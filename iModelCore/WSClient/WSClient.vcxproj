@@ -37,8 +37,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>__WSCLIENT_DLL_BUILD__;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 reb *WebServices*</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 reb *WebServices* -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include\;$(IncludePath)</IncludePath>
@@ -104,6 +104,7 @@
     <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
     <ClCompile Include="Cache\SyncCachedInstancesTask.cpp" />
     <ClCompile Include="Cache\SyncLocalChangesTask.cpp" />
+    <ClCompile Include="Cache\SyncOptions.cpp" />
     <ClCompile Include="Cache\Transactions\BeSQLiteDbTransactionHandler.cpp" />
     <ClCompile Include="Cache\Transactions\CacheTransaction.cpp" />
     <ClCompile Include="Cache\Transactions\CacheTransactionManager.cpp" />
@@ -228,6 +229,7 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IDataSourceCache.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IRepositoryInfoStore.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\ServerQueryHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\SyncOptions.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandler.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\CacheTransaction.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\CacheTransactionManager.h" />

@@ -40,7 +40,7 @@ struct CachingTaskBase : public PackagedAsyncTask<void>
             {};
 
         // Set error and cancel task
-        void SetError(CachingDataSource::ErrorCR error);
+        void SetError(CachingDataSource::ErrorCR error = ICachingDataSource::Status::InternalCacheError);
         // Returns true if user canceled or error occurred - SetError() was called
         bool IsTaskCanceled() const;
         // Get main cancellation token for task

@@ -1254,10 +1254,11 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 SyncProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+SyncOptions options
 )
     {
-    return SyncLocalChanges(nullptr, std::move(onProgress), cancellationToken);
+    return SyncLocalChanges(nullptr, std::move(onProgress), cancellationToken, options);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1267,11 +1268,12 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 const bset<ECInstanceKey>& objectsToSync,
 SyncProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+SyncOptions options
 )
     {
     auto objectsToSyncPtr = std::make_shared<bset<ECInstanceKey>>(objectsToSync);
-    return SyncLocalChanges(objectsToSyncPtr, std::move(onProgress), cancellationToken);
+    return SyncLocalChanges(objectsToSyncPtr, std::move(onProgress), cancellationToken, options);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1281,7 +1283,8 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
 SyncProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+SyncOptions options
 )
     {
     cancellationToken = CreateCancellationToken(cancellationToken);
@@ -1290,6 +1293,7 @@ ICancellationTokenPtr cancellationToken
         (
         shared_from_this(),
         objectsToSync,
+        options,
         std::move(onProgress),
         cancellationToken
         );

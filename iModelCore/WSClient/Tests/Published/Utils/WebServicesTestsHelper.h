@@ -80,45 +80,45 @@ bpair<A, B> StubBPair(A a, B b)
     return bpair<A, B>(a, b);
     }
 
-HttpResponse StubHttpResponse (ConnectionStatus status = ConnectionStatus::CouldNotConnect);
-HttpResponse StubHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());
-HttpResponse StubHttpResponse (HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());
-HttpResponse StubJsonHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());
-HttpResponse StubHttpResponseWithUrl (HttpStatus httpStatus, Utf8StringCR url);
+HttpResponse StubHttpResponse(ConnectionStatus status = ConnectionStatus::CouldNotConnect);
+HttpResponse StubHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
+HttpResponse StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
+HttpResponse StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
+HttpResponse StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url);
 
-WSInfo StubWSInfoWebApi (BeVersion webApiVersion = BeVersion (1, 3), WSInfo::Type type = WSInfo::Type::BentleyWSG);
+WSInfo StubWSInfoWebApi(BeVersion webApiVersion = BeVersion(1, 3), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 //! Stub WebApi 1.1 and BentleyConnect server
-HttpResponse StubWSInfoHttpResponseBentleyConnectV1 ();
+HttpResponse StubWSInfoHttpResponseBentleyConnectV1();
 //! Stub WebApi 1.1 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi11 ();
+HttpResponse StubWSInfoHttpResponseWebApi11();
 //! Stub WebApi 1.2 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi12 ();
+HttpResponse StubWSInfoHttpResponseWebApi12();
 //! Stub WebApi 1.3 and BWSG server. Default for testing WSG 1.x client code
-HttpResponse StubWSInfoHttpResponseWebApi13 ();
+HttpResponse StubWSInfoHttpResponseWebApi13();
 //! Stub WebApi 2.0 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi20 ();
+HttpResponse StubWSInfoHttpResponseWebApi20();
 //! Stub WebApi 2.1 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi21 ();
+HttpResponse StubWSInfoHttpResponseWebApi21();
 //! Stub WebApi 2.2 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi22 ();
+HttpResponse StubWSInfoHttpResponseWebApi22();
 //! Stub WebApi version and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi (BeVersion webApiVersion);
+HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 
-void WriteStringToHttpBody (Utf8StringCR string, HttpBodyPtr body);
-Utf8String ReadHttpBody (HttpBodyPtr body);
+void WriteStringToHttpBody(Utf8StringCR string, HttpBodyPtr body);
+Utf8String ReadHttpBody(HttpBodyPtr body);
 
-WSInfo StubWSInfo (BeVersion version = BeVersion (1, 2), WSInfo::Type type = WSInfo::Type::BentleyWSG);
+WSInfo StubWSInfo(BeVersion version = BeVersion(1, 2), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 
-HttpResponse StubWSErrorHttpResponse (HttpStatus status, Utf8StringCR errorId, Utf8StringCR message = "", Utf8StringCR description = ""); 
-HttpResponse StubWSInfoHttpResponseV1 ();
-HttpResponse StubWSInfoHttpResponseV1BentleyConnect ();
-HttpResponse StubWSInfoHttpResponseV2 ();
-HttpResponse StubWSInfoHttpResponse (BeVersion serverVersion);
+HttpResponse StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, Utf8StringCR message = "", Utf8StringCR description = "");
+HttpResponse StubWSInfoHttpResponseV1();
+HttpResponse StubWSInfoHttpResponseV1BentleyConnect();
+HttpResponse StubWSInfoHttpResponseV2();
+HttpResponse StubWSInfoHttpResponse(BeVersion serverVersion);
 
-WSError StubWSConnectionError ();
-WSError StubWSCanceledError ();
+WSError StubWSConnectionError();
+WSError StubWSCanceledError();
 
-ClientInfoPtr StubClientInfo ();
+ClientInfoPtr StubClientInfo();
 
 ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
 

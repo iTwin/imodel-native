@@ -11,6 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 
 #include <WebServices/Cache/Util/FileUtil.h>
+#include <WebServices/Client/WSChangeset.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -22,12 +23,14 @@ SyncLocalChangesTask::SyncLocalChangesTask
 (
 CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
+SyncOptions options,
 CachingDataSource::SyncProgressCallback&& onProgress,
 ICancellationTokenPtr cancellationToken
 ) :
 CachingTaskBase(cachingDataSource, cancellationToken),
-m_onProgressCallback(onProgress),
 m_objectsToSyncPtr(objectsToSync),
+m_options(options),
+m_onProgressCallback(onProgress),
 m_totalBytesToUpload(0),
 m_totalBytesUploaded(0),
 m_changeGroupIndexToSyncNext(0)
@@ -39,6 +42,9 @@ m_changeGroupIndexToSyncNext(0)
 void SyncLocalChangesTask::_OnExecute()
     {
     auto txn = m_ds->StartCacheTransaction();
+
+    m_serverInfo = m_ds->GetServerInfo(txn);
+
     if (!txn.GetCache().GetChangeManager().HasChanges())
         {
         OnSyncDone();
@@ -118,7 +124,7 @@ void SyncLocalChangesTask::SyncNextCacheChangeGroup()
 
     if (m_changeGroupIndexToSyncNext >= m_changeGroups.size())
         {
-        ReportProgress(0, "");
+        ReportFinalProgress();
         OnSyncDone();
         return;
         }
@@ -129,8 +135,94 @@ void SyncLocalChangesTask::SyncNextCacheChangeGroup()
         ->Then(m_ds->GetCacheAccessThread(), [=]
         {
         m_changeGroupIndexToSyncNext++;
-        SyncNextCacheChangeGroup();
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
+    {
+    return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
+        {
+        if (IsTaskCanceled()) return;
+        auto txn = m_ds->StartCacheTransaction();
+
+        auto changeset = std::make_shared<WSChangeset>();
+        auto changesetIdMap = std::make_shared<bmap<ObjectId, ECInstanceKey>>();
+        auto changesetChangeGroups = std::make_shared<bvector<ChangeGroup*>>();
+        if (SUCCESS != BuildChangeset(txn.GetCache(), *changeset, *changesetIdMap, *changesetChangeGroups))
+            {
+            SetError();
+            return;
+            }
+
+        auto changesetBody = HttpStringBody::Create(std::make_shared<Utf8String>(changeset->ToRequestString()));
+        ResponseGuardPtr guard = CreateResponseGuard(nullptr, false); // TODO: label
+
+        m_ds->GetClient()->SendChangesetRequest(changesetBody, guard->GetProgressCallback(), guard)
+            ->Then(m_ds->GetCacheAccessThread(), [=] (WSChangesetResult result)
+            {
+            if (!result.IsSuccess())
+                {
+                SetError(result.GetError());
+                return;
+                }
+
+            rapidjson::Document changesetResponse;
+            result.GetValue()->AsRapidJson(changesetResponse);
+
+            std::map<ECInstanceKey, Utf8String> createdInstanceIds;
+            auto handler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
+                {
+                createdInstanceIds[(*changesetIdMap)[oldId]] = newId.remoteId;
+                return SUCCESS;
+                };
+
+            if (SUCCESS != changeset->ExtractNewIdsFromResponse(changesetResponse, handler))
+                {
+                SetError();
+                return;
+                };
+
+            auto txn = m_ds->StartCacheTransaction();
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(createdInstanceIds))
+                {
+                SetError();
+                return;
+                };
+
+            for (auto& pair : *changesetIdMap)
+                {
+                ECInstanceKeyCR changedInstanceKey = pair.second;
+                if (createdInstanceIds.find(changedInstanceKey) != createdInstanceIds.end())
+                    {
+                    continue;
+                    }
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(changedInstanceKey))
+                    {
+                    SetError();
+                    return;
+                    };
+                }
+
+            for (auto changeGroup : *changesetChangeGroups)
+                {
+                SyncNextCacheChangeGroup();
+                }
+
+            txn.Commit();
+            });
         });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SyncLocalChangesTask::CanSyncChangeset(ChangeGroupCR changeGroup) const
+    {
+    return
+        m_options.GetUseChangesets() &&
+        m_serverInfo.GetWebApiVersion() >= BeVersion(2, 1) &&
+        changeGroup.GetFileChange().GetChangeStatus() == IChangeManager::ChangeStatus::NoChange;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -188,7 +280,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
 
         if (!changeGroup->AreAllDependenciesSynced())
             {
-            BeAssert(false || "One or more dependencies were not synced");
+            BeAssert(false && "One or more dependencies were not synced");
             RegisterFailedSync(txn.GetCache(), *changeGroup, CachingDataSource::Status::DependencyNotSynced, objectLabel);
             return;
             }
@@ -436,6 +528,148 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(CacheChangeGroupPtr 
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncLocalChangesTask::BuildChangeset
+(
+IDataSourceCache& cache,
+WSChangeset& changeset,
+bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
+bvector<ChangeGroup*>& changesetChangeGroupsOut
+)
+    {
+    for (auto i = m_changeGroupIndexToSyncNext; i < m_changeGroups.size(); ++i)
+        {
+        ChangeGroup& changeGroup = *m_changeGroups[i];
+        if (!CanSyncChangeset(changeGroup))
+            {
+            break;
+            }
+
+        bmap<ObjectId, ECInstanceKey> changeIds;
+        WSChangeset::Instance* newInstance = AddChangeToChangeset(cache, changeset, changeGroup, changeIds);
+        if (nullptr == newInstance)
+            {
+            return ERROR;
+            }
+
+        if (m_options.GetMaxChangesetSize() != 0 &&
+            m_options.GetMaxChangesetSize() < changeset.CalculateSize() ||
+            m_options.GetMaxChangesetInstanceCount() != 0 &&
+            m_options.GetMaxChangesetInstanceCount() < changeset.GetInstanceCount())
+            {
+            changeset.RemoveInstance(*newInstance);
+            break;
+            }
+
+        changesetIdMapOut.insert(changeIds.begin(), changeIds.end());
+        changesetChangeGroupsOut.push_back(&changeGroup);
+        m_changeGroupIndexToSyncNext += 1;
+        }
+
+    if (changesetChangeGroupsOut.empty())
+        {
+        BeAssert(false && "Could not fit any changes into changeset. Check SyncOptions limitations");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Instance* SyncLocalChangesTask::AddChangeToChangeset
+(
+IDataSourceCache& cache,
+WSChangeset& changeset,
+ChangeGroupCR changeGroup,
+bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
+)
+    {
+    if (IChangeManager::ChangeStatus::NoChange == changeGroup.GetRelationshipChange().GetChangeStatus())
+        {
+        auto& change = changeGroup.GetObjectChange();
+        auto state = ToWSChangesetChangeState(change.GetChangeStatus());
+
+        auto properties = ReadChangeProperties(cache, state, change.GetInstanceKey());
+        auto objectId = cache.FindInstance(change.GetInstanceKey());
+
+        changesetIdMapOut[objectId] = change.GetInstanceKey();
+        return &changeset.AddInstance(objectId, state, properties);
+        }
+
+    auto& change = changeGroup.GetRelationshipChange();
+    auto state = ToWSChangesetChangeState(change.GetChangeStatus());
+    ObjectId relId = cache.FindRelationship(change.GetInstanceKey());
+    changesetIdMapOut[relId] = change.GetInstanceKey();
+
+    if (WSChangeset::Deleted == state)
+        {
+        return &changeset.AddInstance(relId, state, nullptr);
+        }
+    else if (WSChangeset::Created == state)
+        {
+        ObjectId sourceId = cache.FindInstance(change.GetSourceKey());
+        ObjectId targetId = cache.FindInstance(change.GetTargetKey());
+
+        WSChangeset::Instance* source = changeset.FindInstance(sourceId);
+        WSChangeset::Instance* target = changeset.FindInstance(targetId);
+
+        WSChangeset::ChangeState sourceState = WSChangeset::Existing;
+        WSChangeset::ChangeState targetState = WSChangeset::Existing;
+
+        JsonValuePtr sourceProperties;
+        JsonValuePtr targetProperties;
+
+        if (IChangeManager::ChangeStatus::NoChange != changeGroup.GetObjectChange().GetChangeStatus())
+            {
+            if (change.GetSourceKey() == changeGroup.GetObjectChange().GetInstanceKey())
+                {
+                sourceState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
+                sourceProperties = ReadChangeProperties(cache, sourceState, change.GetSourceKey());
+                changesetIdMapOut[sourceId] = change.GetSourceKey();
+                }
+            else
+                {
+                targetState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
+                targetProperties = ReadChangeProperties(cache, targetState, change.GetTargetKey());
+                changesetIdMapOut[targetId] = change.GetTargetKey();
+                }
+            }
+
+        if (nullptr == source && nullptr == target)
+            {
+            source = &changeset.AddInstance(sourceId, sourceState, sourceProperties);
+            target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
+                targetId, targetState, targetProperties);
+
+            return source;
+            }
+        else if (nullptr == source)
+            {
+            source = &target->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Backward,
+                sourceId, sourceState, sourceProperties);
+            return source;
+            }
+        else if (nullptr == target)
+            {
+            target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
+                targetId, targetState, targetProperties);
+            return target;
+            }
+        else
+            {
+            BeAssert(false && "Both relationship ends are already in changeset");
+            return nullptr;
+            }
+        }
+
+    BeAssert(false && "Change state not supported");
+    return nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SyncLocalChangesTask::BuildSyncJson(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const
@@ -563,6 +797,59 @@ Utf8String SyncLocalChangesTask::GetChangeStateStr(IChangeManager::ChangeStatus 
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::ChangeState SyncLocalChangesTask::ToWSChangesetChangeState(IChangeManager::ChangeStatus status) const
+    {
+    // TODO: USE WSChangeset::ChangeState in IChangeManager?
+    switch (status)
+        {
+        case IChangeManager::ChangeStatus::NoChange:
+            return WSChangeset::ChangeState::Existing;
+        case IChangeManager::ChangeStatus::Created:
+            return WSChangeset::ChangeState::Created;
+        case IChangeManager::ChangeStatus::Modified:
+            return WSChangeset::ChangeState::Modified;
+        case IChangeManager::ChangeStatus::Deleted:
+            return WSChangeset::ChangeState::Deleted;
+        default:
+            break;
+        }
+    BeAssert(false);
+    return WSChangeset::ChangeState::Existing;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonValuePtr SyncLocalChangesTask::ReadChangeProperties
+(
+IDataSourceCache& cache,
+WSChangeset::ChangeState state,
+ECInstanceKeyCR instance
+) const
+    {
+    auto properties = std::make_shared<Json::Value>();
+    if (WSChangeset::Created == state)
+        {
+        if (SUCCESS != ReadObjectPropertiesForCreation(cache, instance, *properties))
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+        }
+    else if (WSChangeset::Modified == state)
+        {
+        if (SUCCESS != ReadObjectPropertiesForUpdate(cache, instance, *properties))
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+        }
+    return properties;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SyncLocalChangesTask::ReadObjectPropertiesForCreation(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const
@@ -686,17 +973,32 @@ std::map<ECInstanceKey, Utf8String> SyncLocalChangesTask::ReadChangedRemoteIds(C
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   10/2013
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const
     {
-    double synced = (double) m_changeGroupIndexToSyncNext / m_changeGroups.size();
+    if (!m_onProgressCallback)
+        {
+        return;
+        }
+
+    double synced = (double) (m_changeGroupIndexToSyncNext - 1) / m_changeGroups.size();
     synced = trunc(synced * 100) / 100;
 
-    if (m_onProgressCallback)
+    m_onProgressCallback(synced, label, (double) m_totalBytesUploaded + currentFileBytesUploaded, (double) m_totalBytesToUpload);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncLocalChangesTask::ReportFinalProgress() const
+    {
+    if (!m_onProgressCallback)
         {
-        m_onProgressCallback(synced, label, (double) m_totalBytesUploaded + currentFileBytesUploaded, (double) m_totalBytesToUpload);
+        return;
         }
+
+    m_onProgressCallback(1, "", (double) m_totalBytesUploaded, (double) m_totalBytesToUpload);
     }
 
 /*--------------------------------------------------------------------------------------+

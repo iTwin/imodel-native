@@ -28,6 +28,12 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                 <BaseClass>TestClass</BaseClass>
                 <ECProperty propertyName="TestProperty3" typeName="string" />
             </ECClass>
+            <ECClass typeName="TestClassA" >
+                <BaseClass>TestClass</BaseClass>
+            </ECClass>
+            <ECClass typeName="TestClassB" >
+                <BaseClass>TestClass</BaseClass>
+            </ECClass>
             <ECClass typeName="TestClass3" >
                 <ECProperty propertyName="TestReadOnlyProperty" typeName="string" readOnly="True" />
                 <ECProperty propertyName="TestCalculatedProperty" typeName="string" >

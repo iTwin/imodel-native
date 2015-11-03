@@ -14,6 +14,7 @@
 #include "CachingTaskBase.h"
 #include "ChangesGraph.h"
 #include <WebServices/Cache/CachingDataSource.h>
+#include <WebServices/Client/WSChangeset.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -24,7 +25,11 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct SyncLocalChangesTask : public CachingTaskBase
     {
     private:
+        WSInfo m_serverInfo;
+        SyncOptions m_options;
+
         std::shared_ptr<bset<ECInstanceKey>> m_objectsToSyncPtr;
+
         const CachingDataSource::SyncProgressCallback m_onProgressCallback;
 
         bvector<CacheChangeGroupPtr> m_changeGroups;
@@ -42,6 +47,9 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         void SyncNextCacheChangeGroup();
 
+        bool CanSyncChangeset(ChangeGroupCR changeGroup) const;
+        AsyncTaskPtr<void> SyncNextChangeset();
+
         AsyncTaskPtr<void> SyncCacheChangeGroup(CacheChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncCreation(CacheChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncObjectModification(CacheChangeGroupPtr changeGroup);
@@ -51,14 +59,30 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void HandleCreationError(WSErrorCR error, CacheChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
 
         void ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const;
+        void ReportFinalProgress() const;
         ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
 
+        BentleyStatus BuildChangeset
+            (
+            IDataSourceCache& cache,
+            WSChangeset& changeset,
+            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
+            bvector<ChangeGroup*>& changesetChangeGroupsOut
+            );
+        WSChangeset::Instance* AddChangeToChangeset
+            (
+            IDataSourceCache& cache,
+            WSChangeset& changeset,
+            ChangeGroupCR changeGroup,
+            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
+            );
         BentleyStatus BuildSyncJson(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
         BentleyStatus BuildSyncJsonForObjectCreation(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
         BentleyStatus BuildSyncJsonForRelationshipCreation(IDataSourceCache& cache, ChangeManager::RelationshipChangeCR relationshipChange, JsonValueR syncJsonOut) const;
 
         std::map<ECInstanceKey, Utf8String> ReadChangedRemoteIds(CacheChangeGroupCR changeGroup, WSCreateObjectResponseCR response) const;
 
+        JsonValuePtr ReadChangeProperties(IDataSourceCache& cache, WSChangeset::ChangeState state, ECInstanceKeyCR instance) const;
         BentleyStatus ReadObjectProperties(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
         BentleyStatus ReadObjectPropertiesForUpdate(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
         BentleyStatus ReadObjectPropertiesForCreation(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
@@ -70,6 +94,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void SetExistingInstanceInfoToJson(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR json) const;
         void SetChangedInstanceClassInfoToJson(IDataSourceCache& cache, IChangeManager::ObjectChangeCR change, JsonValueR json) const;
         Utf8String GetChangeStateStr(IChangeManager::ChangeStatus changeStatus) const;
+        WSChangeset::ChangeState ToWSChangesetChangeState(IChangeManager::ChangeStatus status)const;
 
         void RegisterFailedSync(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel);
         void SetUpdatedInstanceKeyInCacheChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
@@ -82,6 +107,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             (
             CachingDataSourcePtr cachingDataSource,
             std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
+            SyncOptions options,
             CachingDataSource::SyncProgressCallback&& onProgress,
             ICancellationTokenPtr cancellationToken
             );
