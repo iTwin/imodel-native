@@ -9,10 +9,11 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-appName = RealityCrawler
-policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
+
+appName         = RealityCrawler
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 # Setup location of source files
     prodSrc = $(_MakeFilePath)
@@ -31,65 +32,65 @@ packages = $(_MakeFilePath)packages/
 ASSEMBLY_REFERENCE           = $(packages)Abot.1.5.0.95/lib/net40/Abot.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)NRobotsPatched.1.0.5.0/lib/net40/Robots.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)Abot.1.5.0.95/lib/net40/HtmlAgilityPack.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)AutoMapper.3.3.1/lib/net40/AutoMapper.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)AutoMapper.3.3.1/lib/net40/AutoMapper.Net4.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)CsQuery.1.3.4/lib/net40/CsQuery.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)EntityFramework.6.1.3/lib/net45/EntityFramework.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)EntityFramework.6.1.3/lib/net45/EntityFramework.SqlServer.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(packages)log4net.2.0.3/lib/net40-full/log4net.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(ContextSubPartsAssembliesDir)WMSCapabilitiesNET.dll
 %include csrefapnd.mki
 always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BaseGeoCoordG.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeCurl.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeIcu4c.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeLibxml2.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyAllocator.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyG.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyGeomG.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeOpenSSL.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeSQLiteG.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeXmlG.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/ImagePPG.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/NCSEcw.dll $(o)
-	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/RealityPlatform.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BaseGeoCoordG.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeCurl.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeIcu4c.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeLibxml2.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyAllocator.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyG.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyGeomG.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeOpenSSL.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeSQLiteG.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeXmlG.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/ImagePPG.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/NCSEcw.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/RealityPlatform.dll $(o)
 
 #-----------------------------------------------------------------------
 #   Compile C# Modules
@@ -100,45 +101,42 @@ always:
     ASSEMBLY_TARGET_DIRECTORY = $(o)
     ASSEMBLY_TITLE = Bentley.RealityPlatform.RealityCrawler
     ASSEMBLY_DESCRIPTION = Bentley Reality Crawler
-	ASSEMBLY_PRODUCT_NAME = Bentley.RealityPlatform.RealityCrawler
+    ASSEMBLY_PRODUCT_NAME = Bentley.RealityPlatform.RealityCrawler
     ASSEMBLY_VERSION = 1.0.0.0
-	ASSEMBLY_FILE_VERSION = 1.0.0.0
-	ASSEMBLY_CONFIG_FILE =  $(prodSrc)App.config
+    ASSEMBLY_FILE_VERSION = 1.0.0.0
+    ASSEMBLY_CONFIG_FILE =  $(prodSrc)App.config
     ASSEMBLY_SYMB_DIR = $(o)
-	ASSEMBLY_CONSOLE = 1
-	ASSEMBLY_NO_TRANSKIT = 1
+    ASSEMBLY_CONSOLE = 1
+    ASSEMBLY_NO_TRANSKIT = 1
 
 #-----------------------------------------------------------------------
 # Define default assembly meta-data attributes
-# (these values do not directly influence projects built via msbuild
-#  although we may reuse some subset later in this policy file to define
-#  variables that do control msbuild projects)
 #-----------------------------------------------------------------------
 %include $(SharedMki)stdversion.mki
 ASSEMBLY_COMPANY_NAME   = $(companyName)
 ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
 
-	ASSEMBLY_SOURCE_LIST = \
-		$(prodSrc)RealityCrawlerDB.Context.cs \
-		$(prodSrc)RealityCrawlerDB.cs \
-		$(prodSrc)RealityCrawlerDB.Designer.cs \
-		$(prodSrc)KeywordDictionary.cs \
-		$(prodSrc)RealityCrawler.cs \
-		$(prodSrc)Seed.cs \
-		$(prodSrc)SeedCreator.cs \
-		$(prodSrc)SeedReader.cs \
-		$(prodSrc)Server.cs \
-		$(prodSrc)ServerState.cs \
-		$(prodSrc)ServerType.cs \
-		$(prodSrc)ServerWMS.cs \
-		$(prodSrc)WMSServerData.cs \
-		$(prodSrc)WMSServerExtendedProperties.cs \
+    ASSEMBLY_SOURCE_LIST = \
+        $(prodSrc)RealityCrawlerDB.Context.cs \
+        $(prodSrc)RealityCrawlerDB.cs \
+        $(prodSrc)RealityCrawlerDB.Designer.cs \
+        $(prodSrc)KeywordDictionary.cs \
+        $(prodSrc)RealityCrawler.cs \
+        $(prodSrc)Seed.cs \
+        $(prodSrc)SeedCreator.cs \
+        $(prodSrc)SeedReader.cs \
+        $(prodSrc)Server.cs \
+        $(prodSrc)ServerState.cs \
+        $(prodSrc)ServerType.cs \
+        $(prodSrc)ServerWMS.cs \
+        $(prodSrc)WMSServerData.cs \
+        $(prodSrc)WMSServerExtendedProperties.cs \
 
 ASSEMBLY_EDMX_FILE_TO_BUILD = $(prodSrc)RealityCrawlerDB.edmx
 %include $(_MakeFilePath)../mki/assemblyEdmxAppend.mki
 
 always : 
      $(bcopyCmd) $(stdBcopyOpts) $(prodSrc)DictionaryWMS.xml $(o)
-	 $(bcopyCmd) $(stdBcopyOpts) $(prodSrc)RealityCrawlerSeed.xml $(o)
+     $(bcopyCmd) $(stdBcopyOpts) $(prodSrc)RealityCrawlerSeed.xml $(o)
 
 %include mkcsharp.mki

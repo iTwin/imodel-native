@@ -9,13 +9,12 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
+%include mdl.mki
 
 appName = RealityPackage
-baseDir	= $(_MakeFilePath)
+baseDir = $(_MakeFilePath)
 
-%include mdl.mki
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPackage/
 
@@ -34,7 +33,6 @@ nameToDefine=__REALITYPACKAGE_BUILD__
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
-
 RealityDepends  =   $(_MakeFileSpec) \
                     $(PublicApiDir)RealityDataPackage.h \
                     $(PublicApiDir)RealityPackage.h \

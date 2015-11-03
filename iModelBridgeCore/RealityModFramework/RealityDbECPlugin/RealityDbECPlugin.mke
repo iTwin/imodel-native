@@ -2,14 +2,12 @@
 #      $Source: RealityDbECPlugin/RealityDbECPlugin.mke $
 #   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-baseDir          = $(_MakeFilePath)
-appName = RealityDbECPlugin
-PolicyFile=$(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
 %include  mdl.mki
 
+baseDir     = $(_MakeFilePath)
+appName     = RealityDbECPlugin
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------

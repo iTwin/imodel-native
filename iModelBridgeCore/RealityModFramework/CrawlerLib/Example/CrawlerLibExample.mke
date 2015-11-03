@@ -5,16 +5,13 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #  
 #----------------------------------------------------------------------
-
-
-policyFile = $(_MakeFilePath)../../mki/AssertRealityModFrameworkPolicy.mki
-
-appName = CrawlerLibExample
-consoleAppUnicode   = 1      			# use wmain  
-
+consoleAppUnicode   = 1                 # use wmain  
 %include mdl.mki
 
-baseDir = $(_MakeFilePath)
+appName             = CrawlerLibExample
+baseDir             = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 #----------------------------------------------------------------------
 #   Create output directories
@@ -45,7 +42,7 @@ EXE_OBJS     = $(o)CrawlerLibExample$(oext)
 
 LINKER_LIBRARIES = $(ContextSubpartsLibs)CrawlerLib.lib \
                    $(ContextSubpartsLibs)Bentley.lib \
-                   $(ContextSubpartsLibs)BentleyAllocator.lib \
+                   $(ContextSubpartsLibs)BentleyAllocator.lib
 
 %include $(SharedMki)linktool.mki
 

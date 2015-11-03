@@ -1,19 +1,16 @@
 #--------------------------------------------------------------------------------------
 #
 #     $Source: RealityPlatform/RealityPlatform.mke $
-#    $RCSfile: imagepp.mke,v $
-#   $Revision: 1.50 $
-#       $Date: 2007/03/07 13:34:13 $
-#     $Author: Bern.McCarty $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName = RealityPlatform
-baseDir	= $(_MakeFilePath)
-
-policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
+
+appName         = RealityPlatform
+baseDir         = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatform/
 
@@ -90,12 +87,12 @@ $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 #----------------------------------------------------------------------
 DLM_NAME            = $(appName)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)
-DLM_NO_SIGN	    = 1
+DLM_NO_SIGN         = 1
 
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
-		               $(ContextSubpartsLibs)ImagePP$(libext) \
+                       $(ContextSubpartsLibs)ImagePP$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \

@@ -5,11 +5,10 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-appName = RealityDataHandlerTester
-
-policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
+
+appName     = RealityDataHandlerTester
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 RealityDataHandlerTesterDir = $(_MakeFilePath)
 

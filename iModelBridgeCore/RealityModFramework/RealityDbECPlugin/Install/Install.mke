@@ -5,11 +5,11 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName = Setup_RealityDbECPlugin
-PolicyFile=$(_MakeFilePath)../../mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
-%include $(SharedMki)stdversion.mki
+appName     = Setup_RealityDbECPlugin
 
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SharedMki)stdversion.mki
 
 INSTALLER_TOOLSET_VERSION     = 3.10.2103.0
 %undef __WiXCommon_MKI__
@@ -94,9 +94,6 @@ $(InstallDataDir)RMIndexDbScript.sql : $(_MakeFilePath)Data/RMIndexDbScript.sql
 $(InstallDataDir)CreateOSMEntry.sql : $(_MakeFilePath)Data/CreateOSMEntry.sql
         $(LinkFirstDepToFirstTarget)
 
-PolicyFile=$(SharedMki)InternalSystemPolicy.mki
-%include $(SrcBsiCommon)PublicSDK/ConfigurePolicy.mki
-
 %ifndef INSTALLER_NAME
 	%error INSTALLER_NAME
 %endif
@@ -134,8 +131,6 @@ INSTALLER_COMPILER_OPT + -ext WixUtilExtension
 INSTALLER_COMPILER_OPT + -dSetupExeIconDir=$(wxsFilesDir) -dProductDir=$(OutProduct) -dInstallDataDir=$(InstallDataDir) -dInstallReadMeDir=$(InstallReadMeDir)
 INSTALLER_COMPILER_OPT + -arch $(TARGET_PROCESSOR_ARCHITECTURE) -dRel_V=$(REL_V) -dMaj_V=$(MAJ_V) -dMin_V=$(MIN_V) -dSubMin_V=$(SUBMIN_V)
 
-%include $(SharedMki)InternalSystemPolicy.mki
-%include $(SharedMki)CommonCompileLinkPolicy.mki
 %include $(SharedMki)wix.mki
 
 $(ContextDeliveryDir)$(INSTALLER_NAME).msi : $(o)$(INSTALLER_NAME).msi
