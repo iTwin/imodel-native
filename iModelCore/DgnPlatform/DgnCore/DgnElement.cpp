@@ -2834,3 +2834,57 @@ DgnDbStatus DgnElement2d::SetPlacement(Placement2dCR placement)
     return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementCopier::ElementCopier() 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR templateItem,
+    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
+
+    Placement3d placement(origin, angles, templateItem.GetPlacement().GetElementBox());
+
+    DgnElement::Code icode(code);
+    if (!icode.IsValid())
+        {
+        icode = templateItem.GetCode();
+        DgnAuthorityCPtr authority = targetModel.GetDgnDb().Authorities().GetAuthority(templateItem.GetCode().GetAuthority());
+        if (authority.IsValid())
+            icode = authority->CreateDefaultCode();         // *** WIP_AUTHORITY -- how to ask an authority to issue the next available code?
+        }
+
+    PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), templateItem.GetElementClassId(), templateItem.GetCategoryId(), placement, icode);
+
+    DgnElementPtr instanceDgnElement0 = templateItem.Clone(&status, &iparams);
+    if (!instanceDgnElement0.IsValid())
+        return nullptr;
+
+    PhysicalElementPtr instanceElement0 = instanceDgnElement0->ToPhysicalElementP();
+    if (!instanceElement0.IsValid())
+        {
+        status = DgnDbStatus::WrongClass;
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnElementCPtr instanceDgnElement = instanceElement0->Insert(&status);
+    if (!instanceDgnElement.IsValid())
+        return nullptr;
+
+    PhysicalElementCPtr instanceElement = instanceDgnElement->ToPhysicalElement();
+    if (!instanceElement.IsValid())
+        {
+        status = DgnDbStatus::WrongClass;
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return instanceElement;
+    }
