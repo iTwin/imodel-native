@@ -47,18 +47,6 @@ void MyImageppLibHost::_RegisterFileFormat()
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Eric.Paquet         05/2015
-//-----------------------------------------------------------------------------------------
-ImagePP::IRasterGeoCoordinateServices* MyImageppLibAdmin::_GetIRasterGeoCoordinateServicesImpl() const
-    {
-    //WIP
-    //if (GeoCoordinationManager::GetServices() != NULL)
-    return ImagePP::ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
-
-    //return NULL;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
 BentleyStatus MyImageppLibAdmin::_GetDefaultTempDirectory(BeFileName& tempFileName) const

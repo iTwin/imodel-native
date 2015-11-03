@@ -157,17 +157,11 @@ uint32_t    RasterFile::GetHeight() const
 //----------------------------------------------------------------------------------------
 GeoCoordinates::BaseGCSPtr RasterFile::GetBaseGcs() const
     {
-    IRasterBaseGcsCP pSrcFileGeocoding = GetPageDescriptor()->GetGeocodingCP();
+    GeoCoordinates::BaseGCSCP baseGcsP = GetPageDescriptor()->GetGeocodingCP();
+    if(baseGcsP != nullptr && baseGcsP->IsValid())
+        return GeoCoordinates::BaseGCS::CreateGCS(*baseGcsP);
 
-    if (pSrcFileGeocoding == nullptr)
-        return nullptr;
-
-    GeoCoordinates::BaseGCS* baseGcsP = pSrcFileGeocoding->GetBaseGCS();
-    if (baseGcsP == nullptr)
-        return nullptr;
-
-    GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS(*baseGcsP);
-    return pGcs;
+    return nullptr;
     }
 
 //----------------------------------------------------------------------------------------
