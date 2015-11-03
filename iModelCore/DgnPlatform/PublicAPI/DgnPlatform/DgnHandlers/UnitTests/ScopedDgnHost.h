@@ -11,6 +11,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCore/DgnDb.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 // A published unit test can include only published API header files ... with the exception of a few utilities like this.
 // This header file is snuck in through a back door. This header file can only include and use published API header files 
@@ -34,6 +35,7 @@ struct ScopedDgnHost
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
 
     DGNPLATFORM_EXPORT void SetFetchScriptCallback(FetchScriptCallback* cb);
+    DGNPLATFORM_EXPORT void SetLocksAdmin(DgnPlatformLib::Host::LocksAdmin* admin);
 };
 
 struct TestDataManager

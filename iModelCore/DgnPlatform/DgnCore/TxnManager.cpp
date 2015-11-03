@@ -24,24 +24,6 @@ struct ChangesBlobHeader
 };
 END_UNNAMED_NAMESPACE
 
-
-#if !defined (NDEBUG)
-//=======================================================================================
-//! for debugging, fail if anyone tries to write a transactionable change while this object is on the stack.
-//! @bsiclass                                                     Keith.Bentley   03/07
-//=======================================================================================
-struct  IllegalTxnMark
-{
-    DgnDbR m_db;
-    IllegalTxnMark(DgnDbR db) : m_db(db) {db.ExecuteSql("pragma query_only=TRUE");}
-    ~IllegalTxnMark() {m_db.ExecuteSql("pragma query_only=FALSE");}
-};
-
-#define ILLEGAL_TXN_MARK(db) IllegalTxnMark _v(db)
-#else
-#define ILLEGAL_TXN_MARK(db) 
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -283,14 +265,14 @@ BentleyStatus TxnManager::PropagateChanges()
     if (!m_propagateChanges)
         return BSISUCCESS;
 
-    SetIndirectChanges(true);
+    SetMode(Mode::Indirect);
     for (auto table :  m_tables)
         {
         table->_PropagateChanges();
         if (HasFatalErrors())
             break;
         }
-    SetIndirectChanges(false);
+    SetMode(Mode::Direct);
 
     return HasFatalErrors() ? BSIERROR : BSISUCCESS;
     }
@@ -303,7 +285,7 @@ BentleyStatus TxnManager::PropagateChanges()
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     {
     // Skip the range tree tables - they hold redundant data that will be automatically updated when the changeset is applied.
-    // They all start with the string defined by DGNELEMENT_VTABLE_3dRTree
+    // They all start with the string defined by DGN_VTABLE_RTree3d
     if (0 == strncmp(DGN_VTABLE_RTree3d, tableName, sizeof(DGN_VTABLE_RTree3d)-1))
         return  TrackChangesForTable::No;
 
