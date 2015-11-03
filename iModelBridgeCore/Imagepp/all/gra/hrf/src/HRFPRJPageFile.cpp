@@ -268,9 +268,8 @@ void HRFPRJPageFile::CreateDescriptor()
     HPMAttributeSet               TagList;
     HFCPtr<HPMGenericAttribute>   pTag;
 
-    IRasterBaseGcsPtr            pBaseGCS;
-
-    pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorESRI, m_WKT.c_str()); 
+    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    pBaseGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorESRI, m_WKT.c_str()); 
 
     HRFScanlineOrientation TransfoModelSLO = HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL;
 

@@ -489,7 +489,11 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
             if (pPageFileDescriptor->HasThumbnail())
                 pThumbnail = pPageFileDescriptor->GetThumbnail();
 
-            IRasterBaseGcsCP           pBaseGCS = pPageFileDescriptor->GetGeocodingCP();
+            GeoCoordinates::BaseGCSPtr pBaseGCS;
+            if(pPageFileDescriptor->GetGeocodingCP() != nullptr)
+                {
+                pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(*pPageFileDescriptor->GetGeocodingCP());
+                }
 
             pPageFileDescriptor = new HRFPageDescriptor(m_pPageFile->GetAccessMode(),
                                                         m_pPageFile->GetCapabilities(),
@@ -500,13 +504,12 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
                                                         pModel,
                                                         &PageOrientation,
                                                         pFilter,
-                                                        (HPMAttributeSet*)&(pPageFileDescriptor->GetTags()),
+                                                        &pPageFileDescriptor->GetTags(),
                                                         pPageFileDescriptor->GetDuration());
 
-            if (NULL != pBaseGCS)
+            if (pBaseGCS.IsValid())
                 {
-                IRasterBaseGcsPtr pNewGCS = pBaseGCS->Clone();
-                pPageFileDescriptor->SetGeocoding(pNewGCS.get());
+                pPageFileDescriptor->SetGeocoding(pBaseGCS.get());
                 }
             }
         else
@@ -541,7 +544,11 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
                 pScanOri = &ScanOri;
                 }
 
-            IRasterBaseGcsCP      pBaseGCS = pPageFileDescriptor->GetGeocodingCP();
+            GeoCoordinates::BaseGCSPtr pBaseGCS;
+            if(pOriginalPageDescriptor->GetGeocodingCP() != nullptr)
+                {
+                pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(*pOriginalPageDescriptor->GetGeocodingCP());
+                }
 
             pPageFileDescriptor = new HRFPageDescriptor(pOriginalPageDescriptor->GetAccessMode(),
                                                         pOriginalPageDescriptor->GetCapabilities(),
@@ -553,16 +560,14 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
                                                          pOriginalPageDescriptor->GetTransfoModel() : 0),
                                                         pScanOri,
                                                         pFilter,
-                                                        (HPMAttributeSet*)&(pOriginalPageDescriptor->GetTags()),
+                                                        &(pOriginalPageDescriptor->GetTags()),
                                                         pOriginalPageDescriptor->GetDuration());
 
 
-            if (NULL != pBaseGCS)
+            if (pBaseGCS.IsValid())
                 {
-                IRasterBaseGcsPtr pNewGCS = pBaseGCS->Clone();
-                pPageFileDescriptor->SetGeocoding(pNewGCS.get());
+                pPageFileDescriptor->SetGeocoding(pBaseGCS.get());
                 }
-
             }
 
         // Combine the Page descriptors information from original file and Page File
