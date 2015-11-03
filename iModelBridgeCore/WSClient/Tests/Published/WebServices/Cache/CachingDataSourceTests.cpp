@@ -1789,11 +1789,14 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     EXPECT_EQ("A", result.GetValue().GetJson()["TestProperty"].asString());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequests)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucceeds)
     {
     auto ds = GetTestDataSourceV1();
 
-    ds->SyncLocalChanges(nullptr, nullptr)->Wait();
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.GetValue().empty());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlagAndResetsItAfterSuccessfulSync)
@@ -1960,6 +1963,18 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ServerV2CreatedObject_SendsQuery
     Json::Value jsonInstance;
     ds->StartCacheTransaction().GetCache().ReadInstance({"TestSchema.TestDerivedClass", "NewId"}, jsonInstance);
     EXPECT_THAT(jsonInstance["TestProperty"], Eq("TestValue"));
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndNoChanges_DoesNoRequestsAndSucceeds)
+    {
+    auto ds = GetTestDataSource({2, 1});
+
+    SyncOptions options;
+    options.SetUseChangesets(true);
+    auto result = ds->SyncLocalChanges(nullptr, nullptr, options)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.GetValue().empty());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledCreatedModifiedDeletedObjects_SendsChangeset)
@@ -3989,7 +4004,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
         EXPECT_EQ(7, onProgressCount);
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_NoObjectsPassedToSync_DoesNoRequests)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_NoObjectsPassedToSync_DoesNoRequestsAndReturnsSuccess)
     {
     auto ds = GetTestDataSourceV1();
 
@@ -3999,7 +4014,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoObjectsPassedToSync_DoesNoRequ
     txn.Commit();
 
     bset<ECInstanceKey> toSync;
-    ds->SyncLocalChanges(toSync, nullptr, nullptr)->Wait();
+    auto result = ds->SyncLocalChanges(toSync, nullptr, nullptr)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.GetValue().empty());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForObjectChangePassed_SyncsFile)
