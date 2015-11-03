@@ -140,6 +140,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
                     );
 
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = snippet;
+                deleteSqlSnippets.m_whereClauseNativeSqlSnippet.ImportParameters(whereClause);
                 }
             }
         else

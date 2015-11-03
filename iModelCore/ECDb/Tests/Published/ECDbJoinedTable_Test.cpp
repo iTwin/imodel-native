@@ -421,16 +421,30 @@ TEST_F(JoinedTable, InsertWithParameterBinding)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(cIndex, 20000));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(dIndex, "d2000", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idIndex, 102));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(aIndex, 20000));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(bIndex, "a2000", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(cIndex, 30000));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(dIndex, "d4000", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
     stmt.Finalize();
 
     //-----------------------------SELECT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+    idIndex = stmt.GetParameterIndex("id");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idIndex, 101));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
     ASSERT_EQ(stmt.GetValueInt64(0), 10000);
     ASSERT_STRCASEEQ(stmt.GetValueText(1), "a1000");
     ASSERT_EQ(stmt.GetValueInt64(2), 20000);
     ASSERT_STRCASEEQ(stmt.GetValueText(3), "d2000");
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+
     stmt.Finalize();
 
     //-----------------------------UPDATE----------------------------------------------------
@@ -472,7 +486,8 @@ TEST_F(JoinedTable, InsertWithParameterBinding)
 
     idIndex = stmt.GetParameterIndex("id");
     ASSERT_EQ(idIndex, 1);
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idIndex, 101));
+    auto bindR = stmt.BindInt64(idIndex, 101);
+    ASSERT_EQ(ECSqlStatus::Success, bindR);
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
