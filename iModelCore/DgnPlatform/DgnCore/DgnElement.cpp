@@ -2845,20 +2845,11 @@ ElementCopier::ElementCopier()
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR templateItem,
-    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code)
+    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& icode)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
     Placement3d placement(origin, angles, templateItem.GetPlacement().GetElementBox());
-
-    DgnElement::Code icode(code);
-    if (!icode.IsValid())
-        {
-        icode = templateItem.GetCode();
-        DgnAuthorityCPtr authority = targetModel.GetDgnDb().Authorities().GetAuthority(templateItem.GetCode().GetAuthority());
-        if (authority.IsValid())
-            icode = authority->CreateDefaultCode();         // *** WIP_AUTHORITY -- how to ask an authority to issue the next available code?
-        }
 
     PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), templateItem.GetElementClassId(), templateItem.GetCategoryId(), placement, icode);
 

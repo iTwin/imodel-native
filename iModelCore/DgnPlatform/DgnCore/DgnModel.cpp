@@ -1628,30 +1628,12 @@ void ComponentModel::CompProps::ToJson(Json::Value& outValue) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParameters)
-    {
-    GetSolver().GetParametersR().SetValues(newParameters);
-
-    auto status = Update();
-    if (DgnDbStatus::Success != status)
-        return status;
-    auto sstatus = GetDgnDb().SaveChanges(); // => txn validation invokes the model's solver
-    if (BE_SQLITE_OK == sstatus)
-        return DgnDbStatus::Success;
-    if (BE_SQLITE_ERROR_ChangeTrackError == sstatus)
-        return DgnDbStatus::ValidationFailed;
-    return DgnDbStatus::SQLiteError;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus createSolutionOfComponentRelationship(DgnElementCR inst, ComponentModelR componentModel)
     {
     CachedECSqlStatementPtr statement = inst.GetDgnDb().GetPreparedECSqlStatement(
-        "UPDATE " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate)
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent)
         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
 
     if (!statement.IsValid())
@@ -1667,15 +1649,15 @@ static DgnDbStatus createSolutionOfComponentRelationship(DgnElementCR inst, Comp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
-static DgnModelId queryComponentModelFromSolution(DgnElementCR templateItem)
+static DgnModelId queryComponentModelFromSolution(DgnDbR db, DgnElementId itemId)
     {
-    CachedECSqlStatementPtr statement = templateItem.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate) " WHERE SourceECInstanceId=? LIMIT 1");
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
+        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE SourceECInstanceId=? LIMIT 1");
 
     if (!statement.IsValid())
         return DgnModelId();
 
-    statement->BindId(1, templateItem.GetElementId());
+    statement->BindId(1, itemId);
     if (BE_SQLITE_ROW != statement->Step())
         return DgnModelId();
 
@@ -1683,21 +1665,46 @@ static DgnModelId queryComponentModelFromSolution(DgnElementCR templateItem)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/15
+* @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnElement::Code checkCodeNotUsed(DgnDbR db, DgnElement::Code const& code)
+static DgnDbStatus createInstanceOfTemplateRelationship(DgnElementCR inst, DgnElementCR templateItem)
     {
-    if (!db.Elements().QueryElementIdByCode(code).IsValid())    // double-check that this code is not used
-        return code;                                                    //  Good. It's a new code. Return it.
+    CachedECSqlStatementPtr statement = inst.GetDgnDb().GetPreparedECSqlStatement(
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate)
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
 
-    BeAssert(false && "somebody else is issuing codes in the Component authority namespace!");
-    return DgnAuthority::Code();
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, inst.GetElementClassId());
+    statement->BindId(2, inst.GetElementId());
+    statement->BindId(3, templateItem.GetElementClassId());
+    statement->BindId(4, templateItem.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instanceId)
+    {
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
+        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate) " WHERE SourceECInstanceId=? LIMIT 1");
+
+    if (!statement.IsValid())
+        return DgnElementId();
+
+    statement->BindId(1, instanceId);
+    if (BE_SQLITE_ROW != statement->Step())
+        return DgnElementId();
+
+    return statement->GetValueId<DgnElementId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
+* @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel)
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -1709,19 +1716,75 @@ DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalM
         return nullptr;
         }
 
-    ModelSolverDef::ParameterSet const& currentParameters = GetSolver().GetParameters();
-    Utf8String solutionName = currentParameters.ComputeSolutionName();
+    Utf8String solutionName = parameters.ComputeSolutionName();
 
-#ifdef WIP_COMPONENT_MODEL // *** how to tell if catalog already contains item?
-    SolutionId sid;
-    sid.m_modelName = GetModelName();
-    sid.m_solutionName = solutionName;
+    DgnElement::Code icode = CreateCatalogItemCode(solutionName);
+    if (!icode.IsValid())
+        {
+        BeAssert(false);
+        status = DgnDbStatus::BadRequest;
+        return nullptr;
+        }
 
-    Solution sln;
-    if (DgnDbStatus::Success == Query(sln, sid)) // see if this solution is already cached.
-        return sid;
-#endif
+    //  Check to see if this solution has already been captured. If so, return the existing catalog item.
+    DgnElementId existingTemplateItemId = db.Elements().QueryElementIdByCode(icode);
+    if (existingTemplateItemId.IsValid())
+        {
+        PhysicalElementCPtr existingTemplateItem = db.Elements().Get<PhysicalElement>(existingTemplateItemId);
+        if (!existingTemplateItem.IsValid())
+            {
+            BeAssert(false && "template item cannot be loaded");
+            status = DgnDbStatus::BadElement;
+            return nullptr;
+            }
+        if (existingTemplateItem->GetModel().get() != &catalogModel)
+            {
+            BeDataAssert(false && "solution has already been captured in a different model");
+            }
+        return existingTemplateItem;
+        }
+    
+    if (DgnDbStatus::Success != (status = Solve(parameters)))
+        return nullptr;
 
+    return HarvestSolution(status, catalogModel, solutionName, icode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& parameters)
+    {
+    //  Generate the requested solution
+    GetSolver().GetParametersR().SetValues(parameters);
+
+    DgnDbStatus status = Update();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    auto sstatus = GetDgnDb().SaveChanges(); // => txn validation invokes the model's solver
+    if (BE_SQLITE_OK != sstatus)
+        status = (BE_SQLITE_ERROR_ChangeTrackError == sstatus)? DgnDbStatus::ValidationFailed: DgnDbStatus::SQLiteError;
+    
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, PhysicalModelR catalogModel, Utf8StringCR solutionName, DgnElement::Code const& icode)
+    {
+    DgnDbR db = GetDgnDb();
+
+    DgnClassId iclass = m_compProps.GetItemECClassId(db);
+    if (!iclass.IsValid())
+        {
+        BeAssert(false);
+        status = DgnDbStatus::BadSchema;
+        return nullptr;
+        }
+
+    //  We'll use the same Category for the catalog item as for the (future) instance items.
     DgnCategoryId itemCategoryId = m_compProps.QueryItemCategoryId(db);
     if (!itemCategoryId.IsValid())
         {
@@ -1798,9 +1861,37 @@ DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalM
         subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
         }
 
-    //  **** Item ****
+    //  **** Catalog Item ****
+    PhysicalElementPtr catalogItem;
+        {
+        DgnElement::CreateParams cparams(db, catalogModel.GetModelId(), iclass, icode);
+        dgn_ElementHandler::Element* handler = dgn_ElementHandler::Element::FindHandler(db, iclass);
+        if (nullptr == handler)
+            {
+            BeAssert(false);
+            status = DgnDbStatus::MissingHandler;
+            return nullptr;
+            }
+        DgnElementPtr dgnElem = handler->Create(cparams);    
+        if (!dgnElem.IsValid())
+            {
+            BeAssert(false && "Handler::Create failed");
+            status = DgnDbStatus::WrongHandler;
+            return nullptr;
+            }
+        catalogItem = dgnElem->ToPhysicalElementP();
+        if (!catalogItem.IsValid())
+            {
+            BeAssert(false && "ComponentModel::HarvestSolution creates only PhysicalItems");
+            status = DgnDbStatus::WrongClass;
+            return nullptr;
+            }
+        }
+
+    catalogItem->SetCategoryId(itemCategoryId); // Note that I have to set this afterward, as handler Create works in terms of DgnElement::CreateParams, not GeometricElement::CreateParams
+
     //  Build a single geomstream that refers to all of the geomparts -- that's the solution
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(catalogModel, itemCategoryId, DPoint3d::FromZero(), YawPitchRollAngles());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*catalogItem);
     for (bpair<DgnSubCategoryId, DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
         {
         Transform noTransform = Transform::FromIdentity();
@@ -1808,84 +1899,70 @@ DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalM
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    GeomStream  geom;
-    Placement3d placement = builder->GetPlacement3d();
-    if (builder->GetGeomStream(geom) != BSISUCCESS)
-        {
-        BeAssert(false);
-        status = DgnDbStatus::NotFound;
-        return nullptr;
-        }
+    builder->SetGeomStreamAndPlacement(*catalogItem);
 
-    DgnElement::Code icode = checkCodeNotUsed(db, CreateCatalogItemCode(solutionName));
-    if (!icode.IsValid())
-        {
-        BeAssert(false);
-        status = DgnDbStatus::BadRequest;
+    DgnElementCPtr persistentDgnElem = catalogItem->Insert(&status);
+    if (!persistentDgnElem.IsValid())
         return nullptr;
-        }
 
-    DgnClassId iclass = m_compProps.GetItemECClassId(db);
-    if (!iclass.IsValid())
-        {
-        BeAssert(false);
-        status = DgnDbStatus::BadSchema;
-        return nullptr;
-        }
+    PhysicalElementCPtr persistentCatalogItem = persistentDgnElem->ToPhysicalElement();
 
-    dgn_ElementHandler::Element* handler = dgn_ElementHandler::Element::FindHandler(db, iclass);
-    if (nullptr == handler)
-        {
-        BeAssert(false);
-        status = DgnDbStatus::MissingHandler;
-        return nullptr;
-        }
-    PhysicalElement::CreateParams cparams(db, catalogModel.GetModelId(), iclass, itemCategoryId, placement, icode);
-    //handler->Create(cparams);    *** WIP_COMPONENT_MODEL -- There's no way to use a handler to create an element.
-    //                                    That is because CreateParams always gets converted to DgnElement::CreateParams,
-    //                                    and so we lose the categoryid. That leaves the resulting element invalid -- can't be inserted.
-    DgnElementPtr elem = PhysicalElement::Create(cparams);
-    if (!elem.IsValid())
-        {
-        BeAssert(false);
-        status = DgnDbStatus::BadElement;
-        return nullptr;
-        }
-
-    DgnElementCPtr persistentElem = elem->Insert(&status);
-    if (!persistentElem.IsValid())
-        return persistentElem;
-
-    createSolutionOfComponentRelationship(*persistentElem, *this);
-    return persistentElem;
+    //  Link the catalog item to this ComponentModel
+    createSolutionOfComponentRelationship(*persistentCatalogItem, *this);
+    BeAssert(queryComponentModelFromSolution(db, persistentCatalogItem->GetElementId()) == GetModelId());
+    return persistentCatalogItem;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code ComponentModel::CreateInstanceItemCode(DgnElementCR catalogItem)
+PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR catalogItem,
+                                              DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
+    
     DgnDbR db = catalogItem.GetDgnDb();
+    if (&db != &targetModel.GetDgnDb())
+        {
+        status = DgnDbStatus::WrongDgnDb;
+        BeAssert(false && "Catalog and target models must be in the same Db");
+        return nullptr;
+        }
 
-    DgnModelId mid = queryComponentModelFromSolution(catalogItem);
+    //  Generate the item code. This will be a null code, unless there's a specified authority for the componentmodel.
+    DgnModelId mid = queryComponentModelFromSolution(db, catalogItem.GetElementId());
     if (!mid.IsValid())
         {
-        BeAssert(false && "item is not the solution of a componentmodel");
-        return DgnElement::Code();
+        status = DgnDbStatus::BadArg;
+        BeAssert(false && "input catalog item must be the solution of a componentmodel");
+        return nullptr;
         }
     ComponentModelPtr cmm = db.Models().Get<ComponentModel>(mid);
     if (!cmm.IsValid())
         {
-        BeAssert(false && "item is not the solution of a componentmodel");
-        return DgnElement::Code();
+        status = DgnDbStatus::BadArg;
+        BeAssert(false && "input catalog item must be the solution of a componentmodel");
+        return nullptr;
         }
-    
+
     DgnElement::Code icode;
     DgnAuthorityCPtr authority = db.Authorities().GetAuthority(cmm->m_compProps.m_itemCodeAuthority.c_str());
     if (!authority.IsValid())
-        return DgnElement::Code();      // If no special authority is specified, just go with the no-code strategy.
+        icode = DgnElement::Code();      // If no special authority is specified, just go with the no-code strategy.
+    else
+        icode = authority->CreateDefaultCode();  // *** WIP_COMPONENT_MODEL -- how do I as an Authority to issue a code?
 
-    return authority->CreateDefaultCode();  // *** WIP_COMPONENT_MODEL -- how do I as an Authority to issue a code?
+    //  Creating the item is just a matter of copying the catalog item
+    ElementCopier copier;
+    PhysicalElementCPtr inst = copier.MakeCopy(&status, targetModel, catalogItem, origin, angles, icode);
+    if (!inst.IsValid())
+        return nullptr;
+
+    //  Insert InstanceOfTemplate relationship
+    createInstanceOfTemplateRelationship(*inst, catalogItem);
+    BeAssert(queryTemplateItemFromInstance(db, inst->GetElementId()) == catalogItem.GetElementId());
+
+    return inst;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -558,7 +558,16 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         There can be many copies of a single template Item. 
         There can be many different template Items. 
     -->
-    <ECRelationshipClass typeName="InstantiationOfTemplate" isDomainClass="True" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="InstantiationOfTemplate" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>InstanceId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>TemplateId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(0,N)" roleLabel="many instances" polymorphic="True">
             <Class class="Element" />
         </Source>
@@ -567,7 +576,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
             <Class class="Element" />
         </Source>

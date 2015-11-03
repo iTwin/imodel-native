@@ -157,9 +157,9 @@ void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_CreateTargetModel(Utf8CP targetModelName);
 void Client_ImportCM(Utf8CP componentName);
-void Client_SolveAndCapture(DgnElementId& solutionId, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
-void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, DgnElementId);
+void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, PhysicalElementCR catalogItem);
 void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
 
@@ -417,10 +417,8 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndCapture(DgnElementId& solutionId, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
+void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
     {
-    // *** WIP_COMPONENT_MODEL -- get txn mark
-
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
 
@@ -434,31 +432,9 @@ void ComponentModelTest::Client_SolveAndCapture(DgnElementId& solutionId, Physic
         sparam->SetValue(ecv);
         }
 
-    //  -------------------------------------------------------
-    //  See if solution already exsits. If so, return it without calling Solve. This will be the common pattern.
-    //  -------------------------------------------------------
-#ifdef WIP_COMPONENT_MODEL // *** how to identify existing catalog items?
-    solutionId = catalogModel.GetDgnDb().Elements().QueryElementIdByCode(... ? ...);
-    if (solutionId.IsValid())
-        {
-        ASSERT_TRUE( solutionAlreadyExists ); // make sure the caller expects the solution to already exist
-        return;
-        }
-#endif
-
-    //  -------------------------------------------------------
-    //  Solution does not exist. Solve for the given parameter values
-    //  -------------------------------------------------------
-    ASSERT_TRUE( !solutionAlreadyExists ); // make sure the caller expected to have to solve for a new solution
-    ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(newParameterValues) );
-
-    //  -------------------------------------------------------
-    //  Capture the solution geometry
-    //  -------------------------------------------------------
     DgnDbStatus status;
-    DgnElementCPtr item = componentModel->HarvestSolution(&status, catalogModel);
-    ASSERT_TRUE(item.IsValid()) << Utf8PrintfString("HarvestSolution failed with error %x", status);
-    solutionId = item->GetElementId();
+    catalogItem = componentModel->CaptureSolution(&status, catalogModel, newParameterValues);
+    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::CaptureSolution failed with error %x", status);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -474,18 +450,15 @@ static DgnDbStatus createCatalogModel(PhysicalModelPtr& catalogModel, DgnDbR db,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, DgnElementId solutionId)
+void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, PhysicalElementCR catalogItem)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
 
-    PhysicalElementCPtr catalogItem = m_clientDb->Elements().Get<PhysicalElement>(solutionId);
-    ASSERT_TRUE(catalogItem.IsValid());
-
     DgnDbStatus status;
-    PhysicalElementCPtr instanceElement = ComponentModel::CreateInstanceItem(&status, *targetModel, *catalogItem, DPoint3d::From(1, 2, 3), YawPitchRollAngles::FromDegrees(4, 5, 6), DgnElement::Code());
+    PhysicalElementCPtr instanceElement = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, catalogItem, DPoint3d::From(1, 2, 3), YawPitchRollAngles::FromDegrees(4, 5, 6), DgnElement::Code());
     ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
 
     ieid = instanceElement->GetElementId();
@@ -511,11 +484,11 @@ void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    DgnElementId solutionId;
-    Client_SolveAndCapture(solutionId, catalogModel, componentName, parms, solutionAlreadyExists);
+    PhysicalElementCPtr solution;
+    Client_SolveAndCapture(solution, catalogModel, componentName, parms, solutionAlreadyExists);
     
-    if (solutionId.IsValid())
-        Client_PlaceInstanceOfSolution(ieid, targetModelName, solutionId);
+    if (solution.IsValid())
+        Client_PlaceInstanceOfSolution(ieid, targetModelName, *solution);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -571,10 +544,10 @@ void ComponentModelTest::SimulateClient()
     wsln1["Z"] = 12;
     DgnElementId w1, w2;
     Client_SolveAndPlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
-    BeTest::SetFailOnAssert(false);
     Client_SolveAndPlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, true);
-    BeTest::SetFailOnAssert(true);
-
+    ASSERT_TRUE( w1.IsValid() );
+    ASSERT_TRUE( w2.IsValid() );
+    ASSERT_NE( w1.GetValue() , w2.GetValue() );
     Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
     Client_CheckComponentInstance(w2, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
     
