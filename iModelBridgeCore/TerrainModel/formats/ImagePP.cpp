@@ -890,7 +890,7 @@ int bcdtmImagePP_getImageSizeAndProjection
 
 //   Get BaseGCS Pointer To Raster Coordinate System
 
-     BaseGCS* pRasterCoordSys = (BaseGCS*)RasterPointExtractor.GetDEMRasterCoordSys() ;
+     BaseGCSCP pRasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSys() ;
 
 //   Set Coordinate System Parameters
 
@@ -2380,7 +2380,7 @@ WCharCP    projectionKeyP
 
         //  Get  Pointer To Raster Coordinate System Instance
 
-        BaseGCSP pRasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP ()->GetBaseGCS();
+        BaseGCSCP pRasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP ();
         if (pRasterCoordSys != NULL) geoCordSysSet = 1;
         if (dbg)
             {
@@ -2600,7 +2600,10 @@ void ImagePPConverter::GetImageProperties ()
             HUTDEMRasterXYZPointsExtractor RasterPointExtractor (DEMRasterFilePath, pPool);
             RasterPointExtractor.GetDimensionInPixels (&m_widthInPixels, &m_heightInPixels);
             //   Get BaseGCS Pointer To Raster Coordinate System
-            m_gcs = RasterPointExtractor.GetDEMRasterCoordSysCP ()->GetBaseGCS ();
+            if(RasterPointExtractor.GetDEMRasterCoordSysCP () != nullptr)
+                m_gcs = GeoCoordinates::BaseGCS::CreateGCS(*RasterPointExtractor.GetDEMRasterCoordSysCP ());
+            else
+                m_gcs = nullptr;
             }
         catch (HFCException& rE)
             {

@@ -382,13 +382,13 @@ struct GeoTiffKeysList : IGeoTiffKeysList
         }
 
     bvector<IGeoTiffKeysList::GeoKeyItem> m_keys;
-    int m_index;
-    virtual bool            GetFirstKey (GeoKeyItem* po_Key)
+    mutable int m_index;
+    virtual bool            GetFirstKey (GeoKeyItem* po_Key) const
         {
         m_index = 0;
         return GetNextKey (po_Key);
         }
-    virtual bool            GetNextKey (GeoKeyItem* po_Key)
+    virtual bool            GetNextKey (GeoKeyItem* po_Key) const
         {
         if (m_index < (int)m_keys.size())
             {
