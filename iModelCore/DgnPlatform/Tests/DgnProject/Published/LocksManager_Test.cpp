@@ -396,7 +396,6 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
         }
 
     template<typename T> static DgnDbR ExtractDgnDb(T const& obj) { return obj.GetDgnDb(); }
-    template<> static DgnDbR ExtractDgnDb(DgnDb const& obj) { return const_cast<DgnDbR>(obj); }
 
     template<typename T> LockStatus Acquire(T const& obj, LockLevel level)
         {
@@ -452,6 +451,12 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
         return DrawingElement::Create(DrawingElement::CreateParams(db, model.GetModelId(), DrawingElement::QueryClassId(db), DgnCategory::QueryHighestCategoryId(db)));
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* gcc errs if defined inside the class: explicit specialization in non-namespace scope 
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> DgnDbR LocksManagerTest::ExtractDgnDb(DgnDb const& obj) { return const_cast<DgnDbR>(obj); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
