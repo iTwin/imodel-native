@@ -72,7 +72,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_NonECDbFileExists_Error)
     ASSERT_FALSE(result.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_NonDataSourceCacheDbExists_Error)
+TEST_F(CachingDataSourceTests, OpenOrCreate_NonDataSourceCacheDbExists_OpensAndStartsUpdatingWithRemoteSchemas)
     {
     BeFileName path = StubFilePath();
 
@@ -80,9 +80,14 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_NonDataSourceCacheDbExists_Error)
     db.CreateNewDb(path);
 
     auto client = MockWSRepositoryClient::Create();
-    auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt())->GetResult();
 
-    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError()))));
+
+    CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt())->Wait();
     }
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_DataSourceCacheDbExists_StartsUpdatingWithRemoteSchemas)
