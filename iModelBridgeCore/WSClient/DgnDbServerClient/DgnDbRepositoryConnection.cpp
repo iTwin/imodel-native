@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
-#include <DgnPlatform/DgnCore/RevisionManager.h>
+#include <DgnPlatform/RevisionManager.h>
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER

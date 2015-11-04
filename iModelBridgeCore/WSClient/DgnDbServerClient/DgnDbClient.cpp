@@ -8,8 +8,8 @@
 #include <DgnDbServer/Client/DgnDbClient.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <json/json.h>
-#include <DgnPlatform/DgnCore/TxnManager.h>
-#include <DgnPlatform/DgnCore/RevisionManager.h>
+#include <DgnPlatform/TxnManager.h>
+#include <DgnPlatform/RevisionManager.h>
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
