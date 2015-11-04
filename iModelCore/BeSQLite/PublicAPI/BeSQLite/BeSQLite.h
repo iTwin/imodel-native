@@ -1960,7 +1960,7 @@ protected:
     void DeleteCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId);
     void DeleteCachedPropertyMap();
     void SaveCachedProperties(bool isCommit);
-    Utf8CP GetLastError(DbResult* lastResult) const;
+    Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedRlvs(bool isCommit);
 public:
     int OnCommit();
@@ -2486,7 +2486,7 @@ public:
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
     //! @see sqlite3_errmsg, sqlite3_errcode
-    BE_SQLITE_EXPORT Utf8CP GetLastError(DbResult* lastResult = nullptr) const;
+    BE_SQLITE_EXPORT Utf8String GetLastError(DbResult* lastResult = nullptr) const;
 
     //! Commit the outermost transaction, writing changes to the file. Then, restart the transaction.
     //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled,
