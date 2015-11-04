@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
-#include <DgnPlatform/DgnCore/GeomPart.h>
-#include <DgnPlatform/DgnCore/ElementGeometry.h>
+#include <DgnPlatform/GeomPart.h>
+#include <DgnPlatform/ElementGeometry.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC

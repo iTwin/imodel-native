@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <DgnPlatform/DgnCore/ColorUtil.h>
+#include <DgnPlatform/ColorUtil.h>
 
 #if defined (_MSC_VER)
 #pragma warning (disable:4702)

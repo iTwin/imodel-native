@@ -8,7 +8,7 @@
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnCore/RealityDataCache.h>
+#include <DgnPlatform/RealityDataCache.h>
 
 #include <functional>
 #include <memory>

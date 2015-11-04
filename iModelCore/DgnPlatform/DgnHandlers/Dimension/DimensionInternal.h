@@ -10,8 +10,8 @@
 #if defined (NEEDS_WORK_DGNITEM)
 /* .h File Dependencies */
 #include <Bentley/ScopedArray.h>
-#include <DgnPlatform/DgnHandlers/MdlTextInternal.h>
-#include <DgnPlatform/DgnHandlers/TextBlock/TextAPICommon.h>
+#include <DgnPlatform/MdlTextInternal.h>
+#include <DgnPlatform/TextBlock/TextAPICommon.h>
 
 #define CHECK_LOCATE               1
 #define CHECK_SNAP                 2

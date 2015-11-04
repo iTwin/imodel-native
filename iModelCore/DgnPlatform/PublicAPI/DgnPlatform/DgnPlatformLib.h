@@ -10,13 +10,13 @@
 
 #include <Bentley/WString.h>
 #include "DgnPlatform.h"
-#include "DgnCore/IViewOutput.h"
-#include "DgnCore/ColorUtil.h"
-#include "DgnCore/NotificationManager.h"
-#include "DgnCore/TxnManager.h"
-#include "DgnCore/SolidKernel.h"
-#include "DgnCore/RealityDataCache.h"
-#include "DgnCore/DgnViewport.h"
+#include "IViewOutput.h"
+#include "ColorUtil.h"
+#include "NotificationManager.h"
+#include "TxnManager.h"
+#include "SolidKernel.h"
+#include "RealityDataCache.h"
+#include "DgnViewport.h"
 #include <BeSQLite/L10N.h>
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;

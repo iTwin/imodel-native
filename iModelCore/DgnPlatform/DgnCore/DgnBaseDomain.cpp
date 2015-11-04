@@ -6,9 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
-#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
-#include <DgnPlatform/DgnCore/AnnotationTable.h>
+#include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/AnnotationTable.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

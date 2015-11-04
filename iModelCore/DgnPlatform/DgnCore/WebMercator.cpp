@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/ImageUtilities.h>
+#include <DgnPlatform/ImageUtilities.h>
 
 #define TABLE_NAME_TiledRaster  "TiledRaster"
 #define QV_RGBA_FORMAT   0

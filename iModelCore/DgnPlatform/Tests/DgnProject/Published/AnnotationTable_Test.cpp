@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/DgnDbTables.h>
-#include <DgnPlatform/DgnCore/AnnotationTable.h>
+#include <DgnPlatform/DgnDbTables.h>
+#include <DgnPlatform/AnnotationTable.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

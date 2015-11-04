@@ -55,7 +55,7 @@
 
 //  This file does nothing unless WANT_QUERYVIEW_UPDATE_LOGGING is defined
 #if defined (WANT_QUERYVIEW_UPDATE_LOGGING)
-#include <DgnPlatform/DgnCore/QueryView.h>
+#include <DgnPlatform/QueryView.h>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

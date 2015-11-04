@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/AnnotationTable.h>
+#include <DgnPlatform/AnnotationTable.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextBlockPersistence.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

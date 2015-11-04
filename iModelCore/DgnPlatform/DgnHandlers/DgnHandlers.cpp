@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/L10N.h>
-#include <DgnPlatform/DgnHandlers/DgnECSymbolProvider.h>
-#include <DgnPlatform/DgnHandlers/Dimension.h>
+#include <DgnPlatform/DgnECSymbolProvider.h>
+#include <DgnPlatform/Dimension.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 

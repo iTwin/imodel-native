@@ -9,7 +9,7 @@
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/ECUtils.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeNumerical.h>
 #include <Logging/bentleylogging.h>
