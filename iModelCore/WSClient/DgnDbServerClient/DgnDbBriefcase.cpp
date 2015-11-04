@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatform/DgnCore/TxnManager.h>
+#include <DgnPlatform/TxnManager.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
-#include <DgnPlatform/DgnCore/RevisionManager.h>
+#include <DgnPlatform/RevisionManager.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

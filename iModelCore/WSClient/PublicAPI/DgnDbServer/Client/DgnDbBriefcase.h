@@ -10,7 +10,7 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
-#include <DgnPlatform/DgnCore/DgnDb.h>
+#include <DgnPlatform/DgnDb.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 typedef std::shared_ptr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
