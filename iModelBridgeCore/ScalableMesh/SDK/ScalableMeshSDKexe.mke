@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: SDK/SDKSample.mke $
+#     $Source: SDK/ScalableMeshSDKexe.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -11,7 +11,7 @@ SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 consoleAppUnicode = 1
 %include mdl.mki
 
-appName = ScalableMeshSDKSample
+appName = ScalableMeshSDKexe
 baseDir = $(_MakeFilePath)
 
 o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
@@ -25,11 +25,11 @@ CCompOpts + -DUNICODE
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)SDKSample.obj: $(baseDir)SDKSample.cpp ${MultiCompileDepends}
+$(o)ScalableMeshSDKexe.obj: $(baseDir)ScalableMeshSDKexe.cpp ${MultiCompileDepends}
 
 $(o)Initialize.obj: $(baseDir)Initialize.cpp ${MultiCompileDepends}
 
-$(o)SDKSampleImporter.obj: $(baseDir)SDKSampleImporter.cpp  ${MultiCompileDepends}
+$(o)ScalableMeshSDKexeImporter.obj: $(baseDir)ScalableMeshSDKexeImporter.cpp  ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

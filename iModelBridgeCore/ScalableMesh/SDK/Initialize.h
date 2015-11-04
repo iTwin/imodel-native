@@ -3,7 +3,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-namespace ScalableMeshSDKSample
+namespace ScalableMeshSDKexe
     {
     void InitializeSDK(DgnPlatformLib::Host& host);
     void CloseSDK();

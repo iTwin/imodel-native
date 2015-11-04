@@ -35,10 +35,10 @@
         </Bindings>
     </Part>
     
-    <Part Name="ScalableMeshImporterSample" BentleyBuildMakeFile="SDK/SDKSample.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
+    <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh" />
         <Bindings>
-            <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKSample.exe
+            <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKexe.exe
             </Files>
             <Files ProductDirectoryName="TMSchemas" >
                 Delivery\TerrainModel.01.00.ecschema.xml,Delivery\DTMElement_TemplateExtender_Schema.01.00.ecschema.xml
@@ -83,11 +83,11 @@
     </ProductDirectoryList>
     
       <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
-        <SubPart PartName="ScalableMeshImporterSample"/>  
+        <SubPart PartName="ScalableMeshSDKexe"/>  
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />          
-    <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
-    <Directories DirectoryListName="ScalableMeshSDK" />
-  </Product>
+        <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Directories DirectoryListName="ScalableMeshSDK" />
+      </Product>
   
   </BuildContext>

@@ -14,7 +14,7 @@ using namespace std;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
-namespace ScalableMeshSDKSample
+namespace ScalableMeshSDKexe
     {
 
     class FileFinder

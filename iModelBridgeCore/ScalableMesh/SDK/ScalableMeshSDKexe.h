@@ -23,10 +23,10 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-namespace ScalableMeshSDKSample
+namespace ScalableMeshSDKexe
     {
   
-    struct SampleViewManager : IViewManager
+    struct ExeViewManager : IViewManager
         {
         protected:
             virtual bool _DoesHostHaveFocus() override { return true; }
@@ -37,13 +37,13 @@ namespace ScalableMeshSDKSample
             virtual HUDManager* _GetHUDManager() override { return nullptr; }
         };
 
-    struct ScalableMeshSDKSample : DgnViewLib::Host
+    struct ScalableMeshSDKexe : DgnViewLib::Host
         {
         protected:
             enum class ParseStatus { Success, Error, NotRecognized };
 
-        virtual void _SupplyProductName(Bentley::WStringR name) override { name.assign(L"ScalableMeshSDKSample"); }
-        virtual IViewManager& _SupplyViewManager() override { return *new SampleViewManager(); }
+        virtual void _SupplyProductName(Bentley::WStringR name) override { name.assign(L"ScalableMeshSDKexe"); }
+        virtual IViewManager& _SupplyViewManager() override { return *new ExeViewManager(); }
         virtual DgnPlatformLib::Host::RasterAttachmentAdmin&  _SupplyRasterAttachmentAdmin() { return Bentley::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin(); }
         virtual DgnPlatformLib::Host::PointCloudAdmin&    _SupplyPointCloudAdmin() { return *new Bentley::DgnPlatform::PointCloudDisplayAdmin(); }
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() { return *GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager); }
@@ -58,13 +58,14 @@ namespace ScalableMeshSDKSample
 
         public:
             BeFileName          m_outputName;
-            ScalableMeshSDKSample() : m_sMesh(nullptr), m_pipe(NULL){}
+            ScalableMeshSDKexe() : m_sMesh(nullptr), m_pipe(NULL){}
             int PrintUsage(WCharCP programName);
             int ParseCommandLine(int argc, WCharP argv[]);
             BentleyStatus Initialize(int argc, WCharP argv[]);
             BentleyStatus OpenScalableMesh(WCharCP path);
             size_t CountPoints();
             BentleyStatus ParseImportDefinition(BeXmlNodeP pTestNode);
+            BentleyStatus ParseImportDefinitionNew(BeXmlNodeP pTestNode);
             void Start();
             void Import();
 

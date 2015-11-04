@@ -1,7 +1,7 @@
-#include "SDKSampleImporter.h"
+#include "ScalableMeshSDKexeImporter.h"
 #include <windows.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-namespace ScalableMeshSDKSample
+namespace ScalableMeshSDKexe
     {
 
     /*---------------------------------------------------------------------------------**//**
@@ -214,6 +214,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                 }
             }
 
+        /*
         UInt64 maxNbPointsToImport;
 
         status = pTestChildNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
@@ -223,9 +224,11 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
             SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
             ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
+            //NEEDS_WORK_MST : Not really needed
             data.SetMaximumNbPoints(maxNbPointsToImport);
             sourceImportConfig.SetReplacementSMData(data);
             }
+            */
 
         return true;
         }

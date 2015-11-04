@@ -28,7 +28,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 using namespace Bentley::DgnPlatform;
 using namespace Bentley::GeoCoordinates;
 
-namespace ScalableMeshSDKSample
+namespace ScalableMeshSDKexe
     {
     struct AppViewManager : Bentley::DgnPlatform::IViewManager
         {
@@ -212,12 +212,12 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (Noti
 
 
 
-  struct SampleAdmin : Bentley::ScalableMesh::ScalableMeshAdmin
+  struct ExeAdmin : Bentley::ScalableMesh::ScalableMeshAdmin
         {
         DgnModelRef* s_activeDgnModelRefP;
-        SampleAdmin() :s_activeDgnModelRefP(0){};
+        ExeAdmin() :s_activeDgnModelRefP(0){};
 
-        ~SampleAdmin(){};
+        ~ExeAdmin(){};
 
         bool _CanImportPODfile() const
             {
@@ -236,16 +236,16 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (Noti
 
         };
 
-    struct SampleHost : Bentley::ScalableMesh::ScalableMeshLib::Host
+    struct ExeHost : Bentley::ScalableMesh::ScalableMeshLib::Host
         {
 
-        SampleHost()
+        ExeHost()
             {
             Bentley::ScalableMesh::ScalableMeshLib::Initialize(*this);
             }
     Bentley::ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
         {
-        return *new SampleAdmin();
+        return *new ExeAdmin();
         };
         };
 
@@ -427,8 +427,8 @@ void InitializeSDK(DgnPlatformLib::Host& host)
         file->SetScratchFileFlag(true);
         DgnModel* model = file->CreateNewModel(&createStatus, L"Model",DgnModelType::Normal, true);
         RscFileManager::StaticInitialize(L"not-used");
-        static SampleHost smHost;
-        ((SampleAdmin&)smHost.GetScalableMeshAdmin()).SetActiveModelRef(model);
+        static ExeHost smHost;
+        ((ExeAdmin&)smHost.GetScalableMeshAdmin()).SetActiveModelRef(model);
         InitMonikerFactories();
         Bentley::DgnPlatform::Raster::RasterCoreLib::Initialize(*new AppRasterCoreLibHost());
         BeAssert(Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized()); 
