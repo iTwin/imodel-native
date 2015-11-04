@@ -377,7 +377,6 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // default sub-category exists with expected Code + ID
     DgnSubCategoryCPtr defaultSubCat1 = DgnSubCategory::QuerySubCategory(DgnCategory::GetDefaultSubCategoryId(cat1Id), db);
     ASSERT_TRUE(defaultSubCat1.IsValid());
-    EXPECT_EQ(defaultSubCat1->GetCode().GetNameSpace(), "Cat1");
     EXPECT_EQ(defaultSubCat1->GetCode().GetValue(), "Cat1");
     EXPECT_EQ(defaultSubCat1->GetSubCategoryId(), DgnCategory::GetDefaultSubCategoryId(cat1Id));
 
@@ -385,11 +384,11 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
     DgnAuthority::Code code;    // invalid code
     EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
-    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat1", db); // wrong category
+    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat1"); // wrong category
     EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
-    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat2", db); // wrong category
+    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat2"); // wrong category
     EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
-    code = DgnSubCategory::CreateSubCategoryCode(cat1Id, "NewName", db); // sub-category name must equal category name
+    code = DgnSubCategory::CreateSubCategoryCode(cat1Id, "NewName"); // sub-category name must equal category name
     EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
 
     // Cannot delete default sub-category
@@ -417,7 +416,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     ASSERT_TRUE(cpSubcat2B.IsValid());
 
     DgnSubCategoryPtr pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
-    pSubcat2B->SetCode(DgnSubCategory::CreateSubCategoryCode(cat2Id, "2A", db));
+    pSubcat2B->SetCode(DgnSubCategory::CreateSubCategoryCode(cat2Id, "2A"));
     EXPECT_TRUE(pSubcat2B->Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::DuplicateCode, status);
 
@@ -425,9 +424,9 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     EXPECT_EQ(DgnDbStatus::InvalidParent, pSubcat2B->SetParentId(cat1Id));
 
     // Code validation
-    code = DgnSubCategory::CreateSubCategoryCode(cat1Id, "2B", db); // wrong category
+    code = DgnSubCategory::CreateSubCategoryCode(cat1Id, "2B"); // wrong category
     EXPECT_EQ(DgnDbStatus::InvalidName, pSubcat2B->SetCode(code));
-    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "NewName", db);
+    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "NewName");
     EXPECT_EQ(DgnDbStatus::Success, pSubcat2B->SetCode(code));
 
     // Can rename non-default sub-category if no name collisions
@@ -442,7 +441,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
         {
         Utf8String newName("SubCat");
         newName.append(1, invalidChar);
-        code = DgnSubCategory::CreateSubCategoryCode(cat2Id, newName, db);
+        code = DgnSubCategory::CreateSubCategoryCode(cat2Id, newName);
         EXPECT_EQ(DgnDbStatus::InvalidName, pSubcat2B->SetCode(code));
         }
 
@@ -583,39 +582,4 @@ TEST_F (CategoryTests, QueryByElementId)
     EXPECT_TRUE(tofind.IsValid());
     EXPECT_TRUE(tofind == categoryId);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* Category code = { Value : CategoryName; Namespace : blank }
-* SubCategory code = { Value : SubCategoryName; Namespace : CategoryName }
-* Default sub-category name is same as category name
-* Therefore when we rename a category we must update sub-category codes.
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CategoryTests, RenameCategory)
-    {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
-
-    DgnCategory cat(DgnCategory::CreateParams(*m_db, "MyCat", DgnCategory::Scope::Physical));
-    DgnSubCategory::Appearance app;
-    DgnCategoryCPtr cpCat = cat.Insert(app);
-    ASSERT_TRUE(cpCat.IsValid());
-
-    DgnSubCategory subcat(DgnSubCategory::CreateParams(*m_db, cat.GetCategoryId(), "SubCat", app));
-    EXPECT_TRUE(subcat.Insert().IsValid());
-
-    DgnCategoryPtr pCat = cpCat->MakeCopy<DgnCategory>();
-    EXPECT_EQ(DgnDbStatus::Success, pCat->SetCode(DgnCategory::CreateCategoryCode("NewCat")));
-    EXPECT_TRUE(pCat->Update().IsValid());
-
-    auto cpDefaultSubcat = DgnSubCategory::QuerySubCategory(pCat->GetDefaultSubCategoryId(), *m_db);
-    ASSERT_TRUE(cpDefaultSubcat.IsValid());
-    EXPECT_EQ(cpDefaultSubcat->GetCode().GetValue(), "NewCat");
-    EXPECT_EQ(cpDefaultSubcat->GetCode().GetNameSpace(), "NewCat");
-
-    auto cpSubcat = DgnSubCategory::QuerySubCategory(subcat.GetSubCategoryId(), *m_db);
-    ASSERT_TRUE(cpSubcat.IsValid());
-    EXPECT_EQ(cpSubcat->GetCode().GetValue(), "SubCat");
-    EXPECT_EQ(cpSubcat->GetCode().GetNameSpace(), "NewCat");
-    }
-
 

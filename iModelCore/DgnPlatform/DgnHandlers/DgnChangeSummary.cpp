@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnHandlers/DgnChangeSummary.h>
+#include    <DgnPlatform/DgnChangeSummary.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

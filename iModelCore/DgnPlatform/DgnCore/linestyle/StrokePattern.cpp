@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnCore/LsLocal.h>
+#include    <DgnPlatform/LsLocal.h>
 
 static const double   s_lsTolerance      = 1.0e-7;
 static const double  TOLERANCE_MitreLimit = -0.86602540378443864676372317075294;            // Limit mitering to 150 degree angle

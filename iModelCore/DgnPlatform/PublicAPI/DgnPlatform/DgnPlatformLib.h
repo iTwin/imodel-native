@@ -10,15 +10,14 @@
 
 #include <Bentley/WString.h>
 #include "DgnPlatform.h"
-#include "DgnCore/IViewOutput.h"
-#include "DgnCore/ColorUtil.h"
-#include "DgnCore/NotificationManager.h"
-#include "DgnCore/TxnManager.h"
-#include "DgnCore/SolidKernel.h"
-#include "DgnCore/RealityDataCache.h"
-#include "DgnCore/DgnViewport.h"
+#include "IViewOutput.h"
+#include "ColorUtil.h"
+#include "NotificationManager.h"
+#include "TxnManager.h"
+#include "SolidKernel.h"
+#include "RealityDataCache.h"
+#include "DgnViewport.h"
 #include <BeSQLite/L10N.h>
-#include "DgnCore/PointCloudBaseModel.h"
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
 typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h because they have a bad include scheme.
@@ -970,6 +969,15 @@ public:
             virtual bool    _AllowDgnCoordinateReadout() const {return true;}
             };
 
+        //! Supplies locking functionality for elements, models, etc
+        struct LocksAdmin : IHostObject
+            {
+            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+            DGNPLATFORM_EXPORT virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const;
+            virtual ILocksServerP _GetLocksServer(DgnDbR db) const { return nullptr; }
+            };
+
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -989,7 +997,8 @@ public:
         IACSManagerP            m_acsManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
-        ScriptAdmin*         m_scriptingAdmin;
+        ScriptAdmin*            m_scriptingAdmin;
+        LocksAdmin*             m_locksAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         bvector<CopyrightSupplier*> m_copyrights;
@@ -1042,6 +1051,9 @@ public:
         //! Supply the ScriptAdmin
         DGNPLATFORM_EXPORT virtual ScriptAdmin& _SupplyScriptingAdmin();
 
+        //! Supply the LocksAdmin
+        DGNPLATFORM_EXPORT virtual LocksAdmin& _SupplyLocksAdmin();
+
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
@@ -1067,6 +1079,7 @@ public:
             m_formatterAdmin = nullptr;
             m_realityDataAdmin = nullptr;
             m_scriptingAdmin = nullptr;
+            m_locksAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -1090,6 +1103,7 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
+        LocksAdmin&             GetLocksAdmin()            {return *m_locksAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}

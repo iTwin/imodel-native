@@ -8,8 +8,8 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <numeric>
-#include <DgnPlatform/DgnCore/DgnMaterial.h>
-#include <DgnPlatform/DgnCore/DgnTexture.h>
+#include <DgnPlatform/DgnMaterial.h>
+#include <DgnPlatform/DgnTexture.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry Builder

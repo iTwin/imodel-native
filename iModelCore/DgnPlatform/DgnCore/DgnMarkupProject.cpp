@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include "DgnCoreLog.h"
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnMarkupProject.h>
 #include <BeJpeg/BeJpeg.h>
 
 #define QV_RGBA_FORMAT   0
@@ -252,23 +252,17 @@ void PhysicalRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const
     }
 
 #ifdef WIP_RDL_QUERYVIEWS
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) {return m_subjectView.OnHealUpdate(viewport, context, fullHeal);}
-void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) {return m_subjectView.OnFullUpdate(viewport, context, info);}
-void PhysicalRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) {return m_subjectView.OnDynamicUpdate(viewport, context, info);}
-bool PhysicalRedlineViewController::_WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
-void PhysicalRedlineViewController::_OnCategoryChange() {return m_subjectView.OnCategoryChange();}
-void PhysicalRedlineViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff) {return m_subjectView.ChangeModelDisplay(modelId, onOff);}
-void PhysicalRedlineViewController::_DrawView(ViewContextR context) {return m_subjectView.DrawView(context);}
-uint32_t PhysicalRedlineViewController::_GetMaxElementsToLoad() {return GetMaxElementsToLoad();}
-BeSQLite::DbResult PhysicalRedlineViewController::_Load() {return m_subjectView.Load();}
-Utf8String PhysicalRedlineViewController::_GetRTreeMatchSql(DgnViewportR viewport) {return GetRTreeMatchSql(viewport);}
-int32_t PhysicalRedlineViewController::_GetMaxElementFactor() {return GetMaxElementFactor();}
-double PhysicalRedlineViewController::_GetMinimumSizePixels(DrawPurpose updateType) {return GetMinimumSizePixels(updateType);}
-uint64_t PhysicalRedlineViewController::_GetMaxElementMemory() {return GetMaxElementMemory();}
+bool PhysicalRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
+
+bool PhysicalRedlineViewController::_WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return m_subjectView._WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
+uint32_t PhysicalRedlineViewController::_GetMaxElementsToLoad () {return m_subjectView._GetMaxElementsToLoad();}
+Utf8String PhysicalRedlineViewController::_GetRTreeMatchSql (ViewportR viewport) {return m_subjectView._GetRTreeMatchSql(viewport);}
+int32_t PhysicalRedlineViewController::_GetMaxElementFactor() {return m_subjectView._GetMaxElementFactor();}
+double PhysicalRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateType) {return m_subjectView._GetMinimumSizePixels (updateType);}
+uint64_t PhysicalRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
+
+ViewController::FitComplete PhysicalRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
 
 bool PhysicalRedlineViewController::_DrawOverlayDecorations(IndexedViewportR viewport) { return m_subjectView._DrawOverlayDecorations(viewport) || T_Super::_DrawOverlayDecorations(viewport); }
 bool PhysicalRedlineViewController::_DrawZBufferedDecorations(IndexedViewportR viewport) { return m_subjectView._DrawZBufferedDecorations(viewport) || T_Super::_DrawZBufferedDecorations(viewport); }
@@ -332,6 +326,15 @@ void PhysicalRedlineViewController::_RestoreFromSettings(JsonValueCR settings)
     {
     T_Super::_RestoreFromSettings(settings);
     SynchWithSubjectViewController();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.wilson      10/2015
+//---------------------------------------------------------------------------------------
+void PhysicalRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
+    {
+    T_Super::_OnAttachedToViewport(vp);
+    m_subjectView._OnAttachedToViewport(vp);
     }
 
 //---------------------------------------------------------------------------------------

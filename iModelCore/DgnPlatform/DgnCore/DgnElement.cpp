@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/QvElemSet.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/QvElemSet.h>
+#include <DgnPlatform/DgnScript.h>
 
 #define DGN_ELEMENT_PROPNAME_ECINSTANCEID "ECInstanceId"
 #define DGN_ELEMENT_PROPNAME_MODELID "ModelId"
@@ -248,6 +248,10 @@ DgnDbStatus DgnElement::_OnInsert()
             return stat;
         }
 
+    // If model is exclusively locked we cannot insert elements into it
+    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
+        return DgnDbStatus::LockNotHeld;
+
     return GetModel()->_OnInsertElement(*this);
     }
 
@@ -290,6 +294,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
     GetModel()->_OnInsertedElement(*this);
+    GetDgnDb().Locks().OnElementInserted(GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -364,6 +369,9 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
+    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
+
     return GetModel()->_OnUpdateElement(*this, original);
     }
 
@@ -436,6 +444,9 @@ DgnDbStatus DgnElement::_OnDelete() const
         if (DgnDbStatus::Success != stat)
             return stat;
         }
+
+    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
 
     return GetModel()->_OnDeleteElement(*this);
     }
@@ -2281,12 +2292,10 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
         return (0 == retval) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
         }
 
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     if (0 == BeStringUtilities::Stricmp("ComponentModel", egaType.GetUtf8CP()))
         {
         return ExecuteComponentSolutionEGA(el, origin, angles, egaInstance, tsName, Utf8String(egaInputs.GetUtf8CP()), *this);
         }
-#endif
 
     BeAssert(false && "TBD - Unrecognized EGA type.");
     return DgnDbStatus::NotEnabled;
@@ -2825,3 +2834,51 @@ DgnDbStatus DgnElement2d::SetPlacement(Placement2dCR placement)
     return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementCopier::ElementCopier() 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR templateItem,
+    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& icode)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
+
+    Placement3d placement(origin, angles, templateItem.GetPlacement().GetElementBox());
+
+    PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), templateItem.GetElementClassId(), templateItem.GetCategoryId(), placement, icode);
+
+    DgnElementPtr instanceDgnElement0 = templateItem.Clone(&status, &iparams);
+    if (!instanceDgnElement0.IsValid())
+        return nullptr;
+
+    PhysicalElementPtr instanceElement0 = instanceDgnElement0->ToPhysicalElementP();
+    if (!instanceElement0.IsValid())
+        {
+        status = DgnDbStatus::WrongClass;
+        BeAssert(false);
+        return nullptr;
+        }
+
+    // *** WIP_CLONE - work-around problem with CreateParams slicing
+    instanceElement0->SetPlacement(placement);
+
+    DgnElementCPtr instanceDgnElement = instanceElement0->Insert(&status);
+    if (!instanceDgnElement.IsValid())
+        return nullptr;
+
+    PhysicalElementCPtr instanceElement = instanceDgnElement->ToPhysicalElement();
+    if (!instanceElement.IsValid())
+        {
+        status = DgnDbStatus::WrongClass;
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return instanceElement;
+    }

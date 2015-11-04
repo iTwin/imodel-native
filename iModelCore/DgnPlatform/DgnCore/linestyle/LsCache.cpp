@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnCore/LsLocal.h>
+#include    <DgnPlatform/LsLocal.h>
 
 static LsComponent*  loadComponent (LsComponentReader* reader);
 

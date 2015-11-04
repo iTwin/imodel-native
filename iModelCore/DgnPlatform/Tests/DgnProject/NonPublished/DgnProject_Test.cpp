@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <DgnPlatform/DgnCore/DgnIModel.h>
-#include <DgnPlatform/DgnCore/ColorUtil.h>
+#include <DgnPlatform/DgnIModel.h>
+#include <DgnPlatform/ColorUtil.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_EC

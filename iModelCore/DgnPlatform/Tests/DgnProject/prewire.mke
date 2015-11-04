@@ -9,7 +9,7 @@
 
 SrcDgnPlatform              = $(SrcRoot)DgnPlatform/
 DgnPlatformPublicAPISrc     = $(SrcDgnPlatform)PublicAPI/
-DgnHandlersAPISrc           = $(DgnPlatformPublicAPISrc)DgnPlatform/DgnHandlers/
+DgnPlatformAPISrc           = $(DgnPlatformPublicAPISrc)DgnPlatform/
 baseDir                     = $(_makeFilePath)
 
 $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
@@ -18,7 +18,7 @@ $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnHandlersAPISrc)UnitTests/ScopedDgnHost.h
+$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnPlatformAPISrc)UnitTests/ScopedDgnHost.h
     $(LinkFirstDepToFirstTarget)
 
 #   -------------------------------------------------------------------------------------------

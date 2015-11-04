@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnHandlersAPI.h>
+#include <DgnPlatform/DgnMarkupProject.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 

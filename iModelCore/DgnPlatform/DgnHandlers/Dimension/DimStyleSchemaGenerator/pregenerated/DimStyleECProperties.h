@@ -1,5 +1,5 @@
-#include <DgnPlatform/DgnHandlers/DelegatedElementECEnabler.h>
-#include <DgnPlatform/DgnHandlers/DimensionStyleProps.r.h>
+#include <DgnPlatform/DelegatedElementECEnabler.h>
+#include <DgnPlatform/DimensionStyleProps.r.h>
 
 /*************************************************************************************
  * DO NOT EDIT DO NOT EDIT DO NOT EDIT DO NOT EDIT DO NOT EDIT DO NOT EDIT DO NOT EDIT
