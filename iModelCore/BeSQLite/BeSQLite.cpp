@@ -247,8 +247,23 @@ int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int6
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
 BeGuid      DbValue::GetValueGuid() const {BeGuid guid; memcpy(&guid, GetValueBlob(), sizeof(guid)); return guid;}
 
-DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) {m_val = sqlite3_value_dup(val);}
-DbDupValue::~DbDupValue() {sqlite3_value_free(m_val);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) { m_val = sqlite3_value_dup(val); }
+DbDupValue::~DbDupValue() { sqlite3_value_free(m_val); }
+DbDupValue& DbDupValue::operator = (DbDupValue&& other)
+    {
+    if (this != &other)
+        {
+        if (m_val)
+            sqlite3_value_free(m_val);
+        m_val = other.m_val;
+        other.m_val = nullptr;
+        }
+    return *this;
+    }
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
