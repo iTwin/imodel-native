@@ -2351,7 +2351,8 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
         ID = BaseGCS::pcvAlbersEqualArea;
     else if ((upperMethodName == L"LAMBERT_CONFORMAL_CONIC") ||
              (upperMethodName == L"LAMBERT_CONFORMAL_CONIC_2SP") || // OGR name
-             (upperMethodName == L"LAMBERT CONFORMAL CONIC")) // Oracle name
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC") || // Oracle name
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC, TWO STANDARD PARALLELS")) // Some weird variant encountered in POD files
         ID = BaseGCS::pcvLambertConformalConicTwoParallel;
     else if (upperMethodName == L"LAMBERT_CONFORMAL_CONIC_1SP") // Name from OGR
         ID = BaseGCS::pcvLambertConformalConicOneParallel;

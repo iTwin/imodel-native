@@ -726,8 +726,11 @@
   <data name="Alabama" xml:space="preserve">
     <value>Alabama</value>
   </data>
-  <data name="Alaska " xml:space="preserve">
-    <value>Alaska </value>
+  <data name="Alaska" xml:space="preserve">
+    <value>Alaska</value>
+  </data>
+  <data name="Albany" xml:space="preserve">
+    <value>Albany</value>
   </data>
   <data name="Alberta" xml:space="preserve">
     <value>Alberta</value>
