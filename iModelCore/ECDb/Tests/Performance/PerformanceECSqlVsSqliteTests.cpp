@@ -112,6 +112,8 @@ protected:
         }
     };
 
+int PerformanceECSqlVsSqliteTests::s_opCount = 500000;
+
 BeFileName PerformanceECSqlVsSqliteTests::s_seedFilePath;
 
 //---------------------------------------------------------------------------------------
