@@ -28,7 +28,7 @@ CompileOptionsMki               = $(SrcRasterSchema)RasterSchema.mki
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnCore/DgnModel.h \
+rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(RasterSchemaPublicApiSrc)RasterDomain.h                 \
                                   $(RasterSchemaPublicApiSrc)RasterSchemaApi.h              \
                                   $(RasterSchemaPublicApiSrc)RasterSchemaCommon.h           \

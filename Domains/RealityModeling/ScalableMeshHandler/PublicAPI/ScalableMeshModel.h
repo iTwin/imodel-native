@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnDb.h>
+#include <DgnPlatform/DgnDb.h>
 #include <ScalableMesh/IMrDTM.h>
 #include <ScalableMesh/IMrDTMQuery.h>
 #include "ScalableMeshProgressiveDisplay.h"

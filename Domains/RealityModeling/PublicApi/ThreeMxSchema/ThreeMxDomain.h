@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnCore/DgnDomain.h>
+#include <DgnPlatform/DgnDomain.h>
 #include <ThreeMxSchema/ThreeMxSchemaCommon.h>
 
 BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE

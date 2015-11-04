@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
-#include <DgnPlatform/DgnCore/ImageUtilities.h>
+#include <DgnPlatform/ImageUtilities.h>
 #include "WmsSource.h"
 
 #define TABLE_NAME_WmsTileData "WmsTileData"

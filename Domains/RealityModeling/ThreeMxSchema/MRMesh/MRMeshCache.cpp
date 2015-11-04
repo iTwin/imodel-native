@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
 
-#include    <DgnPlatform/DgnCore/HttpHandler.h>
+#include    <DgnPlatform/HttpHandler.h>
 
 #include    <windows.h>
 

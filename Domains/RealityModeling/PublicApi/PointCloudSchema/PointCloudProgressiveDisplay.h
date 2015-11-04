@@ -9,7 +9,7 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <DgnPlatform/DgnCore/DgnViewport.h>
+#include <DgnPlatform/DgnViewport.h>
 
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 

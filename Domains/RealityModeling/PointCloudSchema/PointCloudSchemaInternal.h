@@ -13,7 +13,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/DgnCore/DgnDomain.h>
+#include <DgnPlatform/DgnDomain.h>
 
 #include <BePointCloud/BePointCloudApi.h>
 #include <BePointCloud/PointCloudTypes.h>
