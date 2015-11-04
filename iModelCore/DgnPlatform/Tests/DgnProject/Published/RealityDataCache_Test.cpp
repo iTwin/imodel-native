@@ -539,7 +539,8 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
         RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create();
         data->SetPersistHandler([&haltPersist, &didPersist, &cv](BeSQLite::Db&, BeMutex& cs)
             {
-            while(haltPersist);
+            while (haltPersist);
+            BeMutexHolder lock(cv.GetMutex());
             didPersist = true;
             cv.notify_all();
             return SUCCESS;
@@ -547,7 +548,8 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
         ASSERT_TRUE(RealityDataStorageResult::Success == m_storage->Persist(*data));
         }
     haltPersist = false;
-    cv.WaitOnCondition(nullptr, 10000);
+    BeMutexHolder lock(cv.GetMutex());
+    cv.ProtectedWaitOnCondition(lock, nullptr, 10000);
     ASSERT_TRUE(didPersist);
     }
 
@@ -579,6 +581,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, DoesCleanupDatabase)
     RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = TestDatabasePrepareAndCleanupHandler::Create();
     handler->SetCleanupDatabaseHandler([&didCleanup, &cv](BeSQLite::Db&, double percentage)
         {
+        BeMutexHolder lock(cv.GetMutex());
         didCleanup = true;
         cv.notify_all();
         return SUCCESS;
@@ -586,7 +589,8 @@ TEST_F (BeSQLiteRealityDataStorageTests, DoesCleanupDatabase)
 
     RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create(handler.get());
     m_storage->Persist(*data);
-    cv.WaitOnCondition(nullptr, 10000);
+    BeMutexHolder lock(cv.GetMutex());
+    cv.ProtectedWaitOnCondition(lock, nullptr, 10000);
     ASSERT_TRUE(didCleanup);
     }
 
@@ -692,13 +696,15 @@ TEST_F (FileRealityDataSourceTests, Request)
     RefCountedPtr<TestSourceResponseReceiver> responseReceiver = TestSourceResponseReceiver::Create([&didReceiveResponse, &cv, &data](RealityDataSourceResponse const& response)
         {
         BeAssert(data.get() == &response.GetData());
+        BeMutexHolder lock(cv.GetMutex());
         didReceiveResponse = true;
         cv.notify_all();
         });
     bool handled;
     ASSERT_TRUE(RealityDataSourceResult::Queued == m_source->Request(*data, handled, m_filePath.c_str(), *options, *responseReceiver));
 
-    cv.WaitOnCondition(nullptr, 10000);
+    BeMutexHolder lock(cv.GetMutex());
+    cv.ProtectedWaitOnCondition(lock, nullptr, 10000);
     ASSERT_TRUE(didInitialize);
     ASSERT_TRUE(didReceiveResponse);
     }
@@ -718,6 +724,7 @@ TEST_F (FileRealityDataSourceTests, Request_WithDataOutOfScope)
     RefCountedPtr<TestFileSourceData::RequestOptions> options = TestFileSourceData::RequestOptions::Create();
     RefCountedPtr<TestSourceResponseReceiver> responseReceiver = TestSourceResponseReceiver::Create([&didReceiveResponse, &cv](RealityDataSourceResponse const& response)
         {
+        BeMutexHolder lock(cv.GetMutex());
         didReceiveResponse = true;
         cv.notify_all();
         });
@@ -738,7 +745,8 @@ TEST_F (FileRealityDataSourceTests, Request_WithDataOutOfScope)
         }
         
     block = false;
-    cv.WaitOnCondition(nullptr, 10000);
+    BeMutexHolder lock(cv.GetMutex());
+    cv.ProtectedWaitOnCondition(lock, nullptr, 10000);
     ASSERT_TRUE(didInitialize);
     ASSERT_TRUE(didReceiveResponse);
     }
@@ -751,7 +759,7 @@ struct TestPredicate : IConditionVariablePredicate
     typedef std::function<bool()> Handler;
     Handler m_handler;
     TestPredicate (Handler const& handler) : m_handler(handler) {}
-    virtual bool _TestCondition(BeConditionVariable& cv) {BeMutexHolder lock(cv.GetMutex()); return m_handler();}
+    virtual bool _TestCondition(BeConditionVariable& cv) {return m_handler();}
     };
 
 //---------------------------------------------------------------------------------------
