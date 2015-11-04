@@ -2577,8 +2577,10 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 // Current display params is already setup when displaying a geom part...DON'T INITIALIZE!!!
                 if (!GeomStreamEntryIdHelper::SetActive(context, true))
                     break;
-                
-                state.InitDisplayParams(category);
+
+                Header const*hdr = Reader::GetHeader(egOp);
+                if (!hdr->UseCurrentDisplayParams())
+                    state.InitDisplayParams(category);
                 break;
                 }
 
@@ -4033,6 +4035,14 @@ bool ElementGeometryBuilder::Append(TextAnnotationCR text)
     ElementGraphicsOutput::Process(annotationDrawToGeom, m_dgnDb);
 
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2015
+//---------------------------------------------------------------------------------------
+void ElementGeometryBuilder::SetUseCurrentDisplayParams(bool newValue)
+    {
+    m_writer.Reset((uint32_t)(newValue ? ElementGeomIO::HeaderFlags::UseCurrentDisplayParams : ElementGeomIO::HeaderFlags::None));
     }
 
 /*---------------------------------------------------------------------------------**//**

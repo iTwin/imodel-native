@@ -68,6 +68,24 @@ StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP in
     return  SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2015
+//---------------------------------------------------------------------------------------
+void LsPointComponent::_QuerySymbology(SymbologyQueryResults& results) const
+    {
+    for (LsSymbolReference const& symref : m_symbols)
+        {
+        LsSymbolComponentCP comp = symref.GetSymbolComponentCP();
+        if (nullptr == comp)
+            continue;
+        if (!symref.GetUseElementWeight())
+            results.SetWeight(comp->GetLineWeight());
+
+        if (!symref.GetUseElementColor())
+            results.SetColors(comp->IsColorByLevel(), comp->GetLineColor(), comp->GetFillColor());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/

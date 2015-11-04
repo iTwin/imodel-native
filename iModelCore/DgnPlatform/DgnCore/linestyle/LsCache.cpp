@@ -247,6 +247,17 @@ void LsCompoundComponent::_StartTextureGeneration() const
     }
   
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2015
+//---------------------------------------------------------------------------------------
+void LsCompoundComponent::_QuerySymbology (SymbologyQueryResults& results) const
+    {
+    for (LsOffsetComponent const & comp : m_components)
+        {
+        comp.m_subComponent->_QuerySymbology(results);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2015
 //---------------------------------------------------------------------------------------
 LsOkayForTextureGeneration LsCompoundComponent::_IsOkayForTextureGeneration() const 

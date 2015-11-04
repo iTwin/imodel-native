@@ -973,7 +973,7 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 }
             else
                 {
-                context.DrawSymbol(&symbCell, &cellTrans, NULL, false, false);
+                context.DrawSymbol(&symbCell, &cellTrans, NULL);
                 }
 
             wasAborted = context.WasAborted();

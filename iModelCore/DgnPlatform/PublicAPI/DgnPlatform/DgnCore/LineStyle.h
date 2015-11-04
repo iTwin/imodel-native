@@ -17,8 +17,7 @@
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 0
-#define CONVERT_LINESTYLES_ENABLED 0
+#define LINESTYLES_ENABLED 1
 
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
@@ -110,6 +109,30 @@ enum class LsOkayForTextureGeneration
     NoChangeRequired        = 0,
     ChangeRequired          = 1,
     NotAllowed              = 2,
+};
+
+//=======================================================================================
+//! Used to decide if the entire line style should be drawn with symbology from the host
+//! or symbology from one of the symbols.
+//!
+// @bsiclass                                                    John.Gooding    11/2015
+//=======================================================================================
+struct SymbologyQueryResults
+{
+private:
+    bool        m_colorBySymbol;
+    bool        m_weightBySymbol;
+    bool        m_isColorByLevel;
+    ColorDef    m_lineColor;
+    ColorDef    m_fillColor;
+    uint32_t    m_weight;
+public:
+    SymbologyQueryResults() : m_colorBySymbol(false), m_weightBySymbol(false) {}
+    void SetColors(bool isColorByLevel, ColorDef lineColor, ColorDef fillColor) { m_isColorByLevel = isColorByLevel; m_colorBySymbol = true; m_lineColor = lineColor; m_fillColor = fillColor; }
+    void SetWeight(uint32_t lineWeight) { m_weightBySymbol = true; m_weight = lineWeight; }
+    bool IsColorBySymbol(ColorDef& lineColor, ColorDef& fillColor) { lineColor = m_lineColor; fillColor = m_fillColor; return m_colorBySymbol; }
+    bool IsColorByLevel() { return m_isColorByLevel; }
+    bool IsWeightBySymbol(uint32_t& lineWeight) { lineWeight = m_weight; return m_weightBySymbol; }
 };
 
 #pragma pack(push)
@@ -283,6 +306,7 @@ struct V10Symbol : V10ComponentBase
     uint32_t    m_fillColor;
     uint32_t    m_weight;
     uint32_t    m_symFlags;
+    bool        m_colorByLevel;
 
     static uint32_t GetBufferSize() { return sizeof (V10Symbol); }
 };
@@ -492,6 +516,7 @@ public:
     virtual void _StartTextureGeneration() const = 0;
     virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
     virtual BentleyStatus _GetTextureWidth (double& width) const                                      { return BSIERROR; }
+    virtual void _QuerySymbology (SymbologyQueryResults& results) const { return; }
 
     //  Defer until update supported
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
@@ -590,6 +615,10 @@ private:
     DPoint3d            m_symSize;
     DPoint3d            m_symBase;                  // Not needed to display; used just to reconstruct range for GetRange method
     uint32_t            m_symFlags;                 // Flags from point symbol resource
+    ColorDef            m_lineColor;
+    ColorDef            m_fillColor;
+    uint32_t            m_weight;
+    bool                m_lineColorByLevel;
     bool                m_postProcessed;
 
     explicit LsSymbolComponent (LsLocationCP pLocation);
@@ -599,6 +628,12 @@ public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
 
+    void                SetColors           (bool colorByLevel, ColorDef lineColor, ColorDef fillColor);
+    void                SetWeight           (uint32_t weight);
+    bool                IsColorByLevel() const { return m_lineColorByLevel; }
+    ColorDef            GetLineColor() const { return m_lineColor; }
+    ColorDef            GetFillColor() const { return m_fillColor; }
+    uint32_t            GetLineWeight() const { return m_weight; }
     double              GetMuDef            () const {return m_muDef;}
     DPoint3dCP          GetSymSize          () const {return &m_symSize;}
     uint32_t            GetFlags            () const {return m_symFlags;}
@@ -827,6 +862,7 @@ public:
     virtual void _StartTextureGeneration() const override;
     virtual LsComponentPtr _GetForTextureGeneration() const override;
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
+    virtual void _QuerySymbology (SymbologyQueryResults& results) const override;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1230,6 +1266,7 @@ public:
     virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
+    virtual void                    _QuerySymbology (SymbologyQueryResults& results) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
     virtual LsComponentPtr _GetForTextureGeneration() const override;

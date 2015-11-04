@@ -820,7 +820,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void _DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override
+void _DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip) override
     {
     DRange3d    range;
 

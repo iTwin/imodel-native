@@ -530,23 +530,6 @@ DPoint3dCP          endTangent
     if (tmpLSParams.modifiers & STYLEMOD_EWIDTH)
         SetEndWidth (endWidth);
 
-    if (nameRec->IsSCScaleIndependent()) // linestyles that are independent of sharedcell's scale.
-        {
-        BeAssert(nameRec->IsSCScaleIndependent());
-#if defined(NEEDSWORK_LINESTYLES)  //  line styles in shared cells
-        Transform       localToFrustum;
-
-        // get the scale from the current localToFrustum to the current modelRef's scale, and back that out of the linestyle scale.
-        if (SUCCESS == context.GetCurrLocalToFrustumTrans (localToFrustum))
-            {
-            DVec3d  xCol;
-            localToFrustum.GetMatrixColumn (xCol, 0);
-
-            scale /= xCol.Magnitude ();
-            }
-#endif
-        }
-
     SetScale (scale);
 
     //  NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
@@ -648,6 +631,8 @@ void                LineStyleSymb::SetTotalLength (double length) {m_totalLength
 void                LineStyleSymb::SetLineStyle (ILineStyleCP lstyle) {m_lStyle = lstyle;}
 
 //---------------------------------------------------------------------------------------
+// When this is called both ElemDisplayParams and ElemMatSymb are fully determined.
+// It is called before the call to ActivateMatSymb.  
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
 void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
@@ -655,6 +640,8 @@ void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
     LsDefinitionP lsDef = (LsDefinitionP)m_lStyle;
     BeAssert(nullptr != lsDef && dynamic_cast<LsDefinitionCP>(m_lStyle) == lsDef);
 
+    //  We know we have something that we want to be represented as a texture, but
+    //  there is a possibility it can't be.
     m_textureHandle = lsDef->GetTextureHandle (context, *this, force, m_scale);
     }
 

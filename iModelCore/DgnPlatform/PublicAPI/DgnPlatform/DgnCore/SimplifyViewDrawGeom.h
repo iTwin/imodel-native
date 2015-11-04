@@ -149,7 +149,7 @@ DGNPLATFORM_EXPORT void             ClipAndProcessBodyAsFacets      (ISolidKerne
 DGNPLATFORM_EXPORT void             ClipAndProcessFacetSet          (PolyfaceQueryCR, bool filled);
 DGNPLATFORM_EXPORT void             ClipAndProcessFacetSetAsCurves  (PolyfaceQueryCR);
 DGNPLATFORM_EXPORT void             ClipAndProcessText              (TextStringCR, double* zDepth);
-DGNPLATFORM_EXPORT void             ClipAndProcessSymbol            (IDisplaySymbolP, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
+DGNPLATFORM_EXPORT void             ClipAndProcessSymbol            (IDisplaySymbolP, TransformCP, ClipPlaneSetP);
 
 DGNPLATFORM_EXPORT BentleyStatus    CurveVectorOutputProcessor      (CurveVectorCR curves, bool filled);
 

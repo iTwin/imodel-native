@@ -20,7 +20,6 @@ private:
 IStrokeForCache&    m_stroker;
 DRange3d            m_range;
 ViewContextP        m_context;
-DgnCategoryId       m_categoryId;
 Transform           m_currentTransform;
 
 protected:
@@ -28,7 +27,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(IStrokeForCache& stroker, DgnCategoryId categoryId) : m_stroker(stroker), m_categoryId(categoryId)
+explicit LineStyleRangeCollector(IStrokeForCache& stroker) : m_stroker(stroker)
     {
     m_range.Init();
     m_currentTransform.InitIdentity();
@@ -60,7 +59,6 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 //---------------------------------------------------------------------------------------
 virtual void _OutputGraphics(ViewContext& context) override
     {
-    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
     m_stroker._StrokeForCache(context);
     }
 
@@ -77,9 +75,9 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, IStrokeForCache& stroker, DgnCategoryId categoryId)
+static void Process(DRange3dR range, IStrokeForCache& stroker)
     {
-    LineStyleRangeCollector  processor(stroker, categoryId);
+    LineStyleRangeCollector  processor(stroker);
 
     ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
 
@@ -240,12 +238,10 @@ DgnDbR _GetDgnDb() const override { return m_dgndb; }
 //=======================================================================================
 struct          StrokeComponentForRange : ComponentStroker
 {
-DgnCategoryId   m_categoryId;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-StrokeComponentForRange(DgnDbR dgndb, LsComponentR component, DgnCategoryId categoryId) : ComponentStroker(dgndb, component, 1.0), m_categoryId(categoryId)
+StrokeComponentForRange(DgnDbR dgndb, LsComponentR component) : ComponentStroker(dgndb, component, 1.0)
     {
     //  It should have already created a copy of the components if that is necessary
     BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
@@ -266,8 +262,7 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
 //---------------------------------------------------------------------------------------
 void ComputeRange(DRange3dR range)
     {
-    //  NEEDSWORK_LINESTYLES -- should this really require a valid categoryId?
-    LineStyleRangeCollector::Process(range, *this, m_categoryId);
+    LineStyleRangeCollector::Process(range, *this);
     }
 };
 
@@ -280,13 +275,17 @@ struct          ComponentToTextureStroker : ComponentStroker
 private:
     double              m_scaleFactor;
     Transform           m_transformForTexture;
+    ColorDef            m_lineColor;
+    ColorDef            m_fillColor;
+    uint32_t            m_lineWeight;
 
 public:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, double verticalShift, LsComponentR component) : ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor)
+ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, double verticalShift, ColorDef lineColor, ColorDef fillColor, uint32_t lineWeight, LsComponentR component) : 
+            ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor), m_lineColor(lineColor), m_fillColor(fillColor), m_lineWeight(lineWeight)
     {
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
@@ -314,8 +313,16 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     ElemMatSymb         elemMatSymb;
 
     elemMatSymb.Init();
-    elemMatSymb.SetLineColor(ColorDef::White());
-    elemMatSymb.SetFillColor(ColorDef::White());
+    //  Generally the line style will be drawn with the color of the element. We accomplish that
+    //  by passing QV_GEOTEXTURE_DEFERCLRSEL to  _DefineQVGeometryMap.
+    //
+    //  A line style may specify that a symbol get its color from the symbol.  In a vector line style,
+    //  it is possible for different symbols to have different colors and for some symbols to be
+    //  drawn with the element color while others are drawn with the symbol color. For a texture
+    //  style the entire line style has to be drawn with the same color.
+    elemMatSymb.SetLineColor(m_lineColor);
+    elemMatSymb.SetFillColor(m_fillColor);
+    elemMatSymb.SetWidth(m_lineWeight);
 
     LineStyleSymb   lineStyleSymb;
     lineStyleSymb.Init(nullptr);
@@ -393,16 +400,25 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
 
     //  Get just the range of the components.  Don't let any scaling enter into this.
     DRange3d  lsRange;
-    StrokeComponentForRange rangeStroker(viewContext.GetDgnDb(), *comp, viewContext.GetCurrentDisplayParams().GetCategoryId());
+    StrokeComponentForRange rangeStroker(viewContext.GetDgnDb(), *comp);
     rangeStroker.ComputeRange(lsRange);
 
     uint32_t  scaleFactor = 1;
     double    verticalShift = 0.0;
     DRange2d range2d = getAdjustedRange(scaleFactor, verticalShift, lsRange, comp->_GetLength());
 
-    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, verticalShift, *comp);
+    SymbologyQueryResults  symbologyResults;
+    comp->_QuerySymbology(symbologyResults);
+    ColorDef lineColor, fillColor;
+    bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
+    uint32_t lineWeight;
+    bool isWeightBySymbol = symbologyResults.IsWeightBySymbol(lineWeight);
+    if (!isWeightBySymbol)
+        lineWeight = 0;
 
-    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, false, viewContext, false);
+    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, verticalShift, lineColor, fillColor, lineWeight, *comp);
+
+    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, isColorBySymbol, viewContext, false);
 
     m_hasTextureWidth = true;
     m_textureWidth = scaleFactor * (range2d.high.y - range2d.low.y);
