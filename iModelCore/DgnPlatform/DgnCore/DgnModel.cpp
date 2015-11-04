@@ -1948,11 +1948,12 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
         }
 
     DgnElement::Code icode;
-    DgnAuthorityCPtr authority = db.Authorities().GetAuthority(cmm->m_compProps.m_itemCodeAuthority.c_str());
-    if (!authority.IsValid())
-        icode = DgnElement::Code();      // If no special authority is specified, just go with the no-code strategy.
-    else
-        icode = authority->CreateDefaultCode();  // *** WIP_COMPONENT_MODEL -- how do I as an Authority to issue a code?
+    if (!cmm->m_compProps.m_itemCodeAuthority.empty())  // WARNING: Don't call GetAuthority with an invalid authority name. It will always prepare a statement and will not cache the (negative) answer.
+        {
+        DgnAuthorityCPtr authority = db.Authorities().GetAuthority(cmm->m_compProps.m_itemCodeAuthority.c_str());
+        if (authority.IsValid())
+            icode = authority->CreateDefaultCode();  // *** WIP_COMPONENT_MODEL -- how do I ask an Authority to issue a code?
+        }    
 
     //  Creating the item is just a matter of copying the catalog item
     ElementCopier copier;
