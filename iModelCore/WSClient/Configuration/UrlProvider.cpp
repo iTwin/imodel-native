@@ -72,7 +72,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     "Mobile.PunchListWsg",
-    "https://dev-wsg20-eus.cloudapp.net",
+    "https://dev-punchlist-eus.cloudapp.net",
     "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
