@@ -10,6 +10,7 @@
 #include <Bentley/WString.h>
 #include <ECDb/ECSqlStatement.h>
 #include <DgnPlatform/Annotations/AnnotationTextBlockLayout.h>
+#include <Bentley/stdcxx/bstdmap.h>
 
 DGNPLATFORM_TYPEDEFS(AnnotationTableCellIndex);
 DGNPLATFORM_TYPEDEFS(AnnotationTableElement);
@@ -20,9 +21,10 @@ DGNPLATFORM_TYPEDEFS(AnnotationTableColumn);
 DGNPLATFORM_TYPEDEFS(TableCellMarginValues);
 DGNPLATFORM_TYPEDEFS(PropertyNames);
 
-DGNPLATFORM_TYPEDEFS (CellContentHolder);
+DGNPLATFORM_TYPEDEFS(CellContentHolder);
+DGNPLATFORM_TYPEDEFS(MergeEntry);
 //__PUBLISH_SECTION_END__
-DGNPLATFORM_TYPEDEFS (TextBlockHolder);
+DGNPLATFORM_TYPEDEFS(TextBlockHolder);
 //__PUBLISH_SECTION_START__
 
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationTableElement);
@@ -38,6 +40,8 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTableElement);
 #define DGN_CLASSNAME_AnnotationTableEdgeRun    "AnnotationTableEdgeRun"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+typedef std::shared_ptr<CellContentHolder>  CellContentHolderPtr;
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -63,6 +67,12 @@ private:
         return  _EQ_;
         }
 
+//__PUBLISH_SECTION_END__
+public:
+    static AnnotationTableCellIndex     GetCellIndex (ECSqlStatement&, uint32_t colIndex);
+    static void                         BindCellIndex (ECSqlStatement&, Utf8CP paramName, AnnotationTableCellIndexCR);
+
+//__PUBLISH_SECTION_START__
 public:
     uint32_t    row;
     uint32_t    col;
@@ -369,6 +379,7 @@ struct PropertyNames : bvector <Utf8String>
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+//! @private
 struct AspectTypeData
     {
     AnnotationTableAspectType   m_type;
@@ -380,6 +391,7 @@ struct AspectTypeData
     Utf8String                  m_ecSqlUpdateString;
     Utf8String                  m_ecSqlDeleteString;
     Utf8String                  m_ecSqlSelectString;
+    Utf8String                  m_ecSqlSelectDupeString;
 
     /*ctor*/ AspectTypeData (AnnotationTableAspectType t, PropertyNamesCR p, bool u, Utf8CP c) : m_type(t), m_propertyNames(p), m_isUniqueAspect(u), m_ecClassName(c) {}
     };
@@ -426,6 +438,7 @@ public:
 
     static BentleyStatus   DeleteAspectFromDb (AnnotationTableAspectType, uint64_t aspectId, AnnotationTableElementR table);
     static CachedECSqlStatementPtr  GetPreparedSelectStatement (AnnotationTableAspectType, AnnotationTableElementCR);
+    static bool  DbContainsDuplicateRows (AnnotationTableAspectType, AnnotationTableElementCR);
 
     BentleyStatus       InsertInDb();
     BentleyStatus       UpdateInDb();
@@ -448,7 +461,74 @@ public:
 
 };
 
-typedef std::shared_ptr<CellContentHolder>  CellContentHolderPtr;
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+//! @private
+struct MergeEntry : AnnotationTableAspect
+{
+private:
+    AnnotationTableCellIndex    m_rootCell;
+    TableUIntValue              m_rowSpan;
+    TableUIntValue              m_columnSpan;
+
+    enum class PropIndex
+        {
+        RootCell        = 0,    // no gaps allowed
+        RowSpan         = 1,
+        ColumnSpan      = 2,
+        };
+
+protected:
+    // AnnotationTableAspect
+    AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Merge; }
+    virtual void                        _BindProperties(ECSqlStatement&) override;
+    virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
+    virtual bool                        _ShouldBePersisted() const override;
+    void                                _CopyDataFrom (AnnotationTableAspectCR) override;
+
+public:
+    static PropertyNames            GetPropertyNames();
+    void                            SetRootCell (AnnotationTableCellIndexCR val);
+    WString                         ToString() const;
+
+public:
+    /*ctor*/                        MergeEntry (AnnotationTableElementR, AnnotationTableCellIndex rootCell);
+    /*ctor*/                        MergeEntry (MergeEntryCR);
+
+    MergeEntryR                     operator= (MergeEntryCR rhs);
+
+    AnnotationTableCellIndexCR      GetRootIndex    ()  const;
+    uint32_t                        GetRowSpan      ()  const;
+    uint32_t                        GetColumnSpan   ()  const;
+
+    void                            SetRootIndex (AnnotationTableCellIndexCR);
+    void                            SetRowSpan      (uint32_t);
+    void                            SetColumnSpan   (uint32_t);
+};
+
+//! @private
+typedef Bstdcxx::bstdmap<AnnotationTableCellIndex, MergeEntry>    MergeMap;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+//! @private
+struct MergeDictionary : MergeMap
+{
+public:
+    /*ctor*/                        MergeDictionary () {}
+
+    WString                         ToString() const;
+
+    MergeEntryCP                    GetMerge (AnnotationTableCellIndexCR) const;
+    MergeEntryP                     GetMerge (AnnotationTableCellIndexCR);
+    BentleyStatus                   DeleteMerge (AnnotationTableCellIndexCR, AnnotationTableElementR table);
+    BentleyStatus                   AddMerge (MergeEntryCR);
+
+    void                            AdjustMergesAfterIndex (uint32_t rowIndex, bool isRow, bool increment);
+
+};
 
 //__PUBLISH_SECTION_END__
 /*=================================================================================**//**
@@ -574,9 +654,6 @@ private:
 
     void                                InitContentsToEmptyTextBlock ();
 
-    static  AnnotationTableCellIndex    GetCellIndex (ECSqlStatement&, uint32_t colIndex);
-    void                                BindCellIndex (ECSqlStatement&);
-
 //__PUBLISH_SECTION_START__
 protected:
     // AnnotationTableAspect
@@ -610,6 +687,13 @@ public:
     void                                ApplyTextStyleByRegion ();
     void                                HeightChanged ();
     void                                WidthChanged ();
+
+    bool                                IndexIsInSpan (AnnotationTableCellIndexCR) const;
+    void                                SetAsMergedCellRoot (uint32_t rowSpan, uint32_t colSpan);
+    void                                SetAsMergedCellInterior (bool isMerged);
+    bool                                IsMergedCellInterior () const;
+    void                                DeleteMergeCellInteriorRow();
+    void                                DeleteMergeCellInteriorColumn();
 
     void                                SetAlignmentDirect (TableCellAlignment);
     void                                SetOrientationDirect (TableCellOrientation);
@@ -734,6 +818,9 @@ public:
     void                                SetIndex (uint32_t);
     bvector<AnnotationTableCell>&       GetCellVectorR()          { return m_cells; }
 
+    void                                ApplyHeaderFooterType ();
+
+    // Finds all cells that intersect this row
     bvector<AnnotationTableCellP>       FindCells() const;
 
     void                                SetHeightLock    (bool);
@@ -817,8 +904,11 @@ protected:
 //__PUBLISH_SECTION_END__
 public:
     static PropertyNames                GetPropertyNames();
-
     void                                SetIndex (uint32_t);
+
+    void                                ApplyHeaderFooterType ();
+
+    // Finds all cells that intersect this column
     bvector<AnnotationTableCellP>       FindCells() const;
 
     void                                SetWidthLock    (bool);
@@ -874,6 +964,7 @@ DGNPLATFORM_EXPORT  BentleyStatus               SetHeaderFooterType (TableHeader
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+//! @private
 struct TableHeaderAspect : AnnotationTableAspect
 {
 friend AnnotationTableElement;
@@ -992,6 +1083,51 @@ public:
 public:
 };
 
+/*=================================================================================**//**
+* An iterator that can step through the set of cells in a table.
+* See AnnotationTableElement::GetCellCollection
++===============+===============+===============+===============+===============+======*/
+struct      AnnotationTableCellIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, AnnotationTableCell>
+{
+private:
+    friend struct   AnnotationTableCellCollection;
+
+    AnnotationTableCellP      m_cell;
+
+    AnnotationTableCellCollection const*  m_parentCollection;
+    AnnotationTableCellIterator (AnnotationTableCellCollection const& collection, bool begin);
+
+public:
+
+    DGNPLATFORM_EXPORT bool                 IsDifferent(AnnotationTableCellIterator const& rhs) const;  //!< Compare this with another iterator
+    DGNPLATFORM_EXPORT void                 MoveToNext ();                                              //!< Advance the iterator to the next item
+    DGNPLATFORM_EXPORT AnnotationTableCellR GetCurrent () const;                                        //!< Get the current item
+};
+
+/*=================================================================================**//**
+* A collection that can iterate through the set of cells in a table.
+* See AnnotationTable::GetCellCollection
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct      AnnotationTableCellCollection
+{
+private:
+    friend struct   AnnotationTableElement;
+    friend struct   AnnotationTableCellIterator;
+
+    AnnotationTableElementPtr    m_table;
+
+    AnnotationTableCellCollection (AnnotationTableElementCR table);
+
+public:
+    typedef ECN::VirtualCollectionIterator<AnnotationTableCellIterator> const_iterator;
+    typedef const_iterator iterator;    //!< only const iteration is possible
+
+public:
+    DGNPLATFORM_EXPORT const_iterator begin () const;           //!< Returns an iterator to the first element in the collection.
+    DGNPLATFORM_EXPORT const_iterator end ()   const;           //!< Returns an iterator that points to the end of the collection.
+};
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -1005,6 +1141,7 @@ private:
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, PhysicalElement) 
 
     TableHeaderAspect                       m_tableHeader;
+    MergeDictionary                         m_mergeDictionary;
     bvector<AnnotationTableRow>             m_rows;
     bvector<AnnotationTableColumn>          m_columns;
     bvector<AnnotationTableAspectDescr>     m_aspectsPendingDelete;
@@ -1020,6 +1157,7 @@ private:
     void                            Clear();
     void                            LoadCells();
 
+    void        MarkAsMergedCellInteriors (AnnotationTableCellIndexCR, uint32_t rowSpan, uint32_t colSpan, bool loading);
     void        BumpRowHeaderFooterCount (AnnotationTableRowCR row, bool add);
     void        BumpColumnHeaderFooterCount (AnnotationTableColumnCR row, bool add);
 
@@ -1030,6 +1168,7 @@ private:
     void        SetHeaderRowCount    (uint32_t);
     void        SetFooterRowCount    (uint32_t);
 
+    bool        HasOverlappingMerges (bvector<AnnotationTableCellP>& consumedRoots, AnnotationTableCellIndexCR rootIndex, uint32_t numRows, uint32_t numCols);
 
 protected:
     DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _OnInsert() override;
@@ -1050,8 +1189,10 @@ public:
     AnnotationTextStyleCP                   GetTextStyle (AnnotationTableRegion) const;
     void                                    SetTextStyleIdDirect (AnnotationTextStyleId val, AnnotationTableRegion region);
     void                                    DeleteAspect (AnnotationTableAspectCR);
+    void                                    ConsiderRegionForAlternateMinimumSize (double& min, AnnotationTableRegion region, bool isHeight) const;
 
-    void                            ConsiderRegionForAlternateMinimumSize (double& min, AnnotationTableRegion region, bool isHeight) const;
+    MergeDictionary&                GetMergeDictionary()            { return m_mergeDictionary; }
+    MergeDictionary const&          GetMergeDictionary() const      { return m_mergeDictionary; }
 
     AnnotationTableCellP            GetCell (AnnotationTableCellIndexCR cellIndex, bool allowMergedInteriors) const;
 
@@ -1071,6 +1212,8 @@ public:
     uint32_t                        GetFillSymbologyForEvenRow()    const;
     void                            SetFillSymbologyForOddRow   (uint32_t);
     void                            SetFillSymbologyForEvenRow  (uint32_t);
+
+    void                            CopyPropsForNewCell (AnnotationTableCellR newCell, AnnotationTableCellCR seedCell);
 
     void                            SetRowCount     (uint32_t v);
     void                            SetColumnCount  (uint32_t v);
@@ -1180,6 +1323,33 @@ DGNPLATFORM_EXPORT  BentleyStatus                   DeleteRow (uint32_t indexOfO
 DGNPLATFORM_EXPORT  BentleyStatus                   InsertColumn (uint32_t indexOfSeedColumn, TableInsertDirection dir);
 //! Delete an existing column from the table.
 DGNPLATFORM_EXPORT  BentleyStatus                   DeleteColumn (uint32_t indexOfOldColumn);
+
+//! Get a collection that can be used to iterate all the cells in the table.  This method is more convenient than calling GetCell in a nested for loop.
+//! \code
+//! for (AnnotationTableCellCR cell : table.GetCellCollection())
+//!     // do something with cell
+//! \endcode
+DGNPLATFORM_EXPORT  AnnotationTableCellCollection         GetCellCollection () const;
+
+//! Change the row and/or column span of a cell.  This will fail if it would consume a part of another merged cell.
+//! @param root    IN The upper left cell index of the merged cell.
+//! @param numRows IN the number of rows that will be spanned by the merged cell.
+//! @param numCols IN the number of columns that will be spanned by the merged cell.
+//! @return ERROR if the merging could not be done.
+DGNPLATFORM_EXPORT  BentleyStatus                   MergeCells (AnnotationTableCellIndexCR root, uint32_t numRows, uint32_t numCols);
+
+#if defined (NEEDSWORK)
+//! Get the edge line symbologies used to draw the edges of a collection of cells.
+//! @param symb  OUT A list of unique symbologies from the requested edges.
+//! @param edges IN  Specifies which edges to query.
+//! @param cells IN  Specifies which cells to query.
+DGNPLATFORM_EXPORT  void                            GetEdgeSymbology (bvector<TableSymbologyValuesPtr>& symb, TableCellListEdges edges, bvector<AnnotationTableCellIndex> const& cells) const;
+//! Change the edge line symbology used to draw the edges of a collection of cells.
+//! @param symb  IN  The symbology to apply to the specified edges.
+//! @param edges IN  Specifies which edges to change.
+//! @param cells IN  Specifies which cells to change.
+DGNPLATFORM_EXPORT  void                            SetEdgeSymbology (TableSymbologyValuesCR symb, TableCellListEdges edges, bvector<AnnotationTableCellIndex> const& cells);
+#endif
 
 //! Get the overall width of this table.  This is equivalent to summing all the column widths.  This method ignores the effects of table breaking.
 DGNPLATFORM_EXPORT  double                          GetWidth  ()  const;
