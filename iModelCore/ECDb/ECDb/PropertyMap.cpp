@@ -23,6 +23,39 @@ PropertyMap::PropertyMap (ECPropertyCR ecProperty, Utf8CP propertyAccessString, 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan          10/2015
+//---------------------------------------------------------------------------------------
+//static
+PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto , ECDbSqlTable const* newContext , PropertyMap const* parentPropertyMap ) 
+    {
+    if (!newContext)
+        newContext = proto.GetPrimaryTable();
+
+    if (auto protoMap = dynamic_cast<PropertyMapPoint const*>(&proto))
+        {
+        return new PropertyMapPoint(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapToColumn const*>(&proto))
+        {
+        return new PropertyMapToColumn(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapPrimitiveArray const*>(&proto))
+        {
+        return new PropertyMapPrimitiveArray(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapToTable const*>(&proto))
+        {
+        return new PropertyMapToTable(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapToInLineStruct const*>(&proto))
+        {
+        return new PropertyMapToInLineStruct(*protoMap, newContext, parentPropertyMap);
+        }
+
+    BeAssert(false && "Case is not handled");
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     12/2013
 //---------------------------------------------------------------------------------------
 bool PropertyMap::IsVirtual () const
@@ -89,7 +122,7 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
     if (arrayProperty != nullptr)
         {
         if (ARRAYKIND_Primitive == arrayProperty->GetKind ())
-            return new PropertyMapArrayOfPrimitives (ecProperty, propertyAccessString, primaryTable, columnInfo, ecDbMap, parentPropertyMap);
+            return new PropertyMapPrimitiveArray (ecProperty, propertyAccessString, primaryTable, columnInfo, ecDbMap, parentPropertyMap);
         else
             {
             BeAssert (ARRAYKIND_Primitive != arrayProperty->GetKind ());
@@ -709,14 +742,10 @@ PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbM
         if (kind == ARRAYKIND_Primitive)
             {
             BeAssert(false && "not yet supported");
-            tableECType = &(ecDbMap.GetClassForPrimitiveArrayPersistence (arrayProperty->GetPrimitiveElementType()));
+            tableECType = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecDbMap.GetECDbR(), arrayProperty->GetPrimitiveElementType());
             }
         else if (kind == ARRAYKIND_Struct)
-            {
             tableECType = arrayProperty->GetStructElementType();
-            // Build a ClassMap for the struct
-            //ClassMapPtr structMap = new ClassMap(*tableECType, ecDbMap);
-            }
         }
     else
         BeAssert (false && "Expecting an array when using PropertyMapToTable");
@@ -974,27 +1003,28 @@ Utf8CP PropertyMapPoint::_GetColumnBaseName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-PropertyMapArrayOfPrimitives::PropertyMapArrayOfPrimitives (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap)
+PropertyMapPrimitiveArray::PropertyMapPrimitiveArray (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap)
     : PropertyMapToColumn (ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap)
     {
     BeAssert (columnInfo.GetColumnType() == PRIMITIVETYPE_Binary); 
     ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
     BeAssert(arrayProperty);
 
-    ECClassCR primitiveArrayPersistenceClass = ecDbMap.GetClassForPrimitiveArrayPersistence (arrayProperty->GetPrimitiveElementType());
-    m_primitiveArrayEnabler = primitiveArrayPersistenceClass.GetDefaultStandaloneEnabler();
+    ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecDbMap.GetECDbR(), arrayProperty->GetPrimitiveElementType());
+    BeAssert(primitiveArrayPersistenceClass != nullptr);
+    m_primitiveArrayEnabler = primitiveArrayPersistenceClass->GetDefaultStandaloneEnabler();
     }
 
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PropertyMapArrayOfPrimitives::_ToString() const
+Utf8String PropertyMapPrimitiveArray::_ToString() const
     {
     ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
     BeAssert (arrayProperty);
     
-    return Utf8PrintfString("PropertyMapArrayOfPrimitives: ecProperty=%s.%s, type=%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
+    return Utf8PrintfString("PropertyMapPrimitiveArray: ecProperty=%s.%s, type=%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
                             GetProperty().GetName().c_str(), ExpHelper::ToString(arrayProperty->GetPrimitiveElementType()), m_columnInfo.GetName());
     }
 

@@ -16,13 +16,43 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static
 ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
     BeAssert(exp.IsComplete());
     ctx.PushScope(exp);
 
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    if (auto info = ctx.GetJoinTableInfo())
+        {
+        auto baseStatement = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement(classMap.GetClass().GetId());
+        auto status = baseStatement->Prepare(ctx.GetECDb(), info->GetParentECSQlStatement());
+        if (status != ECSqlStatus::Success)
+            {
+            BeAssert("Base statement is generated statement should fail at prepare");
+            return status;
+            }
+
+        if (info->GetPrimaryECinstanceIdParameterIndex() > 0)
+            baseStatement->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
+        }
+                                   //1,2 
+    //INSERT INTO Goo (A, B) VALUES(?, ?) JoinTable 
+                                             //1
+    //INSERT INTO Foo(A, ECInstanceId) VALUES (?,?) //ParentOfJoin
+                                //2
+    //INSERT INTO Goo (B) VALUES (?) // Step()  
+    // Goo  Foo
+    // 2     1
+    // 
+    // goo_stmt -> ecsql of foo_stmt
+    // goo_stmt.Step()
+        // generate id
+        // foo_stmt.Bind(2, newInstanceId)
+        // foo_stem.Step()
+    // Step()
+
+    //foo_stmt.Bind(2, instanceId)
+
     NativeSqlSnippets insertNativeSqlSnippets;
     ECSqlStatus stat = GenerateNativeSqlSnippets(insertNativeSqlSnippets, ctx, exp, classMap);
     if (!stat.IsSuccess())
@@ -435,8 +465,7 @@ IClassMap const& classMap
 
     insertSqlSnippets.m_ecinstanceIdMode = ValidateUserProvidedECInstanceId(insertSqlSnippets.m_ecinstanceIdExpIndex, ctx, exp, classMap);
     if (insertSqlSnippets.m_ecinstanceIdMode == ECInstanceIdMode::Invalid)
-        return ECSqlStatus::InvalidECSql
-        ;
+        return ECSqlStatus::InvalidECSql;
 
     return ECSqlStatus::Success;
     }
@@ -507,7 +536,14 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
         NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
-        classIdSqliteSnippets[0].Append(classMap.GetClass().GetId());
+        if (auto joinTableStatement = dynamic_cast<JoinTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+            {
+            classIdSqliteSnippets[0].Append(joinTableStatement->GetClassId());
+            }
+        else
+            {
+            classIdSqliteSnippets[0].Append(classMap.GetClass().GetId());
+            }
         nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
         }
     }
@@ -765,6 +801,12 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
     const bool isEndTableRelationship = classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable;
 
     ECClassId classId = classMap.GetClass().GetId();
+    //override ECClassId in case of join table with secondary class id 
+    if (auto joinTableStatement = dynamic_cast<JoinTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+        {
+        classId = joinTableStatement->GetClassId(); 
+        }
+
     const Exp::Type expType = valueExp->GetType();
     if (expType == Exp::Type::LiteralValue)
         {

@@ -1,20 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlStatementCrudTestDatasetHelper.cpp $
+|     $Source: Tests/Published/ECSqlTestFrameworkHelper.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlStatementCrudTestDatasetHelper.h"
+#include "ECSqlTestFrameworkHelper.h"
 
-
-BEGIN_ECDBUNITTESTS_NAMESPACE
-
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
     {
     ECSqlTestItem testItem (ecsql);
 
@@ -29,7 +27,7 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset&
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
     {
     ECSqlTestItem testItem (ecsql);
 
@@ -44,7 +42,7 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset&
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddNonSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, bool rollbackAfterwards /*= false*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddNonSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, bool rollbackAfterwards /*= false*/)
     {
     ECSqlTestItem testItem(ecsql, rollbackAfterwards);
 
@@ -60,7 +58,7 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddNonSelect(ECSqlTestDatase
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddPrepareFailing (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/)
     {
     ECSqlTestItem testItem (ecsql);
     testItem.AddExpectedResult (PrepareECSqlExpectedResult::CreateFailing (nullptr, failureCategory, description));
@@ -72,7 +70,7 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (ECSqlTest
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/, bool rollbackAfterwards /* = false*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddStepFailingNonSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/, bool rollbackAfterwards /* = false*/)
     {
     ECSqlTestItem testItem(ecsql, rollbackAfterwards);
     //In order to have the test prepare the statement before we can test the step, we need to add an expected success result for the preparation
@@ -86,7 +84,7 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(ECSq
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbCR ecdb, Utf8CP ecsql)
+ECInstanceId ECSqlTestFrameworkHelper::InsertTestInstance (ECDbCR ecdb, Utf8CP ecsql)
     {
     ECSqlStatement stmt;
     auto stat = stmt.Prepare (ecdb, ecsql);
@@ -107,4 +105,4 @@ ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbCR ecd
         return newECInstanceKey.GetECInstanceId ();
     }
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

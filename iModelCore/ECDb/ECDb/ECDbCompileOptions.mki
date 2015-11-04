@@ -1,0 +1,21 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ECDb/ECDbCompileOptions.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName                     = BeSQLiteEC
+CCompPDBName                = $(appName)
+
+publicApiDir                = $(SrcRoot)ECDb/PublicAPI/ECDb/
+buildDir                    = $(OutputRootDir)build/
+
+BeSQLiteLib                 = $(libprefix)BeSQLite$(libext)
+ECNativeObjectsLib          = $(libprefix)ECObjects$(libext)
+BentleyGeomLib              = $(libprefix)BentleyGeom$(libext)
+BentleyGeomFlatBufferLib    = $(libprefix)BentleyGeomFlatBuffer$(libext)
+
+# We are building the ECDb lib
+nameToDefine = __ECDB_BUILD__
+%include cdefapnd.mki

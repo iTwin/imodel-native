@@ -134,6 +134,8 @@ public:
         NamedPropertiesJoin,
         NaturalJoin,
         NonJoinQuery,
+        Option,
+        Options,
         OrderBy,
         OrderBySpec,
         Parameter,
@@ -309,6 +311,8 @@ protected:
 
     size_t AddChild (std::unique_ptr<Exp> child);
     Collection& GetChildrenR () const;
+    void FindRecusive(std::vector<Exp const*>& expList, Type ofType) const;
+    void FindInDirectDecedentOnly(std::vector<Exp const*>& expList, Type ofType) const;
 
 public:
     virtual ~Exp () {}
@@ -334,16 +338,9 @@ public:
     Utf8String ToString () const;
 
     static bool IsAsteriskToken (Utf8CP token) { return strcmp (token, ASTERISK_TOKEN) == 0; }
-    Exp const* FindParent (Exp::Type type) const
-        {
-        Exp const* p = this;
-        do
-            {
-            p = p->GetParent ();        
-            } while (p != nullptr && p->GetType () != type);
-
-        return p;
-        }
+    Exp const* FindParent(Exp::Type type) const;
+    std::vector<Exp const*>  Find(Type ofType, bool recusive) const;
+    std::set<ECDbSqlTable const*> GetReferencedTables() const;
     };
 
 typedef Exp* ExpP;

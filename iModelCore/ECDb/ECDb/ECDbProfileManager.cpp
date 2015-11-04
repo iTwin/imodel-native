@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 3, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 4, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -25,10 +25,7 @@ std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgrader
 // @bsimethod                                 Krischan.Eberle                12/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-DbResult ECDbProfileManager::CreateECProfile 
-(
-ECDbR ecdb
-)
+DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     {
     LOG.debugv("Creating %s profile in %s...", PROFILENAME, ecdb.GetDbFileName());
 
@@ -58,7 +55,7 @@ ECDbR ecdb
         {
         ecdb.AbandonChanges();
         LOG.errorv("Failed to create %s profile in file '%s'. Could not assign new profile version. %s",
-            PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError());
+            PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return stat;
         }
 
@@ -159,7 +156,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Failed to upgrade %s profile in file '%s'. Could not assign new profile version. %s",
-            PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError());
+            PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
         }
     
@@ -300,7 +297,7 @@ DbResult ECDbProfileManager::ProfileCreator::Create(ECDbR ecdb)
     auto stat = CreateECProfileTables(ecdb);
     if (stat != BE_SQLITE_OK)
         {
-        LOG.errorv("Failed to create %s profile in %s: %s", PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError());
+        LOG.errorv("Failed to create %s profile in %s: %s", PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return stat;
         }
 

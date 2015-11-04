@@ -10,6 +10,7 @@
 
 #include "ClassRefExp.h"
 #include "WhereExp.h"
+#include "OptionsExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -21,6 +22,7 @@ DEFINE_EXPR_TYPE (Delete)
 private:
     size_t m_classNameExpIndex;
     int m_whereClauseIndex;
+    int m_optionsClauseIndex;
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
@@ -29,10 +31,11 @@ private:
     virtual Utf8String _ToString () const override { return "Delete"; }
 
 public:
-    DeleteStatementExp (std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<WhereExp> whereClauseExp);
+    DeleteStatementExp (std::unique_ptr<ClassRefExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
 
     ClassNameExp const* GetClassNameExp () const;
-    WhereExp const* GetOptWhereClauseExp () const;
+    WhereExp const* GetWhereClauseExp () const;
+    OptionsExp const* GetOptionsClauseExp() const;
     };
 
 

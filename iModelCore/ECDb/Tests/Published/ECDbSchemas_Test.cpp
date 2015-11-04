@@ -160,7 +160,155 @@ static ECSchemaPtr importECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile)
     return ecSchema;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                         10/05
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ECDbSchemas, JoinedTableTest)
+    {
+    auto const schema =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTableForSubclasses</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='G' typeName='long'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "    </ECClass>"
+        "</ECSchema>";
 
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create("JoinedTableTest.ecdb");
+    ECSchemaPtr joinedTableTestSchema;
+    auto readContext = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(joinedTableTestSchema, schema, *readContext);
+    ASSERT_TRUE(joinedTableTestSchema != nullptr);
+    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
+    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
+
+    auto assert_ecsql = [&db] (Utf8CP sql, ECSqlStatus expectedStatus, DbResult expectedStepStatus)
+        {
+        ECSqlStatement stmt;
+        LOG.infov("Executing : %s", sql);
+        ASSERT_EQ(stmt.Prepare(db, sql), expectedStatus);
+        LOG.infov("NativeSQL : %s", stmt.GetNativeSql());
+        if (expectedStatus == ECSqlStatus::Success)
+            {
+            ASSERT_EQ(stmt.Step(), expectedStepStatus);
+            }
+        };
+    auto assert_ecsql2 = [&db] (Utf8CP sql, ECSqlStatus expectedStatus, int columnCountExpected, int rowCountExpected)
+        {
+        ECSqlStatement stmt;
+        LOG.infov("Executing : %s", sql);
+        ASSERT_EQ(stmt.Prepare(db, sql), expectedStatus);
+        LOG.infov("NativeSQL : %s", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.GetColumnCount(), columnCountExpected);
+
+        int realRowCount = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            realRowCount++;
+
+        ASSERT_EQ(realRowCount, rowCountExpected);
+        };
+
+    assert_ecsql("UPDATE dgn.Goo SET A = ?, B = 'bb1', C = :c1, D = 'dd1' WHERE  A = ? AND B = :b1;", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("UPDATE dgn.Goo SET A = ?, B = 'bb1' WHERE  A = ? AND B = :b1;", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("UPDATE dgn.Goo SET C = :c1, D = 'dd1' WHERE  A = ? AND B = :b1;", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("UPDATE dgn.Foo SET A = 2, B = 'bb1' WHERE  A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+
+    assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(:a,'b1',:c,'d1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Goo(ECInstanceId, A, B, C, D) VALUES(120, 102,'b2',202,'d2');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(103,'b3',203,'d3');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Goo(A, B) VALUES(104,'b4');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(105,'b5');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+    assert_ecsql("INSERT INTO dgn.Boo(A, B, E, F) VALUES(:a,'b6',:c,'f1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Boo(ECInstanceId, A, B, E, F) VALUES(130, 102,'b8',202,'f2');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Boo(A, B, E, F) VALUES(103,'b9',203,'f3');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Boo(A, B) VALUES(105,'b10');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(104,'b11');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+
+    assert_ecsql("INSERT INTO dgn.Roo(A, B, G, H) VALUES(:a,'b12',:c,'h1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Roo(ECInstanceId, A, B, G, H) VALUES(140, 102,'b13',202,'h2');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Roo(A, B, G, H) VALUES(103,'b14',203,'h3');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Roo(A, B) VALUES(105,'b15');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(104,'b16');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(104,'b17');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Foo", ECSqlStatus::Success, 3, 16);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM ONLY dgn.Foo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Foo WHERE A = 102 AND B = 'b2'", ECSqlStatus::Success, 3, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM ONLY dgn.Foo WHERE A = 102 AND B = 'b2'", ECSqlStatus::Success, 3, 0);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM ONLY dgn.Foo  WHERE A = 104 AND B = 'b17'", ECSqlStatus::Success, 3, 1);
+
+
+    assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM dgn.Goo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Goo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, C, D FROM dgn.Goo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", ECSqlStatus::Success, 5, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", ECSqlStatus::Success, 5, 1);
+
+
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Boo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, E, F FROM dgn.Boo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", ECSqlStatus::Success, 5, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", ECSqlStatus::Success, 5, 1);
+
+
+    assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM dgn.Roo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Roo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, G, H FROM dgn.Roo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", ECSqlStatus::Success, 5, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", ECSqlStatus::Success, 5, 1);
+
+
+
+    assert_ecsql("DELETE FROM dgn.Foo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND (A = 101 AND B = 'b1') AND (C = 101 AND D = 'd1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+
+
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                         05/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
     {
     ECDbTestProject saveTestProject;
@@ -201,7 +349,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
     ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
     
     Statement stmt1;
-    stmt1.Prepare (db, "PRAGMA table_info('os_ArrayOfPropertyOrderTest')");
+    stmt1.Prepare (db, "PRAGMA table_info('os_PropertyOrderTest_Array')");
     Utf8String order_PropertyOrderTest;
     while (stmt1.Step () == BE_SQLITE_ROW)
         {
@@ -211,7 +359,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
     ASSERT_TRUE (order_PropertyOrderTest == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex x h i d_X d_Y d_Z u_X u_Y f e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ");
     
     Statement stmt2;
-    stmt2.Prepare (db, "PRAGMA table_info('os_ArrayOfOrderedStruct')");
+    stmt2.Prepare (db, "PRAGMA table_info('os_OrderedStruct_Array')");
     Utf8String order_OrderedStruct;
     while (stmt2.Step () == BE_SQLITE_ROW)
         {
@@ -610,7 +758,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point3dProp_Z"));
 
     //========================[sc_StructWithPrimitiveProperties==================================
-    Utf8CP tblStructWithPrimitiveProperties = "sc_ArrayOfStructWithPrimitiveProperties";
+    Utf8CP tblStructWithPrimitiveProperties = "sc_StructWithPrimitiveProperties_Array";
     EXPECT_TRUE (db.TableExists(tblStructWithPrimitiveProperties));
     EXPECT_EQ   (16, GetColumnCount(db, tblStructWithPrimitiveProperties));
     ASSERT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "ECInstanceId"));
@@ -656,7 +804,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //========================[sc_StructWithPrimitiveArrayProperties=============================
     //Array properties doesnt have any column currently it will take in case of embeded senario but
     //we need to make sure it doesnt exist right now. They uses special System arrray tables 
-    Utf8CP tblStructWithPrimitiveArrayProperties = "sc_ArrayOfStructWithPrimitiveArrayProperties";
+    Utf8CP tblStructWithPrimitiveArrayProperties = "sc_StructWithPrimitiveArrayProperties_Array";
     EXPECT_TRUE(db.TableExists(tblStructWithPrimitiveArrayProperties));
     EXPECT_EQ   (13, GetColumnCount(db, tblStructWithPrimitiveArrayProperties));    
     ASSERT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "ECInstanceId"));
@@ -768,7 +916,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblCompany, "RecordKey"));
 
     //========================[sc_EmployeeCertifications]========================================
-    Utf8CP tblEmployeeCertification = "sc_ArrayOfEmployeeCertification";
+    Utf8CP tblEmployeeCertification = "sc_EmployeeCertification_Array";
     EXPECT_TRUE (db.TableExists(tblEmployeeCertification));    
     EXPECT_EQ   (9, GetColumnCount(db, tblEmployeeCertification));
 
@@ -941,7 +1089,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_FALSE(db.ColumnExists(tblBuilding, "Location"));
     
     //========================[sc_Location]======================================================
-    Utf8CP tblLocation = "sc_ArrayOfLocation"; 
+    Utf8CP tblLocation = "sc_Location_Array"; 
     EXPECT_TRUE (db.TableExists(tblLocation));
     EXPECT_EQ   (12, GetColumnCount(db, tblLocation));            
 
@@ -1006,7 +1154,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblCubicle, "BuildingFloor__src_11_id")); 
         
     //========================[sc_AnglesStruct]======================================================
-    Utf8CP tblAnglesStruct = "sc_ArrayOfAnglesStruct"; 
+    Utf8CP tblAnglesStruct = "sc_AnglesStruct_Array"; 
     EXPECT_TRUE (db.TableExists(tblAnglesStruct));
     EXPECT_EQ   (7, GetColumnCount(db, tblAnglesStruct));            
 
@@ -1112,8 +1260,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_FALSE (db.ColumnExists(tblFoo, "arrayOfAnglesStructsFoo"));
     EXPECT_FALSE (db.ColumnExists(tblFoo, "anglesFoo"));
 
-    //========================[sc_ArrayOfStructDomainClass]===========================================================
-    Utf8CP tbl = "sc_ArrayOfStructDomainClass"; 
+    //========================[sc_StructDomainClass_Array]===========================================================
+    Utf8CP tbl = "sc_StructDomainClass_Array"; 
     EXPECT_TRUE (db.TableExists(tbl));
     EXPECT_EQ   (5, GetColumnCount(db, tbl));
 
@@ -1124,8 +1272,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tbl, "ECPropertyPathId"));
     EXPECT_TRUE (db.ColumnExists(tbl, "ECArrayIndex"));
 
-    //========================[sc_ArrayOfStructNoneDomainClass]===========================================================
-    tbl = "sc_ArrayOfStructNoneDomainClass"; 
+    //========================[sc_StructNoneDomainClass_Array]===========================================================
+    tbl = "sc_StructNoneDomainClass_Array"; 
     EXPECT_TRUE (db.TableExists(tbl));
     EXPECT_EQ   (5, GetColumnCount(db, tbl));
 
@@ -1136,12 +1284,12 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tbl, "ECPropertyPathId"));
     EXPECT_TRUE (db.ColumnExists(tbl, "ECArrayIndex"));
     
-    //========================[sc_ArrayOfStructDomainClassWithNoProperties]===========================================================
-    tbl = "sc_ArrayOfStructDomainClassWithNoProperties"; 
+    //========================[sc_StructDomainClassWithNoProperties_Array]===========================================================
+    tbl = "sc_StructDomainClassWithNoProperties_Array"; 
     EXPECT_TRUE (db.TableExists(tbl));
     
-    //========================[sc_ArrayOfStructNoneDomainClassWithNoProperties]===========================================================
-    tbl = "sc_ArrayOfStructNoneDomainClassWithNoProperties"; 
+    //========================[sc_StructNoneDomainClassWithNoProperties_Array]===========================================================
+    tbl = "sc_StructNoneDomainClassWithNoProperties_Array"; 
     EXPECT_TRUE (db.TableExists(tbl));
 
     //========================[sc_DomainClass]===========================================================
@@ -2276,7 +2424,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeOwnTableNonPolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_TRUE(db.TableExists("sm_ArrayOfB"));
+    EXPECT_TRUE(db.TableExists("sm_B_Array"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2300,7 +2448,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_TRUE(db.TableExists("sm_ArrayOfB"));
+    EXPECT_TRUE(db.TableExists("sm_B_Array"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2323,7 +2471,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_FALSE(db.TableExists("sm_ArrayOfB"));
+    EXPECT_FALSE(db.TableExists("sm_B_Array"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2346,11 +2494,11 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_TRUE (db.TableExists ("sm_ArrayOfB"));
+    EXPECT_TRUE (db.TableExists ("sm_B_Array"));
     EXPECT_FALSE(db.TableExists("sm_b"));
-    EXPECT_FALSE(db.TableExists("sm_ArrayOfA"));
+    EXPECT_FALSE(db.TableExists("sm_A_Array"));
     EXPECT_TRUE(db.TableExists("sm_a"));
-    EXPECT_TRUE(db.TableExists("sm_ArrayOfC"));
+    EXPECT_TRUE(db.TableExists("sm_C_Array"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2374,10 +2522,10 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_FALSE (db.TableExists ("sm_ArrayOfB"));
+    EXPECT_FALSE (db.TableExists ("sm_B_Array"));
     EXPECT_FALSE(db.TableExists("sm_B"));
     EXPECT_TRUE(db.TableExists("sm_A"));
-    EXPECT_TRUE(db.TableExists("sm_ArrayOfC"));
+    EXPECT_TRUE(db.TableExists("sm_C_Array"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2505,9 +2653,12 @@ TEST(ECDbSchemas, IntegrityCheck)
     ASSERT_EQ(nRows, expected.size()) << "Number of SQL definitions are not same";
     }
 
-TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                         05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
     {
-    const Utf8CP schema =
+    SchemaItem schema (
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
@@ -2520,57 +2671,41 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
         "</ClassHasCurrentTimeStampProperty>"
         "</ECCustomAttributes>"
         "</ECClass>"
-        "</ECSchema>";
+        "</ECSchema>");
 
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("checkClassHasCurrentTimeStamp.ecdb");
-    ECSchemaPtr simpleSchema;
-    auto readContext = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(simpleSchema, schema, *readContext);
-    ASSERT_TRUE(simpleSchema != nullptr);
-    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
-    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
-    auto ecClass = simpleSchema->GetClassP("SimpleClass");
+    SetupECDb("checkClassHasCurrentTimeStamp.ecdb", schema);
 
+    ECInstanceKey key;
+    {
     ECSqlStatement insertStatement;
-    Utf8CP insertQuery = "INSERT INTO adhoc.SimpleClass(testprop) VALUES(12)";
-    ASSERT_TRUE(ECSqlStatus::Success == insertStatement.Prepare(db, insertQuery));
-    insertStatement.Step();
-    db.SaveChanges();
-    Utf8String ecsql("SELECT DateTimeProperty FROM ");
-    ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
-    db.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, insertStatement.Prepare(GetECDb(), "INSERT INTO adhoc.SimpleClass(testprop) VALUES(12)"));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+    }
+
     ECSqlStatement statement;
-    auto stat = statement.Prepare(db, ecsql.c_str());
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DateTimeProperty FROM adhoc.SimpleClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
 
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-    BentleyApi::DateTime dateTime1;
-    ASSERT_TRUE(statement.Step() == BE_SQLITE_ROW);
-        {
-        ASSERT_FALSE(statement.IsValueNull(0));
-        dateTime1 = statement.GetValueDateTime(0);
-        }
-    ASSERT_TRUE(statement.Step() == BE_SQLITE_DONE);
-    ECSqlStatement updateStatment;
-    ecsql = "UPDATE ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
-    stat = updateStatment.Prepare(db, ecsql.c_str());
-    ASSERT_TRUE(updateStatment.Step() == BE_SQLITE_DONE);
-    ecsql = "SELECT DateTimeProperty FROM ";
-    ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_FALSE(statement.IsValueNull(0));
+    DateTime lastMod1 = statement.GetValueDateTime(0);
+    statement.Reset();
+    statement.ClearBindings();
 
-    BentleyApi::DateTime dateTime2;
-    ECSqlStatement statement2;
-    stat = statement2.Prepare(db, ecsql.c_str());
+    {
     BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
+    ECSqlStatement updateStatement;
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(GetECDb(), "UPDATE adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
+    }
 
-    ASSERT_TRUE(statement2.Step() == BE_SQLITE_ROW);
-        {
-        ASSERT_FALSE(statement2.IsValueNull(0));
-        dateTime2 = statement2.GetValueDateTime(0);
-        }
-    ASSERT_TRUE(statement2.Step() == BE_SQLITE_DONE);
-    ASSERT_FALSE(dateTime1 == dateTime2);
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_FALSE(statement.IsValueNull(0));
+    DateTime lastMod2 = statement.GetValueDateTime(0);
+
+    ASSERT_NE(lastMod1, lastMod2) << "LastMod date should have been updated after the last UPDATE statement";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

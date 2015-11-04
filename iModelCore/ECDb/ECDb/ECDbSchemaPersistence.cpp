@@ -1021,43 +1021,6 @@ ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::GetClassesMappedToTable(std::vector<ECClassId>& classIds, ECDbSqlTable const& table, bool skipRelationships, ECDbCR db)
-    {
-    BeSQLite::Statement stmt;
-    DbResult stat = skipRelationships ?
-        stmt.Prepare(db,
-        "SELECT DISTINCT ec_ClassMap.ClassId  FROM ec_ClassMap"
-        "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
-        "   INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
-        "   INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "   INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
-        "   WHERE ec_Table.Id = ? AND ec_Class.IsRelationship = 0"
-        ) :
-        stmt.Prepare(db,
-        "SELECT DISTINCT ec_ClassMap.ClassId  FROM ec_ClassMap"
-        "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
-        "   INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
-        "   INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "   INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
-        "   WHERE ec_Table.Id = ?"
-        );
-
-    if (BE_SQLITE_OK != stat)
-        return ERROR;
-
-    stmt.BindInt64(1, table.GetId());
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        auto ecClassId = stmt.GetValueInt64(0);
-        classIds.push_back(ecClassId);
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaPersistence::IsECSchemaMapped(bool* schemaNotFound, ECN::ECSchemaCR ecSchema, ECDbCR db)

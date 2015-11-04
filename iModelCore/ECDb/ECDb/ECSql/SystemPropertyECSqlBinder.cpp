@@ -56,11 +56,14 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindNull()
         return ECSqlStatus::Error;
         }
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindNull();
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindNull();
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     if (!IsNoop())
@@ -164,11 +167,14 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindInt64(value);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindInt64(value);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     if (!IsNoop())
@@ -199,11 +205,14 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::Mak
         return ECSqlStatus::Error;
         }
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindText(value, makeCopy, byteCount);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindText(value, makeCopy, byteCount);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     if (!IsNoop())

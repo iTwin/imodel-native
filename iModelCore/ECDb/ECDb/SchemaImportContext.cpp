@@ -214,7 +214,7 @@ BentleyStatus SchemaImportECDbMapDb::CreateOrUpdateIndicesInDb(ECDbR ecdb) const
         if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.ToString()))
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
-                                                          ecdb.GetLastError());
+                                                          ecdb.GetLastError().c_str());
             BeAssert(false && "Failed to create index");
             return ERROR;
             }
@@ -318,7 +318,7 @@ BentleyStatus SchemaImportECDbMapDb::GenerateIndexWhereClause(NativeSqlBuilder& 
         }
 
     NativeSqlBuilder classIdFilter;
-    if (SUCCESS != storageDescription.GenerateECClassIdFilter(classIdFilter, *classIdCol, index.AppliesToSubclassesIfPartial()))
+    if (SUCCESS != storageDescription.GenerateECClassIdFilter(classIdFilter, index.GetTable(), *classIdCol, index.AppliesToSubclassesIfPartial()))
         return ERROR;
 
     if (classIdFilter.IsEmpty())

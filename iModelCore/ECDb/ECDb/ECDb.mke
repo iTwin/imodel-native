@@ -5,21 +5,15 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-#---------------------------------------------------------------
-# Environment
-#---------------------------------------------------------------
-baseDir           = $(_MakeFilePath)
-PolicyFile        = $(InternalSystemPolicy)
-SolutionPolicyMki = $(baseDir)ECDbPolicy.mki
-
 %include mdl.mki
 
-o            = $(buildDir)ECDb/
 
-# appName      set in ECDbPolicy.mki
-# CCompPDBName = $(appName) # MultiCppCompileRule.mki sets this up
+baseDir             = $(_MakeFilePath)
+o                   = $(OutBuildDir)ECDb/
 
+
+CompileOptionsMki   = $(baseDir)ECDbCompileOptions.mki
+%include $(CompileOptionsMki)
 
 ECDbPublicHeaders =  \
                 $(publicApiDir)ECDbApi.h \
@@ -43,7 +37,7 @@ ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
-				$(baseDir)MapStrategy.h \
+                $(baseDir)MapStrategy.h \
                 $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
@@ -87,6 +81,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/InsertStatementExp.h \
                 $(baseDir)ECSql/UpdateStatementExp.h \
                 $(baseDir)ECSql/DeleteStatementExp.h \
+                $(baseDir)ECSql/OptionsExp.h \
                 $(baseDir)ECSql/ExpHelper.h \
                 $(baseDir)ECSql/ECSqlTypeInfo.h \
                 $(baseDir)ECSql/ECSqlPropertyPathImpl.h \
@@ -229,7 +224,7 @@ $(o)InternalNode$(oext):									$(baseDir)ECSql/Parser/InternalNode.cpp    $(EC
 
 $(o)ECSqlStatus$(oext):	                					$(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DynamicSelectClauseECClass$(oext):						$(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders)${MultiCompileDepends}
+$(o)DynamicSelectClauseECClass$(oext):						$(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParser$(oext):										$(baseDir)ECSql/ECSqlParser.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -258,6 +253,8 @@ $(o)InsertStatementExp$(oext):								$(baseDir)ECSql/InsertStatementExp.cpp    
 $(o)UpdateStatementExp$(oext):								$(baseDir)ECSql/UpdateStatementExp.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DeleteStatementExp$(oext):								$(baseDir)ECSql/DeleteStatementExp.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)OptionsExp$(oext):										$(baseDir)ECSql/OptionsExp.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ExpHelper$(oext):										$(baseDir)ECSql/ExpHelper.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -438,7 +435,7 @@ cppObjects + $(nonportObjs)
 #----------------------------------------------------------------------
 # Link objects
 #----------------------------------------------------------------------
-# DLM_NAME      set in ECDbPolicy.mki
+DLM_NAME                    = $(appName)
 ASSEMBLY_STRONGNAME         = 1
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)

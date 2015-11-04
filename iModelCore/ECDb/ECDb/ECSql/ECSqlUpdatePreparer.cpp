@@ -9,6 +9,7 @@
 #include "ECSqlUpdatePreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
 #include "StructArrayToSecondaryTableECSqlBinder.h"
+
 using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -17,12 +18,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
+ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
-    BeAssert (exp.IsComplete ());
-    ctx.PushScope (exp);
+    BeAssert(exp.IsComplete());
+    ctx.PushScope(exp, exp.GetOptionsClauseExp());
 
-    ClassNameExp const* classNameExp = exp.GetClassNameExp ();
+    ClassNameExp const* classNameExp = exp.GetClassNameExp();
 
     Exp::SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
     if (!specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::ECInstanceId))
@@ -31,8 +32,22 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         return ECSqlStatus::InvalidECSql;
         }
 
-    IClassMap const& classMap = classNameExp->GetInfo ().GetMap ();
-    if (classMap.IsRelationshipClassMap ())
+    IClassMap const& classMap = classNameExp->GetInfo().GetMap();
+    if (auto info = ctx.GetJoinTableInfo())
+        {
+        if (info->HasParentECSQlStatement() && info->HasECSQlStatement())
+            {
+            auto baseStatement = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement(classMap.GetClass().GetId());
+            auto status = baseStatement->Prepare(ctx.GetECDb(), info->GetParentECSQlStatement());
+            if (status != ECSqlStatus::Success)
+                {
+                BeAssert("Base statement is generated statement should fail at prepare");
+                return status;
+                }
+            }
+        }
+
+    if (classMap.IsRelationshipClassMap())
         {
         if (!specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) ||
             !specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::SourceECClassId) ||
@@ -44,62 +59,108 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
             }
         }
 
-    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR ();
-    
+    NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
+
     // UPDATE clause
-    nativeSqlBuilder.Append ("UPDATE ");
-    auto status = ECSqlExpPreparer::PrepareClassRefExp (nativeSqlBuilder, ctx, *classNameExp);
+    nativeSqlBuilder.Append("UPDATE ");
+    auto status = ECSqlExpPreparer::PrepareClassRefExp(nativeSqlBuilder, ctx, *classNameExp);
     if (!status.IsSuccess())
         return status;
 
-    //PropertyValueMap& propertyValueMap;
     // SET clause
     NativeSqlBuilder::ListOfLists assignmentListSnippetLists;
-    status = PrepareAssignmentListExp (assignmentListSnippetLists, ctx, exp.GetAssignmentListExp ());
+    status = PrepareAssignmentListExp(assignmentListSnippetLists, ctx, exp.GetAssignmentListExp());
     if (!status.IsSuccess())
         return status;
 
     const std::vector<size_t> emptyIndexSkipList;
-    auto assignmentListSnippets = NativeSqlBuilder::FlattenJaggedList (assignmentListSnippetLists, emptyIndexSkipList);
-    nativeSqlBuilder.Append (" SET ").Append (assignmentListSnippets);
+    auto assignmentListSnippets = NativeSqlBuilder::FlattenJaggedList(assignmentListSnippetLists, emptyIndexSkipList);
+    nativeSqlBuilder.Append(" SET ").Append(assignmentListSnippets);
     if (assignmentListSnippets.size() == 0)
         ctx.SetNativeNothingToUpdate(true);
 
-    bool hasWhereClause = false;
-    if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
+    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
+    NativeSqlBuilder topLevelWhereClause;
+    if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
-        nativeSqlBuilder.AppendSpace ();
-        status = ECSqlExpPreparer::PrepareWhereExp(nativeSqlBuilder, ctx, whereClauseExp);
+        NativeSqlBuilder whereClause;
+        status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
         if (!status.IsSuccess())
             return status;
 
-        hasWhereClause = true;
-        }
+        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
+        auto const & currentClassMap = classMap;
+        if (auto rootOfJoinedTable = currentClassMap.FindRootOfJoinedTable())
+            {
+            auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
+            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
+            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetTable()) != tableBeenAccessed.end());
+            if (!referencedRootOfJoinedTable && referencedJoinedTable)
+                {
+                //do not modifiy where
+                topLevelWhereClause = whereClause;
+                }
+            else
+                {
+                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                NativeSqlBuilder snippet;
+                snippet.AppendFormatted(
+                    " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    joinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    whereClause.ToString()
+                    );
 
-    // WHERE clause
-    NativeSqlBuilder systemWhereClause;
-    ECDbSqlColumn const* classIdColumn = nullptr;
-    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn) && classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
-        {
-        if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause,
-                                                                 *classIdColumn,
-                                                                 exp.GetClassNameExp()->IsPolymorphic()))
-            return ECSqlStatus::Error;
-        }
-
-    if (!systemWhereClause.IsEmpty ())
-        {
-        if (!hasWhereClause)
-            nativeSqlBuilder.Append (" WHERE ");
+                topLevelWhereClause = snippet;
+                }
+            }
         else
-            nativeSqlBuilder.Append (" AND ");
-
-        nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            topLevelWhereClause = whereClause;
         }
 
-    status = PrepareStepTask (ctx, exp);
+    nativeSqlBuilder.Append(topLevelWhereClause);
+    if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+        {
+        // WHERE clause
+        NativeSqlBuilder systemWhereClause;
+        ECDbSqlColumn const* classIdColumn = nullptr;
+        ECDbSqlTable const* table = &classMap.GetTable();
+        if (auto rootOfJoinedTable = classMap.FindRootOfJoinedTable())
+            {
+             table = &rootOfJoinedTable->GetTable();
+            }
 
-    ctx.PopScope ();
+        if (table->TryGetECClassIdColumn(classIdColumn) &&
+            classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+            {
+            if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
+                *classIdColumn,
+                exp.GetClassNameExp()->IsPolymorphic()))
+                return ECSqlStatus::Error;
+            }
+
+        if (!systemWhereClause.IsEmpty())
+            {
+            if (topLevelWhereClause.IsEmpty())
+                nativeSqlBuilder.Append(" WHERE ");
+            else
+                nativeSqlBuilder.Append(" AND ");
+
+            nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            }
+        }
+
+    status = PrepareStepTask(ctx, exp);
+
+    ctx.PopScope();
     return status;
     }
 
@@ -155,7 +216,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
 
     EmbeddedECSqlStatement* selectorStmt = stepTasks.GetSelector(true);
     selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
-    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetOptWhereClauseExp());
+    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetWhereClauseExp());
     ECSqlStatus stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
     if (!stat.IsSuccess())
         {
@@ -163,7 +224,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
         return stat;
         }
 
-    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetOptWhereClauseExp());
+    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
     int nParamterToBind = ((int) ecsqlParameterMap.Count()) - parameterIndex;
     for (int j = 1; j <= nParamterToBind; j++)
         {
@@ -248,42 +309,42 @@ ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assi
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp)
+ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp)
     {
-    ctx.PushScope (*assignmentListExp);
-    BeAssert (nativeSqlSnippetLists.empty ());
-    for (auto childExp : assignmentListExp->GetChildren ())
+    ctx.PushScope(*assignmentListExp);
+    BeAssert(nativeSqlSnippetLists.empty());
+    for (auto childExp : assignmentListExp->GetChildren())
         {
-        BeAssert (childExp != nullptr);
+        BeAssert(childExp != nullptr);
 
         auto assignmentExp = static_cast<AssignmentExp const*> (childExp);
         NativeSqlBuilder::List nativeSqlSnippets;
-        auto stat = ECSqlPropertyNameExpPreparer::Prepare (nativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp ());
+        auto stat = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp());
         if (!stat.IsSuccess())
             {
-            ctx.PopScope ();
+            ctx.PopScope();
             return stat;
             }
 
-        const auto sqlSnippetCount = nativeSqlSnippets.size ();
+        const auto sqlSnippetCount = nativeSqlSnippets.size();
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
         if (sqlSnippetCount > 0)
             {
             NativeSqlBuilder::List rhsNativeSqlSnippets;
-            auto valueExp = assignmentExp->GetValueExp ();
+            auto valueExp = assignmentExp->GetValueExp();
             //if value is null exp, we need to pass target operand snippets
-            if (ECSqlExpPreparer::IsNullExp (*valueExp))
+            if (ECSqlExpPreparer::IsNullExp(*valueExp))
                 {
-                BeAssert (dynamic_cast<LiteralValueExp const*> (valueExp) != nullptr);
-                stat = ECSqlExpPreparer::PrepareNullLiteralValueExp (rhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), sqlSnippetCount);
+                BeAssert(dynamic_cast<LiteralValueExp const*> (valueExp) != nullptr);
+                stat = ECSqlExpPreparer::PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), sqlSnippetCount);
                 }
             else
-                stat = ECSqlExpPreparer::PrepareValueExp (rhsNativeSqlSnippets, ctx, valueExp);
+                stat = ECSqlExpPreparer::PrepareValueExp(rhsNativeSqlSnippets, ctx, valueExp);
 
             if (!stat.IsSuccess())
                 {
-                ctx.PopScope ();
+                ctx.PopScope();
                 return stat;
                 }
 
@@ -295,28 +356,28 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::Lis
 
             for (size_t i = 0; i < sqlSnippetCount; i++)
                 {
-                nativeSqlSnippets[i].Append (" = ").Append (rhsNativeSqlSnippets[i]);
+                nativeSqlSnippets[i].Append(BooleanSqlOperator::EqualTo, false).Append(rhsNativeSqlSnippets[i]);
                 }
             }
         else
             {
-            if (assignmentExp->GetPropertyNameExp ()->GetTypeInfo ().GetKind () == ECSqlTypeInfo::Kind::StructArray)
+            if (assignmentExp->GetPropertyNameExp()->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::StructArray)
                 {
-                auto valueExp = assignmentExp->GetValueExp ();
-                if (!ECSqlExpPreparer::IsNullExp (*valueExp))
+                auto valueExp = assignmentExp->GetValueExp();
+                if (!ECSqlExpPreparer::IsNullExp(*valueExp))
                     {
                     NativeSqlBuilder::List rhsNativeSqlSnippets;
-                    auto valueExp = assignmentExp->GetValueExp ();
-                    stat = ECSqlExpPreparer::PrepareValueExp (rhsNativeSqlSnippets, ctx, valueExp);
+                    auto valueExp = assignmentExp->GetValueExp();
+                    stat = ECSqlExpPreparer::PrepareValueExp(rhsNativeSqlSnippets, ctx, valueExp);
                     }
                 }
 
             }
 
-        nativeSqlSnippetLists.push_back (move (nativeSqlSnippets));
+        nativeSqlSnippetLists.push_back(move(nativeSqlSnippets));
         }
 
-    ctx.PopScope ();
+    ctx.PopScope();
     return ECSqlStatus::Success;
     }
 

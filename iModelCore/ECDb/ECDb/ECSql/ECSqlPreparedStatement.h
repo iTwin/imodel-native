@@ -25,6 +25,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
+struct JoinTableECSqlStatement;
 struct ECSqlPreparedStatement : NonCopyableClass
     {
 private:
@@ -37,7 +38,7 @@ private:
     bool m_isNothingToUpdate;
     ECSqlParameterMap m_parameterMap;
     std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
-
+    std::unique_ptr<JoinTableECSqlStatement> m_baseECSqlStatement;
     virtual ECSqlStatus _Reset () = 0;
 
 protected:
@@ -61,6 +62,7 @@ public:
     ECSqlStatus Prepare (ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql);
     IECSqlBinder& GetBinder (int parameterIndex);
     int GetParameterIndex (Utf8CP parameterName) const;
+    JoinTableECSqlStatement* GetBaseECSqlStatement(ECN::ECClassId jointTableId = 0LL);
 
     ECSqlStatus ClearBindings ();
     ECSqlStatus Reset ();

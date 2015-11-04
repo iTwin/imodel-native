@@ -67,7 +67,7 @@ public:
 
 struct PropertyMapToColumn;
 struct PropertyMapToTable;
-struct PropertyMapArrayOfPrimitives;
+struct PropertyMapPrimitiveArray;
 
 /*---------------------------------------------------------------------------------------
 * Abstract class for property mapping
@@ -102,23 +102,21 @@ protected:
 
     virtual PropertyMapToColumn const* _GetAsPropertyMapToColumn () const { return nullptr; }
     virtual PropertyMapToTable const* _GetAsPropertyMapToTable () const { return nullptr; }
-    virtual PropertyMapArrayOfPrimitives const* _GetAsPropertyMapArrayOfPrimitives () const { return nullptr; }
 
     virtual bool _IsECInstanceIdPropertyMap () const;
     virtual bool _IsSystemPropertyMap () const;
     virtual BentleyStatus _Save (ECDbClassMapInfo & classMapInfo) const;
     virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo);
 
-
     //! For debugging and logging
     virtual Utf8String _ToString() const;
+
 
 public:
     virtual ~PropertyMap () {}
     ECDbPropertyPathId GetPropertyPathId () const  { BeAssert (m_propertyPathId != 0); return m_propertyPathId; }
     PropertyMapToColumn const* GetAsPropertyMapToColumn() const { return _GetAsPropertyMapToColumn(); }
     PropertyMapToTableCP GetAsPropertyMapToTable () const {return _GetAsPropertyMapToTable();}
-    PropertyMapArrayOfPrimitives const* GetAsPropertyMapArrayOfPrimitives() const { return _GetAsPropertyMapArrayOfPrimitives(); }
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
     PropertyMapCR GetRoot () const 
@@ -204,6 +202,12 @@ public:
     //! For debugging and logging
     Utf8String ToString() const;
 
+    PropertyMapPtr Clone(ECDbSqlTable const* newContext = nullptr) const
+        {
+        return Clone(*this, newContext, nullptr);
+        }
+    static PropertyMapPtr Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+
     //! An abstract factory method that constructs a subtype of PropertyMap, based on the ecProperty, hints, and mapping rules
     static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     };
@@ -215,6 +219,7 @@ public:
 struct PropertyMapToColumn : PropertyMap
 {
 friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
     ECN::PrimitiveECPropertyCP m_primitiveProperty;
 
@@ -246,7 +251,11 @@ protected:
 
     //! basic constructor
     PropertyMapToColumn (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
-    
+    PropertyMapToColumn(PropertyMapToColumn const& proto, ECDbSqlTable const* primaryTable , PropertyMap const* parentPropertyMap)
+        :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_columnInfo(proto.m_columnInfo), m_column(proto.m_column)
+        {        
+        }
+
     virtual PropertyMapToColumn const* _GetAsPropertyMapToColumn () const override { return this; }
 
     //! Make sure our table has the necessary columns, if any
@@ -260,6 +269,8 @@ protected:
    
     //! For debugging and logging
     virtual Utf8String _ToString() const override;
+public:
+
 };
 
 /*---------------------------------------------------------------------------------------
@@ -268,7 +279,8 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyMapToInLineStruct : PropertyMap
 {
-friend struct PropertyMap;
+friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
 
 
@@ -277,6 +289,14 @@ private:
 
 protected:
     PropertyMapToInLineStruct (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    PropertyMapToInLineStruct(PropertyMapToInLineStruct const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+        :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap)
+        {
+        for (auto const& protoChild : proto.m_children)
+            {
+            m_children.AddPropertyMap(PropertyMap::Clone(*protoChild, primaryTable, this));
+            }
+        }
 
     BentleyStatus Initialize(ECDbMapCR map);
 
@@ -295,7 +315,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyMapToTable : PropertyMap
 {
-friend struct PropertyMap;
+friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
     // WIP_ECDB: These seem redundant, m_elementType will always be the ECClass from m_classMapForProperty, right?
     ECN::ECClassCR m_structElementType;
@@ -305,6 +326,10 @@ private:
 
 protected:
     PropertyMapToTable (ECN::ECPropertyCR ecProperty, ECN::ECClassCR elementType, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    PropertyMapToTable(PropertyMapToTable const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+        :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_structElementType(proto.m_structElementType)
+        {
+        }
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const override { return this; }
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const override;
@@ -319,20 +344,21 @@ public:
 //! Mapping an array of primitives to a *single* column
 // @bsiclass                                                     Casey.Mullen      11/2012
 //=======================================================================================
-struct PropertyMapArrayOfPrimitives : PropertyMapToColumn
+struct PropertyMapPrimitiveArray : PropertyMapToColumn
 {
 friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-
+friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
     ECN::StandaloneECEnablerP       m_primitiveArrayEnabler;
 
     //! basic constructor
-    PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
-        
+    PropertyMapPrimitiveArray (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
+    PropertyMapPrimitiveArray(PropertyMapPrimitiveArray const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+        :PropertyMapToColumn(static_cast<PropertyMapToColumn const&>(proto), primaryTable, parentPropertyMap), m_primitiveArrayEnabler(proto.m_primitiveArrayEnabler)
+        {}
+
     //! For debugging and logging
     Utf8String _ToString() const override;
-
-    PropertyMapArrayOfPrimitives const* _GetAsPropertyMapArrayOfPrimitives () const { return this; }
 };
 
 //=======================================================================================
@@ -341,7 +367,7 @@ private:
 struct PropertyMapPoint : PropertyMap
 {
 friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-
+friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
     //! true if 3d, false if 2d
     bool            m_is3d;
@@ -356,7 +382,11 @@ private:
 
     //! basic constructor
     PropertyMapPoint (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
-    
+    PropertyMapPoint(PropertyMapPoint const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+        :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), 
+        m_xColumn(proto.m_xColumn), m_yColumn(proto.m_yColumn), m_zColumn(proto.m_zColumn), m_is3d(proto.m_is3d), m_columnInfo(proto.m_columnInfo)
+        {
+        }
     //! Make sure our table has the necessary columns, if any
     BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 

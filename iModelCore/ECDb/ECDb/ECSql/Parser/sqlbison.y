@@ -167,7 +167,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_LIMIT SQL_TOKEN_OFFSET SQL_TOKEN_NEXT SQL_TOKEN_ONLY
 
 //non-standard
-%token <pParseNode> SQL_TOKEN_MATCH SQL_TOKEN_OPTIONS
+%token <pParseNode> SQL_TOKEN_MATCH SQL_TOKEN_ECSQLOPTIONS
 
 //EC data types
 %token <pParseNode> SQL_TOKEN_BINARY SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT32 SQL_TOKEN_LONG SQL_TOKEN_INT64 SQL_TOKEN_STRING SQL_TOKEN_DATE SQL_TOKEN_TIMESTAMP SQL_TOKEN_DATETIME SQL_TOKEN_POINT2D SQL_TOKEN_POINT3D 
@@ -4044,7 +4044,7 @@ opt_ecsqloptions_clause:
     ;
 
 ecsqloptions_clause:
-    SQL_TOKEN_OPTIONS ecsqloptions_list
+    SQL_TOKEN_ECSQLOPTIONS ecsqloptions_list
         {
         $$ = SQL_NEW_RULE;
         $$->append($1);

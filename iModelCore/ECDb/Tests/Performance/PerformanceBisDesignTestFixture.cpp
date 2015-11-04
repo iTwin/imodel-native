@@ -733,7 +733,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_RunInsertTest (DbR 
     //INSERT is generic, can be used for all ECClasses -> only prepare once
     Statement stmt;
     auto stat = stmt.Prepare (db, m_genericInsertSql.c_str ());
-    ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for INSERT: " << db.GetLastError () << " SQL: " << m_genericInsertSql.c_str ();
+    ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for INSERT: " << db.GetLastError ().c_str() << " SQL: " << m_genericInsertSql.c_str ();
 
     for (auto const& kvPair : m_sqlTestItems)
         {
@@ -748,7 +748,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_RunInsertTest (DbR 
                 }
 
             stat = stmt.Step ();
-            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Step failed for INSERT: " << db.GetLastError () << " SQL: " << m_genericInsertSql.c_str ();
+            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Step failed for INSERT: " << db.GetLastError ().c_str() << " SQL: " << m_genericInsertSql.c_str ();
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -1004,7 +1004,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunI
 
     Statement masterStmt;
     auto stat = masterStmt.Prepare (db, m_masterInsertSql.c_str ());
-    ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for master insert: " << db.GetLastError () << " SQL: " << m_masterInsertSql.c_str ();
+    ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for master insert: " << db.GetLastError ().c_str() << " SQL: " << m_masterInsertSql.c_str ();
 
     for (auto const& kvPair : m_sqlTestItems)
         {
@@ -1017,7 +1017,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunI
 
         Statement domainStmt;
         stat = domainStmt.Prepare (db, domainInsertSql.c_str ());
-        ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for domain insert: " << db.GetLastError () << " SQL: " << domainInsertSql.c_str ();
+        ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for domain insert: " << db.GetLastError ().c_str() << " SQL: " << domainInsertSql.c_str ();
 
         for (int i = 0; i < instancesPerClassCount; i++)
             {
@@ -1028,7 +1028,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunI
                 }
 
             stat = masterStmt.Step ();
-            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Step failed for master insert: " << db.GetLastError () << " SQL: " << m_masterInsertSql.c_str ();
+            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Step failed for master insert: " << db.GetLastError ().c_str() << " SQL: " << m_masterInsertSql.c_str ();
             masterStmt.Reset ();
             masterStmt.ClearBindings ();
 
@@ -1040,7 +1040,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunI
                 }
 
             stat = domainStmt.Step ();
-            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Step failed for domain insert: " << db.GetLastError () << " SQL: " << domainInsertSql.c_str ();
+            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Step failed for domain insert: " << db.GetLastError ().c_str() << " SQL: " << domainInsertSql.c_str ();
             domainStmt.Reset ();
             domainStmt.ClearBindings ();
             }
@@ -1081,7 +1081,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunS
 
         Statement stmt;
         auto stat = stmt.Prepare (db, selectSql.c_str ());
-        ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for select: " << db.GetLastError () << " SQL: " << selectSql.c_str ();
+        ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for select: " << db.GetLastError ().c_str() << " SQL: " << selectSql.c_str ();
 
         IterateResultSet (stmt);
         }

@@ -72,12 +72,13 @@ private:
     size_t m_leftOperandExpIndex;
     size_t m_rightOperandExpIndex;
 
-    FinalizeParseStatus CanCompareTypes (ECSqlParseContext&, ComputedExp const& lhs, ComputedExp const& rhs) const;
-
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
+
+    FinalizeParseStatus CanCompareTypes(ECSqlParseContext&, ComputedExp const& lhs, ComputedExp const& rhs) const;
+    static bool ContainsStructArrayProperty(ECClassCR);
 
 public:
     BinaryBooleanExp(std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right);

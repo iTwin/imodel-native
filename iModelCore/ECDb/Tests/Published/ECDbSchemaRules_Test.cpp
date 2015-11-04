@@ -18,8 +18,8 @@ struct ECDbSchemaRules : SchemaImportTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, Casing)
     {
-    std::vector <TestItem> testItems {
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
                  "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -29,7 +29,7 @@ TEST_F(ECDbSchemaRules, Casing)
                  "</ECSchema>",
                  false, "Classes with names differing only by case."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"TestClass\" >"
                  "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
                  "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
@@ -37,7 +37,7 @@ TEST_F(ECDbSchemaRules, Casing)
                  "</ECSchema>",
                  false, "Properties only differing by case within a class."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"TestClass\" >"
                  "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -48,7 +48,7 @@ TEST_F(ECDbSchemaRules, Casing)
                  "</ECSchema>",
                  false, "Properties only differing by case in a sub and base class."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"TestClass\" >"
                  "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -58,7 +58,7 @@ TEST_F(ECDbSchemaRules, Casing)
                  "</ECSchema>",
                  true, "Properties differing only by case in two unrelated classes."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"TestClass\" >"
                  "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -87,7 +87,7 @@ TEST_F(ECDbSchemaRules, Casing)
         };
 
 
-    for (TestItem const& testItem : testItems)
+    for (SchemaItem const& testItem : testItems)
         {
         AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
         }
@@ -99,7 +99,7 @@ TEST_F(ECDbSchemaRules, Casing)
 TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
     {
     {
-    TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "  <ECClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECClass>"
@@ -109,7 +109,7 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
     }
 
     {
-    TestItem testItem("<ECSchema schemaName='TestSchema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "  <ECClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECClass>"
@@ -119,7 +119,7 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
     }
 
     {
-    TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "  <ECClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECClass>"
@@ -129,7 +129,7 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
     }
 
     {
-    TestItem testItem({"<ECSchema schemaName='Schema1' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem testItem({"<ECSchema schemaName='Schema1' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                                  "  <ECClass typeName='TestClass1' >"
                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                  "  </ECClass>"
@@ -148,14 +148,14 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
     }
 
     {
-    TestItem firstSchemaTestItem("<ECSchema schemaName='Schema1' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem firstSchemaTestItem("<ECSchema schemaName='Schema1' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                                  "  <ECClass typeName='TestClass1' >"
                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                  "  </ECClass>"
                                  "</ECSchema>",
                                  true, "");
 
-    TestItem secondSchemaTestItem("<ECSchema schemaName='Schema2' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem secondSchemaTestItem("<ECSchema schemaName='Schema2' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                                   "  <ECClass typeName='TestClass2' >"
                                   "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                   "  </ECClass>"
@@ -177,7 +177,7 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, Instantiability)
     {
-    TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "<ECClass typeName='AbstractClass' isDomainClass='False' isStruct='False' isCustomAttributeClass='False' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "</ECClass>"
@@ -225,15 +225,15 @@ TEST_F(ECDbSchemaRules, Instantiability)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
     {
-    std::vector <TestItem> testItems {
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
                  "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
                  "  </ECClass>"
                  "</ECSchema>",
                  false, "Property is of same type as class."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\" >"
                  "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" isStruct=\"true\" />"
                  "  </ECClass>"
@@ -244,14 +244,14 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
                  "</ECSchema>",
                  false, "Property is of subtype of class."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
                  "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECClass>"
                  "</ECSchema>",
                  false, "Property is array of class."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
                  "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECClass>"
@@ -262,7 +262,7 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
                  "</ECSchema>",
                  false, "Property is of array of subclass of class."),
 
-        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
                  "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECClass>"
@@ -278,7 +278,7 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
         };
 
 
-    for (TestItem const& testItem : testItems)
+    for (SchemaItem const& testItem : testItems)
         {
         AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
         }
@@ -289,8 +289,8 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, Relationship)
     {
-    std::vector <TestItem> testItems {
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "  <ECClass typeName='A'>"
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECClass>"
@@ -308,7 +308,7 @@ TEST_F(ECDbSchemaRules, Relationship)
         "</ECSchema>",
         true, "Will fail in the future as in a ECRelationshipClass isStruct should not be set to true."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "  <ECClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
@@ -326,7 +326,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "</ECSchema>",
                  true, "Will fail in the future as in a ECRelationshipClass isCustomAttributeClass must not be set to true."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "  <ECClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
@@ -352,7 +352,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "  <ECClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
@@ -378,7 +378,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "  <ECClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
@@ -405,7 +405,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                     "  <ECClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECClass>"
@@ -422,7 +422,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                     "</ECSchema>",
                     false, "RelationshipClass constraint must always specify at least one class."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                     "  <ECClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECClass>"
@@ -440,7 +440,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                     "</ECSchema>",
                     true, "Succeeds right now, but will fail in the future as cardinality should always be specified in RelationshipClass constraint."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                     "  <ECClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECClass>"
@@ -455,12 +455,12 @@ TEST_F(ECDbSchemaRules, Relationship)
                     "</ECSchema>",
                     false, "RelationshipClass constraint must not be left out."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECRelationshipClass typeName='Rel' isDomainClass='False' isStruct='False' isCustomAttribute='False' />"
                 "</ECSchema>",
                 true, "For abstract relationship class no constraints must be specified."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
@@ -478,7 +478,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "</ECSchema>",
                 false, "For abstract relationship class no constraints must be specified."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
@@ -493,7 +493,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "</ECSchema>",
                 false, "For abstract relationship class no constraints must be specified."),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
@@ -508,7 +508,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "</ECSchema>",
                 false, "For abstract relationship class no constraints must be specified.")};
 
-    for (TestItem const& testItem : testItems)
+    for (SchemaItem const& testItem : testItems)
         {
         AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
         }
@@ -520,8 +520,8 @@ TEST_F(ECDbSchemaRules, Relationship)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
     {
-    std::vector <TestItem> testItems {
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" >"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -543,7 +543,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "</ECSchema>",
                  false, "RelationshipClass with non-relationship base class is not expected to be supported."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" >"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -565,7 +565,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "</ECSchema>",
                  false, "Non-relationship class with a relationship base class is not expected to be supported."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" isDomainClass='True'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -576,7 +576,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "</ECSchema>",
                  false, "A domain base class must not have struct subclasses."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" isDomainClass='True'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -591,7 +591,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "</ECSchema>",
                  false, "A domain base class must not have struct subclasses."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" isDomainClass='True'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -602,7 +602,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "</ECSchema>",
                  false, "A domain base class must not have struct subclasses, even if the subclass is a struct and a domain class at the same time."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -613,7 +613,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "</ECSchema>",
                  false, "A struct base class must have only struct subclasses."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
@@ -629,7 +629,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  false, "A struct base class must have only struct subclasses.")
         };
 
-    for (TestItem const& testItem : testItems)
+    for (SchemaItem const& testItem : testItems)
         {
         AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
         }
@@ -640,8 +640,8 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
     {
-    std::vector <TestItem> testItems {
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "  <ECClass typeName='Authority' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "  </ECClass>"
@@ -669,7 +669,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "</ECSchema>",
                  true, ""),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "  <ECClass typeName='Authority' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "  </ECClass>"
@@ -697,7 +697,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "</ECSchema>",
                  false, "Struct property not allowed as key property"),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "  <ECClass typeName='Authority' >"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
@@ -725,7 +725,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "</ECSchema>",
                  false, "Property does not exist"),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "  <ECClass typeName='Authority' >"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
@@ -753,7 +753,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "</ECSchema>",
                  false, "Property path does not exist"),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECClass typeName='Authority' >"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
@@ -781,7 +781,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "</ECSchema>",
                 false, "Property path does not exist"),
 
-    TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "  <ECClass typeName='Authority' >"
             "    <ECProperty propertyName='Name' typeName='string' />"
             "  </ECClass>"
@@ -809,7 +809,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
             "</ECSchema>",
              false, "Property path does not exist"),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECClass typeName='Authority' >"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
@@ -838,7 +838,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "</ECSchema>",
                 false, "Multiple key properties are not supported"),
 
-        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECClass typeName='Authority' >"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
@@ -868,7 +868,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 false, "Multiple classes in a constraint with key properties are not supported")
         };
 
-    for (TestItem const& testItem : testItems)
+    for (SchemaItem const& testItem : testItems)
         {
         AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
         }

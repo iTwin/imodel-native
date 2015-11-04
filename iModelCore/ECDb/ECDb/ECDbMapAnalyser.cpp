@@ -1403,7 +1403,8 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
             }
 
         select.Append (" FROM ").AppendEscaped (firstChildMap->GetTable ().GetName ().c_str ());
-        if (auto classIdColumn = hp.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
+        ECDbSqlColumn const* classIdColumn = nullptr;
+        if (hp.GetTable ().TryGetECClassIdColumn(classIdColumn))
             {
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted && hp.NeedsECClassIdFilter ())
                 {

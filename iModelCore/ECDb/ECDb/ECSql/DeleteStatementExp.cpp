@@ -15,14 +15,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-DeleteStatementExp::DeleteStatementExp (unique_ptr<ClassRefExp> classNameExp, unique_ptr<WhereExp> whereClauseExp)
-    : Exp (), m_whereClauseIndex (UNSET_CHILDINDEX)
+DeleteStatementExp::DeleteStatementExp(unique_ptr<ClassRefExp> classNameExp, unique_ptr<WhereExp> whereClauseExp, unique_ptr<OptionsExp> optionsClauseExp)
+    : Exp(), m_whereClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
-    BeAssert (classNameExp->GetType () == Exp::Type::ClassName);
-    m_classNameExpIndex = AddChild (move (classNameExp));
+    BeAssert(classNameExp->GetType() == Exp::Type::ClassName);
+    m_classNameExpIndex = AddChild(move(classNameExp));
 
     if (whereClauseExp != nullptr)
-        m_whereClauseIndex = static_cast<int> (AddChild (move (whereClauseExp)));
+        m_whereClauseIndex = (int) AddChild(move(whereClauseExp));
+
+    if (optionsClauseExp != nullptr)
+        m_optionsClauseIndex = (int) AddChild(move(optionsClauseExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -52,20 +55,31 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ClassNameExp const* DeleteStatementExp::GetClassNameExp () const
+ClassNameExp const* DeleteStatementExp::GetClassNameExp() const
     {
-    return GetChild<ClassNameExp> (m_classNameExpIndex);
+    return GetChild<ClassNameExp>(m_classNameExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-WhereExp const* DeleteStatementExp::GetOptWhereClauseExp () const
+WhereExp const* DeleteStatementExp::GetWhereClauseExp() const
     {
     if (m_whereClauseIndex < 0)
         return nullptr;
 
-    return GetChild<WhereExp> (static_cast<size_t> (m_whereClauseIndex));
+    return GetChild<WhereExp>((size_t) m_whereClauseIndex);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   10/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+OptionsExp const* DeleteStatementExp::GetOptionsClauseExp() const
+    {
+    if (m_optionsClauseIndex < 0)
+        return nullptr;
+
+    return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -77,13 +91,16 @@ Utf8String DeleteStatementExp::_ToECSql () const
 
     ecsql.append (GetClassNameExp ()->ToECSql ());
 
-    auto whereClauseExp = GetOptWhereClauseExp ();
-    if (whereClauseExp != nullptr)
-        ecsql.append (" ").append (whereClauseExp->ToECSql ());
+    Exp const* exp = GetWhereClauseExp ();
+    if (exp != nullptr)
+        ecsql.append (" ").append (exp->ToECSql ());
+
+    exp = GetOptionsClauseExp();
+    if (exp != nullptr)
+        ecsql.append(" ").append(exp->ToECSql());
 
     return ecsql;
     }
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
