@@ -942,3 +942,69 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
     EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
     }
+
+BEGIN_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DynamicTxnsTest : TransactionManagerTests
+{
+    DEFINE_T_SUPER(TransactionManagerTests);
+
+    void SetupProject(WCharCP testFileName)
+        {
+        T_Super::SetupProject(L"3dMetricGeneral.idgndb", testFileName, BeSQLite::Db::OpenMode::ReadWrite);
+        m_db->Txns().EnableTracking(true);
+        }
+};
+
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DynamicTxnsTest, BasicInvariants)
+    {
+    SetupProject(L"BasicInvariants.dgndb");
+
+    // IsInDynamics accurately reflects pushing and popping of dynamic operations
+    DgnDbR db = *m_db;
+    auto& txns = db.Txns();
+    EXPECT_FALSE(txns.IsInDynamics());
+    txns.BeginDynamicOperation();
+    EXPECT_TRUE(txns.IsInDynamics());
+    txns.BeginDynamicOperation();
+    EXPECT_TRUE(txns.IsInDynamics());
+    txns.EndDynamicOperation();
+    EXPECT_TRUE(txns.IsInDynamics());
+    txns.EndDynamicOperation();
+    EXPECT_FALSE(txns.IsInDynamics());
+
+    // Abandoning changes while in dynamics cancels dynamics
+    txns.BeginDynamicOperation();
+    EXPECT_TRUE(txns.IsInDynamics());
+    db.AbandonChanges();
+    EXPECT_FALSE(txns.IsInDynamics());
+
+    BeTest::SetFailOnAssert(false);
+
+    // Saving changes is not permitted during dynamics
+    txns.BeginDynamicOperation();
+    EXPECT_FALSE(BE_SQLITE_OK == db.SaveChanges());
+    txns.EndDynamicOperation();
+    EXPECT_EQ(BE_SQLITE_OK, db.SaveChanges());
+
+    // Cannot begin or end multi-txn operations during dynamics
+    txns.BeginDynamicOperation();
+    EXPECT_EQ(DgnDbStatus::InDynamicTransaction, txns.BeginMultiTxnOperation());
+    txns.EndDynamicOperation();
+    EXPECT_EQ(DgnDbStatus::Success, txns.BeginMultiTxnOperation());
+    txns.BeginDynamicOperation();
+    EXPECT_EQ(DgnDbStatus::InDynamicTransaction, txns.EndMultiTxnOperation());
+    txns.EndDynamicOperation();
+    EXPECT_EQ(DgnDbStatus::Success, txns.EndMultiTxnOperation());
+
+    BeTest::SetFailOnAssert(true);
+    }
+
