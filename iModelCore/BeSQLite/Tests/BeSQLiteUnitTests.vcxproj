@@ -52,17 +52,17 @@
     <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;BENTLEY_WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)\Winx64\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\VendorAPI\;$(OutRoot)\Winx64\build\UnitTests\BeSQLite\PublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\NonPublished\PublicApi\NonPublished\BeSQLite\;$(ProjectDir)\NonPublished\;$(OutRoot)\Winx64\build\UnitTests\BeSQLite\NonPublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\BeGTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;BENTLEY_WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)\Winx64\BuildContexts\BeSQLiteUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLiteUnitTests\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
