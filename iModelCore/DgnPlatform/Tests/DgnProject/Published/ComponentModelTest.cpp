@@ -524,7 +524,7 @@ void ComponentModelTest::SimulateClient()
     Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
 
     PhysicalModelPtr catalogModel;
-    createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+    createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
     // Now start placing instances of Widgets
     Json::Value wsln1(Json::objectValue);
