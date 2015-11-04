@@ -136,9 +136,9 @@ struct          MethodReference : RefCountedBase
 protected:
                                 MethodReference() {}
     virtual bool                _CanReuseResult ()               { return false; }
-    virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
-    virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
-    virtual ExpressionStatus    _InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
+    virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) { return ExpressionStatus::NotImpl; }
+    virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) { return ExpressionStatus::NotImpl; }
+    virtual ExpressionStatus    _InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments) { return ExpressionStatus::NotImpl; }
     virtual bool                _SupportsStaticMethodCall () const = 0;
     virtual bool                _SupportsInstanceMethodCall () const = 0;
     virtual bool                _SupportsValueListMethodCall () const = 0;
@@ -232,13 +232,13 @@ protected:
 
     virtual                     ~ExpressionContext () {}
                                 ExpressionContext(ExpressionContextP outer) : m_outer(outer), m_options (EVALOPT_Legacy) { }
-    virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) { return ExprStatus_UnknownSymbol; }
+    virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) { return ExpressionStatus::UnknownSymbol; }
     virtual bool                _IsNamespace() const { return false; }
     //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
-    //  virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExprStatus_NotImpl; }
+    //  virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExpressionStatus::NotImpl; }
     //  The globalContext may be used to find instance methods
     virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
-    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) { return ExprStatus_NotImpl; }
+    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) { return ExpressionStatus::NotImpl; }
 
 public:
 
@@ -433,7 +433,7 @@ private:
 protected:
     Symbol (Utf8CP name) : m_name (name) { }
 
-    virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const     { return ExprStatus_MethodRequired; };
+    virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const     { return ExpressionStatus::MethodRequired; };
     virtual ExpressionStatus         _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
     virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
 
@@ -491,11 +491,11 @@ private:
 protected:
     virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
-                                                { return ExprStatus_NeedsLValue; }
+                                                { return ExpressionStatus::NeedsLValue; }
     virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const
         {
         result = m_methodReference.get();
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
 
     MethodSymbol(Utf8CP name, MethodReferenceR methodReference);
@@ -554,7 +554,7 @@ protected:
     ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
         {
-        return ExprStatus_NeedsLValue;
+        return ExpressionStatus::NeedsLValue;
         }
 
 /*__PUBLISH_SECTION_START__*/
@@ -797,7 +797,7 @@ protected:
     virtual                         ~ValueSymbol();
     virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
-                                                { return ExprStatus_NeedsLValue; }
+                                                { return ExpressionStatus::NeedsLValue; }
 public:
     ECOBJECTS_EXPORT static ValueSymbolPtr  Create (Utf8CP name, EvaluationResultCR value);
 
@@ -975,7 +975,7 @@ protected:
     virtual Utf8String  _ToString() const = 0;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context)
-        { return ExprStatus_NotImpl; }
+        { return ExpressionStatus::NotImpl; }
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_Unrecognized; }
 

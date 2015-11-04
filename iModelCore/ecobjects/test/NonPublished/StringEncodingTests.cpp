@@ -48,7 +48,7 @@ struct StringEncodingTests : ECTestFixture
         {
         ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
         ECSchemaPtr schema;
-        EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *schemaContext));  
+        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *schemaContext));  
         }
 
     struct          Utf16String
@@ -101,11 +101,11 @@ struct StringEncodingTests : ECTestFixture
         {
         StandaloneECInstancePtr instance = CreateInstance ("TestClass", encoding);
         ECValue v (strVal);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("String", v));
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("Struct.Name", v));
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->AddArrayElements ("StringArray", 5));
+        EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("String", v));
+        EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("Struct.Name", v));
+        EXPECT_EQ (ECObjectsStatus::Success, instance->AddArrayElements ("StringArray", 5));
         for (uint32_t i = 0; i < 3; i++)
-            EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("StringArray", v, i));
+            EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("StringArray", v, i));
 
         EXPECT_EQ (encoding, instance->GetStringEncoding());
         return instance;
@@ -114,15 +114,15 @@ struct StringEncodingTests : ECTestFixture
     StandaloneECInstancePtr CreateStructInstance (ECDBuffer::StringEncoding encoding, Utf8CP name, IECInstanceR parent)
         {
         ECValue v;
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.GetValue (v, "StructArray"));
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.AddArrayElements ("StructArray", 1));
+        EXPECT_EQ (ECObjectsStatus::Success, parent.GetValue (v, "StructArray"));
+        EXPECT_EQ (ECObjectsStatus::Success, parent.AddArrayElements ("StructArray", 1));
 
         StandaloneECInstancePtr instance = CreateInstance ("Manufacturer", encoding);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("Name", ECValue (name)));
+        EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("Name", ECValue (name)));
 
         ECValue structV;
         structV.SetStruct (instance.get());
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.SetValue ("StructArray", structV, v.GetArrayInfo().GetCount()));
+        EXPECT_EQ (ECObjectsStatus::Success, parent.SetValue ("StructArray", structV, v.GetArrayInfo().GetCount()));
         EXPECT_EQ (encoding, instance->GetStringEncoding());
         return instance;
         }
@@ -133,7 +133,7 @@ struct StringEncodingTests : ECTestFixture
             {
             ECValueCR aV = aVal.GetValue();
             ECValue bV;
-            EXPECT_EQ (ECOBJECTS_STATUS_Success, b->GetValueUsingAccessor (bV, aVal.GetValueAccessor()));
+            EXPECT_EQ (ECObjectsStatus::Success, b->GetValueUsingAccessor (bV, aVal.GetValueAccessor()));
             if (aVal.HasChildValues())
                 {
                 if (!CompareInstances (*aVal.GetChildValues(), b))
@@ -235,7 +235,7 @@ TEST_F (StringEncodingTests, CopyBuffersWithDifferentEncodings)
     EXPECT_EQ (ECDBuffer::StringEncoding_Utf16, b->GetStringEncoding());
 
     // Copying instances copies the entire buffer - including the encoding flag and the strings in their original encodings.
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, b->CopyValues (*a));
+    EXPECT_EQ (ECObjectsStatus::Success, b->CopyValues (*a));
 
     // a and b should now have the same encoding
     EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, b->GetStringEncoding());

@@ -298,13 +298,13 @@ Utf8StringCR ECSchema::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECNameValidation::EncodeToValidName (m_key.m_schemaName, name);
     if (!m_hasExplicitDisplayLabel)
         ECNameValidation::DecodeFromValidName (m_displayLabel, m_key.m_schemaName);
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -320,9 +320,9 @@ Utf8StringCR ECSchema::GetNamespacePrefix () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetNamespacePrefix (Utf8StringCR namespacePrefix)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     m_namespacePrefix = namespacePrefix;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -346,10 +346,10 @@ Utf8StringCR ECSchema::GetInvariantDescription() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDescription (Utf8StringCR description)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_description = description;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,11 +373,11 @@ Utf8StringCR ECSchema::GetInvariantDisplayLabel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetDisplayLabel (Utf8StringCR displayLabel)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_displayLabel = displayLabel;
     m_hasExplicitDisplayLabel = true;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -517,10 +517,10 @@ uint32_t ECSchema::GetVersionMajor () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionMajor (const uint32_t versionMajor)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_key.m_versionMajor = versionMajor;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -538,10 +538,10 @@ uint32_t ECSchema::GetVersionMinor
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_key.m_versionMinor = versionMinor;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -587,11 +587,11 @@ ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
     {
     ClassMap::iterator iter = m_classMap.find (ecClass.GetName().c_str());
     if (iter == m_classMap.end() || iter->second != &ecClass)
-        return ECOBJECTS_STATUS_ClassNotFound;
+        return ECObjectsStatus::ClassNotFound;
 
     m_classMap.erase (iter);
     delete &ecClass;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -601,21 +601,21 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
     {
     ClassMap::iterator iter = m_classMap.find (ecClass.GetName().c_str());
     if (iter == m_classMap.end() || iter->second != &ecClass)
-        return ECOBJECTS_STATUS_ClassNotFound;
+        return ECObjectsStatus::ClassNotFound;
 
     ECClassP pClass = &ecClass;
     m_classMap.erase (iter);
     ECObjectsStatus renameStatus = ecClass.SetName (newName);
     ECObjectsStatus addStatus = AddClass (pClass, false);
-    return ECOBJECTS_STATUS_Success != renameStatus ? renameStatus : addStatus;
+    return ECObjectsStatus::Success != renameStatus ? renameStatus : addStatus;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddClass (ECClassP& pClass, bool deleteClassIfDuplicate)
+ECObjectsStatus ECSchema::AddClass (ECClassP pClass, bool deleteClassIfDuplicate)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     bpair <ClassMap::iterator, bool> resultPair;
     resultPair = m_classMap.insert (bpair<Utf8CP, ECClassP> (pClass->GetName().c_str(), pClass));
@@ -629,22 +629,22 @@ ECObjectsStatus ECSchema::AddClass (ECClassP& pClass, bool deleteClassIfDuplicat
             pClass = NULL;
             }
 
-        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        return ECObjectsStatus::NamedItemAlreadyExists;
         }
     //DebugDump(); wprintf(L"\n");
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateClass (ECClassP& pClass, Utf8StringCR name)
+ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringCR name)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    pClass = new ECClass(*this);
+    pClass = new ECEntityClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         {
         delete pClass;
         pClass = NULL;
@@ -653,6 +653,45 @@ ECObjectsStatus ECSchema::CreateClass (ECClassP& pClass, Utf8StringCR name)
 
     return AddClass (pClass);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CreateStructClass (ECStructClassP& pClass, Utf8StringCR name)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    pClass = new ECStructClass(*this);
+    ECObjectsStatus status = pClass->SetName (name);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete pClass;
+        pClass = NULL;
+        return status;
+        }
+
+    return AddClass (pClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CreateCustomAttributeClass (ECCustomAttributeClassP& pClass, Utf8StringCR name)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    pClass = new ECCustomAttributeClass(*this);
+    ECObjectsStatus status = pClass->SetName (name);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete pClass;
+        pClass = NULL;
+        return status;
+        }
+
+    return AddClass (pClass);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
@@ -663,19 +702,21 @@ ECClassP& targetClass,
 ECClassCR sourceClass
 )
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     // first make sure the class doesn't already exist in the schema
     if (NULL != this->GetClassCP(sourceClass.GetName().c_str()))
-        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        return ECObjectsStatus::NamedItemAlreadyExists;
 
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
+    ECStructClassCP sourceAsStructClass = sourceClass.GetStructClassCP();
+    ECCustomAttributeClassCP sourceAsCAClass = sourceClass.GetCustomAttributeClassCP();
     if (NULL != sourceAsRelationshipClass)
         {
         ECRelationshipClassP newRelationshipClass;
         status = this->CreateRelationshipClass(newRelationshipClass, sourceClass.GetName());
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;
         newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
         newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
@@ -684,19 +725,37 @@ ECClassCR sourceClass
         sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget());
         targetClass = newRelationshipClass;
         }
+    else if (nullptr != sourceAsStructClass)
+        {
+        ECStructClassP newStructClass;
+        status = this->CreateStructClass(newStructClass, sourceClass.GetName());
+        if (ECObjectsStatus::Success != status)
+            return status;
+        // ECX_WIP: Set struct class properties
+        targetClass = newStructClass;
+        }
+    else if (nullptr != sourceAsCAClass)
+        {
+        ECCustomAttributeClassP newCAClass;
+        status = this->CreateCustomAttributeClass(newCAClass, sourceClass.GetName());
+        if (ECObjectsStatus::Success != status)
+            return status;
+        // ECX_WIP: Set CA class properties
+        targetClass = newCAClass;
+        }
     else
         {
-        status = CreateClass(targetClass, sourceClass.GetName());
-        if (ECOBJECTS_STATUS_Success != status)
+        ECEntityClassP newEntityClass;
+        status = CreateEntityClass(newEntityClass, sourceClass.GetName());
+        if (ECObjectsStatus::Success != status)
             return status;
+        targetClass = newEntityClass;
         }
 
-    targetClass->SetIsCustomAttributeClass(sourceClass.GetIsCustomAttributeClass());
-    targetClass->SetIsDomainClass(sourceClass.GetIsDomainClass());
-    targetClass->SetIsStruct(sourceClass.GetIsStruct());
     if (sourceClass.GetIsDisplayLabelDefined())
         targetClass->SetDisplayLabel(sourceClass.GetInvariantDisplayLabel());
     targetClass->SetDescription(sourceClass.GetInvariantDescription());
+    targetClass->SetClassModifier(sourceClass.GetClassModifier());
 
     // Set the base classes on the target class from the source class
     // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
@@ -711,7 +770,7 @@ ECClassCR sourceClass
             continue;
         ECPropertyP destProperty;
         status = targetClass->CopyProperty(destProperty, sourceProperty, true);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;
         }
 
@@ -723,11 +782,11 @@ ECClassCR sourceClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass, Utf8StringCR name)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECRelationshipClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         {
         delete pClass;
         pClass = NULL;
@@ -741,10 +800,10 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
         delete pClass;
         pClass = NULL;
         LOG.warningv (L"Cannot create relationship class '%ls' because it already exists in the schema", name.c_str());
-        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -765,21 +824,21 @@ Utf8String ECSchema::GetFullSchemaName () const
 ECObjectsStatus ECSchema::ParseSchemaFullName (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringCR  fullName)
     {
     if (fullName.empty())
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
     Utf8CP fullNameCP = fullName.c_str();
-    Utf8CP firstDot = strchr (fullNameCP, L'.');
+    Utf8CP firstDot = strchr (fullNameCP, '.');
     if (NULL == firstDot)
         {
         LOG.errorv ("Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     size_t nameLen = firstDot - fullNameCP;
     if (nameLen < 1)
         {
         LOG.errorv ("Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName.c_str());
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     schemaName.assign (fullNameCP, nameLen);
@@ -793,20 +852,20 @@ ECObjectsStatus ECSchema::ParseSchemaFullName (Utf8StringR schemaName, uint32_t&
 ECObjectsStatus ECSchema::ParseSchemaFullName (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP fullName)
     {
     if (NULL == fullName || '\0' == *fullName)
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
-    Utf8CP firstDot = strchr (fullName, L'.');
+    Utf8CP firstDot = strchr (fullName, '.');
     if (NULL == firstDot)
         {
         LOG.errorv ("Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     size_t nameLen = firstDot - fullName;
     if (nameLen < 1)
         {
         LOG.errorv ("Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     schemaName.assign (fullName, nameLen);
@@ -833,20 +892,20 @@ ECObjectsStatus ECSchema::ParseVersionString (uint32_t& versionMajor, uint32_t& 
     versionMajor = DEFAULT_VERSION_MAJOR;
     versionMinor = DEFAULT_VERSION_MINOR;
     if (NULL == versionString || '\0' == *versionString)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
 
     Utf8CP theDot = strchr (versionString, L'.');
     if (NULL == theDot)
         {
         LOG.errorv ("Invalid ECSchema Version String: '%s' does not contain a '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     size_t majorLen = theDot - versionString;
     if (majorLen < 1 || majorLen > 3)
         {
         LOG.errorv ("Invalid ECSchema Version String: '%s' does not have 1-3 numbers before the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     Utf8CP endDot = strchr (theDot+1, L'.');
@@ -854,7 +913,7 @@ ECObjectsStatus ECSchema::ParseVersionString (uint32_t& versionMajor, uint32_t& 
     if (minorLen < 1 || minorLen > 3)
         {
         LOG.errorv ("Invalid ECSchema Version String: '%s' does not have 1-3 numbers after the '.'!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     Utf8P end = NULL;
@@ -862,7 +921,7 @@ ECObjectsStatus ECSchema::ParseVersionString (uint32_t& versionMajor, uint32_t& 
     if (versionString == end)
         {
         LOG.errorv ("Invalid ECSchema Version String: '%s' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
     else
         {
@@ -873,14 +932,14 @@ ECObjectsStatus ECSchema::ParseVersionString (uint32_t& versionMajor, uint32_t& 
     if (&theDot[1] == end)
         {
         LOG.errorv ("Invalid ECSchema Version String: '%s' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
     else
         {
         versionMinor = localMinor;
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -888,17 +947,17 @@ ECObjectsStatus ECSchema::ParseVersionString (uint32_t& versionMajor, uint32_t& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetVersionFromString (Utf8CP versionString)
     {
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     uint32_t versionMajor;
     uint32_t versionMinor;
     ECObjectsStatus status;
-    if ((ECOBJECTS_STATUS_Success != (status = ParseVersionString (versionMajor, versionMinor, versionString))) ||
-        (ECOBJECTS_STATUS_Success != (status = this->SetVersionMajor (versionMajor))) ||
-        (ECOBJECTS_STATUS_Success != (status = this->SetVersionMinor (versionMinor))))
+    if ((ECObjectsStatus::Success != (status = ParseVersionString (versionMajor, versionMinor, versionString))) ||
+        (ECObjectsStatus::Success != (status = this->SetVersionMajor (versionMajor))) ||
+        (ECObjectsStatus::Success != (status = this->SetVersionMinor (versionMinor))))
         return status;
     else
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -910,15 +969,15 @@ ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, Utf8StringCR sch
 
     ECObjectsStatus status;
 
-    if (ECOBJECTS_STATUS_Success != (status = schemaOut->SetName (schemaName)) ||
-        ECOBJECTS_STATUS_Success != (status = schemaOut->SetVersionMajor (versionMajor)) ||
-        ECOBJECTS_STATUS_Success != (status = schemaOut->SetVersionMinor (versionMinor)))
+    if (ECObjectsStatus::Success != (status = schemaOut->SetName (schemaName)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor (versionMajor)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)))
         {
         schemaOut = NULL;
         return status;
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -929,9 +988,9 @@ ECObjectsStatus ECSchema::CopySchema
 ECSchemaPtr& schemaOut
 ) const
     {
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName(), GetVersionMajor(), GetVersionMinor());
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
 
     schemaOut->SetDescription(m_description);
@@ -946,7 +1005,7 @@ ECSchemaPtr& schemaOut
         {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass);
-        if (ECOBJECTS_STATUS_Success != status && ECOBJECTS_STATUS_NamedItemAlreadyExists != status)
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
 
@@ -979,16 +1038,16 @@ ECObjectsStatus ECSchema::ResolveNamespacePrefix (ECSchemaCR schema, Utf8StringR
     {
     namespacePrefix = EMPTY_STRING;
     if (&schema == this)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
 
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
     if (schemaIterator != m_referencedSchemaNamespaceMap.end())
         {
         namespacePrefix = schemaIterator->second;
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
 
-    return ECOBJECTS_STATUS_SchemaNotFound;
+    return ECObjectsStatus::SchemaNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1041,7 +1100,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR
     {
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
     if (m_refSchemaList.end () != m_refSchemaList.find (refSchemaKey))
-        return ECOBJECTS_STATUS_NamedItemAlreadyExists;
+        return ECObjectsStatus::NamedItemAlreadyExists;
 
     Utf8String prefix(namespacePrefix);
     if (prefix.length() == 0)
@@ -1087,11 +1146,11 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR
     if (AddingSchemaCausedCycles ())
         {
         m_refSchemaList.erase (refSchemaKey);
-        return ECOBJECTS_STATUS_SchemaHasReferenceCycle;
+        return ECObjectsStatus::SchemaHasReferenceCycle;
         }
 
     m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const Utf8String> (&refSchema, prefix));
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1101,7 +1160,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
     {
     ECSchemaReferenceList::iterator schemaIterator = m_refSchemaList.find (refSchema.GetSchemaKey());
     if (schemaIterator == m_refSchemaList.end())
-        return ECOBJECTS_STATUS_SchemaNotFound;
+        return ECObjectsStatus::SchemaNotFound;
 
     // Can only remove the reference if nothing actually references it.
 
@@ -1113,7 +1172,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
             {
             if ((ECSchemaP) &(baseClass->GetSchema()) == foundSchema.get())
                 {
-                return ECOBJECTS_STATUS_SchemaInUse;
+                return ECObjectsStatus::SchemaInUse;
                 }
             }
 
@@ -1125,14 +1184,14 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 {
                 if ((ECSchemaP) &(target->GetClass().GetSchema()) == foundSchema.get())
                     {
-                    return ECOBJECTS_STATUS_SchemaInUse;
+                    return ECObjectsStatus::SchemaInUse;
                     }
                 }
             for (auto source : relClass->GetSource().GetConstraintClasses())
                 {
                 if ((ECSchemaP) &(source->GetClass().GetSchema()) == foundSchema.get())
                     {
-                    return ECOBJECTS_STATUS_SchemaInUse;
+                    return ECObjectsStatus::SchemaInUse;
                     }
                 }
             }
@@ -1145,9 +1204,9 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 {
                 typeClass = &(prop->GetAsStructProperty()->GetType());
                 }
-            else if (prop->GetIsArray())
+            else if (prop->GetIsStructArray())
                 {
-                typeClass = prop->GetAsArrayProperty()->GetStructElementType();
+                typeClass = prop->GetAsStructArrayProperty()->GetStructElementType();
                 }
             else
                 {
@@ -1158,7 +1217,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
             if (this->GetName().compare(typeClass->GetSchema().GetName()) == 0 && this->GetVersionMajor() == typeClass->GetSchema().GetVersionMajor() &&
                 this->GetVersionMinor() == typeClass->GetSchema().GetVersionMinor())
                 continue;
-            return ECOBJECTS_STATUS_SchemaInUse;
+            return ECObjectsStatus::SchemaInUse;
             }
         }
 
@@ -1167,7 +1226,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
     if (iterator != m_referencedSchemaNamespaceMap.end())
         m_referencedSchemaNamespaceMap.erase(iterator);
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1244,7 +1303,7 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (uint32_t& versionMinor, WChar
         {
         BeAssert (s_noAssert);
         LOG.errorv (L"Invalid ECSchema FileName String: '%ls' does not contain the suffix '.ecschema.xml'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION_W, filePath);
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     Utf8String     versionString;
@@ -1272,7 +1331,7 @@ ECObjectsStatus GetSchemaFileName (WString& fullFileName, uint32_t& foundMinorVe
         if (!useLatestCompatibleMatch)
             {
             fullFileName = fileName;
-            return ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
             }
 
         if (fullFileName.empty())
@@ -1282,7 +1341,7 @@ ECObjectsStatus GetSchemaFileName (WString& fullFileName, uint32_t& foundMinorVe
             continue;
             }
 
-        if (ECOBJECTS_STATUS_Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
+        if (ECObjectsStatus::Success != GetMinorVersionFromSchemaFileName (currentMinorVersion, fileName))
             continue;
 
         if (currentMinorVersion > foundMinorVersion)
@@ -1293,9 +1352,9 @@ ECObjectsStatus GetSchemaFileName (WString& fullFileName, uint32_t& foundMinorVe
         }
 
     if (fullFileName.empty())
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
@@ -1318,7 +1377,7 @@ bvector<WString>&               searchPaths
 
         //Finds latest
         SchemaKey foundKey(key);
-        if (ECOBJECTS_STATUS_Success != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
+        if (ECObjectsStatus::Success != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
             continue;
 
         ECSchemaPtr schemaOut = NULL;
@@ -1350,7 +1409,7 @@ bvector<WString>&               searchPaths
                 }
             }
 
-        if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile (schemaOut, fullFileName.c_str(), schemaContext))
             continue;
 
         LOG.debugv (L"Located %ls...", fullFileName.c_str());
@@ -1402,7 +1461,7 @@ bvector<ECSchemaP>& supplementalSchemas
         WCharCP     fileName = filePath.GetName();
         ECSchemaPtr schemaOut = NULL;
 
-        if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fileName, schemaContext))
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile (schemaOut, fileName, schemaContext))
             continue;
         supplementalSchemas.push_back(schemaOut.get());
         }
@@ -1631,7 +1690,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
     LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
     schemaOut = NULL;
 
-    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    SchemaReadStatus status = SchemaReadStatus::Success;
 
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, ecSchemaXmlFile);
@@ -1639,7 +1698,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         {
         BeAssert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
-        return SCHEMA_READ_STATUS_FailedToParseXml;
+        return SchemaReadStatus::FailedToParseXml;
         }
 
     AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
@@ -1647,10 +1706,10 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
 
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+    if (SchemaReadStatus::DuplicateSchema == status)
         return status; // already logged
 
-    if (SCHEMA_READ_STATUS_Success != status)
+    if (SchemaReadStatus::Success != status)
         LOG.errorv (L"Failed to read XML file: %ls", ecSchemaXmlFile);
     else
         {
@@ -1675,7 +1734,7 @@ ECSchemaReadContextR schemaContext
     StopWatch timer(L"", true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
     schemaOut = NULL;
-    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    SchemaReadStatus status = SchemaReadStatus::Success;
 
     size_t stringByteCount = strlen (ecSchemaXml) * sizeof(Utf8Char);
 
@@ -1686,16 +1745,16 @@ ECSchemaReadContextR schemaContext
         {
         BeAssert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
-        return SCHEMA_READ_STATUS_FailedToParseXml;
+        return SchemaReadStatus::FailedToParseXml;
         }
 
     uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+    if (SchemaReadStatus::DuplicateSchema == status)
         return status; // already logged
 
-    if (SCHEMA_READ_STATUS_Success != status)
+    if (SchemaReadStatus::Success != status)
         {
         Utf8Char first200Bytes[201];
 
@@ -1726,7 +1785,7 @@ ECSchemaReadContextR schemaContext
     StopWatch timer(L"", true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
     schemaOut = NULL;
-    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    SchemaReadStatus status = SchemaReadStatus::Success;
 
     BeXmlStatus xmlStatus;
     size_t stringSize = wcslen (ecSchemaXml) * sizeof(WChar);
@@ -1736,16 +1795,16 @@ ECSchemaReadContextR schemaContext
         {
         BeAssert (s_noAssert);
         LogXmlLoadError (xmlDom.get());
-        return SCHEMA_READ_STATUS_FailedToParseXml;
+        return SchemaReadStatus::FailedToParseXml;
         }
 
     uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+    if (SchemaReadStatus::DuplicateSchema == status)
         return status; // already logged
 
-    if (SCHEMA_READ_STATUS_Success != status)
+    if (SchemaReadStatus::Success != status)
         {
         WChar first200Characters[201];
         wcsncpy (first200Characters, ecSchemaXml, 200);
@@ -1787,7 +1846,7 @@ IStreamP                        ecSchemaXmlStream,
 ECSchemaReadContextR schemaContext
 )
     {
-    SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
+    SchemaReadStatus status = SchemaReadStatus::Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;
     VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_READ_STATUS_FailedToInitializeMsmxl);
@@ -1798,17 +1857,17 @@ ECSchemaReadContextR schemaContext
     if (returnCode != VARIANT_TRUE)
         {
         LogXmlLoadError (xmlDom.get());
-        return SCHEMA_READ_STATUS_FailedToParseXml;
+        return SchemaReadStatus::FailedToParseXml;
         }
 
     status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
-    if (SCHEMA_READ_STATUS_DuplicateSchema == status)
+    if (SchemaReadStatus::DuplicateSchema == status)
         return status; // already logged
 
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         LOG.errorv (L"Failed to read XML from stream");
     return status;
-    return SCHEMA_READ_STATUS_FailedToParseXml;
+    return SchemaReadStatus::FailedToParseXml;
     }
 #endif //defined (NEEDSWORK_LIBXML)
 
@@ -1823,12 +1882,12 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
 
     SchemaWriteStatus status;
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this);
-    if (SCHEMA_WRITE_STATUS_Success != (status = schemaWriter.Serialize()))
+    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
         return status;
 
     xmlWriter->ToString (ecSchemaXml);
 
-    return SCHEMA_WRITE_STATUS_Success;
+    return SchemaWriteStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1843,12 +1902,12 @@ SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml) const
 
     SchemaWriteStatus status;
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this);
-    if (SCHEMA_WRITE_STATUS_Success != (status = schemaWriter.Serialize()))
+    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
         return status;
 
     xmlWriter->ToString (ecSchemaXml);
 
-    return SCHEMA_WRITE_STATUS_Success;
+    return SchemaWriteStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1865,12 +1924,12 @@ bool    utf16
 
     SchemaWriteStatus status;
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this);
-    if (SCHEMA_WRITE_STATUS_Success != (status = schemaWriter.Serialize()))
+    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
         return status;
 
-    return SCHEMA_WRITE_STATUS_Success;
+    return SchemaWriteStatus::Success;
     //return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted),
-    //    utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) ? SCHEMA_WRITE_STATUS_Success : SCHEMA_WRITE_STATUS_FailedToWriteFile;
+    //    utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) ? SchemaWriteStatus::Success : SchemaWriteStatus::FailedToWriteFile;
     }
 
 #if defined (NEEDSWORK_LIBXML)
@@ -1883,20 +1942,20 @@ IStreamP ecSchemaXmlStream,
 bool     utf16
 )
     {
-    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
 
     MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_WRITE_STATUS_FailedToInitializeMsmxl);
+    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SchemaWriteStatus::FailedToInitializeMsmxl);
     xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
     xmlDocPtr->put_async(VARIANT_FALSE);
     xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
     xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
 
     status = WriteXml(xmlDocPtr);
-    if (status != SCHEMA_WRITE_STATUS_Success)
+    if (status != SchemaWriteStatus::Success)
         return status;
 
-    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SCHEMA_WRITE_STATUS_FailedToSaveXml);
+    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SchemaWriteStatus::FailedToSaveXml);
 
     return status;
     }
@@ -2031,7 +2090,7 @@ IECSchemaLocater& ECSchemaCache::GetSchemaLocater()
 ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
     {
     if (m_schemas.end() != m_schemas.find (ecSchema.GetSchemaKey()))
-        return ECOBJECTS_STATUS_DuplicateSchema;
+        return ECObjectsStatus::DuplicateSchema;
 
     bvector<ECSchemaP> schemas;
     ecSchema.FindAllSchemasInGraph(schemas, true);
@@ -2043,7 +2102,7 @@ ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
         inserted |= result.second;
         }
 
-    return inserted ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_DuplicateSchema;
+    return inserted ? ECObjectsStatus::Success : ECObjectsStatus::DuplicateSchema;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2053,10 +2112,10 @@ ECObjectsStatus ECSchemaCache::DropSchema  (SchemaKeyCR ecSchemaKey)
     {
     SchemaMap::iterator iter = m_schemas.find (ecSchemaKey);
     if (iter == m_schemas.end())
-        return ECOBJECTS_STATUS_SchemaNotFound;
+        return ECObjectsStatus::SchemaNotFound;
 
     m_schemas.erase(iter);
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2084,7 +2143,7 @@ ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(ECSchemaR schema)
             ++iter;
 
         }
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2360,7 +2419,7 @@ void            ECSchema::ReComputeCheckSum ()
         return;
 
     WString xmlStr;
-    if (SCHEMA_WRITE_STATUS_Success != WriteToXmlString (xmlStr))
+    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr))
         return;
 
     m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
@@ -2502,7 +2561,7 @@ bool QualifiedECAccessor::FromString (Utf8CP str)
 bool QualifiedECAccessor::FromAccessString (ECEnablerCR enabler, Utf8CP accessString)
     {
     ECValueAccessor va;
-    if (ECValueAccessor::PopulateValueAccessor (va, enabler, accessString) && 0 < va.GetDepth() && nullptr != va[0].GetECProperty())
+    if (ECObjectsStatus::Success == ECValueAccessor::PopulateValueAccessor (va, enabler, accessString) && 0 < va.GetDepth() && nullptr != va[0].GetECProperty())
         {
         ECClassCR rootClass = va[0].GetECProperty()->GetClass();
         m_schemaName = rootClass.GetSchema().GetName();
@@ -2552,7 +2611,7 @@ bool QualifiedECAccessor::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemap
 
     ECClassCP newClass = post.GetClassCP (schemaClass.m_className.c_str());
     ECValueAccessor va;
-    if (nullptr != newClass && ECOBJECTS_STATUS_Success == ECValueAccessor::PopulateAndRemapValueAccessor (va, *newClass->GetDefaultStandaloneEnabler(), m_accessString.c_str(), remapper))
+    if (nullptr != newClass && ECObjectsStatus::Success == ECValueAccessor::PopulateAndRemapValueAccessor (va, *newClass->GetDefaultStandaloneEnabler(), m_accessString.c_str(), remapper))
         {
         Utf8String newAccessString = va.GetManagedAccessString();
         if (!newAccessString.Equals (m_accessString))

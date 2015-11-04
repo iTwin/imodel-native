@@ -98,7 +98,7 @@ Utf8String        StandaloneECRelationshipInstance::_GetInstanceId() const
 ECObjectsStatus StandaloneECRelationshipInstance::_SetInstanceId (Utf8CP instanceId)
     {
     m_instanceId = instanceId;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -186,7 +186,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (uint32_t propIdx)
     {
-    return ECOBJECTS_STATUS_OperationNotSupported;
+    return ECObjectsStatus::OperationNotSupported;
     }                      
 
 /*---------------------------------------------------------------------------------**//**
@@ -232,7 +232,7 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetSource () const
 ECObjectsStatus StandaloneECRelationshipInstance::_GetSourceOrderId (int64_t& sourceOrderId) const 
     {
     sourceOrderId = m_sourceOrderId;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -286,7 +286,7 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetTarget () const
 ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (int64_t& targetOrderId) const 
     {
     targetOrderId = m_targetOrderId;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -18,14 +18,14 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct ValueAccessorTests : ECTestFixture
     {
     ECSchemaPtr          m_schema;
-    ECClassP             m_ecClass;
+    ECEntityClassP             m_ecClass;
     IECInstancePtr       m_instance;
     uint32_t             propIndex;
 
     void CreateSchema(Utf8String schemaName = "TestSchema", Utf8String className = "TestClass")
         {
         ECSchema::CreateSchema (m_schema, schemaName, 1, 0);
-        m_schema->CreateClass (m_ecClass, className);
+        m_schema->CreateEntityClass (m_ecClass, className);
         }
     
     void CreateInstance()
@@ -67,7 +67,7 @@ TEST_F (ValueAccessorTests, CreateFromIterator)
     CreateProperty("Property_1");
     CreateInstance();
     
-    EXPECT_EQ (m_instance->SetValue ("Property_1", ECValue("Some value 1")), ECOBJECTS_STATUS_Success);    
+    EXPECT_EQ (m_instance->SetValue ("Property_1", ECValue("Some value 1")), ECObjectsStatus::Success);    
     ECValuesCollectionPtr m_collection = ECValuesCollection::Create (*m_instance);
     
     int count = 0;
@@ -94,8 +94,8 @@ TEST_F (ValueAccessorTests, CreateFromInstance)
     CreateInstance();
     
     ECValueAccessor m_accessor;
-    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, "Property_1"), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue("Some value 1")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, "Property_1"), ECObjectsStatus::Success);
+    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue("Some value 1")), ECObjectsStatus::Success);
     
     ECValue value1;
     m_instance->GetValueUsingAccessor (value1, m_accessor);
@@ -112,7 +112,7 @@ TEST_F (ValueAccessorTests, GetAccessString)
     CreateInstance();
     
     ECValueAccessor m_accessor;
-    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, "Property_1"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, "Property_1"), ECObjectsStatus::Success);
     EXPECT_STREQ (m_accessor.GetAccessString(), "Property_1");
     EXPECT_STREQ (m_accessor.GetPropertyName().c_str(), "Property_1");
     }
@@ -129,15 +129,15 @@ TEST_F (ValueAccessorTests, GetDefaultStandaloneEnabler)
     CreateSchema();
     
     PrimitiveECPropertyP prop;
-    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop1"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop1"), ECObjectsStatus::Success);
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 2);
     
-    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop2"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop2"), ECObjectsStatus::Success);
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 3);
     
-    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, "Prop2"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, "Prop2"), ECObjectsStatus::Success);
     Utf8CP propertyName;
-    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetAccessString  (propertyName,  propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetAccessString  (propertyName,  propIndex), ECObjectsStatus::Success);
     EXPECT_STREQ (propertyName, "Prop2");
     }
     

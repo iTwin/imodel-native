@@ -50,7 +50,7 @@ protected:
 
         ECSchemaPtr schema;
         SchemaReadStatus stat = ECSchema::ReadFromXmlString (schema, schemaXml, *context);
-        EXPECT_EQ (SCHEMA_READ_STATUS_Success, stat);
+        EXPECT_EQ (SchemaReadStatus::Success, stat);
         EXPECT_TRUE (schema.IsValid ());
 
         return schema;
@@ -170,7 +170,7 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
             DateTimeInfo actual;
             const ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (actual, dateTimeProperty);
             //if retrieval failed, m_HasDateTimeInfo should be false, too.
-            if (stat != ECOBJECTS_STATUS_Success)
+            if (stat != ECObjectsStatus::Success)
                 ASSERT_FALSE (expected.m_HasDateTimeInfo);
                 
             EXPECT_EQ (expected.m_HasDateTimeInfo, !actual.IsNull ());
@@ -263,12 +263,12 @@ protected:
                 {
                 DISABLE_ASSERTS
                 ECObjectsStatus stat = instance->SetValue (propertyName, value);
-                EXPECT_NE (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue with a mismatching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString ().c_str ();
+                EXPECT_NE (ECObjectsStatus::Success, stat) << "IECInstance::SetValue with a mismatching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString ().c_str ();
                 }
             else
                 {
                 ECObjectsStatus stat = instance->SetValue (propertyName, value);
-                EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue with a matching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString ().c_str ();
+                EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue with a matching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString ().c_str ();
                 }
             }
         }
@@ -277,7 +277,7 @@ protected:
         {
             {
             ECValue value (expectedDateTime);
-            ASSERT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (propertyName, value)) << "AssertGetValue:Setup> Setting datetime value in ECInstance";
+            ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue (propertyName, value)) << "AssertGetValue:Setup> Setting datetime value in ECInstance";
             }
 
         int64_t expectedTicks = 0LL;
@@ -285,7 +285,7 @@ protected:
 
         ECValue value;
         ECObjectsStatus stat = instance->GetValue (value, propertyName);
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::GetValue";
+        ASSERT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::GetValue";
 
         DateTime actualDateTime = value.GetDateTime ();
 
@@ -351,7 +351,7 @@ TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeInfoInSchemaNotRefer
     ECPropertyP prop = testClass->GetPropertyP ("prop1");
     DateTimeInfo dti;
     const ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
-    EXPECT_TRUE (stat == ECOBJECTS_STATUS_Success && dti.IsNull ()) << "No DateTimeInfo CA expected on property that doesn't have the DateTimeInfo CA";
+    EXPECT_TRUE (stat == ECObjectsStatus::Success && dti.IsNull ()) << "No DateTimeInfo CA expected on property that doesn't have the DateTimeInfo CA";
     };
 
 //---------------------------------------------------------------------------------------
@@ -372,12 +372,12 @@ TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeForNonDateTimeProper
 
     DateTimeInfo dti;
     ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
-    ASSERT_NE (ECOBJECTS_STATUS_Success, stat);
+    ASSERT_NE (ECObjectsStatus::Success, stat);
 
     prop = testClass->GetPropertyP ("intArrayProp");
     ASSERT_TRUE (prop != NULL);
     stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
-    ASSERT_NE (ECOBJECTS_STATUS_Success, stat);
+    ASSERT_NE (ECObjectsStatus::Success, stat);
     };
 
 //---------------------------------------------------------------------------------------
@@ -395,7 +395,7 @@ TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeInfoWithCorruptCADef
     ECPropertyP prop = testClass->GetPropertyP ("prop");
     DateTimeInfo dti;
     const ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
-    ASSERT_NE (ECOBJECTS_STATUS_Success, stat);
+    ASSERT_NE (ECObjectsStatus::Success, stat);
     };
 
 //---------------------------------------------------------------------------------------
@@ -523,41 +523,41 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
     ASSERT_TRUE (instance.IsValid ());
 
     ECObjectsStatus stat = instance->SetValue ("nodatetimeinfo", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> ECProperty without DateTimeInfo - ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> ECProperty without DateTimeInfo - ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
     
     stat = instance->SetValue ("emptydatetimeinfo", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> Empty DateTimeInfo - ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> Empty DateTimeInfo - ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("unspecified", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("dateonly", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("garbagekind", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_ParseError, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
+    EXPECT_EQ (ECObjectsStatus::ParseError, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
 
     stat = instance->SetValue ("garbagekindgarbagecomponent", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_ParseError, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
+    EXPECT_EQ (ECObjectsStatus::ParseError, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
 
 
     stat = instance->SetValue ("nodatetimeinfo", ticksWithUtc);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> ECProperty without DateTimeInfo - ECValue::SetDateTimeTicks (ticks, Info): Expected to never mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> ECProperty without DateTimeInfo - ECValue::SetDateTimeTicks (ticks, Info): Expected to never mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("nodatetimeinfo", ticksWithDateOnly);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> ECProperty without DateTimeInfo - ECValue::SetDateTimeTicks (ticks, Info): Expected to never mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> ECProperty without DateTimeInfo - ECValue::SetDateTimeTicks (ticks, Info): Expected to never mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("utc", ticksWithUtc);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> DateTimeInfo (Utc)  - ECValue::SetDateTimeTicks (ticks, Utc): Expected to match with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> DateTimeInfo (Utc)  - ECValue::SetDateTimeTicks (ticks, Utc): Expected to match with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("utc", ticksWithDateOnly);
-    EXPECT_EQ (ECOBJECTS_STATUS_DataTypeMismatch, stat) << "IECInstance::SetValue> DateTimeInfo (Utc)  - ECValue::SetDateTimeTicks (ticks, Date): Expected to mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::DataTypeMismatch, stat) << "IECInstance::SetValue> DateTimeInfo (Utc)  - ECValue::SetDateTimeTicks (ticks, Date): Expected to mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("dateonly", ticksWithUtc);
-    EXPECT_EQ (ECOBJECTS_STATUS_DataTypeMismatch, stat) << "IECInstance::SetValue> DateTimeInfo (Date)  - ECValue::SetDateTimeTicks (ticks, Utc): Expected to mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::DataTypeMismatch, stat) << "IECInstance::SetValue> DateTimeInfo (Date)  - ECValue::SetDateTimeTicks (ticks, Utc): Expected to mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue ("dateonly", ticksWithDateOnly);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> DateTimeInfo (Date)  - ECValue::SetDateTimeTicks (ticks, Date): Expected to match with the DateTimeInfo custom attribute.";
+    EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue> DateTimeInfo (Date)  - ECValue::SetDateTimeTicks (ticks, Date): Expected to match with the DateTimeInfo custom attribute.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -587,11 +587,11 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
 
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ECObjectsStatus ecstat = instance->SetValue (propertyName, v);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+    EXPECT_EQ (ECObjectsStatus::Success, ecstat);
 
     ECValue actualValue;
     ecstat = instance->GetValue (actualValue, propertyName);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+    EXPECT_EQ (ECObjectsStatus::Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
     EXPECT_EQ ((int)DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
@@ -612,11 +612,11 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
 
     instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ecstat = instance->SetValue (propertyName, v);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+    EXPECT_EQ (ECObjectsStatus::Success, ecstat);
 
     actualValue.Clear ();
     ecstat = instance->GetValue (actualValue, propertyName);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+    EXPECT_EQ (ECObjectsStatus::Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
     EXPECT_EQ ((int) DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
@@ -638,11 +638,11 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
 
     instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ecstat = instance->SetValue (propertyName, v);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+    EXPECT_EQ (ECObjectsStatus::Success, ecstat);
 
     actualValue.Clear ();
     ecstat = instance->GetValue (actualValue, propertyName);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+    EXPECT_EQ (ECObjectsStatus::Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
     EXPECT_EQ ((int) DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
@@ -696,11 +696,11 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
 
         if (!isLocal)
             {
-            EXPECT_NE (ECOBJECTS_STATUS_Success, instance->SetValue (localDateTimePropName, value)) << "IECInstance::SetValue> Property name: " << localDateTimePropName << " DateTime: " << testDateTime.ToString ().c_str ();
+            EXPECT_NE (ECObjectsStatus::Success, instance->SetValue (localDateTimePropName, value)) << "IECInstance::SetValue> Property name: " << localDateTimePropName << " DateTime: " << testDateTime.ToString ().c_str ();
             }
         else
             {
-            EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (localDateTimePropName, value)) << "IECInstance::SetValue> Property name: " << localDateTimePropName << " with a local date time is expected to succeed, but the inserted value is null.";
+            EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue (localDateTimePropName, value)) << "IECInstance::SetValue> Property name: " << localDateTimePropName << " with a local date time is expected to succeed, but the inserted value is null.";
             }
         }
     }
@@ -773,13 +773,13 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, DateTimeArrayRoundtrip)
         {
         ECValue v (expected[i]);
         ECObjectsStatus stat = instance->SetValue (propertyName, v, i);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+        EXPECT_EQ (ECObjectsStatus::Success, stat);
         }
     
 
     ECValue actualArrayInfoValue;
     ECObjectsStatus stat = instance->GetValue (actualArrayInfoValue, propertyName);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     EXPECT_TRUE (actualArrayInfoValue.IsArray ());
     ArrayInfo actualArrayInfo = actualArrayInfoValue.GetArrayInfo ();
     EXPECT_TRUE (PRIMITIVETYPE_DateTime == actualArrayInfo.GetElementPrimitiveType ());
@@ -789,7 +789,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, DateTimeArrayRoundtrip)
         {
         ECValue v;
         ECObjectsStatus stat = instance->GetValue (v, propertyName, i);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+        EXPECT_EQ (ECObjectsStatus::Success, stat);
 
         DateTime actual = v.GetDateTime ();
         AssertDateTime (expected[i], actual, false);
@@ -814,11 +814,11 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     DateTime expected [expectedArraySize];
     ECObjectsStatus expectedSuccess [expectedArraySize];
     expected[0] = DateTime::GetCurrentTimeUtc ();
-    expectedSuccess[0] = ECOBJECTS_STATUS_Success;
+    expectedSuccess[0] = ECObjectsStatus::Success;
     expected[1] = DateTime (DateTime::Kind::Unspecified, 2012, 1, 1, 13, 14);
-    expectedSuccess[1] = ECOBJECTS_STATUS_DataTypeMismatch;
+    expectedSuccess[1] = ECObjectsStatus::DataTypeMismatch;
     expected[2] = DateTime (2011, 1, 1);
-    expectedSuccess[2] = ECOBJECTS_STATUS_DataTypeMismatch;
+    expectedSuccess[2] = ECObjectsStatus::DataTypeMismatch;
     
     instance->AddArrayElements (propertyName, expectedArraySize);
     for (uint32_t i = 0; i < expectedArraySize; i++)
@@ -831,7 +831,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     //retrieving the date time from the one array element that was inserted successfully
     ECValue actualArrayInfoValue;
     ECObjectsStatus stat = instance->GetValue (actualArrayInfoValue, propertyName);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     EXPECT_TRUE (actualArrayInfoValue.IsArray ());
     ArrayInfo actualArrayInfo = actualArrayInfoValue.GetArrayInfo ();
     EXPECT_TRUE (PRIMITIVETYPE_DateTime == actualArrayInfo.GetElementPrimitiveType ());
@@ -842,9 +842,9 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
         {
         ECValue v;
         ECObjectsStatus stat = instance->GetValue (v, propertyName, i);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+        EXPECT_EQ (ECObjectsStatus::Success, stat);
 
-        if (expectedSuccess[i] == ECOBJECTS_STATUS_Success)
+        if (expectedSuccess[i] == ECObjectsStatus::Success)
             {
             DateTime actual = v.GetDateTime ();
             AssertDateTime (expected[i], actual, false);

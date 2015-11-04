@@ -130,7 +130,7 @@ public:
     //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
     //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return ::ECOBJECTS_STATUS_Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
+    //! @return ::ECObjectsStatus::Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
     //! is not of type ::PRIMITIVETYPE_DateTime. 
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
 

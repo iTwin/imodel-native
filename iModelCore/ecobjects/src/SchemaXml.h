@@ -18,6 +18,8 @@ struct SchemaXmlReader
 private:
     BeXmlDomR               m_xmlDom;
     ECSchemaReadContextR    m_schemaContext;
+    int                     m_ecSchemaMajorVersion;
+    int                     m_ecSchemaMinorVersion;
 
     bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
 
@@ -25,7 +27,8 @@ protected:
     SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
 
     typedef bvector<bpair<ECClassP, BeXmlNodeP> >  ClassDeserializationVector;
-    SchemaReadStatus                    ReadClassStubsFromXml (ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
+    SchemaReadStatus                    ReadClassStubsFromXml2 (ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
+    SchemaReadStatus                    ReadClassStubsFromXml3 (ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
     SchemaReadStatus                    ReadClassContentsFromXml (ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes);
 
 public:

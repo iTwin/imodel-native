@@ -69,7 +69,7 @@ bool ECEnabler::_IsPropertyReadOnly (uint32_t propertyIndex) const
 ECPropertyCP ECEnabler::_LookupECProperty (uint32_t propertyIndex) const
     {
     Utf8CP accessString;
-    return ECOBJECTS_STATUS_Success == GetAccessString (accessString, propertyIndex) ? _LookupECProperty (accessString) : NULL;
+    return ECObjectsStatus::Success == GetAccessString (accessString, propertyIndex) ? _LookupECProperty (accessString) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,10 +257,10 @@ ECN::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() 
 //        if (0 == BeStringUtilities::Wcsicmp (propertyAccessString, m_propertyNameList[index]))
 //            {
 //            propertyIndex = index + 1;
-//            return ECOBJECTS_STATUS_Success;
+//            return ECObjectsStatus::Success;
 //            }
 //        }
-//    return ECOBJECTS_STATUS_InvalidPropertyAccessString;
+//    return ECObjectsStatus::InvalidPropertyAccessString;
 //    }
 //
 ///*---------------------------------------------------------------------------------**//**
@@ -269,10 +269,10 @@ ECN::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() 
 // ECObjectsStatus PropertyIndexedEnabler::_GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const
 //    {
 //    if (propertyIndex > m_propertyCount || propertyIndex <= 0)
-//        return ECOBJECTS_STATUS_IndexOutOfRange;
+//        return ECObjectsStatus::IndexOutOfRange;
 //
 //    propertyAccessString = m_propertyNameList[propertyIndex -1];
-//    return ECOBJECTS_STATUS_Success;
+//    return ECObjectsStatus::Success;
 //    }
 // 
 ///*---------------------------------------------------------------------------------**//**
@@ -293,7 +293,7 @@ ECN::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() 
 //    {
 //    for (UInt32 index = 0; index < m_propertyCount; ++index)
 //        indices.push_back(index + 1);
-//    return ECOBJECTS_STATUS_Success;
+//    return ECObjectsStatus::Success;
 //    }
 //
 ///*---------------------------------------------------------------------------------**//**
@@ -389,7 +389,7 @@ bool PropertyIndexFlatteningIterator::State::Init (ECEnablerCR enabler, uint32_t
     {
     m_listIndex = 0;
     m_propertyIndices.clear();
-    return ECOBJECTS_STATUS_Success == enabler.GetPropertyIndices (m_propertyIndices, parentPropertyIndex) && !m_propertyIndices.empty();
+    return ECObjectsStatus::Success == enabler.GetPropertyIndices (m_propertyIndices, parentPropertyIndex) && !m_propertyIndices.empty();
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

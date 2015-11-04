@@ -1984,7 +1984,7 @@ ECObjectsStatus   ECValue::SetStructArrayInfo (uint32_t count, bool isFixedCount
     
     SetIsNull (false); // arrays are never null
     
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2001,7 +2001,7 @@ ECObjectsStatus       ECValue::SetPrimitiveArrayInfo (PrimitiveType primitiveEle
     
     SetIsNull (false); // arrays are never null
     
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2208,7 +2208,7 @@ bool                                            ECValueAccessor::PushLocation (E
     {
     uint32_t propertyIndex;
     ECObjectsStatus status = newEnabler.GetPropertyIndex(propertyIndex, accessString);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         {
         //BeAssert (false && "Could not resolve property index for this access string");
         return false;
@@ -2294,7 +2294,7 @@ Utf8CP                                 ECValueAccessor::GetAccessString (uint32_
     int propertyIndex         = m_locationVector[depth].GetPropertyIndex();
     ECEnablerCR enabler       = * m_locationVector[depth].GetEnabler();
     Utf8CP accessString;
-    if (ECOBJECTS_STATUS_Success == enabler.GetAccessString (accessString, propertyIndex))
+    if (ECObjectsStatus::Success == enabler.GetAccessString (accessString, propertyIndex))
         {
         // Embedded structs are weird...e.g., for "OuterStruct.InnerStruct.Property":
         //  - ECValuesCollection::Create() will create separate Location for each portion of the access string ("OuterStruct", "InnerStruct", "Property")
@@ -2324,7 +2324,7 @@ Utf8CP                                 ECValueAccessor::GetAccessString (uint32_
 Utf8CP ECValueAccessor::Location::GetAccessString() const
     {
     Utf8CP accessString = nullptr;
-    return nullptr != GetEnabler() && ECOBJECTS_STATUS_Success == GetEnabler()->GetAccessString (accessString, GetPropertyIndex()) ? accessString : nullptr;
+    return nullptr != GetEnabler() && ECObjectsStatus::Success == GetEnabler()->GetAccessString (accessString, GetPropertyIndex()) ? accessString : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2498,7 +2498,7 @@ static ECClassCP getStructArrayClass (ECClassCR enablerClass, Utf8CP propertyNam
 
     if (auto structProperty = propertyP->GetAsStructProperty ())
         return &structProperty->GetType ();
-    else if (auto arrayProp = propertyP->GetAsArrayProperty ())
+    else if (auto arrayProp = propertyP->GetAsStructArrayProperty ())
         return arrayProp->GetStructElementType ();
 
     return nullptr;
@@ -2519,19 +2519,19 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (Utf8Char* asB
     if (NULL == pos1)
         {
         status = enabler.GetPropertyIndex (propertyIndex, managedPropertyAccessor);
-        if (ECOBJECTS_STATUS_Success == status)
+        if (ECObjectsStatus::Success == status)
             {
             va.PushLocation (enabler, propertyIndex, -1);
-            return ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
             }
 
         status = enabler.GetPropertyIndex (propertyIndex, managedPropertyAccessor);
 
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;
 
         va.PushLocation (enabler, propertyIndex, -1);
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
 
     size_t numChars = 0;
@@ -2541,7 +2541,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (Utf8Char* asB
 
     Utf8CP pos2 = strchr (pos1+1, L']');
     if (!pos2)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     numChars = pos2 - pos1 - 1;
     strncpy(indexBuffer, pos1+1, numChars>NUM_INDEX_BUFFER_CHARS?NUM_INDEX_BUFFER_CHARS:numChars);
@@ -2553,26 +2553,26 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (Utf8Char* asB
     ECValue  arrayVal;
 
     status = enabler.GetPropertyIndex (propertyIndex, asBuffer);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
 
     // if no character after closing bracket then we just want the array, else we are dealing with a member of a struct array
     if (0 == *(pos2+1))
         {
         va.PushLocation (enabler, propertyIndex, indexValue);
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
 
     Utf8String str = asBuffer; 
 
     ECClassCP structClass = getStructArrayClass (enabler.GetClass(), asBuffer);
     if (!structClass)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     ECN::ECEnablerP enablerP = const_cast<ECN::ECEnablerP>(&enabler);
     StandaloneECEnablerPtr structEnabler = dynamic_cast<StandaloneECEnablerP>(enablerP->GetEnablerForStructArrayMember (structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str()).get());
     if (structEnabler.IsNull())
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     va.PushLocation (enabler, propertyIndex, indexValue);
 
@@ -2604,7 +2604,7 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, ECE
 ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, Utf8CP accessor, bool includeAdhocs)
     {
     auto status = PopulateValueAccessor (va, instance, accessor);
-    if (ECOBJECTS_STATUS_PropertyNotFound == status && includeAdhocs)
+    if (ECObjectsStatus::PropertyNotFound == status && includeAdhocs)
         {
         // Find the array index of the ad-hoc property value with the specified name
         va.Clear();
@@ -2616,7 +2616,7 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IEC
                 {
                 va.PushLocation (instance.GetEnabler(), adhoc.GetContainerPropertyIndex(), arrayIndex);
                 va.m_isAdhoc = true;
-                return ECOBJECTS_STATUS_Success;
+                return ECObjectsStatus::Success;
                 }
             }
         }
@@ -2659,7 +2659,7 @@ static ECEnablerCP getStructArrayEnablerForDeepestLocation (ECValueAccessorCR va
         return nullptr;
 
     auto prop = va.DeepestLocationCR().GetECProperty();
-    auto arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+    auto arrayProp = nullptr != prop ? prop->GetAsStructArrayProperty() : nullptr;
     auto structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
     if (nullptr != structClass)
         {
@@ -2682,18 +2682,18 @@ ECObjectsStatus ECValueAccessor::RemapValueAccessor (ECValueAccessor& newVa, ECE
     for (Location const& oldLoc : oldVa.GetLocationVector())
         {
         if (prevWasArray && nullptr == (curNewEnabler = getStructArrayEnablerForDeepestLocation (newVa)))
-            return ECOBJECTS_STATUS_ClassNotFound;
+            return ECObjectsStatus::ClassNotFound;
 
         Utf8String newAccessString;
         if (!remapAccessString (newAccessString, curNewEnabler->GetClass(), oldLoc.GetAccessString(), remapper))
-            return ECOBJECTS_STATUS_PropertyNotFound;
+            return ECObjectsStatus::PropertyNotFound;
 
         newVa.PushLocation (*curNewEnabler, newAccessString.c_str(), oldLoc.GetArrayIndex());
 
         prevWasArray = oldLoc.GetArrayIndex() != INDEX_ROOT;
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2708,7 +2708,7 @@ ECObjectsStatus ECValueAccessor::PopulateAndRemapValueAccessor (ECValueAccessor&
     bvector<Utf8String> chunks;
     BeStringUtilities::Split (accessString, "[", chunks);
     if (chunks.empty())
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     ECEnablerCP curEnabler = &enabler;
     for (Utf8String& chunk : chunks)
@@ -2719,7 +2719,7 @@ ECObjectsStatus ECValueAccessor::PopulateAndRemapValueAccessor (ECValueAccessor&
             {
             // previous was an array
             if (va.GetDepth() == 0)
-                return ECOBJECTS_STATUS_Error;
+                return ECObjectsStatus::Error;
 
             // Identify any struct subsequent array member accessor
             if (bracPos < chunk.length()-1)
@@ -2727,20 +2727,20 @@ ECObjectsStatus ECValueAccessor::PopulateAndRemapValueAccessor (ECValueAccessor&
                 if (chunk[bracPos + 1] == '.' && chunk[bracPos + 2] != 0)
                     thisAccessString += bracPos + 2;
                 else
-                    return ECOBJECTS_STATUS_Error;
+                    return ECObjectsStatus::Error;
                 }
 
             // extract array index
             chunk[bracPos] = 0;
             uint32_t arrayIndex;
             if (1 != sscanf (chunk.c_str(), "%ud", &arrayIndex))
-                return ECOBJECTS_STATUS_Error;
+                return ECObjectsStatus::Error;
 
             va.DeepestLocation().SetArrayIndex (arrayIndex);
 
             // If this is a struct array member, obtain an enabler for it.
             if (!Utf8String::IsNullOrEmpty (thisAccessString) && nullptr == (curEnabler = getStructArrayEnablerForDeepestLocation (va)))
-                return ECOBJECTS_STATUS_Error;
+                return ECObjectsStatus::Error;
             }
 
         if (!Utf8String::IsNullOrEmpty (thisAccessString))
@@ -2749,11 +2749,11 @@ ECObjectsStatus ECValueAccessor::PopulateAndRemapValueAccessor (ECValueAccessor&
             if (remapAccessString (newAccessString, curEnabler->GetClass(), thisAccessString, remapper))
                 va.PushLocation (*curEnabler, newAccessString.c_str());
             else
-                return ECOBJECTS_STATUS_PropertyNotFound;
+                return ECObjectsStatus::PropertyNotFound;
             }
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -2776,7 +2776,7 @@ ECPropertyValuePtr     ECPropertyValue::GetPropertyValue (IECInstanceCR instance
     {
     ECValueAccessor va;
 
-    if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor (va, instance, propertyAccessor))
+    if (ECObjectsStatus::Success != ECValueAccessor::PopulateValueAccessor (va, instance, propertyAccessor))
         return NULL;
 
     return  new ECPropertyValue (instance, va);
@@ -2803,10 +2803,10 @@ ECObjectsStatus ECPropertyValue::EvaluateValue () const
         {
         // m_ecValue.Clear();
         m_evaluated = true;
-        return NULL != m_instance ? m_instance->GetValueUsingAccessor (m_ecValue, m_accessor) : ECOBJECTS_STATUS_Error;
+        return NULL != m_instance ? m_instance->GetValueUsingAccessor (m_ecValue, m_accessor) : ECObjectsStatus::Error;
         }
     else
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2846,7 +2846,7 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 ECObjectsStatus ECPropertyValue::Initialize (IECInstanceCR instance, Utf8CP accessString, ECValueCR v)
     {
     ECObjectsStatus status = ECValueAccessor::PopulateValueAccessor (m_accessor, instance, accessString);
-    if (ECOBJECTS_STATUS_Success == status)
+    if (ECObjectsStatus::Success == status)
         {
         m_instance = &instance;
         m_ecValue = v;
@@ -3805,7 +3805,7 @@ AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, Utf8CP contai
     : m_containerIndex (0)
     {
     uint32_t containerIndex = 0;
-    if (ECOBJECTS_STATUS_Success == enabler.GetPropertyIndex (containerIndex, containerAccessString))
+    if (ECObjectsStatus::Success == enabler.GetPropertyIndex (containerIndex, containerAccessString))
         Init (enabler, containerIndex, loadMetadata);
     }
 
@@ -3843,9 +3843,9 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, uint32_t containerIndex, 
     {
     // find struct array property
     ECPropertyCP prop = enabler.LookupECProperty (containerIndex);
-    ArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+    StructArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsStructArrayProperty() : nullptr;
     ECClassCP structClass = nullptr;
-    if (nullptr == arrayProp || ARRAYKIND_Struct != arrayProp->GetKind() || nullptr == (structClass = arrayProp->GetStructElementType()))
+    if (nullptr == arrayProp || nullptr == (structClass = arrayProp->GetStructElementType()))
         return false;
 
     // find custom attribute on struct class
@@ -3864,7 +3864,7 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, uint32_t containerIndex, 
 
     for (size_t i = 0; i < _countof (s_propertyNames); i++)
         {
-        if (ECOBJECTS_STATUS_Success == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
+        if (ECObjectsStatus::Success == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
             {
             prop = structClass->GetPropertyP (v.GetUtf8CP());
             if (nullptr != prop)
@@ -3973,7 +3973,7 @@ IECInstancePtr AdhocPropertyQuery::GetEntry (uint32_t index) const
         return nullptr;
 
     ECValue v;
-    if (ECOBJECTS_STATUS_Success != m_host.GetValue (v, GetContainerPropertyIndex(), index) || v.IsNull())
+    if (ECObjectsStatus::Success != m_host.GetValue (v, GetContainerPropertyIndex(), index) || v.IsNull())
         return nullptr;
     else if (!v.IsStruct())
         {
@@ -3990,7 +3990,7 @@ IECInstancePtr AdhocPropertyQuery::GetEntry (uint32_t index) const
 ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, uint32_t index, Utf8CP accessor) const
     {
     auto entry = GetEntry (index);
-    return entry.IsValid() ? entry->GetValue (v, accessor) : ECOBJECTS_STATUS_PropertyNotFound;
+    return entry.IsValid() ? entry->GetValue (v, accessor) : ECObjectsStatus::PropertyNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4002,15 +4002,15 @@ bool AdhocPropertyQuery::GetPropertyIndex (uint32_t& index, Utf8CP accessString)
         return false;
 
     ECValue v;
-    if (ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+    if (ECObjectsStatus::Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
         {
         uint32_t count = v.GetArrayInfo().GetCount();
         for (uint32_t i = 0; i < count; i++)
-            if (ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex(), i) && !v.IsNull() && v.IsStruct())
+            if (ECObjectsStatus::Success == m_host.GetValue (v, GetContainerPropertyIndex(), i) && !v.IsNull() && v.IsStruct())
                 {
                 IECInstancePtr instance = v.GetStruct();
                 v.SetAllowsPointersIntoInstanceMemory (true);
-                if (ECOBJECTS_STATUS_Success == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == strcmp (accessString, v.GetUtf8CP()))
+                if (ECObjectsStatus::Success == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == strcmp (accessString, v.GetUtf8CP()))
                     {
                     index = i;
                     return true;
@@ -4027,7 +4027,7 @@ bool AdhocPropertyQuery::GetPropertyIndex (uint32_t& index, Utf8CP accessString)
 uint32_t AdhocPropertyQuery::GetCount() const
     {
     ECValue v;
-    if (IsSupported() && ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+    if (IsSupported() && ECObjectsStatus::Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
         return v.GetArrayInfo().GetCount();
     else
         return 0;
@@ -4046,11 +4046,11 @@ ECObjectsStatus AdhocPropertyQuery::GetUnitName (Utf8StringR name, uint32_t inde
 ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel (Utf8StringR label, uint32_t index) const
     {
     auto status = GetString (label, index, Index::DisplayLabel);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         {
         Utf8String name;
         status = GetName (name, index);
-        if (ECOBJECTS_STATUS_Success == status)
+        if (ECObjectsStatus::Success == status)
             ECNameValidation::DecodeFromValidName (label, name);
         }
 
@@ -4064,26 +4064,26 @@ ECObjectsStatus AdhocPropertyQuery::GetPrimitiveType (PrimitiveType& type, uint3
     {
     auto entry = GetEntry (index);
     if (entry.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     Utf8CP propName = GetPropertyName (Index::Type);
     if (nullptr == propName)
         {
         // defaults to string if no property to specify otherwise
         type = PRIMITIVETYPE_String;
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
 
     ECValue v;
-    if (ECOBJECTS_STATUS_Success != entry->GetValue (v, propName) || !v.IsInteger())
-        return ECOBJECTS_STATUS_Error;
+    if (ECObjectsStatus::Success != entry->GetValue (v, propName) || !v.IsInteger())
+        return ECObjectsStatus::Error;
     else if (v.IsNull())
         {
         type = PRIMITIVETYPE_String;
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     else
-        return PrimitiveTypeForCode (type, v.GetInteger()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
+        return PrimitiveTypeForCode (type, v.GetInteger()) ? ECObjectsStatus::Success : ECObjectsStatus::Error;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4094,7 +4094,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR propertyValue, uint32_t i
     // avoid looking up the struct instance repeatedly.
     auto entry = GetEntry (index);
     if (entry.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     // get value type
     PrimitiveType type = PRIMITIVETYPE_String;
@@ -4103,29 +4103,29 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR propertyValue, uint32_t i
     if (nullptr != propName)
         {
         auto status = entry->GetValue (v, propName);
-        if (ECOBJECTS_STATUS_Success == status)
+        if (ECObjectsStatus::Success == status)
             {
             // null => use default type (string)
             if (!v.IsNull() && (!v.IsInteger() || !PrimitiveTypeForCode (type, v.GetInteger())))
-                status = ECOBJECTS_STATUS_Error;
+                status = ECObjectsStatus::Error;
             }
 
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;
         }
 
     // get value
     auto status = GetValue (propertyValue, *entry, Index::Value);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
     else if (!propertyValue.IsString() && !propertyValue.IsNull())
         {
         BeAssert (false);
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
         }
 
     // convert string value to desired type
-    return propertyValue.ConvertToPrimitiveType (type) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
+    return propertyValue.ConvertToPrimitiveType (type) ? ECObjectsStatus::Success : ECObjectsStatus::Error;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4136,7 +4136,7 @@ ECObjectsStatus AdhocPropertyQuery::IsReadOnly (bool& isReadOnly, uint32_t index
     ECValue v;
     auto status = GetValue (v, index, Index::IsReadOnly);
     isReadOnly = false;
-    if (ECOBJECTS_STATUS_Success == status && v.IsBoolean() && !v.IsNull())
+    if (ECObjectsStatus::Success == status && v.IsBoolean() && !v.IsNull())
         isReadOnly = v.GetBoolean();
 
     return status;
@@ -4150,7 +4150,7 @@ ECObjectsStatus AdhocPropertyQuery::IsHidden (bool& isHidden, uint32_t index) co
     ECValue v;
     auto status = GetValue (v, index, Index::IsHidden);
     isHidden = false;
-    if (ECOBJECTS_STATUS_Success == status && v.IsBoolean() && !v.IsNull())
+    if (ECObjectsStatus::Success == status && v.IsBoolean() && !v.IsNull())
         isHidden = v.GetBoolean();
 
     return status;
@@ -4162,7 +4162,7 @@ ECObjectsStatus AdhocPropertyQuery::IsHidden (bool& isHidden, uint32_t index) co
 ECObjectsStatus AdhocPropertyQuery::GetString (Utf8StringR str, uint32_t index, Index which) const
     {
     auto entry = GetEntry (index);
-    return entry.IsValid() ? GetString (str, *entry, which) : ECOBJECTS_STATUS_PropertyNotFound;
+    return entry.IsValid() ? GetString (str, *entry, which) : ECObjectsStatus::PropertyNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4173,13 +4173,13 @@ ECObjectsStatus AdhocPropertyQuery::GetString (Utf8StringR str, IECInstanceCR in
     ECValue v;
     v.SetAllowsPointersIntoInstanceMemory (true);
     auto status = GetValue (v, instance, which);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
     else if (!v.IsString() && !v.IsNull())
-        return ECOBJECTS_STATUS_DataTypeMismatch;
+        return ECObjectsStatus::DataTypeMismatch;
 
     str = v.GetUtf8CP();
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4188,7 +4188,7 @@ ECObjectsStatus AdhocPropertyQuery::GetString (Utf8StringR str, IECInstanceCR in
 ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, uint32_t index, Index which) const
     {
     auto entry = GetEntry (index);
-    return entry.IsValid() ? GetValue (v, *entry, which) : ECOBJECTS_STATUS_PropertyNotFound;
+    return entry.IsValid() ? GetValue (v, *entry, which) : ECObjectsStatus::PropertyNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4200,10 +4200,10 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, IECInstanceCR instance
     if (nullptr == propName)
         {
         if (IsRequiredMetadata (which))
-            return ECOBJECTS_STATUS_Error;
+            return ECObjectsStatus::Error;
 
         v.Clear();
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     else
         return instance.GetValue (v, propName);
@@ -4233,7 +4233,7 @@ AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host, uint32_t propIdx)
 ECObjectsStatus AdhocPropertyEdit::SetValue (uint32_t index, Utf8CP accessor, ECValueCR v)
     {
     auto entry = GetEntry (index);
-    return entry.IsValid() ? entry->SetValue (accessor, v) : ECOBJECTS_STATUS_PropertyNotFound;
+    return entry.IsValid() ? entry->SetValue (accessor, v) : ECObjectsStatus::PropertyNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4242,11 +4242,11 @@ ECObjectsStatus AdhocPropertyEdit::SetValue (uint32_t index, Utf8CP accessor, EC
 ECObjectsStatus AdhocPropertyEdit::SetName (uint32_t index, Utf8CP name)
     {
     if (!ECNameValidation::IsValidName (name))
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     auto entry = GetEntry (index);
     if (entry.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
     else
         return entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false));
     }
@@ -4258,18 +4258,18 @@ ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel (uint32_t index, Utf8CP label
     {
     auto entry = GetEntry (index);
     if (entry.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     auto propName = GetPropertyName (Index::DisplayLabel);
     if (nullptr == propName)
         {
         if (!andSetName)
-            return ECOBJECTS_STATUS_Error;
+            return ECObjectsStatus::Error;
         }
     else
         {
         auto status = entry->SetValue (propName, ECValue (label, false));
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;
         }
 
@@ -4280,7 +4280,7 @@ ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel (uint32_t index, Utf8CP label
         return entry->SetValue (GetPropertyName (Index::Name), ECValue (name.c_str(), false));
         }
     else
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4290,17 +4290,17 @@ ECObjectsStatus AdhocPropertyEdit::SetValue (uint32_t index, ECValueCR inputV)
     {
     PrimitiveType type;
     auto status = GetPrimitiveType (type, index);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
 
     ECValue v (inputV);
     Utf8String strRep;
     if (!v.ConvertToPrimitiveType (type) || !v.ConvertPrimitiveToString (strRep))
-        return ECOBJECTS_STATUS_DataTypeMismatch;
+        return ECObjectsStatus::DataTypeMismatch;
 
     auto entry = GetEntry (index);
     if (entry.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     return entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false));
     }
@@ -4312,11 +4312,11 @@ ECObjectsStatus AdhocPropertyEdit::SetIsReadOnly (uint32_t index, bool isReadOnl
     {
     auto entry = GetEntry (index);
     if (entry.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     auto propName = GetPropertyName (Index::IsReadOnly);
     if (nullptr == propName)
-        return ECOBJECTS_STATUS_OperationNotSupported;
+        return ECObjectsStatus::OperationNotSupported;
 
     return entry->SetValue (propName, ECValue (isReadOnly));
     }
@@ -4328,11 +4328,11 @@ ECObjectsStatus AdhocPropertyEdit::SetIsHidden (uint32_t index, bool isHidden)
     {
     auto entry = GetEntry (index);
     if (entry.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     auto propName = GetPropertyName (Index::IsHidden);
     if (nullptr == propName)
-        return ECOBJECTS_STATUS_OperationNotSupported;
+        return ECObjectsStatus::OperationNotSupported;
 
     return entry->SetValue (propName, ECValue (isHidden));
     }
@@ -4363,7 +4363,7 @@ public:
 ECClassCP AdhocPropertyQuery::GetStructClass() const
     {
     auto prop = GetHost().GetEnabler().LookupECProperty (GetContainerPropertyIndex());
-    auto arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+    auto arrayProp = nullptr != prop ? prop->GetAsStructArrayProperty() : nullptr;
     auto structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
     if (nullptr == structClass)
         BeAssert (false);
@@ -4387,17 +4387,17 @@ ECObjectsStatus AdhocPropertyEdit::Swap (uint32_t propIdxA, uint32_t propIdxB)
     {
     auto entryA = GetEntry (propIdxA), entryB = GetEntry (propIdxB);
     if (entryA.IsNull() || entryB.IsNull())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     ECValue v;
     v.SetStruct (entryA.get());
     auto status = GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxB);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
 
     v.SetStruct (entryB.get());
     status = GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxA);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         {
         v.SetStruct (entryA.get());
         GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxA);
@@ -4412,29 +4412,29 @@ ECObjectsStatus AdhocPropertyEdit::Swap (uint32_t propIdxA, uint32_t propIdxB)
 ECObjectsStatus AdhocPropertyEdit::Add (Utf8CP name, ECValueCR v, Utf8CP displayLabel, Utf8CP unitName, Utf8CP extendedTypeName, bool isReadOnly, bool hidden)
     {
     if (!IsSupported())
-        return ECOBJECTS_STATUS_OperationNotSupported;
+        return ECObjectsStatus::OperationNotSupported;
 
     if (!ECNameValidation::IsValidName (name))
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     auto type = PRIMITIVETYPE_String;
     if (!v.IsNull())
         {
         if (!v.IsPrimitive())
-            return ECOBJECTS_STATUS_DataTypeMismatch;
+            return ECObjectsStatus::DataTypeMismatch;
 
         type = v.GetPrimitiveType();
         if (nullptr == GetPropertyName (Index::Type) && type != PRIMITIVETYPE_String)
-            return ECOBJECTS_STATUS_OperationNotSupported;  // no property to hold type, so all properties are strings.
+            return ECObjectsStatus::OperationNotSupported;  // no property to hold type, so all properties are strings.
         }
 
     if (PRIMITIVETYPE_String != type && nullptr == GetPropertyName (Index::Type))
-        return ECOBJECTS_STATUS_DataTypeMismatch;   // need a property to hold the type if it's not string...
+        return ECObjectsStatus::DataTypeMismatch;   // need a property to hold the type if it's not string...
 
     Utf8String strRep;
     ECValue vAsStr (v);
     if (!vAsStr.ConvertPrimitiveToString (strRep))
-        return ECOBJECTS_STATUS_DataTypeMismatch;
+        return ECObjectsStatus::DataTypeMismatch;
 
     if (nullptr != unitName)
         {
@@ -4445,7 +4445,7 @@ ECObjectsStatus AdhocPropertyEdit::Add (Utf8CP name, ECValueCR v, Utf8CP display
             case PRIMITIVETYPE_Double:
                 break;
             default:
-                return ECOBJECTS_STATUS_OperationNotSupported;  // type does not support units.
+                return ECObjectsStatus::OperationNotSupported;  // type does not support units.
             }
         }
 
@@ -4454,8 +4454,8 @@ ECObjectsStatus AdhocPropertyEdit::Add (Utf8CP name, ECValueCR v, Utf8CP display
     uint32_t existingPropertyIndex = 0;
     bool replacing = GetPropertyIndex (existingPropertyIndex, name);
 
-    auto status = replacing ? ECOBJECTS_STATUS_Success : GetHostR().AddArrayElements (GetContainerPropertyIndex(), 1);
-    if (ECOBJECTS_STATUS_Success != status)
+    auto status = replacing ? ECObjectsStatus::Success : GetHostR().AddArrayElements (GetContainerPropertyIndex(), 1);
+    if (ECObjectsStatus::Success != status)
         return status;
 
     BeAssert (GetCount() > 0);
@@ -4469,37 +4469,37 @@ ECObjectsStatus AdhocPropertyEdit::Add (Utf8CP name, ECValueCR v, Utf8CP display
     if (entry.IsNull())
         {
         BeAssert (false);
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
         }
 
-    if (ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false))) ||
-        ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false))))
+    if (ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false))) ||
+        ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false))))
         return status;
 
-    if (nullptr != displayLabel && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::DisplayLabel), ECValue (displayLabel, false))))
+    if (nullptr != displayLabel && ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::DisplayLabel), ECValue (displayLabel, false))))
         return status;
 
-    if (nullptr != unitName && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Unit), ECValue (unitName, false))))
+    if (nullptr != unitName && ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::Unit), ECValue (unitName, false))))
         return status;
 
-    if (nullptr != extendedTypeName && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::ExtendType), ECValue (extendedTypeName, false))))
+    if (nullptr != extendedTypeName && ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::ExtendType), ECValue (extendedTypeName, false))))
         return status;
 
-    if (isReadOnly && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::IsReadOnly), ECValue (isReadOnly))))
+    if (isReadOnly && ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::IsReadOnly), ECValue (isReadOnly))))
         return status;
 
-    if (hidden && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::IsHidden), ECValue (hidden))))
+    if (hidden && ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::IsHidden), ECValue (hidden))))
         return status;
 
     int32_t typeCode;
-    if (PRIMITIVETYPE_String != type && (!CodeForPrimitiveType (typeCode, type) || ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Type), ECValue (typeCode)))))
+    if (PRIMITIVETYPE_String != type && (!CodeForPrimitiveType (typeCode, type) || ECObjectsStatus::Success != (status = entry->SetValue (GetPropertyName (Index::Type), ECValue (typeCode)))))
         return status;
 
     // set the struct to the array
     ECValue structV;
     structV.SetStruct (entry.get());
     status = GetHostR().SetValue (GetContainerPropertyIndex(), structV, replacing ? existingPropertyIndex : GetCount() - 1);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         {
         BeAssert (false);
         return status;
@@ -4507,7 +4507,7 @@ ECObjectsStatus AdhocPropertyEdit::Add (Utf8CP name, ECValueCR v, Utf8CP display
 
     revert.Clear();
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4516,9 +4516,9 @@ ECObjectsStatus AdhocPropertyEdit::Add (Utf8CP name, ECValueCR v, Utf8CP display
 ECObjectsStatus AdhocPropertyEdit::Remove (uint32_t index)
     {
     if (!IsSupported())
-        return ECOBJECTS_STATUS_OperationNotSupported;
+        return ECObjectsStatus::OperationNotSupported;
     else if (index >= GetCount())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
     else
         return GetHostR().RemoveArrayElement (GetContainerPropertyIndex(), index);
     }
@@ -4528,7 +4528,7 @@ ECObjectsStatus AdhocPropertyEdit::Remove (uint32_t index)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus AdhocPropertyEdit::Clear()
     {
-    return IsSupported() ? GetHostR().ClearArray (GetContainerPropertyIndex()) : ECOBJECTS_STATUS_OperationNotSupported;
+    return IsSupported() ? GetHostR().ClearArray (GetContainerPropertyIndex()) : ECObjectsStatus::OperationNotSupported;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4537,11 +4537,11 @@ ECObjectsStatus AdhocPropertyEdit::Clear()
 ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool preserveValues)
     {
     if (!IsSupported() || !query.IsSupported())
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     auto enabler = GetStructEnabler();
     if (enabler.IsNull())
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     bmap<Utf8String, ECValue> preservedValues;
     if (preserveValues)
@@ -4552,24 +4552,24 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
             IECInstancePtr entry = GetEntry (i);
             Utf8String name;
             ECValue v;
-            if (entry.IsValid() && ECOBJECTS_STATUS_Success == GetString (name, *entry, Index::Name) && ECOBJECTS_STATUS_Success == GetValue (v, *entry, Index::Value))
+            if (entry.IsValid() && ECObjectsStatus::Success == GetString (name, *entry, Index::Name) && ECObjectsStatus::Success == GetValue (v, *entry, Index::Value))
                 preservedValues[name] = v;
             }
         }
 
     auto status = Clear();
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
 
     uint32_t count = query.GetCount();
     if (0 == count)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
 
     status = GetHostR().AddArrayElements (GetContainerPropertyIndex(), count);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         {
         BeAssert (false && "Failed to add array elements...existing values will be lost");
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
         }
 
     Utf8String name;
@@ -4586,22 +4586,22 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
         auto newEntry = enabler->CreateInstance();
         ECValue v;
         v.SetStruct (newEntry.get());
-        if (newEntry.IsNull() || ECOBJECTS_STATUS_Success != newEntry->CopyValues (*from) || ECOBJECTS_STATUS_Success != GetHostR().SetValue (GetContainerPropertyIndex(), v, i))
+        if (newEntry.IsNull() || ECObjectsStatus::Success != newEntry->CopyValues (*from) || ECObjectsStatus::Success != GetHostR().SetValue (GetContainerPropertyIndex(), v, i))
             {
             GetHostR().RemoveArrayElement (GetContainerPropertyIndex(), i);
             continue;
             }
 
-        if (preserveValues && ECOBJECTS_STATUS_Success == query.GetString (name, *from, Index::Name) && preservedValues.end() != (found = preservedValues.find (name)))
+        if (preserveValues && ECObjectsStatus::Success == query.GetString (name, *from, Index::Name) && preservedValues.end() != (found = preservedValues.find (name)))
             {
             ECValue v = found->second;
             PrimitiveType type;
-            if (ECOBJECTS_STATUS_Success == GetPrimitiveType (type, i) && v.ConvertToPrimitiveType (type))
+            if (ECObjectsStatus::Success == GetPrimitiveType (type, i) && v.ConvertToPrimitiveType (type))
                 SetValue (i, v);
             }
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -153,15 +153,15 @@ bool UnitLocater::LocateUnit (UnitR unit) const
 
     // If the unit specification defines the Unit, we're done
     ECValue v;
-    if (ECOBJECTS_STATUS_Success == unitSpecAttr->GetValue (v, UNIT_NAME) && !v.IsNull() && LocateUnitByName (unit, v.GetUtf8CP()))
+    if (ECObjectsStatus::Success == unitSpecAttr->GetValue (v, UNIT_NAME) && !v.IsNull() && LocateUnitByName (unit, v.GetUtf8CP()))
         return true;
 
     // If the unit specification defines a KindOfQuantity, locate a matching UnitSpecification at schema level defining the Unit
-    if (ECOBJECTS_STATUS_Success == unitSpecAttr->GetValue (v, KOQ_NAME) && !v.IsNull() && LocateUnitByKOQ (unit, v.GetUtf8CP()))
+    if (ECObjectsStatus::Success == unitSpecAttr->GetValue (v, KOQ_NAME) && !v.IsNull() && LocateUnitByKOQ (unit, v.GetUtf8CP()))
         return true;
 
     // If the unit specification defines a Dimension, locate matching UnitSpecification defining the Unit
-    if (ECOBJECTS_STATUS_Success == unitSpecAttr->GetValue (v, DIMENSION_NAME) && !v.IsNull() && LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetUtf8CP()))
+    if (ECObjectsStatus::Success == unitSpecAttr->GetValue (v, DIMENSION_NAME) && !v.IsNull() && LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetUtf8CP()))
         return true;
 
     return false;
@@ -196,7 +196,7 @@ bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, Utf8CP u
     {
     // 1. Extract conversion info
     ECValue v;
-    if (ECOBJECTS_STATUS_Success != attr.GetValue (v, CONVERSION_TYPE) || v.IsNull())
+    if (ECObjectsStatus::Success != attr.GetValue (v, CONVERSION_TYPE) || v.IsNull())
         return false;
 
     bool isSlope = (0 == strcmp (v.GetUtf8CP(), SLOPE_CONVERTER));
@@ -204,13 +204,13 @@ bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, Utf8CP u
     UnitConverter cvtr (isSlope);
     if (isFactorOffset || 0 == strcmp (v.GetUtf8CP(), FACTOR_CONVERTER))
         {
-        if (ECOBJECTS_STATUS_Success != attr.GetValue (v, CONVERSION_FACTOR) || v.IsNull())
+        if (ECObjectsStatus::Success != attr.GetValue (v, CONVERSION_FACTOR) || v.IsNull())
             return false;
 
         double conversionFactor = v.GetDouble();
         if (isFactorOffset)
             {
-            if (ECOBJECTS_STATUS_Success != attr.GetValue (v, CONVERSION_OFFSET) || v.IsNull())
+            if (ECObjectsStatus::Success != attr.GetValue (v, CONVERSION_OFFSET) || v.IsNull())
                 return false;
 
             cvtr = UnitConverter (conversionFactor, v.GetDouble());
@@ -223,11 +223,11 @@ bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, Utf8CP u
 
     // 2. Extract label
     ECValue labelV;
-    if (ECOBJECTS_STATUS_Success != attr.GetValue (labelV, SHORT_LABEL) || labelV.IsNull())
+    if (ECObjectsStatus::Success != attr.GetValue (labelV, SHORT_LABEL) || labelV.IsNull())
         return false;
 
     // 3. Extract base unit name
-    Utf8CP baseUnitName = (ECOBJECTS_STATUS_Success == attr.GetValue (v, BASE_UNIT) && !v.IsNull()) ? v.GetUtf8CP() : unitName;
+    Utf8CP baseUnitName = (ECObjectsStatus::Success == attr.GetValue (v, BASE_UNIT) && !v.IsNull()) ? v.GetUtf8CP() : unitName;
 
     unit = Unit (unitName, labelV.GetUtf8CP(), cvtr, baseUnitName);
     return true;
@@ -264,7 +264,7 @@ bool UnitLocater::LocateUnitBySpecification (UnitR unit, Utf8CP propName, Utf8CP
 bool UnitLocater::GetUnitFromSpecifications (UnitR unit, Utf8CP propName, Utf8CP propValue, IECInstanceCR specsAttr) const
     {
     ECValue v;
-    if (ECOBJECTS_STATUS_Success != specsAttr.GetValue (v, UNIT_SPECIFICATION_LIST))
+    if (ECObjectsStatus::Success != specsAttr.GetValue (v, UNIT_SPECIFICATION_LIST))
         return false;
 
     uint32_t nSpecs = v.GetArrayInfo().GetCount();
@@ -273,14 +273,14 @@ bool UnitLocater::GetUnitFromSpecifications (UnitR unit, Utf8CP propName, Utf8CP
         {
         // Find the UnitSpecifications[] entry matching the input criterion
         IECInstancePtr spec;
-        if (ECOBJECTS_STATUS_Success == specsAttr.GetValue (v, UNIT_SPECIFICATION_LIST, i) && (spec = v.GetStruct()).IsValid())
+        if (ECObjectsStatus::Success == specsAttr.GetValue (v, UNIT_SPECIFICATION_LIST, i) && (spec = v.GetStruct()).IsValid())
             {
-            if (ECOBJECTS_STATUS_Success == spec->GetValue (v, propName) && !v.IsNull() && 0 == strcmp (v.GetUtf8CP(), propValue))
+            if (ECObjectsStatus::Success == spec->GetValue (v, propName) && !v.IsNull() && 0 == strcmp (v.GetUtf8CP(), propValue))
                 {
                 // Find a UnitName defined on this UnitSpecification, and from that get the Unit
-                if (ECOBJECTS_STATUS_Success == spec->GetValue (v, UNIT_NAME) && !v.IsNull() && LocateUnitByName (unit, v.GetUtf8CP()))
+                if (ECObjectsStatus::Success == spec->GetValue (v, UNIT_NAME) && !v.IsNull() && LocateUnitByName (unit, v.GetUtf8CP()))
                     return true;
-                else if (0 == strcmp (KOQ_NAME, propName) && ECOBJECTS_STATUS_Success == spec->GetValue (v, DIMENSION_NAME) && !v.IsNull())
+                else if (0 == strcmp (KOQ_NAME, propName) && ECObjectsStatus::Success == spec->GetValue (v, DIMENSION_NAME) && !v.IsNull())
                     {
                     // Managed supports creating a KindOfQuantity simply by referencing it in conjunction with a DimensionName in a UnitSpecification....
                     if (LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetUtf8CP()))
@@ -312,7 +312,7 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, Utf8CP koqName) const
             // check Dimension of the base KOQ
             ECValue v;
             IECInstancePtr koqAttr = koqClass->GetCustomAttribute (KOQ_ATTRIBUTES);
-            if (koqAttr.IsValid() && ECOBJECTS_STATUS_Success == koqAttr->GetValue (v, DIMENSION) && !v.IsNull())
+            if (koqAttr.IsValid() && ECObjectsStatus::Success == koqAttr->GetValue (v, DIMENSION) && !v.IsNull())
                 return LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetUtf8CP());
             }
         }
@@ -365,11 +365,11 @@ bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, Utf8StringR 
     if (attr.IsValid())
         {
         ECValue v;
-        if (ECOBJECTS_STATUS_Success != attr->GetValue(v, DISPLAY_UNIT_NAME) || v.IsNull() || !UnitLocater(ecprop, false, unitsECClassLocater).LocateUnitByName(displayUnit, v.GetUtf8CP()))
+        if (ECObjectsStatus::Success != attr->GetValue(v, DISPLAY_UNIT_NAME) || v.IsNull() || !UnitLocater(ecprop, false, unitsECClassLocater).LocateUnitByName(displayUnit, v.GetUtf8CP()))
             displayUnit = storedUnit;
         
         displayFormat.clear();
-        if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
+        if (ECObjectsStatus::Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
             displayFormat = v.GetUtf8CP();
 
         return true;

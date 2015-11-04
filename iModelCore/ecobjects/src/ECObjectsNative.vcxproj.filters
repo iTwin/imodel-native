@@ -239,6 +239,9 @@
     <ClCompile Include="SchemaXml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PresentationMetadataHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">

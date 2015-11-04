@@ -130,14 +130,14 @@ private:
     //! information.
     //! @param[in] propertyIndex Index of property to validate against (index is 1-based)
     //! @param[in] v ECValue to validate
-    //! @return ECOBJECT_STATUS_Success if the validation was successful. ECOBJECTS_STATUS_DataTypeMismatch otherwise
+    //! @return ECOBJECT_STATUS_Success if the validation was successful. ECObjectsStatus::DataTypeMismatch otherwise
     ECObjectsStatus ValidateDateTimeMetadata (uint32_t propertyIndex, ECValueCR v) const;
     //! If the property is a DateTime property looks up the DateTimeInfo custom attribute and, if present,
     //! applies the DateTime metadata to the given ECValue.
     //! @remarks The metadata is used to build the DateTime object when the client calls ECValue::GetDateTime.
     //! @param[in] v ECValue to apply metadata to
     //! @param[in] propertyIndex Index of property to retrieve metadata from (index is 1-based)
-    //! @return ECOBJECT_STATUS_Success if successful. ECOBJECTS_STATUS_DataTypeMismatch if the 
+    //! @return ECOBJECT_STATUS_Success if successful. ECObjectsStatus::DataTypeMismatch if the 
     ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, uint32_t propertyIndex) const;
     ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, uint32_t propertyIndex) const;
 
@@ -156,7 +156,7 @@ protected:
     //! @param[in]  useArrayIndex   true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
     //!                             indicates the index in the array
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (array index is 0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const = 0;
 
     //! Sets the value for the property referred to by the specified property index
@@ -165,7 +165,7 @@ protected:
     //! @param[in]  useArrayIndex   true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
     //!                             indicates the index in the array
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (array index is 0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) = 0;
 
     //! Given a propertyIndex, will insert size number of empty array elements at the given index
@@ -206,7 +206,7 @@ protected:
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve
     //! @param[in]  useArrayIndex   Flag indicating whether an array index should be used
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
 
     //! Sets the unique id for this instance
@@ -237,7 +237,7 @@ protected:
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  useArrayIndex   Flag indicating whether an array index should be used
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     //! @remarks For when the caller wants to directly set the InternalValue, and not go through any processing, for example with calculated properties
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
 
@@ -279,96 +279,96 @@ public:
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyAccessString Name of the property to retrieve
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, Utf8CP propertyAccessString) const;
 //__PUBLISH_SECTION_END__
     //! Gets the value stored in the specified ECProperty, optionally including ad-hoc property values. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyAccessString Name of the property to retrieve
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValueOrAdhoc (ECValueR v, Utf8CP propertyAccessString) const;    
 //__PUBLISH_SECTION_START__
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v                       If successful, will contain the value of the property
     //! @param[in]  propertyAccessString    Name of the property to retrieve
     //! @param[in]  arrayIndex              The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, Utf8CP propertyAccessString, uint32_t arrayIndex) const;
     //! Gets the value stored in the ECProperty referred to by the specified property index
     //! @note The property index is 1-based!
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t propertyIndex) const;
     //! Gets the value stored in the specified ECProperty
     //! @note The property index is 1-based!
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t propertyIndex, uint32_t arrayIndex) const;
     //! Sets the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (Utf8CP propertyAccessString, ECValueCR v);
 //__PUBLISH_SECTION_END__
     //! Sets the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValueOrAdhoc (Utf8CP propertyAccessString, ECValueCR v);    
 //__PUBLISH_SECTION_START__
     //! Sets the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
     //! @param[in]  arrayIndex           The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (Utf8CP propertyAccessString, ECValueCR v, uint32_t arrayIndex);
     //! Sets the value for the specified property
     //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t propertyIndex, ECValueCR v);
     //! Sets the value for the specified property
     //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex);
 
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (Utf8CP propertyAccessString, ECValueCR v);
 //__PUBLISH_SECTION_END__
     //! Change the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValueOrAdhoc (Utf8CP propertyAccessString, ECValueCR v);    
 //__PUBLISH_SECTION_START__
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
     //! @param[in]  arrayIndex              The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, ECObjectsStatus::PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (Utf8CP propertyAccessString, ECValueCR v, uint32_t arrayIndex);
     //! Change the value for the specified property
     //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
-    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, ECObjectsStatus::PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (uint32_t propertyIndex, ECValueCR v);
     //! Change the value for the specified property
     //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, ECObjectsStatus::PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex);
 
     //! Gets the value of the ECProperty specified by the ECValueAccessor
@@ -380,21 +380,21 @@ public:
     //! Check for Null property value
     //! @param[out] isNull                  If successful, will contain true if property value is NULL.
     //! @param[in]  propertyAccessString    Name of the property to retrieve
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, Utf8CP propertyAccessString) const;
 
     //! Check for Null property value
     //! @param[out] isNull                  If successful, will contain true if property value is NULL.
     //! @param[in]  propertyAccessString    Name of the property to retrieve
     //! @param[in]  arrayIndex              The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, Utf8CP propertyAccessString, uint32_t arrayIndex) const;
 
     //! Check for Null property value
     //! @note The property index is 1-based!
     //! @param[out] isNull          If successful, will contain true if property value is NULL.
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, uint32_t propertyIndex) const;
 
     //! Check for Null property value
@@ -402,7 +402,7 @@ public:
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
-    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, uint32_t propertyIndex, uint32_t arrayIndex) const;
 
 /*__PUBLISH_SECTION_END__*/
@@ -426,7 +426,7 @@ public:
     //! Attempts to copy all property values from one instance to this instance.
     //! It is expected that the source instance is of the same class as this instance.
     //! @param[in] source   Instance to copy values from.
-    //! @returns ECOBJECTS_STATUS_Success if values were successfully copied.
+    //! @returns ECObjectsStatus::Success if values were successfully copied.
     ECOBJECTS_EXPORT ECObjectsStatus    CopyValues(ECN::IECInstanceCR source);
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.
@@ -758,7 +758,7 @@ public:
     //! Get a property value 
     //! @param[out]     v               Holds the property value after successful return
     //! @param[in]      managedAccessor The managed-style access string (e.g. including array indices: "MyStructs[0].Property"...)
-    //! @return ECOBJECTS_STATUS_Success if the value was retrieved, or an error code
+    //! @return ECObjectsStatus::Success if the value was retrieved, or an error code
     ECOBJECTS_EXPORT ECObjectsStatus    GetInstanceValue (ECValueR v, Utf8CP managedAccessor) const;
 
     //! @return The schema and class name of the IECInstance

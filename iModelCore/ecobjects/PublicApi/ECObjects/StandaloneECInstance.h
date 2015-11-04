@@ -161,7 +161,7 @@ public:
 //__PUBLISH_SECTION_START__
     //! Merges the property values of the specified IECInstance into this MemoryECInstanceBase
     //! @param[in]      fromNativeInstance The IECInstance supplying property values to be merged
-    //! @return ECOBJECTS_STATUS_Success if property values were successfully merged, otherwise an error status
+    //! @return ECObjectsStatus::Success if property values were successfully merged, otherwise an error status
     ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (ECN::IECInstanceCR fromNativeInstance);
 //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount);

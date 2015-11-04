@@ -125,13 +125,13 @@ public:
     //! Obtain a propertyIndex given an access string. The propertyIndex can be used with ECInstances enabled by this enabler for more efficient property value access
     //! @param[out]     propertyIndex           Will be set to the corresponding property index
     //! @param[in]      propertyAccessString    Access string for which to obtain the property index
-    //! @return ECOBJECTS_STATUS_Success if access string successfully converted, or an error code.
+    //! @return ECObjectsStatus::Success if access string successfully converted, or an error code.
     ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (uint32_t& propertyIndex, Utf8CP propertyAccessString) const;
 
     //! Given a propertyIndex, find the corresponding property access string
     //! @param[out]     propertyAccessString    Will be set to the corresponding access string
     //! @param[in]      propertyIndex           Property index for which to obtain an access string
-    //! @return ECOBJECTS_STATUS_Success if property index successfully converted, or an error code.
+    //! @return ECObjectsStatus::Success if property index successfully converted, or an error code.
     ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (Utf8CP& propertyAccessString, uint32_t propertyIndex) const;
 
     //! Obtain the property index of the first property of this enabler's ECClass (if parentIndex == 0), or the first child property
@@ -159,7 +159,7 @@ public:
     //! Get vector of all property indices for property defined by parent index.
     //! @param[out]     indices         Vector to hold the property indices.
     //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
-    //! @return ECOBJECTS_STATUS_Success if vector of indices populated, or an error code.
+    //! @return ECObjectsStatus::Success if vector of indices populated, or an error code.
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const;
 
     //! Get the IStandaloneEnablerLocater for this enabler
@@ -262,19 +262,19 @@ protected:
                 if (0 == BeStringUtilities::Stricmp(propertyAccessString, DerivedClass::PropertyNameList[index]))
                     {
                     propertyIndex = index + 1;
-                    return ECOBJECTS_STATUS_Success;
+                    return ECObjectsStatus::Success;
                     }
                 }
-            return ECOBJECTS_STATUS_InvalidPropertyAccessString;
+            return ECObjectsStatus::InvalidPropertyAccessString;
             }
 
         virtual ECObjectsStatus _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override
             {
             if (propertyIndex > DerivedClass::MAX_PROPERTY_COUNT || propertyIndex <= 0)
-                return ECOBJECTS_STATUS_IndexOutOfRange;
+                return ECObjectsStatus::IndexOutOfRange;
 
             propertyAccessString = DerivedClass::PropertyNameList[propertyIndex -1];
-            return ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
             }
 
         virtual uint32_t        _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override
@@ -289,7 +289,7 @@ protected:
             {
             for (uint32_t index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
                 indices.push_back(index + 1);
-            return ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
 
             }
         virtual uint32_t        _GetFirstPropertyIndex (uint32_t parentIndex) const override {return 1;}

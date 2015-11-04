@@ -152,15 +152,15 @@ bool                MemoryECInstanceBase::_IsMemoryInitialized () const
 ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet, uint8_t bitIndex, uint32_t propertyIndex) const
     {
     if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
+        return ECObjectsStatus::InvalidIndexForPerPropertyFlag;
 
     if (propertyIndex >= GetClassLayout().GetPropertyCount ())
-        return ECOBJECTS_STATUS_IndexOutOfRange;
+        return ECObjectsStatus::IndexOutOfRange;
 
     uint32_t* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags;
 
     if (!addressOfPerPropertyFlags)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     uint32_t bitToCheck = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
     uint32_t offset = bitToCheck >> BITS_TO_SHIFT_FOR_FLAGSBITMASK;
@@ -169,7 +169,7 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
 
     isSet = (bitValue == (addressOfPerPropertyFlags[offset] & bitValue));
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,16 +182,16 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     if (2 > m_perPropertyFlagsHolder.numBitsPerProperty)
         {
         DEBUG_FAIL ("PerPropertyFlagsHolder presently supports maximum 2 bits");
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
         }
     else if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
+        return ECObjectsStatus::InvalidIndexForPerPropertyFlag;
 
     ::uint32_t mask = m_perPropertyFlagsHolder.numBitsPerProperty == 2 ? s_maskFor2Bits[(int)bitIndex] : 0xFFFFFFFF;
 
     uint32_t* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags;
     if (NULL == addressOfPerPropertyFlags)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     isSet = false;
     for (uint32_t i = 0; i < m_perPropertyFlagsHolder.numPerPropertyFlagsEntries; i++)
@@ -203,7 +203,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
             }
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -217,7 +217,7 @@ ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (uint32_t property
 
     PropertyLayoutCP propertyLayout = NULL;
 
-    if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, propertyIndex))
+    if (ECObjectsStatus::Success == GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, propertyIndex))
         {
         uint32_t parentIndex = propertyLayout->GetParentStructIndex();
         if (0 != parentIndex)
@@ -235,15 +235,15 @@ ECObjectsStatus          MemoryECInstanceBase::SetIsLoadedBit (uint32_t property
 ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (uint8_t bitIndex, uint32_t propertyIndex, bool setBit)
     {
     if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
+        return ECObjectsStatus::InvalidIndexForPerPropertyFlag;
 
     if (propertyIndex >= GetClassLayout().GetPropertyCount ())
-        return ECOBJECTS_STATUS_IndexOutOfRange;
+        return ECObjectsStatus::IndexOutOfRange;
 
     uint32_t* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags;
 
     if (!addressOfPerPropertyFlags)
-        return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
+        return ECObjectsStatus::InvalidIndexForPerPropertyFlag;
 
     uint32_t bitToSet = (propertyIndex * m_perPropertyFlagsHolder.numBitsPerProperty) + bitIndex;
     uint32_t offset = bitToSet >> BITS_TO_SHIFT_FOR_FLAGSBITMASK;
@@ -255,7 +255,7 @@ ECObjectsStatus          MemoryECInstanceBase::SetPerPropertyBit (uint8_t bitInd
     else
         addressOfPerPropertyFlags[offset] &= ~bitValue;
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,11 +269,11 @@ ECObjectsStatus    MemoryECInstanceBase::SetBitForAllProperties (uint8_t bitInde
     for (uint32_t propertyIndex=0; propertyIndex<(uint32_t)numProperties; propertyIndex++)
         {
         status = SetPerPropertyBit (bitIndex, propertyIndex, setBit);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;
         }
     
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,13 +294,13 @@ void    MemoryECInstanceBase::ClearAllPerPropertyFlags ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           MemoryECInstanceBase::_ModifyData (uint32_t offset, void const * newData, uint32_t dataLength)
     {
-    PRECONDITION (NULL != m_data, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (offset + dataLength <= m_bytesAllocated, ECOBJECTS_STATUS_MemoryBoundsOverrun);
+    PRECONDITION (NULL != m_data, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (offset + dataLength <= m_bytesAllocated, ECObjectsStatus::MemoryBoundsOverrun);
 
     Byte * dest = GetAddressOfPropertyData() + offset;
     memcpy (dest, newData, dataLength);
     
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -308,13 +308,13 @@ ECObjectsStatus           MemoryECInstanceBase::_ModifyData (uint32_t offset, vo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus MemoryECInstanceBase::_MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength)
     {
-    PRECONDITION (NULL != m_data, ECOBJECTS_STATUS_PreconditionViolated);
-    PRECONDITION (toOffset + dataLength <= m_bytesAllocated, ECOBJECTS_STATUS_MemoryBoundsOverrun);
+    PRECONDITION (NULL != m_data, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (toOffset + dataLength <= m_bytesAllocated, ECObjectsStatus::MemoryBoundsOverrun);
 
     Byte* data = GetAddressOfPropertyData();
     memmove (data+toOffset, data+fromOffset, dataLength);
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,14 +331,14 @@ ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
         if (NULL == reallocedData)
             {
             BeAssert (false);
-            return ECOBJECTS_STATUS_UnableToAllocateMemory;
+            return ECObjectsStatus::UnableToAllocateMemory;
             }
 
         m_data = reallocedData;
         m_bytesAllocated = newAllocation;
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     } 
 //
 ////*---------------------------------------------------------------------------------**//**
@@ -347,7 +347,7 @@ ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
 //ECObjectsStatus MemoryECInstanceBase::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
 //    {
 //    // If we're using pinned managed memory buffer, we can't resize it...we'll just re-evaluate the calculated property next time its value is requested.
-//    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECOBJECTS_STATUS_Success;
+//    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECObjectsStatus::Success;
 //    }
 
 /*---------------------------------------------------------------------------------**//**
@@ -390,12 +390,12 @@ ECObjectsStatus           MemoryECInstanceBase::_GrowAllocation (uint32_t bytesN
     Byte * reallocedData = (Byte*)realloc(m_data, newSize);
     DEBUG_EXPECT (NULL != reallocedData);
     if (NULL == reallocedData)
-        return ECOBJECTS_STATUS_UnableToAllocateMemory;
+        return ECObjectsStatus::UnableToAllocateMemory;
     
     m_data = reallocedData; 
     m_bytesAllocated = newSize;
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -439,7 +439,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
             {
             pTo = pFrom->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
             ECObjectsStatus copyStatus = pTo->CopyValues (*pFrom);
-            if (ECOBJECTS_STATUS_Success != copyStatus)
+            if (ECObjectsStatus::Success != copyStatus)
                 return copyStatus;
             }
 
@@ -450,10 +450,10 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         }
 
     ECObjectsStatus status = SetPrimitiveValueToMemory (structValueIdValue, propertyLayout, true, index);      
-    if (status != ECOBJECTS_STATUS_Success)
+    if (status != ECObjectsStatus::Success)
         {
         // This useless return value again....
-        if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+        if (ECObjectsStatus::PropertyValueMatchesNoChange != status)
             return status;
         }
                  
@@ -462,7 +462,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
 
     m_structInstances->push_back (StructArrayEntry (structValueId, p));
 
-    return ECOBJECTS_STATUS_Success; 
+    return ECObjectsStatus::Success; 
     }    
   
 /*---------------------------------------------------------------------------------**//**
@@ -523,7 +523,7 @@ ECObjectsStatus           MemoryECInstanceBase::SetStructArrayInstance (MemoryEC
     if (m_structValueId < structValueId)
         m_structValueId = structValueId;
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -558,14 +558,14 @@ ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (
     {
     ECValue structValueIdValue;
     ECObjectsStatus status = GetPrimitiveValueFromMemory (structValueIdValue, propertyLayout, true, index);      
-    if (status != ECOBJECTS_STATUS_Success)
+    if (status != ECObjectsStatus::Success)
         return status;
         
     // A structValueId of 0 means the instance is null
     if (structValueIdValue.IsNull() || 0 == structValueIdValue.GetInteger())
         {
         v.SetStruct(NULL);
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }        
                     
     StructValueIdentifier structValueId = structValueIdValue.GetInteger();
@@ -573,7 +573,7 @@ ECObjectsStatus           MemoryECInstanceBase::_GetStructArrayValueFromMemory (
     IECInstancePtr instancePtr = GetStructArrayInstance (structValueId);
     v.SetStruct (instancePtr.get());
     
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -624,7 +624,7 @@ void                MemoryECInstanceBase::_ClearValues ()
 ECObjectsStatus MemoryECInstanceBase::RemoveStructStructArrayEntry (StructValueIdentifier structValueId)
     {
     if (!m_structInstances)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     StructInstanceVector::iterator iter;
     for (iter = m_structInstances->begin(); iter != m_structInstances->end(); iter++)
@@ -632,11 +632,11 @@ ECObjectsStatus MemoryECInstanceBase::RemoveStructStructArrayEntry (StructValueI
         if (structValueId == (*iter).structValueIdentifier)
             {
             m_structInstances->erase(iter);
-            return ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
             }
         }
 
-    return ECOBJECTS_STATUS_Error;
+    return ECObjectsStatus::Error;
     }
                                   
 /*---------------------------------------------------------------------------------**//**
@@ -658,14 +658,14 @@ ECObjectsStatus MemoryECInstanceBase::_RemoveStructArrayElementsFromMemory (Prop
     for (uint32_t i = 0; i<removeCount; i++)
         {
         status = GetPrimitiveValueFromMemory (v, propertyLayout, true, removeIndex+i);
-        if (status != ECOBJECTS_STATUS_Success)
+        if (status != ECObjectsStatus::Success)
             return status;
 
         // get struct value id from ecValue
         StructValueIdentifier structValueId = v.GetInteger ();    
 
         status = RemoveStructStructArrayEntry (structValueId);       
-        if (status != ECOBJECTS_STATUS_Success)
+        if (status != ECObjectsStatus::Success)
             return status;
        }   
 
@@ -735,13 +735,13 @@ static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR sourc
                 {
                 // TFS#128233: overwrite the entire array, adjusting size if necessary.
                 ECValue targetArray;
-                if (prop.GetValue().IsArray() && ECOBJECTS_STATUS_Success == target.GetValueUsingAccessor (targetArray, prop.GetValueAccessor()))
+                if (prop.GetValue().IsArray() && ECObjectsStatus::Success == target.GetValueUsingAccessor (targetArray, prop.GetValueAccessor()))
                     {
                     uint32_t nArrayElements = prop.GetValue().GetArrayInfo().GetCount();
                     if (nArrayElements != targetArray.GetArrayInfo().GetCount())
                         {
                         auto accessString = prop.GetValueAccessor().GetManagedAccessString();
-                        if (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::ClearArray (target, accessString.c_str()))
+                        if (ECObjectsStatus::Success == ECInstanceInteropHelper::ClearArray (target, accessString.c_str()))
                             ECInstanceInteropHelper::AddArrayElements (target, accessString.c_str(), nArrayElements);
                         }
                     }
@@ -806,7 +806,7 @@ ECObjectsStatus MemoryECInstanceBase::_SetIsHidden (bool set)
     else 
         m_usageBitmask = m_usageBitmask & (~(uint16_t)MEMORYINSTANCEUSAGE_IsHidden);
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -830,14 +830,14 @@ ECN::IECInstanceCR     fromNativeInstance
     IECInstancePtr  thisAsIECInstance = GetAsIECInstanceP ();
 
     if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     bool sourceIsMemoryBased = (NULL != fromNativeInstance.GetAsMemoryECInstance ());
 
     ECValuesCollectionPtr   properties = ECValuesCollection::Create (fromNativeInstance);
     mergeProperties (*thisAsIECInstance, *properties, sourceIsMemoryBased);
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -847,16 +847,16 @@ ECN::IECInstanceCR     fromNativeInstance
 ECObjectsStatus          MemoryECInstanceBase::SetInstancePerPropertyFlagsData (Byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries)
     {
     if (numBitsPerProperty != m_perPropertyFlagsHolder.numBitsPerProperty)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     if (numPerPropertyFlagsEntries !=  m_perPropertyFlagsHolder.numPerPropertyFlagsEntries)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     if (0 == numPerPropertyFlagsEntries)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
 
     memcpy (m_perPropertyFlagsHolder.perPropertyFlags, perPropertyFlagsDataAddress, m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(uint32_t));
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -866,7 +866,7 @@ ECObjectsStatus MemoryECInstanceBase::SetValueInternal (uint32_t propertyIndex, 
     {
     PropertyLayoutCP propLayout;
     ECObjectsStatus status;
-    if (ECOBJECTS_STATUS_Success == (status = GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex)))
+    if (ECObjectsStatus::Success == (status = GetClassLayout().GetPropertyLayoutByIndex (propLayout, propertyIndex)))
         {
         SetIsLoadedBit (propertyIndex);
         status = SetInternalValueToMemory (*propLayout, v, useArrayIndex, arrayIndex);
@@ -900,13 +900,13 @@ ECObjectsStatus MemoryECInstanceBase::_EvaluateCalculatedProperty (ECValueR calc
     if (NULL != spec)
         {
         uint32_t propIdx;
-        if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
+        if (ECObjectsStatus::Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
             (const_cast<MemoryECInstanceBase&> (*this)).SetIsLoadedBit (propIdx);
 
         return spec->Evaluate (calcedValue, existingValue, thisInstance, propLayout.GetAccessString());
         }
     else
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -916,7 +916,7 @@ ECObjectsStatus MemoryECInstanceBase::_UpdateCalculatedPropertyDependents (ECVal
     {
     IECInstanceR thisInstance = *GetAsIECInstanceP();
     CalculatedPropertySpecificationCP spec = LookupCalculatedPropertySpecification (thisInstance, propLayout);
-    return NULL != spec ? spec->UpdateDependentProperties (calcedValue, thisInstance) : ECOBJECTS_STATUS_Error;
+    return NULL != spec ? spec->UpdateDependentProperties (calcedValue, thisInstance) : ECObjectsStatus::Error;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -925,10 +925,10 @@ ECObjectsStatus MemoryECInstanceBase::_UpdateCalculatedPropertyDependents (ECVal
 bool MemoryECInstanceBase::_IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const
     {
     uint32_t propIdx;
-    if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
+    if (ECObjectsStatus::Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
         {
         ECPropertyCP ecprop = GetAsIECInstance()->GetEnabler().LookupECProperty (propIdx);
-        ArrayECPropertyCP arrayProp = ecprop ? ecprop->GetAsArrayProperty() : NULL;
+        StructArrayECPropertyCP arrayProp = ecprop ? ecprop->GetAsStructArrayProperty() : NULL;
         if (NULL != arrayProp)
             return structInstance.GetEnabler().GetClass().Is (arrayProp->GetStructElementType());
         }
@@ -994,7 +994,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
         return NULL;
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
-    if (ECOBJECTS_STATUS_Success != newInstance->CopyValues (instance))
+    if (ECObjectsStatus::Success != newInstance->CopyValues (instance))
         return NULL;
 
     return newInstance;
@@ -1047,7 +1047,7 @@ Utf8String        StandaloneECInstance::_GetInstanceId() const
 ECObjectsStatus StandaloneECInstance::_SetInstanceId (Utf8CP instanceId)
     {
     m_instanceId = instanceId;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1074,10 +1074,10 @@ ECObjectsStatus           StandaloneECInstance::_GetValue (ECValueR v, uint32_t 
     v.Clear ();
 
     ECObjectsStatus status = GetValueFromMemory (v, propertyIndex, useArrayIndex, arrayIndex);
-    if (ECOBJECTS_STATUS_Success == status)
+    if (ECObjectsStatus::Success == status)
         {
         bool isSet = false;
-        if (ECOBJECTS_STATUS_Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, (uint8_t) PROPERTYFLAGINDEX_IsLoaded, propertyIndex)) 
+        if (ECObjectsStatus::Success == MemoryECInstanceBase::IsPerPropertyBitSet (isSet, (uint8_t) PROPERTYFLAGINDEX_IsLoaded, propertyIndex)) 
             v.SetIsLoaded (isSet);
         }
 
@@ -1156,21 +1156,21 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (uint32_t propIdx)
     {
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;
+    if (ECObjectsStatus::Success != status || NULL == pPropertyLayout)
+        return ECObjectsStatus::PropertyNotFound;
 
     uint32_t arrayCount = GetReservedArrayCount (*pPropertyLayout);
     if (arrayCount > 0)
         {
         status =  RemoveArrayElements (*pPropertyLayout, 0, arrayCount);
 
-        if (ECOBJECTS_STATUS_Success == status)
+        if (ECObjectsStatus::Success == status)
             SetPerPropertyBit ((uint8_t) PROPERTYFLAGINDEX_IsLoaded, propIdx, false);
 
         return  status;
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }                      
 
 /*---------------------------------------------------------------------------------**//**

@@ -433,7 +433,7 @@ Utf8String        ClassLayout::LogicalStructureToString (uint32_t parentStuctInd
         PropertyLayoutCP    propertyLayout = NULL;
         ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propIndex);
 
-        if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
+        if (ECObjectsStatus::Success != status || NULL == propertyLayout)
             {
             oss += "  *** ERROR finding PropertyLayout ***\n";
             continue;
@@ -548,12 +548,12 @@ static bool            areLayoutsCompatible (ClassLayoutCR testLayout, ClassLayo
         {
         PropertyLayoutCP testPropertyLayout;
         ECObjectsStatus status = testLayout.GetPropertyLayoutByIndex (testPropertyLayout, i);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return false;
 
         PropertyLayoutCP propertyLayout;
         status = classLayout.GetPropertyLayout (propertyLayout, testPropertyLayout->GetAccessString());
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return false;
 
         if (testPropertyLayout->GetTypeDescriptor().GetTypeKind() != propertyLayout->GetTypeDescriptor().GetTypeKind())
@@ -664,7 +664,7 @@ uint32_t        ClassLayout::Factory::GetParentStructIndex (Utf8CP accessString)
         {
         Utf8String         parentAccessString (accessString, pLastDot - accessString);
         ECObjectsStatus status = m_underConstruction->GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             BeAssert (false);
         }
     
@@ -1042,7 +1042,7 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
             }
         }     
 #endif
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1227,11 +1227,11 @@ ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propert
     IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
 
     if (pos == m_indicesByAccessString.end())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
     else
         {
         propertyLayout = m_propertyLayouts[pos->second];
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     }
 
@@ -1242,10 +1242,10 @@ ECObjectsStatus     ClassLayout::GetPropertyIndex (uint32_t& propertyIndex, Utf8
     {
     IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
     if (pos == m_indicesByAccessString.end())
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
     propertyIndex = pos->second;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1255,10 +1255,10 @@ ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & 
     {
     BeAssert (propertyIndex < m_propertyLayouts.size());
     if (propertyIndex >= m_propertyLayouts.size())
-        return ECOBJECTS_STATUS_IndexOutOfRange; 
+        return ECObjectsStatus::IndexOutOfRange; 
         
     propertyLayout = m_propertyLayouts[propertyIndex];
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1270,10 +1270,10 @@ ECObjectsStatus ClassLayout::GetPropertyLayoutIndex (uint32_t& propertyIndex, Pr
         if (m_propertyLayouts[i] == &propertyLayout)
             {
             propertyIndex = (uint32_t)i;
-            return ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
             }
 
-    return ECOBJECTS_STATUS_PropertyNotFound;
+    return ECObjectsStatus::PropertyNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1284,12 +1284,12 @@ ECObjectsStatus         ClassLayout::GetAccessStringByIndex(Utf8CP& accessString
     PropertyLayoutCP    propertyLayout;
     ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
 
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
 
     accessString = propertyLayout->GetAccessString();
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1298,7 +1298,7 @@ ECObjectsStatus         ClassLayout::GetAccessStringByIndex(Utf8CP& accessString
 bool ClassLayout::HasChildProperties (uint32_t parentIndex) const
     {
     PropertyLayoutCP propertyLayout;
-    return ECOBJECTS_STATUS_Success == GetPropertyLayoutByIndex (propertyLayout, parentIndex) && propertyLayout->GetTypeDescriptor().IsStruct();
+    return ECObjectsStatus::Success == GetPropertyLayoutByIndex (propertyLayout, parentIndex) && propertyLayout->GetTypeDescriptor().IsStruct();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1307,7 +1307,7 @@ bool ClassLayout::HasChildProperties (uint32_t parentIndex) const
 uint32_t ClassLayout::GetParentPropertyIndex (uint32_t childIndex) const
     {
     PropertyLayoutCP propertyLayout;
-    return ECOBJECTS_STATUS_Success == GetPropertyLayoutByIndex (propertyLayout, childIndex) ? propertyLayout->GetParentStructIndex() : 0;
+    return ECObjectsStatus::Success == GetPropertyLayoutByIndex (propertyLayout, childIndex) ? propertyLayout->GetParentStructIndex() : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1334,15 +1334,15 @@ ECObjectsStatus ClassLayout::GetPropertyIndices (bvector<uint32_t>& properties, 
     {
     bmap<uint32_t, bvector<uint32_t> >::const_iterator mapIterator = m_logicalStructureMap.find (parentIndex);
     if ( ! EXPECTED_CONDITION (m_logicalStructureMap.end() != mapIterator))
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     for (uint32_t propIndex: mapIterator->second)
         properties.push_back(propIndex);
 
     if (properties.size() > 0)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
 
-    return ECOBJECTS_STATUS_Error;
+    return ECObjectsStatus::Error;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1837,7 +1837,7 @@ ECObjectsStatus       ECDBuffer::EnsureSpaceIsAvailable (uint32_t& offset, Prope
     int32_t additionalBytesNeeded = bytesNeeded - availableBytes;
     
     if (additionalBytesNeeded <= 0)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         
     return GrowPropertyValue (propertyLayout, additionalBytesNeeded);
     }        
@@ -1848,12 +1848,12 @@ ECObjectsStatus       ECDBuffer::EnsureSpaceIsAvailable (uint32_t& offset, Prope
 ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount)
     {
     ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = ECOBJECTS_STATUS_Error;
+    ECObjectsStatus status = ECObjectsStatus::Error;
 
     bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
-    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to remove an array entry", ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to remove an array entry", ECObjectsStatus::PreconditionViolated);
     
-    PRECONDITION (removeCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
+    PRECONDITION (removeCount > 0, ECObjectsStatus::IndexOutOfRange)        
    
     uint32_t     bytesAllocated = _GetBytesAllocated();    
     Byte *       currentData    = (Byte*)_GetData();
@@ -1896,7 +1896,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
 
     // WIP: bytesToMove is UInt32, and therefore will always be positive.
     // if (bytesToMove < 0)
-    //     return ECOBJECTS_STATUS_Error;
+    //     return ECObjectsStatus::Error;
 
     // remove the array values - bytesToMove may be equal to zero if allocated size has no padding and we are deleting the last member of the array.
     if (bytesToMove > 0)
@@ -2018,7 +2018,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
     // replace all property data for the instance
     status = _ModifyData (0, _data, bytesAllocated);
 
-    if (ECOBJECTS_STATUS_Success == status)
+    if (ECObjectsStatus::Success == status)
         _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
 
 #ifdef DEBUGGING_ARRAYENTRY_REMOVAL           
@@ -2038,14 +2038,14 @@ ECObjectsStatus ECDBuffer::RemoveArrayElements (PropertyLayoutCR propertyLayout,
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     PRECONDITION (typeDescriptor.IsArray() && 
         "Can not set the value to memory at an array index using the specified property layout because it is not an array datatype", 
-        ECOBJECTS_STATUS_PreconditionViolated);  
+        ECObjectsStatus::PreconditionViolated);  
                         
     if (removeIndex >= GetReservedArrayCount (propertyLayout))
-        return ECOBJECTS_STATUS_IndexOutOfRange;  
+        return ECObjectsStatus::IndexOutOfRange;  
 
 
 #ifdef DEBUGGING_ARRAYENTRY_REMOVAL 
-    ECObjectsStatus status = ECOBJECTS_STATUS_Error;
+    ECObjectsStatus status = ECObjectsStatus::Error;
     WString preDeleteLayout = InstanceDataToString ("", GetClassLayout());
     if (preDeleteLayout.empty())
         return status;
@@ -2056,12 +2056,12 @@ ECObjectsStatus ECDBuffer::RemoveArrayElements (PropertyLayoutCR propertyLayout,
     else if (typeDescriptor.IsStructArray())    
         {
         ECObjectsStatus result = _RemoveStructArrayElementsFromMemory (propertyLayout, removeIndex, removeCount);       
-        if (ECOBJECTS_STATUS_Success == result)
+        if (ECObjectsStatus::Success == result)
             _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
         return result;
         }
 
-    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
+    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECObjectsStatus::DataTypeNotSupported);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2073,7 +2073,7 @@ ECObjectsStatus ECDBuffer::ClearArrayElementsFromMemory (uint32_t propertyIndex)
     ClassLayoutCR classLayout = GetClassLayout();
     
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propertyIndex);
-    if (ECOBJECTS_STATUS_Success == status)
+    if (ECObjectsStatus::Success == status)
         {
         uint32_t arrayCount = GetReservedArrayCount (*pPropertyLayout);
         if (0 < arrayCount)
@@ -2091,8 +2091,8 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (uint32_t propIdx, uint32_t rem
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;
+    if (ECObjectsStatus::Success != status || NULL == pPropertyLayout)
+        return ECObjectsStatus::PropertyNotFound;
 
     return RemoveArrayElements (*pPropertyLayout, removeIndex, removeCount);
     }
@@ -2105,17 +2105,17 @@ ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (uint32_t propIdx, uint32_t
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;
+    if (ECObjectsStatus::Success != status || NULL == pPropertyLayout)
+        return ECObjectsStatus::PropertyNotFound;
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
     bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
-    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_UnableToResizeFixedSizedArray);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECObjectsStatus::UnableToResizeFixedSizedArray);
     
-    PRECONDITION (insertCount > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
+    PRECONDITION (insertCount > 0, ECObjectsStatus::IndexOutOfRange)        
     
     status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, insertIndex, insertCount);
-    if (ECOBJECTS_STATUS_Success == status)
+    if (ECObjectsStatus::Success == status)
         _HandleArrayResize (pPropertyLayout, insertIndex, insertCount);
 
     return status;
@@ -2127,21 +2127,21 @@ ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (uint32_t propIdx, uint32_t
 ECObjectsStatus       ECDBuffer::AddNullArrayElementsAt (uint32_t propIdx, uint32_t count)
     {        
     if (0 == count)
-        return ECOBJECTS_STATUS_Success;    // it's a no-op. Used to be treated as error, but it's bound to happen.
+        return ECObjectsStatus::Success;    // it's a no-op. Used to be treated as error, but it's bound to happen.
 
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound; 
+    if (ECObjectsStatus::Success != status || NULL == pPropertyLayout)
+        return ECObjectsStatus::PropertyNotFound; 
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
     bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
-    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_UnableToResizeFixedSizedArray);
+    PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECObjectsStatus::UnableToResizeFixedSizedArray);
     
     ArrayCount index = GetAllocatedArrayCount (propertyLayout);
     status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, index, count);
-    if (ECOBJECTS_STATUS_Success == status)
+    if (ECObjectsStatus::Success == status)
         _HandleArrayResize (pPropertyLayout, index, count);
 
     return status;
@@ -2161,14 +2161,14 @@ ECObjectsStatus       ECDBuffer::EnsureSpaceIsAvailableForArrayIndexValue (Prope
     int32_t additionalBytesNeeded = bytesNeeded - availableBytes;
     
     if (additionalBytesNeeded <= 0)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
     
     uint32_t arrayCount = GetAllocatedArrayCount (propertyLayout);
     
     uint32_t endOfValueDataPreGrow = *((SecondaryOffset*)(GetPropertyData() + propertyLayout.GetOffset()) + 1);
     ECObjectsStatus status = GrowPropertyValue (propertyLayout, additionalBytesNeeded);
 
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
 
     if (arrayIndex < arrayCount - 1)
@@ -2198,7 +2198,7 @@ ECObjectsStatus       ECDBuffer::GrowPropertyValue (PropertyLayoutCR propertyLay
     uint32_t bytesAllocated = _GetBytesAllocated();    
     uint32_t additionalBytesAvailable = bytesAllocated - bytesUsed;
     
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     if (additionalBytesNeeded > additionalBytesAvailable)
         {
         uint32_t growBy = additionalBytesNeeded - additionalBytesAvailable;
@@ -2208,7 +2208,7 @@ ECObjectsStatus       ECDBuffer::GrowPropertyValue (PropertyLayoutCR propertyLay
         bytesAllocated = newBytesAllocated;
         }
     
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
         
     Byte * writeableData = (Byte *)GetPropertyData();
@@ -2226,7 +2226,7 @@ ECObjectsStatus       ECDBuffer::GrowPropertyValue (PropertyLayoutCR propertyLay
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     ECDBuffer::Compress()
     {
-    return _IsMemoryInitialized() ? _ShrinkAllocation() : ECOBJECTS_STATUS_Success;
+    return _IsMemoryInitialized() ? _ShrinkAllocation() : ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2263,7 +2263,7 @@ ECObjectsStatus       ECDBuffer::ShiftValueData(Byte * propertyData, uint32_t by
         
         DEBUG_EXPECT (destination + bytesToMove <= propertyData + bytesAllocated && "Attempted to move memory beyond the end of the allocated XAttribute.");
         if (destination + bytesToMove > propertyData + bytesAllocated)
-            return ECOBJECTS_STATUS_IndexOutOfRange;
+            return ECObjectsStatus::IndexOutOfRange;
             
         MoveData (destination, source, bytesToMove);
         }
@@ -2278,7 +2278,7 @@ ECObjectsStatus       ECDBuffer::ShiftValueData(Byte * propertyData, uint32_t by
             *pSecondaryOffset += shiftBy; 
         
         *pLast += shiftBy; // always do the last one
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
         
     uint32_t nSecondaryOffsetsToShift = sizeOfSecondaryOffsetsToShift / sizeof(SecondaryOffset);
@@ -2318,7 +2318,7 @@ ECObjectsStatus       ECDBuffer::ShiftArrayIndexValueData(PropertyLayoutCR prope
         
         DEBUG_EXPECT (destination + bytesToMove <= data + *pNextProperty && "Attempted to move memory beyond the end of the reserved memory for this property.");
         if (destination + bytesToMove > data + *pNextProperty)
-            return ECOBJECTS_STATUS_IndexOutOfRange;
+            return ECObjectsStatus::IndexOutOfRange;
             
         MoveData (destination, source, bytesToMove);
         }
@@ -2370,7 +2370,7 @@ ECObjectsStatus ECDBuffer::SetIsHidden (bool hidden)            { return _SetIsH
 ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)
     {
     auto status = _CopyFromBuffer (source);
-    if (ECOBJECTS_STATUS_Success == status)
+    if (ECObjectsStatus::Success == status)
         {
         SetIsPersistentlyReadOnly (source.IsPersistentlyReadOnly());
         SetIsHidden (source.IsHidden());
@@ -2392,19 +2392,19 @@ static bool isPrimitiveType (ECPropertyCR prop)
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source, bool ignoreErrors)
     {
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
         {
         ECPropertyValue const& prop = *it;
         if (prop.HasChildValues())
             {
             // Stupid PropertyValueMatchesNoChange return value is stupid.
-            if (ECOBJECTS_STATUS_Success != (status = duplicateProperties (target, *prop.GetChildValues(), ignoreErrors)))
+            if (ECObjectsStatus::Success != (status = duplicateProperties (target, *prop.GetChildValues(), ignoreErrors)))
                 {
-                if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+                if (!ignoreErrors && ECObjectsStatus::PropertyValueMatchesNoChange != status)
                     return status;
                 else
-                    status = ECOBJECTS_STATUS_Success;  // ignore error
+                    status = ECObjectsStatus::Success;  // ignore error
                 }
 
             continue;
@@ -2412,17 +2412,17 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         else 
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
-            if (NULL != ecProp && isPrimitiveType (*ecProp) && ECOBJECTS_STATUS_Success != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            if (NULL != ecProp && isPrimitiveType (*ecProp) && ECObjectsStatus::Success != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
                 {
-                if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+                if (!ignoreErrors && ECObjectsStatus::PropertyValueMatchesNoChange != status)
                     return status;
                 else
-                    status = ECOBJECTS_STATUS_Success;  // ignore error
+                    status = ECObjectsStatus::Success;  // ignore error
                 }
             }
         }
 
-    return ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status ? ECOBJECTS_STATUS_Success : status;
+    return ECObjectsStatus::PropertyValueMatchesNoChange == status ? ECObjectsStatus::Success : status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2431,18 +2431,18 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
 ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
     {
     if (!GetClass().GetName().Equals (source.GetClass().GetName()))
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     // If both are ECD-based, try copying the buffers first - it's cheaper.
     ECDBuffer* thisBuffer = this->GetECDBufferP();
     ECDBuffer const* srcBuffer = nullptr;
-    if (NULL != thisBuffer && NULL != (srcBuffer = source.GetECDBuffer()) && ECOBJECTS_STATUS_Success == thisBuffer->CopyFromBuffer (*srcBuffer))
-        return ECOBJECTS_STATUS_Success;
+    if (NULL != thisBuffer && NULL != (srcBuffer = source.GetECDBuffer()) && ECObjectsStatus::Success == thisBuffer->CopyFromBuffer (*srcBuffer))
+        return ECObjectsStatus::Success;
     
     // Not ECD-based, or incompatible layouts. Copy property-by-property
     ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
     auto status = duplicateProperties (*this, *srcValues, false);
-    if (ECOBJECTS_STATUS_Success == status && nullptr != srcBuffer && nullptr != thisBuffer)
+    if (ECObjectsStatus::Success == status && nullptr != srcBuffer && nullptr != thisBuffer)
         {
         thisBuffer->SetIsPersistentlyReadOnly (srcBuffer->IsPersistentlyReadOnly());
         thisBuffer->SetIsHidden (srcBuffer->IsHidden());
@@ -2461,8 +2461,8 @@ ECObjectsStatus IECInstance::CopyCommonValues (IECInstanceCR source)
         // If both are ECD-based, try copying the buffers first - it's cheaper.
         ECDBuffer* thisBuffer = this->GetECDBufferP();
         ECDBuffer const* srcBuffer;
-        if (NULL != thisBuffer && NULL != (srcBuffer = source.GetECDBuffer()) && ECOBJECTS_STATUS_Success == thisBuffer->CopyFromBuffer (*srcBuffer))
-            return ECOBJECTS_STATUS_Success;
+        if (NULL != thisBuffer && NULL != (srcBuffer = source.GetECDBuffer()) && ECObjectsStatus::Success == thisBuffer->CopyFromBuffer (*srcBuffer))
+            return ECObjectsStatus::Success;
         }
 
     ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
@@ -2475,16 +2475,16 @@ ECObjectsStatus IECInstance::CopyCommonValues (IECInstanceCR source)
 ECObjectsStatus ECDBuffer::GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index, int * structValueIdP) const
     {
     ECObjectsStatus status = _GetStructArrayValueFromMemory (v, propertyLayout, index);
-    if (NULL != structValueIdP && ECOBJECTS_STATUS_Success == status)
+    if (NULL != structValueIdP && ECObjectsStatus::Success == status)
         {
         ECValue idVal;
         status = GetPrimitiveValueFromMemory (idVal, propertyLayout, true, index);
-        if (ECOBJECTS_STATUS_Success == status)
+        if (ECObjectsStatus::Success == status)
             {
             if (idVal.IsInteger() && !idVal.IsNull())
                 *structValueIdP = idVal.GetInteger();
             else
-                status = ECOBJECTS_STATUS_Error;
+                status = ECObjectsStatus::Error;
             }
         }
 
@@ -2498,44 +2498,44 @@ ECObjectsStatus ECDBuffer::CopyPropertiesFromBuffer (ECDBufferCR srcBuffer)
     {
     ClassLayoutCR classLayout = GetClassLayout();
     if (!classLayout.Equals (srcBuffer.GetClassLayout()))
-        return ECOBJECTS_STATUS_OperationNotSupported;
+        return ECObjectsStatus::OperationNotSupported;
 
     // Ensure source instance's data is accessible. This is ugly but necessary e.g. if source instance is an ECXDInstance - it may need to acquire its XAttribute
     ScopedDataAccessor scopedDataAccessor (srcBuffer);
     if (!scopedDataAccessor.IsValid())
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     // Make sure we have enough room for the data
     uint32_t bytesAvailable = _GetBytesAllocated();
     uint32_t bytesNeeded = srcBuffer.CalculateBytesUsed();
-    if (bytesAvailable < bytesNeeded && ECOBJECTS_STATUS_Success != _GrowAllocation (bytesNeeded - bytesAvailable))
-            return ECOBJECTS_STATUS_UnableToAllocateMemory;
+    if (bytesAvailable < bytesNeeded && ECObjectsStatus::Success != _GrowAllocation (bytesNeeded - bytesAvailable))
+            return ECObjectsStatus::UnableToAllocateMemory;
 
     // copy ecd buffer
-    if (ECOBJECTS_STATUS_Success != ModifyData (_GetData(), srcBuffer._GetData(), bytesNeeded))
-        return ECOBJECTS_STATUS_Error;
+    if (ECObjectsStatus::Success != ModifyData (_GetData(), srcBuffer._GetData(), bytesNeeded))
+        return ECObjectsStatus::Error;
 
     // copy struct instances, updating their identifiers if necessary
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     PropertyLayoutCP srcPropLayout;
     uint32_t nProperties = classLayout.GetPropertyCount();
     for (uint32_t propIdx = 0; propIdx < nProperties; propIdx++)
         {
-        if (ECOBJECTS_STATUS_Success != srcBuffer.GetClassLayout().GetPropertyLayoutByIndex (srcPropLayout, propIdx) || !srcPropLayout->GetTypeDescriptor().IsStructArray())
+        if (ECObjectsStatus::Success != srcBuffer.GetClassLayout().GetPropertyLayoutByIndex (srcPropLayout, propIdx) || !srcPropLayout->GetTypeDescriptor().IsStructArray())
             continue;
 
         // NB: The respective buffers may have different ClassLayout pointers. Each expects to be passed a PropertyLayout from its own ClassLayout object.
         PropertyLayoutCP myPropLayout;
         if (&classLayout == &srcBuffer.GetClassLayout())
             myPropLayout = srcPropLayout;
-        else if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutByIndex (myPropLayout, propIdx) || !myPropLayout->GetTypeDescriptor().IsStructArray())
+        else if (ECObjectsStatus::Success != classLayout.GetPropertyLayoutByIndex (myPropLayout, propIdx) || !myPropLayout->GetTypeDescriptor().IsStructArray())
             continue;
 
         ArrayCount nEntries = srcBuffer.GetReservedArrayCount (*srcPropLayout);
         for (ArrayCount arrayIdx = 0; arrayIdx < nEntries; arrayIdx++)
             {
             ECValue srcStructVal;
-            if (ECOBJECTS_STATUS_Success == srcBuffer._GetStructArrayValueFromMemory (srcStructVal, *srcPropLayout, arrayIdx) && !srcStructVal.IsNull())
+            if (ECObjectsStatus::Success == srcBuffer._GetStructArrayValueFromMemory (srcStructVal, *srcPropLayout, arrayIdx) && !srcStructVal.IsNull())
                 {
                 // The ECDBuffer we copied from source to 'this' contains struct ID values relevant only to source buffer
                 // So clear out the struct ID entry in 'this' first.
@@ -2543,21 +2543,21 @@ ECObjectsStatus ECDBuffer::CopyPropertiesFromBuffer (ECDBufferCR srcBuffer)
                 //  There seems to be no reason not to enforce that.
                 ECValue nullStructIdValue (0);
                 status = SetPrimitiveValueToMemory (nullStructIdValue, *myPropLayout, true, arrayIdx);
-                if (ECOBJECTS_STATUS_Success != status && ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)  // useless redundant return value...
+                if (ECObjectsStatus::Success != status && ECObjectsStatus::PropertyValueMatchesNoChange == status)  // useless redundant return value...
                     break;
 
-                if (ECOBJECTS_STATUS_Success != (status = _SetStructArrayValueToMemory (srcStructVal, *myPropLayout, arrayIdx)))
+                if (ECObjectsStatus::Success != (status = _SetStructArrayValueToMemory (srcStructVal, *myPropLayout, arrayIdx)))
                     {
                     // This useless return value is a constant pain in the...
-                    if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
-                        status = ECOBJECTS_STATUS_Success;
+                    if (ECObjectsStatus::PropertyValueMatchesNoChange == status)
+                        status = ECObjectsStatus::Success;
                     else
                         break;
                     }
                 }
             }
 
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             break;
         }
 
@@ -2573,7 +2573,7 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
 
     DEBUG_EXPECT (typeDescriptor.IsArray() == useIndex);   
 
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount (propertyLayout) == 0));    
     if (isInUninitializedFixedCountArray || IsPropertyValueNull(propertyLayout, useIndex, index))
         {
@@ -2584,7 +2584,7 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
 
         v.SetToNull();
         if (!propertyLayout.HoldsCalculatedProperty())
-            return ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
         }    
     else
         {
@@ -2683,11 +2683,11 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 }
             default:
                 BeAssert (false && "datatype not implemented");
-                return ECOBJECTS_STATUS_DataTypeNotSupported;
+                return ECObjectsStatus::DataTypeNotSupported;
             }
         }
 
-    if (ECOBJECTS_STATUS_Success == status && propertyLayout.HoldsCalculatedProperty() && !m_allPropertiesCalculated)
+    if (ECObjectsStatus::Success == status && propertyLayout.HoldsCalculatedProperty() && !m_allPropertiesCalculated)
         status = EvaluateCalculatedProperty (propertyLayout, v, useIndex, index);
 
     return status;
@@ -2707,7 +2707,7 @@ ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, PropertyLayoutC
         {
         // Note that it is not possible to retrieve an embedded struct as an atomic ECValue - you must access its property values individually.
         v.SetStruct (NULL);
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     else if (typeDescriptor.IsArray())
         {                
@@ -2719,7 +2719,7 @@ ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, PropertyLayoutC
             return v.SetStructArrayInfo (arrayCount, isFixedArrayCount);
         }
         
-    POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);        
+    POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ECObjectsStatus::DataTypeNotSupported);        
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2730,18 +2730,18 @@ ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, PropertyLayoutC
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     PRECONDITION (typeDescriptor.IsArray() && 
         "Can not obtain value from memory at an array index using the specified property layout because it is not an array datatype", 
-        ECOBJECTS_STATUS_PreconditionViolated);    
+        ECObjectsStatus::PreconditionViolated);    
            
     uint32_t arrayCount = GetReservedArrayCount (propertyLayout);                      
     if (index >= arrayCount)
-        return ECOBJECTS_STATUS_IndexOutOfRange;             
+        return ECObjectsStatus::IndexOutOfRange;             
 
     if (typeDescriptor.IsPrimitiveArray())
         return GetPrimitiveValueFromMemory (v, propertyLayout, true, index);
     else if (typeDescriptor.IsStructArray())
         return _GetStructArrayValueFromMemory (v, propertyLayout, index);       
         
-    POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);        
+    POSTCONDITION (false && "Can not obtain value from memory using the specified property layout because it is an unsupported datatype", ECObjectsStatus::DataTypeNotSupported);        
     }    
     
 
@@ -2750,12 +2750,12 @@ ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, PropertyLayoutC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, Utf8CP propertyAccessString, bool useIndex, uint32_t index) const
     {
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (NULL != propertyAccessString, ECObjectsStatus::PreconditionViolated);
                 
     PropertyLayoutCP propertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayout (propertyLayout, propertyAccessString);
-    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;
+    if (ECObjectsStatus::Success != status || NULL == propertyLayout)
+        return ECObjectsStatus::PropertyNotFound;
 
     if (useIndex)
         return GetValueFromMemory (v, *propertyLayout, index);
@@ -2770,23 +2770,23 @@ ECObjectsStatus       ECDBuffer::GetIsNullValueFromMemory (bool& isNull, uint32_
     {
     PropertyLayoutCP propertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;    
+    if (ECObjectsStatus::Success != status || NULL == propertyLayout)
+        return ECObjectsStatus::PropertyNotFound;    
 
     if (useIndex)
         {
         if (!propertyLayout->GetTypeDescriptor().IsArray())
             {
             BeAssert(false && "You cannot use an array index if the property is not an array!");
-            return ECOBJECTS_STATUS_PropertyNotFound;
+            return ECObjectsStatus::PropertyNotFound;
             }
 
         if (index >= GetReservedArrayCount (*propertyLayout))
-            return ECOBJECTS_STATUS_IndexOutOfRange;
+            return ECObjectsStatus::IndexOutOfRange;
         }
 
     isNull = !propertyLayout->HoldsCalculatedProperty() && IsPropertyValueNull (*propertyLayout, useIndex, index);
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2796,8 +2796,8 @@ ECObjectsStatus  ECDBuffer::GetValueFromMemory (ECValueR v, uint32_t propertyInd
     {
     PropertyLayoutCP propertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;    
+    if (ECObjectsStatus::Success != status || NULL == propertyLayout)
+        return ECObjectsStatus::PropertyNotFound;    
 
     if (useArrayIndex)
         return GetValueFromMemory (v, *propertyLayout, arrayIndex);
@@ -2827,9 +2827,9 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         ECObjectsStatus calcStatus = _UpdateCalculatedPropertyDependents (v, propertyLayout);
         switch (calcStatus)
             {//needswork: if it failed to parse the value with a regexp, maybe we still allow them to set it... just not propagate to dependents?
-            case ECOBJECTS_STATUS_Success:
+            case ECObjectsStatus::Success:
                 break;
-            case ECOBJECTS_STATUS_UnableToSetReadOnlyProperty:
+            case ECObjectsStatus::UnableToSetReadOnlyProperty:
                 // It is okay to set the read-only value once
                 if (isOriginalValueNull)
                     break;
@@ -2848,9 +2848,9 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             SetPropertyValueNull (propertyLayout, useIndex, index, true);
 
         if (isOriginalValueNull)
-            return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+            return ECObjectsStatus::PropertyValueMatchesNoChange;
 
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         } 
 
     if (isInUninitializedFixedCountArray)
@@ -2868,20 +2868,20 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
     else
         primitiveType = GetStructArrayPrimitiveType ();
 
-    ECObjectsStatus result = ECOBJECTS_STATUS_Error;
+    ECObjectsStatus result = ECObjectsStatus::Error;
 
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Integer:
             {
             if (!v.IsInteger ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             int32_t value = v.GetInteger();
 
             uint32_t* valueP = (uint32_t*)(GetPropertyData() + offset);
             if (!isOriginalValueNull && *valueP == value)
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             result = ModifyData (valueP, value);
             }
@@ -2889,12 +2889,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_Long:
             {
             if (!v.IsLong ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             int64_t value = v.GetLong();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             result = ModifyData (valueP, &value, sizeof (value));
             }
@@ -2902,12 +2902,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_Double:
             {
             if (!v.IsDouble ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             double value = v.GetDouble();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             result = ModifyData (valueP, &value, sizeof(value));
             }       
@@ -2915,7 +2915,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_String:
             {
             if (!v.IsString ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
             
             void const* value;
             uint32_t bytesNeeded;
@@ -2937,7 +2937,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
                 currentSize = GetPropertyValueSize (propertyLayout);
 
             if (!isOriginalValueNull && currentSize>=bytesNeeded && 0 == memcmp (GetPropertyData() + offset, value, bytesNeeded))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
 
@@ -2946,7 +2946,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             else
                 status = EnsureSpaceIsAvailable (offset, propertyLayout, bytesNeeded);
 
-            if (ECOBJECTS_STATUS_Success != status)
+            if (ECObjectsStatus::Success != status)
                 return status;
 
             result = ModifyData (GetPropertyData() + offset, value, bytesNeeded);
@@ -2957,7 +2957,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             {
             if ((primitiveType == PRIMITIVETYPE_Binary && !v.IsBinary ()) ||
                 (primitiveType == PRIMITIVETYPE_IGeometry && !(v.IsIGeometry() || v.IsBinary())))
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             uint32_t currentSize = 0;
             if (useIndex)
@@ -2978,7 +2978,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             uint32_t bytesNeeded = (uint32_t)totalSize;
 
             if (!isOriginalValueNull && currentSize>=totalSize && 0 == memcmp (GetPropertyData() + offset, dataBuffer, bytesNeeded))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             ECObjectsStatus status;
             if (useIndex)
@@ -2986,14 +2986,14 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             else
                 status = EnsureSpaceIsAvailable (offset, propertyLayout, bytesNeeded);
 
-            if (ECOBJECTS_STATUS_Success != status)
+            if (ECObjectsStatus::Success != status)
                 return status;
                 
             // WIP_FUSION We need to figure out the story for value size.  It is legitamate to have a non-null binary value that is
             // 0 bytes in length.  Currently, we do not track that length anywhere.  How do we capture this in the case that the binary value was previously set to some
             // value > 0 in length and we are not auto compressing property values.
             if (bytesNeeded == 0)
-                return ECOBJECTS_STATUS_Success;
+                return ECObjectsStatus::Success;
             
             result = ModifyData (GetPropertyData() + offset, dataBuffer, bytesNeeded);
             free (dataBuffer);
@@ -3002,12 +3002,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_Boolean:
             {
             if (!v.IsBoolean ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             bool value = v.GetBoolean();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             result = ModifyData (valueP, &value, sizeof(value));
             }       
@@ -3015,12 +3015,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_Point2D:
             {
             if (!v.IsPoint2D ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             DPoint2d value = v.GetPoint2D();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             result = ModifyData (valueP, &value, sizeof(value));
             }       
@@ -3028,12 +3028,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_Point3D:
             {
             if (!v.IsPoint3D ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             DPoint3d value = v.GetPoint3D();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             result = ModifyData (valueP, &value, sizeof(value));
             } 
@@ -3041,25 +3041,25 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_DateTime:      // stored as long
             {
             if (!v.IsDateTime ())
-                return ECOBJECTS_STATUS_DataTypeMismatch;
+                return ECObjectsStatus::DataTypeMismatch;
 
             int64_t value = v.GetDateTimeTicks();
             Byte const* valueP = GetPropertyData() + offset;
             if (!isOriginalValueNull && 0 == memcmp (valueP, &value, sizeof(value)))
-                return ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                return ECObjectsStatus::PropertyValueMatchesNoChange;
 
             result = ModifyData (valueP, &value, sizeof (value));
             }
             break;
         }
 
-    if (ECOBJECTS_STATUS_Success == result)
+    if (ECObjectsStatus::Success == result)
         {
         SetPropertyValueNull (propertyLayout, useIndex, index, false);
         return result; 
         }
 
-    POSTCONDITION (false && "datatype not implemented", ECOBJECTS_STATUS_DataTypeNotSupported);
+    POSTCONDITION (false && "datatype not implemented", ECObjectsStatus::DataTypeNotSupported);
     }                
     
 /*---------------------------------------------------------------------------------**//**
@@ -3068,12 +3068,12 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
 ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout)
     {
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
-    PRECONDITION (!typeDescriptor.IsStruct() && "Cannot set an embedded struct value directly. Set the individual struct members instead.", ECOBJECTS_STATUS_DataTypeNotSupported);
+    PRECONDITION (!typeDescriptor.IsStruct() && "Cannot set an embedded struct value directly. Set the individual struct members instead.", ECObjectsStatus::DataTypeNotSupported);
 
     if (typeDescriptor.IsPrimitive())
         return SetPrimitiveValueToMemory (v, propertyLayout, false, 0);
 
-    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
+    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECObjectsStatus::DataTypeNotSupported);
     }      
     
 /*---------------------------------------------------------------------------------**//**
@@ -3084,24 +3084,24 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
     PRECONDITION (typeDescriptor.IsArray() && 
         "Can not set the value to memory at an array index using the specified property layout because it is not an array datatype", 
-        ECOBJECTS_STATUS_PreconditionViolated);  
+        ECObjectsStatus::PreconditionViolated);  
                         
-    PRECONDITION (!typeDescriptor.IsStruct() && "Cannot set an embedded struct value directly. Set the individual struct members instead.", ECOBJECTS_STATUS_DataTypeNotSupported);
+    PRECONDITION (!typeDescriptor.IsStruct() && "Cannot set an embedded struct value directly. Set the individual struct members instead.", ECObjectsStatus::DataTypeNotSupported);
 
     if (index >= GetReservedArrayCount (propertyLayout))
-        return ECOBJECTS_STATUS_IndexOutOfRange;
+        return ECObjectsStatus::IndexOutOfRange;
 
     if (typeDescriptor.IsPrimitiveArray())
         return SetPrimitiveValueToMemory (v, propertyLayout, true, index);
     else if (typeDescriptor.IsStructArray() && (v.IsNull() || v.IsStruct()))
         {
         if (v.GetStruct().IsValid() && !_IsStructValidForArray (*v.GetStruct(), propertyLayout))
-            return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
+            return ECObjectsStatus::UnableToSetStructArrayMemberInstance;
 
         return _SetStructArrayValueToMemory (v, propertyLayout, index);       
         }
 
-    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECOBJECTS_STATUS_DataTypeNotSupported);
+    POSTCONDITION (false && "Can not set the value to memory using the specified property layout because it is an unsupported datatype", ECObjectsStatus::DataTypeNotSupported);
     }     
     
 /*---------------------------------------------------------------------------------**//**
@@ -3123,12 +3123,12 @@ ECObjectsStatus ECDBuffer::SetInternalValueToMemory (PropertyLayoutCR propertyLa
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECDBuffer::SetValueToMemory (Utf8CP propertyAccessString, ECValueCR v, bool useIndex, uint32_t index)
     {
-    PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
+    PRECONDITION (NULL != propertyAccessString, ECObjectsStatus::PreconditionViolated);
                 
     PropertyLayoutCP propertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayout (propertyLayout, propertyAccessString);
-    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;       
+    if (ECObjectsStatus::Success != status || NULL == propertyLayout)
+        return ECObjectsStatus::PropertyNotFound;       
 
     if (useIndex)
         return SetValueToMemory (v, *propertyLayout, index);
@@ -3143,8 +3143,8 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (uint32_t propertyIndex, ECVal
     {
     PropertyLayoutCP propertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
-        return ECOBJECTS_STATUS_PropertyNotFound;   
+    if (ECObjectsStatus::Success != status || NULL == propertyLayout)
+        return ECObjectsStatus::PropertyNotFound;   
 
     if (useArrayIndex)
         return SetValueToMemory (v, *propertyLayout, arrayIndex);
@@ -3160,7 +3160,7 @@ CalculatedPropertySpecificationCP ECDBuffer::LookupCalculatedPropertySpecificati
     ClassLayoutCR classLayout = GetClassLayout();
     uint32_t propertyIndex;
     ECPropertyCP ecprop;
-    if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
+    if (ECObjectsStatus::Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
         {
         PrimitiveECPropertyCP primProp;
         ArrayECPropertyCP arrayProp;
@@ -3181,11 +3181,11 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
     ECValue updatedValue;
     ECObjectsStatus evalStatus = _EvaluateCalculatedProperty (updatedValue, existingValue, propLayout);
     
-    if (ECOBJECTS_STATUS_Success != evalStatus || updatedValue.Equals (existingValue))
+    if (ECObjectsStatus::Success != evalStatus || updatedValue.Equals (existingValue))
         return evalStatus;
 
     evalStatus = _SetCalculatedValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex);
-    if (ECOBJECTS_STATUS_Success == evalStatus)
+    if (ECObjectsStatus::Success == evalStatus)
         existingValue = updatedValue;
 
     return evalStatus;
@@ -3208,7 +3208,7 @@ ECObjectsStatus ECDBuffer::ModifyData (Byte const* data, void const* newData, si
     if (m_allowWritingDirectlyToInstanceMemory)
         {
         memcpy (const_cast<Byte*> (data), newData, len);
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     else
         return _ModifyData ((uint32_t)(data - _GetData()), newData, (uint32_t)len);
@@ -3222,7 +3222,7 @@ ECObjectsStatus ECDBuffer::ModifyData (uint32_t const* data, uint32_t newData)
     if (m_allowWritingDirectlyToInstanceMemory)
         {
         *const_cast<uint32_t*> (data) = newData;
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     else
         return _ModifyData ((uint32_t)((Byte const*)data - _GetData()), &newData, sizeof(newData));
@@ -3236,7 +3236,7 @@ ECObjectsStatus ECDBuffer::MoveData (Byte* to, Byte const* from, size_t len)
     if (m_allowWritingDirectlyToInstanceMemory)
         {
         memmove (to, from, len);
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     else
         {
@@ -3299,7 +3299,7 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
         {
         PropertyLayoutCP propertyLayout;
         ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             {
             appendFormattedString (oss, "%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
             return oss;
@@ -3363,7 +3363,7 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
                     offset = GetOffsetOfArrayIndex (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                     address = data + offset;
                     status = GetValueFromMemory (v, *propertyLayout, i);
-                    if (ECOBJECTS_STATUS_Success == status)            
+                    if (ECObjectsStatus::Success == status)            
                         valueAsString = v.ToString();                
                     else
                         {
@@ -3381,7 +3381,7 @@ Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
                         
                         appendFormattedString (oss, "%s      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
                         }     
-                    if ((ECOBJECTS_STATUS_Success == status) && (!v.IsNull()) && (v.IsStruct()))
+                    if ((ECObjectsStatus::Success == status) && (!v.IsNull()) && (v.IsStruct()))
                         {
                         Utf8String structIndent(indent);
                         structIndent.append ("      ");
@@ -3493,7 +3493,7 @@ public:
 ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex ()
     {
     // initialize the inserted secondary offsets and update all shifted secondary offsets         
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     
     if (m_elementTypeIsFixedSize)
         return status;  // There are no secondary offsets to update
@@ -3537,7 +3537,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
         Byte const* modifyP = m_pResizeIndexPostShift - insertedSecondaryOffsetByteCount;
         status = m_instance.ModifyData (modifyP, pWriteBuffer, sizeOfWriteBuffer);            
         //DEBUG_EXPECT (m_propertyData + modifyOffset + sizeOfWriteBuffer <= m_propertyData + m_arrayOffset + m_instance.GetPropertyValueSize (m_propertyLayout));
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;        
         }            
         
@@ -3549,7 +3549,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsFollowingResizeIndex
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus            ArrayResizer::ShiftDataPreceedingResizeIndex ()    
     {    
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     if (m_resizeIndex == 0)
         return status;
     
@@ -3573,7 +3573,7 @@ ECObjectsStatus            ArrayResizer::ShiftDataPreceedingResizeIndex ()
 ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, uint32_t byteCountToSet)            
     {
     // update all secondary offsets preceeding the insertion point since the size of the fixed section has changed and therefore all variable data has moved
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     
     if (m_elementTypeIsFixedSize)
         return status;
@@ -3595,7 +3595,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
         status = m_instance.ModifyData ((Byte*)pSecondaryOffset, pWriteBuffer, byteCountToSet);
         //DEBUG_EXPECT (modifyOffset >= m_postHeaderByteCount);
         //DEBUG_EXPECT (m_propertyData + modifyOffset + byteCountToSet <= m_pResizeIndexPostShift);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;        
         }               
         
@@ -3608,7 +3608,7 @@ ECObjectsStatus            ArrayResizer::SetSecondaryOffsetsPreceedingResizeInde
 ECObjectsStatus            ArrayResizer::WriteArrayHeader ()                
     {
     // write the new array header (updated count & null flags)      
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     ScopedWriteBuffer writeBuffer (m_postHeaderByteCount, m_instance.m_allowWritingDirectlyToInstanceMemory, (Byte*)(m_propertyData + m_arrayOffset));
     Byte * pWriteBuffer = writeBuffer.GetData();
     if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
@@ -3656,7 +3656,7 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
     if (!m_instance.m_allowWritingDirectlyToInstanceMemory)
         {
         status = m_instance.ModifyData (m_propertyData + m_arrayOffset, pWriteBuffer, m_postHeaderByteCount);
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;        
         }                       
         
@@ -3669,19 +3669,19 @@ ECObjectsStatus            ArrayResizer::WriteArrayHeader ()
 ECObjectsStatus       ArrayResizer::CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, uint32_t insertIndex, uint32_t insertCount)
     {                        
     ArrayResizer resizer (classLayout, propertyLayout, instance, insertIndex, insertCount);
-    PRECONDITION (resizer.m_resizeIndex <= resizer.m_preAllocatedArrayCount, ECOBJECTS_STATUS_IndexOutOfRange);        
+    PRECONDITION (resizer.m_resizeIndex <= resizer.m_preAllocatedArrayCount, ECObjectsStatus::IndexOutOfRange);        
     
     ECObjectsStatus status = instance.EnsureSpaceIsAvailable (resizer.m_arrayOffset, propertyLayout, resizer.m_preArrayByteCount + resizer.m_resizeFixedSectionByteCount);
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;       
         
     resizer.m_propertyData = resizer.m_instance.GetPropertyData();
     status = resizer.ShiftDataFollowingResizeIndex();        
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;
         
     status = resizer.ShiftDataPreceedingResizeIndex();        
-    if (ECOBJECTS_STATUS_Success != status)
+    if (ECObjectsStatus::Success != status)
         return status;        
     
     status = resizer.WriteArrayHeader();
@@ -3881,7 +3881,7 @@ bool ECDBuffer::EvaluateAllCalculatedProperties (bool includeDefaults)
                 SetValueToMemory (null, *propLayout);
 
             ECValue v;
-            if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout) && v.IsArray())
+            if (ECObjectsStatus::Success == GetValueFromMemory (v, *propLayout) && v.IsArray())
                 {
                 // an array of calculated primitive values
                 uint32_t arrayCount = v.GetArrayInfo().GetCount();
@@ -3897,12 +3897,12 @@ bool ECDBuffer::EvaluateAllCalculatedProperties (bool includeDefaults)
         else if (propLayout->GetTypeDescriptor().IsStructArray())
             {
             ECValue v;
-            if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout))
+            if (ECObjectsStatus::Success == GetValueFromMemory (v, *propLayout))
                 {
                 uint32_t arrayCount = v.GetArrayInfo().GetCount();
                 for (uint32_t i = 0; i < arrayCount; i++)
                     {
-                    if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout, i) && !v.IsNull() && NULL != v.GetStruct()->GetECDBuffer())
+                    if (ECObjectsStatus::Success == GetValueFromMemory (v, *propLayout, i) && !v.IsNull() && NULL != v.GetStruct()->GetECDBuffer())
                         v.GetStruct()->GetECDBufferP()->EvaluateAllCalculatedProperties();
                     }
                 }
@@ -3919,14 +3919,14 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
     {
     // Do we really support this? Currently everybody uses integers for this...
     if (GetStructArrayPrimitiveType() != src.GetStructArrayPrimitiveType())
-        return ECOBJECTS_STATUS_OperationNotSupported;
+        return ECObjectsStatus::OperationNotSupported;
 
     // Note this method does not do anything about per-property flags, etc, which are relevant to MemoryECInstanceBase-derived classes...
     ScopedDataAccessor srcAccessor (src), dstAccessor (*this, true);
     if (!srcAccessor.IsValid() || !dstAccessor.IsValid())
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     ClearValues();
 
     ClassLayoutCR srcLayout = src.GetClassLayout();
@@ -3936,11 +3936,11 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
         // we can copy directly
         uint32_t bytesAvailable = _GetBytesAllocated();
         uint32_t bytesNeeded = src.CalculateBytesUsed();
-        if (bytesNeeded <= bytesAvailable || ECOBJECTS_STATUS_Success == (status = _GrowAllocation (bytesNeeded - bytesAvailable)))
+        if (bytesNeeded <= bytesAvailable || ECObjectsStatus::Success == (status = _GrowAllocation (bytesNeeded - bytesAvailable)))
             status = ModifyData (_GetData(), src._GetData(), bytesNeeded);
         }
     else if (!allowClassLayoutConversion)
-        status = ECOBJECTS_STATUS_ECClassNotSupported;
+        status = ECObjectsStatus::ECClassNotSupported;
     else
         {
         // The ClassLayouts differ - we need to set properties one-by-one
@@ -3950,7 +3950,7 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
         for (PropertyLayoutCP srcPropLayout: srcLayout.m_propertyLayouts)
             {
             PropertyLayoutCP dstPropLayout;
-            if (ECOBJECTS_STATUS_Success == dstLayout.GetPropertyLayout (dstPropLayout, srcPropLayout->GetAccessString()))
+            if (ECObjectsStatus::Success == dstLayout.GetPropertyLayout (dstPropLayout, srcPropLayout->GetAccessString()))
                 {
                 ECTypeDescriptor dstType = dstPropLayout->GetTypeDescriptor(),
                                  srcType = srcPropLayout->GetTypeDescriptor();
@@ -3964,7 +3964,7 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
                     continue;   // embedded structs always null
                 else if (dstType.IsPrimitive())
                     {
-                    if (ECOBJECTS_STATUS_Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, false, 0) && v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))
+                    if (ECObjectsStatus::Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, false, 0) && v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))
                         SetPrimitiveValueToMemory (v, *dstPropLayout, false, 0, true /* set calculated property directly */);
                     }
                 else // array
@@ -3973,20 +3973,20 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
                     // memory swapping/allocation for arrays of variable-sized properties (principally strings). Worth it?
 
                     // Note for struct arrays this copies the struct value identifiers directly, does not copy or create struct array instances or fix up identifiers
-                    if (ECOBJECTS_STATUS_Success == src.GetValueFromMemory (v, *srcPropLayout) && v.IsArray() && v.GetArrayInfo().GetCount() > 0)
+                    if (ECObjectsStatus::Success == src.GetValueFromMemory (v, *srcPropLayout) && v.IsArray() && v.GetArrayInfo().GetCount() > 0)
                         {
                         uint32_t propertyIndex;
-                        if (ECOBJECTS_STATUS_Success != dstLayout.GetPropertyLayoutIndex (propertyIndex, *dstPropLayout))
+                        if (ECObjectsStatus::Success != dstLayout.GetPropertyLayoutIndex (propertyIndex, *dstPropLayout))
                             { BeAssert(false); continue; }
 
                         uint32_t count = v.GetArrayInfo().GetCount();
                         status = AddNullArrayElementsAt (propertyIndex, count);
-                        if (ECOBJECTS_STATUS_Success != status)
+                        if (ECObjectsStatus::Success != status)
                             return status;
 
                         for (uint32_t i = 0; i < count; i++)
                             {
-                            if (ECOBJECTS_STATUS_Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, true, i))
+                            if (ECObjectsStatus::Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, true, i))
                                 {
                                 // already established struct array primitive types match - only need to convert primitive array types
                                 if (!srcType.IsPrimitiveArray() || v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))

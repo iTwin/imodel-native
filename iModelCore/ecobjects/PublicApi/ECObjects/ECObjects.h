@@ -39,9 +39,13 @@ EC_TYPEDEFS(PrimitiveECProperty);
 EC_TYPEDEFS(DateTimeInfo);
 EC_TYPEDEFS(StructECProperty);
 EC_TYPEDEFS(ArrayECProperty);
+EC_TYPEDEFS(StructArrayECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
+EC_TYPEDEFS(ECEntityClass);
+EC_TYPEDEFS(ECCustomAttributeClass);
+EC_TYPEDEFS(ECStructClass);
 EC_TYPEDEFS(ECRelationshipConstraintClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
@@ -100,144 +104,134 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef struct IStream* IStreamP;
 
-//! Error code categories
-typedef enum ECErrorCategories
-    {
-    ECOBJECTS_ERROR_BASE            = 0x31000,
-    SCHEMA_READ_STATUS_BASE         = 0x32000,
-    SCHEMA_WRITE_STATUS_BASE        = 0x33000,
-    INSTANCE_READ_STATUS_BASE       = 0x34000,
-    INSTANCE_WRITE_STATUS_BASE      = 0x35000,
-    SUPPLEMENTED_SCHEMA_STATUS_BASE = 0x36000,
-    } ECErrorCategories;
-
 //! General purpose result codes
-enum ECObjectsStatus
+enum class ECObjectsStatus
     {
-    ECOBJECTS_STATUS_Success                                            = SUCCESS,
-    ECOBJECTS_STATUS_PropertyNotFound                                   = ECOBJECTS_ERROR_BASE + 0x01,
-    ECOBJECTS_STATUS_DataTypeMismatch                                   = ECOBJECTS_ERROR_BASE + 0x02,
-    ECOBJECTS_STATUS_ECInstanceImplementationNotSupported               = ECOBJECTS_ERROR_BASE + 0x03,
-    ECOBJECTS_STATUS_InvalidPropertyAccessString                        = ECOBJECTS_ERROR_BASE + 0x04,
-    ECOBJECTS_STATUS_IndexOutOfRange                                    = ECOBJECTS_ERROR_BASE + 0x05,
-    ECOBJECTS_STATUS_ECClassNotSupported                                = ECOBJECTS_ERROR_BASE + 0x06,
-    ECOBJECTS_STATUS_ECSchemaNotSupported                               = ECOBJECTS_ERROR_BASE + 0x07,
-    ECOBJECTS_STATUS_AccessStringDisagreesWithNIndices                  = ECOBJECTS_ERROR_BASE + 0x08,
-    ECOBJECTS_STATUS_EnablerNotFound                                    = ECOBJECTS_ERROR_BASE + 0x09,
-    ECOBJECTS_STATUS_OperationNotSupported                              = ECOBJECTS_ERROR_BASE + 0x0A,
-    ECOBJECTS_STATUS_ParseError                                         = ECOBJECTS_ERROR_BASE + 0x0B,
-    ECOBJECTS_STATUS_NamedItemAlreadyExists                             = ECOBJECTS_ERROR_BASE + 0x0C,
-    ECOBJECTS_STATUS_PreconditionViolated                               = ECOBJECTS_ERROR_BASE + 0x0D,
-    ECOBJECTS_STATUS_SchemaNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0E,
-    ECOBJECTS_STATUS_ClassNotFound                                      = ECOBJECTS_ERROR_BASE + 0x0F,
-    ECOBJECTS_STATUS_BaseClassUnacceptable                              = ECOBJECTS_ERROR_BASE + 0x10,
-    ECOBJECTS_STATUS_SchemaInUse                                        = ECOBJECTS_ERROR_BASE + 0x11,
-    ECOBJECTS_STATUS_InvalidName                                        = ECOBJECTS_ERROR_BASE + 0x12,
-    ECOBJECTS_STATUS_DataTypeNotSupported                               = ECOBJECTS_ERROR_BASE + 0x13,
-    ECOBJECTS_STATUS_UnableToAllocateMemory                             = ECOBJECTS_ERROR_BASE + 0x14,
-    ECOBJECTS_STATUS_MemoryBoundsOverrun                                = ECOBJECTS_ERROR_BASE + 0x15,
-    ECOBJECTS_STATUS_NullPointerValue                                   = ECOBJECTS_ERROR_BASE + 0x16,
-    ECOBJECTS_STATUS_NotCustomAttributeClass                            = ECOBJECTS_ERROR_BASE + 0x17,
-    ECOBJECTS_STATUS_DuplicateSchema                                    = ECOBJECTS_ERROR_BASE + 0x18,
-    ECOBJECTS_STATUS_UnableToSetReadOnlyInstance                        = ECOBJECTS_ERROR_BASE + 0x19,
-    ECOBJECTS_STATUS_UnableToSetReadOnlyProperty                        = ECOBJECTS_ERROR_BASE + 0x1A,
-    ECOBJECTS_STATUS_ArrayIndexDoesNotExist                             = ECOBJECTS_ERROR_BASE + 0x1B,
-    ECOBJECTS_STATUS_PropertyValueMatchesNoChange                       = ECOBJECTS_ERROR_BASE + 0x1C,
-    ECOBJECTS_STATUS_NoChildProperties                                  = ECOBJECTS_ERROR_BASE + 0x1D,
-    ECOBJECTS_STATUS_UnableToAllocateManagedMemory                      = ECOBJECTS_ERROR_BASE + 0x1E,
-    ECOBJECTS_STATUS_MemoryAllocationCallbackRequired                   = ECOBJECTS_ERROR_BASE + 0x1F,
-    ECOBJECTS_STATUS_UnableToAddStructArrayMember                       = ECOBJECTS_ERROR_BASE + 0x20,
-    ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x21,
-    ECOBJECTS_STATUS_UnableToGetStructArrayMemberInstance               = ECOBJECTS_ERROR_BASE + 0x22,
-    ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag                     = ECOBJECTS_ERROR_BASE + 0x23,
-    ECOBJECTS_STATUS_SchemaHasReferenceCycle                            = ECOBJECTS_ERROR_BASE + 0x24,
-    ECOBJECTS_STATUS_SchemaNotSupplemented                              = ECOBJECTS_ERROR_BASE + 0x25,
-    ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
-    ECOBJECTS_STATUS_UnableToResizeFixedSizedArray                      = ECOBJECTS_ERROR_BASE + 0x27,
-    ECOBJECTS_STATUS_SchemaIsImmutable                                  = ECOBJECTS_ERROR_BASE + 0x28,
-    ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound            = ECOBJECTS_ERROR_BASE + 0x29,
-    ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
+    Success,
+    PropertyNotFound,
+    DataTypeMismatch,
+    ECInstanceImplementationNotSupported,
+    InvalidPropertyAccessString,
+    IndexOutOfRange,
+    ECClassNotSupported,
+    ECSchemaNotSupported,
+    AccessStringDisagreesWithNIndices,
+    EnablerNotFound,
+    OperationNotSupported,
+    ParseError,
+    NamedItemAlreadyExists,
+    PreconditionViolated,
+    SchemaNotFound,
+    ClassNotFound,
+    BaseClassUnacceptable,
+    SchemaInUse,
+    InvalidName,
+    DataTypeNotSupported,
+    UnableToAllocateMemory,
+    MemoryBoundsOverrun,
+    NullPointerValue,
+    NotCustomAttributeClass,
+    DuplicateSchema,
+    UnableToSetReadOnlyInstance,
+    UnableToSetReadOnlyProperty,
+    ArrayIndexDoesNotExist,
+    PropertyValueMatchesNoChange,
+    NoChildProperties,
+    UnableToAllocateManagedMemory,
+    MemoryAllocationCallbackRequired,
+    UnableToAddStructArrayMember,
+    UnableToSetStructArrayMemberInstance,
+    UnableToGetStructArrayMemberInstance,
+    InvalidIndexForPerPropertyFlag,
+    SchemaHasReferenceCycle,
+    SchemaNotSupplemented,
+    UnableToQueryForNullPropertyFlag,
+    UnableToResizeFixedSizedArray,
+    SchemaIsImmutable,
+    DynamicSchemaCustomAttributeWasNotFound,
+    Error,
     };
 
 //! Result status for deserializing an ECSchema from Xml
-enum SchemaReadStatus
+enum class SchemaReadStatus
     {
-    SCHEMA_READ_STATUS_Success                               = SUCCESS,
-    SCHEMA_READ_STATUS_FailedToParseXml                      = SCHEMA_READ_STATUS_BASE + 0x02,
-    SCHEMA_READ_STATUS_InvalidECSchemaXml                    = SCHEMA_READ_STATUS_BASE + 0x03,
-    SCHEMA_READ_STATUS_ReferencedSchemaNotFound              = SCHEMA_READ_STATUS_BASE + 0x04,
-    SCHEMA_READ_STATUS_DuplicateSchema                       = SCHEMA_READ_STATUS_BASE + 0x05,
-    SCHEMA_READ_STATUS_InvalidPrimitiveType                  = SCHEMA_READ_STATUS_BASE + 0x06,
-    SCHEMA_READ_STATUS_HasReferenceCycle                     = SCHEMA_READ_STATUS_BASE + 0x07,
+    Success,
+    FailedToParseXml,
+    InvalidECSchemaXml,
+    ReferencedSchemaNotFound,
+    DuplicateSchema,
+    DuplicateClassDefinition,
+    InvalidPrimitiveType,
+    HasReferenceCycle,
     };
 
 //! Result status for serializing an ECSchema to Xml
-enum SchemaWriteStatus
+enum class SchemaWriteStatus
     {
-    SCHEMA_WRITE_STATUS_Success                                 = SUCCESS,
-    SCHEMA_WRITE_STATUS_FailedToSaveXml                         = SCHEMA_WRITE_STATUS_BASE + 0x01,
-    SCHEMA_WRITE_STATUS_FailedToCreateXml                       = SCHEMA_WRITE_STATUS_BASE + 0x02,
-    SCHEMA_WRITE_STATUS_FailedToWriteFile                       = SCHEMA_WRITE_STATUS_BASE + 0x03,
+    Success,
+    FailedToSaveXml,
+    FailedToCreateXml,
+    FailedToWriteFile,
     };
 
 //! Result status of deserializing an IECInstance from Xml
-enum InstanceReadStatus
+enum class InstanceReadStatus
     {
-    INSTANCE_READ_STATUS_Success                             = 0,
-    INSTANCE_READ_STATUS_FileNotFound                        = INSTANCE_READ_STATUS_BASE + 1,
-    INSTANCE_READ_STATUS_CantCreateStream                    = INSTANCE_READ_STATUS_BASE + 2,
-    INSTANCE_READ_STATUS_CantCreateXmlReader                 = INSTANCE_READ_STATUS_BASE + 3,
-    INSTANCE_READ_STATUS_CantSetStream                       = INSTANCE_READ_STATUS_BASE + 4,
-    INSTANCE_READ_STATUS_NoElementName                       = INSTANCE_READ_STATUS_BASE + 5,
-    INSTANCE_READ_STATUS_BadElement                          = INSTANCE_READ_STATUS_BASE + 6,
-    INSTANCE_READ_STATUS_UnexpectedElement                   = INSTANCE_READ_STATUS_BASE + 7,
-    INSTANCE_READ_STATUS_EmptyElement                        = INSTANCE_READ_STATUS_BASE + 8,
-    INSTANCE_READ_STATUS_EndElementDoesntMatch               = INSTANCE_READ_STATUS_BASE + 9,
-    INSTANCE_READ_STATUS_XmlFileIncomplete                   = INSTANCE_READ_STATUS_BASE + 10,
-    INSTANCE_READ_STATUS_XmlParseError                       = INSTANCE_READ_STATUS_BASE + 20,
+    Success,
+    FileNotFound,
+    CantCreateStream,
+    CantCreateXmlReader,
+    CantSetStream,
+    NoElementName,
+    BadElement,
+    UnexpectedElement,
+    EmptyElement,
+    EndElementDoesntMatch,
+    XmlFileIncomplete,
+    XmlParseError,
 
-    INSTANCE_READ_STATUS_ECClassNotFound                     = INSTANCE_READ_STATUS_BASE + 30,
-    INSTANCE_READ_STATUS_BadECProperty                       = INSTANCE_READ_STATUS_BASE + 31,
-    INSTANCE_READ_STATUS_BadPrimitivePropertyType            = INSTANCE_READ_STATUS_BASE + 32,
-    INSTANCE_READ_STATUS_BadBinaryData                       = INSTANCE_READ_STATUS_BASE + 33,
-    INSTANCE_READ_STATUS_BadTimeValue                        = INSTANCE_READ_STATUS_BASE + 34,
-    INSTANCE_READ_STATUS_BadDoubleValue                      = INSTANCE_READ_STATUS_BASE + 35,
-    INSTANCE_READ_STATUS_BadIntegerValue                     = INSTANCE_READ_STATUS_BASE + 36,
-    INSTANCE_READ_STATUS_BadLongValue                        = INSTANCE_READ_STATUS_BASE + 37,
-    INSTANCE_READ_STATUS_BadPoint2dValue                     = INSTANCE_READ_STATUS_BASE + 38,
-    INSTANCE_READ_STATUS_BadPoint3dValue                     = INSTANCE_READ_STATUS_BASE + 39,
-    INSTANCE_READ_STATUS_BadArrayElement                     = INSTANCE_READ_STATUS_BASE + 40,
-    INSTANCE_READ_STATUS_TypeMismatch                        = INSTANCE_READ_STATUS_BASE + 41,
-    INSTANCE_READ_STATUS_CantSetValue                        = INSTANCE_READ_STATUS_BASE + 42,
-    INSTANCE_READ_STATUS_ECSchemaNotFound                    = INSTANCE_READ_STATUS_BASE + 43,
-    INSTANCE_READ_STATUS_UnableToGetStandaloneEnabler        = INSTANCE_READ_STATUS_BASE + 44,
-    INSTANCE_READ_STATUS_CommentOnly                         = INSTANCE_READ_STATUS_BASE + 45,
-    INSTANCE_READ_STATUS_PropertyNotFound                    = INSTANCE_READ_STATUS_BASE + 46,
+    ECClassNotFound,
+    BadECProperty,
+    BadPrimitivePropertyType,
+    BadBinaryData,
+    BadTimeValue,
+    BadDoubleValue,
+    BadIntegerValue,
+    BadLongValue,
+    BadPoint2dValue,
+    BadPoint3dValue,
+    BadArrayElement,
+    TypeMismatch,
+    CantSetValue,
+    ECSchemaNotFound,
+    UnableToGetStandaloneEnabler,
+    CommentOnly,
+    PropertyNotFound,
     };
 
 //! Result status of writing an IECInstance to Xml
-enum InstanceWriteStatus
+enum class InstanceWriteStatus
     {
-    INSTANCE_WRITE_STATUS_Success                               = 0,
-    INSTANCE_WRITE_STATUS_CantCreateStream                      = INSTANCE_WRITE_STATUS_BASE + 1,
-    INSTANCE_WRITE_STATUS_CantCreateXmlWriter                   = INSTANCE_WRITE_STATUS_BASE + 3,
-    INSTANCE_WRITE_STATUS_CantSetStream                         = INSTANCE_WRITE_STATUS_BASE + 4,
-    INSTANCE_WRITE_STATUS_XmlWriteError                         = INSTANCE_WRITE_STATUS_BASE + 5,
-    INSTANCE_WRITE_STATUS_CantReadFromStream                    = INSTANCE_WRITE_STATUS_BASE + 6,
-    INSTANCE_WRITE_STATUS_FailedToWriteFile                     = INSTANCE_WRITE_STATUS_BASE + 7,
+    Success,
+    CantCreateStream,
+    CantCreateXmlWriter,
+    CantSetStream,
+    XmlWriteError,
+    CantReadFromStream,
+    FailedToWriteFile,
 
-    INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
+    BadPrimitivePropertyType,
     };
 
 //! Result status of trying to supplement an ECSchema
-enum SupplementedSchemaStatus
+enum class SupplementedSchemaStatus
     {
-    SUPPLEMENTED_SCHEMA_STATUS_Success                          = 0,
-    SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing                 = SUPPLEMENTED_SCHEMA_STATUS_BASE + 1,
-    SUPPLEMENTED_SCHEMA_STATUS_Duplicate_Precedence_Error       = SUPPLEMENTED_SCHEMA_STATUS_BASE + 2,
-    SUPPLEMENTED_SCHEMA_STATUS_IECRelationship_Not_Allowed      = SUPPLEMENTED_SCHEMA_STATUS_BASE + 3,
-    SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException             = SUPPLEMENTED_SCHEMA_STATUS_BASE + 4,
-    SUPPLEMENTED_SCHEMA_STATUS_SupplementalClassHasBaseClass    = SUPPLEMENTED_SCHEMA_STATUS_BASE + 5,
+    Success,
+    Metadata_Missing,
+    Duplicate_Precedence_Error,
+    IECRelationship_Not_Allowed,
+    SchemaMergeException,
+    SupplementalClassHasBaseClass,
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -357,32 +351,32 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     };
 
 //! Enumerates the possible return values for evaluating an expression or its value
-enum ExpressionStatus
+enum class ExpressionStatus
     {
-    ExprStatus_Success              =   0, //!< Success
-    ExprStatus_UnknownError         =   1, //!< There as an unknown error in evaluation
-    ExprStatus_UnknownMember        =   2, //!< Returned if a property name in the expression cannot be found in the containing class
-    ExprStatus_PrimitiveRequired    =   3, //!< Returned when a primitive is expected and not found
-    ExprStatus_StructRequired       =   4, //!< Returned when a struct is expected and not found
-    ExprStatus_ArrayRequired        =   5, //!< Returned when an array is expected and not found
-    ExprStatus_UnknownSymbol        =   6, //!< Returned when the symbol in the expression cannot be resolved
-    ExprStatus_DotNotSupported      =   7,
+    Success, //!< Success
+    UnknownError, //!< There as an unknown error in evaluation
+    UnknownMember, //!< Returned if a property name in the expression cannot be found in the containing class
+    PrimitiveRequired, //!< Returned when a primitive is expected and not found
+    StructRequired, //!< Returned when a struct is expected and not found
+    ArrayRequired, //!< Returned when an array is expected and not found
+    UnknownSymbol, //!< Returned when the symbol in the expression cannot be resolved
+    DotNotSupported,
 
-    //  Returning ExprStatus_NotImpl in base methods is the lazy approach for methods that should be 
+    //  Returning ExpressionStatus::NotImpl in base methods is the lazy approach for methods that should be 
     //  pure virtual.  Should be eliminated after prototyping phase is done
-    ExprStatus_NotImpl              =   8,
+    NotImpl,
 
-    ExprStatus_NeedsLValue          =   9, //!< Returned when the symbol needs to be an lvalue
-    ExprStatus_WrongType            =  10, //!< Returned when the symbol type is of the wrong type for the expression
-    ExprStatus_IncompatibleTypes    =  11, //!< Returned when expression uses incompatible types (ie, trying to perform arithmetic on two strings)
-    ExprStatus_MethodRequired       =  12, //!< Returned when a method token is expected and not found
-    ExprStatus_InstanceMethodRequired =  13, //!< Returned when an instance method is called, but has not been defined
-    ExprStatus_StaticMethodRequired =  14, //!< Returned when a static method is called, but has not been defined
-    ExprStatus_InvalidTypesForDivision =  15, //!< Returned when the expression tries to perform a division operation on types that cannot be divided
-    ExprStatus_DivideByZero             =  16, //!< Returned when the division operation tries to divide by zero
-    ExprStatus_WrongNumberOfArguments   =  17, //!< Returned when the number of arguments to a method in an expression do not match the number of arguments actually expected
-    ExprStatus_IndexOutOfRange          = 18, //!< Returned when array index is used which is outside the bounds of the array.
-    ExprStatus_IncompatibleUnits        = 19, //!< Returned when units are combined in an unsupported manner within the expression, for example adding angles and lengths.
+    NeedsLValue, //!< Returned when the symbol needs to be an lvalue
+    WrongType, //!< Returned when the symbol type is of the wrong type for the expression
+    IncompatibleTypes, //!< Returned when expression uses incompatible types (ie, trying to perform arithmetic on two strings)
+    MethodRequired, //!< Returned when a method token is expected and not found
+    InstanceMethodRequired, //!< Returned when an instance method is called, but has not been defined
+    StaticMethodRequired, //!< Returned when a static method is called, but has not been defined
+    InvalidTypesForDivision, //!< Returned when the expression tries to perform a division operation on types that cannot be divided
+    DivideByZero, //!< Returned when the division operation tries to divide by zero
+    WrongNumberOfArguments, //!< Returned when the number of arguments to a method in an expression do not match the number of arguments actually expected
+    IndexOutOfRange, //!< Returned when array index is used which is outside the bounds of the array.
+    IncompatibleUnits, //!< Returned when units are combined in an unsupported manner within the expression, for example adding angles and lengths.
     };
 
 //! Used to define how the relationship OrderId is handled.
@@ -411,24 +405,57 @@ enum class ECRelatedInstanceDirection
     };
 
 //! The various strengths supported on a relationship class.
-enum StrengthType
+enum class StrengthType
     {
     //!  'Referencing' relationships imply no ownership and no cascading deletes when the
     //! object on either end of the relationship is deleted.  For example, a document
     //! object may have a reference to the User that last modified it.
     //! This is like "Association" in UML.
-    STRENGTHTYPE_Referencing,
+    Referencing,
     //! 'Holding' relationships imply shared ownership.  A given object can be "held" by
     //! many different objects, and the object will not get deleted unless all of the
     //! objects holding it are first deleted (or the relationships severed.)
     //! This is like "Aggregation" in UML.
-    STRENGTHTYPE_Holding,
+    Holding,
     //! 'Embedding' relationships imply exclusive ownership and cascading deletes.  An
     //! object that is the target of an 'embedding' relationship may also be the target
     //! of other 'referencing' relationships, but cannot be the target of any 'holding'
     //! relationships.  For examples, a Folder 'embeds' the Documents that it contains.
     //! This is like "Composition" in UML.
-    STRENGTHTYPE_Embedding
+    Embedding
+    };
+
+//! Used to describe the attribute of an ECClass
+enum class ECClassModifier
+    {
+    //! No modifiers
+    None,
+    //! Class is abstract and may not have instances contructed
+    Abstract,
+    //! Class is sealed and may not be used as a base class
+    Sealed
+    };
+
+//! Used to define what type of ECClass this struct can be contained in
+enum class StructContainerType
+    {
+    EntityClass,
+    CustomAttributeClass
+    };
+
+//! Used to define what type of IECCustomAttributeContainer this CustomAttribute can be applied to
+enum class CustomAttributeContainerType
+    {
+    Schema,
+    Entity,
+    CustomAttribute,
+    Struct,
+    Relationship,
+    Enumeration,
+    Property,
+    StructProperty,
+    ArrayProperty,
+    StructArrayProperty
     };
 
 /** @endGroup */

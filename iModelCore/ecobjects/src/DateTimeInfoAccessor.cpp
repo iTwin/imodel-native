@@ -51,23 +51,23 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom (DateTimeInfoR dateTimeInfo, ECPro
     {
     ArrayECPropertyCP arrayDateTimeProp = NULL;
     PRECONDITION ((dateTimeProperty.GetIsPrimitive () && dateTimeProperty.GetAsPrimitiveProperty ()->GetType () == PRIMITIVETYPE_DateTime) || 
-                  ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty ()) != NULL && arrayDateTimeProp->GetKind () == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime), ECOBJECTS_STATUS_DataTypeNotSupported);
+                  ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty ()) != NULL && arrayDateTimeProp->GetKind () == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime), ECObjectsStatus::DataTypeNotSupported);
 
     IECInstancePtr caInstance = dateTimeProperty.GetCustomAttribute (DATETIMEINFO_CLASSNAME);
     if (caInstance.IsNull())
         {
         //no CA found -> return a DateTimeInfo for which both Kind and Component are set to unset
         dateTimeInfo = DateTimeInfo ();
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
 
     //Retrieve DateTimeKind
     ECValue caVal;
     ECObjectsStatus stat = caInstance->GetValue (caVal, DATETIMEINFO_KIND_PROPERTYNAME);
-    if (stat != ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         {
         LogPropertyNotFoundError (DATETIMEINFO_KIND_PROPERTYNAME);
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
         }
 
     bool isKindNull = true;
@@ -75,16 +75,16 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom (DateTimeInfoR dateTimeInfo, ECPro
     //parsing returns false in error case
     if (!TryParseKind (isKindNull, kind, caVal))
         {
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
 
     //Retrieve DateTimeComponent
     caVal.Clear ();
     stat = caInstance->GetValue (caVal, DATETIMEINFO_COMPONENT_PROPERTYNAME);
-    if (stat != ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         {
         LogPropertyNotFoundError (DATETIMEINFO_COMPONENT_PROPERTYNAME);
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
         }
 
     bool isComponentNull = true;
@@ -92,11 +92,11 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom (DateTimeInfoR dateTimeInfo, ECPro
     //parsing returns false in error case
     if (!TryParseComponent (isComponentNull, component, caVal))
         {
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
         
     dateTimeInfo = DateTimeInfo (isKindNull, kind, isComponentNull, component);
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------

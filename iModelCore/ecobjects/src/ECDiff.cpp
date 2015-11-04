@@ -16,7 +16,7 @@ using namespace std;
 #define ID_REFERENCES "References"
 #define ID_IS_CUSTOMATTRIBUTE_CLASS "IsCustomAttributeClass"
 #define ID_IS_STRUCT "IsStruct"
-#define ID_IS_DOMAIN_CLASS "IsDomainClass"
+#define ID_IS_ENTITY_CLASS "IsEntityClass"
 #define ID_IS_RELATIONSHIP_CLASS "IsRelationshipClass"
 #define ID_BASECLASSES "BaseClasses"
 #define ID_PROPERTIES "Properties"
@@ -43,6 +43,8 @@ using namespace std;
 #define ID_MINOCCURS "MinOccurs"
 #define ID_CUSTOMATTRIBUTES "CustomAttributes"
 #define ID_NAMESPACEPREFIX "NamespacePrefix"
+#define ID_IS_ABSTRACT "IsAbstract"
+#define ID_IS_SEALED "IsSealed"
     
 
 /*---------------------------------------------------------------------------------**//**
@@ -792,7 +794,7 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
             return ID_CLASSES;
         case DiffNodeId::References: return ID_REFERENCES;
         case DiffNodeId::IsCustomAttributeClass: return ID_IS_CUSTOMATTRIBUTE_CLASS;
-        case DiffNodeId::IsDomainClass: return ID_IS_DOMAIN_CLASS;
+        case DiffNodeId::IsEntityClass: return ID_IS_ENTITY_CLASS;
         case DiffNodeId::IsStruct: return ID_IS_STRUCT;
         case DiffNodeId::BaseClass: return ID_BASECLASSES;
         case DiffNodeId::IsRelationshipClass: return ID_IS_RELATIONSHIP_CLASS;
@@ -816,6 +818,8 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::MinOccurs: return ID_MINOCCURS;
         case DiffNodeId::CustomAttributes: return ID_CUSTOMATTRIBUTES;
         case DiffNodeId::NamespacePrefix: return ID_NAMESPACEPREFIX;
+        case DiffNodeId::IsAbstract: return ID_IS_ABSTRACT;
+        case DiffNodeId::IsSealed: return ID_IS_SEALED;
         }
     return NULL;
     }
@@ -878,12 +882,12 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
         set<Utf8String> referenceSchemas;
         Utf8String namespacePrefix;
         for (ECSchemaReferenceList::const_iterator itor = left.begin(); itor != left.end() ; ++itor)
-            if (schemaLeft.ResolveNamespacePrefix (*itor->second, namespacePrefix) == ECOBJECTS_STATUS_Success)
+            if (schemaLeft.ResolveNamespacePrefix (*itor->second, namespacePrefix) == ECObjectsStatus::Success)
                 if (referenceSchemas.find (namespacePrefix) == referenceSchemas.end())
                     referenceSchemas.insert(namespacePrefix);
 
         for (ECSchemaReferenceList::const_iterator itor = right.begin(); itor != right.end() ; ++itor)
-            if (schemaRight.ResolveNamespacePrefix (*itor->second, namespacePrefix) == ECOBJECTS_STATUS_Success)
+            if (schemaRight.ResolveNamespacePrefix (*itor->second, namespacePrefix) == ECObjectsStatus::Success)
                 if (referenceSchemas.find (namespacePrefix) == referenceSchemas.end())
                     referenceSchemas.insert(namespacePrefix);
 
@@ -930,17 +934,28 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (Utf8CP className, ECSchemaCR schemaLeft
     if (left->GetDescription() != right->GetDescription())
         diff->Add (DiffNodeId::Description)->SetValue (left->GetDescription().c_str(), right->GetDescription().c_str());
 
-    if (left->GetIsCustomAttributeClass() != right->GetIsCustomAttributeClass())
-        diff->Add (DiffNodeId::IsCustomAttributeClass)->SetValue (left->GetIsCustomAttributeClass(), right->GetIsCustomAttributeClass());
+    if (( (left->GetCustomAttributeClassCP() != NULL)) != (right->GetCustomAttributeClassCP() != NULL))
+        diff->Add (DiffNodeId::IsCustomAttributeClass)->SetValue (left->GetCustomAttributeClassCP() != NULL, right->GetCustomAttributeClassCP() != NULL );
 
-    if (left->GetIsStruct() != right->GetIsStruct())
-        diff->Add (DiffNodeId::IsStruct)->SetValue (left->GetIsStruct(), right->GetIsStruct());
+    if (left->GetClassType() != right->GetClassType())
+        {
+        if (ECClassType::Struct == left->GetClassType() || ECClassType::Struct == right->GetClassType())
+            diff->Add (DiffNodeId::IsStruct)->SetValue (ECClassType::Struct == left->GetClassType(), ECClassType::Struct == right->GetClassType());
+        if (ECClassType::CustomAttribute == left->GetClassType() || ECClassType::CustomAttribute == right->GetClassType())
+            diff->Add(DiffNodeId::IsCustomAttributeClass)->SetValue(ECClassType::CustomAttribute == left->GetClassType(), ECClassType::CustomAttribute == right->GetClassType());
+        if (ECClassType::Relationship == left->GetClassType() || ECClassType::Relationship == right->GetClassType())
+            diff->Add (DiffNodeId::IsRelationshipClass)->SetValue (left->GetRelationshipClassCP() != NULL, right->GetRelationshipClassCP() != NULL );
+        if (ECClassType::Entity == left->GetClassType() || ECClassType::Entity == right->GetClassType())
+            diff->Add(DiffNodeId::IsEntityClass)->SetValue(ECClassType::Entity == left->GetClassType(), ECClassType::Entity == right->GetClassType());
+        }
 
-    if (left->GetIsDomainClass() != right->GetIsDomainClass())
-        diff->Add (DiffNodeId::IsDomainClass)->SetValue (left->GetIsDomainClass(), right->GetIsDomainClass());
-
-    if (( (left->GetRelationshipClassCP() != NULL))!= (right->GetRelationshipClassCP() != NULL))
-        diff->Add (DiffNodeId::IsRelationshipClass)->SetValue (left->GetRelationshipClassCP() != NULL, right->GetRelationshipClassCP() != NULL );
+    if (left->GetClassModifier() != right->GetClassModifier())
+        {
+        if (ECClassModifier::Abstract == left->GetClassModifier() || ECClassModifier::Abstract == right->GetClassModifier())
+            diff->Add(DiffNodeId::IsAbstract)->SetValue(ECClassModifier::Abstract == left->GetClassModifier(), ECClassModifier::Abstract == right->GetClassModifier());
+        if (ECClassModifier::Sealed == left->GetClassModifier() || ECClassModifier::Sealed == right->GetClassModifier())
+            diff->Add(DiffNodeId::IsSealed)->SetValue(ECClassModifier::Sealed == left->GetClassModifier(), ECClassModifier::Sealed == right->GetClassModifier());
+        }
 
     DiffCustomAttributes (*diff, *left, *right);
     AlignedClasses classes; 
@@ -1222,11 +1237,11 @@ Utf8CP ECSchemaDiffTool::ToString(StrengthType type)
     {
     switch(type)
         {
-        case STRENGTHTYPE_Embedding:
+        case StrengthType::Embedding:
             return ID_STRENGTH_TYPE_EMBEDDING;
-        case STRENGTHTYPE_Holding:
+        case StrengthType::Holding:
             return ID_STRENGTH_TYPE_HOLDING;
-        case STRENGTHTYPE_Referencing:
+        case StrengthType::Referencing:
             return ID_STRENGTH_TYPE_REFERENCING;
         }
     return NULL;
@@ -1262,10 +1277,12 @@ ECDiffNodeP ECSchemaDiffTool::AppendClass (ECDiffNodeR parent , ECClassCR ecClas
     if (ecClass.GetIsDisplayLabelDefined())
         diff->Add (DiffNodeId::DisplayLabel)->GetValue(direction).SetValue (ecClass.GetDisplayLabel().c_str());
     diff->Add (DiffNodeId::Description)->GetValue(direction).SetValue (ecClass.GetDescription().c_str());
-    diff->Add (DiffNodeId::IsCustomAttributeClass)->GetValue(direction).SetValue (ecClass.GetIsCustomAttributeClass());
-    diff->Add (DiffNodeId::IsStruct)->GetValue(direction).SetValue (ecClass.GetIsStruct());
-    diff->Add (DiffNodeId::IsDomainClass)->GetValue(direction).SetValue (ecClass.GetIsDomainClass());
-    diff->Add (DiffNodeId::IsRelationshipClass)->GetValue(direction).SetValue (ecClass.GetRelationshipClassCP() != NULL);
+    diff->Add (DiffNodeId::IsCustomAttributeClass)->GetValue(direction).SetValue (ECClassType::CustomAttribute == ecClass.GetClassType());
+    diff->Add (DiffNodeId::IsStruct)->GetValue(direction).SetValue (ECClassType::Struct == ecClass.GetClassType());
+    diff->Add (DiffNodeId::IsEntityClass)->GetValue(direction).SetValue (ECClassType::Entity == ecClass.GetClassType());
+    diff->Add (DiffNodeId::IsRelationshipClass)->GetValue(direction).SetValue (ECClassType::Relationship == ecClass.GetClassType());
+    diff->Add(DiffNodeId::IsAbstract)->GetValue(direction).SetValue(ecClass.GetClassModifier() == ECClassModifier::Abstract);
+    diff->Add(DiffNodeId::IsSealed)->GetValue(direction).SetValue(ecClass.GetClassModifier() == ECClassModifier::Sealed);
     AppendCustomAttributes (*diff, ecClass, direction);
     if (!ecClass.GetBaseClasses().empty())
         {
@@ -1613,17 +1630,17 @@ bool ECDiffValueHelper::TryParseRelationshipStrengthType (ECN::StrengthType& str
     {
     if (strengthValue.CompareToI(ID_STRENGTH_TYPE_EMBEDDING) == 0)
         {
-        strengthType = STRENGTHTYPE_Embedding;
+        strengthType = StrengthType::Embedding;
         return true;
         }
     if (strengthValue.CompareToI(ID_STRENGTH_TYPE_HOLDING) == 0)
         {
-        strengthType = STRENGTHTYPE_Holding;
+        strengthType = StrengthType::Holding;
         return true;
         }
     if (strengthValue.CompareToI(ID_STRENGTH_TYPE_REFERENCING) == 0)
         {
-        strengthType = STRENGTHTYPE_Referencing;
+        strengthType = StrengthType::Referencing;
         return true;
         }
     BeAssert (false && "Unknown strength type value");
@@ -1830,7 +1847,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     else
         versionMinor = GetDefault().GetVersionMinor();
     //Create Merge schema 
-    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, versionMajor, versionMinor) != ECOBJECTS_STATUS_Success)
+    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, versionMajor, versionMinor) != ECObjectsStatus::Success)
         return MERGESTATUS_ErrorCreatingMergeSchema;
 
     if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)
@@ -1945,14 +1962,20 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
     if(defaultClass == NULL)
         return MERGESTATUS_ErrorClassNotFound;
     bool isRelationshipClass = defaultClass->GetRelationshipClassCP() != NULL;
+    bool isCAClass = defaultClass->GetCustomAttributeClassCP() != NULL;
+    bool isStructClass = defaultClass->GetStructClassCP() != NULL;
     ECDiffValueP v = NULL;
     if ((v = GetMergeValue (diff, DiffNodeId::IsRelationshipClass)) != NULL)
         isRelationshipClass = v->GetValueBool();
+    if ((v = GetMergeValue(diff, DiffNodeId::IsStruct)) != NULL)
+        isStructClass = v->GetValueBool();
+    if ((v = GetMergeValue(diff, DiffNodeId::IsCustomAttributeClass)) != NULL)
+        isCAClass = v->GetValueBool();
     ECClassP mergeClass;
     if(isRelationshipClass)
         {
         ECRelationshipClassP newClass;
-        if (GetMerged().CreateRelationshipClass(newClass, defaultClass->GetName()) != ECOBJECTS_STATUS_Success)
+        if (GetMerged().CreateRelationshipClass(newClass, defaultClass->GetName()) != ECObjectsStatus::Success)
             return MERGESTATUS_ErrorMergeClassAlreadyExist;
         ECDiffNodeP relationshipInfo = diff.ImplGetChildById (DiffNodeId::RelationshipInfo);
         if (relationshipInfo)
@@ -1966,9 +1989,27 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
                     return status;
         mergeClass = newClass;
         }
-    else
-        if (GetMerged().CreateClass( mergeClass, defaultClass->GetName()) !=  ECOBJECTS_STATUS_Success)
+    else if (isStructClass)
+        {
+        ECStructClassP newClass;
+        if (GetMerged().CreateStructClass(newClass, defaultClass->GetName()) != ECObjectsStatus::Success)
             return MERGESTATUS_ErrorMergeClassAlreadyExist;
+        mergeClass = newClass;
+        }
+    else if (isCAClass)
+        {
+        ECCustomAttributeClassP newClass;
+        if (GetMerged().CreateCustomAttributeClass(newClass, defaultClass->GetName()) != ECObjectsStatus::Success)
+            return MERGESTATUS_ErrorMergeClassAlreadyExist;
+        mergeClass = newClass;
+        }
+    else
+        {
+        ECEntityClassP newClass;
+        if (GetMerged().CreateEntityClass( newClass, defaultClass->GetName()) !=  ECObjectsStatus::Success)
+            return MERGESTATUS_ErrorMergeClassAlreadyExist;
+        mergeClass = newClass;
+        }
 
     //Make sure it doest process again
     info.SetClass (*mergeClass);
@@ -1986,20 +2027,13 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
     else
         mergeClass->SetDescription (v->GetValueString());
 
-    if ((v = GetMergeValue (diff, DiffNodeId::IsCustomAttributeClass)) == NULL)
-        mergeClass->SetIsCustomAttributeClass(defaultClass->GetIsCustomAttributeClass());
+    if (((v = GetMergeValue(diff, DiffNodeId::IsSealed)) != NULL) && v->GetValueBool())
+        mergeClass->SetClassModifier(ECClassModifier::Sealed);
+    else if (((v = GetMergeValue(diff, DiffNodeId::IsAbstract)) != NULL) && v->GetValueBool())
+        mergeClass->SetClassModifier(ECClassModifier::Abstract);
     else
-        mergeClass->SetIsCustomAttributeClass (v->GetValueBool());
+        mergeClass->SetClassModifier(defaultClass->GetClassModifier());
 
-    if ((v = GetMergeValue (diff, DiffNodeId::IsStruct)) == NULL)
-        mergeClass->SetIsStruct(defaultClass->GetIsStruct());
-    else
-        mergeClass->SetIsStruct (v->GetValueBool());
-
-    if ((v = GetMergeValue (diff, DiffNodeId::IsDomainClass)) == NULL)
-        mergeClass->SetIsDomainClass(defaultClass->GetIsDomainClass());
-    else
-        mergeClass->SetIsDomainClass (v->GetValueBool());
     //Process base classes
     ECDiffNodeP baseClasses = diff.ImplGetChildById (DiffNodeId::BaseClasses);
     if (baseClasses)
@@ -2045,10 +2079,10 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipClassToMerge(ECRelationshipClas
     mergedClass.SetStrength (defaultClass.GetStrength());
     mergedClass.SetStrengthDirection (defaultClass.GetStrengthDirection());
 
-    if ((status = AppendRelationshipContstraintToMerge (mergedClass.GetSource(), defaultClass.GetSource())) != MERGESTATUS_Success)
+    if ((status = AppendRelationshipConstraintToMerge (mergedClass.GetSource(), defaultClass.GetSource())) != MERGESTATUS_Success)
         return status;
 
-    if ((status = AppendRelationshipContstraintToMerge (mergedClass.GetTarget(), defaultClass.GetTarget())) != MERGESTATUS_Success)
+    if ((status = AppendRelationshipConstraintToMerge (mergedClass.GetTarget(), defaultClass.GetTarget())) != MERGESTATUS_Success)
         return status;
 
     return MERGESTATUS_Success;
@@ -2097,7 +2131,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
         }
     else
         if (defaultRelationshipClass)
-            if ((status = AppendRelationshipContstraintToMerge(mergedClass.GetSource(), defaultRelationshipClass->GetSource())) != MERGESTATUS_Success)
+            if ((status = AppendRelationshipConstraintToMerge(mergedClass.GetSource(), defaultRelationshipClass->GetSource())) != MERGESTATUS_Success)
                 return status;
 
     ECDiffNodeP targetConstraint = diff->ImplGetChildById( DiffNodeId::Target);
@@ -2110,7 +2144,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
         }
     else
         if (defaultRelationshipClass)
-            if ((status = AppendRelationshipContstraintToMerge(mergedClass.GetTarget(), defaultRelationshipClass->GetTarget())) != MERGESTATUS_Success)
+            if ((status = AppendRelationshipConstraintToMerge(mergedClass.GetTarget(), defaultRelationshipClass->GetTarget())) != MERGESTATUS_Success)
                 return status;
 
     return MERGESTATUS_Success;
@@ -2125,7 +2159,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
     ECDiffValueP v  = NULL;
     if ((v = GetMergeValue (diff, DiffNodeId::Cardinality)) != NULL)
         {
-        if (mergedConstraint.SetCardinality (v->GetValueString().c_str()) != ECOBJECTS_STATUS_Success)
+        if (mergedConstraint.SetCardinality (v->GetValueString().c_str()) != ECObjectsStatus::Success)
             return MERGESTATUS_ErrorParsingCardinality;
         }
     else
@@ -2378,10 +2412,14 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
     if (isStruct)
         {
         StructECPropertyP newProperty;
-        ECClassCP structTypeClass = ResolveClass (typeName);
+        ECClassCP typeClass = ResolveClass (typeName);
+        if (typeClass == NULL)
+            return MERGESTATUS_Failed;
+        ECStructClassCP structTypeClass = typeClass->GetStructClassCP();
         if (structTypeClass == NULL)
             return MERGESTATUS_Failed;
-        if (mergedClass.CreateStructProperty (newProperty, defaultProperty->GetName(), *structTypeClass) != ECOBJECTS_STATUS_Success)
+
+        if (mergedClass.CreateStructProperty (newProperty, defaultProperty->GetName(), *structTypeClass) != ECObjectsStatus::Success)
             return MERGESTATUS_Failed;
         mergedProperty = newProperty;
         }
@@ -2393,16 +2431,21 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
             PrimitiveType primitiveType;
             if (!ECDiffValueHelper::TryParsePrimitiveType (primitiveType, typeName))
                 return MERGESTATUS_Failed;
-            if (mergedClass.CreateArrayProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECOBJECTS_STATUS_Success)
+            if (mergedClass.CreateArrayProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECObjectsStatus::Success)
                 return MERGESTATUS_Failed;
             }
         else
             {
-            ECClassCP structTypeClass = ResolveClass (typeName);
+            StructArrayECPropertyP newStructProperty;
+            ECClassCP typeClass = ResolveClass (typeName);
+            if (typeClass == NULL)
+                return MERGESTATUS_Failed;
+            ECStructClassCP structTypeClass = typeClass->GetStructClassCP();
             if (structTypeClass == NULL)
                 return MERGESTATUS_Failed;
-            if (mergedClass.CreateArrayProperty (newProperty, defaultProperty->GetName(), structTypeClass) != ECOBJECTS_STATUS_Success)
+            if (mergedClass.CreateStructArrayProperty (newStructProperty, defaultProperty->GetName(), structTypeClass) != ECObjectsStatus::Success)
                 return MERGESTATUS_Failed;
+            newProperty = newStructProperty;
             }
 
         ECDiffNodeP arrayInfo = diff->ImplGetChildById (DiffNodeId::ArrayInfo);
@@ -2425,7 +2468,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         PrimitiveType primitiveType;
         if (!ECDiffValueHelper::TryParsePrimitiveType (primitiveType, typeName))
             return MERGESTATUS_Failed;
-        if (mergedClass.CreatePrimitiveProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECOBJECTS_STATUS_Success)
+        if (mergedClass.CreatePrimitiveProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECObjectsStatus::Success)
             return MERGESTATUS_Failed;
         mergedProperty = newProperty;
         }
@@ -2477,7 +2520,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
         {
         PrimitiveECPropertyCP srcProperty = property->GetAsPrimitiveProperty();
         PrimitiveECPropertyP newProperty;
-        if (mergeClass.CreatePrimitiveProperty (newProperty, srcProperty->GetName(), srcProperty->GetType()) != ECOBJECTS_STATUS_Success)
+        if (mergeClass.CreatePrimitiveProperty (newProperty, srcProperty->GetName(), srcProperty->GetType()) != ECObjectsStatus::Success)
             return MERGESTATUS_Failed;
         mergeProperty = newProperty;
         }
@@ -2485,17 +2528,21 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
         {
         StructECPropertyCP srcProperty = property->GetAsStructProperty();
         StructECPropertyP newProperty;
-        ECClassCP resolvedStructType = &srcProperty->GetType();
-        if (IsPartOfMergeSchema(*resolvedStructType))
+        ECClassCP resolvedType = &srcProperty->GetType();
+        if (IsPartOfMergeSchema(*resolvedType))
             {
-            status = ResolveClassFromMergeContext (resolvedStructType, resolvedStructType->GetName().c_str());
+            status = ResolveClassFromMergeContext (resolvedType, resolvedType->GetName().c_str());
             if (status != MERGESTATUS_Success)
                 return status;
             }
         else
-            EnsureSchemaIsReferenced (*resolvedStructType);
-        BeAssert(resolvedStructType!= NULL);
-        if (mergeClass.CreateStructProperty (newProperty, srcProperty->GetName(), *resolvedStructType) != ECOBJECTS_STATUS_Success)
+            EnsureSchemaIsReferenced (*resolvedType);
+        BeAssert(resolvedType!= NULL);
+        ECStructClassCP resolvedStructType = resolvedType->GetStructClassCP();
+        if (nullptr == resolvedStructType)
+            return MERGESTATUS_ErrorClassNotFound;
+
+        if (mergeClass.CreateStructProperty (newProperty, srcProperty->GetName(), *resolvedStructType) != ECObjectsStatus::Success)
             return MERGESTATUS_Failed;
         mergeProperty = newProperty;
         }
@@ -2505,22 +2552,28 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
         ArrayECPropertyP newProperty;
         if (srcProperty->GetKind() == ARRAYKIND_Struct)
             {
-            ECClassCP resolvedStructType = srcProperty->GetStructElementType();
-            if (IsPartOfMergeSchema(*resolvedStructType))
+            ECClassCP resolvedType = srcProperty->GetAsStructArrayProperty()->GetStructElementType();
+            if (IsPartOfMergeSchema(*resolvedType))
                 {
-                status = ResolveClassFromMergeContext (resolvedStructType, resolvedStructType->GetName().c_str());
+                status = ResolveClassFromMergeContext (resolvedType, resolvedType->GetName().c_str());
                 if (status != MERGESTATUS_Success)
                     return status;
                 }
             else
-                EnsureSchemaIsReferenced (*resolvedStructType);
-            BeAssert(resolvedStructType!= NULL);
-            if (mergeClass.CreateArrayProperty(newProperty, srcProperty->GetName(), resolvedStructType) != ECOBJECTS_STATUS_Success)
+                EnsureSchemaIsReferenced (*resolvedType);
+            BeAssert(resolvedType!= NULL);
+            ECStructClassCP resolvedStructType = resolvedType->GetStructClassCP();
+            if (nullptr == resolvedStructType)
+                return MERGESTATUS_ErrorClassNotFound;
+
+            StructArrayECPropertyP newStructProp;
+            if (mergeClass.CreateStructArrayProperty(newStructProp, srcProperty->GetName(), resolvedStructType) != ECObjectsStatus::Success)
                 return MERGESTATUS_Failed;
+            newProperty = newStructProp;
             }
         else //primitive
             {
-            if (mergeClass.CreateArrayProperty (newProperty, srcProperty->GetName(), srcProperty->GetPrimitiveElementType()) != ECOBJECTS_STATUS_Success)
+            if (mergeClass.CreateArrayProperty (newProperty, srcProperty->GetName(), srcProperty->GetPrimitiveElementType()) != ECObjectsStatus::Success)
                 return MERGESTATUS_Failed;
             }
         newProperty->SetMinOccurs( srcProperty->GetMinOccurs());
@@ -2618,15 +2671,33 @@ MergeStatus ECSchemaMergeTool::AppendClassToMerge (ECClassCP ecClass, ClassMerge
     BeAssert(ecClass != NULL);
     ECClassP mergedClass;
     ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP();
-    if (relationshipClass == NULL)
+    ECStructClassCP structClass = ecClass->GetStructClassCP();
+    ECCustomAttributeClassCP caClass = ecClass->GetCustomAttributeClassCP();
+    if (relationshipClass != NULL)
         {
-        if (GetMerged().CreateClass (mergedClass, ecClass->GetName()) != ECOBJECTS_STATUS_Success)
+        ECRelationshipClassP newClass;
+        if (GetMerged().CreateRelationshipClass (newClass, ecClass->GetName()) != ECObjectsStatus::Success)
             return MERGESTATUS_Failed;
+        mergedClass = newClass;
+        }
+    else if (nullptr != structClass)
+        {
+        ECStructClassP newClass;
+        if (GetMerged().CreateStructClass(newClass, ecClass->GetName()) != ECObjectsStatus::Success)
+            return MERGESTATUS_Failed;
+        mergedClass = newClass;
+        }
+    else if (nullptr != caClass)
+        {
+        ECCustomAttributeClassP newClass;
+        if (GetMerged().CreateCustomAttributeClass(newClass, ecClass->GetName()) != ECObjectsStatus::Success)
+            return MERGESTATUS_Failed;
+        mergedClass = newClass;
         }
     else
         {
-        ECRelationshipClassP newClass;
-        if (GetMerged().CreateRelationshipClass (newClass, ecClass->GetName()) != ECOBJECTS_STATUS_Success)
+        ECEntityClassP newClass;
+        if (GetMerged().CreateEntityClass (newClass, ecClass->GetName()) != ECObjectsStatus::Success)
             return MERGESTATUS_Failed;
         mergedClass = newClass;
         }
@@ -2635,9 +2706,7 @@ MergeStatus ECSchemaMergeTool::AppendClassToMerge (ECClassCP ecClass, ClassMerge
     if (ecClass->GetIsDisplayLabelDefined())
         mergedClass->SetDisplayLabel (ecClass->GetDisplayLabel());
     mergedClass->SetDescription (ecClass->GetDescription());
-    mergedClass->SetIsCustomAttributeClass (ecClass->GetIsCustomAttributeClass());
-    mergedClass->SetIsDomainClass (ecClass->GetIsDomainClass());
-    mergedClass->SetIsStruct (ecClass->GetIsStruct());
+    mergedClass->SetClassModifier(ecClass->GetClassModifier());
 
     MergeStatus status = AppendBaseClassesToMerge (*mergedClass, *ecClass);
     if (status != MERGESTATUS_Success)
@@ -2664,11 +2733,11 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipToMerge(ECRelationshipClassR me
     mergedRelationshipClass.SetStrength (defaultRelationshipClass.GetStrength());
     mergedRelationshipClass.SetStrengthDirection (defaultRelationshipClass.GetStrengthDirection());
 
-    status = AppendRelationshipContstraintToMerge (mergedRelationshipClass.GetSource(), defaultRelationshipClass.GetSource());
+    status = AppendRelationshipConstraintToMerge (mergedRelationshipClass.GetSource(), defaultRelationshipClass.GetSource());
     if (status != MERGESTATUS_Success)
         return status;
 
-    status = AppendRelationshipContstraintToMerge (mergedRelationshipClass.GetTarget(), defaultRelationshipClass.GetTarget());
+    status = AppendRelationshipConstraintToMerge (mergedRelationshipClass.GetTarget(), defaultRelationshipClass.GetTarget());
     if (status != MERGESTATUS_Success)
         return status;
 
@@ -2677,7 +2746,7 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipToMerge(ECRelationshipClassR me
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-MergeStatus ECSchemaMergeTool::AppendRelationshipContstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint)
+MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint)
     {
     MergeStatus status;
     mergedRelationshipClassConstraint.SetCardinality (defaultRelationshipClassConstraint.GetCardinality());

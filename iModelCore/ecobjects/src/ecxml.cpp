@@ -20,9 +20,9 @@ ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, Utf8CP booleanSt
     else if (0 == BeStringUtilities::Stricmp (booleanString, ECXML_FALSE))
         booleanValue = false;
     else
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,7 +63,7 @@ Utf8CP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
 ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8StringCR typeName)
     {
     if (0 == typeName.length())
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
     if (0 == typeName.compare (ECXML_TYPENAME_STRING))
         primitiveType = PRIMITIVETYPE_String;
@@ -90,9 +90,9 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8Str
     else if (0 == typeName.compare(0, strlen(ECXML_TYPENAME_IGEOMETRY_LEGACY), ECXML_TYPENAME_IGEOMETRY_LEGACY))
         primitiveType = PRIMITIVETYPE_IGeometry; 
     else
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -102,11 +102,11 @@ Utf8CP ECXml::StrengthToString (StrengthType strength)
     {
     switch (strength)
         {
-        case STRENGTHTYPE_Referencing :
+        case StrengthType::Referencing :
             return ECXML_STRENGTH_REFERENCING;
-        case STRENGTHTYPE_Holding:
+        case StrengthType::Holding:
             return ECXML_STRENGTH_HOLDING;
-        case STRENGTHTYPE_Embedding:
+        case StrengthType::Embedding:
             return ECXML_STRENGTH_EMBEDDING;
         default:
             return EMPTY_STRING;
@@ -120,17 +120,17 @@ Utf8CP ECXml::StrengthToString (StrengthType strength)
 ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, Utf8StringCR strengthString)
     {
     if (0 == strengthString.length())
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
     if (0 == strengthString.compare(ECXML_STRENGTH_EMBEDDING))
-        strength = STRENGTHTYPE_Embedding;
+        strength = StrengthType::Embedding;
     else if (0 == strengthString.compare(ECXML_STRENGTH_HOLDING))
-        strength = STRENGTHTYPE_Holding;
+        strength = StrengthType::Holding;
     else if (0 == strengthString.compare(ECXML_STRENGTH_REFERENCING))
-        strength = STRENGTHTYPE_Referencing;
+        strength = StrengthType::Referencing;
     else
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
          
 /*---------------------------------------------------------------------------------**//**
@@ -155,15 +155,15 @@ Utf8CP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
 ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString)
     {
     if (0 == directionString.length())
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
     if (0 == directionString.compare(ECXML_DIRECTION_BACKWARD))
         direction = ECRelatedInstanceDirection::Backward;
     else if (0 == directionString.compare(ECXML_DIRECTION_FORWARD))
         direction = ECRelatedInstanceDirection::Forward;
     else
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,7 +171,7 @@ ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& directi
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &upperLimit, const Utf8String &cardinalityString)
     {
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     if (0 == cardinalityString.compare("1"))
         {
         LOG.debugv("Legacy cardinality of '1' interpreted as '(1,1)'");
@@ -196,7 +196,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
     if (openParenIndex == std::string::npos)
         {
         if (0 == BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "%d", &upperLimit))
-            return ECOBJECTS_STATUS_ParseError;
+            return ECObjectsStatus::ParseError;
         LOG.debugv("Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
         return status;
@@ -205,22 +205,87 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
     if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
         {
         LOG.warningv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
      
     int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "(%d,%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
-        return ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         
     if (0 == scanned)
         {
         LOG.warningv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
-        return ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
         }
     
     // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
     upperLimit = UINT_MAX;
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECXml::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
+    {
+    if (0 == modifierString.CompareToI("Abstract"))
+        modifier = ECClassModifier::Abstract;
+    else if (0 == modifierString.CompareToI("Sealed"))
+        modifier = ECClassModifier::Sealed;
+    else
+        {
+        if (0 != modifierString.CompareToI("None"))
+            LOG.warningv("Invalid value for Modifier attribute: %s.  Defaulting to NONE", modifierString.c_str());
+        modifier = ECClassModifier::None;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECXml::ParseContainerString(StructContainerType& containerType, Utf8StringCR typeString)
+    {
+    if (0 == typeString.CompareToI("CustomAttribute"))
+        containerType = StructContainerType::CustomAttributeClass;
+    else
+        {
+        if (0 != typeString.CompareToI("Entity"))
+            LOG.warningv("Invalid value for appliesTo attribute: %s.  Defaulting to Entity", typeString.c_str());
+        containerType = StructContainerType::EntityClass;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
+    {
+    if (0 == typeString.CompareToI("ECSchema"))
+        containerType = CustomAttributeContainerType::Schema;
+    else if (0 == typeString.CompareToI("ECEntityClass"))
+        containerType = CustomAttributeContainerType::Entity;
+    else if (0 == typeString.CompareToI("ECCustomAttributeClass"))
+        containerType = CustomAttributeContainerType::CustomAttribute;
+    else if (0 == typeString.CompareToI("ECStructClass"))
+        containerType = CustomAttributeContainerType::Struct;
+    else if (0 == typeString.CompareToI("ECRelationshipClass"))
+        containerType = CustomAttributeContainerType::Relationship;
+    else if (0 == typeString.CompareToI("ECEnumeration"))
+        containerType = CustomAttributeContainerType::Enumeration;
+    else if (0 == typeString.CompareToI("ECProperty"))
+        containerType = CustomAttributeContainerType::Property;
+    else if (0 == typeString.CompareToI("ECStructProperty"))
+        containerType = CustomAttributeContainerType::StructProperty;
+    else if (0 == typeString.CompareToI("ECArrayProperty"))
+        containerType = CustomAttributeContainerType::ArrayProperty;
+    else if (0 == typeString.CompareToI("ECStructArrayProperty"))
+        containerType = CustomAttributeContainerType::StructArrayProperty;
+    else
+        {
+        LOG.warningv("Unknown custom attribute container type: %s", typeString);
+        return ECObjectsStatus::ParseError;
+        }
+    return ECObjectsStatus::Success;
     }
 
 #if defined (DONT_THINK_WE_NEED)

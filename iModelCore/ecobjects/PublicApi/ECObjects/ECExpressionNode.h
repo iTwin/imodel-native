@@ -94,7 +94,7 @@ public:
     static ExpressionStatus PerformIntegerDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
     static ExpressionStatus PerformDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
     static ExpressionStatus PerformMod(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
-    static ExpressionStatus PerformLikeTest(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right) { return ExprStatus_NotImpl; }
+    static ExpressionStatus PerformLikeTest(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right) { return ExpressionStatus::NotImpl; }
     static ExpressionStatus PerformJunctionOperator(EvaluationResultR resultOut, ExpressionToken junctionOperator, EvaluationResultR left, EvaluationResultR right);
     static ExpressionStatus PerformLogicalOr(EvaluationResultR resultOut, EvaluationResultR leftValue, EvaluationResultR rightValue);
     static ExpressionStatus PerformLogicalAnd(EvaluationResultR resultOut, EvaluationResultR leftValue, EvaluationResultR rightValue);
@@ -193,12 +193,12 @@ public:
     virtual bool _SupportsGetStringValue() {return PRIMITIVETYPE_String == m_primitiveType; }
 
     ECN::PrimitiveType GetResolvedPrimitiveType() const { return m_primitiveType; }
-    virtual bool _GetBooleanValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return false; }
-    virtual ::int64_t _GetDateTimeValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual double _GetDoubleValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual ::int32_t _GetIntegerValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual ::int64_t _GetLongValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual ExpressionStatus _GetStringValue(ECValueR expressionStatus, ExpressionContextR context) { return ExprStatus_WrongType; }
+    virtual bool _GetBooleanValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExpressionStatus::WrongType; return false; }
+    virtual ::int64_t _GetDateTimeValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExpressionStatus::WrongType; return 0; }
+    virtual double _GetDoubleValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExpressionStatus::WrongType; return 0; }
+    virtual ::int32_t _GetIntegerValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExpressionStatus::WrongType; return 0; }
+    virtual ::int64_t _GetLongValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExpressionStatus::WrongType; return 0; }
+    virtual ExpressionStatus _GetStringValue(ECValueR expressionStatus, ExpressionContextR context) { return ExpressionStatus::WrongType; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,7 +225,7 @@ private:
     virtual ExpressionStatus    _GetValue (EvaluationResult& result, ExpressionContextR) override
         {
         result = m_value;
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
 
     virtual bool                _IsConstant() const override { return true; }
@@ -256,42 +256,42 @@ private:
     virtual bool    _GetBooleanValue (ExpressionStatus& status, ExpressionContextR context) override
         {
         ECValue v (m_value);
-        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Boolean) ? ExprStatus_Success : ExprStatus_WrongType;
-        return ExprStatus_Success == status ? v.GetBoolean() : false;
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Boolean) ? ExpressionStatus::Success : ExpressionStatus::WrongType;
+        return ExpressionStatus::Success == status ? v.GetBoolean() : false;
         }
     virtual ::int32_t _GetIntegerValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
-        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Integer) ? ExprStatus_Success : ExprStatus_WrongType;
-        return ExprStatus_Success == status ? v.GetInteger() : 0;
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Integer) ? ExpressionStatus::Success : ExpressionStatus::WrongType;
+        return ExpressionStatus::Success == status ? v.GetInteger() : 0;
         }
     virtual ::int64_t _GetLongValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
-        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Long) ? ExprStatus_Success : ExprStatus_WrongType;
-        return ExprStatus_Success == status ? v.GetLong() : 0;
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Long) ? ExpressionStatus::Success : ExpressionStatus::WrongType;
+        return ExpressionStatus::Success == status ? v.GetLong() : 0;
         }
     virtual double  _GetDoubleValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
-        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) ? ExprStatus_Success : ExprStatus_WrongType;
-        return ExprStatus_Success == status ? v.GetDouble() : 0.0;
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) ? ExpressionStatus::Success : ExpressionStatus::WrongType;
+        return ExpressionStatus::Success == status ? v.GetDouble() : 0.0;
         }
     virtual ::int64_t _GetDateTimeValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
-        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_DateTime) ? ExprStatus_Success : ExprStatus_WrongType;
-        return ExprStatus_Success == status ? (::int64_t) v.GetDouble() : 0;
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_DateTime) ? ExpressionStatus::Success : ExpressionStatus::WrongType;
+        return ExpressionStatus::Success == status ? (::int64_t) v.GetDouble() : 0;
         }
     virtual ExpressionStatus _GetStringValue(ECValueR v, ExpressionContextR context)
         {
         if (m_value.GetPrimitiveType() == PRIMITIVETYPE_String)
             {
             v = m_value;
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_WrongType;
+            return ExpressionStatus::WrongType;
         }
 public:
     ECValueCR   GetInternalValue() const { return m_value; }
@@ -631,12 +631,12 @@ protected:
 
 
     virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, 
-                                        ExpressionContextR context) { return ExprStatus_NotImpl; }
+                                        ExpressionContextR context) { return ExpressionStatus::NotImpl; }
 
     //  Undecided if this is pure virtual or a default implementation.
     virtual ExpressionStatus _PerformOperation(EvaluationResultR result,
                                         EvaluationResultCR leftResult, EvaluationResultCR rightResult, 
-                                        ExpressionContextR context)  { return ExprStatus_NotImpl; }
+                                        ExpressionContextR context)  { return ExpressionStatus::NotImpl; }
 
     ExpressionStatus        PerformDefaultPromotion(EvaluationResult& leftResult, EvaluationResult& rightResult);
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override
@@ -1154,8 +1154,8 @@ public:
         ::int32_t divisor = m_right->_GetIntegerValue(status, context);
         if (0 == divisor)
             {
-            if (ExprStatus_Success == status)
-                status = ExprStatus_DivideByZero;
+            if (ExpressionStatus::Success == status)
+                status = ExpressionStatus::DivideByZero;
             return 0;
             }
 
@@ -1167,8 +1167,8 @@ public:
         ::int64_t divisor = m_right->_GetLongValue(status, context);
         if (0 == divisor)
             {
-            if (ExprStatus_Success == status)
-                status = ExprStatus_DivideByZero;
+            if (ExpressionStatus::Success == status)
+                status = ExpressionStatus::DivideByZero;
             return 0;
             }
 
@@ -1194,8 +1194,8 @@ public:
         ::int32_t divisor = m_right->_GetIntegerValue(status, context);
         if (0 == divisor)
             {
-            if (ExprStatus_Success == status)
-                status = ExprStatus_DivideByZero;
+            if (ExpressionStatus::Success == status)
+                status = ExpressionStatus::DivideByZero;
             return 0;
             }
 
@@ -1207,8 +1207,8 @@ public:
         ::int64_t divisor = m_right->_GetLongValue(status, context);
         if (0 == divisor)
             {
-            if (ExprStatus_Success == status)
-                status = ExprStatus_DivideByZero;
+            if (ExpressionStatus::Success == status)
+                status = ExpressionStatus::DivideByZero;
             return 0;
             }
 
@@ -1220,8 +1220,8 @@ public:
         double divisor = m_right->_GetDoubleValue(status, context);
         if (0.0 == divisor)
             {
-            if (ExprStatus_Success == status)
-                status = ExprStatus_DivideByZero;
+            if (ExpressionStatus::Success == status)
+                status = ExpressionStatus::DivideByZero;
             return 0;
             }
 
@@ -1245,8 +1245,8 @@ public:
         double divisor = m_right->_GetDoubleValue(status, context);
         if (0.0 == divisor)
             {
-            if (ExprStatus_Success == status)
-                status = ExprStatus_DivideByZero;
+            if (ExpressionStatus::Success == status)
+                status = ExpressionStatus::DivideByZero;
             return 0;
             }
 
@@ -1287,8 +1287,8 @@ public:
         double divisor = m_divisor->_GetDoubleValue(status, context);
         if (0.0 == divisor)
             {
-            if (ExprStatus_Success == status)
-                status = ExprStatus_DivideByZero;
+            if (ExpressionStatus::Success == status)
+                status = ExpressionStatus::DivideByZero;
             return 0;
             }
 

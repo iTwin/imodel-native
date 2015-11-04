@@ -90,7 +90,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
     if (index == numberOfOperators)
         {
         //  This is an instance expression
-        return ExprStatus_UnknownError;    // Report invalid reference
+        return ExpressionStatus::UnknownError;    // Report invalid reference
         }
 
     evalResult.InitECValue().SetStruct (const_cast<IECInstanceP>(&rootInstance));
@@ -114,7 +114,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                     EvaluationResult accessorResult;
                     NodePtr accessorNode = lBracketNode->GetIndexNode();
                     ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext);
-                    if (ExprStatus_Success != exprStatus)
+                    if (ExpressionStatus::Success != exprStatus)
                         {
                         evalResult.Clear();
                         return exprStatus;
@@ -122,7 +122,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                     else if (!accessorResult.IsECValue())
                         {
                         evalResult.Clear();
-                        return ExprStatus_PrimitiveRequired;
+                        return ExpressionStatus::PrimitiveRequired;
                         }
 
                     memberName = accessorResult.GetECValue()->GetUtf8CP();
@@ -149,7 +149,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             if (NULL == currentProperty)
                 {
                 evalResult.Clear();
-                return ExprStatus_UnknownMember;
+                return ExpressionStatus::UnknownMember;
                 }
 
             if (!currentProperty->GetIsStruct())
@@ -162,7 +162,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 //  -- will we allow indexing via a property name?
                 //  -- will we allow passing an struct to a method?
                 evalResult.Clear();
-                return ExprStatus_PrimitiveRequired;
+                return ExpressionStatus::PrimitiveRequired;
                 }
 
             ECN::StructECPropertyCP  structProperty = currentProperty->GetAsStructProperty();
@@ -174,20 +174,20 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
         if (TOKEN_None == nextOperation)
             {
             if (NULL == currentProperty)
-                return ExprStatus_UnknownSymbol;
+                return ExpressionStatus::UnknownSymbol;
 
             ECN::PrimitiveECPropertyCP   primProp = currentProperty->GetAsPrimitiveProperty();
             if (NULL == primProp)
                 {
                 evalResult.Clear();
-                return ExprStatus_PrimitiveRequired;
+                return ExpressionStatus::PrimitiveRequired;
                 }
 
             ::uint32_t   propertyIndex;
-            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
+            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECObjectsStatus::Success)
                 {
                 evalResult.Clear();
-                return ExprStatus_UnknownError;
+                return ExpressionStatus::UnknownError;
                 }
 
 
@@ -195,13 +195,13 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             refResult.m_memberSelector = -1;
             refResult.m_property = currentProperty;
 
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
 
         if (TOKEN_LParen == nextOperation)
             {
             //  Might want to allow a method to setting properties on an object returned from a method.  For now, just return an error.
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
             }
 
         if (TOKEN_LeftBracket == nextOperation)
@@ -209,7 +209,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             if (NULL == currentProperty)
                 {
                 evalResult.Clear();
-                return ExprStatus_ArrayRequired;
+                return ExpressionStatus::ArrayRequired;
                 }
 
             ECN::ArrayECPropertyCP   arrayProp = currentProperty->GetAsArrayProperty();
@@ -217,7 +217,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             if (NULL == arrayProp)
                 {
                 evalResult.Clear();
-                return ExprStatus_ArrayRequired;
+                return ExpressionStatus::ArrayRequired;
                 }
 
             LBracketNodeCP       lBracketNode = static_cast<LBracketNodeCP>(primaryList.GetOperatorNode(index++));
@@ -229,7 +229,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             NodePtr             indexNode = lBracketNode->GetIndexNode();
 
             ExpressionStatus exprStatus = indexNode->GetValue(indexResult, globalContext);
-            if (ExprStatus_Success != exprStatus)
+            if (ExpressionStatus::Success != exprStatus)
                 {
                 evalResult.Clear();
                 return exprStatus;
@@ -237,7 +237,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             else if (!indexResult.IsECValue())
                 {
                 evalResult.Clear();
-                return ExprStatus_PrimitiveRequired;
+                return ExpressionStatus::PrimitiveRequired;
                 }
 
             //  Need to convert this to an int if it is not already an int
@@ -249,46 +249,46 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 if (TOKEN_None != nextOperation)
                     {
                     evalResult.Clear();
-                    return ExprStatus_StructRequired;  //  might be method required.  Should check next node
+                    return ExpressionStatus::StructRequired;  //  might be method required.  Should check next node
                     }
 
                 refResult.m_accessString = accessString;
                 refResult.m_arrayIndex = arrayIndex;
                 refResult.m_property = currentProperty;
 
-                return ExprStatus_Success;
+                return ExpressionStatus::Success;
                 }
 
             BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
 
             ::uint32_t   propertyIndex;
-            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
+            if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECObjectsStatus::Success)
                 {
                 evalResult.Clear();
-                return ExprStatus_UnknownError;
+                return ExpressionStatus::UnknownError;
                 }
 
             ECN::ECValue         ecValue;
             ECN::ECObjectsStatus  ecStatus = instance->GetValue(ecValue, propertyIndex, arrayIndex);
 
-            if (ECN::ECOBJECTS_STATUS_Success != ecStatus)
+            if (ECN::ECObjectsStatus::Success != ecStatus)
                 {
                 evalResult.Clear();
-                return ExprStatus_UnknownError;             //  This should return a good translation of the ECOBJECTS_STATUS_ value
+                return ExpressionStatus::UnknownError;             //  This should return a good translation of the ECObjectsStatus:: value
                 }
 
             if (ecValue.IsNull())
                 {
                 evalResult = ecValue;
                 //  Should we initialize the array?
-                return ExprStatus_UnknownError;
+                return ExpressionStatus::UnknownError;
                 }
 
             if (TOKEN_None == nextOperation)
                 {
                 //  Returning a struct instance.
                 evalResult.Clear();
-                return ExprStatus_UnknownError;
+                return ExpressionStatus::UnknownError;
                 }
 
             appendDot   = false;
@@ -300,7 +300,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             }
         }
 
-    return ExprStatus_UnknownError;
+    return ExpressionStatus::UnknownError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,7 +377,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
     if (TOKEN_Dot != nextOperation && TOKEN_Ident != nextOperation && TOKEN_LeftBracket != nextOperation)
         {
         BeAssert (false);
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
         }
     
     bool appendDot = false;
@@ -400,10 +400,10 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             EvaluationResult accessorResult;
             NodePtr accessorNode = lBracketNode->GetIndexNode();
             ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext);
-            if (ExprStatus_Success != exprStatus)
+            if (ExpressionStatus::Success != exprStatus)
                 { evalResult.Clear(); return exprStatus; }
             else if (accessorResult.GetValueType() != ValType_ECValue || !accessorResult.GetECValue()->IsString())
-                { evalResult.Clear(); return ExprStatus_WrongType; }
+                { evalResult.Clear(); return ExpressionStatus::WrongType; }
 
             // ###TODO: NEEDSWORK: this doesn't work for expressions like 'this["Struct.Member"]'
             memberName = accessorResult.GetECValue()->GetUtf8CP();
@@ -419,7 +419,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 if (2 == qualifiers.size() && !instance.GetClass().Is (qualifiers[0].c_str(), qualifiers[1].c_str()))
                     {
                     evalResult.Clear();
-                    return ExprStatus_UnknownMember;
+                    return ExpressionStatus::UnknownMember;
                     }
                 }
 
@@ -436,12 +436,12 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         currentProperty = ecClass->GetPropertyP (memberName);
         if (NULL == currentProperty)
-            { evalResult.Clear(); return ExprStatus_UnknownMember; }
+            { evalResult.Clear(); return ExpressionStatus::UnknownMember; }
         else if (!currentProperty->GetIsStruct())
             break;
 
         if (TOKEN_None == nextOperation)
-            { evalResult.Clear(); return ExprStatus_PrimitiveRequired; }
+            { evalResult.Clear(); return ExpressionStatus::PrimitiveRequired; }
 
         ecClass = &currentProperty->GetAsStructProperty()->GetType();
         }
@@ -453,7 +453,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         // handle point member access
         componentIndex = getComponentIndex (primaryList.GetOperatorNode (index), is2d);
         if (IECTypeAdapterContext::COMPONENT_INDEX_None == componentIndex)
-            return ExprStatus_UnknownMember;
+            return ExpressionStatus::UnknownMember;
 
         // we'll get the component value below if no more operations
         nextOperation = primaryList.GetOperation (++index);
@@ -463,28 +463,28 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         {
         evalResult.Clear();
         if (NULL == currentProperty)
-            return ExprStatus_UnknownSymbol;
+            return ExpressionStatus::UnknownSymbol;
         else if (currentProperty->GetIsArray())
             {
             uint32_t propIdx;
-            if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
-                return ExprStatus_UnknownSymbol;
+            if (ECObjectsStatus::Success != instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
+                return ExpressionStatus::UnknownSymbol;
 
             IValueListResultPtr list = IValueListResult::Create (const_cast<IECInstanceR>(instance), propIdx);
             evalResult.SetValueList (*list);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
 
         UnitSpec units;
         ECValue ecval;
         PrimitiveECPropertyCP primProp = currentProperty->GetAsPrimitiveProperty();
-        if (NULL == primProp || ECOBJECTS_STATUS_Success != instance.GetValue (ecval, accessString.c_str()))
-            return ExprStatus_UnknownError;
+        if (NULL == primProp || ECObjectsStatus::Success != instance.GetValue (ecval, accessString.c_str()))
+            return ExpressionStatus::UnknownError;
 
         if (IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
             {
             if (ecval.IsNull() || (is2d && !ecval.IsPoint2D()) || (!is2d && !ecval.IsPoint3D()))
-                return ExprStatus_DotNotSupported;
+                return ExpressionStatus::DotNotSupported;
 
             DPoint3d pt = !is2d ? ecval.GetPoint3D() : DPoint3d::From (ecval.GetPoint2D().x, ecval.GetPoint2D().y, 0.0);
             double* component = (&pt.x) + componentIndex;
@@ -498,27 +498,27 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 {
                 IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*primProp, instance);
                 if (!context.IsValid())
-                    return ExprStatus_UnknownError;
+                    return ExpressionStatus::UnknownError;
                 context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
                 if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
                     {
                     if (typeAdapter->RequiresExpressionTypeConversion (globalContext.GetEvaluationOptions ()) && !typeAdapter->ConvertToExpressionType (ecval, *context))
-                        return ExprStatus_UnknownError;
+                        return ExpressionStatus::UnknownError;
                     }
                 else if (typeAdapter->SupportsUnits () && !typeAdapter->GetUnits (units, *context))
-                    return ExprStatus_UnknownError;
+                    return ExpressionStatus::UnknownError;
                 }
             }
 
         evalResult = ecval;
         evalResult.SetUnits (units);
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
     else if (TOKEN_LeftBracket == nextOperation)
         {
         ArrayECPropertyCP arrayProp = NULL;
         if (NULL == currentProperty || NULL == (arrayProp = currentProperty->GetAsArrayProperty()))
-            { evalResult.Clear(); return ExprStatus_ArrayRequired; }
+            { evalResult.Clear(); return ExpressionStatus::ArrayRequired; }
 
         LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP> (primaryList.GetOperatorNode (index++));
         nextOperation = primaryList.GetOperation (index);
@@ -530,33 +530,33 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             {
             componentIndex = getComponentIndex (primaryList.GetOperatorNode (index), is2d);
             if (IECTypeAdapterContext::COMPONENT_INDEX_None == componentIndex)
-                return ExprStatus_UnknownMember;
+                return ExpressionStatus::UnknownMember;
 
             // we'll get the component value below if no more operations
             nextOperation = primaryList.GetOperation (++index);
             }
 
         if (isPrimitive && TOKEN_None != nextOperation)
-            { evalResult.Clear(); return ExprStatus_StructRequired; }
+            { evalResult.Clear(); return ExpressionStatus::StructRequired; }
 
         EvaluationResult indexResult;
         NodePtr indexNode = lBracketNode->GetIndexNode();
 
         ExpressionStatus exprStatus = indexNode->GetValue (indexResult, globalContext);
-        if (ExprStatus_Success != exprStatus)
+        if (ExpressionStatus::Success != exprStatus)
             { evalResult.Clear(); return exprStatus; }
         else if (indexResult.GetValueType() != ValType_ECValue || !indexResult.GetECValue()->ConvertToPrimitiveType (PRIMITIVETYPE_Integer) || indexResult.GetECValue()->IsNull())
-            { evalResult.Clear(); return ExprStatus_PrimitiveRequired; }
+            { evalResult.Clear(); return ExpressionStatus::PrimitiveRequired; }
 
         ECValue arrayVal;
         UnitSpec units;
-        if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (uint32_t)indexResult.GetECValue()->GetInteger()))
-            { evalResult.Clear(); return ExprStatus_UnknownError; }
+        if (ECObjectsStatus::Success != instance.GetValue (arrayVal, accessString.c_str(), (uint32_t)indexResult.GetECValue()->GetInteger()))
+            { evalResult.Clear(); return ExpressionStatus::UnknownError; }
 
         if (isPrimitive && IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
             {
             if (arrayVal.IsNull() || (is2d && !arrayVal.IsPoint3D()) || (!is2d && !arrayVal.IsPoint3D()))
-                return ExprStatus_DotNotSupported;
+                return ExpressionStatus::DotNotSupported;
 
             DPoint3d pt = !is2d ? arrayVal.GetPoint3D() : DPoint3d::From (arrayVal.GetPoint2D().x, arrayVal.GetPoint2D().y, 0.0);
             double* component = (&pt.x) + componentIndex;
@@ -575,13 +575,13 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                     if (adapter->RequiresExpressionTypeConversion (globalContext.GetEvaluationOptions ()) && !adapter->ConvertToExpressionType (arrayVal, *context))
                         {
                         evalResult.Clear();
-                        return ExprStatus_UnknownError;
+                        return ExpressionStatus::UnknownError;
                         }
                     }
                 else if (adapter->SupportsUnits () && !adapter->GetUnits (units, *context))
                     {
                     evalResult.Clear();
-                    return ExprStatus_UnknownError;
+                    return ExpressionStatus::UnknownError;
                     }
                 }
             }
@@ -590,7 +590,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             {
             evalResult = arrayVal;
             evalResult.SetUnits (units);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
 
         BeAssert (ARRAYKIND_Struct == arrayProp->GetKind());
@@ -598,16 +598,16 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         if (arrayVal.IsNull())
             {
             evalResult = arrayVal;
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else if (!arrayVal.IsStruct())
-            { evalResult.Clear(); return ExprStatus_StructRequired; }
+            { evalResult.Clear(); return ExpressionStatus::StructRequired; }
 
         if (TOKEN_LParen == nextOperation)
             {
             --index;    // place the LParen back in queue, caller will handle it.
             evalResult = arrayVal;
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
             return GetInstanceValue (evalResult, index, primaryList, globalContext, *arrayVal.GetStruct());
@@ -618,7 +618,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         if (NULL != currentProperty && currentProperty->GetIsArray())
             {
             uint32_t propIdx;
-            if (ECOBJECTS_STATUS_Success == instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
+            if (ECObjectsStatus::Success == instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
                 {
                 IValueListResultPtr list = IValueListResult::Create (const_cast<IECInstanceR>(instance), propIdx);
                 evalResult.SetValueList (*list);
@@ -638,7 +638,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                     if (0 == strcmp ("Count", arrayPropName))
                         {
                         evalResult.InitECValue().SetInteger ((int32_t)count);
-                        return ExprStatus_Success;
+                        return ExpressionStatus::Success;
                         }
 
                     bool wantFirst = 0 == strcmp ("First", arrayPropName);
@@ -648,7 +648,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                         if (0 == count)
                             {
                             evalResult.InitECValue().SetToNull();
-                            return ExprStatus_Success;
+                            return ExpressionStatus::Success;
                             }
                         else
                             return list->GetValueAt (evalResult, wantFirst ? 0 : count - 1);
@@ -659,12 +659,12 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 {
                 // put the LParen back in queue, caller will handle it.
                 --index;
-                return ExprStatus_Success;
+                return ExpressionStatus::Success;
                 }
             }
         }
 
-    return ExprStatus_UnknownError;
+    return ExpressionStatus::UnknownError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -674,7 +674,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
     {
     BeAssert(m_initialized);
 
-    ExpressionStatus status = ExprStatus_StructRequired;
+    ExpressionStatus status = ExpressionStatus::StructRequired;
     for (IECInstancePtr const& instance: instanceList)
         {
         size_t index = startIndex;
@@ -684,7 +684,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             }
 
         status = GetInstanceValue (evalResult, index, primaryList, globalContext, *instance);
-        if (ExprStatus_Success == status)
+        if (ExpressionStatus::Success == status)
             {
             startIndex = index;
             break;
@@ -725,7 +725,7 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
     if (index == numberOfOperators)
         {
         //  This is an instance expression
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
 
     ExpressionToken     nextOperation = primaryList.GetOperation(index);
@@ -736,7 +736,7 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             {
             EvaluationResult valueResult;
             ExpressionStatus instanceStatus = GetInstanceValue (valueResult, index, primaryList, globalContext, *evalResult.GetInstanceList());
-            if (ExprStatus_Success != instanceStatus)
+            if (ExpressionStatus::Success != instanceStatus)
                 {
                 if (0 == startIndex && 0 == index)
                     {
@@ -755,12 +755,12 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
                 {
                 convertResultToInstanceList (evalResult, false);
                 //  -- will we allow passing an struct t a method?
-                return ExprStatus_Success;
+                return ExpressionStatus::Success;
                 }
             else if (!evalResult.IsValueList() && !convertResultToInstanceList (evalResult, true))
                 {
                 evalResult.Clear();
-                return ExprStatus_StructRequired;
+                return ExpressionStatus::StructRequired;
                 }
             }
 
@@ -770,7 +770,7 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             nextOperation           = primaryList.GetOperation(index);
 
             EvaluationResult        methodResult;
-            ExpressionStatus exprStatus = ExprStatus_UnknownError;
+            ExpressionStatus exprStatus = ExpressionStatus::UnknownError;
             switch (evalResult.GetValueType())
                 {
                 case ValType_InstanceList:
@@ -781,7 +781,7 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
                     break;
                 }
 
-            if (ExprStatus_Success != exprStatus)
+            if (ExpressionStatus::Success != exprStatus)
                 {
                 evalResult.Clear();
                 return exprStatus;
@@ -791,17 +791,17 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             if (TOKEN_None == nextOperation)
                 {
                 convertResultToInstanceList (evalResult, false);
-                return ExprStatus_Success;
+                return ExpressionStatus::Success;
                 }
             else if (!convertResultToInstanceList (evalResult, true))
                 {
                 evalResult.Clear();
-                return ExprStatus_StructRequired;
+                return ExpressionStatus::StructRequired;
                 }
             }
         }
 
-    return ExprStatus_UnknownError;
+    return ExpressionStatus::UnknownError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -827,7 +827,7 @@ MethodReferenceStandard::MethodReferenceStandard(ExpressionValueListMethod_t val
 ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
     {
     if (NULL == m_staticMethod)
-        return ExprStatus_StaticMethodRequired;
+        return ExpressionStatus::StaticMethodRequired;
 
     return (*m_staticMethod)(evalResult, arguments);
     }
@@ -837,7 +837,7 @@ ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus MethodReferenceStandard::_InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& args)
     {
-    return NULL != m_valueListMethod ? (*m_valueListMethod)(evalResult, valueList, args) : ExprStatus_InstanceMethodRequired;
+    return NULL != m_valueListMethod ? (*m_valueListMethod)(evalResult, valueList, args) : ExpressionStatus::InstanceMethodRequired;
     }
 
 //---------------------------------------------------------------------------------------
@@ -860,7 +860,7 @@ MethodReferencePtr MethodReferenceStaticWithContext::Create(ExpressionStaticMeth
 ExpressionStatus MethodReferenceStaticWithContext::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
     {
     if (NULL == m_staticMethod)
-        return ExprStatus_StaticMethodRequired;
+        return ExpressionStatus::StaticMethodRequired;
 
     return (*m_staticMethod)(evalResult, m_context, arguments);
     }
@@ -872,7 +872,7 @@ ExpressionStatus MethodReferenceStaticWithContext::_InvokeStaticMethod (Evaluati
 ExpressionStatus MethodReferenceStandard::_InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments)
     {
     if (NULL == m_instanceMethod)
-        return ExprStatus_InstanceMethodRequired;
+        return ExpressionStatus::InstanceMethodRequired;
 
     return (*m_instanceMethod)(evalResult, instanceData, arguments);
     }
@@ -955,14 +955,14 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
     if (primaryList.GetOperation(callNodeIndex) != TOKEN_LParen)
         {
         evalResult.InitECValue().Clear();
-        return ExprStatus_UnknownError;    // Invalid operation on method
+        return ExpressionStatus::UnknownError;    // Invalid operation on method
         }
 
     // NEEDSWORK: If a static method returns an ECInstanceList, we can never access properties of those instances??
     if (primaryList.GetNumberOfOperators() != startIndex)
         {
         evalResult.InitECValue().Clear();
-        return ExprStatus_UnknownError;    // Invalid operation on method
+        return ExpressionStatus::UnknownError;    // Invalid operation on method
         }
 
     CallNodeP   callNode = static_cast<CallNodeP>(primaryList.GetOperatorNode(callNodeIndex));
@@ -1045,7 +1045,7 @@ ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult
     {
     Utf8CP ident = primaryList.GetName(startIndex);
     if (NULL == ident)
-        return ExprStatus_UnknownSymbol;
+        return ExpressionStatus::UnknownSymbol;
 
     for (bvector<SymbolPtr>::iterator curr = m_symbols.begin(); curr != m_symbols.end(); curr++)
         {
@@ -1058,7 +1058,7 @@ ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult
     if (NULL != outer)
         return outer->GetValue(evalResult, primaryList, globalContext, startIndex);
 
-    return ExprStatus_UnknownSymbol;
+    return ExpressionStatus::UnknownSymbol;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1068,7 +1068,7 @@ ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalRe
     {
     Utf8CP ident = primaryList.GetName(startIndex);
     if (NULL == ident)
-        return ExprStatus_UnknownSymbol;
+        return ExpressionStatus::UnknownSymbol;
 
     for (bvector<SymbolPtr>::iterator curr = m_symbols.begin(); curr != m_symbols.end(); curr++)
         {
@@ -1081,7 +1081,7 @@ ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalRe
     if (NULL != outer)
         return outer->GetValue(evalResult, primaryList, globalContext, startIndex);
 
-    return ExprStatus_UnknownSymbol;
+    return ExpressionStatus::UnknownSymbol;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1103,7 +1103,7 @@ ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& res
             return outer->ResolveMethod(result, ident, useOuterIfNecessary);
         }
 
-    return ExprStatus_UnknownSymbol;
+    return ExpressionStatus::UnknownSymbol;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1158,19 +1158,19 @@ ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLis
         {
         ExpressionToken token = primaryList.GetOperation(startIndex);
         if (ECN::TOKEN_Dot == token)
-            return ExprStatus_StructRequired;
+            return ExpressionStatus::StructRequired;
 
         if (ECN::TOKEN_LParen == token)
-            return ExprStatus_MethodRequired;
+            return ExpressionStatus::MethodRequired;
 
         if (ECN::TOKEN_LeftBracket == token)
-            return ExprStatus_ArrayRequired;
+            return ExpressionStatus::ArrayRequired;
 
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
         }
 
     evalResult = m_expressionValue;
-    return ExprStatus_Success;
+    return ExpressionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1216,19 +1216,19 @@ ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, Primar
         {
         ExpressionToken token = primaryList.GetOperation(startIndex);
         if (ECN::TOKEN_Dot == token)
-            return ExprStatus_StructRequired;
+            return ExpressionStatus::StructRequired;
 
         if (ECN::TOKEN_LParen == token)
-            return ExprStatus_MethodRequired;
+            return ExpressionStatus::MethodRequired;
 
         if (ECN::TOKEN_LeftBracket == token)
-            return ExprStatus_ArrayRequired;
+            return ExpressionStatus::ArrayRequired;
 
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
         }
 
     evalResult = m_evaluator->EvaluateProperty ();
-    return ExprStatus_Success;
+    return ExpressionStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1354,16 +1354,16 @@ ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR
     if (startIndex == primaryList.GetNumberOfOperators())
         {
         // This is an instance expression
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
         }
 
-    ExpressionStatus status = ExprStatus_UnknownSymbol;
+    ExpressionStatus status = ExpressionStatus::UnknownSymbol;
     Utf8CP name = primaryList.GetName (startIndex);
     if (NULL != name)
         {
         for (IECInstancePtr const& instance: m_instances)
             {
-            if (instance.IsValid() && ExprStatus_Success == (status = GetReference (evalResult, refResult, primaryList, globalContext, startIndex, *instance)))
+            if (instance.IsValid() && ExpressionStatus::Success == (status = GetReference (evalResult, refResult, primaryList, globalContext, startIndex, *instance)))
                 break;
             }
         }

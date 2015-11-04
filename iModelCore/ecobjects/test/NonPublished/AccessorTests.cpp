@@ -18,14 +18,14 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct ValueAccessorTests : ECTestFixture
     {
     ECSchemaPtr          m_schema;
-    ECClassP             m_ecClass;
+    ECEntityClassP             m_ecClass;
     IECInstancePtr       m_instance;
     uint32_t             propIndex;
 
     void CreateSchema(Utf8String schemaName = "TestSchema", Utf8String className = "TestClass")
         {
         ECSchema::CreateSchema (m_schema, schemaName, 1, 0);
-        m_schema->CreateClass (m_ecClass, className);
+        m_schema->CreateEntityClass (m_ecClass, className);
         }
     
     void CreateInstance()
@@ -68,7 +68,7 @@ TEST_F (ValueAccessorTests, CreateFromInstanceIndexConstructAndClone)
     CreateInstance();
     
     ECValueAccessor m_accessor1 = ECValueAccessor(*m_instance, propIndex);
-    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor1, ECValue("Some value 1")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor1, ECValue("Some value 1")), ECObjectsStatus::Success);
     
     ECValue value1;
     m_instance->GetValueUsingAccessor (value1, m_accessor1);
@@ -92,7 +92,7 @@ TEST_F (ValueAccessorTests, CreateFromEnabledIndexConstruct)
     CreateInstance();
     
     ECValueAccessor m_accessor = ECValueAccessor(*m_ecClass->GetDefaultStandaloneEnabler(), propIndex);
-    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue("Some value 1")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue("Some value 1")), ECObjectsStatus::Success);
     
     ECValue value1;
     m_instance->GetValueUsingAccessor (value1, m_accessor);

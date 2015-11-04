@@ -43,32 +43,32 @@ TEST_F(ValueTests, ECValueToString)
     BeStringUtilities::WCharToUtf8(unicharUtf8, unichar);
     ECValue value;
     
-    EXPECT_EQ (value.SetUtf8CP(unicharUtf8.c_str()), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP(unicharUtf8.c_str()), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), unicharUtf8.c_str());
     
-    EXPECT_EQ (value.SetBinary(binary, sizeof(binary)), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetBinary(binary, sizeof(binary)), SUCCESS);
     //EXPECT_STREQ (value.ToString().c_str(), L"AEgADw==");  //this is probably BASE64 encoded
     EXPECT_TRUE (std::regex_match (value.ToString().c_str(), std::regex("^AEgAD.==$")));
     
-    EXPECT_EQ (value.SetBoolean(false), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetBoolean(false), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "False");
     
-    EXPECT_EQ (value.SetDateTime(dateTime), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetDateTime(dateTime), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "2013-02-14T09:58:17.456Z");  //Fix if conversion is region specific
     
-    EXPECT_EQ (value.SetDouble(3.14159265359), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetDouble(3.14159265359), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "3.1415926535900001");
     
-    EXPECT_EQ (value.SetInteger(-255), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetInteger(-255), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "-255");
     
-    EXPECT_EQ (value.SetLong(1234567890L), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetLong(1234567890L), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "1234567890");
     
-    EXPECT_EQ (value.SetPoint2D(point2d), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetPoint2D(point2d), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "123.456,456.78899999999999");
     
-    EXPECT_EQ (value.SetPoint3D(point3d), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetPoint3D(point3d), SUCCESS);
     EXPECT_STREQ (value.ToString().c_str(), "1.2,-3.3999999999999999,5.5999999999999996");
     };
     
@@ -78,10 +78,10 @@ TEST_F(ValueTests, ECValueToString)
 TEST_F(ValueTests, ValueReadOnly)
     {
     ECSchemaPtr schema;
-    ECClassP base;
+    ECEntityClassP base;
     
     ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
-    schema->CreateClass(base, "BaseClass");
+    schema->CreateEntityClass(base, "BaseClass");
 
     PrimitiveECPropertyP readOnlyProp;
     base->CreatePrimitiveProperty(readOnlyProp, "readOnlyProp");
@@ -91,7 +91,7 @@ TEST_F(ValueTests, ValueReadOnly)
     
     IECInstancePtr instance = base->GetDefaultStandaloneEnabler()->CreateInstance();
     //since the instance has no value initially, it can be set.This was done so that instances could be deserialized even if they had readonly property.This is the same as in the managed API.
-    EXPECT_EQ (instance->SetValue ("readOnlyProp", ECValue ("Some value")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (instance->SetValue ("readOnlyProp", ECValue ("Some value")), ECObjectsStatus::Success);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

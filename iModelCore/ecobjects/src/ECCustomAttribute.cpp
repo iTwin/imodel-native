@@ -393,10 +393,10 @@ bool requireSchemaReference
 )
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
-    if (!classDefinition.GetIsCustomAttributeClass())
+    if (ECClassType::CustomAttribute != classDefinition.GetClassType())
         {
         BeAssert (false);
-        return ECOBJECTS_STATUS_NotCustomAttributeClass;
+        return ECObjectsStatus::NotCustomAttributeClass;
         }
 
     // first need to verify that this custom attribute instance is from either the current schema or a referenced schema
@@ -412,7 +412,7 @@ bool requireSchemaReference
                     containerSchema->GetFullSchemaName().c_str(), 
                     classDefinition.GetSchema().GetFullSchemaName().c_str());
                 BeAssert (false);
-                return ECOBJECTS_STATUS_SchemaNotFound;
+                return ECObjectsStatus::SchemaNotFound;
                 }
             }
         }
@@ -430,7 +430,7 @@ bool requireSchemaReference
         }
 
     customAttributeCollection.push_back(&customAttributeInstance);
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -535,7 +535,7 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema)
     {
-    InstanceReadStatus status = INSTANCE_READ_STATUS_Success;
+    InstanceReadStatus status = InstanceReadStatus::Success;
 
     // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
     for (BeXmlNodeP customAttributeNode = containerNode.GetFirstChild (); NULL != customAttributeNode; customAttributeNode = customAttributeNode->GetNextSibling ())
@@ -551,10 +551,10 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
             Utf8String         customAttributeXmlString;
             customAttributeClassNode->GetXmlString (customAttributeXmlString);
             InstanceReadStatus thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
-            if (INSTANCE_READ_STATUS_Success != thisStatus && INSTANCE_READ_STATUS_CommentOnly != thisStatus)
+            if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
                 // skip this attribute, but continue processing any remaining.
-                if (INSTANCE_READ_STATUS_Success == status)
+                if (InstanceReadStatus::Success == status)
                     status = thisStatus;
                 }
 
@@ -574,9 +574,9 @@ BeXmlWriterR xmlWriter
 ) const
     {
     if (m_primaryCustomAttributes.size() < 1)
-        return SCHEMA_WRITE_STATUS_Success;
+        return SchemaWriteStatus::Success;
 
-    SchemaWriteStatus   status = SCHEMA_WRITE_STATUS_Success;
+    SchemaWriteStatus   status = SchemaWriteStatus::Success;
     WString             customAttributeXml;
 
     ECCustomAttributeCollection::const_iterator iter;
@@ -602,11 +602,11 @@ ECObjectsStatus IECCustomAttributeContainer::CopyCustomAttributesTo
 IECCustomAttributeContainerR destContainer
 ) const
     {
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     for (IECInstancePtr customAttribute: GetPrimaryCustomAttributes(false))
         {
         status = destContainer.SetPrimaryCustomAttribute(*(customAttribute->CreateCopyThroughSerialization()));
-        if (ECOBJECTS_STATUS_Success != status)
+        if (ECObjectsStatus::Success != status)
             return status;
         }
     return status;

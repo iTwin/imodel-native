@@ -14,7 +14,7 @@
 #include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
 
-#define EXPECT_STATUS(STATUS, EXPR) EXPECT_EQ (ECOBJECTS_STATUS_ ## STATUS , (EXPR))
+#define EXPECT_STATUS(STATUS, EXPR) EXPECT_EQ (ECObjectsStatus:: ## STATUS , (EXPR))
 #define EXPECT_SUCCESS(EXPR) EXPECT_STATUS(Success, (EXPR))
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
@@ -43,9 +43,9 @@ void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool 
     {
     v.Clear();
     if (useIndex)
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
     else
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
     EXPECT_STREQ (value, v.GetUtf8CP());
     }
 
@@ -63,7 +63,7 @@ void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8C
 void SetAndVerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
     {
     v.SetUtf8CP(value);
-    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
     VerifyString (instance, v, accessString, value);
     }
        
@@ -74,9 +74,9 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool
     {
     v.Clear();
     if (useIndex)
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
     else
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
     EXPECT_EQ (value, v.GetInteger());
     }
     
@@ -94,7 +94,7 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint
 void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
     {
     v.SetInteger(value);
-    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
     VerifyInteger (instance, v, accessString, value);
     }  
     
@@ -104,7 +104,7 @@ void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString
 void VerifyDouble (IECInstanceR instance, ECValueR v, Utf8CP accessString, double value)
     {
     v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
     EXPECT_EQ (value, v.GetDouble());
     }
         
@@ -114,7 +114,7 @@ void VerifyDouble (IECInstanceR instance, ECValueR v, Utf8CP accessString, doubl
 void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, Utf8CP accessString, double value)
     {
     v.SetDouble(value);
-    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
     VerifyDouble (instance, v, accessString, value);
     }
 
@@ -124,7 +124,7 @@ void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, Utf8CP accessString,
 void VerifyLong (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint64_t value)
     {
     v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
     EXPECT_EQ (value, v.GetLong());
     }
         
@@ -134,7 +134,7 @@ void VerifyLong (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint64_
 void SetAndVerifyLong (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint64_t value)
     {
     v.SetLong(value);
-    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
     VerifyLong (instance, v, accessString, value);
     } 
     
@@ -144,7 +144,7 @@ void SetAndVerifyLong (IECInstanceR instance, ECValueR v, Utf8CP accessString, u
 void VerifyArrayInfo (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t count, bool isFixedCount)
     {
     v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
     EXPECT_EQ (count, v.GetArrayInfo().GetCount());
     EXPECT_EQ (isFixedCount, v.GetArrayInfo().IsFixedCount());
     }
@@ -155,8 +155,8 @@ void VerifyArrayInfo (IECInstanceR instance, ECValueR v, Utf8CP accessString, ui
 void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t index)
     {
     v.Clear();    
-    EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.GetValue (v, accessString, index));
-    EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.SetValue (accessString, v, index));
+    EXPECT_TRUE (ECObjectsStatus::IndexOutOfRange == instance.GetValue (v, accessString, index));
+    EXPECT_TRUE (ECObjectsStatus::IndexOutOfRange == instance.SetValue (accessString, v, index));
     }    
     
 /*---------------------------------------------------------------------------------**//**
@@ -186,7 +186,7 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, Utf8CP accessSt
         v.SetUtf8CP(incrementingString.c_str());
 
         ECObjectsStatus status = instance.SetValue (accessString, v, i);
-        EXPECT_TRUE (SUCCESS == status);
+        EXPECT_TRUE (ECObjectsStatus::Success == status);
         }
     
     VerifyStringArray (instance, v, accessString, value, 0, count);
@@ -213,7 +213,7 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, Utf8CP accessS
         v.SetInteger(baseValue + i); 
 
         ECObjectsStatus status = instance.SetValue (accessString, v, i);
-        EXPECT_TRUE (SUCCESS == status);
+        EXPECT_TRUE (ECObjectsStatus::Success == status);
         }
         
     VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
@@ -227,7 +227,7 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, Utf8CP access
     for (uint32_t i = start ; i < start + count ; i++)    
         {
         v.Clear();
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, i));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, i));
         EXPECT_TRUE (isNull == v.IsNull());        
         }
     }
@@ -457,7 +457,7 @@ ECSchemaPtr       CreateTestSchema ()
 
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));
+    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));
     return schema;
     }
     
@@ -493,7 +493,7 @@ ECSchemaPtr     CreateProfilingSchema (int nStrings)
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
+    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
     return schema;
     }
     
@@ -503,14 +503,14 @@ ECSchemaPtr     CreateProfilingSchema (int nStrings)
 void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, int baseValue)
     {
     // test insertion in an empty array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
     VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
     SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 5);   
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
     VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
     // test insertion in the middle of an array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
     VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 0, 3);
@@ -519,14 +519,14 @@ void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, Utf8Char*
     VerifyIntegerArray          (instance, v, arrayAccessor, baseValue + 3, 6, 2);
     SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 8);   
     // test insertion at the beginning of an array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
     VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 4, 8);    
     SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 12);     
     // test insertion at the end of an array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.AddArrayElements (arrayAccessor, 2));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.AddArrayElements (arrayAccessor, 2));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
@@ -540,14 +540,14 @@ void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, Utf8Char*
 void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, Utf8Char* stringSeed)
     {
     // test insertion in an empty array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
     VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 5);   
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
     VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
     // test insertion in the middle of an array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
     VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 3);
@@ -558,14 +558,14 @@ void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, Utf8Ch
     VerifyStringArray           (instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 8);   
     // test insertion at the beginning of an array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
     VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 4, 8);    
     SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 12);     
     // test insertion at the end of an array
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.AddArrayElements (arrayAccessor, 2));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.AddArrayElements (arrayAccessor, 2));    
     VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
     VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
@@ -579,24 +579,24 @@ void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, Utf8Ch
 void VerifyVariableCountManufacturerArray (IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor)
     {    
     VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor));    
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor));
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 0));    
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 0));
     EXPECT_TRUE (v.IsStruct());    
     IECInstancePtr manufInst = v.GetStruct();
     VerifyString (*manufInst, v, "Name", "Nissan");
     VerifyInteger (*manufInst, v, "AccountNo", 3475);
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 1));    
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 1));
     EXPECT_TRUE (v.IsStruct());    
     manufInst = v.GetStruct();
     VerifyString (*manufInst, v, "Name", "Ford");
     VerifyInteger (*manufInst, v, "AccountNo", 381);    
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 2));    
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 2));
     EXPECT_TRUE (v.IsStruct());    
     manufInst = v.GetStruct();
     VerifyString (*manufInst, v, "Name", "Chrysler");
     VerifyInteger (*manufInst, v, "AccountNo", 81645);    
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, arrayAccessor, 3));    
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 3));
     EXPECT_TRUE (v.IsStruct());    
     manufInst = v.GetStruct();
     VerifyString (*manufInst, v, "Name", "Toyota");
@@ -611,23 +611,23 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     VerifyArrayInfo (instance, v, arrayAccessor, 0, false);
     
     // create an array of two values
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.AddArrayElements (arrayAccessor, 2));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.AddArrayElements (arrayAccessor, 2));
     VerifyArrayInfo (instance, v, arrayAccessor, 2, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, true);
     IECInstancePtr manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Nissan");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 3475);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 0));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 0));
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Kia");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 1791);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 1));
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, false);    
    
     // insert two elements in the middle of the array   
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance.InsertArrayElements (arrayAccessor, 1, 2));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 1, 2));
     VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 1, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 1, 2, true);
@@ -636,30 +636,30 @@ void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneEC
     SetAndVerifyString (*manufInst, v, "Name", "Ford");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 381);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 1)); 
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 1));
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Chrysler");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 81645);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS ==instance.SetValue (arrayAccessor, v, 2));        
+    ASSERT_TRUE (ECObjectsStatus::Success ==instance.SetValue (arrayAccessor, v, 2));
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
     
     // ensure we can set a struct array value to NULL        
     v.SetToNull();
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 3));
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 3, false);
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, true);
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Acura");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 6);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 3));
     VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
     manufInst = manufacturerEnabler.CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Toyota");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 6823);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance.SetValue (arrayAccessor, v, 3));        
+    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 3));
     
     VerifyVariableCountManufacturerArray (instance, v, arrayAccessor);
     }
@@ -815,33 +815,33 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     double    doubleVal;
     int       intVal;
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDoubleValue (*instance, "D", (double)(1.0/3.0)));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDouble      (*instance, doubleVal, "D"));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetDoubleValue (*instance, "D", (double)(1.0/3.0)));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetDouble      (*instance, doubleVal, "D"));
     EXPECT_TRUE ((double)(1.0/3.0) == doubleVal);
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::AddArrayElements ("FixedArrayFixedElement", 1));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "FixedArrayFixedElement[0]", (int)(97)));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "FixedArrayFixedElement[0]"));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::AddArrayElements ("FixedArrayFixedElement", 1));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "FixedArrayFixedElement[0]", (int)(97)));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "FixedArrayFixedElement[0]"));
     EXPECT_TRUE (97 == intVal);
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "VariableArrayFixedElement[1]", (int)(101)));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "VariableArrayFixedElement[1]"));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "VariableArrayFixedElement[1]", (int)(101)));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "VariableArrayFixedElement[1]"));
     EXPECT_TRUE (101 == intVal);
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "VariableArrayFixedElement[0]", (int)(100)));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "VariableArrayFixedElement[0]"));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "VariableArrayFixedElement[0]", (int)(100)));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "VariableArrayFixedElement[0]"));
     EXPECT_TRUE (100 == intVal);
 
     Utf8String testString = "Charmed";
     Utf8String testString2 = "Charmed2";
     Utf8CP stringValueP = NULL;
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, "ManufacturerArray[1].Name", testString.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, "ManufacturerArray[1].Name"));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetStringValue (*instance, "ManufacturerArray[1].Name", testString.c_str()));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, "ManufacturerArray[1].Name"));
     EXPECT_STREQ (testString.c_str(), stringValueP);
 
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, "ManufacturerArray[0].Name", testString2.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, "ManufacturerArray[0].Name"));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetStringValue (*instance, "ManufacturerArray[0].Name", testString2.c_str()));
+    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, "ManufacturerArray[0].Name"));
     EXPECT_STREQ (testString2.c_str(), stringValueP);
     };
 #endif
@@ -994,8 +994,8 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
         Utf8CP propertyName         = NULL;
         uint32_t propertyIndex          = 0;
 
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == enabler->GetPropertyIndex (propertyIndex, expectedPropertyName));
-        EXPECT_TRUE (ECOBJECTS_STATUS_Success == enabler->GetAccessString  (propertyName,  propertyIndex));
+        EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (propertyIndex, expectedPropertyName));
+        EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetAccessString  (propertyName,  propertyIndex));
 
         EXPECT_STREQ (expectedPropertyName, propertyName);
         }
@@ -1179,8 +1179,8 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "TestSchema", 1, 2);
-    ECClassP class1;
-    testSchema->CreateClass(class1, "TestClass");
+    ECEntityClassP class1;
+    testSchema->CreateEntityClass(class1, "TestClass");
     ArrayECPropertyP primitiveArrayProp;
     class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArray");
     primitiveArrayProp->SetPrimitiveElementType (PRIMITIVETYPE_Long);
@@ -1207,7 +1207,7 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     v.SetLong(4);
     secondInstance->SetValue("PrimitiveArray", v, 1);
 
-    EXPECT_TRUE (SUCCESS == secondInstance->GetValue (v, "PrimitiveArray"));
+    EXPECT_TRUE (ECObjectsStatus::Success == secondInstance->GetValue (v, "PrimitiveArray"));
     EXPECT_EQ (2, v.GetArrayInfo().GetCount());
 
     v.Clear();
@@ -1215,7 +1215,7 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     MemoryECInstanceBase* mbInstance = instance->GetAsMemoryECInstanceP ();
     mbInstance->MergePropertiesFromInstance (*secondInstance);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v, "PrimitiveArray"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "PrimitiveArray"));
 
     // TFS#128233
     EXPECT_EQ (2, v.GetArrayInfo().GetCount()); // CGM: This line fails because it merges the array values instead of overwriting
@@ -1343,7 +1343,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     ECN::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
 
     ECObjectsStatus copyStatus = duplicateInstance->CopyValues (*instance);
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == copyStatus);
+    EXPECT_TRUE (ECObjectsStatus::Success == copyStatus);
 
     collection = ECValuesCollection::Create (*duplicateInstance);
     iValue = 0;
@@ -2055,30 +2055,30 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     ecValue.SetDateTimeTicks(inTicks);
     instance->SetValue ("Install_Date", ecValue);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "Count"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Count"));
     EXPECT_TRUE (ecValue.GetInteger() == inCount);
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "Name"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Name"));
     EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "Length"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Length"));
     EXPECT_TRUE (ecValue.GetDouble() == inLength);
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "Field_Tested"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Field_Tested"));
     EXPECT_TRUE (ecValue.GetBoolean() == inTest);
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "Size"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Size"));
     DPoint2d    point2d = ecValue.GetPoint2D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inSize, &point2d, sizeof(DPoint2d)));
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "StartPoint"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "StartPoint"));
     DPoint3d    point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint1, &point3d, sizeof(DPoint3d)));
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "EndPoint"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "EndPoint"));
     point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     //in absence of the DateTimeInfo custom attribute on Service_Date the retrieved
     //date time will always be of kind Unspecified, i.e. the original kind (here Utc)
     //gets lost
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "Service_Date"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Service_Date"));
     DateTime  sysTime = ecValue.GetDateTime ();
     EXPECT_TRUE (inTimeUtc.Equals (sysTime, true));
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "Install_Date"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
     // instance.Compact()... then check values again
@@ -2110,8 +2110,8 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     ECValue value;
     uint32_t propertyIndex = 0;
 
-    EXPECT_TRUE (SUCCESS  == enabler->GetPropertyIndex (propertyIndex, accessString));
-    EXPECT_TRUE (SUCCESS  == instance->GetValue (value, propertyIndex));
+    EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (propertyIndex, accessString));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (value, propertyIndex));
     //EXPECT_TRUE (intValue == value.GetInteger());
     EXPECT_STREQ (stringValue, value.GetUtf8CP());
 
@@ -2167,18 +2167,18 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
 
 #if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     // verify we can not change the size of fixed arrays        
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements ("FixedArrayFixedElement", 0, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements ("FixedArrayFixedElement", 10, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->AddArrayElements    ("FixedArrayFixedElement", 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements ("FixedArrayVariableElement", 0, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->InsertArrayElements ("FixedArrayVariableElement", 12, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECOBJECTS_STATUS_Success != instance->AddArrayElements    ("FixedArrayVariableElement", 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayFixedElement", 0, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayFixedElement", 10, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->AddArrayElements    ("FixedArrayFixedElement", 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayVariableElement", 0, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayVariableElement", 12, 1));
+    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->AddArrayElements    ("FixedArrayVariableElement", 1));
 #endif
 
     // verify constraints of array insertion are enforced
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements ("NonExistArray", 0, 1));
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements ("BeginningArray", 2, 1)); // insert index is invalid    
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success != instance->InsertArrayElements ("BeginningArray", 0, 0)); // insert count is invalid    
+    ASSERT_TRUE (ECObjectsStatus::Success != instance->InsertArrayElements ("NonExistArray", 0, 1));
+    ASSERT_TRUE (ECObjectsStatus::Success != instance->InsertArrayElements ("BeginningArray", 2, 1)); // insert index is invalid    
+    ASSERT_TRUE (ECObjectsStatus::Success != instance->InsertArrayElements ("BeginningArray", 0, 0)); // insert count is invalid    
     }
     
     ECValue v;
@@ -2299,7 +2299,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
     
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v, "D"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "D"));
     EXPECT_TRUE (v.IsNull());
     
     double doubleValue = 1.0/3.0;
@@ -2307,17 +2307,17 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     EXPECT_TRUE (!v.IsNull());    
     
     v.SetToNull();
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("D", v));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("D", v));
     v.SetUtf8CP("Just making sure that it is not NULL before calling GetValue in the next line.");
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v, "D"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "D"));
     EXPECT_TRUE (v.IsNull());
         
     SetAndVerifyString (*instance, v, "S", "Yo!");
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v, "D"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "D"));
     EXPECT_TRUE (v.IsNull());    
     
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v, "S"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "S"));
     EXPECT_FALSE (v.IsNull());     
     };
 
@@ -2344,8 +2344,8 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     Utf8CP wheelsAccessString = "Wheels";
     uint32_t namePropertyIndex = 9999;
     uint32_t wheelsPropertyIndex = 9998;
-    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (namePropertyIndex, nameAccessString));
-    EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (wheelsPropertyIndex, wheelsAccessString));
+    EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (namePropertyIndex, nameAccessString));
+    EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (wheelsPropertyIndex, wheelsAccessString));
 
     EXPECT_FALSE (instance->IsPropertyReadOnly (nameAccessString));
     EXPECT_FALSE (instance->IsPropertyReadOnly (namePropertyIndex));
@@ -2355,13 +2355,13 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
 
     ECValue v;
     v.SetInteger(610);
-    EXPECT_TRUE (SUCCESS == instance->SetValue (wheelsAccessString, v));  // should work since original value is NULL
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue (wheelsAccessString, v));  // should work since original value is NULL
     v.SetInteger(512);
-    EXPECT_TRUE (ECOBJECTS_STATUS_UnableToSetReadOnlyProperty == instance->SetValue (wheelsAccessString, v));  // should fail since read only and value is not NULL
+    EXPECT_TRUE (ECObjectsStatus::UnableToSetReadOnlyProperty == instance->SetValue (wheelsAccessString, v));  // should fail since read only and value is not NULL
 
     // make sure we can copy an instance contains read only properties
     StandaloneECInstancePtr  copyInstance =  StandaloneECInstance::Duplicate (*instance);
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v, wheelsAccessString));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, wheelsAccessString));
     EXPECT_TRUE (610 == v.GetInteger());
 
     // make sure we can deserialize and instance from XML that contains read only properties
@@ -2369,8 +2369,8 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     instance->WriteToXmlString (ecInstanceXml, true, false);
     ECN::IECInstancePtr deserializedInstance = NULL;
     ECN::ECInstanceReadContextPtr instanceContext = ECN::ECInstanceReadContext::CreateContext (*schema);
-    EXPECT_TRUE (INSTANCE_READ_STATUS_Success == IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext));
-    EXPECT_TRUE (SUCCESS == deserializedInstance->GetValue (v, wheelsAccessString));
+    EXPECT_TRUE (InstanceReadStatus::Success == IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext));
+    EXPECT_TRUE (ECObjectsStatus::Success == deserializedInstance->GetValue (v, wheelsAccessString));
     EXPECT_TRUE (610 == v.GetInteger());
     };
 
@@ -2403,13 +2403,13 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("ABinary", v0In));
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v0Out, "ABinary"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ABinary", v0In));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v0Out, "ABinary"));
     EXPECT_TRUE (v0In.Equals (v0Out));
 
     // now set it to a smaller size
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("ABinary", v1In));
-    EXPECT_TRUE (SUCCESS == instance->GetValue (v1Out, "ABinary"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ABinary", v1In));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v1Out, "ABinary"));
     EXPECT_TRUE (v1In.Equals (v1Out));
     };
 
@@ -2419,7 +2419,7 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
 static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, Utf8CP propertyName, uint32_t expectedCount)
     {
     ECValue varray;
-    EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (varray, propertyName));
     uint32_t count = varray.GetArrayInfo().GetCount();
     EXPECT_TRUE (count == expectedCount);
 
@@ -2427,7 +2427,7 @@ static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, Utf8CP pr
 
     for (uint32_t i=0; i<count; i++)
         {
-        EXPECT_TRUE (SUCCESS == instance.GetValue (ventry, propertyName, i));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (ventry, propertyName, i));
         }
     }
 
@@ -2454,7 +2454,7 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
 
     {
     DISABLE_ASSERTS    
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success != instance->RemoveArrayElement("FixedArrayFixedElement", 2));
+    EXPECT_TRUE (ECObjectsStatus::Success != instance->RemoveArrayElement("FixedArrayFixedElement", 2));
     }
 
     EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayVariableElement", ECValue ("ArrayMember 1"), 1));
@@ -2466,28 +2466,28 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
 
     {
     DISABLE_ASSERTS    
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success != instance->RemoveArrayElement("FixedArrayVariableElement", 2));
+    EXPECT_TRUE (ECObjectsStatus::Success != instance->RemoveArrayElement("FixedArrayVariableElement", 2));
     }
 #endif
 
     instance->AddArrayElements("SomeStrings", 5);
 
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 0"), 0));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 1"), 1));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 2"), 2));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 0"), 0));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 1"), 1));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 2"), 2));
     // leave index 3 null
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 4"), 4));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 4"), 4));
 
     validateArrayCount (*instance, "SomeStrings", 5); 
 
     instance->AddArrayElements("SomeInts", 6);
 
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeInts",  ECValue ((int)0), 0));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeInts",  ECValue ((int)1), 1));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeInts",  ECValue ((int)2), 2));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)0), 0));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)1), 1));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)2), 2));
     // leave index 3 null
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeInts",  ECValue ((int)4), 4));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SomeInts",  ECValue ((int)5), 5));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)4), 4));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)5), 5));
 
     validateArrayCount (*instance, "SomeInts", 6); 
 
@@ -2496,7 +2496,7 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     EXPECT_TRUE (manufacturerEnabler.IsValid());
 
     ECValue v;
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements ("ManufacturerArray", 4));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("ManufacturerArray", 4));
     VerifyArrayInfo (*instance, v, "ManufacturerArray", 4, false);
     VerifyIsNullArrayElements (*instance, v, "ManufacturerArray", 0, 4, true);
 
@@ -2505,25 +2505,25 @@ TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
     SetAndVerifyString (*manufInst, v, "Name", "Nissan");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 3475);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("ManufacturerArray", v, 0));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 0));
 
     manufInst = manufacturerEnabler->CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Kia");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 1791);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("ManufacturerArray", v, 1));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 1));
 
     manufInst = manufacturerEnabler->CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Honda");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 1592);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("ManufacturerArray", v, 2));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 2));
 
     manufInst = manufacturerEnabler->CreateInstance().get();    
     SetAndVerifyString (*manufInst, v, "Name", "Chevy");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 19341);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("ManufacturerArray", v, 3));    
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 3));
 
     VerifyIsNullArrayElements (*instance, v, "ManufacturerArray", 0, 4, false);    
 
@@ -2567,44 +2567,44 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     ECValue i3((int)32323);
     ECValue d1(0.71266461290077521);
 
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("StringProperty", s4));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("IntProperty", i2));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StringProperty", s4));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("IntProperty", i2));
 
     StandaloneECEnablerPtr structArrayEnabler = schema->GetClassP("StructClass")->GetDefaultStandaloneEnabler ();
     ECN::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
 
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("BooleanProperty", b));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue ("BooleanProperty", b));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("BooleanProperty", b));
+    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("BooleanProperty", b));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    EXPECT_TRUE (SUCCESS == instance->AddArrayElements ("SimpleArrayProperty", 1));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("SimpleArrayProperty", 1));
 #endif
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("SimpleArrayProperty", s1, 0));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("StructProperty.StringProperty", s2));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue ("StructProperty.StringProperty", s2));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("StructProperty.IntProperty", i1));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue ("StructProperty.IntProperty", i1));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SimpleArrayProperty", s1, 0));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructProperty.StringProperty", s2));
+    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("StructProperty.StringProperty", s2));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructProperty.IntProperty", i1));
+    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("StructProperty.IntProperty", i1));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    EXPECT_TRUE (SUCCESS == instance->AddArrayElements ("StructProperty.ArrayProperty", 1));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("StructProperty.ArrayProperty", 1));
 #endif
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("StructProperty.ArrayProperty", s3, 0));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("DoubleProperty", d1));
-    EXPECT_TRUE (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == instance->ChangeValue ("DoubleProperty", d1));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructProperty.ArrayProperty", s3, 0));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("DoubleProperty", d1));
+    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("DoubleProperty", d1));
 
-    EXPECT_TRUE (SUCCESS == structInstance->SetValue ("StringProperty", s5));
-    EXPECT_TRUE (SUCCESS == structInstance->SetValue ("IntProperty", i3));
+    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->SetValue ("StringProperty", s5));
+    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->SetValue ("IntProperty", i3));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    EXPECT_TRUE (SUCCESS == structInstance->AddArrayElements ("ArrayProperty", 1));
+    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->AddArrayElements ("ArrayProperty", 1));
 #endif
-    EXPECT_TRUE (SUCCESS == structInstance->SetValue ("ArrayProperty", s6, 0));
+    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->SetValue ("ArrayProperty", s6, 0));
 
 #if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     // This is a fixed-size struct array so we don't have to insert members
 #else
-    EXPECT_TRUE (SUCCESS == instance->AddArrayElements ("StructArrayProperty", 1));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("StructArrayProperty", 1));
 #endif
     ECValue structVal;
     structVal.SetStruct (structInstance.get());
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("StructArrayProperty", structVal, 0));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructArrayProperty", structVal, 0));
 
     // ensure we can walk the properties
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
@@ -2649,8 +2649,8 @@ TEST_F (MemoryLayoutTests, GeometrySetGet)
     {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "GeometrySchema", 1, 0);
-    ECClassP geomClass;
-    testSchema->CreateClass(geomClass, "GeometryStore");
+    ECEntityClassP geomClass;
+    testSchema->CreateEntityClass(geomClass, "GeometryStore");
 
     PrimitiveECPropertyP stringProp;
     geomClass->CreatePrimitiveProperty(stringProp, "Name");
@@ -2672,7 +2672,7 @@ TEST_F (MemoryLayoutTests, GeometrySetGet)
     IGeometryPtr storedGeometryPtr1 = v.GetIGeometry ();
     ASSERT_TRUE(storedGeometryPtr1.IsValid());
     ECObjectsStatus status = instance->SetValue ("MyGeometry", v);
-    ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
+    ASSERT_EQ(ECObjectsStatus::Success,status);
 
     }
 
@@ -2684,19 +2684,18 @@ TEST_F (MemoryLayoutTests, GeometrySetGet)
 struct DefaultStandaloneEnablerTests : ECTestFixture
 {
     ECSchemaPtr m_schema;
-    ECClassP    m_class;
+    ECEntityClassP    m_class;
 
     DefaultStandaloneEnablerTests() : m_class(nullptr)
         {
         ECSchema::CreateSchema(m_schema, "TestSchema", 1, 0);
-        m_schema->CreateClass(m_class, "TestClass");
+        m_schema->CreateEntityClass(m_class, "TestClass");
         }
 
-    ECClassP CreateStructClass(Utf8StringCR structName, Utf8StringCR propName)
+    ECStructClassP CreateStructClass(Utf8StringCR structName, Utf8StringCR propName)
         {
-        ECClassP structClass;
-        m_schema->CreateClass(structClass, structName);
-        structClass->SetIsStruct(true);
+        ECStructClassP structClass;
+        m_schema->CreateStructClass(structClass, structName);
         PrimitiveECPropertyP prop;
         structClass->CreatePrimitiveProperty(prop, propName);
         return structClass;
@@ -2756,7 +2755,7 @@ TEST_F(DefaultStandaloneEnablerTests, Type)
     EXPECT_STATUS(DataTypeMismatch, SetValue("Prim", "def"));
     EXPECT_SUCCESS(SetValue("Prim", 123));
 
-    ECClassP oldStruct = CreateStructClass("OldStruct", "Old");
+    ECStructClassP oldStruct = CreateStructClass("OldStruct", "Old");
     StructECPropertyP structProp;
     m_class->CreateStructProperty(structProp, "Struct", *oldStruct);
     EXPECT_SUCCESS(SetValue("Struct.Old", "abc"));
@@ -2770,11 +2769,6 @@ TEST_F(DefaultStandaloneEnablerTests, Type)
     arrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Integer);
     EXPECT_STATUS(DataTypeMismatch, SetValue("Array", "def", 0));
     EXPECT_SUCCESS(SetValue("Array", 123, 0));
-    arrayProp->SetStructElementType(oldStruct);
-
-    // expected assertion => failed test...
-    DISABLE_ASSERTS
-    EXPECT_STATUS(DataTypeNotSupported, SetValue("Array", 456, 0));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

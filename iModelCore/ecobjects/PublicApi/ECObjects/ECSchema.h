@@ -617,8 +617,21 @@ protected:
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr);
 
     virtual bool                        _IsPrimitive () const { return false; }
+    virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP()        { return nullptr; } // used to avoid dynamic_cast
+
     virtual bool                        _IsStruct () const { return false; }
+    virtual StructECPropertyCP          _GetAsStructPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual StructECPropertyP           _GetAsStructPropertyP()        { return nullptr; } // used to avoid dynamic_cast
+
     virtual bool                        _IsArray () const { return false; }
+    virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ArrayECPropertyP            _GetAsArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
+
+    virtual bool                        _IsStructArray() const { return false; }
+    virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual StructArrayECPropertyP      _GetAsStructArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
+
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
     virtual Utf8String                  _GetTypeName () const = 0;
@@ -674,6 +687,8 @@ public:
     ECOBJECTS_EXPORT bool               GetIsArray() const;
     //! Returns whether this property is a Primitive property
     ECOBJECTS_EXPORT bool               GetIsPrimitive() const;
+    //! Returns whether this property is a StructArray property
+    ECOBJECTS_EXPORT bool               GetIsStructArray() const;
 
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
@@ -727,6 +742,9 @@ public:
     ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP (); //!< Returns the property as an ArrayECProperty*
     ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const; //!< Returns the property as a const StructECProperty*
     ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP (); //!< Returns the property as a StructECProperty*
+    ECOBJECTS_EXPORT StructArrayECPropertyCP GetAsStructArrayProperty() const; //! <Returns the property as a const StructArrayECProperty*
+    ECOBJECTS_EXPORT StructArrayECPropertyP GetAsStructArrayPropertyP (); //! <Returns the property as a StructArrayECProperty*
+
 };
 
 //=======================================================================================
@@ -748,6 +766,8 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsPrimitive () const override { return true;}
+    virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
+    virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
@@ -772,8 +792,9 @@ struct StructECProperty : public ECProperty
     DEFINE_T_SUPER(ECProperty)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
+friend struct ECStructClass;
 private:
-    ECClassCP   m_structType;
+    ECStructClassCP   m_structType;
 
     StructECProperty (ECClassCR ecClass) : m_structType(NULL), ECProperty(ecClass) {};
 
@@ -781,6 +802,8 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsStruct () const override { return true;}
+    virtual StructECPropertyCP          _GetAsStructPropertyCP() const override { return this; }
+    virtual StructECPropertyP           _GetAsStructPropertyP()        override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
@@ -790,44 +813,43 @@ protected:
 public:
     //! The property type.
     //! This type must be an ECClass where IsStruct is set to true.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECClassCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECStructClassCR value);
     //! Gets the ECClass that defines the type for this property
-    ECOBJECTS_EXPORT ECClassCR          GetType() const; 
+    ECOBJECTS_EXPORT ECStructClassCR    GetType() const; 
 };
 
 //=======================================================================================
-//! The in-memory representation of an ECProperty as defined by ECSchemaXML
+//! The in-memory representation of an ECArrayProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
 struct ArrayECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
-/*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 
 private:
     uint32_t                                    m_minOccurs;
     uint32_t                                    m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
-    union
-        {
-        PrimitiveType   m_primitiveType;
-        ECClassCP       m_structType;
-        };
-
-    ArrayKind               m_arrayKind;
+    PrimitiveType   m_primitiveType;
     mutable IECTypeAdapter* m_cachedMemberTypeAdapter;
 
-    ArrayECProperty (ECClassCR ecClass)
-        : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
-          m_minOccurs (0), m_maxOccurs (UINT_MAX), m_cachedMemberTypeAdapter (NULL) {};
-    ECObjectsStatus                     SetMinOccurs (Utf8StringCR minOccurs);
-    ECObjectsStatus                     SetMaxOccurs (Utf8StringCR maxOccurs);
+protected:
+    ArrayKind               m_arrayKind;
+
+    ArrayECProperty(ECClassCR ecClass)
+        : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind(ARRAYKIND_Primitive),
+        m_minOccurs(0), m_maxOccurs(UINT_MAX), m_cachedMemberTypeAdapter(NULL)
+        {};
+    ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
+    ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsArray () const override { return true;}
+    virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
+    virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
@@ -835,6 +857,7 @@ protected:
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
 
+/*__PUBLISH_SECTION_END__*/
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
@@ -849,10 +872,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetPrimitiveElementType(PrimitiveType value);
     //! Gets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
     ECOBJECTS_EXPORT PrimitiveType      GetPrimitiveElementType() const;
-    //! Sets the ECClass to be used for the array's struct elements
-    ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECClassCP value);
-    //! Gets the ECClass of the array's struct elements
-    ECOBJECTS_EXPORT ECClassCP          GetStructElementType() const;
     //! Sets the Minimum number of array members.
     ECOBJECTS_EXPORT ECObjectsStatus    SetMinOccurs(uint32_t value);
     //! Gets the Minimum number of array members.
@@ -867,6 +886,37 @@ public:
     //! the ECSchema as is, GetStoredMaxOccurs can be called as a workaround until the max occurs issue has been resolved.
     uint32_t                            GetStoredMaxOccurs () const { return m_maxOccurs; }
 //__PUBLISH_SECTION_START__
+    };
+
+//=======================================================================================
+//! The in-memory representation of an StructArrayECProperty as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct StructArrayECProperty : ArrayECProperty
+    {
+DEFINE_T_SUPER(ArrayECProperty)
+private:
+    friend struct ECClass;
+    ECStructClassCP m_structType;
+    StructArrayECProperty(ECClassCR ecClass)
+        : ArrayECProperty(ecClass)
+        {
+        m_arrayKind = ARRAYKIND_Struct;
+        };
+protected:
+    virtual Utf8String                  _GetTypeName() const override;
+    virtual ECObjectsStatus             _SetTypeName(Utf8StringCR typeName) override;
+    virtual bool                        _IsStructArray() const override { return true; }
+    virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const override { return this; }
+    virtual StructArrayECPropertyP      _GetAsStructArrayPropertyP()        override { return this; }
+    virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+
+public:
+    //! Sets the ECClass to be used for the array's struct elements
+    ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECStructClassCP value);
+    //! Gets the ECClass of the array's struct elements
+    ECOBJECTS_EXPORT ECStructClassCP    GetStructElementType() const;
+
     };
 
 //=======================================================================================
@@ -948,11 +998,18 @@ typedef StandaloneECEnabler*                StandaloneECEnablerP;
 typedef RefCountedPtr<ECSchema>             ECSchemaPtr;
 typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPtr;
 
+enum class ECClassType
+    {
+    Entity,
+    Relationship,
+    Struct,
+    CustomAttribute
+    };
 //=======================================================================================
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECClass : IECCustomAttributeContainer
+struct EXPORT_VTABLE_ATTRIBUTE ECClass /*abstract*/ : IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -976,9 +1033,7 @@ private:
     Utf8String                      m_description;
     ECValidatedName                 m_validatedName;
     mutable ECClassId               m_ecClassId;
-    bool                            m_isStruct;
-    bool                            m_isCustomAttributeClass;
-    bool                            m_isDomainClass;
+    ECClassModifier                 m_modifier;
     ECSchemaCR                      m_schema;
     ECBaseClassesList               m_baseClasses;
     mutable ECDerivedClassesList    m_derivedClasses;
@@ -1037,8 +1092,19 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) const;
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
+    virtual ECClassType                  _GetClassType() const { return ECClassType::Entity;} // default type
+
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
+
+    virtual ECEntityClassCP             _GetEntityClassCP () const { return nullptr; }  // used to avoid dynamic_cast
+    virtual ECEntityClassP              _GetEntityClassP ()        { return nullptr; }  // used to avoid dynamic_cast
+
+    virtual ECStructClassCP             _GetStructClassCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ECStructClassP              _GetStructClassP()        { return nullptr; } // used to avoid dynamic_cast
+
+    virtual ECCustomAttributeClassCP    _GetCustomAttributeClassCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ECCustomAttributeClassP     _GetCustomAttributeClassP()        { return nullptr; } // used to avoid dynamic_cast
 
     void                                InvalidateDefaultStandaloneEnabler() const;
 public:
@@ -1060,10 +1126,35 @@ public:
     ECOBJECTS_EXPORT ECClassId             GetId() const;
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
+
+    // The type of derived ECClass this is
+    ECOBJECTS_EXPORT ECClassType           GetClassType() const;
+
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassP GetRelationshipClassP();
+
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECEntityClassCP GetEntityClassCP() const;
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECEntityClassP GetEntityClassP();
+
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECCustomAttributeClassCP GetCustomAttributeClassCP() const;
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECCustomAttributeClassP GetCustomAttributeClassP();
+
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECStructClassCP GetStructClassCP() const;
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECStructClassP GetStructClassP();
+
+    //! Returns the class modifier
+    ECOBJECTS_EXPORT ECClassModifier GetClassModifier() const;
+    //! Sets the class modifier
+    ECOBJECTS_EXPORT void SetClassModifier(ECClassModifier modifier);
+
     //! The ECSchema that this class is defined in
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
     // schemas index class by name so publicly name can not be reset
@@ -1100,38 +1191,11 @@ public:
     //! @return     An iterable container of ECProperties
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties(bool includeBaseProperties) const;
 
-    //! Sets the bool value of whether this class can be used as a struct
-    //! @param[in] isStruct String representation of true/false
-    //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct (Utf8CP isStruct);
-    //! Sets the bool value of whether this class can be used as a struct
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct(bool value);
-    //! Returns whether this class can be used as a struct
-    ECOBJECTS_EXPORT bool               GetIsStruct() const;
-
-    //! Sets the bool value of whether this class can be used as a custom attribute
-    //! @param[in] isCustomAttribute String representation of true/false
-    //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass (Utf8CP isCustomAttribute);
-    //! Sets the bool value of whether this class can be used as a custom attribute
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass(bool value);
-    //! Returns whether this class can be used as a custom attribute
-    ECOBJECTS_EXPORT bool               GetIsCustomAttributeClass() const;
-
-    //! Sets the bool value of whether this class can be used as a domain object
-    //! @param[in] isDomainClass String representation of true/false
-    //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass (Utf8CP isDomainClass);
-    //! Sets the bool value of whether this class can be used as a domain object
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass(bool value);
-    //! Gets whether this class can be used as a domain object
-    ECOBJECTS_EXPORT bool               GetIsDomainClass() const;
-
-
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
     //! so will return an error.
+    //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
 
@@ -1143,6 +1207,7 @@ public:
     //! You cannot insert a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
     //! so will return an error.
+    //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
     //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
     //! false if @p baseClass is added to the end of the list
@@ -1168,11 +1233,11 @@ public:
     //! If the given name is valid, creates a primitive property object with the given primitive type
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
-    //! If the given name is valid, creates a struct property object using the current class as the struct type
+    //! If the given name is valid, creates a struct property object using the current class (if a StructClass) as the struct type
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name);
 
     //! If the given name is valid, creates a struct property object using the specified class as the struct type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
 
     //! If the given name is valid, creates an array property object using the current class as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name);
@@ -1181,7 +1246,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
     //! If the given name is valid, creates an array property object using the specified class as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name, ECClassCP structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCP structType);
 
     //! Remove the named property
     //! @param[in] name The name of the property to be removed
@@ -1245,6 +1310,102 @@ public:
 
 
 }; // ECClass
+
+//---------------------------------------------------------------------------------------
+// The in-memory representation of an EntityClass as defined by ECSchemaXML
+// @bsiclass                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+struct EXPORT_VTABLE_ATTRIBUTE ECEntityClass : ECClass
+{
+DEFINE_T_SUPER(ECClass)
+
+/*__PUBLISH_SECTION_END__*/
+friend struct ECSchema;
+friend struct SchemaXmlReader;
+friend struct SchemaXmlWriter;
+
+private:
+
+protected:
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    ECEntityClass (ECSchemaCR schema);
+    virtual ~ECEntityClass () {}
+
+    virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
+    virtual ECEntityClassP _GetEntityClassP() override { return this; }
+    virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
+//__PUBLISH_SECTION_START__
+public:
+
+};
+
+//---------------------------------------------------------------------------------------
+// The in-memory representation of a CustomAttributeClass as defined by ECSchemaXML
+// @bsiclass                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+struct EXPORT_VTABLE_ATTRIBUTE ECCustomAttributeClass : public ECClass
+{
+DEFINE_T_SUPER(ECClass)
+
+/*__PUBLISH_SECTION_END__*/
+friend struct ECSchema;
+friend struct SchemaXmlReader;
+friend struct SchemaXmlWriter;
+
+private:
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    ECCustomAttributeClass (ECSchemaCR schema);
+    virtual ~ECCustomAttributeClass () {}
+
+protected:
+    virtual ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
+    virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
+    virtual ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
+    
+};
+
+//---------------------------------------------------------------------------------------
+// The in-memory representation of a StructClass as defined by ECSchemaXML
+// @bsiclass                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+struct EXPORT_VTABLE_ATTRIBUTE ECStructClass : public ECClass
+{
+DEFINE_T_SUPER(ECClass)
+
+/*__PUBLISH_SECTION_END__*/
+friend struct ECSchema;
+friend struct SchemaXmlReader;
+friend struct SchemaXmlWriter;
+
+private:
+    StructContainerType m_containerType;
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    ECStructClass (ECSchemaCR schema);
+    virtual ~ECStructClass () {}
+
+
+protected:
+    virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
+    virtual ECStructClassCP _GetStructClassCP() const override { return this;}
+    virtual ECStructClassP _GetStructClassP() override { return this; }
+
+    virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
+
+//__PUBLISH_SECTION_START__
+public:
+    //! Sets what type of container can hold this struct: EntityClass or a CustomAttributeClass
+    ECOBJECTS_EXPORT void SetContainerType(StructContainerType type);
+
+    //! Gets what type of container can hold this struct: EntityClass or a CustomAttributeClass
+    ECOBJECTS_EXPORT StructContainerType GetContainerType();
+
+};
 
 
 //=======================================================================================
@@ -1513,9 +1674,9 @@ public:
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECClass
+struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECEntityClass
 {
-    DEFINE_T_SUPER(ECClass)
+DEFINE_T_SUPER(ECEntityClass)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 friend struct SchemaXmlReader;
@@ -2002,12 +2163,12 @@ public:
 public:
     //! Adds a schema to the cache
     //! @param[in] schema   The ECSchema to add to the cache
-    //! @returns ECOBJECTS_STATUS_DuplicateSchema is the schema is already in the cache, otherwise ECOBJECTS_STATUS_Success
+    //! @returns ECObjectsStatus::DuplicateSchema is the schema is already in the cache, otherwise ECObjectsStatus::Success
     ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR schema);
 
     //! Removes the specified schema from the cache
     //! @param[in] key  The SchemaKey fully describing the schema that should be removed from the cache
-    //! @returns ECOBJECTS_STATUS_SchemaNotFound is the schema was not found in the cache, otherwise ECOBJECTS_STATUS_Success
+    //! @returns ECObjectsStatus::SchemaNotFound is the schema was not found in the cache, otherwise ECObjectsStatus::Success
     ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (SchemaKeyCR key );
 
     //! Get the requested schema from the cache
@@ -2108,7 +2269,7 @@ private:
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
 
-    ECObjectsStatus                     AddClass (ECClassP& pClass, bool deleteClassIfDuplicate = true);
+    ECObjectsStatus                     AddClass (ECClassP pClass, bool deleteClassIfDuplicate = true);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
@@ -2145,7 +2306,7 @@ public:
     ECOBJECTS_EXPORT ECSchemaId         GetId() const;
     //! Sets the name of this schema
     //! @param[in]  value   The name of the ECSchema
-    //! @returns Success if the name passes validation and is set, ECOBJECTS_STATUS_InvalidName otherwise
+    //! @returns Success if the name passes validation and is set, ECObjectsStatus::InvalidName otherwise
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(Utf8StringCR value);
     //! Returns the name of this ECSchema
     ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
@@ -2236,11 +2397,23 @@ public:
     //! @return True if this version of the schema is one that should never be imported into a repository
     ECOBJECTS_EXPORT static bool        ShouldNotBeStored (SchemaKeyCR key);
 
-    //! If the class name is valid, will create an ECClass object and add the new class to the schema
-    //! @param[out] ecClass If successful, will contain a new ECClass object
+    //! If the class name is valid, will create an ECEntityClass object and add the new class to the schema
+    //! @param[out] ecClass If successful, will contain a new ECEntityClass object
     //! @param[in]  name    Name of the class to create
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, Utf8StringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateEntityClass (ECEntityClassP& ecClass, Utf8StringCR name);
+
+    //! If the class name is valid, will create an ECStructClass object and add the new class to the schema
+    //! @param[out] ecClass If successful, will contain a new ECStructClass object
+    //! @param[in]  name    Name of the class to create
+    //! @return A status code indicating whether or not the class was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateStructClass (ECStructClassP& ecClass, Utf8StringCR name);
+
+    //! If the class name is valid, will create an ECCustomAttributeClass object and add the new class to the schema
+    //! @param[out] ecClass If successful, will contain a new ECCustomAttributeClass object
+    //! @param[in]  name    Name of the class to create
+    //! @return A status code indicating whether or not the class was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateCustomAttributeClass (ECCustomAttributeClassP& ecClass, Utf8StringCR name);
 
     //! If the class name is valid, will create an ECRelationshipClass object and add the new class to the schema
     //! @param[out] relationshipClass If successful, will contain a new ECRelationshipClass object
@@ -2257,7 +2430,7 @@ public:
     //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
     //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.
     //! @param[out] namespacePrefix The namespace prefix if schema is a referenced schema; empty string if the sechema is the current schema;
-    //! @return   Success if the schema is either the current schema or a referenced schema;  ECOBJECTS_STATUS_SchemaNotFound if the schema is not found in the list of referenced schemas
+    //! @return   Success if the schema is either the current schema or a referenced schema;  ECObjectsStatus::SchemaNotFound if the schema is not found in the list of referenced schemas
     ECOBJECTS_EXPORT ECObjectsStatus    ResolveNamespacePrefix (ECSchemaCR schema, Utf8StringR namespacePrefix) const;
 
     //! Get a class by name within the context of this schema.
@@ -2401,7 +2574,7 @@ public:
     //! ECSchemaPtr schema;
     //! WCharCP ecSchemaFilename = L"ECSchema file path";
     //! SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ecSchemaFilename, *schemaContext);
-    //! if (SCHEMA_READ_STATUS_Success != status)
+    //! if (SchemaReadStatus::Success != status)
     //!     return ERROR;
     //! @endcode
     //! @param[out]   schemaOut           The read schema
@@ -2427,7 +2600,7 @@ public:
     //!
     //! ECSchemaP schema;
     //! SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, ecSchemaAsString, *schemaContext);
-    //! if (SCHEMA_READ_STATUS_Success != status)
+    //! if (SchemaReadStatus::Success != status)
     //!     return ERROR;
     //! @endcode
     //! @param[out]   schemaOut           The read schema
@@ -2447,7 +2620,7 @@ public:
     //!
     //! ECSchemaP schema;
     //! SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, ecSchemaAsString, *schemaContext);
-    //! if (SCHEMA_READ_STATUS_Success != status)
+    //! if (SchemaReadStatus::Success != status)
     //!     return ERROR;
     //! @endcode
     //! @param[out]   schemaOut           The read schema

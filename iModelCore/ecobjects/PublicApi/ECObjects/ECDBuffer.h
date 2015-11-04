@@ -256,25 +256,25 @@ public:
     //! Given a property access string, will return the PropertyLayout
     //! @param[out] propertyLayout  Will point to the PropertyLayout if found
     //! @param[in]  accessString    The access string for the desired property
-    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
+    //! @returns ECObjectsStatus::PropertyNotFound if the property is not found, ECObjectsStatus::Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, Utf8CP accessString) const;
 
     //! Given a property index, will return the PropertyLayout
     //! @param[out] propertyLayout  Will point to the PropertyLayout if found
     //! @param[in]  propertyIndex   The index in the ClassLayout of the desired property
-    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
+    //! @returns ECObjectsStatus::PropertyNotFound if the property is not found, ECObjectsStatus::Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, uint32_t propertyIndex) const;
 
     //! Given a property layout, will return the property index within the ClassLayout
     //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
     //! @param[in]  propertyLayout  The propertyLayout of the property that we want the index for
-    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
+    //! @returns ECObjectsStatus::PropertyNotFound if the property is not found, ECObjectsStatus::Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutIndex (uint32_t& propertyIndex, PropertyLayoutCR propertyLayout) const;
 
     //! Given an access string, will return the property index within the ClassLayout
     //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
     //! @param[in]  accessString    The access string for the desired property
-    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
+    //! @returns ECObjectsStatus::PropertyNotFound if the property is not found, ECObjectsStatus::Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (uint32_t& propertyIndex, Utf8CP accessString) const;
 
     //! Given a propertyIndex, will return whether the property is read-only or not
@@ -668,9 +668,9 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const;
 
     virtual bool                _IsPersistentlyReadOnly() const { return false; }
-    virtual ECObjectsStatus     _SetIsPersistentlyReadOnly (bool readOnly) { return ECOBJECTS_STATUS_OperationNotSupported; }
+    virtual ECObjectsStatus     _SetIsPersistentlyReadOnly (bool readOnly) { return ECObjectsStatus::OperationNotSupported; }
     virtual bool                _IsHidden() const { return false; }
-    virtual ECObjectsStatus     _SetIsHidden (bool hidden) { return ECOBJECTS_STATUS_OperationNotSupported; }
+    virtual ECObjectsStatus     _SetIsHidden (bool hidden) { return ECObjectsStatus::OperationNotSupported; }
 
     // Helper for implementations of calculated property methods above
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP LookupCalculatedPropertySpecification (IECInstanceCR thisAsIECInstance, PropertyLayoutCR propLayout) const;

@@ -18,3 +18,8 @@ CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
 ECRelationshipTests.DumpToString
 
+ECSchemaUnitsManagerTests.*                         # Need to handle UnitSpecification which is both CA and Struct
+SchemaTest.GetBaseClassProperty                     # References Units schema
+UnitsTest.TestUnitSpecifications                    # References Units schema
+SchemaDeserializationTest.ExpectSuccessWithDuplicateClassesInXml  # This is no longer allowed
+SchemaLocateTest.ExpectSuccessWhenLocatingStandardSchema # References Units schema

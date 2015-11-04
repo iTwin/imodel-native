@@ -57,7 +57,7 @@ struct ECRelationshipTests : ECTestFixture
 
         ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext ();
 
-        EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str (), *schemaContext));
+        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str (), *schemaContext));
         EXPECT_TRUE (m_schema.IsValid ());
         }
 
@@ -185,10 +185,10 @@ TEST_F (ECRelationshipTests, SetRelationshipProperties)
     rel_targetOrder.SetInteger (999);
     rel_name.SetUtf8CP ("my_relationship");
 
-    EXPECT_TRUE (SUCCESS == relationshipInstance->SetValue ("p", rel_p));
-    EXPECT_TRUE (SUCCESS == relationshipInstance->SetValue ("Name", rel_name));
-    EXPECT_TRUE (SUCCESS == relationshipInstance->SetValue ("SourceOrderId", rel_sourceOrder));
-    EXPECT_TRUE (SUCCESS == relationshipInstance->SetValue ("TargetOrderId", rel_targetOrder));
+    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("p", rel_p));
+    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("Name", rel_name));
+    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("SourceOrderId", rel_sourceOrder));
+    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("TargetOrderId", rel_targetOrder));
 
     IECInstancePtr readSource = relationshipInstance->GetSource ();
     ECValue readValue;
@@ -204,7 +204,7 @@ TEST_F (ECRelationshipTests, SetRelationshipProperties)
     WString ecInstanceXml;
 
     InstanceWriteStatus status2 = relationshipInstance->WriteToXmlString (ecInstanceXml, true, true);
-    EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);
+    EXPECT_EQ (InstanceWriteStatus::Success, status2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,7 +248,7 @@ TEST_F (ECRelationshipTests, InheritedEnablerIterator)
     while (tempIndex != 0)
         {
         Utf8CP tempName = NULL;
-        EXPECT_EQ (relationshipEnabler->GetAccessString (tempName, tempIndex), ECOBJECTS_STATUS_Success);
+        EXPECT_EQ (relationshipEnabler->GetAccessString (tempName, tempIndex), ECObjectsStatus::Success);
         EXPECT_FALSE (relationshipEnabler->HasChildProperties (tempIndex));
 
         int foundPos = -1;
@@ -282,13 +282,13 @@ TEST_F (ECRelationshipTests, InheritedEnablerIndices)
     Utf8CP props[] = { "p", "SourceOrderId", "TargetOrderId", "Name", "Source ECPointer", "Target ECPointer", "ArrayProperty" };
 
     bvector<uint32_t> indices;
-    EXPECT_EQ (relationshipEnabler->GetPropertyIndices (indices, 0), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipEnabler->GetPropertyIndices (indices, 0), ECObjectsStatus::Success);
     EXPECT_EQ (indices.size (), sizeof(props) / sizeof(props[0]));
 
     for (uint32_t i = 0; i < indices.size (); i++)
         {
         Utf8CP tempName = NULL;
-        EXPECT_EQ (relationshipEnabler->GetAccessString (tempName, indices[i]), ECOBJECTS_STATUS_Success);
+        EXPECT_EQ (relationshipEnabler->GetAccessString (tempName, indices[i]), ECObjectsStatus::Success);
         EXPECT_FALSE (relationshipEnabler->HasChildProperties (indices[i]));
 
         int foundPos = -1;
@@ -316,12 +316,12 @@ TEST_F (ECRelationshipTests, InheritedSetGetValues)
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
 
     ECValue value;
-    EXPECT_EQ (relationshipInstance->SetValue ("Name", ECValue ("Some value 1")), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "Name"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->SetValue ("Name", ECValue ("Some value 1")), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "Name"), ECObjectsStatus::Success);
     EXPECT_STREQ ("Some value 1", value.GetUtf8CP ());
 
-    EXPECT_EQ (relationshipInstance->SetValue ("p", ECValue (42)), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "p"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->SetValue ("p", ECValue (42)), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "p"), ECObjectsStatus::Success);
     EXPECT_EQ (42, value.GetInteger ());
     }
 
@@ -338,34 +338,34 @@ TEST_F (ECRelationshipTests, InheritedSetGetArrayValues)
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
 
     ECValue value;
-    EXPECT_EQ (relationshipInstance->AddArrayElements ("ArrayProperty", 13), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->AddArrayElements ("ArrayProperty", 13), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECObjectsStatus::Success);
     EXPECT_EQ (value.GetArrayInfo ().GetCount (), 13);
 
-    EXPECT_EQ (relationshipInstance->SetValue ("ArrayProperty", ECValue ("Seventh Value"), 7), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->SetValue ("ArrayProperty", ECValue ("First Value"), 1), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 7), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->SetValue ("ArrayProperty", ECValue ("Seventh Value"), 7), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->SetValue ("ArrayProperty", ECValue ("First Value"), 1), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 7), ECObjectsStatus::Success);
     EXPECT_STREQ (value.GetUtf8CP (), "Seventh Value");
 
-    EXPECT_EQ (relationshipInstance->InsertArrayElements ("ArrayProperty", 2, 29), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->InsertArrayElements ("ArrayProperty", 2, 29), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECObjectsStatus::Success);
     EXPECT_EQ (value.GetArrayInfo ().GetCount (), 42);
 
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 36), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 36), ECObjectsStatus::Success);
     EXPECT_STREQ (value.GetUtf8CP (), "Seventh Value");
 
-    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 36), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 36), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 0), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 36), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 36), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 0), ECObjectsStatus::Success);
 
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 0), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 0), ECObjectsStatus::Success);
     EXPECT_STREQ (value.GetUtf8CP (), "First Value");
 
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECObjectsStatus::Success);
     EXPECT_EQ (value.GetArrayInfo ().GetCount (), 39);
 
     //No idea why clearing array is not allowed
-    EXPECT_EQ (relationshipInstance->ClearArray ("ArrayProperty"), ECOBJECTS_STATUS_OperationNotSupported);
+    EXPECT_EQ (relationshipInstance->ClearArray ("ArrayProperty"), ECObjectsStatus::OperationNotSupported);
     EXPECT_EQ (value.GetArrayInfo ().GetCount (), 39);
     }
 
@@ -383,9 +383,9 @@ TEST_F (ECRelationshipTests, SourceDestOrderIDs)
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
 
-    EXPECT_EQ (relationshipInstance->GetSourceOrderId (sourceId), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->GetSourceOrderId (sourceId), ECObjectsStatus::Success);
     EXPECT_EQ (sourceId, 0);
-    EXPECT_EQ (relationshipInstance->GetTargetOrderId (targetId), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->GetTargetOrderId (targetId), ECObjectsStatus::Success);
     EXPECT_EQ (targetId, 0);
 
     EXPECT_TRUE (relationshipInstance->GetSource ().IsNull ());
@@ -397,9 +397,9 @@ TEST_F (ECRelationshipTests, SourceDestOrderIDs)
     EXPECT_STREQ (relationshipInstance->GetSource ()->GetClass ().GetFullName (), "RelationshipTesting:ClassA");
     EXPECT_STREQ (relationshipInstance->GetTarget ()->GetClass ().GetFullName (), "RelationshipTesting:ClassB");
 
-    EXPECT_EQ (relationshipInstance->GetSourceOrderId (sourceId), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->GetSourceOrderId (sourceId), ECObjectsStatus::Success);
     EXPECT_EQ (sourceId, 0);
-    EXPECT_EQ (relationshipInstance->GetTargetOrderId (targetId), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->GetTargetOrderId (targetId), ECObjectsStatus::Success);
     EXPECT_EQ (targetId, 0);
     }
 
@@ -419,8 +419,8 @@ TEST_F (ECRelationshipTests, DumpToString)
 
     relationshipInstance->SetSource (m_schema->GetClassP ("ClassA")->GetDefaultStandaloneEnabler ()->CreateInstance ().get ());
     relationshipInstance->SetTarget (m_schema->GetClassP ("ClassB")->GetDefaultStandaloneEnabler ()->CreateInstance ().get ());
-    EXPECT_EQ (relationshipInstance->SetValue ("Name", ECValue ("Some value 1")), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (relationshipInstance->SetValue ("p", ECValue (42)), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (relationshipInstance->SetValue ("Name", ECValue ("Some value 1")), ECObjectsStatus::Success);
+    EXPECT_EQ (relationshipInstance->SetValue ("p", ECValue (42)), ECObjectsStatus::Success);
 
     Utf8String outStr = relationshipInstance->ToString ("~!@");
     bvector<Utf8String> strSplit = split (outStr, '\n');

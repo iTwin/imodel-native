@@ -168,8 +168,8 @@ void UnitsTest::SetUp()
     ECTestFixture::SetUp();
 
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_refSchema, s_refSchemaXml, *context));
-    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
+    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_refSchema, s_refSchemaXml, *context));
+    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
 
     m_fromProperty = m_schema->GetClassP ("TestClass")->GetPropertyP ("FromProperty");
     m_toProperty = m_schema->GetClassP ("TestClass")->GetPropertyP ("ToProperty");

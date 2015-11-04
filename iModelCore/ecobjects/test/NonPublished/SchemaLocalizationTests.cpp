@@ -34,8 +34,8 @@ void VerifyCaString (IECCustomAttributeContainerR caContainer, Utf8CP containerI
 
     ECValue stringValue;
     ECValueAccessor accessor;
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, propertyAccessor));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, caInstance->GetValueUsingAccessor(stringValue, accessor));
+    EXPECT_EQ(ECObjectsStatus::Success, ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, propertyAccessor));
+    EXPECT_EQ(ECObjectsStatus::Success, caInstance->GetValueUsingAccessor(stringValue, accessor));
     EXPECT_FALSE(stringValue.IsNull()) << "Failed to get a valid value for " 
         << caClassName << "." << propertyAccessor << " on container: " << containerId << "\nInstance\n" << caInstance->ToString("  ").c_str();
 
@@ -209,7 +209,7 @@ TEST_F(SchemaLocalizationTests, CopyingALocalizedSchema)
     VerifyLocalized(testSchema, GB);
 
     ECSchemaPtr copyTestSchema;
-    EXPECT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, testSchema->CopySchema(copyTestSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, testSchema->CopySchema(copyTestSchema));
     EXPECT_FALSE(copyTestSchema->IsSupplemented());
     VerifyNotLocalized(copyTestSchema);
     }
@@ -232,9 +232,9 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchema)
 
     ECSchemaPtr copyTestSchema;
     Utf8String     schemaXml;
-    EXPECT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, testSchema->WriteToXmlString(schemaXml));
+    EXPECT_EQ(SchemaWriteStatus::Success, testSchema->WriteToXmlString(schemaXml));
     ECSchemaReadContextPtr deserializedSchemaContext = ECSchemaReadContext::CreateContext();
-    EXPECT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(copyTestSchema, schemaXml.c_str(), *deserializedSchemaContext));
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copyTestSchema, schemaXml.c_str(), *deserializedSchemaContext));
     EXPECT_FALSE(copyTestSchema->IsSupplemented());
     VerifyNotLocalized(copyTestSchema);
     }

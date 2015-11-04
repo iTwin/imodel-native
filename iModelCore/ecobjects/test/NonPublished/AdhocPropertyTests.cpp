@@ -17,7 +17,7 @@ using namespace BentleyApi::ECN;
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 
-#define EXPECT_STATUS(STATUS, EXPR) EXPECT_EQ (ECOBJECTS_STATUS_ ## STATUS , (EXPR))
+#define EXPECT_STATUS(STATUS, EXPR) EXPECT_EQ (ECObjectsStatus:: ## STATUS , (EXPR))
 #define EXPECT_SUCCESS(EXPR) EXPECT_STATUS (Success, (EXPR))
 
 static const WCharCP s_schemaXml =
@@ -74,7 +74,7 @@ struct AdhocPropertyTest : ECTestFixture
 TEST_F (AdhocPropertyTest, AdhocInterface)
     {
     Utf8String schemaXml (s_schemaXml);
-    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXml.c_str(), *context));
+    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, schemaXml.c_str(), *context));
 
     auto noAdhocs = m_schema->GetClassP ("NoAdhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_FALSE (AdhocPropertyQuery (*noAdhocs, "NONE").IsSupported());
@@ -214,7 +214,7 @@ TEST_F (AdhocPropertyTest, AdhocInterface)
 TEST_F (AdhocPropertyTest, WCharSchemaXml_FailsOnNonWindowPlatforms)
     {
 #ifdef BENTLEY_WIN32
-    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
+    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
 #endif
     }
 
