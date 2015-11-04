@@ -5,7 +5,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
-#include <DgnPlatform/DgnCore/Annotations/AnnotationLeaderStyle.h>
+#include <DgnPlatform/Annotations/AnnotationLeaderStyle.h>
 #include "Annotations.fb.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE

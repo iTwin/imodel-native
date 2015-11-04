@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnFontData.h>
+#include <DgnPlatform/DgnFontData.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015

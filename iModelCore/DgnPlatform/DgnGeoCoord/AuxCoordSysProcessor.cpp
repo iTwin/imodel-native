@@ -9,7 +9,7 @@
 
 #include    <DgnGeoCoord\DgnGeoCoord.h>
 #include    <DgnPlatform\Tools\stringop.h>
-#include    <DgnPlatform\DgnCore\DgnCoreAPI.h>
+#include    <DgnPlatform/DgnCoreAPI.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 

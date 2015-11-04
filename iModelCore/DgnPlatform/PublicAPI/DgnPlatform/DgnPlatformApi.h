@@ -172,8 +172,8 @@ For a list of configuration variables used by DgnPlatform, see \ref ConfigVariab
 +===============+===============+===============+===============+===============+======*/
 /** @endcond */
 
-#include    <DgnPlatform/DgnPlatform.h>
-#include    "DgnCore/DgnCoreAPI.h"
-#include    "DgnHandlers/DgnHandlersAPI.h"
+#include "DgnPlatform.h"
+#include "DgnCoreAPI.h"
+#include "DgnHandlersAPI.h"
 //__PUBLISH_SECTION_END__
-#include    <Bentley/BeAssert.h>
+#include  <Bentley/BeAssert.h>

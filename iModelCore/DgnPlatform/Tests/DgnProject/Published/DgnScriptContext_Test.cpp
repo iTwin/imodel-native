@@ -8,7 +8,7 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGN

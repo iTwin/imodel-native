@@ -5,7 +5,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
-#include <DgnPlatform/DgnCore/Annotations/AnnotationFrame.h>
+#include <DgnPlatform/Annotations/AnnotationFrame.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

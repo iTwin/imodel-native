@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/Annotations/AnnotationPropertyBag.h>
+#include <DgnPlatform/Annotations/AnnotationPropertyBag.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 

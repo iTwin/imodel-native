@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/L10N.h>
-#include <DgnPlatform/DgnHandlers/DgnECSymbolProvider.h>
-#include <DgnPlatform/DgnHandlers/Dimension.h>
+#include <DgnPlatform/DgnECSymbolProvider.h>
+#include <DgnPlatform/Dimension.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -30,6 +30,7 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert (NULL == m_solidsKernelAdmin);     m_solidsKernelAdmin     = &_SupplySolidsKernelAdmin();
     BeAssert (NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin ();
     BeAssert (NULL == m_scriptingAdmin);        m_scriptingAdmin        = &_SupplyScriptingAdmin ();
+    BeAssert (NULL == m_locksAdmin);            m_locksAdmin            = &_SupplyLocksAdmin ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,6 +56,7 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_geoCoordAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_formatterAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_scriptingAdmin, onProgramExit);
+    TERMINATE_HOST_OBJECT(m_locksAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
     IECSymbolProvider::UnRegisterExternalSymbolPublisher ();

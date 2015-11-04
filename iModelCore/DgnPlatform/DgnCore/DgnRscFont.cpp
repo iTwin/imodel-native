@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnFontData.h>
-#include <DgnPlatform/DgnCore/DgnRscFontStructures.h>
+#include <DgnPlatform/DgnFontData.h>
+#include <DgnPlatform/DgnRscFontStructures.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015

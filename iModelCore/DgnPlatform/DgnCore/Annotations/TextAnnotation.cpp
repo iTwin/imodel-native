@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationSeedPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextBlockPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationFramePersistence.h>

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#include <DgnPlatform/DgnCore/DgnLink.h>
+#include <DgnPlatform/DgnLink.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 

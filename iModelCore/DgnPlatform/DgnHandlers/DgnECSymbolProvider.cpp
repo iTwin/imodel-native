@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnHandlers/DgnECSymbolProvider.h>
+#include    <DgnPlatform/DgnECSymbolProvider.h>
 #include    <ECObjects/ECExpressionNode.h>
 #include    <ECObjects/SystemSymbolProvider.h>
 

@@ -15,7 +15,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
-#include <DgnPlatform/DgnCore/DgnElementDependency.h>
+#include <DgnPlatform/DgnElementDependency.h>
 
 #define LOCALIZED_STR(str) str
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

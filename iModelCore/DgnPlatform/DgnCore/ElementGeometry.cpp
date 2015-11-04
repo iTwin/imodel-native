@@ -9,7 +9,7 @@
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
-#include "DgnPlatform/DgnCore/Annotations/TextAnnotationDraw.h"
+#include "DgnPlatform/Annotations/TextAnnotationDraw.h"
 
 using namespace flatbuffers;
 
@@ -1185,15 +1185,25 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCR geomToElem)
+void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCP geomToElem)
     {
+    if (nullptr == geomToElem || geomToElem->IsIdentity())
+        {
+        FlatBufferBuilder fbb;
+
+        auto mloc = FB::CreateBeginSubCategory(fbb, subCategory.GetValueUnchecked());
+
+        fbb.Finish(mloc);
+        Append(Operation(OpCode::BeginSubCategory, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        return;
+        }
+
     DPoint3d            origin;
     RotMatrix           rMatrix;
     YawPitchRollAngles  angles;
 
-    geomToElem.GetTranslation(origin);
-    geomToElem.GetMatrix(rMatrix);
-
+    geomToElem->GetTranslation(origin);
+    geomToElem->GetMatrix(rMatrix);
     YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix);
 
     FlatBufferBuilder fbb;
@@ -1569,7 +1579,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnSubCategoryId& subCate
 
     subCategory = DgnSubCategoryId((uint64_t)ppfb->subCategoryId());
 
-    DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
+    DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
     geomToElem = angles.ToTransform(origin);
@@ -2183,7 +2193,10 @@ static bool SetActive(ViewContextR context, bool enable)
     if (GeomStreamEntryId::Type::Invalid != entryId.GetType() && entryId.GetGeomPartId().IsValid())
         {
         if (!enable)
+            {
             entryId.SetGeomPartId(DgnGeomPartId()); // Clear part and remain active...
+            context.SetGeomStreamEntryId(entryId);
+            }
 
         return false; // Already active (or remaining active)...
         }
@@ -2260,7 +2273,7 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                     {
                     DgnSubCategoryId remappedSubCategoryId = importer.FindSubCategory(subCategory); 
                     BeAssert(remappedSubCategoryId.IsValid() && "Category and all subcategories should have been remapped by the element that owns this geometry");
-                    writer.Append(remappedSubCategoryId, geomToElem);   
+                    writer.Append(remappedSubCategoryId, &geomToElem);   
                     }
                 break;
                 }
@@ -3539,6 +3552,9 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
         localRange.Extend(range);
         }
 
+    if (!geomToElement.IsIdentity())
+        geomToElement.Multiply(localRange, localRange);
+
     OnNewGeom(localRange, &geomToElement);
     m_writer.Append(geomPartId);
 
@@ -3548,7 +3564,7 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geomToElementIn)
+void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomToElement)
     {
     if (m_isPartCreate)
         {
@@ -3563,24 +3579,16 @@ void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geom
         return;
         }
 
-    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
-    DRange3d  localRange = localRangeIn;
-
-    if (!geomToElem.IsIdentity())
-        geomToElem.Multiply(localRange, localRange);
-
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
 
-    // Establish "geometry group" boundaries at sub-category and transform changes...
-    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))
+    // Establish "geometry group" boundaries at sub-category and GeomPart changes...geomToElement should only be non-null when inserting a GeomPart..
+    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || nullptr != geomToElement))
         {
-        m_writer.Append(m_elParams.GetSubCategoryId(), geomToElem);
-
+        m_writer.Append(m_elParams.GetSubCategoryId(), geomToElement);
         m_prevSubCategory = m_elParams.GetSubCategoryId();
-        m_prevGeomToElem = geomToElem;
         }
 
     if (m_appearanceChanged)
@@ -3656,10 +3664,10 @@ bool ElementGeometryBuilder::AppendLocal(ElementGeometryCR geom)
     {
     DRange3d localRange;
 
-    if (!geom.GetRange(localRange, nullptr))
+    if (!geom.GetRange(localRange))
         return false;
 
-    OnNewGeom(localRange, nullptr);
+    OnNewGeom(localRange);
 
     if (!m_writer.AppendSimplified(geom, m_is3d))
         m_writer.Append(geom);
@@ -3724,7 +3732,7 @@ bool ElementGeometryBuilder::Append(ICurvePrimitiveCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
 
         if (!m_writer.AppendSimplified(geom, false, m_is3d))
             m_writer.Append(geom);
@@ -3749,7 +3757,7 @@ bool ElementGeometryBuilder::Append(CurveVectorCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
 
         if (!m_writer.AppendSimplified(geom, m_is3d))
             m_writer.Append(geom);
@@ -3780,7 +3788,7 @@ bool ElementGeometryBuilder::Append(ISolidPrimitiveCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3809,7 +3817,7 @@ bool ElementGeometryBuilder::Append(MSBsplineSurfaceCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3838,7 +3846,7 @@ bool ElementGeometryBuilder::Append(PolyfaceQueryCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3867,7 +3875,7 @@ bool ElementGeometryBuilder::Append(ISolidKernelEntityCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3895,7 +3903,7 @@ bool ElementGeometryBuilder::Append(TextStringCR text)
         if (!getRange(text, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(text);
 
         return true;

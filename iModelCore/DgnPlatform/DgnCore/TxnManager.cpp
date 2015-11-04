@@ -265,14 +265,14 @@ BentleyStatus TxnManager::PropagateChanges()
     if (!m_propagateChanges)
         return BSISUCCESS;
 
-    SetIndirectChanges(true);
+    SetMode(Mode::Indirect);
     for (auto table :  m_tables)
         {
         table->_PropagateChanges();
         if (HasFatalErrors())
             break;
         }
-    SetIndirectChanges(false);
+    SetMode(Mode::Direct);
 
     return HasFatalErrors() ? BSIERROR : BSISUCCESS;
     }

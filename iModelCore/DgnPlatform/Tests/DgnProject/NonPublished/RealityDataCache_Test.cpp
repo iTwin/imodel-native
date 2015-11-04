@@ -9,7 +9,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeDebugLog.h>
-#include <DgnPlatform/DgnCore/RealityDataCache.h>
+#include <DgnPlatform/RealityDataCache.h>
 
 #include <functional>
 #include <memory>

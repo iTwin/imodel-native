@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <DgnPlatform/DgnCore/ColorUtil.h>
+#include <DgnPlatform/ColorUtil.h>
 #include <Bentley/bset.h>
 
 #if defined (_MSC_VER)

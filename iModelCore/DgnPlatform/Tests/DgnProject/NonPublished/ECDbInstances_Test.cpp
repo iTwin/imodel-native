@@ -8,7 +8,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <DgnPlatform/DgnCore/ColorUtil.h>
+#include <DgnPlatform/ColorUtil.h>
 #include <Logging/bentleylogging.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"DgnECDb"))

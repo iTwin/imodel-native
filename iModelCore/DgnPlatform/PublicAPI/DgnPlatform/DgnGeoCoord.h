@@ -11,9 +11,9 @@
 
 #include    <GeoCoord/BaseGeoCoord.h>
 #include    <DgnPlatform/DgnPlatform.h>
-#include    <DgnPlatform/DgnCore/DgnDb.h>
-#include    <DgnPlatform/DgnCore/UnitDefinition.h>
-#include    <DgnPlatform/DgnCore/ScanCriteria.h>
+#include    <DgnPlatform/DgnDb.h>
+#include    <DgnPlatform/UnitDefinition.h>
+#include    <DgnPlatform/ScanCriteria.h>
 #include    <Bentley/bvector.h>
 #include    <DgnPlatform/DgnPlatformLib.h>
 

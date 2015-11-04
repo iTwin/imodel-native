@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnHandlers/NamedVolume.h>
-#include    <DgnPlatform/DgnCore/QueryView.h>
+#include    <DgnPlatform/NamedVolume.h>
+#include    <DgnPlatform/QueryView.h>
 
 #define DGNEC_SCHEMA_NAME L"dgn"
 #define DGNEC_SCHEMA_MAJOR_VERSION 1

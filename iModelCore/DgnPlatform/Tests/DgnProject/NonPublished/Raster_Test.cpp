@@ -9,7 +9,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
-//#include <DgnPlatform/DgnHandlers/RasterHandlers.h>
+//#include <DgnPlatform/RasterHandlers.h>
 #include <Logging/bentleylogging.h>
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC

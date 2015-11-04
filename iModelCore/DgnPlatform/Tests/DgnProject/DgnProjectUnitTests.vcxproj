@@ -155,18 +155,18 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>$(OutRoot)Winx86\Product\BeGTest\bin\BeGTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
     <NMakeIncludeSearchPath>$(OutRoot)Winx86\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx86\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx86\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\DgnPlatform-Gtest\DgnPlatformTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest re dgnplatform:backdoor* dgnplatform:unittest* dgnplatform:gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest re dgnplatform:backdoor* dgnplatform:unittest* dgnplatform:gtest -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\</NMakeIncludeSearchPath>
   </PropertyGroup>

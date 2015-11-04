@@ -8,7 +8,7 @@
 #pragma once
 
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <DgnPlatform/DgnCore/ClipVector.h>
+#include <DgnPlatform/ClipVector.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

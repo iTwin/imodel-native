@@ -9,11 +9,11 @@
 
 #include    <Geom\msgeomstructs.hpp>
 #include    <Bentley\BeTimeUtilities.h>
-#include    <DgnPlatform\DgnCore\DgnCoreAPI.h>
+#include    <DgnPlatform/DgnCoreAPI.h>
 #include    <DgnGeoCoord\DgnGeoCoord.h>
 #include    <DgnGeoCoord\DgnGeoCoordApi.h>
-#include    <DgnPlatform\DgnHandlers\IGeoCoordReproject.h>
-#include    <DgnPlatform\DgnCore\Undo.h>
+#include    <DgnPlatform/IGeoCoordReproject.h>
+#include    <DgnPlatform/Undo.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_USTN
