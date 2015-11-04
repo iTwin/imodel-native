@@ -442,6 +442,7 @@ bool ImportECSchema (ECSchemaR ecSchema, DgnDbR project)
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema (ecSchema);
     BentleyStatus importSchemaStatus = project.Schemas ().ImportECSchemas (*schemaList);
+    project.SaveChanges();
     return (SUCCESS == importSchemaStatus);
     }
 
