@@ -434,7 +434,7 @@ public:
 
     //! Pops the current dynamic operation from the top of the stack, reverting all temporary changes made during the operation.
     //! An IDynamicChangeProcessor may be supplied to capture the results of the dynamic changes
-    //! In that case:
+    //! In that case, if any changes exist in the current dynamic operation:
     //!  - Any indirect changes resulting from the dynamic changes will be computed; then
     //!  - The change processor will be invoked
     //! In either case, all changes made since the most recent call to BeginDynamicOperation will be rolled back before the function returns.

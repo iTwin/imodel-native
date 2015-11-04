@@ -964,6 +964,9 @@ struct DynamicTxnsTest : TransactionManagerTests
         Utf8PrintfString code("%c", s_code++);
         DgnElementCPtr elem = T_Super::InsertElement(code);
         EXPECT_TRUE(elem.IsValid());
+        if (!m_db->Txns().IsInDynamics())
+            EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
         ids.push_back(elem->GetElementId());
         }
 
@@ -1065,5 +1068,38 @@ TEST_F(DynamicTxnsTest, DynamicTxns)
     ExpectNoneExist(dynamicElemIds);
     InsertElement(persistentElemIds);
     ExpectAllExist(persistentElemIds);
+
+    // Undo/redo behave as if the dynamic txns never occurred
+    txns.ReverseSingleTxn();
+    EXPECT_EQ(1, CountExistingElements(persistentElemIds));
+    ExpectNoneExist(dynamicElemIds);
+    txns.ReverseSingleTxn();
+    ExpectNoneExist(persistentElemIds);
+    ExpectNoneExist(dynamicElemIds);
+    txns.ReinstateTxn();
+    EXPECT_EQ(1, CountExistingElements(persistentElemIds));
+    ExpectNoneExist(dynamicElemIds);
+    txns.ReinstateTxn();
+    ExpectAllExist(persistentElemIds);
+    ExpectNoneExist(dynamicElemIds);
+
+    // Nested dynamic changes are undone independently of outer dynamic txns
+    bvector<DgnElementId> innerElemIds,
+                          outerElemIds;
+    txns.BeginDynamicOperation();
+        InsertElement(outerElemIds);
+        ExpectAllExist(outerElemIds);
+        txns.BeginDynamicOperation();
+            InsertElement(innerElemIds);
+            ExpectAllExist(outerElemIds);
+            ExpectAllExist(innerElemIds);
+        txns.EndDynamicOperation();
+        ExpectAllExist(outerElemIds);
+        ExpectNoneExist(innerElemIds);
+        InsertElement(outerElemIds);
+        ExpectAllExist(outerElemIds);
+    txns.EndDynamicOperation();
+    ExpectNoneExist(innerElemIds);
+    ExpectNoneExist(outerElemIds);
     }
 
