@@ -1083,6 +1083,8 @@ public:
 public:
 };
 
+struct AnnotationTableCellCollection;
+
 /*=================================================================================**//**
 * An iterator that can step through the set of cells in a table.
 * See AnnotationTableElement::GetCellCollection

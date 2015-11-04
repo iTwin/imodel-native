@@ -1187,7 +1187,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCP geomToElem)
     {
-    if (nullptr == geomToElem)
+    if (nullptr == geomToElem || geomToElem->IsIdentity())
         {
         FlatBufferBuilder fbb;
 

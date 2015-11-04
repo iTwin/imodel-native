@@ -2834,3 +2834,51 @@ DgnDbStatus DgnElement2d::SetPlacement(Placement2dCR placement)
     return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementCopier::ElementCopier() 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR templateItem,
+    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& icode)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
+
+    Placement3d placement(origin, angles, templateItem.GetPlacement().GetElementBox());
+
+    PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), templateItem.GetElementClassId(), templateItem.GetCategoryId(), placement, icode);
+
+    DgnElementPtr instanceDgnElement0 = templateItem.Clone(&status, &iparams);
+    if (!instanceDgnElement0.IsValid())
+        return nullptr;
+
+    PhysicalElementPtr instanceElement0 = instanceDgnElement0->ToPhysicalElementP();
+    if (!instanceElement0.IsValid())
+        {
+        status = DgnDbStatus::WrongClass;
+        BeAssert(false);
+        return nullptr;
+        }
+
+    // *** WIP_CLONE - work-around problem with CreateParams slicing
+    instanceElement0->SetPlacement(placement);
+
+    DgnElementCPtr instanceDgnElement = instanceElement0->Insert(&status);
+    if (!instanceDgnElement.IsValid())
+        return nullptr;
+
+    PhysicalElementCPtr instanceElement = instanceDgnElement->ToPhysicalElement();
+    if (!instanceElement.IsValid())
+        {
+        status = DgnDbStatus::WrongClass;
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return instanceElement;
+    }
