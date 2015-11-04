@@ -71,8 +71,8 @@ struct GeoKeyItem
         }
     };
 
-virtual bool            GetFirstKey(GeoKeyItem* po_Key)=0;
-virtual bool            GetNextKey(GeoKeyItem* po_Key)=0;
+    virtual bool            GetFirstKey(GeoKeyItem* po_Key) const=0;
+    virtual bool            GetNextKey(GeoKeyItem* po_Key) const=0;
 
 virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value)=0;
 virtual void            AddKey (unsigned short pi_KeyID, double pi_value)=0;

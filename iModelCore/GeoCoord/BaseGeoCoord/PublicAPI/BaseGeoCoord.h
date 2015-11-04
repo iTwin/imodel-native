@@ -468,9 +468,9 @@ WktFlavor               wktFlavor
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         InitFromGeoTiffKeys
 (
-StatusInt*              warning,
-WStringP                warningErrorMsg,
-::IGeoTiffKeysList*     geoTiffKeys
+StatusInt*                  warning,
+WStringP                    warningErrorMsg,
+::IGeoTiffKeysList const*   geoTiffKeys
 );
 
 /*__PUBLISH_SECTION_END__*/

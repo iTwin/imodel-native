@@ -2895,7 +2895,7 @@ StatusInt       Process
 BaseGCSR                outGCS,
 StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
 WStringP                warningOrErrorMsg,  // Error message.
-IGeoTiffKeysList&       geoTiffKeys         // The GeoTiff key list
+IGeoTiffKeysList const& geoTiffKeys         // The GeoTiff key list
 )
     {
     if (NULL != warning)
@@ -5639,9 +5639,9 @@ WktFlavor           wktFlavor           // The WKT Flavor.
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       BaseGCS::InitFromGeoTiffKeys
 (
-StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
+StatusInt*              warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
 WStringP                warningOrErrorMsg,  // Error message.
-IGeoTiffKeysList*       geoTiffKeys         // The GeoTiff key list
+IGeoTiffKeysList const* geoTiffKeys         // The GeoTiff key list
 )
     {
     // The GeoTiffKeyInterpreter maintains state while parsing the geoTiffKeys, and we can have private methods without having to put then on BaseGCS.
