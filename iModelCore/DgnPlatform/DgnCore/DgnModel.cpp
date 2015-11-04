@@ -1686,6 +1686,7 @@ static DgnDbStatus createInstanceOfTemplateRelationship(DgnElementCR inst, DgnEl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
+#ifndef NDEBUG
 static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instanceId)
     {
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
@@ -1700,6 +1701,7 @@ static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instan
 
     return statement->GetValueId<DgnElementId>(0);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15

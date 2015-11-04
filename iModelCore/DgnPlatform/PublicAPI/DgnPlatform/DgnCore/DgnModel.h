@@ -912,15 +912,15 @@ private:
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
 
 protected:
+    //! @private
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
+    //! @private
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
 
+    //! @private
     DgnElement::Code CreateCatalogItemCode(Utf8StringCR slnId);
 
-    //! Extract the current solution from this ComponentModel and store it in the form of one or more items in the specified output model.
-    //! @param[out] status      An error code is stored here in case the creation of the item fails.
-    //! @param[in] catalogModel The output catalog model, where the harvested solution item(s) is(are) stored.
-    //! @return The item generated to hold the solution results. If more than one element was created, this is the parent.
+    //! @private
     DGNPLATFORM_EXPORT PhysicalElementCPtr HarvestSolution(DgnDbStatus& status, PhysicalModelR catalogModel, Utf8StringCR solutionName, DgnElement::Code const& icode);
 
 public:
@@ -956,6 +956,7 @@ public:
     //! If the solution has already been captured, this function will return the previously created Item.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the item fails.
     //! @param[in] catalogModel The output catalog model, where the harvested solution item(s) is(are) stored.
+    //! @param[in] parameters   The parameters that should be used to generate the solution
     //! @return The Item generated to hold the solution results. If more than one element was created, this is the parent.
     DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters);
 

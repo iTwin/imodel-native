@@ -2865,6 +2865,9 @@ PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, PhysicalMode
         return nullptr;
         }
 
+    // *** WIP_CLONE - work-around problem with CreateParams slicing
+    instanceElement0->SetPlacement(placement);
+
     DgnElementCPtr instanceDgnElement = instanceElement0->Insert(&status);
     if (!instanceDgnElement.IsValid())
         return nullptr;

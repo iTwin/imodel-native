@@ -19,8 +19,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 #define TEST_JS_NAMESPACE    "ComponentModelPerfTest"
 #define TEST_JS_NAMESPACE_W L"ComponentModelPerfTest"
-#define TEST_WIDGET_COMPONENT_NAME "Widget"
-#define TEST_GADGET_COMPONENT_NAME "Gadget"
+#define TEST_BOXES_COMPONENT_NAME "Boxes"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
@@ -101,33 +100,6 @@ struct FakeScriptLibrary : ScopedDgnHost::FetchScriptCallback
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void checkGeomStream(GeometricElementCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
-    {
-    //  Verify that item generated a line
-    size_t count=0;
-    for (ElementGeometryPtr geom : ElementGeometryCollection (gel))
-        {
-        ASSERT_EQ( exptectedType , geom->GetGeometryType() );
-        ++count;
-        }
-    ASSERT_EQ( expectedCount , count );
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void checkSlabDimensions(GeometricElementCR el, double expectedX, double expectedY, double expectedZ)
-    {
-    DgnBoxDetail box;
-    ASSERT_TRUE( (*(ElementGeometryCollection(el).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
-    ASSERT_EQ( expectedX, box.m_baseX );
-    ASSERT_EQ( expectedY, box.m_baseY );
-    ASSERT_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const& allowedClasses)
@@ -148,7 +120,6 @@ struct ComponentModelPerfTest : public testing::Test
 {
 protected:
 BeFileName         m_componentDbName;
-BeFileName         m_componentSchemaFileName;
 BeFileName         m_clientDbName;
 DgnDbPtr           m_componentDb;
 DgnDbPtr           m_clientDb;
@@ -163,10 +134,11 @@ void OpenComponentDb(DgnDb::OpenMode mode) {openDb(m_componentDb, m_componentDbN
 void CloseComponentDb() {m_componentDb->CloseDb(); m_componentDb=nullptr;}
 void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode);}
 void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
-void Developer_TestWidgetSolver();
-void Developer_TestGadgetSolver();
 void Client_ImportCM(Utf8CP componentName);
 void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+
+void PlaceInstances(int ninstances, int boxCount, DPoint3d boxSize);
+void PlaceElements(int ninstances, int boxCount, DPoint3d boxSize);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -200,7 +172,7 @@ DgnCategoryId ComponentModelPerfTest::Developer_CreateCategory(Utf8CP code, Colo
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This function defines 2 ComponenModels: a Widget and a Gadget.
+* This function defines 2 ComponenModels: a Boxes and a TwentyBoxes.
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelPerfTest::Developer_CreateCMs()
@@ -210,36 +182,23 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     ASSERT_TRUE(m_componentDb.IsValid());
 
     // Define the CM's Element Category (in the CM's DgnDb). Use the same name as the component model. 
-    ASSERT_TRUE( Developer_CreateCategory("Widget", ColorDef(0xff,0x00,0x00)).IsValid() );
-    ASSERT_TRUE( Developer_CreateCategory("Gadget", ColorDef(0x00,0xff,0x00)).IsValid() );
+    ASSERT_TRUE( Developer_CreateCategory("Boxes", ColorDef(0xff,0x00,0x00)).IsValid() );
 
     // Define the Solver wparameters for use by this model.
     ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
     ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
     bvector<ModelSolverDef::Parameter> wparameters;
-    wparameters.push_back(ModelSolverDef::Parameter("X", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("Y", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("Z", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("Other", ip, ECN::ECValue("Something else")));
-    ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Widget", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
-    bvector<ModelSolverDef::Parameter> gparameters; 
-    gparameters.push_back(ModelSolverDef::Parameter("Q", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(ModelSolverDef::Parameter("R", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(ModelSolverDef::Parameter("T", ip, ECN::ECValue("Some other parm")));
-    ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
+    wparameters.push_back(ModelSolverDef::Parameter("H", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("D", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("box_count", tp, ECN::ECValue(1.0)));
+    ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Boxes", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
 
     // Create the models
-    ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "", wsolver);     // *** WIP_COMPONENT_MODEL Authority
+    ComponentModel::CreateParams wparms(*m_componentDb, TEST_BOXES_COMPONENT_NAME, "dgn.PhysicalElement", "Boxes", "", wsolver);
     ComponentModelPtr wcm = new ComponentModel(wparms);
     ASSERT_TRUE( wcm->IsValid() );
     ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );       /* Insert the new model into the DgnDb */
-
-    ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "", gsolver);     // *** WIP_COMPONENT_MODEL Authority
-    gparms.SetSolver(gsolver);
-    ComponentModelPtr gcm = new ComponentModel(gparms);
-    ASSERT_TRUE( gcm->IsValid() );
-    ASSERT_EQ( DgnDbStatus::Success , gcm->Insert() );       /* Insert the new model into the DgnDb */
 
     // Here is the model solver that should be used. 
     // Note that we must put it into the Script library under the same name that was used in the model definition above.
@@ -247,111 +206,26 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     // Note that a script will generally create elements from scratch. That's why it starts by deleting all elements in the model. They would have been the outputs of the last run.
     AddToFakeScriptLibrary(TEST_JS_NAMESPACE, 
 "(function () { \
-    function widgetSolver(model, params, options) { \
+    function makeBoxes(model, params, options) { \
         model.DeleteAllElements();\
-        var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
-        var origin = new BentleyApi.Dgn.JsDPoint3d(1,2,3);\
         var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
-        var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
-        builder.AppendBox(params['X'], params['Y'], params['Z']); \
-        builder.SetGeomStreamAndPlacement(element); \
-        element.Insert(); \
-        var element2 = model.CreateElement('dgn.PhysicalElement', options.Category);\
-        var origin2 = new BentleyApi.Dgn.JsDPoint3d(10,12,13);\
-        var angles2 = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
-        var builder2 = new BentleyApi.Dgn.JsElementGeometryBuilder(element2, origin2, angles2); \
-        builder2.AppendBox(params['X'], params['Y'], params['Z']); \
-        builder2.SetGeomStreamAndPlacement(element2); \
-        element2.Insert(); \
-        element.SetParent(element2);\
-        element.Update();\
+        for (var i = 0; i < params.box_count; i++)\
+            {\
+            var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
+            var origin = new BentleyApi.Dgn.JsDPoint3d(i,i,i);\
+            var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
+            builder.AppendBox(params.H, params.W, params.D); \
+            builder.SetGeomStreamAndPlacement(element); \
+            element.Insert(); \
+            }\
         return 0;\
     } \
-    function gadgetSolver(model, params, options) { \
-        model.DeleteAllElements();\
-        var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
-        var origin = new BentleyApi.Dgn.JsDPoint3d(0,0,0);\
-        var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,45);\
-        var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
-        builder.AppendBox(params['Q'], params['W'], params['R']); \
-        builder.SetGeomStreamAndPlacement(element); \
-        element.Insert(); \
-        return 0;\
-    } \
-    BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Widget" "', widgetSolver); \
-    BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Gadget" "', gadgetSolver); \
+    BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Boxes" "', makeBoxes); \
 })();\
 ");
     ASSERT_TRUE( wcm.IsValid() );
-    ASSERT_TRUE( gcm.IsValid() );
 
     m_componentDb->SaveChanges(); // should trigger validation
-
-    CloseComponentDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelPerfTest::Developer_TestWidgetSolver()
-    {
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-
-    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_WIDGET_COMPONENT_NAME);
-    ASSERT_TRUE( cm.IsValid() );
-
-    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
-
-    for (int i=0; i<10; ++i)
-        {
-        params.GetParameterP("X")->SetValue(ECN::ECValue(1*i));
-        params.GetParameterP("Y")->SetValue(ECN::ECValue(2*i));
-        params.GetParameterP("Z")->SetValue(ECN::ECValue(3*i));
-
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
-    
-        cm->FillModel();
-        ASSERT_EQ( 2 , countElementsInModel(*cm) );
-
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(),  params.GetParameter("X")->GetValue().GetDouble(), 
-                                                        params.GetParameter("Y")->GetValue().GetDouble(),
-                                                        params.GetParameter("Z")->GetValue().GetDouble());
-        }
-
-    CloseComponentDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelPerfTest::Developer_TestGadgetSolver()
-    {
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-
-    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_GADGET_COMPONENT_NAME);
-    ASSERT_TRUE( cm.IsValid() );
-
-    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
-
-    for (int i=0; i<10; ++i)
-        {
-        params.GetParameterP("Q")->SetValue(ECN::ECValue(1*i));
-        params.GetParameterP("W")->SetValue(ECN::ECValue(2*i));
-        params.GetParameterP("R")->SetValue(ECN::ECValue(3*i));
-
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
-    
-        cm->FillModel();
-        ASSERT_EQ( 1 , countElementsInModel(*cm) );
-
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(),  params.GetParameter("Q")->GetValue().GetDouble(), 
-                                                        params.GetParameter("W")->GetValue().GetDouble(),
-                                                        params.GetParameter("R")->GetValue().GetDouble());
-        }
 
     CloseComponentDb();
     }
@@ -421,37 +295,30 @@ void ComponentModelPerfTest::Client_SolveAndCapture(PhysicalElementCPtr& catalog
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-static void insertBoxElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId)
+static void insertBoxesElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
     {
     PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
 
-    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
-    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
-    ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, placementOrigin, YawPitchRollAngles());
+    for (auto const& originOfBlock : originsOfBlocks)
+        {
+        DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(originOfBlock, sizeOfBlock, true);
+        ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
+        builder->Append(*testGeomPtr);
+        }
 
-    DPoint3d centerOfBlock = DPoint3d::From(0, 0, 0);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, centerOfBlock, YawPitchRollAngles());
-    builder->Append(*testGeomPtr);
     builder->SetGeomStreamAndPlacement(*testElement);
 
     eid = physicalTestModel.GetDgnDb().Elements().Insert(*testElement)->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* count to be used by all placement performance tests
-+---------------+---------------+---------------+---------------+---------------+------*/
-static const int ninstances = 100000;
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComponentModelPerfTest, Performance_PlaceInstances)
+void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint3d boxSize)
     {
-    // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceInstances.idgndb");
-    BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
-    m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
+    ASSERT_TRUE(m_componentDbName.DoesPathExist());
+    ASSERT_TRUE(m_clientDbName.DoesPathExist());
 
     // Create component models (in component db)
     Developer_CreateCMs();
@@ -470,57 +337,100 @@ TEST_F(ComponentModelPerfTest, Performance_PlaceInstances)
     timer.Start();
 
     //  Import the component model
-    Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
+    Client_ImportCM(TEST_BOXES_COMPONENT_NAME);
 
     //  Cache a solution
-    Json::Value wsln1(Json::objectValue);
-    wsln1["X"] = 10;
-    wsln1["Y"] = 11;
-    wsln1["Z"] = 12;
+    Json::Value parameters(Json::objectValue);
+    parameters["H"] = boxSize.x;
+    parameters["W"] = boxSize.y;
+    parameters["D"] = boxSize.z;
+    parameters["box_count"] = boxCount;
     DgnElementId w1;
     PhysicalElementCPtr catalogItem;
-    Client_SolveAndCapture(catalogItem, *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
+    Client_SolveAndCapture(catalogItem, *catalogModel, TEST_BOXES_COMPONENT_NAME, parameters, false);
 
     DgnDbStatus status;
-    DPoint3d placementOrigin = DPoint3d::From(1,2,3);
-    YawPitchRollAngles placementAngles = YawPitchRollAngles::FromDegrees(4,5,6);
+    YawPitchRollAngles placementAngles;
 
     //  Place instances of this solution
     for (int i=0; i<ninstances; ++i)
         {
+        DPoint3d placementOrigin = DPoint3d::From(-i,-i,-i);
         ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem, placementOrigin, placementAngles, DgnElement::Code());
         }
     timer.Stop();
     NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
 
     m_clientDb->SaveChanges();
-    // 1,298,432 ComponentModelTest_Performance_PlaceInstances.idgndb
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ComponentModelPerfTest, Performance_PlaceElements)
+void ComponentModelPerfTest::PlaceElements(int ninstances, int boxCount, DPoint3d boxSize)
     {
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceElements.idgndb");
+    ASSERT_TRUE(m_clientDbName.DoesPathExist());
+
     OpenClientDb(Db::OpenMode::ReadWrite);
+    
     PhysicalModelPtr targetModel;
     createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
     DgnCategoryId someCat = DgnCategory::QueryFirstCategoryId(*m_clientDb);
+
+    bvector<DPoint3d> originsOfBoxes;
+    for (int i=0; i<boxCount; ++i)
+        originsOfBoxes.push_back(DPoint3d::From(i,i,i));
+
     StopWatch timer("place components");
     timer.Start();
     for (int i=0; i<ninstances; ++i)
         {
+        DPoint3d placementOrigin = DPoint3d::From(-i,-i,-i);
         DgnElementId eid;
-        insertBoxElement(eid, *targetModel, someCat);
-        insertBoxElement(eid, *targetModel, someCat);   // (place Widget component creates an instance of two boxes, so we place two boxes here, to make it comparable)
+        insertBoxesElement(eid, *targetModel, someCat, placementOrigin, boxSize, originsOfBoxes);
         }
     timer.Stop();
     NativeLogging::LoggingManager::GetLogger("Performance")->infov("place %d plain physical elements: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
     
     m_clientDb->SaveChanges();
-
-    // 1,781,760 ComponentModelTest_Performance_PlaceElements.idgndb
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelPerfTest, PlaceInstances_TwoBoxes)
+    {
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component2.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceInstances2.idgndb");
+    PlaceInstances(100000, 2, DPoint3d::From(10,12,13));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelPerfTest, PlaceElements_TwoBoxes)
+    {
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceElements2.idgndb");
+    PlaceElements(100000, 2, DPoint3d::From(10,12,13));
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelPerfTest, PlaceInstances_TwentyBoxes)
+    {
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component20.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceInstances20.idgndb");
+    PlaceInstances(100000, 20, DPoint3d::From(10,12,13));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelPerfTest, PlaceElements_TwentyBoxes)
+    {
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceElements20.idgndb");
+    PlaceElements(100000, 20, DPoint3d::From(10,12,13));
+    };
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
