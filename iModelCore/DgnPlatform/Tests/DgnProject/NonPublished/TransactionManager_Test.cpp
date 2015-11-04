@@ -957,6 +957,39 @@ struct DynamicTxnsTest : TransactionManagerTests
         T_Super::SetupProject(L"3dMetricGeneral.idgndb", testFileName, BeSQLite::Db::OpenMode::ReadWrite);
         m_db->Txns().EnableTracking(true);
         }
+
+    void InsertElement(bvector<DgnElementId>& ids)
+        {
+        static char s_code = 'A';
+        Utf8PrintfString code("%c", s_code++);
+        DgnElementCPtr elem = T_Super::InsertElement(code);
+        EXPECT_TRUE(elem.IsValid());
+        ids.push_back(elem->GetElementId());
+        }
+
+    size_t CountExistingElements(bvector<DgnElementId> const& ids)
+        {
+        size_t count = 0;
+        for (auto const& id : ids)
+            if (m_db->Elements().GetElement(id).IsValid())
+                ++count;
+
+        return count;
+        }
+    void ExpectAllExist(bvector<DgnElementId> const& ids)
+        {
+        EXPECT_EQ(ids.size(), CountExistingElements(ids));
+        }
+    void ExpectNoneExist(bvector<DgnElementId> const& ids)
+        {
+        EXPECT_EQ(0, CountExistingElements(ids));
+        }
+
+    struct AssertScope
+    {
+        AssertScope() { BeTest::SetFailOnAssert(false); }
+        ~AssertScope() { BeTest::SetFailOnAssert(true); }
+    };
 };
 
 END_UNNAMED_NAMESPACE
@@ -987,7 +1020,7 @@ TEST_F(DynamicTxnsTest, BasicInvariants)
     db.AbandonChanges();
     EXPECT_FALSE(txns.IsInDynamics());
 
-    BeTest::SetFailOnAssert(false);
+    AssertScope V_V_V_;
 
     // Saving changes is not permitted during dynamics
     txns.BeginDynamicOperation();
@@ -1004,7 +1037,33 @@ TEST_F(DynamicTxnsTest, BasicInvariants)
     EXPECT_EQ(DgnDbStatus::InDynamicTransaction, txns.EndMultiTxnOperation());
     txns.EndDynamicOperation();
     EXPECT_EQ(DgnDbStatus::Success, txns.EndMultiTxnOperation());
+    }
 
-    BeTest::SetFailOnAssert(true);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DynamicTxnsTest, DynamicTxns)
+    {
+    SetupProject(L"DynamicTxns.dgndb");
+
+    DgnDbR db = *m_db;
+    auto& txns = db.Txns();
+    bvector<DgnElementId> persistentElemIds,
+                          dynamicElemIds;
+                        
+    AssertScope V_V_V_;
+
+    // Elements created during dynamics are reverted afterward
+    // Dynamic txns have no effect on persistent txns
+    InsertElement(persistentElemIds);
+    ExpectAllExist(persistentElemIds);
+    txns.BeginDynamicOperation();
+    InsertElement(dynamicElemIds);
+    ExpectAllExist(dynamicElemIds);
+    ExpectAllExist(persistentElemIds);
+    txns.EndDynamicOperation();
+    ExpectNoneExist(dynamicElemIds);
+    InsertElement(persistentElemIds);
+    ExpectAllExist(persistentElemIds);
     }
 

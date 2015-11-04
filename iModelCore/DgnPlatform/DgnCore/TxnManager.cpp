@@ -1467,20 +1467,21 @@ void TxnManager::EndDynamicOperation(IDynamicChangeProcessor* processor)
         BeAssert(BE_SQLITE_OK == rc);
         UNUSED_VARIABLE(rc);
 
+        OnBeginValidate();
+
+        Changes changes(changeset);
+        AddChanges(changes);
+
         if (nullptr != processor)
             {
-            OnBeginValidate();
-
-            Changes changes(changeset);
-            AddChanges(changes);
-
             PropagateChanges();
             processor->_ProcessDynamicChanges();
-
-            OnEndValidate();
             }
 
-        CancelChanges(changeset);
+        OnEndValidate();
+
+        changeset.Invert();
+        ApplyChangeSet(changeset, TxnAction::Abandon);
         }
 
     m_dynamics.pop_back();
