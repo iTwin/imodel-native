@@ -41,7 +41,6 @@
     #define DLLLOCAL_ATTRIBUTE      __attribute__((visibility ("hidden")))
     #define CDECL_ATTRIBUTE
     #define STDCALL_ATTRIBUTE
-    #define SEALED_ATTRIBUTE
     #define THROW_SPECIFIER(X)      throw(X)
 
     #define ENUM_UNDERLYING_TYPE(T)   : T
@@ -81,7 +80,6 @@
     #define EXPORT_VTABLE_ATTRIBUTE   /* This is a GCC concept. In MSVC, it appears that the vtable and typeinfo of a class are always exported if the class contains any exported methods. */
     #define CDECL_ATTRIBUTE         __cdecl
     #define STDCALL_ATTRIBUTE       __stdcall
-    #define SEALED_ATTRIBUTE        sealed
     #define ENUM_UNDERLYING_TYPE(T)   : T
     #define THROW_SPECIFIER(X)
 
