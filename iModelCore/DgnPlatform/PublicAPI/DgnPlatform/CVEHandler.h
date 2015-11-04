@@ -8,11 +8,11 @@
 #pragma once
 
 //#include    <DgnPlatform/ViewHandler.h>   not in graphite
-#include    <DgnPlatform/DgnCore/DgnViewport.h>
-#include    <DgnPlatform/DgnCore/QvViewport.h>
+#include    <DgnPlatform/DgnViewport.h>
+#include    <DgnPlatform/QvViewport.h>
 //#include    <DgnPlatform/TemporaryDgnElement.h>
-#include    <DgnPlatform/DgnCore/XGraphics.h>
-#include    <DgnPlatform/DgnCore/DisplayStyleHandler.h>
+#include    <DgnPlatform/XGraphics.h>
+#include    <DgnPlatform/DisplayStyleHandler.h>
 #include    <DgnPlatform/ProxyDisplayCore.h>
 #include    <DgnPlatform/MSSmartPtr.h>
 //  #include    <DgnPlatform/Tcb/tcb.r.h>       // HLine settings.... => foreignformat
@@ -419,7 +419,7 @@ static bool IsProxyDisplayHandler (HandlerR);
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //__PUBLISH_SECTION_START__
-#include "DgnPlatform/DgnCore/IPickGeom.h"
+#include "DgnPlatform/IPickGeom.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE // added in graphite
 

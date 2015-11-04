@@ -3,7 +3,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/TextStyleInterop.h>
+#include <DgnPlatform/TextStyleInterop.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015

@@ -14,8 +14,8 @@
 #include <BeJavaScript/BeJavaScript.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnElement.h>
-#include <DgnPlatform/DgnCore/DgnModel.h>
+#include <DgnPlatform/DgnElement.h>
+#include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/GeomJsApi.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

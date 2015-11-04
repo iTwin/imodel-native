@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
-#include <DgnPlatform/DgnHandlers/DgnChangeSummary.h>
+#include <DgnPlatform/DgnChangeSummary.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_EC

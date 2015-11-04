@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnRscFontStructures.h>
+#include <DgnPlatform/DgnRscFontStructures.h>
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  12/07

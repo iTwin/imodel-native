@@ -8,7 +8,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
-#include <DgnPlatform/DgnCore/TextString.h>
+#include <DgnPlatform/TextString.h>
 #include "TextString.fb.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/GradientSettings.h>
+#include <DgnPlatform/GradientSettings.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley    03/04

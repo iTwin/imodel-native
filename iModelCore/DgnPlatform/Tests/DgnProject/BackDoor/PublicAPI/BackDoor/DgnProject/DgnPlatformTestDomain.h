@@ -8,12 +8,12 @@
 #pragma once
 
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnDomain.h>
-#include <DgnPlatform/DgnCore/DgnDb.h>
-#include <DgnPlatform/DgnCore/DgnElement.h>
-#include <DgnPlatform/DgnCore/DgnModel.h>
-#include <DgnPlatform/DgnCore/ElementHandler.h>
-#include <DgnPlatform/DgnCore/DgnElementDependency.h>
+#include <DgnPlatform/DgnDomain.h>
+#include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnElement.h>
+#include <DgnPlatform/DgnModel.h>
+#include <DgnPlatform/ElementHandler.h>
+#include <DgnPlatform/DgnElementDependency.h>
 
 #define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define DPTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"

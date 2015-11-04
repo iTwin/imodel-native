@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeJavaScript/BeJavaScript.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <Bentley/BeFileListIterator.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnPlatform/DgnPlatformApi.h>

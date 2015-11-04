@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#include <DgnPlatform/DgnCore/ImageUtilities.h>
+#include <DgnPlatform/ImageUtilities.h>
 
 #if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
 // See pngconf.h

@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/QvElemSet.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/QvElemSet.h>
+#include <DgnPlatform/DgnScript.h>
 
 #define DGN_ELEMENT_PROPNAME_ECINSTANCEID "ECInstanceId"
 #define DGN_ELEMENT_PROPNAME_MODELID "ModelId"

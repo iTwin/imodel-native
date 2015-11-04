@@ -9,7 +9,7 @@
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
-#include "DgnPlatform/DgnCore/Annotations/TextAnnotationDraw.h"
+#include "DgnPlatform/Annotations/TextAnnotationDraw.h"
 
 using namespace flatbuffers;
 

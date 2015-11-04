@@ -466,16 +466,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_AnnotationTable_Row</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>ElementId</string>
-                            <string>RowIndex</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="RowIndex"                     typeName="int"/>
@@ -489,16 +479,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_AnnotationTable_Column</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>ElementId</string>
-                            <string>ColumnIndex</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ColumnIndex"                  typeName="int"/>
@@ -517,17 +497,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_AnnotationTable_Cell</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>ElementId</string>
-                            <string>CellIndex.RowIndex</string>
-                            <string>CellIndex.ColumnIndex</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="CellIndex"              typeName="AnnotationTableCellIndex"/>
@@ -539,6 +508,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="MarginBottom"                 typeName="double)"/>
         <ECProperty propertyName="MarginLeft"                   typeName="double)"/>
         <ECProperty propertyName="MarginRight"                  typeName="double)"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableMerge" isDomainClass="True">
+        <!-- The aspect that holds properties describing merging of cells in an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="RootCell"               typeName="AnnotationTableCellIndex"/>
+        <ECProperty propertyName="RowSpan"                      typeName="int"/>
+        <ECProperty propertyName="ColumnSpan"                   typeName="int"/>
     </ECClass>
 
     <!-- An Item in (a catalog/template model) can hold a soultion of a ComponentModel. 
