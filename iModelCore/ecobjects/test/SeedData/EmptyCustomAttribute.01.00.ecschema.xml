@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="EmptyCustomAttribute" nameSpacePrefix="bp" version="1.0" description="Bentley.Plant" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECClass typeName="JS_Relationship" isStruct="True" isDomainClass="True" isCustomAttributeClass="True">
+    <ECClass typeName="JS_Relationship" isStruct="True" isDomainClass="false" isCustomAttributeClass="false">
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="InverseName" typeName="string" />
         <ECProperty propertyName="InheritValue" typeName="boolean" />
