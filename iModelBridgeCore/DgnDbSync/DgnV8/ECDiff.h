@@ -101,7 +101,7 @@ enum class DiffNodeId
     Class = 9,
     References = 10,
     IsCustomAttributeClass = 11,
-    IsDomainClass = 12,
+    IsEntityClass = 12,
     IsStruct = 13,
     BaseClass = 14,
     Reference = 15,
@@ -130,6 +130,8 @@ enum class DiffNodeId
     ConstraintClasses = 38,
     ConstraintClass = 39,
     NamespacePrefix = 40,
+    IsAbstract = 41,
+    IsSealed = 42
     };
 
 //======================================================================================
@@ -536,7 +538,7 @@ private:
     MergeStatus AppendPropertyToMerge(ECClassR mergeClass,ECPropertyCP property);
     MergeStatus AppendRelationshipToMerge(ECRelationshipClassR mergedRelationshipClass, ECRelationshipClassCR defaultRelationshipClass);
     MergeStatus AppendRelationshipClassToMerge(ECRelationshipClassR mergedClass, ECRelationshipClassCR defaultClass);
-    MergeStatus AppendRelationshipContstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint);
+    MergeStatus AppendRelationshipConstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint);
     MergeStatus AppendCustomAttributesToMerge (IECCustomAttributeContainerR mergeContainer, IECCustomAttributeContainerCR defaultContainer);
 
     ECClassCP ResolveClass (Utf8StringCR classFullName);
