@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+Microsoft Visual Studio Solution File, Format Version 14.00
+# Visual Studio 2015
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68CC97D2-9BA6-4023-8C6C-BF279858566A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsNative", "src\ECObjectsNative.vcxproj", "{01917E3B-2174-4AC9-860E-BAAAA15C606D}"
