@@ -9,7 +9,7 @@
 #include "PerformanceTestFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/ECUtils.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeNumerical.h>
 #include <Logging/bentleylogging.h>
@@ -185,7 +185,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     ASSERT_TRUE( Developer_CreateCategory("Boxes", ColorDef(0xff,0x00,0x00)).IsValid() );
 
     // Define the Solver wparameters for use by this model.
-    ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
+    //ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
     ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
     bvector<ModelSolverDef::Parameter> wparameters;
     wparameters.push_back(ModelSolverDef::Parameter("H", tp, ECN::ECValue(1.0))); 
@@ -327,11 +327,11 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
 
     //  Create the catalog model in the client.
     PhysicalModelPtr catalogModel;
-    createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
 
     //  Create the target model in the client.
     PhysicalModelPtr targetModel;
-    createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
+    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     StopWatch timer("place components");
     timer.Start();
