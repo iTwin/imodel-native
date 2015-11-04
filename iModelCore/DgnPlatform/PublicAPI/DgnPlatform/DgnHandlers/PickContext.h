@@ -82,7 +82,7 @@ private:
 
     virtual bool _CheckStop() override;
     virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override;
-    virtual Render::GraphicPtr _OutputElement(GeometricElementCR) override;
+    virtual void _OutputElement(GeometricElementCR) override;
     virtual void _DrawAreaPattern(ViewContext::ClipStencil& boundary) override;
     virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*) override;
     virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;

@@ -425,7 +425,6 @@ protected:
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
-    ColorDef        m_backgroundColor;
     Render::TargetPtr m_renderTarget;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
@@ -466,7 +465,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
     virtual Render::RenderDevice* _GetRenderDevice() const = 0;
     virtual uintptr_t _GetBackDropTextureId() {return 0;}
-    DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
+    DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
 
@@ -490,9 +489,7 @@ public:
     DGNPLATFORM_EXPORT Point2d GetScreenOrigin() const;
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
     void ClearNeedsRefresh() {m_needsRefresh = false;}
-    void SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_backgroundColor.SetAlpha(0);}
     void AlignWithRootZ();
-    DGNPLATFORM_EXPORT ColorDef GetWindowBgColor() const;
     DGNPLATFORM_EXPORT double GetMinimumLOD() const;
     IProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
@@ -577,7 +574,7 @@ public:
 /** @{ */
     //! Get the RGB color of the background for this DgnViewport.
     //! @return background RGB color
-    ColorDef GetBackgroundColor() const {return m_backgroundColor;}
+    ColorDef GetBackgroundColor() const {return _GetBackgroundColor();}
 
     //! @return either white or black, whichever has more contrast to the background color of this DgnViewport.
     DGNPLATFORM_EXPORT ColorDef GetContrastToBackgroundColor() const;
@@ -877,7 +874,7 @@ struct NonVisibleViewport : DgnViewport
 {
 protected:
     virtual Render::RenderDevice* _GetRenderDevice() const override {return nullptr;}
-    virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
+    virtual ColorDef _GetBackgroundColor() const override {return ColorDef::Black();}
     virtual StatusInt _ConnectRenderTarget() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}
     virtual BSIRect _GetClientRect() const override

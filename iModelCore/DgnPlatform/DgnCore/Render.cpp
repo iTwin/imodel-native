@@ -38,16 +38,33 @@ void Render::Scene::_Clear()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::Graphic* CreateSceneContext::_GetCachedGraphic(double pixelSize) 
+    {
+    return m_currGeomElement->Graphics().FindFor(*GetViewport(), pixelSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void CreateSceneContext::_SaveGraphic()
+    {
+    if (!m_currGraphic.IsValid())
+        return;
+
+    m_currGraphic->FinishDrawing(); // save the graphic on the element, even if this fails so we don't attempt to stroke it again.
+    m_currGeomElement->Graphics().Save(*m_currGraphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr CreateSceneContext::_OutputElement(GeometricElementCR element)
+void CreateSceneContext::_OutputElement(GeometricElementCR element)
     {
-    Render::GraphicPtr graphic = element.GetGraphicFor(*this, true);
-
-    if (graphic.IsValid())
-        m_scene.AddGraphic(*graphic);
-
-    return graphic;
+    T_Super::_OutputElement(element);
+    if (m_currGraphic.IsValid())
+        m_scene.AddGraphic(*m_currGraphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,11 +72,13 @@ GraphicPtr CreateSceneContext::_OutputElement(GeometricElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CreateSceneContext::CreateScene(DgnViewportR vp)
     {
+    m_scene.Clear();
+
     InitAborted(false);
 
     vp.GetViewControllerR()._OnFullUpdate(vp, *this);
 
-    if (SUCCESS != _Attach(&vp, DrawPurpose::Update))
+    if (SUCCESS != _Attach(&vp, DrawPurpose::CreateScene))
         return true;
 
     VisitAllViewElements(true, nullptr);

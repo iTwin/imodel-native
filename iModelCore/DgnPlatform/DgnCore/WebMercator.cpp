@@ -902,8 +902,6 @@ static bool shouldDraw (ViewContextR context)
         {
         case DrawPurpose::Hilite:
         case DrawPurpose::Unhilite:
-        case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
-        case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
         case DrawPurpose::Pick:
         case DrawPurpose::Flash:
         case DrawPurpose::CaptureGeometry:

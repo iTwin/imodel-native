@@ -2980,34 +2980,6 @@ void GeometricElement::_Stroke(ViewContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr GeometricElement::GetGraphicFor(ViewContextR context, bool useCached) const
-    {
-    DgnViewportCR vp = *context.GetViewport();
-
-    DgnElement3dCP el3d = ToElement3d();
-    double pixelSize = (nullptr != el3d) ? vp.GetPixelSizeAtPoint(&el3d->GetPlacement().GetOrigin()) : 0.0;
-
-    if (useCached)
-        {
-        Render::GraphicP cached = m_graphics.FindFor(vp, pixelSize);
-        if (nullptr != cached)
-            return cached;
-        }
-
-    Transform placementTrans = el3d ? el3d->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform();
-
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(&vp, &placementTrans, pixelSize));
-    vp.GetViewControllerR()._StrokeElement(context, *this);
-
-    if (useCached)
-        m_graphics.Save(*graphic);
-
-    return graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometricElement::_DrawHit(HitDetailCR hit, ViewContextR context) const

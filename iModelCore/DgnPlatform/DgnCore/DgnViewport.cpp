@@ -47,7 +47,6 @@ DgnViewport::DgnViewport()
     m_invertY           = true;
     m_frustumValid      = false;
     m_toolGraphicsHandler = nullptr;
-    m_backgroundColor   = ColorDef::Black();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,7 +68,7 @@ void DgnViewport::InitViewSettings(bool useBgTexture)
     {
     BeAssert(m_renderTarget.IsValid());
 
-    m_renderTarget->SetViewAttributes(GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
+    m_renderTarget->SetViewAttributes(GetViewFlags(), GetBackgroundColor(), useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
     m_targetParamsSet = true;
     }
 
@@ -391,7 +390,6 @@ StatusInt DgnViewport::_ConnectRenderTarget()
     if (SUCCESS == status)
         m_deviceAssigned = true;
 
-    m_backgroundColor = _GetWindowBgColor();
     return status;
     }
 
@@ -1184,7 +1182,8 @@ bool DgnViewport::UseClipVolume(DgnModelCP modelRef) const
 ColorDef DgnViewport::GetContrastToBackgroundColor() const
     {
     // should we use black or white
-    bool    invert  = ((m_backgroundColor.GetRed() + m_backgroundColor.GetGreen() + m_backgroundColor.GetBlue()) > (255*3)/2);
+    ColorDef bgColor = GetBackgroundColor();
+    bool    invert  = ((bgColor.GetRed() + bgColor.GetGreen() + bgColor.GetBlue()) > (255*3)/2);
     return  invert ? ColorDef::Black()  : ColorDef::White();
     }
 
@@ -1341,7 +1340,7 @@ void DgnViewport::PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, Rot
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::_GetWindowBgColor() const
+ColorDef DgnViewport::_GetBackgroundColor() const
     {
     if (!m_viewController.IsValid())
         return ColorDef::Black();

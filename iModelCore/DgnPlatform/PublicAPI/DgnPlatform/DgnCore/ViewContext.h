@@ -271,11 +271,11 @@ protected:
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
-    DgnElementPtr           m_currentElement;
     ScanCriteriaP           m_scanCriteria;
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
+    GeometricElementCP      m_currGeomElement;
     Render::GraphicPtr      m_currGraphic;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
@@ -293,7 +293,9 @@ protected:
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _OutputElement(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR);
+    virtual Render::Graphic* _GetCachedGraphic(double pixelSize) {return nullptr;}
+    virtual void _SaveGraphic() {}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*);
@@ -330,7 +332,6 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT virtual void _SetCurrentElement(GeometricElementCP);
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT ViewContext();
     DGNPLATFORM_EXPORT virtual ~ViewContext();
@@ -352,7 +353,7 @@ public:
     StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
     void Detach() {_Detach();}
     bool VisitAllModelElements(bool includeTransients) {return _VisitAllModelElements(includeTransients);}
-    DGNPLATFORM_EXPORT bool VisitAllViewElements(bool includeTransients, BSIRectCP updateRect); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
+    DGNPLATFORM_EXPORT bool VisitAllViewElements(bool includeTransients, BSIRectCP updateRect);
     DGNPLATFORM_EXPORT StatusInt VisitHit(HitDetailCR hit);
     void VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
     DGNPLATFORM_EXPORT void DrawBox(DPoint3dP box, bool is3d);
@@ -379,7 +380,7 @@ public:
     void SetScanReturn() {_SetScanReturn();}
 
 public:
-    Render::GraphicPtr BeginGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return m_currGraphic=_BeginGraphic(params);}
+    Render::GraphicPtr BeginGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _BeginGraphic(params);}
     StatusInt VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
@@ -549,15 +550,15 @@ public:
     //! Get the DgnDb for this ViewContext.
     DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 
-    //! Get the current persistent element being visited by this ViewContext.
-    GeometricElementCP GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometricElement() : nullptr);}
+    //! Get the current Geometric element being visited by this ViewContext.
+    GeometricElementCP GetCurrentElement() const {return m_currGeomElement;}
 
     /** @cond BENTLEY_SDK_Scope1 */
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
 
     //! Set or clear the current persistent element.
-    void SetCurrentElement(GeometricElementCP element) {_SetCurrentElement(element);}
+    void SetCurrentElement(GeometricElementCP element) {m_currGeomElement = element;}
     /** @endcond */
 
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
@@ -597,7 +598,6 @@ public:
     //! Get the current ElemDisplayParams.
     //! @return the current ElemDisplayParams.
     Render::ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
-
 
     //! Clears current override flags and re-applies context overrides.
     //! @note Calls ActivateOverrideMatSymb on the output.
@@ -713,7 +713,9 @@ struct CreateSceneContext : ViewContext
     DEFINE_T_SUPER(ViewContext);
 private:
     Render::Scene& m_scene;
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _OutputElement(GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual Render::Graphic* _GetCachedGraphic(double pixelSize) override;
+    DGNPLATFORM_EXPORT virtual void _SaveGraphic() override;
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_scene.GetRenderTarget().CreateGraphic(params);}
 
 public:

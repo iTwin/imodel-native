@@ -161,8 +161,6 @@ public:
     void AddElement(Entry const&);
     void AddGeomElement(GeometricElementCR geom){AddElement(Entry(geom.CalculateRange3d(), geom));}
     StatusInt RemoveElement(Entry const&);
-
-    DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);
 };
 
 END_BENTLEY_DGN_NAMESPACE

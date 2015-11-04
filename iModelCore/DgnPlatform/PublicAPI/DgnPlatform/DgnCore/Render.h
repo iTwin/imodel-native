@@ -808,15 +808,14 @@ struct Graphic : RefCounted<NonCopyableClass>
     struct CreateParams
     {
         DgnViewportCP m_vp;
-        TransformCP  m_placement;
-        double       m_pixelSize;
-        CreateParams(DgnViewportCP vp=nullptr, TransformCP placement=nullptr, double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
+        Transform     m_placement;
+        double        m_pixelSize;
+        CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
 
 protected:
     DgnViewportCP m_vp;
-    Transform    m_placement;
-    double       m_pixelSize;
+    double        m_pixelSize;
 
     virtual StatusInt _FinishDrawing() {return SUCCESS;}
     virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) = 0;
@@ -849,10 +848,8 @@ protected:
     virtual ~Graphic() {}
 
 public:
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize) 
-        {
-        m_placement = params.m_placement ? *params.m_placement : Transform::FromIdentity(); 
-        }
+    StatusInt FinishDrawing() {return _FinishDrawing();}
+    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize) {}
 
     bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
 
@@ -1014,8 +1011,7 @@ protected:
     virtual void _DrawTiledRaster(ITiledRaster* tiledRaster) = 0;
     virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
-    virtual void _BeginScene() {Clear();}
-    virtual void _FinishScene() = 0;
+    virtual void _Render() = 0;
     virtual Target& _GetRenderTarget() = 0;
     DGNPLATFORM_EXPORT virtual void _AddGraphic(Graphic& graphic);
     DGNPLATFORM_EXPORT virtual void _DropGraphic(Graphic& graphic);
@@ -1069,6 +1065,7 @@ public:
     void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
     void DropGraphic(Graphic& graphic) {_DropGraphic(graphic);}
     void Clear() {_Clear();}
+    void Render() {return _Render();}
 
     Target& GetRenderTarget() {return _GetRenderTarget();}
 

@@ -60,7 +60,6 @@ DG_INLINE double DgnViewport::GetMinimumLOD() const {return _GetMinimumLOD();}
 DG_INLINE BSIRect DgnViewport::GetClientRect() const {return _GetClientRect();}
 DG_INLINE Point2d DgnViewport::GetScreenOrigin() const {return _GetScreenOrigin();}
 DG_INLINE DVec2d DgnViewport::GetDpiScale() const    {return _GetDpiScale();}
-DG_INLINE ColorDef DgnViewport::GetWindowBgColor() const {return _GetWindowBgColor();}
 DG_INLINE ColorDef DgnViewport::GetHiliteColor() const {return _GetHiliteColor();}
 DG_INLINE StatusInt DgnViewport::RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return _RefreshViewport(always, synchHealingFromBs, stopFlag);}
 DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, fixedRepetitions);}

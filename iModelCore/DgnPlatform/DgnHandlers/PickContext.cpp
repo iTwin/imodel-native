@@ -1201,7 +1201,7 @@ void PickContext::_OnPreDrawTransient()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr PickContext::_OutputElement(GeometricElementCR element)
+void PickContext::_OutputElement(GeometricElementCR element)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
@@ -1210,7 +1210,7 @@ GraphicPtr PickContext::_OutputElement(GeometricElementCR element)
 #endif
 
     // do per-element test
-    return T_Super::_OutputElement(element);
+    T_Super::_OutputElement(element);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Reset hit priority override in case it's been set...

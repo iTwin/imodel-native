@@ -1387,7 +1387,6 @@ public:
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const; //!< Default snap using CurvePrimitive in HitDetail.
     DGNPLATFORM_EXPORT virtual void _Stroke(ViewContextR context) const override;
-    DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphicFor(ViewContextR context, bool useCache) const;
     bool HasGeometry() const {return m_geom.HasGeometry();} //!< return false if this GeometricElement currently has no geometry (is empty).
     bool IsPlacementValid() const {return _IsPlacementValid(); }
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}

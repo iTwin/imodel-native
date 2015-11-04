@@ -221,14 +221,6 @@ void ViewContext::_PopTransformClip()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetCurrentElement(GeometricElementCP element)
-    {
-    m_currentElement = (DgnElementP) element;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
     m_dgnDb = &dgnDb;
@@ -300,7 +292,7 @@ void ViewContext::_Detach()
     m_isAttached = false;
 
     m_transformClipStack.PopAll(*this);
-    m_currentElement = nullptr;
+    m_currGeomElement = nullptr;
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_currGraphic.IsValid())
@@ -540,9 +532,30 @@ bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::_OutputElement(GeometricElementCR element)
+void ViewContext::_OutputElement(GeometricElementCR element)
     {
-    return element.GetGraphicFor(*this, false);
+    m_currGeomElement = &element;
+    m_currGraphic = nullptr;
+
+    if (!element.HasGeometry())
+        return;
+
+    DgnElement3dCP el3d = element.ToElement3d();
+    Transform placementTrans = el3d ? el3d->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform();
+
+    DPoint3d origin;
+    placementTrans.GetTranslation(origin);
+
+    DgnViewportCR vp = *GetViewport();
+    double pixelSize = vp.GetPixelSizeAtPoint(&origin);
+
+    m_currGraphic = _GetCachedGraphic(pixelSize);
+    if (m_currGraphic.IsValid())
+        return;
+
+    m_currGraphic = _BeginGraphic(Graphic::CreateParams(&vp, placementTrans, pixelSize));
+    vp.GetViewControllerR()._StrokeElement(*this, element);
+    _SaveGraphic();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -692,7 +705,6 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
     if (ElementIsUndisplayed(element))
         return SUCCESS;
 
-    _SetCurrentElement(&element);
     _OutputElement(element);
 
     // Output element or local range for debugging if requested...
@@ -737,8 +749,7 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
             }
         }
 
-    _SetCurrentElement(nullptr);
-
+    m_currGeomElement = nullptr;
     return SUCCESS;
     }
 
@@ -930,9 +941,7 @@ bool ViewContext::VisitAllViewElements(bool includeTransients, BSIRectCP updateR
     SetScanReturn();
     _VisitAllModelElements(includeTransients);
 
-    m_transformClipStack.PopAll(*this);    // This will cause pushed clip elements to display correctly (outside their clip).
-
-    return  WasAborted();
+    return WasAborted();
     }
 
 /*---------------------------------------------------------------------------------**//**

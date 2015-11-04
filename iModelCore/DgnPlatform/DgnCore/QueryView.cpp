@@ -109,6 +109,7 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
     m_lastUpdateType = newUpdateType;
     if (m_forceNewQuery || info.GetDoBackingStore())
@@ -117,6 +118,7 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context
         LoadElementsForUpdate(vp, newUpdateType, &context, true, true, false);
         return;
         }
+#endif
 
     QueryModel::Selector& selector = m_queryModel.GetSelector();
     if (selector.IsActive())
@@ -144,7 +146,9 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context
 #if defined (TRACE_QUERY_LOGIC)
     printf("_OnDynamicUpdate: calling StartSelectProcessing\n");
 #endif
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     StartSelectProcessing(vp, DrawPurpose::UpdateDynamic);
+#endif
     ComputeFps();
     }
 
@@ -153,6 +157,7 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnHealUpdate(DgnViewportR vp, ViewContextR context, bool fullHeal)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_lastUpdateType = DrawPurpose::UpdateHealing;
     if (!m_forceNewQuery && !fullHeal)
         return;
@@ -169,6 +174,7 @@ void QueryViewController::_OnHealUpdate(DgnViewportR vp, ViewContextR context, b
 
     LoadElementsForUpdate(vp, DrawPurpose::UpdateHealing, &context, needNewQuery, true, false);
     ComputeFps();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -176,8 +182,10 @@ void QueryViewController::_OnHealUpdate(DgnViewportR vp, ViewContextR context, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_lastUpdateType = DrawPurpose::Update;
-    LoadElementsForUpdate(vp, DrawPurpose::Update, &context, true, true, false);
+#endif
+    LoadElementsForUpdate(vp, DrawPurpose::CreateScene, &context, true, true, false);
     ComputeFps();
     }
 
@@ -226,6 +234,7 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
     if (nullptr != results)
         lastSize = results->m_elements.size();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // When loading for view dynamics we don't want the overhead of loading too much. If the last update for view dynamics did not
     // draw all of the elements then load 50% more than what was drawn.
     if (DrawPurpose::UpdateDynamic == updateType && m_maxDrawnInDynamicUpdate > 0 && m_maxDrawnInDynamicUpdate < lastSize)
@@ -234,6 +243,7 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
         if (hitLimit > computedLimit)
             hitLimit = std::min(computedLimit,(uint32_t)MAX_TO_DRAW_IN_DYNAMIC_UPDATE);
         }
+#endif
 
     QueryModel::Selector& selector = m_queryModel.GetSelector();
     selector.StartProcessing(viewport, *this, _GetRTreeMatchSql(viewport).c_str(), hitLimit, GetMaxElementMemory(), minimumPixels, 
@@ -505,10 +515,13 @@ void QueryViewController::_DrawView(ViewContextR context)
 
     context.GetViewport()->ClearProgressiveDisplay();
 
-    bool isDynamicUpdate = context.GetDrawPurpose() == DrawPurpose::UpdateDynamic;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+#endif
+    bool isDynamicUpdate = false;
     uint32_t maxToDraw = isDynamicUpdate ? m_maxToDrawInDynamicUpdate : UINT_MAX;
 
     const uint64_t maxMem = GetMaxElementMemory();
+    UNUSED_VARIABLE(maxMem);
 #if !defined (_X64_)
     const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
 #endif
@@ -596,6 +609,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             geomModel->AddGraphicsToScene(context);
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.
     if ((DrawPurpose::UpdateHealing == context.GetDrawPurpose() || 
          DrawPurpose::Update == context.GetDrawPurpose()) && (results->m_reachedMaxElements || results->m_eliminatedByLOD) && !m_noQuery)
@@ -614,6 +628,7 @@ void QueryViewController::_DrawView(ViewContextR context)
 
         vp->ScheduleProgressiveDisplay(*pvFilter);
         }
+#endif
     }
 
 //---------------------------------------------------------------------------------------
