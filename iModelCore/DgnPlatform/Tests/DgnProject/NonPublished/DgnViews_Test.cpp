@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <DgnPlatform/DgnCore/ColorUtil.h>
+#include <DgnPlatform/ColorUtil.h>
 #include <Bentley/bset.h>
 
 #if defined (_MSC_VER)
@@ -185,77 +185,85 @@ TEST_F(DgnViewsTest, IteratorEntryProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Insert a View 
-* @bsimethod                               Ahmed.Rizwan                    10/14
+* CRUD
+* @bsimethod                               Umar Hayagt                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnViewsTest, InsertView)
+TEST_F(DgnViewsTest, CRUD)
     {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.idgndb", Db::OpenMode::ReadWrite);
 
     // Get views
     DgnViews& viewTable = project->Views ();
-    DgnViewId viewId ((uint64_t)4);
     // Create a new view
     DgnViews::View tempView = DgnViews::View (DgnViewType::Physical,
                                              DgnClassId(project->Schemas().GetECClassId("dgn","PhysicalView")),
                                              DgnModelId ((uint64_t)2),
                                              "TestView",
-                                             NULL,
-                                             DgnViewSource::User,
-                                             DgnViewId ((uint64_t)5)
+                                             "Test Description",
+                                             DgnViewSource::User
+                                            );
+    
+    DgnViews::View tempView2 = DgnViews::View (DgnViewType::Drawing,
+                                             DgnClassId(project->Schemas().GetECClassId("dgn","PhysicalView")),
+                                             DgnModelId ((uint64_t)1),
+                                             "TestDrawingView",
+                                             "TestDrawingView Description",
+                                             DgnViewSource::Private
                                             );
 
     // Insert 
     ASSERT_EQ (BE_SQLITE_OK, viewTable.Insert(tempView)) << "Unable to insert View";
-    tempView = viewTable.QueryView (DgnViewId ((uint64_t)5));
-    EXPECT_TRUE (tempView.IsValid ()) << "View not found";
-    // Verify Properties
-    TestViewProperties originalView, testView;
-    originalView.SetTestViewProperties (L"TestView", DgnViewType::Physical);
-    WString entryNameW (tempView.GetName (), true);
-    testView.SetTestViewProperties (entryNameW.c_str (), tempView.GetDgnViewType ());
-    testView.IsEqual (originalView);
+    DgnViewId viewId = tempView.GetId();
+    ASSERT_TRUE(viewId.IsValid());
 
-    }
+    ASSERT_EQ(BE_SQLITE_OK, viewTable.Insert(tempView2)) << "Unable to insert View";
+    DgnViewId viewId2 = tempView2.GetId();
+    ASSERT_TRUE(viewId2.IsValid());
 
-/*---------------------------------------------------------------------------------**//**
-* Insert a View after it is deleted
-* @bsimethod                               Ahmed.Rizwan                    10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnViewsTest, InsertDeletedView)
-    {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+    //  Query
+    //
+    ASSERT_TRUE( viewId == viewTable.QueryViewId("TestView"));
+    
 
-    // Get views
-    DgnViews& viewTable = project->Views ();
-    DgnViewId viewId ((uint64_t)4);
-    // Get an existing view
-    DgnViews::View exisitingView = viewTable.QueryView(viewId);
-    ASSERT_TRUE (exisitingView.IsValid ()) << "Unable to find the view";
-    // Delete it
+    //  Iterate
+    //
+    for (DgnViews::Iterator::Entry entry : viewTable.MakeIterator())
+        {
+        if (entry.GetDgnViewId() == viewId)
+            {
+            DgnViews::View toFind = viewTable.QueryView(viewId);
+            EXPECT_TRUE(tempView.GetId() == toFind.GetId());
+            EXPECT_TRUE(tempView.GetBaseModelId() == toFind.GetBaseModelId());
+            EXPECT_TRUE(tempView.GetClassId() == toFind.GetClassId());
+            EXPECT_TRUE(tempView.GetDgnViewSource() == toFind.GetDgnViewSource());
+            EXPECT_STREQ(tempView.GetName(), toFind.GetName());
+            EXPECT_STREQ(tempView.GetDescription(), toFind.GetDescription());
+            }
+        else if (entry.GetDgnViewId() == viewId2)
+            {
+            DgnViews::View toFind = viewTable.QueryView(viewId2);
+            EXPECT_TRUE(tempView2.GetId() == toFind.GetId());
+            EXPECT_TRUE(tempView2.GetBaseModelId() == toFind.GetBaseModelId());
+            EXPECT_TRUE(tempView2.GetClassId() == toFind.GetClassId());
+            EXPECT_TRUE(tempView2.GetDgnViewSource() == toFind.GetDgnViewSource());
+            EXPECT_STREQ(tempView2.GetName(), toFind.GetName());
+            EXPECT_STREQ(tempView2.GetDescription(), toFind.GetDescription());
+
+            }
+        }
+
+    
+    // Delete 
+    //
     ASSERT_EQ (BE_SQLITE_DONE, viewTable.Delete(viewId)) << "Unable to delete the View";
 
-    // Verify that it is deleted
-    EXPECT_TRUE (!viewTable.QueryView (viewId).IsValid ()) << "View not deleted";
-    // Insert it back
-    ASSERT_EQ (BE_SQLITE_OK, viewTable.Insert(exisitingView)) << "Unable to insert View";
-    // Verify that it is inserted
-    exisitingView = viewTable.QueryView (viewId);
-    EXPECT_TRUE (exisitingView.IsValid ()) << "View not found";
-    // Verify properties
-    TestViewProperties originalView, testView;
-    originalView.SetTestViewProperties (L"Model2d Views - View 2", DgnViewType::Drawing);
-    WString entryNameW (exisitingView.GetName (), true);
-    testView.SetTestViewProperties (entryNameW.c_str (), exisitingView.GetDgnViewType ());
-    testView.IsEqual (originalView);
-
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Insert an existing View
+* Insert an Duplicate View
 * @bsimethod                               Ahmed.Rizwan                    10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnViewsTest, InsertExistingView)
+TEST_F(DgnViewsTest, InsertDuplicateView)
     {
     SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 

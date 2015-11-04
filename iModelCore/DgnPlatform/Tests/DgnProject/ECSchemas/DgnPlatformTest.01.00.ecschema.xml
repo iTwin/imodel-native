@@ -95,6 +95,8 @@
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
                     <string>Delete</string>
+                    <string>Insert</string>
+                    <string>SetCode</string>
                     <string>DeleteChild</string>
                     <string>Move</string>
                     <string>SetGeometry</string>

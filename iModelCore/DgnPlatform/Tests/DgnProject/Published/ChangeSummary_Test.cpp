@@ -555,7 +555,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     m_testDb->SaveChanges();
 
     Statement stmt;
-    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_ArrayOfAnglesStruct SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
+    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_AnglesStruct_Array SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
@@ -575,7 +575,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     m_testDb->SaveChanges();
 
     stmt.Finalize();
-    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_ArrayOfAnglesStruct WHERE ECArrayIndex=2");
+    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_AnglesStruct_Array WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
@@ -692,7 +692,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     Statement stmt;
-    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_ArrayOfAnglesStruct SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
+    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_AnglesStruct_Array SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
@@ -717,7 +717,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     stmt.Finalize();
-    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_ArrayOfAnglesStruct WHERE ECArrayIndex=2");
+    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_AnglesStruct_Array WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);

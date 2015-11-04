@@ -4,11 +4,13 @@
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/AnnotationTable.h>
+#include <DgnPlatform/AnnotationTable.h>
+#include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextBlockPersistence.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define PARAM_ECInstanceId                      "ECInstanceId"
 #define PARAM_ElementId                         "ElementId"
+#define PARAM_AspectId                          "ECInstanceId"      // NEEDSWORK: Is this needed?
 
 #define HEADER_PARAM_RowCount                   "RowCount"
 #define HEADER_PARAM_ColumnCount                "ColumnCount"
@@ -31,6 +33,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define HEADER_PARAM_DefaultMarginLeft          "DefaultMarginLeft"
 #define HEADER_PARAM_DefaultMarginRight         "DefaultMarginRight"
 #define HEADER_PARAM_DefaultCellAlignment       "DefaultCellAlignment"
+#define HEADER_PARAM_DefaultCellOrientation     "DefaultCellOrientation"
 #define HEADER_PARAM_FillSymbologyKeyOddRow     "FillSymbologyKeyOddRow"
 #define HEADER_PARAM_FillSymbologyKeyEvenRow    "FillSymbologyKeyEvenRow"
 #define HEADER_PARAM_TitleRowTextStyle          "TitleRowTextStyle"
@@ -55,12 +58,75 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define COLUMN_PARAM_WidthLock                  "WidthLock"
 #define COLUMN_PARAM_Width                      "Width"
 
+#define CELLINDEX_PARAM_RowIndex                "RowIndex"
+#define CELLINDEX_PARAM_ColumnIndex             "ColumnIndex"
+
+#define CELL_PARAM_Index                        "CellIndex"
+#define CELL_PARAM_TextBlock                    "TextBlock"
+#define CELL_PARAM_FillKey                      "FillKey"
+#define CELL_PARAM_Alignment                    "Alignment"
+#define CELL_PARAM_Orientation                  "Orientation"
+#define CELL_PARAM_MarginTop                    "MarginTop"
+#define CELL_PARAM_MarginBottom                 "MarginBottom"
+#define CELL_PARAM_MarginLeft                   "MarginLeft"
+#define CELL_PARAM_MarginRight                  "MarginRight"
+
+#define MERGEENTRY_PARAM_RootCell               "RootCell"
+#define MERGEENTRY_PARAM_RowSpan                "RowSpan"
+#define MERGEENTRY_PARAM_ColumnSpan             "ColumnSpan"
+
 static const double s_doubleTol = 1.e-8;
 
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(AnnotationTableHandler)
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     setWordWrapLength (AnnotationTextBlockR textBlock, double length)
+    {
+    textBlock.SetDocumentWidth (length);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static double   getMinimumWordWrapLength (AnnotationTextBlockCR textBlock)
+    {
+    AnnotationTextBlockPtr  copyTextBlock = textBlock.Clone ();
+    setWordWrapLength (*copyTextBlock, mgds_fc_epsilon);
+
+    AnnotationTextBlockLayout layout(*copyTextBlock);
+    DRange2dCR range  = layout.GetLayoutRange ();
+
+#if defined (NEEDSWORK)
+    if (copyTextBlock->GetProperties().IsVertical())
+        return range.high.y - range.low.y;
+    else
+#endif
+        return range.high.x - range.low.x;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static double   getNonWrappedLength (AnnotationTextBlockCR textBlock)
+    {
+    AnnotationTextBlockPtr  copyTextBlock = textBlock.Clone ();
+    setWordWrapLength (*copyTextBlock, 0.0);
+
+    AnnotationTextBlockLayout layout(*copyTextBlock);
+    DRange2dCR range  = layout.GetLayoutRange ();
+
+#if defined (NEEDSWORK)
+    if (copyTextBlock->GetProperties().IsVertical())
+        return range.high.y - range.low.y;
+    else
+#endif
+        return range.high.x - range.low.x;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
@@ -72,18 +138,20 @@ static Utf8String buildECSqlInsertString (Utf8CP schemaName, Utf8CP className, b
     Utf8PrintfString ecSql("INSERT INTO %s.%s (%s, ", schemaName, className, idPropertyName);
     Utf8PrintfString values(":%s, ", idPropertyName);
 
-    int propCount = 0;
+    bool addedOne = false;
     for (Utf8StringCR propertyName : propertyNames)
         {
-        if (propCount != 0)
+        if (addedOne)
             {
             ecSql.append(", ");
             values.append(", ");
             }
+
         ecSql.append("[").append(propertyName).append("]");
         values.append(":").append(propertyName);
-        propCount++;
+        addedOne = true;
         }
+
     ecSql.append(") VALUES (").append(values).append(")");
 
     return ecSql;
@@ -96,17 +164,9 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
     {
     Utf8PrintfString ecSql("UPDATE ONLY %s.%s SET ", schemaName, className);
 
-    // For multi-aspects, property[0] identifies the aspect (ex. rowIndex) which we never want to update.
-    bool    skipFirst = ! isUniqueAspect;
     bool    addedOne  = false;
     for (Utf8StringCR propertyName : propertyNames)
         {
-        if (skipFirst)
-            {
-            skipFirst = false;
-            continue;
-            }
-
         if (addedOne)
             ecSql.append(", ");
 
@@ -123,8 +183,8 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
     if ( ! isUniqueAspect)
         {
         ecSql.append(" AND ");
-        ecSql.append("[").append(propertyNames[0]).append("]");
-        ecSql.append("=:").append(propertyNames[0]);
+        ecSql.append("[").append(PARAM_AspectId).append("]");
+        ecSql.append("=:").append(PARAM_AspectId);
         }
 
     return ecSql;
@@ -133,20 +193,13 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-static Utf8String buildECSqlDeleteString (Utf8CP schemaName, Utf8CP className, Utf8CP aspectIdProp)
+static Utf8String buildECSqlDeleteString (Utf8CP schemaName, Utf8CP className, bool isUniqueAspect)
     {
-    Utf8CP  idPropertyName = nullptr == aspectIdProp ? PARAM_ECInstanceId : PARAM_ElementId;
+    Utf8CP  idPropertyName = isUniqueAspect ? PARAM_ECInstanceId : PARAM_AspectId;
 
     Utf8PrintfString ecSql("DELETE FROM %s.%s WHERE ", schemaName, className);
     ecSql.append("[").append(idPropertyName).append("]");
     ecSql.append("=:").append(idPropertyName);
-
-    if (aspectIdProp)
-        {
-        ecSql.append(" AND ");
-        ecSql.append("[").append(aspectIdProp).append("]");
-        ecSql.append("=:").append(aspectIdProp);
-        }
 
     return ecSql;
     }
@@ -156,8 +209,16 @@ static Utf8String buildECSqlDeleteString (Utf8CP schemaName, Utf8CP className, U
 //---------------------------------------------------------------------------------------
 static Utf8String buildECSqlSelectString (Utf8CP schemaName, Utf8CP className, bvector<Utf8String> const& propertyNames, bool isUniqueAspect)
     {
-    Utf8String ecSql("SELECT ");
     bool first = true;
+    Utf8String ecSql("SELECT ");
+
+    if ( ! isUniqueAspect)
+        {
+        // Always select aspectId first
+        ecSql.append("i.[").append(PARAM_AspectId).append("]");
+        first = false;
+        }
+
     for (Utf8StringCR propertyName : propertyNames)
         {
         if ( ! first)
@@ -176,6 +237,111 @@ static Utf8String buildECSqlSelectString (Utf8CP schemaName, Utf8CP className, b
     return ecSql;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+static Utf8String convertToComponents (Utf8CP aspectIndexProp)
+    {
+    // NEEDSWORK: this is working around the fact that ECSql does not support structs in
+    //            GROUP BY clauses.  Seems to me that it should.
+    Utf8String  inStr (aspectIndexProp);
+
+    if ( ! inStr.Equals ("CellIndex") &&  ! inStr.Equals ("RootCell"))
+        return aspectIndexProp;
+
+    Utf8String  outStr;
+
+    outStr.append (aspectIndexProp).append (".RowIndex").append (", ");
+    outStr.append (aspectIndexProp).append (".ColumnIndex");
+
+    return outStr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+static Utf8String buildECSqlSelectDupeString (Utf8CP schemaName, Utf8CP className, Utf8CP aspectIndexProp)
+    {
+    Utf8String  propsString (PARAM_ElementId);
+    propsString.append (", ").append (convertToComponents (aspectIndexProp));
+
+    //      SELECT
+    //          ElementId, prop[0], COUNT(*)
+    //      FROM
+    //          dgn.AnnotationTableRow
+    //      GROUP BY
+    //          ElementId, RowIndex
+    //      HAVING 
+    //          COUNT(*) > 1
+    Utf8String sqlString ("SELECT ");
+    sqlString.append (PARAM_AspectId).append (", ");
+    sqlString.append (propsString);
+    sqlString.append (", COUNT(*)").append (" FROM ");
+    sqlString.append (schemaName).append (".").append(className).append(" ");
+    sqlString.append ("GROUP BY ");
+    sqlString.append (propsString);
+    sqlString.append (" HAVING COUNT(*) > 1");
+
+    return sqlString;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+AspectTypeData const&   AnnotationTableAspect::GetAspectTypeData(AnnotationTableAspectType type)
+    {
+    static bvector<AspectTypeData> s_typeData;
+
+    if (s_typeData.empty())
+        {
+        PropertyNames headerNames =  TableHeaderAspect::GetPropertyNames();
+        PropertyNames rowNames =     AnnotationTableRow::GetPropertyNames();
+        PropertyNames colNames =     AnnotationTableColumn::GetPropertyNames();
+        PropertyNames cellNames =    AnnotationTableCell::GetPropertyNames();
+        PropertyNames mergeNames =   MergeEntry::GetPropertyNames();
+// NEEDSWORK
+//        PropertyNames fillNames =    AnnotationTableFill::GetPropertyNames();
+//        PropertyNames symbNames =    AnnotationTableSymbology::GetPropertyNames();
+//        PropertyNames edgeRunNames = AnnotationTableEdgeRun::GetPropertyNames();
+
+        s_typeData = 
+            {
+            { AspectTypeData (AnnotationTableAspectType::Header,    headerNames,   true,  DGN_CLASSNAME_AnnotationTableHeader)     },
+            { AspectTypeData (AnnotationTableAspectType::Row,       rowNames,      false, DGN_CLASSNAME_AnnotationTableRow)        },
+            { AspectTypeData (AnnotationTableAspectType::Column,    colNames,      false, DGN_CLASSNAME_AnnotationTableColumn)     },
+            { AspectTypeData (AnnotationTableAspectType::Cell,      cellNames,     false, DGN_CLASSNAME_AnnotationTableCell)       },
+            { AspectTypeData (AnnotationTableAspectType::Merge,     mergeNames,    false, DGN_CLASSNAME_AnnotationTableMerge)      },
+// NEEDSWORK
+//            { AspectTypeData (AnnotationTableAspectType::Fill,      fillNames,     false, DGN_CLASSNAME_AnnotationTableFill)       },
+//            { AspectTypeData (AnnotationTableAspectType::Symbology, symbNames,     false, DGN_CLASSNAME_AnnotationTableSymbology)  },
+//            { AspectTypeData (AnnotationTableAspectType::EdgeRun,   edgeRunNames,  false, DGN_CLASSNAME_AnnotationTableEdgeRun)    },
+            };
+        }
+
+    return s_typeData[(uint32_t) type];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/ AnnotationTableAspect::AnnotationTableAspect (AnnotationTableAspectCR rhs)
+    :
+    m_table (rhs.m_table)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableAspect::CopyDataFrom (AnnotationTableAspectCR rhs)
+    {
+    m_aspectId   = rhs.m_aspectId;
+    m_hasChanges = rhs.m_hasChanges;
+
+    _CopyDataFrom (rhs);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -192,6 +358,15 @@ bool AnnotationTableAspect::BindIfNull (ECSqlStatement& statement, Utf8CP paramN
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AnnotationTableAspect::BindInt (ECSqlStatement& statement, Utf8CP paramName, TableIntValue const& value)
+    {
+    if ( ! BindIfNull (statement, paramName, value.IsNull()))
+        statement.BindInt (statement.GetParameterIndex(paramName), value.GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableAspect::BindUInt (ECSqlStatement& statement, Utf8CP paramName, TableUIntValue const& value)
     {
     if ( ! BindIfNull (statement, paramName, value.IsNull()))
         statement.BindInt (statement.GetParameterIndex(paramName), value.GetValue());
@@ -225,19 +400,36 @@ void AnnotationTableAspect::BindDouble (ECSqlStatement& statement, Utf8CP paramN
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+bool AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType aspectType, AnnotationTableElementCR table)
+    {
+    AspectTypeData  typeData  = GetAspectTypeData (aspectType);
+    Utf8StringR     sqlString = typeData.m_ecSqlSelectDupeString;
+
+    if (sqlString.empty())
+        sqlString = buildECSqlSelectDupeString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames[0].c_str());
+
+    CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
+    if (UNEXPECTED_CONDITION (!statement.IsValid()))
+        return nullptr;
+
+    if (DbResult::BE_SQLITE_DONE != statement->Step())
+        return true;
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement
-(
-Utf8StringR                 sqlString,
-bvector<Utf8String> const&  propertyNames,
-Utf8CP                      className,
-bool                        isUniqueAspect,
-AnnotationTableElementCR    table
-)
+CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType aspectType, AnnotationTableElementCR table)
     {
+    AspectTypeData  typeData  = GetAspectTypeData (aspectType);
+    Utf8StringR     sqlString = typeData.m_ecSqlSelectString;
+
     if (sqlString.empty())
-        sqlString = buildECSqlSelectString (DGN_ECSCHEMA_NAME, className, propertyNames, isUniqueAspect);
+        sqlString = buildECSqlSelectString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (!statement.IsValid())
@@ -249,24 +441,41 @@ AnnotationTableElementCR    table
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void    AnnotationTableAspect::BindProperties (ECSqlStatement& statement, bool isUpdate)
+    {
+    Utf8CP  elemIdProp = _IsUniqueAspect() ? PARAM_ECInstanceId : PARAM_ElementId;
+
+    statement.BindId (statement.GetParameterIndex(elemIdProp), GetTable().GetElementId());
+
+    if (isUpdate && ! _IsUniqueAspect() && EXPECTED_CONDITION (m_aspectId.IsValid()))
+        statement.BindInt64  (statement.GetParameterIndex(PARAM_AspectId), m_aspectId.GetValue());
+
+    _BindProperties (statement);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   08/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationTableAspect::InsertInDb()
     {
-    Utf8StringR sqlString = _GetECSqlInsertStringBuffer();
+    AspectTypeData  typeData  = GetAspectTypeData (_GetAspectType());
+    Utf8StringR     sqlString = typeData.m_ecSqlUpdateString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlInsertString (DGN_ECSCHEMA_NAME, _GetECClassName(), _GetPropertyNames(), _IsUniqueAspect());
+        sqlString = buildECSqlInsertString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
-    if (!statement.IsValid())
+    if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return ERROR;
 
-    _BindAllProperties (*statement);
+    BindProperties (*statement, false);
 
     if (DbResult::BE_SQLITE_DONE != statement->Step())
         return ERROR;
 
+    m_aspectId = m_table.GetDgnDb().GetLastInsertRowId();
     ClearHasChanges();
 
     return SUCCESS;
@@ -277,16 +486,17 @@ BentleyStatus AnnotationTableAspect::InsertInDb()
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationTableAspect::UpdateInDb()
     {
-    Utf8StringR sqlString = _GetECSqlUpdateStringBuffer();
+    AspectTypeData  typeData  = GetAspectTypeData (_GetAspectType());
+    Utf8StringR     sqlString = typeData.m_ecSqlUpdateString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlUpdateString (DGN_ECSCHEMA_NAME, _GetECClassName(), _GetPropertyNames(), _IsUniqueAspect());
+        sqlString = buildECSqlUpdateString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
-    if (!statement.IsValid())
+    if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return ERROR;
 
-    _BindAllProperties (*statement);
+    BindProperties (*statement, true);
 
     if (DbResult::BE_SQLITE_DONE != statement->Step())
         return ERROR;
@@ -303,25 +513,19 @@ BentleyStatus AnnotationTableAspect::UpdateInDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTableAspect::DeleteFromDb()
+BentleyStatus AnnotationTableAspect::DeleteAspectFromDb (AnnotationTableAspectType aspectType, uint64_t aspectId, AnnotationTableElementR table)
     {
-    Utf8StringR sqlString = _GetECSqlDeleteStringBuffer();
+    AspectTypeData  typeData  = GetAspectTypeData (aspectType);
+    Utf8StringR     sqlString = typeData.m_ecSqlDeleteString;
 
     if (sqlString.empty())
-        {
-        Utf8CP  aspectIdProp = nullptr;
+        sqlString = buildECSqlDeleteString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_isUniqueAspect);
 
-        if ( ! _IsUniqueAspect())
-            aspectIdProp = _GetPropertyNames()[0].c_str();
-
-        sqlString = buildECSqlDeleteString (DGN_ECSCHEMA_NAME, _GetECClassName(), aspectIdProp);
-        }
-
-    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
+    CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (!statement.IsValid())
         return ERROR;
 
-    _BindIdProperties (*statement);
+    statement->BindInt64 (statement->GetParameterIndex(PARAM_AspectId), aspectId);
 
     if (UNEXPECTED_CONDITION (BE_SQLITE_DONE != statement->Step()))
         return ERROR;
@@ -330,168 +534,97 @@ BentleyStatus AnnotationTableAspect::DeleteFromDb()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus AnnotationTableAspect::DeleteFromDb()
+    {
+    return DeleteAspectFromDb (_GetAspectType(), GetAspectId(), m_table);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
 void    AnnotationTableAspect::AssignProperties (ECSqlStatement const& statement)
     {
-    // The first property for multi-aspects is always the elementId.  We don't need to assign that.
-    int firstIndex = _IsUniqueAspect () ? 0 : 1;
-
-    for (int propIndex = firstIndex; propIndex < statement.GetColumnCount (); propIndex++)
+    int firstPropIndex = 0;
+    int firstStatementColumn = 0;
+    
+    if ( ! _IsUniqueAspect ())
         {
-        IECSqlValue const&  value = statement.GetValue (propIndex);
+        IECSqlValue const&  value = statement.GetValue (0);
+
+        if (EXPECTED_CONDITION ( ! value.IsNull()))
+            m_aspectId.SetValue (value.GetInt64());
+
+        // We've already read AspectId (just above) and prop0 (before this method)
+        // so we want to start on the second column which is propIndex 1
+        //
+        // Pictorially... the statement looks like this:
+        //          Col 0    | Col 1 | Col 2 | Col3
+        //          AspectId | prop0 | prop1 | prop2
+        //                              |
+        //   We want to start here------^
+        //
+        firstPropIndex = 1;
+        firstStatementColumn = 2;
+        }
+
+    for (int statementColumn = firstStatementColumn, propIndex = firstPropIndex; statementColumn < statement.GetColumnCount (); statementColumn++, propIndex++)
+        {
+        IECSqlValue const&  value = statement.GetValue (statementColumn);
 
         if ( ! value.IsNull())
             _AssignValue (propIndex, value);
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/  AnnotationTableColumn::AnnotationTableColumn (AnnotationTableElementR table, int index)
-    :
-    AnnotationTableAspect (table), m_index (index)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/  AnnotationTableColumn::AnnotationTableColumn (AnnotationTableColumnCR rhs) : AnnotationTableAspect (rhs)
-    {
-    CopyDataFrom (rhs);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTableColumnR AnnotationTableColumn::operator= (AnnotationTableColumnCR rhs)
-    {
-    CopyDataFrom (rhs);
-
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    AnnotationTableColumn::CopyDataFrom (AnnotationTableColumnCR rhs)
-    {
-    m_index             = rhs.m_index;
-    m_widthLock         = rhs.m_widthLock;
-    m_width             = rhs.m_width;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   10/2015
 //---------------------------------------------------------------------------------------
-Utf8StringR     AnnotationTableColumn::_GetECSqlInsertStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8StringR     AnnotationTableColumn::_GetECSqlUpdateStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8StringR     AnnotationTableColumn::_GetECSqlDeleteStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8CP          AnnotationTableColumn::_GetECClassName() { return DGN_CLASSNAME_AnnotationTableColumn; }
-bvector<Utf8String> const& AnnotationTableColumn::_GetPropertyNames() { return GetPropertyNames(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-bvector<Utf8String> const&      AnnotationTableColumn::GetPropertyNames()
+AnnotationTableCellIndex    AnnotationTableCellIndex::GetCellIndex(ECSqlStatement& statement, uint32_t columnIndex)
     {
-    static PropertyNames s_propNames;
+    if (statement.IsValueNull(columnIndex))
+        return AnnotationTableCellIndex();
 
-    if ( ! s_propNames.empty())
-        return s_propNames;
+    AnnotationTableCellIndex    cellIndex;
+    IECSqlStructValue const& cellIndexValue = statement.GetValueStruct(columnIndex);
 
-    s_propNames = 
+    for (int iMember = 0; iMember < cellIndexValue.GetMemberCount(); iMember++)
         {
-        { (int) AnnotationTableColumn::PropIndex::ColumnIndex,  COLUMN_PARAM_Index      },
-        { (int) AnnotationTableColumn::PropIndex::WidthLock,    COLUMN_PARAM_WidthLock  },
-        { (int) AnnotationTableColumn::PropIndex::Width,        COLUMN_PARAM_Width      },
-        };
+        IECSqlValue const& memberValue = cellIndexValue.GetValue(iMember);
+        ECPropertyCP memberProperty = memberValue.GetColumnInfo().GetProperty();
 
-    return s_propNames;
-    }
+        if (UNEXPECTED_CONDITION (memberProperty == nullptr))
+            return cellIndex;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr AnnotationTableColumn::GetPreparedSelectStatement (AnnotationTableElementCR table)
-    {
-    static Utf8String  s_sqlString;
+        Utf8CP memberName = memberProperty->GetName().c_str();
 
-    return AnnotationTableAspect::GetPreparedSelectStatement (s_sqlString, GetPropertyNames(), DGN_CLASSNAME_AnnotationTableColumn, false, table);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   10/2015
-//---------------------------------------------------------------------------------------
-void AnnotationTableColumn::_FlushChangesToProperties()
-    {
-    double  defaultWidth = GetTable().GetDefaultColumnWidth();
-    double  colWidth  = GetWidth();
-
-    if (DoubleOps::WithinTolerance (defaultWidth, colWidth, s_doubleTol))
-        m_width.Clear ();
-
-    if ( ! GetWidthLock ())
-        m_widthLock.Clear ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-bool    AnnotationTableColumn::_ShouldBePersisted() const
-    {
-    if (m_width.IsValid())         return true;
-    if (m_widthLock.IsValid())     return true;
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-void  AnnotationTableColumn::_AssignValue (int index, IECSqlValue const& value)
-    {
-    PropIndex propIndex = static_cast <PropIndex> (index);
-
-    switch (propIndex)
-        {
-        case PropIndex::Width:          m_width.SetValue       (value.GetDouble());    break;
-        case PropIndex::WidthLock:      m_widthLock.SetValue   (value.GetBoolean());   break;
-        default:                        BeAssert (false);
+        if (0 == BeStringUtilities::Stricmp(CELLINDEX_PARAM_RowIndex, memberName))
+            cellIndex.row = memberValue.GetInt();
+        else if (0 == BeStringUtilities::Stricmp(CELLINDEX_PARAM_ColumnIndex, memberName))
+            cellIndex.col = memberValue.GetInt();
+        else
+            BeAssert(false);
         }
+
+    return cellIndex;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
+// @bsimethod                                                   Josh.Schifter   10/2015
 //---------------------------------------------------------------------------------------
-void  AnnotationTableColumn::SetWidth                     (double val)    { m_width.SetValue (val); SetHasChanges(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-double  AnnotationTableColumn::GetWidth () const      { return m_width.IsValid() ? m_width.GetValue() : GetTable().GetDefaultColumnWidth(); }
-bool    AnnotationTableColumn::GetWidthLock () const  { return m_widthLock.GetValue(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   08/2015
-//---------------------------------------------------------------------------------------
-void    AnnotationTableColumn::_BindIdProperties(ECSqlStatement& statement)
+void    AnnotationTableCellIndex::BindCellIndex(ECSqlStatement& statement, Utf8CP paramName, AnnotationTableCellIndexCR cellIndex)
     {
-    statement.BindInt (statement.GetParameterIndex(COLUMN_PARAM_Index), m_index);
-    statement.BindId  (statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId());
-    }
+    int paramIndex = statement.GetParameterIndex(paramName);
+    IECSqlStructBinder& binder = statement.BindStruct(paramIndex);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-void    AnnotationTableColumn::_BindAllProperties(ECSqlStatement& statement)
-    {
-    _BindIdProperties (statement);
+    ECSqlStatus status;
 
-    BindBool    (statement, COLUMN_PARAM_WidthLock,       m_widthLock);
-    BindDouble  (statement, COLUMN_PARAM_Width,           m_width);
+    status = binder.GetMember(CELLINDEX_PARAM_RowIndex).BindInt(cellIndex.row);
+    BeAssert(status == ECSqlStatus::Success);
+
+    status = binder.GetMember(CELLINDEX_PARAM_ColumnIndex).BindInt(cellIndex.col);
+    BeAssert(status == ECSqlStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,50 +657,29 @@ AnnotationTableRowR AnnotationTableRow::operator= (AnnotationTableRowCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AnnotationTableRow::CopyDataFrom (AnnotationTableRowCR rhs)
+void    AnnotationTableRow::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
     {
+    AnnotationTableRowCR   rhs = static_cast <AnnotationTableRowCR> (rhsAspect);
+
     m_index             = rhs.m_index;
     m_heightLock        = rhs.m_heightLock;
     m_height            = rhs.m_height;
+    m_cells             = rhs.m_cells;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   10/2015
-//---------------------------------------------------------------------------------------
-Utf8StringR     AnnotationTableRow::_GetECSqlInsertStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8StringR     AnnotationTableRow::_GetECSqlUpdateStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8StringR     AnnotationTableRow::_GetECSqlDeleteStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8CP          AnnotationTableRow::_GetECClassName() { return DGN_CLASSNAME_AnnotationTableRow; }
-bvector<Utf8String> const& AnnotationTableRow::_GetPropertyNames() { return GetPropertyNames(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-bvector<Utf8String> const&      AnnotationTableRow::GetPropertyNames()
+PropertyNames   AnnotationTableRow::GetPropertyNames()
     {
-    static PropertyNames s_propNames;
-
-    if ( ! s_propNames.empty())
-        return s_propNames;
-
-    s_propNames = 
+    PropertyNames propNames =
         {
         { (int) AnnotationTableRow::PropIndex::RowIndex,   ROW_PARAM_Index       },
         { (int) AnnotationTableRow::PropIndex::HeightLock, ROW_PARAM_HeightLock  },
         { (int) AnnotationTableRow::PropIndex::Height,     ROW_PARAM_Height      },
         };
 
-    return s_propNames;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr AnnotationTableRow::GetPreparedSelectStatement (AnnotationTableElementCR table)
-    {
-    static Utf8String  s_sqlString;
-
-    return AnnotationTableAspect::GetPreparedSelectStatement (s_sqlString, GetPropertyNames(), DGN_CLASSNAME_AnnotationTableRow, false, table);
+    return propNames;
     }
 
 //---------------------------------------------------------------------------------------
@@ -599,6 +711,17 @@ bool    AnnotationTableRow::_ShouldBePersisted() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
+void    AnnotationTableRow::_BindProperties(ECSqlStatement& statement)
+    {
+    statement.BindInt (statement.GetParameterIndex(ROW_PARAM_Index), m_index);
+
+    BindBool    (statement, ROW_PARAM_HeightLock,       m_heightLock);
+    BindDouble  (statement, ROW_PARAM_Height,           m_height);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
 void  AnnotationTableRow::_AssignValue (int index, IECSqlValue const& value)
     {
     PropIndex propIndex = static_cast <PropIndex> (index);
@@ -611,10 +734,88 @@ void  AnnotationTableRow::_AssignValue (int index, IECSqlValue const& value)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-void  AnnotationTableRow::SetHeight                     (double val)    { m_height.SetValue (val); SetHasChanges(); }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableRow::InitializeInternalCollections()
+    {
+    PRECONDITION(m_cells.empty(),);
+#if defined (NEEDSWORK)
+    PRECONDITION(m_edgeRuns.empty(),);
+    PRECONDITION(m_fillRuns.empty(),);
+#endif
+
+    // Cells
+    for (uint32_t colIndex = 0; colIndex < GetTable().GetColumnCount(); colIndex++)
+        {
+        AnnotationTableCell cell (GetTable(), AnnotationTableCellIndex (m_index, colIndex));
+        m_cells.push_back (cell);
+        }
+
+#if defined (NEEDSWORK)
+    // EdgeRuns
+    TextTableEdgeRun edgeRun;
+    edgeRun.Initialize (*m_table, EdgeRunHostType::Row, m_index);
+    m_edgeRuns.push_back (edgeRun);
+
+    // FillRuns
+    TextTableFillRun fillRun;
+    fillRun.Initialize (*m_table, m_index);
+    m_fillRuns.push_back (fillRun);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableRow::SetIndex (uint32_t val)
+    {
+    m_index = val;
+    SetHasChanges();
+
+    // Adjust all the cells owned by this row
+    for (AnnotationTableCell& cell: m_cells)
+        cell.SetIndex (AnnotationTableCellIndex (m_index, cell.GetIndex().col));
+
+#if defined (NEEDSWORK)
+    // Adjust all the edge runs owned by this row
+    for (TextTableEdgeRun& edgeRun: m_edgeRuns)
+        edgeRun.SetHostIndex (m_index);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<AnnotationTableCellP>     AnnotationTableRow::FindCells() const
+    {
+    // return any cells that intersect this row
+    bvector<AnnotationTableCellP>     cells;
+
+    for (uint32_t colIndex = 0; colIndex < GetTable().GetColumnCount(); colIndex++)
+        {
+        // try to find a merge root in this column that spans this row
+        uint32_t  rowIndex = m_index;
+
+        while (true)
+            {
+            AnnotationTableCellP cell = GetTable().GetCell (AnnotationTableCellIndex (rowIndex, colIndex));
+
+            if (NULL != cell && rowIndex + cell->GetRowSpan() - 1 >= m_index)
+                {
+                cells.push_back (cell);
+                break;
+                }
+
+            if (0 == rowIndex)
+                break;
+
+            rowIndex--;
+            }
+        }
+
+    return cells;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
@@ -622,37 +823,2539 @@ void  AnnotationTableRow::SetHeight                     (double val)    { m_heig
 double  AnnotationTableRow::GetHeight () const      { return m_height.IsValid() ? m_height.GetValue() : GetTable().GetDefaultRowHeight(); }
 bool    AnnotationTableRow::GetHeightLock () const  { return m_heightLock.GetValue(); }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   08/2015
-//---------------------------------------------------------------------------------------
-void    AnnotationTableRow::_BindIdProperties(ECSqlStatement& statement)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableRow::SetHeightLock    (bool   val)    { m_heightLock.SetValue (val); SetHasChanges(); }
+void AnnotationTableRow::SetHeightDirect  (double val)    { m_height.SetValue (val);     SetHasChanges(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableRow::SetHeight (double newValue, SizeLockAction lockAction)
     {
-    statement.BindInt (statement.GetParameterIndex(ROW_PARAM_Index), m_index);
-    statement.BindId  (statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId());
+    double oldValue = GetHeight();
+
+    SetHeightDirect (newValue);
+
+    if (SizeLockAction::TurnOn == lockAction)
+        SetHeightLock (true);
+    else
+    if (SizeLockAction::TurnOff == lockAction)
+        SetHeightLock (false);
+
+    if (DoubleOps::WithinTolerance (newValue, oldValue, s_doubleTol))
+        return;
+
+    /*-------------------------------------------------------------------------
+        Layout the contents of each cell based on the new height and fix the
+        column widths if needed.
+    -------------------------------------------------------------------------*/
+    for (AnnotationTableCellP const& cell: FindCells())
+        cell->HeightChanged();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableElement::ConsiderRegionForAlternateMinimumSize (double& min, AnnotationTableRegion region, bool isHeight) const
+    {
+    DVec2d                  minSize   = GetEmptyMinimumSizeWithoutMargins (region);
+    TableCellMarginValues   margins   = GetDefaultMargins ();
+    double                  size      = 0.0;
+
+    if (isHeight)
+        size = minSize.y + margins.m_top + margins.m_bottom;
+    else
+        size = minSize.x + margins.m_left + margins.m_right;
+
+    if (min < size)
+        min = size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+double AnnotationTableRow::GetAlternateMinimumHeight () const
+    {
+    double                  minHeight = 0.0;
+    TableHeaderFooterType   rowType   = GetHeaderFooterType ();
+
+    if (TableHeaderFooterType::Body == rowType)
+        {
+        GetTable().ConsiderRegionForAlternateMinimumSize (minHeight, AnnotationTableRegion::Body, true);
+        return minHeight;
+        }
+
+    uint32_t  numHeaderCols = GetTable().GetHeaderColumnCount();
+    uint32_t  numFooterCols = GetTable().GetFooterColumnCount();
+    uint32_t  numBodyCols   = GetTable().GetColumnCount() - numHeaderCols - numFooterCols;
+
+    if (0 != numHeaderCols)
+        GetTable().ConsiderRegionForAlternateMinimumSize (minHeight, AnnotationTableRegion::HeaderColumn, true);
+
+    if (0 != numFooterCols)
+        GetTable().ConsiderRegionForAlternateMinimumSize (minHeight, AnnotationTableRegion::FooterColumn, true);
+
+    if (0 != numBodyCols)
+        GetTable().ConsiderRegionForAlternateMinimumSize (minHeight, AnnotationTableRegion::Body, true);
+
+    return minHeight;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+double AnnotationTableColumn::GetAlternateMinimumWidth () const
+    {
+    double  minWidth = 0.0;
+
+    uint32_t  numTitleRows  = GetTable().GetTitleRowCount();
+    uint32_t  numHeaderRows = GetTable().GetHeaderRowCount();
+    uint32_t  numFooterRows = GetTable().GetFooterRowCount();
+    uint32_t  numBodyRows   = GetTable().GetRowCount() - numTitleRows - numHeaderRows - numFooterRows;
+
+    if (0 != numTitleRows)
+        GetTable().ConsiderRegionForAlternateMinimumSize (minWidth, AnnotationTableRegion::TitleRow, false);
+
+    if (0 != numHeaderRows)
+        GetTable().ConsiderRegionForAlternateMinimumSize (minWidth, AnnotationTableRegion::HeaderRow, false);
+
+    if (0 != numFooterRows)
+        GetTable().ConsiderRegionForAlternateMinimumSize (minWidth, AnnotationTableRegion::FooterRow, false);
+
+    if (0 != numBodyRows)
+        {
+        TableHeaderFooterType   colType   = GetHeaderFooterType ();
+        AnnotationTableRegion   region    = AnnotationTableElement::GetTableRegionFromColumnType (colType);
+
+        GetTable().ConsiderRegionForAlternateMinimumSize (minWidth, region, false);
+        }
+
+    return minWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double AnnotationTableRow::GetMinimumHeight (bool allowedToChangeContentLayout) const
+    {
+    bool                rowHasUnsharedCells = false;
+    double              minimumHeight = 0;
+    double              currRowHeight = GetHeight();
+
+    for (AnnotationTableCellP const& cell: FindCells())
+        {
+        DVec2d          cellSize                    = cell->GetSize();
+        double          heightSuppliedByOtherRows   = cellSize.y - currRowHeight;
+        double          heightNeededForContent;
+
+        if (cell->GetIndex().row == GetIndex() && 1 == cell->GetRowSpan())
+            rowHasUnsharedCells = true;
+
+        if (allowedToChangeContentLayout)
+            heightNeededForContent = cell->GetFullyCompressedContentHeight();
+        else
+            heightNeededForContent = cell->GetContentSize().y;
+
+        double          rowNeededHeight = heightNeededForContent - heightSuppliedByOtherRows;
+
+        if (minimumHeight < rowNeededHeight)
+            minimumHeight = rowNeededHeight;
+        }
+
+    if ( ! rowHasUnsharedCells)
+        {
+        // If all the cells are merged with other rows, it is possible that the entire needed
+        // height might be supplied by those rows.  But we don't want min height to be zero.
+        // The alternate minimum is computed as if the row contained its own empty cells.
+        double altMin = GetAlternateMinimumHeight();
+
+        if (minimumHeight < altMin)
+            minimumHeight = altMin;
+        }
+
+    return minimumHeight;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+double AnnotationTableRow::ComputeMinimumHeight () const
+    {
+    return GetMinimumHeight (true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableRow::SetHeight (double newHeight)
+    {
+    double  minimumHeight = GetMinimumHeight(true);
+
+    // Never set the height smaller than the minimum
+    if (newHeight < minimumHeight)
+        newHeight = minimumHeight;
+
+    SetHeight (newHeight, SizeLockAction::TurnOn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableRow::ShrinkHeightToContents ()
+    {
+    double  minimumHeight = GetMinimumHeight(false);
+
+    SetHeight (minimumHeight, SizeLockAction::NoChange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::HeightChanged ()
+    {
+    /*-------------------------------------------------------------------------
+        Layout the contents based on the new height and fix the column width if needed.
+    -------------------------------------------------------------------------*/
+    DVec2d                  cellSize = GetSize();
+    TableCellMarginValues   margins  = GetMargins();
+    double                  vMargins = margins.m_top + margins.m_bottom;
+
+    FitContentToHeight (cellSize.y - vMargins);
+
+    // Will only affect the last column in the cell's span
+    AnnotationTableCellIndex    cellIndex   = GetIndex();
+    uint32_t                    colIndex    = cellIndex.col + GetColumnSpan() - 1;
+    AnnotationTableColumnP      column      = GetTable().GetColumn (colIndex);
+
+    DVec2d          cellNeededSize          = GetContentSize();
+    double          additionalNeededWidth   = cellNeededSize.x - cellSize.x;
+
+    // If the cell needs more width make the column wider
+    if (0 < additionalNeededWidth)
+        {
+        double      newColWidth = column->GetWidth() + additionalNeededWidth;
+
+        column->SetWidth (newColWidth, SizeLockAction::NoChange);
+        return;
+        }
+
+    // See if we can shrink the column width
+    if ( ! column->GetWidthLock() && 0 > additionalNeededWidth)
+        column->ShrinkWidthToContents();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableRow::SetHeightFromContents (bool allowedToChangeContentLayout)
+    {
+    double  maxNeededHeight = 0.0;
+    double  currRowHeight = GetHeight();
+
+    /*-------------------------------------------------------------------------
+        Find the maximum height needed based on the contents of the row.
+    -------------------------------------------------------------------------*/
+    for (AnnotationTableCellP const& cell: FindCells())
+        {
+        DVec2d  cellSize                    = cell->GetSize();
+        double  heightSuppliedByOtherRows   = cellSize.y - currRowHeight;
+        double  heightNeededForContent;
+
+        if (allowedToChangeContentLayout)
+            heightNeededForContent = cell->GetFullyExpandedContentHeight();
+        else
+            heightNeededForContent = cell->GetContentSize().x;
+
+        double  rowNeededHeight  = heightNeededForContent - heightSuppliedByOtherRows;
+
+        if (maxNeededHeight < rowNeededHeight)
+            maxNeededHeight = rowNeededHeight;
+        }
+
+    /*-------------------------------------------------------------------------
+        Clear the lock flag if we used the expanded height, this row is
+        now free to grow/shrink with future content height changes.
+    -------------------------------------------------------------------------*/
+    SizeLockAction  lockAction = allowedToChangeContentLayout ? SizeLockAction::TurnOff : SizeLockAction::NoChange;
+
+    SetHeight (maxNeededHeight, lockAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableRow::SetHeightFromContents ()
+    {
+    SetHeightFromContents (true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TableHeaderFooterType   AnnotationTableRow::GetHeaderFooterType () const
+    {
+    return GetTable().GetRowHeaderFooterType (GetIndex());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+/* ctor */      TextBlockHolder::TextBlockHolder (AnnotationTableCellR c) : CellContentHolder (c)
+    {
+    m_textBlockState = TEXTBLOCK_STATE_Uninitialized;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void        TextBlockHolder::_FlushChangesToProperties ()
+    {
+    if (m_textBlockState != TEXTBLOCK_STATE_Changed)
+        return;
+
+    if (m_textBlock->IsEmpty())
+        {
+        m_tableCell->ClearBinaryTextBlock();
+        SetTextBlockDirect (nullptr);
+        }
+    else
+        {
+        bvector<Byte>   bytes;
+        AnnotationTextBlockPersistence::EncodeAsFlatBuf (bytes, *m_textBlock);
+        m_tableCell->AssignBinaryTextBlock (&bytes[0], bytes.size());
+        }
+
+    m_textBlockState = TEXTBLOCK_STATE_Initialized;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTextBlockLayoutCP     TextBlockHolder::GetTextBlockLayout () const
+    {
+    if (m_textBlockLayout.IsValid())
+        return m_textBlockLayout.get();
+
+    AnnotationTextBlockCP   textBlock = GetTextBlock();
+
+    if (nullptr != textBlock)
+        m_textBlockLayout = new AnnotationTextBlockLayout(*textBlock);
+
+    return m_textBlockLayout.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTextBlockCP     TextBlockHolder::GetTextBlock () const
+    {
+    if (TEXTBLOCK_STATE_Uninitialized != m_textBlockState)
+        return m_textBlock.get();
+
+    size_t      numBytes;
+    void const* serializedTextBlock = m_tableCell->GetBinaryTextBlock(&numBytes);
+
+    if (nullptr != serializedTextBlock)
+        {
+        DgnDbR                  dgnDb = m_tableCell->GetTable().GetDgnDb();
+        AnnotationTextBlockPtr  newTextBlock = AnnotationTextBlock::Create(dgnDb);
+
+        AnnotationTextBlockPersistence::DecodeFromFlatBuf(*newTextBlock, static_cast<ByteCP> (serializedTextBlock), numBytes);
+        SetTextBlockDirect (newTextBlock.get());
+        }
+
+    m_textBlockState = TEXTBLOCK_STATE_Initialized;
+
+    return m_textBlock.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTextBlockP  TextBlockHolder::GetTextBlockForFieldProcessing()
+    {
+#if defined (NEEDSWORK)
+    if (TEXTBLOCK_STATE_Uninitialized != m_textBlockState)
+        {
+        return m_textBlock.IsValid() && m_textBlock->ContainsFields() ? m_textBlock.get() : nullptr;
+        }
+    else
+        {
+        Utf8CP xml = m_tableCell->GetInstanceHolder().GetUtf8CP (TEXTTABLE_CELL_PROP_TextBlock);
+        if (nullptr != xml && TextBlockXmlDeserializer::XmlContainsFields (xml))
+            return const_cast<TextBlockP>(GetTextBlock());
+        else
+            return nullptr;
+        }
+#else
+    BeAssert (false);
+    return nullptr;
+#endif
+    }
+
+#if defined (NEEDSWORK)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::ReconcileJustificationForNewTextBlock ()
+    {
+    bool                        isFirstParagraph = true;
+    bool                        foundMix = false;
+    TextElementJustification    foundJust = TextElementJustification::Invalid;
+
+    // Get the justification from the first paragraph
+    ParagraphRange paragraphRange (*m_textBlock);
+    for (ParagraphCR paragraph: paragraphRange)
+        {
+        ParagraphPropertiesCR paraProps = paragraph.GetProperties();
+
+        if (isFirstParagraph)
+            {
+            foundJust        = paraProps.GetJustification();
+            isFirstParagraph = false;
+            continue;
+            }
+
+        if (paraProps.GetJustification() != foundJust)
+            {
+            foundMix = true;
+            break;
+            }
+        }
+
+    if (TextElementJustification::Invalid == foundJust)
+        return;
+
+    TableCellAlignment          alignFromJust = AnnotationTableCell::ToTableCellAlignment (foundJust);
+    TextElementJustification    normalizeJust = AnnotationTableCell::ToTextElementJustification (alignFromJust);
+
+    // Always set the justification even if there's no change.  It will turn on the override flag.
+    m_textBlock->SetJustification (normalizeJust, paragraphRange);
+
+    // Perform layout is only needed if something changed.
+    if (foundMix || normalizeJust != foundJust)
+        m_textBlock->PerformLayout ();
+
+    // Set the cell property to match the text block.
+    m_tableCell->SetAlignmentDirect (alignFromJust);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::ReconcileCellPropertiesFromNewTextBlock ()
+    {
+    // Orientation
+    bool newVertical = m_textBlock->GetProperties().IsVertical();
+    bool oldVertical = TableCellOrientation::Vertical == m_tableCell->GetOrientation();
+
+    if (newVertical != oldVertical)
+        {
+        TableCellOrientation    newOrientation = newVertical ? TableCellOrientation::Vertical : TableCellOrientation::Horizontal;
+
+        // Set the cell property to match the text block.
+        m_tableCell->SetOrientationDirect (newOrientation);
+        }
+
+    // Justification
+    ReconcileJustificationForNewTextBlock ();
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::SetTextBlockDirect(AnnotationTextBlockP textBlock) const
+    {
+    m_textBlock         = textBlock;
+    m_textBlockLayout   = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::SetTextBlock (AnnotationTextBlockCR textBlock)
+    {
+    AnnotationTextBlockPtr  newTextBlock = textBlock.Clone();
+    SetTextBlockDirect (newTextBlock.get());
+
+#if defined (NEEDSWORK) // probably still needed
+    ReconcileCellPropertiesFromNewTextBlock();
+#endif
+
+#if defined (NEEDSWORK) // probably not needed
+    m_textBlock->SetUserOrigin (DPoint3d::FromZero());
+    m_textBlock->SetOrientation (RotMatrix::FromIdentity());
+    m_textBlock->RemoveAlongElementDependency();
+
+    TextBlockPropertiesPtr  props = m_textBlock->GetProperties().Clone();
+
+    if (m_tableCell->GetAnnotationTable().HasAnnotationScale())
+        props->SetAnnotationScale (m_tableCell->GetAnnotationTable().GetAnnotationScale());
+    else
+        props->ClearAnnotationScale ();
+
+    m_textBlock->SetProperties (*props);
+#endif
+
+    m_textBlockState = TEXTBLOCK_STATE_Changed;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            TextBlockHolder::_IsEmpty () const
+    {
+    if (TEXTBLOCK_STATE_Uninitialized != m_textBlockState)
+        return m_textBlock.IsNull() ||  m_textBlock->IsEmpty();
+
+    void const* serializedTextBlock = m_tableCell->GetBinaryTextBlock (nullptr);
+
+    if (nullptr == serializedTextBlock)
+        return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DVec2d          TextBlockHolder::_GetSize () const
+    {
+    DVec2d   size;
+    double   textWidth, textHeight;
+
+    GetPaddedSizeAlignedWithTextBlock (textWidth, textHeight);
+
+    switch (m_tableCell->GetOrientation())
+        {
+        default:
+            {
+            size.x = textWidth;
+            size.y = textHeight;
+
+            break;
+            }
+        case TableCellOrientation::Rotate90:
+        case TableCellOrientation::Rotate270:
+            {
+            size.x = textHeight;
+            size.y = textWidth;
+
+            break;
+            }
+        }
+
+    return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double            TextBlockHolder::GetMinimumWordWrapLength () const
+    {
+    AnnotationTextBlockCP textBlock = GetTextBlock();
+
+    if (NULL == textBlock)
+        return 0;
+
+    return getMinimumWordWrapLength (*textBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double            TextBlockHolder::_GetFullyCompressedHeight () const
+    {
+    if (TableCellOrientation::Horizontal == m_tableCell->GetOrientation())
+        return _GetSize ().y;
+
+    return GetMinimumWordWrapLength ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double            TextBlockHolder::_GetFullyCompressedWidth () const
+    {
+    if (TableCellOrientation::Horizontal != m_tableCell->GetOrientation())
+        return _GetSize ().x;
+
+    return GetMinimumWordWrapLength ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double            TextBlockHolder::GetNonWrappedLength () const
+    {
+    AnnotationTextBlockCP textBlock = GetTextBlock();
+
+    if (NULL == textBlock)
+        return 0;
+
+    return getNonWrappedLength (*textBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double            TextBlockHolder::_GetFullyExpandedHeight () const
+    {
+    if (TableCellOrientation::Horizontal == m_tableCell->GetOrientation())
+        return _GetSize ().y;
+
+    return GetNonWrappedLength ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double            TextBlockHolder::_GetFullyExpandedWidth () const
+    {
+    if (TableCellOrientation::Horizontal != m_tableCell->GetOrientation())
+        return _GetSize ().x;
+
+    return GetNonWrappedLength ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::_SetAlignment (TableCellAlignment newAlignment)
+    {
+    AnnotationTextBlockCP   textBlock   = GetTextBlock();
+
+    if (NULL == textBlock)
+        return;
+
+    AnnotationTextBlockPtr                          copyTextBlock = textBlock->Clone();
+    AnnotationTextBlock::HorizontalJustification    newJust = AnnotationTableCell::ToTextBlockJustification (newAlignment);
+
+    copyTextBlock->SetJustification (newJust);
+    SetTextBlock(*copyTextBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::_SetOrientation (TableCellOrientation newOrientation)
+    {
+    AnnotationTextBlockCP   textBlock   = GetTextBlock();
+
+    if (NULL == textBlock)
+        return;
+
+#if defined (NEEDSWORK)
+    AnnotationTextBlockPtr  copyTextBlock = textBlock->Clone();
+    bool                    isVertical = (TableCellOrientation::Vertical == newOrientation);
+
+    copyTextBlock->SetIsVertical (isVertical);
+    SetTextBlock(*copyTextBlock);
+#else
+    BeAssert(false); // text block does not support vertical
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::SetWordWrapLength (double length)
+    {
+    AnnotationTextBlockCP   textBlock   = GetTextBlock();
+
+    if (NULL == textBlock)
+        return;
+
+    AnnotationTextBlockPtr  copyTextBlock = textBlock->Clone();
+    setWordWrapLength (*copyTextBlock, length);
+
+    SetTextBlock(*copyTextBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::_FitContentToHeight (double height)
+    {
+    if (TableCellOrientation::Horizontal == m_tableCell->GetOrientation())
+        return;
+
+    uint32_t            rowIndex = m_tableCell->GetIndex().row;
+    AnnotationTableRowP row      = m_tableCell->GetTable().GetRow (rowIndex);
+
+    // If the height is not locked remove the word wrap.
+    if ( ! row->GetHeightLock())
+        height = 0.0;
+
+    SetWordWrapLength (height);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::_FitContentToWidth (double width)
+    {
+    if (TableCellOrientation::Horizontal != m_tableCell->GetOrientation())
+        return;
+
+    uint32_t                colIndex = m_tableCell->GetIndex().col;
+    AnnotationTableColumnP  col      = m_tableCell->GetTable().GetColumn (colIndex);
+
+    // If the width is not locked remove the word wrap.
+    if ( ! col->GetWidthLock())
+        width = 0.0;
+
+    SetWordWrapLength (width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/14
++---------------+---------------+---------------+---------------+---------------+------*/
+double          TextBlockHolder::ComputeDescenderAdjustment (AnnotationTextStyleCR textStyle)
+    {
+    bool    isTextStyleVertical = false;
+
+#if defined (NEEDSWORK)
+    textStyle.GetProperty (TextStyle_Vertical, isTextStyleVertical);
+#endif
+
+    if (isTextStyleVertical)
+        return 0.0;
+
+    double      height = textStyle.GetHeight();
+    DgnFontId   fontId = textStyle.GetFontId();
+    DgnFontCP   font   = textStyle.GetDgnDb().Fonts().FindFontById(fontId);
+
+    if (UNEXPECTED_CONDITION (nullptr == font))
+        return 0.0;
+
+#if defined (NEEDSWORK)
+    return font->GetDescenderRatio() * height;
+#else
+    return 0.3 * height;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/14
++---------------+---------------+---------------+---------------+---------------+------*/
+double          TextBlockHolder::ComputeDescenderAdjustment (AnnotationTextBlockLayoutCR textBlockLayout)
+    {
+#if defined (NEEDSWORK)
+    if (textBlock.GetProperties().IsVertical())
+        return 0.0;
+#endif
+
+    /*-------------------------------------------------------------------------
+        Iterate the runs on the last line only.  Find the one with the
+        largest descender.  We will use this to pad the bottom of the text
+        block so that the descenders don't stick into the real margins.  We
+        also pad the top so that the text looks balanced in the table cell.
+    -------------------------------------------------------------------------*/
+    AnnotationLayoutLineCollectionCR    lines = textBlockLayout.GetLines();
+    AnnotationLayoutLinePtr const&      lastLine = lines.back();
+    double                              descenderHeight = 0.0;
+    double                              maxPositiveUnitOffset = 0.0;
+
+    for (AnnotationLayoutRunPtr const& run : lastLine->GetRuns())
+        {
+        AnnotationTextStyleCPtr textStyle   = run->GetSeedRun().CreateEffectiveStyle ();
+        double                  fontSize    = textStyle->GetHeight();
+#if defined (NEEDSWORK)
+        DgnFontCP               font        = dgnDb.Fonts().FindFontById(fontId);
+        DgnFontId               fontId      = textStyle->GetFontId();
+        double                  height      = fontSize * font.GetDescenderRatio();
+#else
+        double                  height      = fontSize * 0.3;
+#endif
+
+        if (descenderHeight < height)
+            descenderHeight = height;
+
+#if defined (NEEDSWORK)
+        // DgnDb note...
+        // Maybe we can remove this whole unit offset check.  It only exists for the case where a
+        // fraction extends below a (potential) descender.  As of now we don't support 'shifted'
+        // fractions, meaning the fraction must always sit on the baseline... so no fraction can
+        // ever extend below the descenders
+        if (maxPositiveUnitOffset < run->GetOffsetFromLine().y)
+            maxPositiveUnitOffset = run->GetOffsetFromLine().y;
+#endif
+        }
+
+    // Layout range already includes MaxUnitOffset.  If there are fractions,
+    // we only want the part of the descender that extends past the fractions.
+    return MAX (0.0, descenderHeight - maxPositiveUnitOffset);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TextBlockHolder::GetPaddedSizeAlignedWithTextBlock (double& width, double& height) const
+    {
+    AnnotationTextBlockCP textBlock = GetTextBlock();
+
+    if (NULL == textBlock || textBlock->IsEmpty())
+        {
+        AnnotationTableRegion   region = m_tableCell->GetTableRegion();
+        AnnotationTextStyleCP   textStyle = m_tableCell->GetTable().GetTextStyle (region);
+
+        height = textStyle->GetHeight();
+        width  = height * textStyle->GetWidthFactor();
+
+        height += ComputeDescenderAdjustment (*textStyle);
+
+        return;
+        }
+
+    AnnotationTextBlockLayoutCP layout = GetTextBlockLayout();
+
+    DRange2dCR  range = layout->GetLayoutRange();
+    double      descenderAdjustment = ComputeDescenderAdjustment (*layout);
+
+    width  = range.high.x - range.low.x;
+    height = range.high.y - range.low.y + 2*descenderAdjustment;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  AnnotationTableCell::AnnotationTableCell (AnnotationTableElementR table, AnnotationTableCellIndex index)
+    :
+    AnnotationTableAspect (table), m_index (index), m_rawTextBlock(nullptr)
+    {
+    InitContentsToEmptyTextBlock();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  AnnotationTableCell::AnnotationTableCell (AnnotationTableCellCR rhs) : AnnotationTableAspect (rhs), m_rawTextBlock (nullptr)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCellR AnnotationTableCell::operator= (AnnotationTableCellCR rhs)
+    {
+    CopyDataFrom (rhs);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::ClearBinaryTextBlock ()
+    {
+    if (nullptr != m_rawTextBlock)
+        free ((void*)m_rawTextBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void  const* AnnotationTableCell::GetBinaryTextBlock (size_t* numBytes)
+    {
+    if (nullptr != numBytes)
+        *numBytes = m_rawTextBlockBytes;
+
+    return m_rawTextBlock;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::AssignBinaryTextBlock (void const* data, size_t numBytes)
+    {
+    ClearBinaryTextBlock();
+
+    if (nullptr == data)
+        return;
+
+    m_rawTextBlockBytes = numBytes;
+
+    void * local = malloc (numBytes);
+    memcpy (local, data, numBytes);
+    m_rawTextBlock = (const Byte *)local;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+    {
+    AnnotationTableCellCR   rhs = static_cast <AnnotationTableCellCR> (rhsAspect);
+
+    m_index             = rhs.m_index;
+
+    AssignBinaryTextBlock (m_rawTextBlock, m_rawTextBlockBytes);
+
+    m_fillKey           = rhs.m_fillKey;
+    m_alignment         = rhs.m_alignment;
+    m_orientation       = rhs.m_orientation;
+    m_marginTop         = rhs.m_marginTop;
+    m_marginBottom      = rhs.m_marginBottom;
+    m_marginLeft        = rhs.m_marginLeft;
+    m_marginRight       = rhs.m_marginRight;
+
+    m_contentHolder     = rhs.m_contentHolder;
+
+    if (nullptr != m_contentHolder)
+        m_contentHolder->Initialize (*this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+PropertyNames   AnnotationTableCell::GetPropertyNames()
+    {
+    PropertyNames propNames =
+        {
+        { (int) AnnotationTableCell::PropIndex::CellIndex,      CELL_PARAM_Index         },
+        { (int) AnnotationTableCell::PropIndex::TextBlock,      CELL_PARAM_TextBlock     },
+        { (int) AnnotationTableCell::PropIndex::FillKey,        CELL_PARAM_FillKey       },
+        { (int) AnnotationTableCell::PropIndex::Alignment,      CELL_PARAM_Alignment     },
+        { (int) AnnotationTableCell::PropIndex::Orientation,    CELL_PARAM_Orientation   },
+        { (int) AnnotationTableCell::PropIndex::MarginTop,      CELL_PARAM_MarginTop     },
+        { (int) AnnotationTableCell::PropIndex::MarginBottom,   CELL_PARAM_MarginBottom  },
+        { (int) AnnotationTableCell::PropIndex::MarginLeft,     CELL_PARAM_MarginLeft    },
+        { (int) AnnotationTableCell::PropIndex::MarginRight,    CELL_PARAM_MarginRight   },
+        };
+
+    return propNames;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void AnnotationTableCell::_FlushChangesToProperties()
+    {
+    if (NULL == m_contentHolder)
+        return;
+
+    if (GetAlignment() == GetTable().GetDefaultCellAlignment())
+        m_alignment.Clear();
+
+    if (GetOrientation() == GetTable().GetDefaultCellOrientation())
+        m_orientation.Clear();
+
+    TableCellMarginValues   cellMargins     = GetMargins();
+    TableCellMarginValues   defaultMargins  = GetTable().GetDefaultMargins();
+
+    if (DoubleOps::WithinTolerance (defaultMargins.m_top, cellMargins.m_top, s_doubleTol))
+        m_marginTop.Clear();
+
+    if (DoubleOps::WithinTolerance (defaultMargins.m_bottom, cellMargins.m_bottom, s_doubleTol))
+        m_marginBottom.Clear();
+
+    if (DoubleOps::WithinTolerance (defaultMargins.m_left, cellMargins.m_left, s_doubleTol))
+        m_marginLeft.Clear();
+
+    if (DoubleOps::WithinTolerance (defaultMargins.m_right, cellMargins.m_right, s_doubleTol))
+        m_marginRight.Clear();
+
+    if ( ! m_fillKey.IsNull() && 0 == m_fillKey.GetValue())
+        m_fillKey.Clear();
+
+    m_contentHolder->_FlushChangesToProperties ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+bool    AnnotationTableCell::_ShouldBePersisted() const
+    {
+    if (nullptr == m_contentHolder)
+        return false;
+
+    if (nullptr != m_rawTextBlock)  return true;
+    if (m_fillKey.IsValid())        return true;
+    if (m_alignment.IsValid())      return true;
+    if (m_orientation.IsValid())    return true;
+    if (m_marginTop.IsValid())      return true;
+    if (m_marginBottom.IsValid())   return true;
+    if (m_marginLeft.IsValid())     return true;
+    if (m_marginRight.IsValid())    return true;
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void    AnnotationTableCell::_BindProperties(ECSqlStatement& statement)
+    {
+    AnnotationTableCellIndex::BindCellIndex (statement, CELL_PARAM_Index, m_index);
+
+    if (nullptr != m_rawTextBlock)
+        statement.BindBinary(statement.GetParameterIndex(CELL_PARAM_TextBlock), m_rawTextBlock, static_cast<int>(m_rawTextBlockBytes), IECSqlBinder::MakeCopy::Yes);
+    else
+        statement.BindNull(statement.GetParameterIndex(CELL_PARAM_TextBlock));
+
+    BindUInt   (statement, CELL_PARAM_FillKey,      m_fillKey);
+    BindUInt   (statement, CELL_PARAM_Alignment,    m_alignment);
+    BindUInt   (statement, CELL_PARAM_Orientation,  m_orientation);
+    BindDouble (statement, CELL_PARAM_MarginTop,    m_marginTop);
+    BindDouble (statement, CELL_PARAM_MarginBottom, m_marginBottom);
+    BindDouble (statement, CELL_PARAM_MarginLeft,   m_marginLeft);
+    BindDouble (statement, CELL_PARAM_MarginRight,  m_marginRight);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void  AnnotationTableCell::_AssignValue (int index, IECSqlValue const& value)
+    {
+    PropIndex propIndex = static_cast <PropIndex> (index);
+
+    switch (propIndex)
+        {
+        case PropIndex::TextBlock:
+            {
+            int         size;
+            void const* data = value.GetBinary (&size);
+            AssignBinaryTextBlock (data, size);
+            break;
+            }
+        case PropIndex::FillKey:        m_fillKey.SetValue      (value.GetInt());       break;
+        case PropIndex::Alignment:      m_alignment.SetValue    (value.GetInt());       break;
+        case PropIndex::Orientation:    m_orientation.SetValue  (value.GetInt());       break;
+        case PropIndex::MarginTop:      m_marginTop.SetValue    (value.GetDouble());    break;
+        case PropIndex::MarginBottom:   m_marginBottom.SetValue (value.GetDouble());    break;
+        case PropIndex::MarginLeft:     m_marginLeft.SetValue   (value.GetDouble());    break;
+        case PropIndex::MarginRight:    m_marginRight.SetValue  (value.GetDouble());    break;
+        default:                        BeAssert (false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::SetIndex (AnnotationTableCellIndexCR val)
+    {
+    m_index = val;
+    SetHasChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableRegion AnnotationTableCell::GetTableRegion () const
+    {
+    return GetTable().GetTableRegion (m_index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTextBlock::HorizontalJustification AnnotationTableCell::ToTextBlockJustification (TableCellAlignment cellAlignment)
+    {
+    switch (cellAlignment)
+        {
+        default:
+        case TableCellAlignment::LeftTop:
+        case TableCellAlignment::LeftMiddle:
+        case TableCellAlignment::LeftBottom:    return AnnotationTextBlock::HorizontalJustification::Left;
+        case TableCellAlignment::CenterTop:
+        case TableCellAlignment::CenterMiddle:
+        case TableCellAlignment::CenterBottom:  return AnnotationTextBlock::HorizontalJustification::Center;
+        case TableCellAlignment::RightTop:
+        case TableCellAlignment::RightMiddle:
+        case TableCellAlignment::RightBottom:   return AnnotationTextBlock::HorizontalJustification::Right;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableCell::SetAlignmentDirect (TableCellAlignment alignment)
+    {
+    m_alignment.SetValue (static_cast<uint32_t>(alignment));
+    SetHasChanges(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableCell::SetAlignment(TableCellAlignment alignment)
+    {
+    if (EXPECTED_CONDITION (NULL != m_contentHolder))
+        m_contentHolder->_SetAlignment (alignment);
+
+    SetAlignmentDirect (alignment);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TableCellAlignment      AnnotationTableCell::GetAlignment() const
+    {
+    return m_alignment.IsValid() ? static_cast<TableCellAlignment> (m_alignment.GetValue()) : GetTable().GetDefaultCellAlignment();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableCell::SetOrientationDirect (TableCellOrientation orientation)
+    {
+    m_orientation.SetValue (static_cast<uint32_t>(orientation));
+    SetHasChanges(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableCell::SetOrientation (TableCellOrientation orientation)
+    {
+    DVec2d      oldContentSize  = GetContentSize();
+
+    if (EXPECTED_CONDITION (NULL != m_contentHolder))
+        m_contentHolder->_SetOrientation (orientation);
+
+    SetOrientationDirect (orientation);
+    SetSizeFromContents (&oldContentSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TableCellOrientation      AnnotationTableCell::GetOrientation() const
+    {
+    return m_orientation.IsValid() ? static_cast<TableCellOrientation> (m_orientation.GetValue()) : GetTable().GetDefaultCellOrientation();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableCell::SetMarginsDirect (TableCellMarginValuesCR newValues)
+    {
+    m_marginTop.SetValue (newValues.m_top);
+    m_marginBottom.SetValue (newValues.m_bottom);
+    m_marginLeft.SetValue (newValues.m_left);
+    m_marginRight.SetValue (newValues.m_right);
+    SetHasChanges(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableCell::SetMargins (TableCellMarginValuesCR newValues)
+    {
+    DVec2d      oldContentSize  = GetContentSize();
+
+    SetMarginsDirect(newValues);
+    SetSizeFromContents(&oldContentSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     setDoubleIfNotNull (double& out, TableDoubleValue const& val)
+    {
+    if ( ! val.IsNull())
+        out = val.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TableCellMarginValues   AnnotationTableCell::GetMargins () const
+    {
+    TableCellMarginValues   margins = GetTable().GetDefaultMargins();
+
+    setDoubleIfNotNull (margins.m_top,    m_marginTop);
+    setDoubleIfNotNull (margins.m_bottom, m_marginBottom);
+    setDoubleIfNotNull (margins.m_left,   m_marginLeft);
+    setDoubleIfNotNull (margins.m_right,  m_marginRight);
+
+    return margins;
+    }
+
+#if defined (NEEDSWORK)
+/*-------------------------------------------------------------------------------------*
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DVec2d          AnnotationTableCell::GetTextSize () const
+    {
+    TextBlockCP     textBlock;
+    RunPropertiesCP runProps;
+    DVec2d          textSize;
+
+    if (NULL != (textBlock = GetTextBlock()) &&
+        NULL != (runProps  = textBlock->GetFirstRunProperties()))
+        {
+        textSize = DVec2d::From(runProps->GetFontSize());
+        }
+    else
+        {
+        DgnModelP       model     = m_table->GetModel();
+        AnnotationTableRegion region    = GetTableRegion();
+        DgnTextStyleCP  textStyle = m_table->GetTextStyle (region);
+
+        // TextStyle already has the table's annotation scale in it.
+        textSize.x = textStyle->GetWidth(model);
+        textSize.y = textStyle->GetHeight(model);
+        }
+
+    return textSize;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DVec2d          AnnotationTableCell::GetSize () const
+    {
+    DVec2d      size = DVec2d::From (0.0, 0.0);
+    uint32_t    rowSpan = GetRowSpan();
+    uint32_t    colSpan = GetColumnSpan();
+
+    for (uint32_t iRow = m_index.row; iRow < m_index.row + rowSpan; iRow++)
+        {
+        AnnotationTableRowCP row = GetTable().GetRow (iRow);
+
+        size.y += row->GetHeight();
+        }
+
+    for (uint32_t iCol = m_index.col; iCol < m_index.col + colSpan; iCol++)
+        {
+        AnnotationTableColumnCP col = GetTable().GetColumn (iCol);
+
+        size.x += col->GetWidth();
+        }
+
+    return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DVec2d          AnnotationTableCell::GetAvailableContentSize () const
+    {
+    DVec2d                  size    = GetSize();
+    TableCellMarginValues   margins = GetMargins();
+
+    size.x -= (margins.m_left + margins.m_right);
+    size.y -= (margins.m_top + margins.m_bottom);
+
+    return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::FitContentToHeight (double height)
+    {
+    if (UNEXPECTED_CONDITION (NULL == m_contentHolder))
+        return;
+
+    m_contentHolder->_FitContentToHeight (height);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::FitContentToWidth (double width)
+    {
+    if (UNEXPECTED_CONDITION (NULL == m_contentHolder))
+        return;
+
+    m_contentHolder->_FitContentToWidth (width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DVec2d          AnnotationTableElement::GetEmptyMinimumSizeWithoutMargins (AnnotationTableRegion region) const
+    {
+    AnnotationTextStyleCP   textStyle = GetTextStyle (region);
+    DVec2d                  size;
+
+    size.y = textStyle->GetHeight ();
+    size.x = size.y * textStyle->GetWidthFactor ();
+
+    size.y += 2 * TextBlockHolder::ComputeDescenderAdjustment (*textStyle);
+
+    return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DVec2d          AnnotationTableCell::GetEmptyMinimumSizeWithoutMargins () const
+    {
+    return GetTable().GetEmptyMinimumSizeWithoutMargins (GetTableRegion());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double          AnnotationTableCell::GetFullyCompressedContentHeight () const
+    {
+    TableCellMarginValues   margins  = GetMargins();
+    double                  minContentHeight;
+
+    if ( ! IsEmpty())
+        minContentHeight = m_contentHolder->_GetFullyCompressedHeight();
+    else
+        minContentHeight = GetEmptyMinimumSizeWithoutMargins().y;
+
+    return minContentHeight + margins.m_top + margins.m_bottom;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double          AnnotationTableCell::GetFullyCompressedContentWidth () const
+    {
+    TableCellMarginValues   margins  = GetMargins();
+    double                  minContentWidth;
+
+    if ( ! IsEmpty())
+        minContentWidth = m_contentHolder->_GetFullyCompressedWidth();
+    else
+        minContentWidth = GetEmptyMinimumSizeWithoutMargins().x;
+
+    return minContentWidth + margins.m_left + margins.m_right;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double          AnnotationTableCell::GetFullyExpandedContentHeight () const
+    {
+    TableCellMarginValues   margins  = GetMargins();
+    double                  expandedHeight;
+
+    if ( ! IsEmpty())
+        expandedHeight = m_contentHolder->_GetFullyExpandedHeight();
+    else
+        expandedHeight = GetEmptyMinimumSizeWithoutMargins().y;
+
+    return expandedHeight + margins.m_top + margins.m_bottom;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double          AnnotationTableCell::GetFullyExpandedContentWidth () const
+    {
+    TableCellMarginValues   margins  = GetMargins();
+    double                  expandedWidth;
+
+    if ( ! IsEmpty())
+        expandedWidth = m_contentHolder->_GetFullyExpandedWidth();
+    else
+        expandedWidth = GetEmptyMinimumSizeWithoutMargins().x;
+
+    return expandedWidth + margins.m_left + margins.m_right;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DVec2d          AnnotationTableCell::GetContentSize () const
+    {
+    TableCellMarginValues   margins = GetMargins();
+    DVec2d                  size;
+
+    if ( ! IsEmpty())
+        size = m_contentHolder->_GetSize ();
+    else
+        size = GetEmptyMinimumSizeWithoutMargins ();
+
+    size.x += margins.m_left + margins.m_right;
+    size.y += margins.m_top  + margins.m_bottom;
+
+    return size;
+    }
+
+#if defined (NEEDSWORK)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d        AnnotationTableCell::GetContentOrigin (DPoint3dCR cellOrigin, DVec3dCR xCellVec, DVec3dCR yCellVec) const
+    {
+    DVec2d                  cellSize = GetSize();
+    DVec2d                  contentBox;
+    DVec3d                  xContentVec, yContentVec;
+    double                  topContentMargin, bottomContentMargin;
+    double                  leftContentMargin, rightContentMargin;
+    DPoint3d                contentOrigin;
+    TableCellMarginValues   marginValues = GetMargins();
+
+    switch (GetOrientation())
+        {
+        default:
+            {
+            //  +-----------+
+            //  | oo>       |
+            //  |           |
+            //  |           |
+            //  |           |
+            //  +-----------+
+
+            contentBox          = cellSize;
+            contentOrigin       = cellOrigin;
+            xContentVec         = xCellVec;
+            yContentVec         = yCellVec;
+            topContentMargin    = marginValues.m_top;
+            bottomContentMargin = marginValues.m_bottom;
+            leftContentMargin   = marginValues.m_left;
+            rightContentMargin  = marginValues.m_right;
+
+            break;
+            }
+        case TableCellOrientation::Rotate90:
+            {
+            //  +-----------+
+            //  |         o |
+            //  |         o |
+            //  |         v |
+            //  |           |
+            //  +-----------+
+
+            contentBox.Init (cellSize.y, cellSize.x);
+            contentOrigin.SumOf (cellOrigin, xCellVec, cellSize.x);
+            xContentVec.Init   (yCellVec);
+            yContentVec.Negate (xCellVec);
+            topContentMargin    = marginValues.m_right;
+            bottomContentMargin = marginValues.m_left;
+            leftContentMargin   = marginValues.m_top;
+            rightContentMargin  = marginValues.m_bottom;
+
+            break;
+            }
+        case TableCellOrientation::Rotate270:
+            {
+            //  +-----------+
+            //  |           |
+            //  | ^         |
+            //  | o         |
+            //  | o         |
+            //  +-----------+
+
+            contentBox.Init (cellSize.y, cellSize.x);
+            contentOrigin.SumOf (cellOrigin, yCellVec, cellSize.y);
+            xContentVec.Negate (yCellVec);
+            yContentVec.Init   (xCellVec);
+            topContentMargin    = marginValues.m_left;
+            bottomContentMargin = marginValues.m_right;
+            leftContentMargin   = marginValues.m_bottom;
+            rightContentMargin  = marginValues.m_top;
+
+            break;
+            }
+        }
+
+    // ContentOrigin is now at the (text POV) upper-left corner of the cell.
+    // Adjust it to the upper-left corner of the usable area.
+    contentOrigin.SumOf (contentOrigin, xContentVec, leftContentMargin);
+    contentOrigin.SumOf (contentOrigin, yContentVec, topContentMargin);
+
+    // ContentBox is now the full size of the cell.
+    // Shrink it to be the size of the usable area.
+    contentBox.x -= leftContentMargin + rightContentMargin;
+    contentBox.y -= topContentMargin + bottomContentMargin;
+
+    double              xAdjust = 0;
+    double              yAdjust = 0;
+    TableCellAlignment  alignment = GetAlignment();
+    HorizontalAlignment hAlign = ToHorizontalAlignment (alignment);
+    VerticalAlignment   vAlign = ToVerticalAlignment (alignment);
+
+    switch (hAlign)
+        {
+        case HorizontalAlignment::Left:   xAdjust += 0;                     break;
+        case HorizontalAlignment::Center: xAdjust += contentBox.x / 2.0;    break;
+        case HorizontalAlignment::Right:  xAdjust += contentBox.x;          break;
+        }
+
+    switch (vAlign)
+        {
+        case VerticalAlignment::Top:      yAdjust += 0;                     break;
+        case VerticalAlignment::Middle:   yAdjust += contentBox.y / 2.0;    break;
+        case VerticalAlignment::Bottom:   yAdjust += contentBox.y;          break;
+        }
+
+    contentOrigin.SumOf (contentOrigin, xContentVec, xAdjust);
+    contentOrigin.SumOf (contentOrigin, yContentVec, yAdjust);
+
+    return contentOrigin;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d        AnnotationTableCell::ComputeContentOrigin () const
+    {
+    RotMatrix   rMatrix = m_table->GetRotation();
+    DVec3d      xVec, yVec;
+
+    rMatrix.GetColumn (xVec, 0);
+    rMatrix.GetColumn (yVec, 1);
+    yVec.Negate();
+
+    DPoint3d    cellOrigin = ComputeOrigin();
+
+    return GetContentOrigin (cellOrigin, xVec, yVec);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+RotMatrix       AnnotationTableCell::GetContentRotation () const
+    {
+    RotMatrix   tableRotation   = m_table->GetRotation();
+    RotMatrix   contentRotation;
+
+    switch (GetOrientation())
+        {
+        default:
+            {
+            contentRotation = tableRotation;
+            break;
+            }
+        case TableCellOrientation::Rotate90:
+            {
+            RotMatrix   adjustment = RotMatrix::FromIdentity();
+            DVec3d      xVec, yVec, zVec;
+
+            adjustment.GetColumns (xVec, yVec, zVec);
+            yVec.Negate();
+
+            adjustment = RotMatrix::FromColumnVectors (yVec, xVec, zVec);
+            contentRotation.InitProduct (adjustment, tableRotation);
+
+            break;
+            }
+        case TableCellOrientation::Rotate270:
+            {
+            RotMatrix   adjustment = RotMatrix::FromIdentity();
+            DVec3d      xVec, yVec, zVec;
+
+            adjustment.GetColumns (xVec, yVec, zVec);
+            xVec.Negate();
+
+            adjustment = RotMatrix::FromColumnVectors (yVec, xVec, zVec);
+            contentRotation.InitProduct (adjustment, tableRotation);
+
+            break;
+            }
+        }
+
+    return contentRotation;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableCell::ComputeOrigin (DPoint3dR cellOrigin, SubTable const& subTable, DVec3dCR xVec, DVec3dCR yVec) const
+    {
+    cellOrigin = subTable.m_origin;
+
+    bool foundIt = false;
+
+    for (TextTableRowCP const& row : subTable.m_rows)
+        {
+        if (row->GetIndex() == m_index.row)
+            {
+            foundIt = true;
+            break;
+            }
+
+        cellOrigin.SumOf (cellOrigin, yVec, row->GetHeight());
+        }
+
+    if ( ! foundIt)
+        return ERROR;
+
+    foundIt = false;
+
+    for (TextTableColumnCP const& col : subTable.m_columns)
+        {
+        if (col->GetIndex() == m_index.col)
+            {
+            foundIt = true;
+            break;
+            }
+
+        cellOrigin.SumOf (cellOrigin, xVec, col->GetWidth());
+        }
+
+    return foundIt ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d        AnnotationTableCell::ComputeOrigin () const
+    {
+    RotMatrix   rMatrix = m_table->GetRotation();
+    DVec3d      xVec, yVec;
+
+    rMatrix.GetColumn (xVec, 0);
+    rMatrix.GetColumn (yVec, 1);
+    yVec.Negate();
+
+    SubTables subTables;
+
+    m_table->LayoutSubTables (subTables);
+
+    for (SubTable const& subTable : subTables)
+        {
+        DPoint3d    cellOrigin;
+
+        if (SUCCESS == ComputeOrigin (cellOrigin, subTable, xVec, yVec))
+            return cellOrigin;
+        }
+
+    BeAssert (false);
+    return m_table->GetOrigin();
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::ApplyTextStyleByRegion ()
+    {
+    AnnotationTextBlockCP textBlock = GetTextBlock();
+
+    if (NULL == textBlock)
+        return;
+
+    AnnotationTableRegion  region       = GetTableRegion();
+    AnnotationTextStyleId  textStyleId  = GetTable().GetTextStyleId (region);
+
+    /*---------------------------------------------------------------------
+        Each cell gets to specify its own justification.
+    ---------------------------------------------------------------------*/
+    TableCellAlignment                              alignment     = GetAlignment();
+    AnnotationTextBlock::HorizontalJustification    justification = ToTextBlockJustification (alignment);
+
+    AnnotationTextBlockPtr copyTextBlock = textBlock->Clone();
+    copyTextBlock->SetJustification (justification);
+    copyTextBlock->SetStyleId(textStyleId, SetAnnotationTextStyleOptions::Default);
+
+    SetTextBlock(*copyTextBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableCell::IsEmpty () const
+    {
+    return (NULL != m_contentHolder) ? m_contentHolder->_IsEmpty() : true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTextBlockCP     AnnotationTableCell::GetTextBlock () const
+    {
+    if (NULL == m_contentHolder)
+        return NULL;
+
+    TextBlockHolder* holder = m_contentHolder->_AsTextBlockHolder();
+
+    if (NULL == holder)
+        return NULL;
+
+    return holder->GetTextBlock();
+    }
+
+#if defined (NEEDSWORK)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TextBlockP      AnnotationTableCell::GetTextBlockForFieldProcessing()
+    {
+    TextBlockHolder* holder = nullptr != m_contentHolder ? m_contentHolder->_AsTextBlockHolder() : nullptr;
+    return nullptr != holder ? holder->GetTextBlockForFieldProcessing() : nullptr;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::SetSizeFromContents (DVec2dCP oldContentSize)
+    {
+    // Will only affect the last row and column in the cell's span
+    AnnotationTableCellIndex    cellIndex   = GetIndex();
+    AnnotationTableRowP         row         = GetTable().GetRow    (cellIndex.row + GetRowSpan() - 1);
+    AnnotationTableColumnP      column      = GetTable().GetColumn (cellIndex.col + GetColumnSpan() - 1);
+    double                      rowHeight   = row->GetHeight();
+    double                      colWidth    = column->GetWidth();
+
+    DVec2d                      currSize    = GetSize();
+    double                      heightSuppliedByOtherRows   = currSize.y - rowHeight;
+    double                      widthSuppliedByOtherColumns = currSize.x - colWidth;
+
+    DVec2d                      neededSize      = GetContentSize();
+    double                      rowNeededHeight = neededSize.y - heightSuppliedByOtherRows;
+    double                      colNeededWidth  = neededSize.x - widthSuppliedByOtherColumns;
+
+    /// Height
+    if (rowHeight < rowNeededHeight)
+        {
+        row->SetHeight (rowNeededHeight, SizeLockAction::TurnOff);
+        }
+    else
+    if ( ! row->GetHeightLock() && rowHeight > rowNeededHeight)
+        {
+        if (nullptr == oldContentSize || oldContentSize->y > currSize.y)
+            row->SetHeightFromContents();
+        }
+
+    /// Width
+    if (colWidth < colNeededWidth)
+        {
+        column->SetWidth (colNeededWidth, SizeLockAction::TurnOff);
+        }
+    else
+    if ( ! column->GetWidthLock() && colWidth > colNeededWidth)
+        {
+        if (nullptr == oldContentSize || oldContentSize->x > currSize.x)
+            column->SetWidthFromContents(false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::InitContentsToEmptyTextBlock ()
+    {
+    m_contentHolder = CellContentHolderPtr (new TextBlockHolder (*this));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::SetTextBlockDirect (AnnotationTextBlockCR textBlock)
+    {
+    TextBlockHolder* holder = m_contentHolder->_AsTextBlockHolder();
+
+    if (NULL == holder)
+        {
+        BeAssert (false); // needs work, if there is a holder, switch it to a TextBlockHolder
+
+        // Needs to call this, but also clean up instance data from the other holder
+        //InitContentsToEmptyTextBlock();
+
+        return;
+        }
+
+    holder->SetTextBlock (textBlock);
+    SetHasChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::SetTextBlock (AnnotationTextBlockCR textBlock)
+    {
+    DVec2d      oldContentSize  = GetContentSize();
+
+    SetTextBlockDirect (textBlock);
+    SetSizeFromContents (&oldContentSize);
+    }
+
+#if defined (NEEDSWORK)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::SetTextString (WCharCP newString)
+    {
+    TextBlockPtr    textBlock   = CreateEmptyTextBlock();
+
+    if (NULL != newString && L'\0' != *newString)
+        textBlock->AppendText (newString);
+
+    SetTextBlock (*textBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::ClearContents ()
+    {
+    SetTextString (L"");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void   AnnotationTableCell::SetFillKey (UInt32 fillKey)   {                 m_instanceHolder.SetInteger (TEXTTABLE_CELL_PROP_FillKey, fillKey); }
+void   AnnotationTableCell::ClearFillKey ()               {                 m_instanceHolder.SetToNull  (TEXTTABLE_CELL_PROP_FillKey); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void   AnnotationTableCell::ApplyToFillRuns ()
+    {
+    TextTableRowP   row             = m_table->GetRow (m_index.row);
+    FillRunsR       fillRuns        = row->GetFillRuns();
+    UInt32          verticalSpan    = GetRowSpan();
+    ECValue         val             = m_instanceHolder.GetValue (TEXTTABLE_CELL_PROP_FillKey);
+
+    if ( ! val.IsNull() && 0 == (UInt32) val.GetInteger())
+        {
+        fillRuns.CreateGap (NULL, m_index.col, GetColumnSpan());
+        }
+    else
+        {
+        UInt32  runKey = val.IsNull() ? 0 : (UInt32) val.GetInteger();
+
+        fillRuns.ApplyRun (runKey, verticalSpan, m_index.col, GetColumnSpan());
+        fillRuns.MergeRedundantRuns (m_table);
+        }
+
+    for (UInt32 iRow = 1; iRow < verticalSpan; iRow++)
+        {
+        UInt32          rowIndex        = m_index.row + iRow;
+        TextTableRowP   spannedRow      = m_table->GetRow (rowIndex);
+        FillRunsR       spannedFillRuns = spannedRow->GetFillRuns();
+
+        spannedFillRuns.CreateGap (NULL, m_index.col, GetColumnSpan());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void   AnnotationTableCell::SetFillSymbology (TableSymbologyValuesCR symb)
+    {
+    if ( ! symb.HasFillVisible())
+        {
+        ClearFillKey();
+        }
+    else
+    if ( ! symb.GetFillVisible())
+        {
+        SetFillKey(0);
+        }
+    else
+        {
+        if (UNEXPECTED_CONDITION ( ! symb.HasFillColor()))
+            return;
+
+        FillEntry      newFill;
+        newFill.SetFillColor (symb.GetFillColor());
+
+        UInt32 newKey = m_table->GetFillDictionary().FindOrAddFill (newFill);
+
+        SetFillKey (newKey);
+        }
+
+    ApplyToFillRuns();
+    }
+
+#endif
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        AnnotationTableCell::GetRowSpan () const
+    {
+    MergeEntryCP entry = GetTable().GetMergeDictionary().GetMerge (m_index);
+
+    if (NULL == entry)
+        return 1;
+
+    return entry->GetRowSpan();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        AnnotationTableCell::GetColumnSpan () const
+    {
+    MergeEntryCP entry = GetTable().GetMergeDictionary().GetMerge (m_index);
+
+    if (NULL == entry)
+        return 1;
+
+    return entry->GetColumnSpan();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool          AnnotationTableCell::IndexIsInSpan (AnnotationTableCellIndexCR index) const
+    {
+    AnnotationTableCellIndex  myIndex = GetIndex();
+
+    if (myIndex.row > index.row)
+        return false;
+
+    if (myIndex.col > index.col)
+        return false;
+
+    if (myIndex.row + GetRowSpan() < index.row)
+        return false;
+
+    if (myIndex.col + GetColumnSpan() < index.col)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::SetAsMergedCellRoot (uint32_t rowSpan, uint32_t colSpan)
+    {
+    if (IsMergedCellInterior())
+        InitContentsToEmptyTextBlock();
+
+    MergeEntryP entry = GetTable().GetMergeDictionary().GetMerge (m_index);
+
+    if (NULL != entry)
+        {
+        entry->SetRowSpan (rowSpan);
+        entry->SetColumnSpan (colSpan);
+        return;
+        }
+
+    MergeEntry merge (GetTable(), m_index);
+
+    merge.SetRowSpan (rowSpan);
+    merge.SetColumnSpan (colSpan);
+
+    EXPECTED_CONDITION (SUCCESS == GetTable().GetMergeDictionary().AddMerge (merge));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::DeleteMergeCellInteriorRow ()
+    {
+    MergeEntryP merge = GetTable().GetMergeDictionary().GetMerge (m_index);
+
+    if (UNEXPECTED_CONDITION (NULL == merge))
+        return;
+
+    uint32_t    rowSpan = merge->GetRowSpan();
+
+    if (UNEXPECTED_CONDITION (rowSpan <= 1))
+        return;
+
+    merge->SetRowSpan (rowSpan - 1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::DeleteMergeCellInteriorColumn ()
+    {
+    MergeEntryP merge = GetTable().GetMergeDictionary().GetMerge (m_index);
+
+    if (UNEXPECTED_CONDITION (NULL == merge))
+        return;
+
+    uint32_t    colSpan = merge->GetColumnSpan();
+
+    if (UNEXPECTED_CONDITION (colSpan <= 1))
+        return;
+
+    merge->SetColumnSpan (colSpan - 1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableCell::IsMergedCellInterior () const
+    {
+    return NULL == m_contentHolder;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::SetAsMergedCellInterior (bool isMerged)
+    {
+    if (isMerged)
+        {
+        m_contentHolder = NULL;
+        return;
+        }
+
+    if (IsMergedCellInterior())
+        InitContentsToEmptyTextBlock();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  AnnotationTableColumn::AnnotationTableColumn (AnnotationTableElementR table, int index)
+    :
+    AnnotationTableAspect (table), m_index (index)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  AnnotationTableColumn::AnnotationTableColumn (AnnotationTableColumnCR rhs) : AnnotationTableAspect (rhs)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableColumnR AnnotationTableColumn::operator= (AnnotationTableColumnCR rhs)
+    {
+    CopyDataFrom (rhs);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableColumn::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+    {
+    AnnotationTableColumnCR   rhs = static_cast <AnnotationTableColumnCR> (rhsAspect);
+
+    m_index             = rhs.m_index;
+    m_widthLock         = rhs.m_widthLock;
+    m_width             = rhs.m_width;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-void    AnnotationTableRow::_BindAllProperties(ECSqlStatement& statement)
+PropertyNames   AnnotationTableColumn::GetPropertyNames()
     {
-    _BindIdProperties (statement);
+    PropertyNames names =
+        {
+        { (int) AnnotationTableColumn::PropIndex::ColumnIndex,  COLUMN_PARAM_Index      },
+        { (int) AnnotationTableColumn::PropIndex::WidthLock,    COLUMN_PARAM_WidthLock  },
+        { (int) AnnotationTableColumn::PropIndex::Width,        COLUMN_PARAM_Width      },
+        };
 
-    BindBool    (statement, ROW_PARAM_HeightLock,       m_heightLock);
-    BindDouble  (statement, ROW_PARAM_Height,           m_height);
+    return names;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void AnnotationTableColumn::_FlushChangesToProperties()
+    {
+    double  defaultWidth = GetTable().GetDefaultColumnWidth();
+    double  colWidth  = GetWidth();
+
+    if (DoubleOps::WithinTolerance (defaultWidth, colWidth, s_doubleTol))
+        m_width.Clear ();
+
+    if (GetWidthLock ()) // default is true
+        m_widthLock.Clear ();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-bvector<Utf8String> const&      TableHeaderAspect::GetPropertyNames()
+bool    AnnotationTableColumn::_ShouldBePersisted() const
     {
-    static PropertyNames s_propNames;
+    if (m_width.IsValid())         return true;
+    if (m_widthLock.IsValid())     return true;
 
-    if ( ! s_propNames.empty())
-        return s_propNames;
+    return false;
+    }
 
-    s_propNames = 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+void    AnnotationTableColumn::_BindProperties(ECSqlStatement& statement)
+    {
+    statement.BindInt (statement.GetParameterIndex(COLUMN_PARAM_Index), m_index);
+
+    BindBool    (statement, COLUMN_PARAM_WidthLock,       m_widthLock);
+    BindDouble  (statement, COLUMN_PARAM_Width,           m_width);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+void  AnnotationTableColumn::_AssignValue (int index, IECSqlValue const& value)
+    {
+    PropIndex propIndex = static_cast <PropIndex> (index);
+
+    switch (propIndex)
+        {
+        case PropIndex::Width:          m_width.SetValue       (value.GetDouble());    break;
+        case PropIndex::WidthLock:      m_widthLock.SetValue   (value.GetBoolean());   break;
+        default:                        BeAssert (false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableColumn::SetIndex (uint32_t val)
+    {
+    m_index = val;
+    SetHasChanges();
+
+#if defined (NEEDSWORK)
+    // Adjust all the edge runs owned by this column
+    for (TextTableEdgeRun& edgeRun: m_edgeRuns)
+        edgeRun.SetHostIndex (m_index);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<AnnotationTableCellP>     AnnotationTableColumn::FindCells() const
+    {
+    // return any cells that intersect this row
+    bvector<AnnotationTableCellP>     cells;
+
+    for (uint32_t rowIndex = 0; rowIndex < GetTable().GetRowCount(); rowIndex++)
+        {
+        // try to find a merge root in this row that spans this col
+        uint32_t  colIndex = m_index;
+
+        while (true)
+            {
+            AnnotationTableCellP cell = GetTable().GetCell (AnnotationTableCellIndex (rowIndex, colIndex));
+
+            if (NULL != cell && colIndex + cell->GetColumnSpan() - 1 >= m_index)
+                {
+                cells.push_back (cell);
+                break;
+                }
+
+            if (0 == colIndex)
+                break;
+
+            colIndex--;
+            }
+        }
+
+    return cells;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+void  AnnotationTableColumn::SetWidthLock   (bool   val)  { m_widthLock.SetValue (val);   SetHasChanges(); }
+void  AnnotationTableColumn::SetWidthDirect (double val)  { m_width.SetValue (val);       SetHasChanges(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+double  AnnotationTableColumn::GetWidth () const      { return m_width.IsValid() ? m_width.GetValue() : GetTable().GetDefaultColumnWidth(); }
+bool    AnnotationTableColumn::GetWidthLock () const  { return m_widthLock.IsValid() ? m_widthLock.GetValue() : true; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableColumn::ShrinkWidthToContents ()
+    {
+    double  minimumWidth = GetMinimumWidth(false);
+
+    SetWidth (minimumWidth, SizeLockAction::NoChange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TableHeaderFooterType   AnnotationTableColumn::GetHeaderFooterType () const
+    {
+    return GetTable().GetColumnHeaderFooterType (GetIndex());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::WidthChanged ()
+    {
+    /*-------------------------------------------------------------------------
+        Layout the contents based on the new width and fix the row height if needed.
+    -------------------------------------------------------------------------*/
+    DVec2d                  cellSize = GetSize();
+    TableCellMarginValues   margins  = GetMargins();
+    double                  hMargins = margins.m_left + margins.m_right;
+
+    FitContentToWidth (cellSize.x - hMargins);
+
+    // Will only affect the last row in the cell's span
+    AnnotationTableCellIndex    cellIndex   = GetIndex();
+    uint32_t                    rowIndex    = cellIndex.row + GetRowSpan() - 1;
+    AnnotationTableRowP         row         = GetTable().GetRow (rowIndex);
+
+    DVec2d          cellNeededSize          = GetContentSize();
+    double          additionalNeededHeight  = cellNeededSize.y - cellSize.y;
+
+    // If the cell needs more height make the row taller
+    if (0 < additionalNeededHeight)
+        {
+        double      newRowHeight = row->GetHeight() + additionalNeededHeight;
+
+        row->SetHeight (newRowHeight, SizeLockAction::NoChange);
+        return;
+        }
+
+    // See if we can shrink the row height
+    if ( ! row->GetHeightLock() && 0 > additionalNeededHeight)
+        row->ShrinkHeightToContents();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableColumn::SetWidth (double newValue, SizeLockAction lockAction)
+    {
+    double oldValue = GetWidth();
+
+    SetWidthDirect (newValue);
+
+    if (SizeLockAction::TurnOn == lockAction)
+        SetWidthLock (true);
+    else
+    if (SizeLockAction::TurnOff == lockAction)
+        SetWidthLock (false);
+
+    if (DoubleOps::WithinTolerance (newValue, oldValue, s_doubleTol))
+        return;
+
+    /*-------------------------------------------------------------------------
+        Layout the contents of each cell based on the new width and fix the
+        row heights if needed.
+    -------------------------------------------------------------------------*/
+    for (AnnotationTableCellP const& cell: FindCells())
+        cell->WidthChanged();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double AnnotationTableColumn::GetMinimumWidth (bool allowedToChangeContentLayout) const
+    {
+    bool                colHasUnsharedCells = false;
+    double              minimumWidth = 0.0;
+    double              currColWidth = GetWidth();
+
+    for (AnnotationTableCellP const& cell: FindCells())
+        {
+        DVec2d          cellSize                    = cell->GetSize();
+        double          widthSuppliedByOtherCols    = cellSize.x - currColWidth;
+        double          widthNeededForContent;
+
+        if (cell->GetIndex().col == GetIndex() && 1 == cell->GetColumnSpan())
+            colHasUnsharedCells = true;
+
+        if (allowedToChangeContentLayout)
+            widthNeededForContent = cell->GetFullyCompressedContentWidth();
+        else
+            widthNeededForContent = cell->GetContentSize().x;
+
+        double          colNeededWidth  = widthNeededForContent - widthSuppliedByOtherCols;
+
+        if (minimumWidth < colNeededWidth)
+            minimumWidth = colNeededWidth;
+        }
+
+    if ( ! colHasUnsharedCells)
+        {
+        // If all the cells are merged with other columns, it is possible that the entire needed
+        // width might be supplied by those columns.  But we don't want min width to be zero.
+        // The alternate minimum is computed as if the column contained its own empty cells.
+        double altMin = GetAlternateMinimumWidth();
+
+        if (minimumWidth < altMin)
+            minimumWidth = altMin;
+        }
+
+    return minimumWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double AnnotationTableColumn::ComputeMinimumWidth () const
+    {
+    return GetMinimumWidth (true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableColumn::SetWidth (double newWidth)
+    {
+    double  minimumWidth = GetMinimumWidth(true);
+
+    // Never set the width smaller than the minimum
+    if (newWidth < minimumWidth)
+        newWidth = minimumWidth;
+
+    SetWidth (newWidth, SizeLockAction::TurnOn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableColumn::SetWidthFromContents (bool allowedToChangeContentLayout)
+    {
+    double  maxNeededWidth = 0.0;
+    double  currColWidth = GetWidth();
+
+    /*-------------------------------------------------------------------------
+        Find the maximum width needed based on the contents of the column.
+    -------------------------------------------------------------------------*/
+    for (AnnotationTableCellP const& cell: FindCells())
+        {
+        DVec2d  cellSize                    = cell->GetSize();
+        double  widthSuppliedByOtherCols    = cellSize.x - currColWidth;
+        double  widthNeededForContent;
+
+        if (allowedToChangeContentLayout)
+            widthNeededForContent = cell->GetFullyExpandedContentWidth();
+        else
+            widthNeededForContent = cell->GetContentSize().x;
+
+        double  colNeededWidth  = widthNeededForContent - widthSuppliedByOtherCols;
+
+        if (maxNeededWidth < colNeededWidth)
+            maxNeededWidth = colNeededWidth;
+        }
+
+    /*-------------------------------------------------------------------------
+        Clear the lock flag if we used the expanded width, this column is
+        now free to grow/shrink with future content width changes.
+    -------------------------------------------------------------------------*/
+    SizeLockAction  lockAction = allowedToChangeContentLayout ? SizeLockAction::TurnOff : SizeLockAction::NoChange;
+
+    SetWidth (maxNeededWidth, lockAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableColumn::SetWidthFromContents ()
+    {
+    SetWidthFromContents (true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  MergeEntry::MergeEntry (AnnotationTableElementR table, AnnotationTableCellIndex rootCell)
+    :
+    AnnotationTableAspect (table), m_rootCell (rootCell)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  MergeEntry::MergeEntry (MergeEntryCR rhs) : AnnotationTableAspect (rhs)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+MergeEntryR MergeEntry::operator= (MergeEntryCR rhs)
+    {
+    CopyDataFrom (rhs);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MergeEntry::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+    {
+    MergeEntryCR   rhs = static_cast <MergeEntryCR> (rhsAspect);
+
+    m_rootCell      = rhs.m_rootCell;
+    m_rowSpan       = rhs.m_rowSpan;
+    m_columnSpan    = rhs.m_columnSpan;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+PropertyNames   MergeEntry::GetPropertyNames()
+    {
+    PropertyNames names =
+        {
+        { (int) MergeEntry::PropIndex::RootCell,        MERGEENTRY_PARAM_RootCell       },
+        { (int) MergeEntry::PropIndex::RowSpan,         MERGEENTRY_PARAM_RowSpan        },
+        { (int) MergeEntry::PropIndex::ColumnSpan,      MERGEENTRY_PARAM_ColumnSpan     },
+        };
+
+    return names;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+bool    MergeEntry::_ShouldBePersisted() const
+    {
+    if (m_rowSpan.IsValid())        return true;
+    if (m_columnSpan.IsValid())     return true;
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void    MergeEntry::_BindProperties(ECSqlStatement& statement)
+    {
+    AnnotationTableCellIndex::BindCellIndex (statement, MERGEENTRY_PARAM_RootCell, m_rootCell);
+
+    BindUInt   (statement, MERGEENTRY_PARAM_RowSpan,        m_rowSpan);
+    BindUInt   (statement, MERGEENTRY_PARAM_ColumnSpan,     m_columnSpan);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void  MergeEntry::_AssignValue (int index, IECSqlValue const& value)
+    {
+    PropIndex propIndex = static_cast <PropIndex> (index);
+
+    switch (propIndex)
+        {
+        case PropIndex::RowSpan:        m_rowSpan.SetValue      (value.GetInt());    break;
+        case PropIndex::ColumnSpan:     m_columnSpan.SetValue   (value.GetInt());   break;
+        default:                        BeAssert (false);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+AnnotationTableCellIndexCR    MergeEntry::GetRootIndex () const     { return m_rootCell; }
+void MergeEntry::SetRootIndex (AnnotationTableCellIndexCR val)      { m_rootCell = val; SetHasChanges(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void  MergeEntry::SetRowSpan     (uint32_t val)  { m_rowSpan.SetValue (val);    SetHasChanges(); }
+void  MergeEntry::SetColumnSpan  (uint32_t val)  { m_columnSpan.SetValue (val); SetHasChanges(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+uint32_t  MergeEntry::GetRowSpan    () const  { return m_rowSpan.GetValue(); }
+uint32_t  MergeEntry::GetColumnSpan () const  { return m_columnSpan.GetValue(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   MergeDictionary::AddMerge (MergeEntryCR merge)
+    {
+    bpair <MergeMap::iterator, bool> retVal;
+
+    retVal = insert (MergeMap::value_type (merge.GetRootIndex(), merge));
+
+    return retVal.second ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+MergeEntryP    MergeDictionary::GetMerge (AnnotationTableCellIndexCR index)
+    {
+    MergeMap::iterator entry = find (index);
+
+    if (end() == entry)
+        return NULL;
+
+    return &entry->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   MergeDictionary::DeleteMerge (AnnotationTableCellIndexCR index, AnnotationTableElementR table)
+    {
+    MergeEntryP    entry = GetMerge (index);
+
+    if (UNEXPECTED_CONDITION (NULL == entry))
+        return ERROR;
+
+    table.DeleteAspect (*entry);
+
+    return (1 == erase (index)) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+MergeEntryCP    MergeDictionary::GetMerge (AnnotationTableCellIndexCR index) const
+    {
+    return (const_cast <MergeDictionary*> (this))->GetMerge (index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MergeDictionary::AdjustMergesAfterIndex (uint32_t index, bool isRow, bool increment)
+    {
+    // A row/column was inserted or deleted.  All merges on subsequent rows/columns need
+    // to have their rootIndex adjusted.  For merges that span the insert/delete these will
+    // have their span's adjusted within Insert/DeleteRow.
+
+    bvector<MergeEntry> mergesToAdjust;
+    MergeMap::iterator  mergeMapIter = begin();
+
+    while (mergeMapIter != end())
+        {
+        AnnotationTableCellIndexCR    rootIndex = mergeMapIter->first;
+
+        if (isRow)
+            {
+            if (rootIndex.row >= index)
+                mergesToAdjust.push_back (mergeMapIter->second);
+            }
+        else
+            {
+            if (rootIndex.col >= index)
+                mergesToAdjust.push_back (mergeMapIter->second);
+            }
+
+        ++mergeMapIter;
+        }
+
+    for (MergeEntryR merge : mergesToAdjust)
+        {
+        AnnotationTableCellIndex  rootIndex = merge.GetRootIndex();
+        uint32_t&                 toAdjust (isRow ? rootIndex.row : rootIndex.col);
+
+        erase (rootIndex);
+
+        if (increment)
+            toAdjust += 1;
+        else
+            toAdjust -= 1;
+
+        merge.SetRootIndex (rootIndex);
+        AddMerge (merge);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+PropertyNames   TableHeaderAspect::GetPropertyNames()
+    {
+    PropertyNames propNames =
         {
         { (int) TableHeaderAspect::PropIndex::RowCount,                HEADER_PARAM_RowCount                  },
         { (int) TableHeaderAspect::PropIndex::ColumnCount,             HEADER_PARAM_ColumnCount               },
@@ -675,6 +3378,7 @@ bvector<Utf8String> const&      TableHeaderAspect::GetPropertyNames()
         { (int) TableHeaderAspect::PropIndex::DefaultMarginLeft,       HEADER_PARAM_DefaultMarginLeft         }, 
         { (int) TableHeaderAspect::PropIndex::DefaultMarginRight,      HEADER_PARAM_DefaultMarginRight        }, 
         { (int) TableHeaderAspect::PropIndex::DefaultCellAlignment,    HEADER_PARAM_DefaultCellAlignment      }, 
+        { (int) TableHeaderAspect::PropIndex::DefaultCellOrientation,  HEADER_PARAM_DefaultCellOrientation    }, 
         { (int) TableHeaderAspect::PropIndex::FillSymbologyKeyOddRow,  HEADER_PARAM_FillSymbologyKeyOddRow    }, 
         { (int) TableHeaderAspect::PropIndex::FillSymbologyKeyEvenRow, HEADER_PARAM_FillSymbologyKeyEvenRow   }, 
         { (int) TableHeaderAspect::PropIndex::TitleRowTextStyle,       HEADER_PARAM_TitleRowTextStyle         }, 
@@ -692,17 +3396,8 @@ bvector<Utf8String> const&      TableHeaderAspect::GetPropertyNames()
         { (int) TableHeaderAspect::PropIndex::FooterColumnTextHeight,  HEADER_PARAM_FooterColumnTextHeight    }, 
         };
 
-    return s_propNames;
+    return propNames;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   10/2015
-//---------------------------------------------------------------------------------------
-Utf8StringR     TableHeaderAspect::_GetECSqlInsertStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8StringR     TableHeaderAspect::_GetECSqlUpdateStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8StringR     TableHeaderAspect::_GetECSqlDeleteStringBuffer() { static Utf8String s_str; return s_str; }
-Utf8CP          TableHeaderAspect::_GetECClassName() { return DGN_CLASSNAME_AnnotationTableHeader; }
-bvector<Utf8String> const& TableHeaderAspect::_GetPropertyNames() { return GetPropertyNames(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
@@ -734,6 +3429,7 @@ void  TableHeaderAspect::_AssignValue (int index, IECSqlValue const& value)
         case    PropIndex::DefaultMarginLeft:           m_defaultMarginLeft.SetValue (value.GetDouble());        break;
         case    PropIndex::DefaultMarginRight:          m_defaultMarginRight.SetValue (value.GetDouble());        break;
         case    PropIndex::DefaultCellAlignment:        m_defaultCellAlignment    = value.GetInt();        break;
+        case    PropIndex::DefaultCellOrientation:      m_defaultCellOrientation    = value.GetInt();        break;
         case    PropIndex::FillSymbologyKeyOddRow:      m_fillSymbologyKeyOddRow  = value.GetInt();        break;
         case    PropIndex::FillSymbologyKeyEvenRow:     m_fillSymbologyKeyEvenRow = value.GetInt();        break;
         case    PropIndex::TitleRowTextStyle:           m_titleRowTextStyle.SetValue (value.GetInt64());        break;
@@ -807,18 +3503,20 @@ void    TableHeaderAspect::Invalidate()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   08/2015
 //---------------------------------------------------------------------------------------
-void    TableHeaderAspect::CopyDataFrom(TableHeaderAspect const& rhs)
+void    TableHeaderAspect::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
     {
+    TableHeaderAspect const&   rhs = static_cast <TableHeaderAspect const&> (rhsAspect);
+
     m_rowCount                  = rhs.m_rowCount;
     m_columnCount               = rhs.m_columnCount;
     m_textStyleId               = rhs.m_textStyleId;
-    m_titleRowCount             = 0;
-    m_headerRowCount            = 0;
-    m_footerRowCount            = 0;
-    m_headerColumnCount         = 0;
-    m_footerColumnCount         = 0;
-    m_breakType                 = 0;
-    m_breakPosition             = 0;
+    m_titleRowCount             = rhs.m_titleRowCount;
+    m_headerRowCount            = rhs.m_headerRowCount;
+    m_footerRowCount            = rhs.m_footerRowCount;
+    m_headerColumnCount         = rhs.m_headerColumnCount;
+    m_footerColumnCount         = rhs.m_footerColumnCount;
+    m_breakType                 = rhs.m_breakType;
+    m_breakPosition             = rhs.m_breakPosition;
     m_breakLength               = rhs.m_breakLength;
     m_breakGap                  = rhs.m_breakGap;
     m_repeatHeaders             = rhs.m_repeatHeaders;
@@ -850,46 +3548,37 @@ void    TableHeaderAspect::CopyDataFrom(TableHeaderAspect const& rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   08/2015
 //---------------------------------------------------------------------------------------
-void    TableHeaderAspect::_BindIdProperties(ECSqlStatement& statement)
+void    TableHeaderAspect::_BindProperties(ECSqlStatement& statement)
     {
-    statement.BindId (statement.GetParameterIndex(PARAM_ECInstanceId), GetTable().GetElementId());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   08/2015
-//---------------------------------------------------------------------------------------
-void    TableHeaderAspect::_BindAllProperties(ECSqlStatement& statement)
-    {
-    _BindIdProperties (statement);
-
-    BindInt     (statement, HEADER_PARAM_RowCount, m_rowCount);
-    BindInt     (statement, HEADER_PARAM_ColumnCount, m_columnCount);
-    BindInt64   (statement, HEADER_PARAM_TextStyleId, m_textStyleId);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_TitleRowCount),              m_titleRowCount);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_HeaderRowCount),             m_headerRowCount);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_FooterRowCount),             m_footerRowCount);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_HeaderColumnCount),          m_headerColumnCount);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_FooterColumnCount),          m_footerColumnCount);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_BreakType),                  m_breakType);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_BreakPosition),              m_breakPosition);
+    BindUInt    (statement, HEADER_PARAM_RowCount,                  m_rowCount);
+    BindUInt    (statement, HEADER_PARAM_ColumnCount,               m_columnCount);
+    BindInt64   (statement, HEADER_PARAM_TextStyleId,               m_textStyleId);
+    BindUInt    (statement, HEADER_PARAM_TitleRowCount,             m_titleRowCount);
+    BindUInt    (statement, HEADER_PARAM_HeaderRowCount,            m_headerRowCount);
+    BindUInt    (statement, HEADER_PARAM_FooterRowCount,            m_footerRowCount);
+    BindUInt    (statement, HEADER_PARAM_HeaderColumnCount,         m_headerColumnCount);
+    BindUInt    (statement, HEADER_PARAM_FooterColumnCount,         m_footerColumnCount);
+    BindUInt    (statement, HEADER_PARAM_BreakType,                 m_breakType);
+    BindUInt    (statement, HEADER_PARAM_BreakPosition,             m_breakPosition);
     BindDouble  (statement, HEADER_PARAM_BreakLength,               m_breakLength);
     BindDouble  (statement, HEADER_PARAM_BreakGap,                  m_breakGap);
     BindBool    (statement, HEADER_PARAM_RepeatHeaders,             m_repeatHeaders);
     BindBool    (statement, HEADER_PARAM_RepeatFooters,             m_repeatFooters);
-    BindDouble  (statement, HEADER_PARAM_DefaultColumnWidth, m_defaultColumnWidth);
-    BindDouble  (statement, HEADER_PARAM_DefaultRowHeight, m_defaultRowHeight);
-    BindDouble  (statement, HEADER_PARAM_DefaultMarginTop,           m_defaultMarginTop);
-    BindDouble  (statement, HEADER_PARAM_DefaultMarginBottom,        m_defaultMarginBottom);
-    BindDouble  (statement, HEADER_PARAM_DefaultMarginLeft,          m_defaultMarginLeft);
-    BindDouble  (statement, HEADER_PARAM_DefaultMarginRight,         m_defaultMarginRight);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_DefaultCellAlignment),       m_defaultCellAlignment);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_FillSymbologyKeyOddRow),     m_fillSymbologyKeyOddRow);
-    statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_FillSymbologyKeyEvenRow),    m_fillSymbologyKeyEvenRow);
-    BindInt64   (statement, HEADER_PARAM_TitleRowTextStyle,     m_titleRowTextStyle);
-    BindInt64   (statement, HEADER_PARAM_HeaderRowTextStyle,    m_headerRowTextStyle);
-    BindInt64   (statement, HEADER_PARAM_FooterRowTextStyle,    m_footerRowTextStyle);
-    BindInt64   (statement, HEADER_PARAM_HeaderColumnTextStyle, m_headerColumnTextStyle);
-    BindInt64   (statement, HEADER_PARAM_FooterColumnTextStyle, m_footerColumnTextStyle);
+    BindDouble  (statement, HEADER_PARAM_DefaultColumnWidth,        m_defaultColumnWidth);
+    BindDouble  (statement, HEADER_PARAM_DefaultRowHeight,          m_defaultRowHeight);
+    BindDouble  (statement, HEADER_PARAM_DefaultMarginTop,          m_defaultMarginTop);
+    BindDouble  (statement, HEADER_PARAM_DefaultMarginBottom,       m_defaultMarginBottom);
+    BindDouble  (statement, HEADER_PARAM_DefaultMarginLeft,         m_defaultMarginLeft);
+    BindDouble  (statement, HEADER_PARAM_DefaultMarginRight,        m_defaultMarginRight);
+    BindUInt    (statement, HEADER_PARAM_DefaultCellAlignment,      m_defaultCellAlignment);
+    BindUInt    (statement, HEADER_PARAM_DefaultCellOrientation,    m_defaultCellOrientation);
+    BindUInt    (statement, HEADER_PARAM_FillSymbologyKeyOddRow,    m_fillSymbologyKeyOddRow);
+    BindUInt    (statement, HEADER_PARAM_FillSymbologyKeyEvenRow,   m_fillSymbologyKeyEvenRow);
+    BindInt64   (statement, HEADER_PARAM_TitleRowTextStyle,         m_titleRowTextStyle);
+    BindInt64   (statement, HEADER_PARAM_HeaderRowTextStyle,        m_headerRowTextStyle);
+    BindInt64   (statement, HEADER_PARAM_FooterRowTextStyle,        m_footerRowTextStyle);
+    BindInt64   (statement, HEADER_PARAM_HeaderColumnTextStyle,     m_headerColumnTextStyle);
+    BindInt64   (statement, HEADER_PARAM_FooterColumnTextStyle,     m_footerColumnTextStyle);
     statement.BindDouble    (statement.GetParameterIndex(HEADER_PARAM_BackupTextHeight),           m_backupTextHeight);
     statement.BindInt       (statement.GetParameterIndex(HEADER_PARAM_DataSourceProviderId),       m_dataSourceProviderId);
     BindDouble  (statement, HEADER_PARAM_BodyTextHeight,             m_bodyTextHeight);
@@ -903,40 +3592,43 @@ void    TableHeaderAspect::_BindAllProperties(ECSqlStatement& statement)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr TableHeaderAspect::GetPreparedSelectStatement (AnnotationTableElementCR table)
-    {
-    static Utf8String  s_sqlString;
-
-    return AnnotationTableAspect::GetPreparedSelectStatement (s_sqlString, GetPropertyNames(), DGN_CLASSNAME_AnnotationTableHeader, true, table);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
 int         TableHeaderAspect::GetInteger (PropIndex propIndex) const
     {
     TableIntValue const* intValue = nullptr;
 
     switch (propIndex)
         {
-        case PropIndex::RowCount:                  { intValue = &m_rowCount;     break; }
-        case PropIndex::ColumnCount:               { intValue = &m_columnCount;  break; }
-        case PropIndex::TitleRowCount:             { break; }
-        case PropIndex::HeaderRowCount:            { break; }
-        case PropIndex::FooterRowCount:            { break; }
-        case PropIndex::HeaderColumnCount:         { break; }
-        case PropIndex::FooterColumnCount:         { break; }
-        case PropIndex::BreakType:                 { break; }
-        case PropIndex::BreakPosition:             { break; }
-        case PropIndex::DefaultCellAlignment:      { break; }
-        case PropIndex::FillSymbologyKeyOddRow:    { break; }
-        case PropIndex::FillSymbologyKeyEvenRow:   { break; }
-        case PropIndex::TitleRowTextStyle:         { break; }
-        case PropIndex::HeaderRowTextStyle:        { break; }
-        case PropIndex::FooterRowTextStyle:        { break; }
-        case PropIndex::HeaderColumnTextStyle:     { break; }
-        case PropIndex::FooterColumnTextStyle:     { break; }
         case PropIndex::DataSourceProviderId:      { break; }
+        }
+
+    if (EXPECTED_CONDITION (nullptr != intValue))
+        return intValue->GetValue();
+
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+int         TableHeaderAspect::GetUInteger (PropIndex propIndex) const
+    {
+    TableUIntValue const* intValue = nullptr;
+
+    switch (propIndex)
+        {
+        case PropIndex::RowCount:                  { intValue = &m_rowCount;                break; }
+        case PropIndex::ColumnCount:               { intValue = &m_columnCount;             break; }
+        case PropIndex::TitleRowCount:             { intValue = &m_titleRowCount;           break; }
+        case PropIndex::HeaderRowCount:            { intValue = &m_headerRowCount;          break; }
+        case PropIndex::FooterRowCount:            { intValue = &m_footerRowCount;          break; }
+        case PropIndex::HeaderColumnCount:         { intValue = &m_headerColumnCount;       break; }
+        case PropIndex::FooterColumnCount:         { intValue = &m_footerColumnCount;       break; }
+        case PropIndex::BreakType:                 { intValue = &m_breakType;               break; }
+        case PropIndex::BreakPosition:             { intValue = &m_breakPosition;           break; }
+        case PropIndex::DefaultCellAlignment:      { intValue = &m_defaultCellAlignment;    break; }
+        case PropIndex::DefaultCellOrientation:    { intValue = &m_defaultCellOrientation;  break; }
+        case PropIndex::FillSymbologyKeyOddRow:    { intValue = &m_fillSymbologyKeyOddRow;  break; }
+        case PropIndex::FillSymbologyKeyEvenRow:   { intValue = &m_fillSymbologyKeyEvenRow; break; }
         }
 
     if (EXPECTED_CONDITION (nullptr != intValue))
@@ -954,8 +3646,20 @@ double          TableHeaderAspect::GetDouble (PropIndex propIndex) const
 
     switch (propIndex)
         {
-        case PropIndex::DefaultColumnWidth:             { doubleValue = &m_defaultColumnWidth;  break; }
-        case PropIndex::DefaultRowHeight:               { doubleValue = &m_defaultRowHeight;    break; }
+        case PropIndex::BreakLength:              { doubleValue = &m_breakLength;             break; }
+        case PropIndex::BreakGap:                 { doubleValue = &m_breakGap;                break; }
+        case PropIndex::DefaultColumnWidth:       { doubleValue = &m_defaultColumnWidth;      break; }
+        case PropIndex::DefaultRowHeight:         { doubleValue = &m_defaultRowHeight;        break; }
+        case PropIndex::DefaultMarginTop:         { doubleValue = &m_defaultMarginTop;        break; }
+        case PropIndex::DefaultMarginBottom:      { doubleValue = &m_defaultMarginBottom;     break; }
+        case PropIndex::DefaultMarginLeft:        { doubleValue = &m_defaultMarginLeft;       break; }
+        case PropIndex::DefaultMarginRight:       { doubleValue = &m_defaultMarginRight;      break; }
+        case PropIndex::BodyTextHeight:           { doubleValue = &m_bodyTextHeight;          break; }
+        case PropIndex::TitleRowTextHeight:       { doubleValue = &m_titleRowTextHeight;      break; }
+        case PropIndex::HeaderRowTextHeight:      { doubleValue = &m_headerRowTextHeight;     break; }
+        case PropIndex::FooterRowTextHeight:      { doubleValue = &m_footerRowTextHeight;     break; }
+        case PropIndex::HeaderColumnTextHeight:   { doubleValue = &m_headerColumnTextHeight;  break; }
+        case PropIndex::FooterColumnTextHeight:   { doubleValue = &m_footerColumnTextHeight;  break; }
         }
 
     if (EXPECTED_CONDITION (nullptr != doubleValue))
@@ -998,8 +3702,6 @@ void        TableHeaderAspect::SetInteger (int v, PropIndex propIndex)
 
     switch (propIndex)
         {
-        case PropIndex::RowCount:                  { value = &m_rowCount;      break; }
-        case PropIndex::ColumnCount:               { value = &m_columnCount;   break; }
         case PropIndex::TitleRowCount:             { break; }
         case PropIndex::HeaderRowCount:            { break; }
         case PropIndex::FooterRowCount:            { break; }
@@ -1008,6 +3710,7 @@ void        TableHeaderAspect::SetInteger (int v, PropIndex propIndex)
         case PropIndex::BreakType:                 { break; }
         case PropIndex::BreakPosition:             { break; }
         case PropIndex::DefaultCellAlignment:      { break; }
+        case PropIndex::DefaultCellOrientation:    { break; }
         case PropIndex::FillSymbologyKeyOddRow:    { break; }
         case PropIndex::FillSymbologyKeyEvenRow:   { break; }
         case PropIndex::TitleRowTextStyle:         { break; }
@@ -1016,6 +3719,48 @@ void        TableHeaderAspect::SetInteger (int v, PropIndex propIndex)
         case PropIndex::HeaderColumnTextStyle:     { break; }
         case PropIndex::FooterColumnTextStyle:     { break; }
         case PropIndex::DataSourceProviderId:      { break; }
+        default: { BeAssert (false); return; }
+        }
+
+    if (UNEXPECTED_CONDITION (nullptr == value))
+        return;
+
+    value->SetValue (v);
+    SetHasChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+void        TableHeaderAspect::SetUInteger (int v, PropIndex propIndex)
+    {
+    TableUIntValue* value = nullptr;
+
+    switch (propIndex)
+        {
+        case PropIndex::RowCount:                  { value = &m_rowCount;      break; }
+        case PropIndex::ColumnCount:               { value = &m_columnCount;   break; }
+        default: { BeAssert (false); return; }
+        }
+
+    if (UNEXPECTED_CONDITION (nullptr == value))
+        return;
+
+    value->SetValue (v);
+    SetHasChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+void        TableHeaderAspect::SetBoolean (bool v, PropIndex propIndex)
+    {
+    TableBoolValue* value = nullptr;
+
+    switch (propIndex)
+        {
+        case PropIndex::RepeatHeaders:      { value = &m_repeatHeaders;   break; }
+        case PropIndex::RepeatFooters:      { value = &m_repeatFooters;   break; }
         default: { BeAssert (false); return; }
         }
 
@@ -1082,64 +3827,133 @@ void        TableHeaderAspect::SetStyleId (AnnotationTextStyleId v, PropIndex pr
     SetHasChanges();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTableSerializer::SerializeAspectChanges (AnnotationTableAspectR aspect)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCellIterator::AnnotationTableCellIterator (AnnotationTableCellCollection const& collection, bool begin)
+    :
+    m_parentCollection (&collection)
     {
-    if ( ! aspect.HasChanges())
-        return SUCCESS;
+    m_cell = NULL;
 
-    aspect._FlushChangesToProperties();
-
-    bool    aspectIsMandatory = aspect._IsRequiredOnElement ();
-    bool    shouldBePersisted = aspectIsMandatory || aspect._ShouldBePersisted ();
-
-    // if all the properties are default we don't need the aspect anymore
-    if ( ! shouldBePersisted)
-        return aspect.DeleteFromDb();
-
-    BentleyStatus status;
-
-    // Try to update an existing row, if that fails the row must not exist so create it.
-    if (SUCCESS != (status = aspect.UpdateInDb()))
-        status = aspect.InsertInDb();
-
-    if (SUCCESS != status)
-        return ERROR;
-
-    return SUCCESS;
+    if (begin)
+        m_cell = collection.m_table->GetCell (AnnotationTableCellIndex (0, 0));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationTableSerializer::SerializeTableToDb()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCellIterator::MoveToNext ()
     {
-    bool    bFailed = false;
+    if (NULL == m_cell)
+        return;
 
-    bFailed |= (SUCCESS != SerializeAspectChanges (m_table.GetHeaderAspect()));
+    AnnotationTableElementR   table       = *(m_parentCollection->m_table);
+    AnnotationTableCellIndex  currIndex   = m_cell->GetIndex();
 
-    for (AnnotationTableColumnR column: m_table.GetColumnVectorR())
+    uint32_t      colCount = table.GetColumnCount();
+    uint32_t      rowCount = table.GetRowCount();
+
+    while (true)
         {
-        bFailed |= (SUCCESS != SerializeAspectChanges (column));
+        if (currIndex.row >= rowCount -1 && currIndex.col >= colCount - 1)
+            {
+            BeAssert (currIndex.row == rowCount -1 && currIndex.col == colCount - 1);
+
+            m_cell = NULL;  // <= we have reached the end
+            return;
+            }
+
+        if (currIndex.col < colCount -1)
+            {
+            while (currIndex.col < colCount -1)
+                {
+                // Move to the next column in this row
+                currIndex.col++;
+
+                // If we got a real cell return it
+                if (NULL != (m_cell = table.GetCell (currIndex)))
+                    return;
+
+                // currIndex refers to a merged cell interior, keep going
+                }
+
+            continue; // no more columns, go around again
+            }
+
+        // Move to the first column of the next row
+        currIndex.row++;
+        currIndex.col = 0;
+
+        // If we got a real cell return it
+        if (NULL != (m_cell = table.GetCell (currIndex)))
+            return;
+
+        // currIndex refers to a merged cell interior, keep going
         }
 
-    for (AnnotationTableRowR row: m_table.GetRowVectorR())
-        {
-        bFailed |= (SUCCESS != SerializeAspectChanges (row));
-        }
-
-    return DgnDbStatus::Success;
+    m_cell = NULL;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  AnnotationTableCellIterator::IsDifferent (AnnotationTableCellIterator const& rhs) const
+    {
+    if (m_parentCollection != rhs.m_parentCollection)
+        return true;
+
+    return (m_cell != rhs.m_cell);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCellR  AnnotationTableCellIterator::GetCurrent () const
+    {
+    return *m_cell;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+/* ctor */ AnnotationTableCellCollection::AnnotationTableCellCollection (AnnotationTableElementCR table) : m_table (const_cast <AnnotationTableElementP> (&table)) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCellCollection::const_iterator  AnnotationTableCellCollection::begin() const { return new AnnotationTableCellIterator (*this, true);  }
+AnnotationTableCellCollection::const_iterator  AnnotationTableCellCollection::end() const   { return new AnnotationTableCellIterator (*this, false); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-int         AnnotationTableElement::GetRowCount         () const     { return m_tableHeader.GetInteger (TableHeaderAspect::PropIndex::RowCount); }
-int         AnnotationTableElement::GetColumnCount      () const     { return m_tableHeader.GetInteger (TableHeaderAspect::PropIndex::ColumnCount); }
-double      AnnotationTableElement::GetDefaultRowHeight () const     { return m_tableHeader.GetDouble (TableHeaderAspect::PropIndex::DefaultRowHeight); }
-double      AnnotationTableElement::GetDefaultColumnWidth () const   { return m_tableHeader.GetDouble (TableHeaderAspect::PropIndex::DefaultColumnWidth); }
+uint32_t                AnnotationTableElement::GetRowCount ()                  const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::RowCount); }
+uint32_t                AnnotationTableElement::GetColumnCount ()               const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::ColumnCount); }
+uint32_t                AnnotationTableElement::GetTitleRowCount()              const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::TitleRowCount); }
+uint32_t                AnnotationTableElement::GetHeaderRowCount()             const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::HeaderRowCount); }
+uint32_t                AnnotationTableElement::GetFooterRowCount()             const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FooterRowCount); }
+uint32_t                AnnotationTableElement::GetHeaderColumnCount()          const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::HeaderColumnCount); }
+uint32_t                AnnotationTableElement::GetFooterColumnCount()          const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FooterColumnCount); }
+double                  AnnotationTableElement::GetDefaultRowHeight ()          const     { return m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultRowHeight); }
+double                  AnnotationTableElement::GetDefaultColumnWidth ()        const     { return m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultColumnWidth); }
+TableCellOrientation    AnnotationTableElement::GetDefaultCellOrientation ()    const     { return static_cast<TableCellOrientation> (m_tableHeader.GetUInteger  (TableHeaderAspect::PropIndex::DefaultCellOrientation)); }
+TableCellAlignment      AnnotationTableElement::GetDefaultCellAlignment ()      const     { return static_cast<TableCellAlignment> (m_tableHeader.GetUInteger  (TableHeaderAspect::PropIndex::DefaultCellAlignment)); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+TableCellMarginValues      AnnotationTableElement::GetDefaultMargins () const
+    {
+    TableCellMarginValues   margins;
+
+    margins.m_top    = m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultMarginTop);
+    margins.m_bottom = m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultMarginBottom);
+    margins.m_left   = m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultMarginLeft);
+    margins.m_right  = m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultMarginRight);
+
+    return margins;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
@@ -1246,10 +4060,290 @@ AnnotationTextStyleCP  AnnotationTableElement::GetTextStyle (AnnotationTableRegi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-void AnnotationTableElement::SetRowCount            (int                v)  { m_tableHeader.SetInteger (v, TableHeaderAspect::PropIndex::RowCount); }
-void AnnotationTableElement::SetColumnCount         (int                v)  { m_tableHeader.SetInteger (v, TableHeaderAspect::PropIndex::ColumnCount); }
-void AnnotationTableElement::SetDefaultColumnWidth  (double             v)  { m_tableHeader.SetDouble  (v, TableHeaderAspect::PropIndex::DefaultColumnWidth); }
-void AnnotationTableElement::SetDefaultRowHeight    (double             v)  { m_tableHeader.SetDouble  (v, TableHeaderAspect::PropIndex::DefaultRowHeight); }
+void AnnotationTableElement::SetRowCount                (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::RowCount); }
+void AnnotationTableElement::SetColumnCount             (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::ColumnCount); }
+void AnnotationTableElement::SetTitleRowCount           (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::TitleRowCount); }
+void AnnotationTableElement::SetHeaderRowCount          (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::HeaderRowCount); }
+void AnnotationTableElement::SetFooterRowCount          (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::FooterRowCount); }
+void AnnotationTableElement::SetHeaderColumnCount       (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::HeaderColumnCount); }
+void AnnotationTableElement::SetFooterColumnCount       (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::FooterColumnCount); }
+void AnnotationTableElement::SetBreakType               (TableBreakType       v)    { m_tableHeader.SetUInteger ((uint32_t) v, TableHeaderAspect::PropIndex::BreakType); }
+void AnnotationTableElement::SetBreakPosition           (TableBreakPosition   v)    { m_tableHeader.SetUInteger ((uint32_t) v, TableHeaderAspect::PropIndex::BreakPosition); }
+void AnnotationTableElement::SetBreakLength             (double               v)    { m_tableHeader.SetDouble   (           v, TableHeaderAspect::PropIndex::BreakLength); }
+void AnnotationTableElement::SetRepeatHeaders           (bool                 v)    { m_tableHeader.SetBoolean  (           v, TableHeaderAspect::PropIndex::RepeatHeaders); }
+void AnnotationTableElement::SetRepeatFooters           (bool                 v)    { m_tableHeader.SetBoolean  (           v, TableHeaderAspect::PropIndex::RepeatFooters); }
+void AnnotationTableElement::SetDefaultColumnWidth      (double               v)    { m_tableHeader.SetDouble   (           v, TableHeaderAspect::PropIndex::DefaultColumnWidth); }
+void AnnotationTableElement::SetDefaultRowHeight        (double               v)    { m_tableHeader.SetDouble   (           v, TableHeaderAspect::PropIndex::DefaultRowHeight); }
+void AnnotationTableElement::SetDefaultCellAlignment    (TableCellAlignment   v)    { m_tableHeader.SetUInteger ((uint32_t) v, TableHeaderAspect::PropIndex::DefaultCellAlignment); }
+void AnnotationTableElement::SetDefaultCellOrientation  (TableCellOrientation v)    { m_tableHeader.SetUInteger ((uint32_t) v, TableHeaderAspect::PropIndex::DefaultCellOrientation); }
+void AnnotationTableElement::SetFillSymbologyForOddRow  (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::FillSymbologyKeyOddRow); }
+void AnnotationTableElement::SetFillSymbologyForEvenRow (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::FillSymbologyKeyEvenRow); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableElement::SetBreakGap     (double val)
+    {
+    if (0 > val)
+        return;
+
+    m_tableHeader.SetDouble  (val, TableHeaderAspect::PropIndex::BreakGap);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableElement::CanChangeRowHeaderFooterType (uint32_t rowIndex, TableHeaderFooterType newType) const
+    {
+    uint32_t  firstFooterIndex      = GetRowCount() - GetFooterRowCount();
+
+    uint32_t  lastValidTitleIndex   = GetTitleRowCount();
+    uint32_t  lastValidHeaderIndex  = GetTitleRowCount() + GetHeaderRowCount();
+
+    uint32_t  firstValidHeaderIndex = 0 == lastValidTitleIndex   ? 0 : lastValidTitleIndex   - 1;
+    uint32_t  firstValidBodyIndex   = 0 == lastValidHeaderIndex  ? 0 : lastValidHeaderIndex  - 1;
+    uint32_t  firstValidFooterIndex = 0 == firstFooterIndex      ? 0 : firstFooterIndex      - 1;
+
+    uint32_t  lastValidBodyIndex    = firstValidFooterIndex + 1;
+
+    switch (newType)
+        {
+        case TableHeaderFooterType::Body:   return rowIndex >= firstValidBodyIndex   && rowIndex <= lastValidBodyIndex;
+        case TableHeaderFooterType::Title:  return rowIndex <= lastValidTitleIndex;
+        case TableHeaderFooterType::Header: return rowIndex >= firstValidHeaderIndex && rowIndex <= lastValidHeaderIndex;
+        case TableHeaderFooterType::Footer: return rowIndex >= firstValidFooterIndex;
+        default:                            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableElement::ChangeRowHeaderFooterType (uint32_t rowIndex, TableHeaderFooterType newType)
+    {
+    /*-------------------------------------------------------------------------
+        Intended to be called only from AnnotationTableRow::SetHeaderFooterType
+    -------------------------------------------------------------------------*/
+    TableHeaderFooterType oldType = GetRowHeaderFooterType(rowIndex);
+
+    if (oldType == newType)
+        return SUCCESS;
+
+    if ( ! CanChangeRowHeaderFooterType (rowIndex, newType))
+        return ERROR;
+
+    uint32_t  titleCount  = GetTitleRowCount();
+    uint32_t  headerCount = GetHeaderRowCount();
+    uint32_t  footerCount = GetFooterRowCount();
+
+    switch (oldType)
+        {
+        case TableHeaderFooterType::Title:  SetTitleRowCount  (titleCount  - 1); break;
+        case TableHeaderFooterType::Header: SetHeaderRowCount (headerCount - 1); break;
+        case TableHeaderFooterType::Footer: SetFooterRowCount (footerCount - 1); break;
+        }
+
+    switch (newType)
+        {
+        case TableHeaderFooterType::Title:  SetTitleRowCount  (titleCount  + 1); break;
+        case TableHeaderFooterType::Header: SetHeaderRowCount (headerCount + 1); break;
+        case TableHeaderFooterType::Footer: SetFooterRowCount (footerCount + 1); break;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableElement::CanChangeColumnHeaderFooterType (uint32_t colIndex, TableHeaderFooterType newType) const
+    {
+    switch (newType)
+        {
+        case TableHeaderFooterType::Body:   return true;
+        case TableHeaderFooterType::Header: return colIndex == 0;
+        case TableHeaderFooterType::Footer: return colIndex == GetColumnCount() - 1;
+        default:                            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableElement::ChangeColumnHeaderFooterType (uint32_t colIndex, TableHeaderFooterType newType)
+    {
+    /*-------------------------------------------------------------------------
+        Intended to be called only from AnnotationTableColumn::SetHeaderFooterType
+    -------------------------------------------------------------------------*/
+    TableHeaderFooterType oldType = GetColumnHeaderFooterType(colIndex);
+
+    if (oldType == newType)
+        return SUCCESS;
+
+    if ( ! CanChangeColumnHeaderFooterType (colIndex, newType))
+        return ERROR;
+
+    uint32_t  headerCount = GetHeaderColumnCount();
+    uint32_t  footerCount = GetFooterColumnCount();
+
+    switch (oldType)
+        {
+        case TableHeaderFooterType::Header: SetHeaderColumnCount (headerCount - 1); break;
+        case TableHeaderFooterType::Footer: SetFooterColumnCount (footerCount - 1); break;
+        }
+
+    switch (newType)
+        {
+        case TableHeaderFooterType::Header: SetHeaderColumnCount (headerCount + 1); break;
+        case TableHeaderFooterType::Footer: SetFooterColumnCount (footerCount + 1); break;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableRow::ApplyHeaderFooterType ()
+    {
+    bool                    rowIsEmpty  = true;
+    bvector<uint32_t>       colsWithEmptyCells;
+
+    /*---------------------------------------------------------------------
+        Apply the appropriate 'region' TextStyle to every cell in the row.
+    ---------------------------------------------------------------------*/
+    for (AnnotationTableCellR cell : m_cells)
+        {
+        if (cell.IsMergedCellInterior())
+            continue;
+
+        AnnotationTextBlockCP textBlock = cell.GetTextBlock();
+
+        if (NULL == textBlock)
+            {
+            colsWithEmptyCells.push_back (cell.GetIndex().col);
+            continue;
+            }
+
+        cell.ApplyTextStyleByRegion ();
+        rowIsEmpty = false;
+        }
+
+    // Setting textBlocks will recompute the row height but for empty rows need to do it manually.
+    if (rowIsEmpty)
+        {
+        double  minHeight = GetMinimumHeight(false);
+
+        // Here we know the entire row is empty so its ok to set the height directly
+        if (GetHeight() < minHeight || false == GetHeightLock())
+            SetHeightDirect (minHeight);
+        }
+
+    // Setting textBlocks will recompute the col widths but if the column has an empty cell in this row
+    // we'll need to do it manually.
+    for (uint32_t colIndex : colsWithEmptyCells)
+        {
+        AnnotationTableColumnP  column   = GetTable().GetColumn (colIndex);
+        double                  minWidth = column->GetMinimumWidth(false);
+
+        /*---------------------------------------------------------------------
+          Don't use SetWidthDirect because we don't know if the whole column is empty.
+        ---------------------------------------------------------------------*/
+        if (column->GetWidth() < minWidth)
+            column->SetWidth (minWidth);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableRow::SetHeaderFooterType (TableHeaderFooterType newType)
+    {
+    if (SUCCESS != GetTable().ChangeRowHeaderFooterType (m_index, newType))
+        return ERROR;
+
+    ApplyHeaderFooterType();
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableColumn::ApplyHeaderFooterType ()
+    {
+    bool                    colIsEmpty  = true;
+    bvector<uint32_t>       rowsWithEmptyCells;
+
+    /*---------------------------------------------------------------------
+        Apply the appropriate 'region' TextStyle to every cell in the column.
+    ---------------------------------------------------------------------*/
+    for (uint32_t rowIndex = 0; rowIndex < GetTable().GetRowCount(); rowIndex++)
+        {
+        AnnotationTableCellP  cell = GetTable().GetCell (AnnotationTableCellIndex (rowIndex, m_index));
+
+        if (NULL == cell)
+            continue;
+
+        if (nullptr == cell->GetTextBlock())
+            {
+            rowsWithEmptyCells.push_back (rowIndex);
+            continue;
+            }
+
+        cell->ApplyTextStyleByRegion ();
+        colIsEmpty = false;
+        }
+
+    // Setting textBlocks will recompute the column width but for empty columns need to do it manually.
+    if (colIsEmpty)
+        {
+        if (GetWidthLock())
+            {
+            double minWidth = GetMinimumWidth(false);
+
+            if (GetWidth() < minWidth)
+                SetWidthDirect (minWidth);
+            }
+        else
+            {
+            AnnotationTableRegion   region    = AnnotationTableElement::GetTableRegionFromColumnType (GetHeaderFooterType());
+            AnnotationTextStyleCP   textStyle = GetTable().GetTextStyle (region);
+            TableCellMarginValues   margins   = GetTable().GetDefaultMargins ();
+            double                  width     = textStyle->GetHeight () * textStyle->GetWidthFactor ();
+
+            // Here we know the entire column is empty so its ok to set the width directly
+            SetWidthDirect (10 * width + margins.m_left + margins.m_right);
+            }
+        }
+
+    // Setting textBlocks will recompute the row heights but if the row has an empty cell in this column
+    // we'll need to do it manually.
+    for (uint32_t rowIndex : rowsWithEmptyCells)
+        {
+        AnnotationTableRowP row       = GetTable().GetRow (rowIndex);
+        double              minHeight = row->GetMinimumHeight(false);
+
+        /*---------------------------------------------------------------------
+          Don't use SetHeightDirect because we don't know if the whole row is empty.
+        ---------------------------------------------------------------------*/
+        if (row->GetHeight() < minHeight)
+            row->SetHeight (minHeight);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableColumn::SetHeaderFooterType (TableHeaderFooterType newType)
+    {
+    if (SUCCESS != GetTable().ChangeColumnHeaderFooterType (m_index, newType))
+        return ERROR;
+
+    ApplyHeaderFooterType();
+
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
@@ -1272,7 +4366,7 @@ void            AnnotationTableElement::SetTextStyleIdDirect (AnnotationTextStyl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AnnotationTableElement::ClearTextStyleFromCache (TextTableRegion region)
+void            AnnotationTableElement::ClearTextStyleFromCache (AnnotationTableRegion region)
     {
     auto it = m_textStyles.find (region);
     if (it != m_textStyles.end())
@@ -1288,6 +4382,7 @@ void            AnnotationTableElement::SetTextStyleId (AnnotationTextStyleId va
     SetTextStyleIdDirect (val, region);
 #if defined (NEEDSWORK)
     SetTextHeightOverride (NULL, region);
+#endif
 
     bool                    isRow;
     TableHeaderFooterType   type;
@@ -1296,7 +4391,7 @@ void            AnnotationTableElement::SetTextStyleId (AnnotationTextStyleId va
 
     if (isRow)
         {
-        for (TextTableRowR row : m_rows)
+        for (AnnotationTableRowR row : m_rows)
             {
             if (row.GetHeaderFooterType() != type)
                 continue;
@@ -1306,7 +4401,7 @@ void            AnnotationTableElement::SetTextStyleId (AnnotationTextStyleId va
         }
     else
         {
-        for (TextTableColumnR col : m_columns)
+        for (AnnotationTableColumnR col : m_columns)
             {
             if (col.GetHeaderFooterType() != type)
                 continue;
@@ -1314,7 +4409,6 @@ void            AnnotationTableElement::SetTextStyleId (AnnotationTextStyleId va
             col.ApplyHeaderFooterType ();
             }
         }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1337,7 +4431,7 @@ AnnotationTableElementPtr AnnotationTableElement::Create(CreateParams const& par
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-AnnotationTableElementPtr AnnotationTableElement::Create (int rowCount, int columnCount, AnnotationTextStyleId textStyleId, double backupTextHeight, CreateParams const& params)
+AnnotationTableElementPtr AnnotationTableElement::Create (uint32_t rowCount, uint32_t columnCount, AnnotationTextStyleId textStyleId, double backupTextHeight, CreateParams const& params)
     {
     AnnotationTableElementPtr   table = Create (params);
 
@@ -1359,9 +4453,12 @@ AnnotationTableElementPtr AnnotationTableElement::Create (int rowCount, int colu
 //---------------------------------------------------------------------------------------
 void    AnnotationTableElement::Initialize (bool isNewTable)
     {
+    PRECONDITION(m_rows.empty(),);
+    PRECONDITION(m_columns.empty(),);
+
     m_columns.reserve (GetColumnCount());
 
-    for (int columnIndex = 0; columnIndex < GetColumnCount(); columnIndex++)
+    for (uint32_t columnIndex = 0; columnIndex < GetColumnCount(); columnIndex++)
         {
         AnnotationTableColumn column (*this, columnIndex);
         m_columns.push_back (column);
@@ -1369,12 +4466,12 @@ void    AnnotationTableElement::Initialize (bool isNewTable)
 
     m_rows.reserve (GetRowCount());
 
-    for (int rowIndex = 0; rowIndex < GetRowCount(); rowIndex++)
+    for (uint32_t rowIndex = 0; rowIndex < GetRowCount(); rowIndex++)
         {
         AnnotationTableRow row (*this, rowIndex);
         m_rows.push_back (row);
 
-        //m_rows[rowIndex].InitializeInternalCollections();
+        m_rows[rowIndex].InitializeInternalCollections();
         }
 
     if (isNewTable)
@@ -1393,9 +4490,7 @@ void    AnnotationTableElement::Initialize (bool isNewTable)
 
         SetDefaultMargins (margins);
 
-#if defined (NEEDSWORK)
         textHeight += 2 * TextBlockHolder::ComputeDescenderAdjustment (*textStyle);
-#endif
 
         SetDefaultRowHeight (textHeight + margins.m_bottom + margins.m_top);
         SetDefaultColumnWidth (10 * textWidth + margins.m_left + margins.m_right);
@@ -1415,7 +4510,122 @@ void    AnnotationTableElement::Initialize (bool isNewTable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTableRowP   AnnotationTableElement::GetRow (int rowIndex)
+AnnotationTableCellCollection   AnnotationTableElement::GetCellCollection () const
+    {
+    return AnnotationTableCellCollection (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static TableHeaderFooterType  getHeaderFooterType (uint32_t numTitles, uint32_t numHeaders, uint32_t numFooters, uint32_t count, uint32_t index)
+    {
+    uint32_t    maxTitleIndex  = numTitles;
+    uint32_t    maxHeaderIndex = numHeaders + numTitles;
+    uint32_t    minFooterIndex = count - numFooters;
+
+    if (index < maxTitleIndex)
+        return TableHeaderFooterType::Title;
+
+    if (index < maxHeaderIndex)
+        return TableHeaderFooterType::Header;
+
+    if (index >= minFooterIndex)
+        return TableHeaderFooterType::Footer;
+
+    return TableHeaderFooterType::Body;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TableHeaderFooterType   AnnotationTableElement::GetRowHeaderFooterType (uint32_t rowIndex) const
+    {
+    uint32_t    numTitles  = GetTitleRowCount();
+    uint32_t    numHeaders = GetHeaderRowCount();
+    uint32_t    numFooters = GetFooterRowCount();
+
+    return getHeaderFooterType (numTitles, numHeaders, numFooters, GetRowCount(), rowIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TableHeaderFooterType   AnnotationTableElement::GetColumnHeaderFooterType (uint32_t colIndex) const
+    {
+    uint32_t    numTitles  = 0;
+    uint32_t    numHeaders = GetHeaderColumnCount();
+    uint32_t    numFooters = GetFooterColumnCount();
+
+    return getHeaderFooterType (numTitles, numHeaders, numFooters, GetColumnCount(), colIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableElement::ClassifyTableRegion (TableHeaderFooterType& type, bool& isRow, AnnotationTableRegion region)
+    {
+    switch (region)
+        {
+        default:
+        case AnnotationTableRegion::Body:           isRow = true;  type = TableHeaderFooterType::Body;    break;
+        case AnnotationTableRegion::TitleRow:       isRow = true;  type = TableHeaderFooterType::Title;   break;
+        case AnnotationTableRegion::HeaderRow:      isRow = true;  type = TableHeaderFooterType::Header;  break;
+        case AnnotationTableRegion::FooterRow:      isRow = true;  type = TableHeaderFooterType::Footer;  break;
+        case AnnotationTableRegion::HeaderColumn:   isRow = false; type = TableHeaderFooterType::Header;  break;
+        case AnnotationTableRegion::FooterColumn:   isRow = false; type = TableHeaderFooterType::Footer;  break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableRegion AnnotationTableElement::GetTableRegionFromRowType (TableHeaderFooterType type)
+    {
+    switch (type)
+        {
+        case    TableHeaderFooterType::Title:    return AnnotationTableRegion::TitleRow;
+        case    TableHeaderFooterType::Header:   return AnnotationTableRegion::HeaderRow;
+        case    TableHeaderFooterType::Footer:   return AnnotationTableRegion::FooterRow;
+        }
+
+    return  AnnotationTableRegion::Body;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableRegion AnnotationTableElement::GetTableRegionFromColumnType (TableHeaderFooterType type)
+    {
+    switch (type)
+        {
+        case    TableHeaderFooterType::Header:   return AnnotationTableRegion::HeaderColumn;
+        case    TableHeaderFooterType::Footer:   return AnnotationTableRegion::FooterColumn;
+        }
+
+    return  AnnotationTableRegion::Body;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableRegion AnnotationTableElement::GetTableRegion (AnnotationTableCellIndexCR cellIndex) const
+    {
+    TableHeaderFooterType   type   = GetRowHeaderFooterType (cellIndex.row);
+    AnnotationTableRegion   region = GetTableRegionFromRowType (type);
+
+    if (AnnotationTableRegion::Body != region)
+        return region;
+
+    type = GetColumnHeaderFooterType (cellIndex.col);
+
+    return GetTableRegionFromColumnType (type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableRowP   AnnotationTableElement::GetRow (uint32_t rowIndex)
     {
     if (GetRowCount() <= rowIndex)
         return NULL;
@@ -1426,7 +4636,7 @@ AnnotationTableRowP   AnnotationTableElement::GetRow (int rowIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTableRowCP  AnnotationTableElement::GetRow (int rowIndex) const
+AnnotationTableRowCP  AnnotationTableElement::GetRow (uint32_t rowIndex) const
     {
     return (const_cast <AnnotationTableElement*> (this))->GetRow (rowIndex);
     }
@@ -1434,7 +4644,268 @@ AnnotationTableRowCP  AnnotationTableElement::GetRow (int rowIndex) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTableColumnP   AnnotationTableElement::GetColumn (int colIndex)
+void            AnnotationTableElement::DeleteAspect (AnnotationTableAspectCR aspect)
+    {
+    if ( ! aspect.HasValidAspectId())
+        return;
+
+    AnnotationTableAspectDescr  aspectDescr (aspect._GetAspectType(), aspect.GetAspectId());
+    m_aspectsPendingDelete.push_back (aspectDescr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableElement::DeleteRow (uint32_t rowIndex)
+    {
+    if (GetRowCount() <= rowIndex)
+        return ERROR;
+
+    if (1 == GetRowCount())
+        return ERROR;
+
+    AnnotationTableRowP  oldRow = GetRow(rowIndex);
+
+    // Adjust the title/header/footer count if necessary.
+    BumpRowHeaderFooterCount (*oldRow, false);
+
+    bvector <AnnotationTableCellP> cellsWithHeightChanges;
+
+    // Fix merge entries for any cells that span the row.
+    for (AnnotationTableCellP const& cell: oldRow->FindCells())
+        {
+        AnnotationTableCellIndexCR  rootIndex = cell->GetIndex();
+        MergeEntryCP                merge = m_mergeDictionary.GetMerge (rootIndex);
+
+        if (NULL == merge)  // not a merged cell
+            continue;
+
+        // Interior cells are being removed
+        if (rootIndex.row != rowIndex)
+            {
+            cell->DeleteMergeCellInteriorRow();
+            cellsWithHeightChanges.push_back (cell);
+            continue;
+            }
+
+        uint32_t  rowSpan = merge->GetRowSpan();
+        uint32_t  colSpan = merge->GetColumnSpan();
+
+        // The root of a merged cell is being removed
+        m_mergeDictionary.DeleteMerge (rootIndex, *this);
+
+        // If the cell only spanned one row we are done
+        if (1 >= rowSpan)
+            continue;
+
+        // If the cell will only span one row and column we are done
+        if (1 >= colSpan && 1 >= (rowSpan - 1))
+            continue;
+
+        // Make a new merge on the cell in the next row
+        AnnotationTableCellIndex    newRootIndex (rowIndex + 1, rootIndex.col);
+        AnnotationTableCellP        newRoot = GetCell (newRootIndex, true);
+
+        if (UNEXPECTED_CONDITION (NULL == newRoot))
+            continue;
+
+        newRoot->SetAsMergedCellRoot (rowSpan - 1, colSpan);
+        cellsWithHeightChanges.push_back (newRoot);
+        }
+
+#if defined (NEEDSWORK)
+    // Delete the vertical edgeRuns that span the row.
+    GetLeftEdgeRuns().DeleteSpan (*this, rowIndex, 1);
+
+    for (AnnotationTableColumnR column: m_columns)
+        column.GetEdgeRuns().DeleteSpan (*this, rowIndex, 1);
+
+    // Delete horizontal edge runs owned by the row.
+    for (AnnotationTableEdgeRunR edgeRun : oldRow->GetEdgeRuns())
+        edgeRun.DeleteAspect(*this);
+#endif
+    // Not safe to use this anymore
+    oldRow = NULL;
+
+    // Remove the instance for the deleted row, it's cells and it's edgeRuns
+    bvector<AnnotationTableRow>::iterator erasePos = m_rows.begin() + rowIndex;
+    DeleteAspect (*erasePos);
+
+    for (AnnotationTableCellR cell: erasePos->GetCellVectorR())
+        DeleteAspect (cell);
+
+#if defined (NEEDSWORK)
+    for (AnnotationTableEdgeRunR run: erasePos->GetEdgeRuns())
+        DeleteAspect (run.GetInstanceHolderR());
+#endif
+
+    // fixup the affected objects
+    m_rows.erase (erasePos);
+
+    uint32_t  adjustedIndex = rowIndex;
+    for (bvector<AnnotationTableRow>::iterator rowIter = erasePos; rowIter < m_rows.end(); rowIter++)
+        rowIter->SetIndex (adjustedIndex++);
+
+    m_mergeDictionary.AdjustMergesAfterIndex (rowIndex, true, false);
+
+    SetRowCount (static_cast <uint32_t> (m_rows.size()));
+
+    // Layout any cells that span the new row.
+    for (AnnotationTableCellP const& cell: cellsWithHeightChanges)
+        cell->SetSizeFromContents(nullptr);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableElement::InsertRow (uint32_t indexOfSeedRow, TableInsertDirection direction)
+    {
+    uint32_t              indexOfNewRow = TableInsertDirection::Before == direction ? indexOfSeedRow : indexOfSeedRow + 1;
+    AnnotationTableRowCP  seedRow = GetRow (indexOfSeedRow);
+
+    if (NULL == seedRow)
+        return ERROR;
+
+    // Adjust the title/header/footer count if necessary.
+    BumpRowHeaderFooterCount (*seedRow, true);
+
+    bvector <AnnotationTableCellP> cellsWithHeightChanges;
+
+    // Fix rowSpan for any cells that span the row.
+    if (GetRowCount() != indexOfNewRow)
+        {
+        for (AnnotationTableCellP const& cell: GetRow(indexOfNewRow)->FindCells())
+            {
+            uint32_t  rowSpan = cell->GetRowSpan();
+
+            if (1 == rowSpan)  // not a merged cell
+                continue;
+
+            // if this is the root of a merged cell, nothing to do it just shifts down.
+            if (cell->GetIndex().row == indexOfNewRow)
+                continue;
+
+            cell->SetAsMergedCellRoot (rowSpan + 1, cell->GetColumnSpan());
+            cellsWithHeightChanges.push_back (cell);
+            }
+        }
+
+#if defined (NEEDSWORK)
+    // Expand the vertical edgeRuns that span the row.
+    GetLeftEdgeRuns().InsertSpan (indexOfNewRow, 1, EdgeRunInitializer(EdgeRunHostType::Left));
+
+    for (AnnotationTableColumnR column: m_columns)
+        column.GetEdgeRuns().InsertSpan (indexOfNewRow, 1, EdgeRunInitializer(EdgeRunHostType::Column, column.GetIndex()));
+#endif
+    // Insert the Row and create its vector of cells
+    AnnotationTableRow newRow (*this, indexOfNewRow);
+
+    bvector<AnnotationTableRow>::iterator insertPos = m_rows.begin() + indexOfNewRow;
+    m_rows.insert (insertPos, newRow);
+    m_rows[indexOfNewRow].InitializeInternalCollections();
+
+    // Adjust all the subsequent rows, this will also adjust all the cells in the row
+    uint32_t  adjustedIndex = indexOfNewRow+1;
+    insertPos = m_rows.begin() + indexOfNewRow;
+    for (bvector<AnnotationTableRow>::iterator rowIter = insertPos + 1; rowIter < m_rows.end(); rowIter++)
+        rowIter->SetIndex (adjustedIndex++);
+
+    m_mergeDictionary.AdjustMergesAfterIndex (indexOfNewRow, true, true);
+
+    SetRowCount (static_cast <uint32_t> (m_rows.size()));
+
+    // Copy settings from the seed row
+    if (TableInsertDirection::Before == direction)
+        indexOfSeedRow++;
+
+    CopyPropsForNewRow (indexOfNewRow, indexOfSeedRow);
+
+    // Layout any cells that span the new row.
+    for (AnnotationTableCellP const& cell: cellsWithHeightChanges)
+        cell->SetSizeFromContents(nullptr);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableElement::CopyPropsForNewCell (AnnotationTableCellR newCell, AnnotationTableCellCR seedCell)
+    {
+    newCell.SetAlignment   (seedCell.GetAlignment());
+    newCell.SetOrientation (seedCell.GetOrientation());
+    newCell.SetMargins     (seedCell.GetMargins());
+
+#if defined (NEEDSWORK)
+    TableSymbologyValuesPtr symb = TableSymbologyValues::Create();
+    seedCell.GetFillSymbology (*symb);
+    newCell.SetFillSymbology (*symb);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableElement::CopyPropsForNewRow (uint32_t indexOfNewRow, uint32_t indexOfSeedRow)
+    {
+    AnnotationTableRowP   newRow  = GetRow (indexOfNewRow);
+    AnnotationTableRowCP  seedRow = GetRow (indexOfSeedRow);
+
+    // Copy row properties from the seed
+    newRow->SetHeight (seedRow->GetHeight());
+    newRow->SetHeightLock (seedRow->GetHeightLock());
+
+    bvector<AnnotationTableCellP> seedCells = seedRow->FindCells();
+
+    for (AnnotationTableCellCP seedCell : seedCells)
+        {
+        AnnotationTableCellIndexCR    seedIndex = seedCell->GetIndex();
+
+        // Skip this one if the the new cell is an interior of the seed
+        if (indexOfNewRow > seedIndex.row &&
+            indexOfNewRow < seedIndex.row + seedCell->GetRowSpan())
+            continue;
+
+        AnnotationTableCellIndex  newCellIndex = AnnotationTableCellIndex (indexOfNewRow, seedIndex.col);
+        AnnotationTableCellP      newCell = GetCell (newCellIndex);
+
+        // Copy the colSpan from the seed
+        uint32_t colSpan = seedCell->GetColumnSpan();
+
+        if (1 < colSpan)
+            {
+            newCell->SetAsMergedCellRoot (1, colSpan);
+            MarkAsMergedCellInteriors (newCellIndex, 1, colSpan, false);
+            }
+
+        // Copy cell properties from the seed
+        CopyPropsForNewCell (*newCell, *seedCell);
+        }
+
+#if defined (NEEDSWORK)
+    // For the new horizontal edges, copy symbology from the seed
+    EdgeRunsR   newEdges  = newRow->GetEdgeRuns (false);    // new edge is always the bottom
+    EdgeRunsCR  seedEdges = newRow->GetEdgeRuns (true);     // seed edge is always the top
+    newEdges.ApplySeed (seedEdges);
+
+    // For the new vertical edges, copy symbology from the seed
+    GetLeftEdgeRuns().ApplySeedAtIndex (indexOfNewRow, 1, indexOfSeedRow);
+    GetLeftEdgeRuns().MergeRedundantRuns (this);
+
+    for (AnnotationTableColumnR column : m_columns)
+        {
+        column.GetEdgeRuns().ApplySeedAtIndex (indexOfNewRow, 1, indexOfSeedRow);
+        column.GetEdgeRuns().MergeRedundantRuns (this);
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableColumnP   AnnotationTableElement::GetColumn (uint32_t colIndex)
     {
     if (GetColumnCount() <= colIndex)
         return NULL;
@@ -1445,9 +4916,647 @@ AnnotationTableColumnP   AnnotationTableElement::GetColumn (int colIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTableColumnCP  AnnotationTableElement::GetColumn (int colIndex) const
+AnnotationTableColumnCP  AnnotationTableElement::GetColumn (uint32_t colIndex) const
     {
     return (const_cast <AnnotationTableElement*> (this))->GetColumn (colIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableElement::DeleteColumn (uint32_t colIndex)
+    {
+    if (GetColumnCount() <= colIndex)
+        return ERROR;
+
+    if (1 == GetColumnCount())
+        return ERROR;
+
+    AnnotationTableColumnP   oldColumn = GetColumn(colIndex);
+
+    // Adjust the title/header/footer count if necessary.
+    BumpColumnHeaderFooterCount (*oldColumn, false);
+
+    bvector <AnnotationTableCellIndex> cellsWithWidthChanges;
+
+    // Fix colSpan for any cells that span the column.
+    for (AnnotationTableCellP const& cell: oldColumn->FindCells())
+        {
+        AnnotationTableCellIndexCR    rootIndex = cell->GetIndex();
+        MergeEntryCP        merge = m_mergeDictionary.GetMerge (rootIndex);
+
+        if (NULL == merge)  // not a merged cell
+            continue;
+
+        // an interior cell is being removed
+        if (rootIndex.col != colIndex)
+            {
+            cell->DeleteMergeCellInteriorColumn();
+            cellsWithWidthChanges.push_back (rootIndex);
+            continue;
+            }
+
+        uint32_t  rowSpan = merge->GetRowSpan();
+        uint32_t  colSpan = merge->GetColumnSpan();
+
+        // The root of a merged cell is being removed
+        m_mergeDictionary.DeleteMerge (rootIndex, *this);
+
+        // If the cell only spanned one column we are done
+        if (1 >= colSpan)
+            continue;
+
+        // If the cell will only span one row and column we are done
+        if (1 >= rowSpan && 1 >= (colSpan - 1))
+            continue;
+
+        // Make a new merge on the cell in the next column
+        AnnotationTableCellIndex    newRootIndex (rootIndex.row, colIndex + 1);
+        AnnotationTableCellP        newRoot = GetCell (newRootIndex, true);
+
+        if (UNEXPECTED_CONDITION (NULL == newRoot))
+            continue;
+
+        newRoot->SetAsMergedCellRoot (rowSpan, colSpan - 1);
+        cellsWithWidthChanges.push_back (rootIndex);    // looks like a typo but its ok.  After the col is deleted this will
+                                                        // be the index for newRoot.
+        }
+
+#if defined (NEEDSWORK)
+    // Delete the horizontal edgeRuns that span the column.
+    GetTopEdgeRuns().DeleteSpan (*this, colIndex, 1);
+
+    for (AnnotationTableRowR row: m_rows)
+        row.GetEdgeRuns().DeleteSpan (*this, colIndex, 1);
+
+    // Delete vertical edge runs owned by the column
+    for (AnnotationTableEdgeRunR edgeRun : oldColumn->GetEdgeRuns())
+        edgeRun.DeleteInstance(*this);
+#endif
+
+    // Not safe to use this anymore
+    oldColumn = NULL;
+
+    // Delete the column
+    bvector<AnnotationTableColumn>::iterator colErasePos = m_columns.begin() + colIndex;
+    DeleteAspect (*colErasePos);
+
+    m_columns.erase (colErasePos);
+
+    // Adjust all the subsequent columns
+    uint32_t  adjustedIndex = colIndex;
+    for (bvector<AnnotationTableColumn>::iterator colIter = colErasePos; colIter < m_columns.end(); colIter++)
+        colIter->SetIndex (adjustedIndex++);
+
+    for (AnnotationTableRow& row: m_rows)
+        {
+        bvector<AnnotationTableCell>& cells = row.GetCellVectorR();
+
+        // Delete the cell
+        bvector<AnnotationTableCell>::iterator cellErasePos = cells.begin() + colIndex;
+        DeleteAspect (*cellErasePos);
+
+        cells.erase (cellErasePos);
+
+        // Adjust all the subsequent cells
+        adjustedIndex = colIndex;
+        for (bvector<AnnotationTableCell>::iterator cellIter = cellErasePos; cellIter < cells.end(); cellIter++)
+            cellIter->SetIndex (AnnotationTableCellIndex (row.GetIndex(), adjustedIndex++));
+        }
+
+    m_mergeDictionary.AdjustMergesAfterIndex (colIndex, false, false);
+
+    SetColumnCount (static_cast <uint32_t> (m_columns.size()));
+
+    // Layout any cells that used to span the column.
+    for (AnnotationTableCellIndex const& index: cellsWithWidthChanges)
+        {
+        AnnotationTableCellP  cell = GetCell (index);
+        cell->WidthChanged();
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableElement::InsertColumn (uint32_t indexOfSeedColumn, TableInsertDirection direction)
+    {
+    uint32_t                  indexOfNewColumn = TableInsertDirection::Before == direction ? indexOfSeedColumn : indexOfSeedColumn + 1;
+    AnnotationTableColumnCP   seedColumn = GetColumn (indexOfSeedColumn);
+
+    if (NULL == seedColumn)
+        return ERROR;
+
+    // Since a table can only have at most one 'first' column and 'last' column, we don't bump
+    // the count like we do for rows.  Instead the firstness or lastness transfers to the new column
+    // so the count stays the same.  And then we apply the body style to the original seed.
+    TableHeaderFooterType originalSeedType = seedColumn->GetHeaderFooterType();
+
+    bvector <AnnotationTableCellP> cellsWithWidthChanges;
+
+    // Fix colSpan for any cells that span the column.
+    if (GetColumnCount() != indexOfNewColumn)
+        {
+        for (AnnotationTableCellP const& cell: GetColumn(indexOfNewColumn)->FindCells())
+            {
+            uint32_t  colSpan = cell->GetColumnSpan();
+
+            if (1 == colSpan)  // not a merged cell
+                continue;
+
+            // if this is the root of a merged cell, nothing to do it just shifts over.
+            if (cell->GetIndex().col == indexOfNewColumn)
+                continue;
+
+            cell->SetAsMergedCellRoot (cell->GetRowSpan(), colSpan + 1);
+            cellsWithWidthChanges.push_back (cell);
+            }
+        }
+
+#if defined (NEEDSWORK)
+    // Expand the horizontal edgeRuns and fillRuns that span the column.
+    GetTopEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer(EdgeRunHostType::Top));
+
+    for (AnnotationTableRowR row: m_rows)
+        {
+        row.GetEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer(EdgeRunHostType::Row, row.GetIndex()));
+        row.GetFillRuns().InsertSpan (indexOfNewColumn, 1, FillRunInitializer(row.GetIndex()));
+        }
+#endif
+    // Insert the new column
+    AnnotationTableColumn newColumn (*this, indexOfNewColumn);
+
+    bvector<AnnotationTableColumn>::iterator columnInsertPos = m_columns.begin() + indexOfNewColumn;
+    m_columns.insert (columnInsertPos, newColumn);
+
+    // Adjust all the subsequent columns
+    uint32_t  adjustedIndex = indexOfNewColumn+1;
+    columnInsertPos = m_columns.begin() + indexOfNewColumn;
+    for (bvector<AnnotationTableColumn>::iterator colIter = columnInsertPos + 1; colIter < m_columns.end(); colIter++)
+        colIter->SetIndex (adjustedIndex++);
+
+    for (AnnotationTableRow& row: m_rows)
+        {
+        // Add the new cell
+        AnnotationTableCell           newCell (*this, AnnotationTableCellIndex (row.GetIndex(), indexOfNewColumn));
+        bvector<AnnotationTableCell>& cells = row.GetCellVectorR();
+
+        bvector<AnnotationTableCell>::iterator cellInsertPos = cells.begin() + indexOfNewColumn;
+        cells.insert (cellInsertPos, newCell);
+
+        // Adjust all the subsequent cells
+        adjustedIndex = indexOfNewColumn+1;
+        cellInsertPos = cells.begin() + indexOfNewColumn;
+        for (bvector<AnnotationTableCell>::iterator cellIter = cellInsertPos + 1; cellIter < cells.end(); cellIter++)
+            cellIter->SetIndex (AnnotationTableCellIndex (row.GetIndex(), adjustedIndex++));
+        }
+
+    m_mergeDictionary.AdjustMergesAfterIndex (indexOfNewColumn, false, true);
+    
+    SetColumnCount (static_cast <uint32_t> (m_columns.size()));
+
+    // Copy settings from the seed column
+    if (TableInsertDirection::Before == direction)
+        indexOfSeedColumn++;
+
+    CopyPropsForNewColumn (indexOfNewColumn, indexOfSeedColumn);
+
+    // Layout any cells that span the new column.
+    for (AnnotationTableCellP const& cell : cellsWithWidthChanges)
+        cell->WidthChanged();
+
+#if defined (NEEDSWORK)
+    for (AnnotationTableCellP const& cell : GetColumn(indexOfNewColumn)->FindCells())
+        cell->ApplyToFillRuns();
+#endif
+
+    AnnotationTableColumnP   postSeedColumn = GetColumn (indexOfSeedColumn);
+
+    if (postSeedColumn->GetHeaderFooterType() != originalSeedType)
+        postSeedColumn->ApplyHeaderFooterType ();
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void        AnnotationTableElement::CopyPropsForNewColumn (uint32_t indexOfNewColumn, uint32_t indexOfSeedColumn)
+    {
+    AnnotationTableColumnP   newColumn  = GetColumn (indexOfNewColumn);
+    AnnotationTableColumnCP  seedColumn = GetColumn (indexOfSeedColumn);
+
+    // Copy col properties from the seed
+    newColumn->SetWidth (seedColumn->GetWidth());
+    newColumn->SetWidthLock (seedColumn->GetWidthLock());
+
+    bvector<AnnotationTableCellP> seedCells = seedColumn->FindCells();
+
+    for (AnnotationTableCellCP seedCell : seedCells)
+        {
+        AnnotationTableCellIndexCR    seedIndex = seedCell->GetIndex();
+
+        // Skip this one if the the new cell is an interior of the seed
+        if (indexOfNewColumn > seedIndex.col &&
+            indexOfNewColumn < seedIndex.col + seedCell->GetColumnSpan())
+            continue;
+
+        AnnotationTableCellIndex  newCellIndex = AnnotationTableCellIndex (seedIndex.row, indexOfNewColumn);
+        AnnotationTableCellP      newCell = GetCell (newCellIndex);
+
+        // Copy the rowSpan from the seed
+        uint32_t rowSpan = seedCell->GetRowSpan();
+
+        if (1 < rowSpan)
+            {
+            newCell->SetAsMergedCellRoot (rowSpan, 1);
+            MarkAsMergedCellInteriors (newCellIndex, rowSpan, 1, false);
+            }
+
+        // Copy cell properties from the seed
+        CopyPropsForNewCell (*newCell, *seedCell);
+        }
+
+#if defined (NEEDSWORK)
+    // For the new vertical edges, copy symbology from the seed
+    EdgeRunsR   newEdges  = newColumn->GetEdgeRuns (false);    // new edge is always the right
+    EdgeRunsCR  seedEdges = newColumn->GetEdgeRuns (true);     // seed edge is always the left
+    newEdges.ApplySeed (seedEdges);
+
+    // For the new horizontal edges, copy symbology from the seed
+    GetTopEdgeRuns().ApplySeedAtIndex (indexOfNewColumn, 1, indexOfSeedColumn);
+    GetTopEdgeRuns().MergeRedundantRuns (this);
+
+    for (AnnotationTableRowR row : m_rows)
+        {
+        row.GetEdgeRuns().ApplySeedAtIndex (indexOfNewColumn, 1, indexOfSeedColumn);
+        row.GetEdgeRuns().MergeRedundantRuns (this);
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCellP  AnnotationTableElement::GetCell (AnnotationTableCellIndexCR cellIndex, bool allowMergedInteriors) const
+    {
+    if (GetRowCount()    <= cellIndex.row ||
+        GetColumnCount() <= cellIndex.col)
+        {
+        return NULL;
+        }
+
+    AnnotationTableElementR      nonConstThis = const_cast <AnnotationTableElementR> (*this);
+    AnnotationTableCellR  cell = nonConstThis.m_rows[cellIndex.row].GetCellVectorR()[cellIndex.col];
+
+    if ( ! allowMergedInteriors && cell.IsMergedCellInterior())
+        return NULL;
+
+    return &cell;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCellP  AnnotationTableElement::GetCell (AnnotationTableCellIndexCR cellIndex) const
+    {
+    return GetCell (cellIndex, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableElement::HasOverlappingMerges (bvector<AnnotationTableCellP>& consumedRoots, AnnotationTableCellIndexCR rootIndex, uint32_t numRows, uint32_t numCols)
+    {
+    uint32_t  maxRowIndex = rootIndex.row + numRows;
+    uint32_t  maxColIndex = rootIndex.col + numCols;
+
+    // Examine every cell in the proposed merge block
+    for (uint32_t iRow = rootIndex.row; iRow < rootIndex.row + numRows; iRow++)
+        {
+        for (uint32_t iCol = rootIndex.col; iCol < rootIndex.col + numCols; iCol++)
+            {
+            AnnotationTableCellIndex    interiorIndex (iRow, iCol);
+            AnnotationTableCellP        interiorCell = GetCell(interiorIndex);
+
+            // If this cell was already part of a merge block...
+            if (nullptr == interiorCell)
+                {
+                bool rootInConsumedList = false;
+
+                // Check if we've already encountered the old root of this cell
+                for (AnnotationTableCellP const& consumedRoot : consumedRoots)
+                    {
+                    if (consumedRoot->IndexIsInSpan(interiorIndex))
+                        {
+                        rootInConsumedList = true;
+                        break;
+                        }
+                    }
+
+                // If we haven't yet seen the old root, we won't, which means it
+                // lies outside the proposed block.  Which means it's overlapping.
+                if ( ! rootInConsumedList)
+                    return true;
+
+                continue;
+                }
+
+            // This cell is it's own root.
+            uint32_t          interiorRowSpan = interiorCell->GetRowSpan();
+            uint32_t          interiorColSpan = interiorCell->GetColumnSpan();
+
+            if (1 == interiorRowSpan && 1 == interiorColSpan)
+                continue;
+
+            // Test if the cell's old block extends outside the proposed block.  If
+            // it does, then it's an overlap.
+            if (interiorIndex.row + interiorRowSpan > maxRowIndex)
+                return true;
+
+            if (interiorIndex.col + interiorColSpan > maxColIndex)
+                return true;
+
+            // Remember the roots that we've consumed so we know what to do when we
+            // get to their old interiors.
+            consumedRoots.push_back (interiorCell);
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::MarkAsMergedCellInteriors (AnnotationTableCellIndexCR rootIndex, uint32_t rowSpan, uint32_t colSpan, bool loading)
+    {
+    for (uint32_t iRow = rootIndex.row; iRow < rootIndex.row + rowSpan; iRow++)
+        {
+        for (uint32_t iCol = rootIndex.col; iCol < rootIndex.col + colSpan; iCol++)
+            {
+            AnnotationTableCellIndex  index (iRow, iCol);
+
+            if (index == rootIndex)
+                continue;
+
+            AnnotationTableCellP  cell = GetCell(index);
+
+            if (NULL == cell)  // it's already an interior
+                continue;
+
+            cell->SetAsMergedCellInterior (true);
+
+            if ( ! loading)
+                {
+                DeleteAspect (*cell);
+                continue;
+                }
+
+            // sanity check that we didn't already load an aspect for this cell
+            BeAssert ( ! cell->HasValidAspectId());
+            }
+        }
+
+#if defined (NEEDSWORK)
+    EdgeRuns    removedRuns;
+
+    for (uint32_t iRow = rootIndex.row; iRow < rootIndex.row + rowSpan - 1; iRow++)
+        {
+        AnnotationTableRowP   row = GetRow (iRow);
+        row->GetEdgeRuns().CreateGap (&removedRuns, rootIndex.col, colSpan);
+        }
+
+    for (uint32_t iCol = rootIndex.col; iCol < rootIndex.col + colSpan - 1; iCol++)
+        {
+        AnnotationTableColumnP   column = GetColumn (iCol);
+        column->GetEdgeRuns().CreateGap (&removedRuns, rootIndex.row, rowSpan);
+        }
+
+    if ( ! loading)
+        {
+        for (AnnotationTableEdgeRunR edgeRun: removedRuns)
+            DeleteInstance (edgeRun.GetInstanceHolderR());
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AnnotationTableElement::MergeCells (AnnotationTableCellIndexCR rootIndex, uint32_t numRows, uint32_t numCols)
+    {
+    if (GetRowCount()    <= rootIndex.row ||
+        GetColumnCount() <= rootIndex.col)
+        {
+        return ERROR;
+        }
+
+    if (GetRowCount()    <= rootIndex.row + numRows - 1 ||
+        GetColumnCount() <= rootIndex.col + numCols - 1)
+        {
+        return ERROR;
+        }
+
+    if (0 == numRows || 0 == numCols)
+        return ERROR;
+
+    if (2 > numRows && 2 > numCols)
+        return ERROR;
+
+    bvector<AnnotationTableCellP> consumedRoots;
+    if (HasOverlappingMerges (consumedRoots, rootIndex, numRows, numCols))
+        return ERROR;
+
+    // Do this so the xattribute will be removed.
+    for (AnnotationTableCellP const& consumedRoot : consumedRoots)
+        consumedRoot->SetAsMergedCellRoot (1, 1);
+
+    AnnotationTableCellP  rootCell = GetCell (rootIndex);
+    rootCell->SetAsMergedCellRoot (numRows, numCols);
+
+    MarkAsMergedCellInteriors (rootIndex, numRows, numCols, false);
+
+#if defined (NEEDSWORK)
+    // Will set the verticalSpan in the main row, and open gaps on subsequent rows.
+    rootCell->ApplyToFillRuns();
+#endif
+
+    if (1 < numCols)
+        rootCell->WidthChanged();
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableElement::BumpRowHeaderFooterCount (AnnotationTableRowCR row, bool add)
+    {
+    uint32_t  increment = add ? 1 : -1;
+
+    switch (row.GetHeaderFooterType())
+        {
+        case TableHeaderFooterType::Title:
+            SetTitleRowCount (GetTitleRowCount() + increment);
+            break;
+        case TableHeaderFooterType::Header:
+            SetHeaderRowCount (GetHeaderRowCount() + increment);
+            break;
+        case TableHeaderFooterType::Footer:
+            SetFooterRowCount (GetFooterRowCount() + increment);
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableElement::BumpColumnHeaderFooterCount (AnnotationTableColumnCR col, bool add)
+    {
+    uint32_t  increment = add ? 1 : -1;
+
+    switch (col.GetHeaderFooterType())
+        {
+        case TableHeaderFooterType::Header:
+            SetHeaderColumnCount (GetHeaderColumnCount() + increment);
+            break;
+        case TableHeaderFooterType::Footer:
+            SetFooterColumnCount (GetFooterColumnCount() + increment);
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double  AnnotationTableElement::GetWidth () const
+    {
+    double  value = 0.0;
+
+    for (AnnotationTableColumnCR col : m_columns)
+        value += col.GetWidth();
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double  AnnotationTableElement::GetHeight () const
+    {
+    double  value = 0.0;
+
+    for (AnnotationTableRowCR row : m_rows)
+        value += row.GetHeight();
+
+    return value;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus AnnotationTableSerializer::SerializeAspectChanges (AnnotationTableAspectR aspect)
+    {
+    if ( ! aspect.HasChanges())
+        return SUCCESS;
+
+    aspect._FlushChangesToProperties();
+
+    bool    aspectIsMandatory = aspect._IsRequiredOnElement ();
+    bool    shouldBePersisted = aspectIsMandatory || aspect._ShouldBePersisted ();
+
+    // if all the properties are default we don't need the aspect anymore
+    if ( ! shouldBePersisted)
+        return aspect.DeleteFromDb();
+
+    BentleyStatus status;
+
+    if (aspect.HasValidAspectId ())
+        status = aspect.UpdateInDb();
+    else
+        status = aspect.InsertInDb();
+
+    if (SUCCESS != status)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus AnnotationTableSerializer::SerializeTableToDb()
+    {
+    bool    bFailed = false;
+
+    /*-------------------------------------------------------------------------
+        Table header data
+    -------------------------------------------------------------------------*/
+    bFailed |= (SUCCESS != SerializeAspectChanges (m_table.GetHeaderAspect()));
+
+    /*-------------------------------------------------------------------------
+        Column data
+    -------------------------------------------------------------------------*/
+    for (AnnotationTableColumnR column: m_table.GetColumnVectorR())
+        {
+        bFailed |= (SUCCESS != SerializeAspectChanges (column));
+        }
+
+    /*-------------------------------------------------------------------------
+        Row data
+    -------------------------------------------------------------------------*/
+    for (AnnotationTableRowR row: m_table.GetRowVectorR())
+        {
+        bFailed |= (SUCCESS != SerializeAspectChanges (row));
+
+        /*-------------------------------------------------------------------------
+            Cell data
+        -------------------------------------------------------------------------*/
+        for (AnnotationTableCellR cell: row.GetCellVectorR())
+            bFailed |= (SUCCESS != SerializeAspectChanges (cell));
+        }
+
+    /*-------------------------------------------------------------------------
+        Merge dictionary instances
+    -------------------------------------------------------------------------*/
+    MergeDictionary&    mergeDict = m_table.GetMergeDictionary();
+    MergeMap::iterator  mergeMapIter = mergeDict.begin();
+
+    while (mergeMapIter != mergeDict.end())
+        {
+        MergeEntryR                 merge = mergeMapIter->second;
+
+        if (1 == merge.GetRowSpan() && 1 == merge.GetColumnSpan())
+            {
+            m_table.DeleteAspect (merge);
+            mergeMapIter = mergeDict.erase (mergeMapIter);
+            continue;
+            }
+
+        bFailed |= (SUCCESS != SerializeAspectChanges (merge));
+        ++mergeMapIter;
+        }
+
+    /*-------------------------------------------------------------------------
+        Remove deleted aspects
+    -------------------------------------------------------------------------*/
+    for (AnnotationTableAspectDescr& aspectDesc : m_table.GetAspectsPendingDelete())
+        AnnotationTableAspect::DeleteAspectFromDb (aspectDesc.m_type, aspectDesc.m_aspectId, m_table);
+
+    m_table.GetAspectsPendingDelete().clear();
+
+    BeAssert (false == AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType::Row,       m_table));
+    BeAssert (false == AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType::Column,    m_table));
+    BeAssert (false == AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType::Cell,      m_table));
+    BeAssert (false == AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType::Merge,     m_table));
+    //BeAssert (false == AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType::Fill,      m_table));
+    //BeAssert (false == AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType::Symbology, m_table));
+    //BeAssert (false == AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType::EdgeRun,   m_table));
+
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1494,10 +5603,12 @@ DgnDbStatus AnnotationTableElement::_LoadFromDb()
     if (DgnDbStatus::Success != status)
         return status;
 
+    CachedECSqlStatementPtr statement;
+
     /*-------------------------------------------------------------------------
         Table header data
     -------------------------------------------------------------------------*/
-    CachedECSqlStatementPtr statement = TableHeaderAspect::GetPreparedSelectStatement (*this);
+    statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::Header, *this);
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return DgnDbStatus::ReadError;
 
@@ -1505,19 +5616,20 @@ DgnDbStatus AnnotationTableElement::_LoadFromDb()
         return DgnDbStatus::ReadError;
 
     m_tableHeader.AssignProperties (*statement);
+    m_tableHeader.SetAspectId (GetElementId().GetValue());
 
     Initialize (false);
 
     /*-------------------------------------------------------------------------
         Row data
     -------------------------------------------------------------------------*/
-    statement = AnnotationTableRow::GetPreparedSelectStatement (*this);
+    statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::Row, *this);
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return DgnDbStatus::ReadError;
 
     while (DbResult::BE_SQLITE_ROW == statement->Step())
         {
-        int rowIndex = statement->GetValue(0).GetInt();
+        int rowIndex = statement->GetValue(1).GetInt();
 
         AnnotationTableRowP row = GetRow (rowIndex);
         row->AssignProperties (*statement);
@@ -1526,19 +5638,97 @@ DgnDbStatus AnnotationTableElement::_LoadFromDb()
     /*-------------------------------------------------------------------------
         Column data
     -------------------------------------------------------------------------*/
-    statement = AnnotationTableColumn::GetPreparedSelectStatement (*this);
+    statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::Column, *this);
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return DgnDbStatus::ReadError;
 
     while (DbResult::BE_SQLITE_ROW == statement->Step())
         {
-        int columnIndex = statement->GetValue(0).GetInt();
+        int columnIndex = statement->GetValue(1).GetInt();
 
         AnnotationTableColumnP column = GetColumn (columnIndex);
         column->AssignProperties (*statement);
         }
 
+    /*-------------------------------------------------------------------------
+        Merge data - do these before the cells
+    -------------------------------------------------------------------------*/
+    statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::Merge, *this);
+    if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
+        return DgnDbStatus::ReadError;
+
+    while (DbResult::BE_SQLITE_ROW == statement->Step())
+        {
+        AnnotationTableCellIndex    rootIndex = AnnotationTableCellIndex::GetCellIndex (*statement, 1);
+
+        MergeEntry  newMerge (*this, rootIndex);
+        newMerge.AssignProperties (*statement);
+
+        EXPECTED_CONDITION (SUCCESS == GetMergeDictionary().AddMerge (newMerge));
+
+        uint32_t  rowSpan = newMerge.GetRowSpan();
+        uint32_t  colSpan = newMerge.GetColumnSpan();
+        MarkAsMergedCellInteriors (rootIndex, rowSpan, colSpan, true);
+        }
+
+    /*-------------------------------------------------------------------------
+        Cell data
+    -------------------------------------------------------------------------*/
+#if defined (NEEDSWORK)
+    if (!skipCells)
+#endif
+        LoadCells ();
+
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                                   Josh.Schifter   10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableElement::LoadCells ()
+    {
+#if defined (NEEDSWORK)
+    if (table.AreCellsLoaded())
+        return;
+#endif
+    CachedECSqlStatementPtr statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::Cell, *this);
+    if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
+        return;
+
+    while (DbResult::BE_SQLITE_ROW == statement->Step())
+        {
+        AnnotationTableCellIndex    cellIndex = AnnotationTableCellIndex::GetCellIndex (*statement, 1);
+        AnnotationTableCellP        cell      = GetCell (cellIndex);
+
+#if defined (NEEDSWORK)
+        if (UNEXPECTED_CONDITION (nullptr == cell || cell->IsMergedCellInterior()))
+            continue;
+#else
+        if (UNEXPECTED_CONDITION (nullptr == cell))
+            continue;
+#endif
+
+        cell->AssignProperties (*statement);
+
+#if defined (NEEDSWORK)
+        cell->ApplyToFillRuns();
+#endif
+        }
+
+#if defined (NEEDSWORK)
+    table.m_cellsLoaded = true;
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   10/2015
+//---------------------------------------------------------------------------------------
+void AnnotationTableElement::Clear()
+    {
+    m_tableHeader.Invalidate();
+    m_rows.clear();
+    m_columns.clear();
+    m_textStyles.clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1552,6 +5742,8 @@ void AnnotationTableElement::_CopyFrom(DgnElementCR rhsElement)
     if (nullptr == rhs)
         return;
 
+    Clear();
+
     m_tableHeader.CopyDataFrom (rhs->m_tableHeader);
 
     Initialize (false);
@@ -1564,6 +5756,19 @@ void AnnotationTableElement::_CopyFrom(DgnElementCR rhsElement)
 
     for (AnnotationTableRowCR rhsRow : rhs->m_rows)
         m_rows[rhsRow.GetIndex()].CopyDataFrom (rhsRow);
+
+    MergeMap::iterator  mergeMapIter = rhs->m_mergeDictionary.begin();
+
+    while (mergeMapIter != rhs->m_mergeDictionary.end())
+        {
+        MergeEntryR     rhsMerge = mergeMapIter->second;
+        MergeEntry      merge (*this, rhsMerge.GetRootIndex());
+
+        merge.CopyDataFrom (rhsMerge);
+
+        m_mergeDictionary.AddMerge (merge);
+        ++mergeMapIter;
+        }
     }
 
 //---------------------------------------------------------------------------------------

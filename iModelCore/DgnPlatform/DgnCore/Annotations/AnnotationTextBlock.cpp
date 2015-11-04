@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextStylePersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextBlockPersistence.h>
 
@@ -147,6 +147,57 @@ void AnnotationTextBlock::AppendRun(AnnotationRunBaseR run)
         m_paragraphs.push_back(AnnotationParagraph::Create(*m_dgndb, m_styleID));
 
     m_paragraphs.back()->GetRunsR().push_back(&run);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+AnnotationTextBlock::ToStringOpts AnnotationTextBlock::ToStringOpts::CreateForPlainText()
+    {
+    ToStringOpts opts;
+    opts.m_paragraphSeparator = " ";
+    opts.m_lineBreakString = " ";
+    opts.m_fractionSeparator = "/";
+
+    return opts;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+Utf8String AnnotationTextBlock::ToString(ToStringOpts const& opts) const
+    {
+    Utf8String str;
+
+    for (size_t iParagraph = 0; iParagraph < m_paragraphs.size(); ++iParagraph)
+        {
+        if (iParagraph > 0)
+            str += opts.GetParagraphSeparator();
+
+        for (AnnotationRunBasePtr run : m_paragraphs[iParagraph]->m_runs)
+            {
+            switch (run->GetType())
+                {
+                case AnnotationRunType::Text: str += ((AnnotationTextRunCR)*run).GetContent(); break;
+                case AnnotationRunType::LineBreak: str += opts.GetLineBreakString(); break;
+                case AnnotationRunType::Fraction:
+                    {
+                    AnnotationFractionRunCR fraction = (AnnotationFractionRunCR)*run;
+                    str += fraction.GetNumeratorContent();
+                    str += opts.GetFractionSeparator();
+                    str += fraction.GetDenominatorContent();
+                    
+                    break;
+                    }
+
+                default:
+                    BeAssert(false);
+                    break;
+                }
+            }
+        }
+
+    return str;
     }
 
 //*****************************************************************************************************************************************************************************************************

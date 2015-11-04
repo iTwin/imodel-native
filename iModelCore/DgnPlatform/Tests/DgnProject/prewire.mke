@@ -5,10 +5,12 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
 %include mdl.mki
 
-baseDir = $(_makeFilePath)
+SrcDgnPlatform              = $(SrcRoot)DgnPlatform/
+DgnPlatformPublicAPISrc     = $(SrcDgnPlatform)PublicAPI/
+DgnPlatformAPISrc           = $(DgnPlatformPublicAPISrc)DgnPlatform/
+baseDir                     = $(_makeFilePath)
 
 $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
     $(LinkFirstDepToFirstTargetAsDirectory)
@@ -16,7 +18,7 @@ $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnHandlersAPISrc)UnitTests/ScopedDgnHost.h
+$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnPlatformAPISrc)UnitTests/ScopedDgnHost.h
     $(LinkFirstDepToFirstTarget)
 
 #   -------------------------------------------------------------------------------------------
@@ -37,7 +39,7 @@ always:
 
 tsSourceFiles = $[@wildcard $(baseDir)*.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
 
-$(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
+$(ScriptOutDir)DgnScriptTest.js : $(tsSourceFiles)
     $(msg)
     $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(ScriptOutDir)DgnScriptTest.js
     ~time

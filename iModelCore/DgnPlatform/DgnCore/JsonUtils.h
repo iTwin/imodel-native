@@ -2,13 +2,13 @@
 |
 |     $Source: DgnCore/JsonUtils.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <DgnPlatform/DgnCore/ClipVector.h>
+#include <DgnPlatform/ClipVector.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

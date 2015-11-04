@@ -16,6 +16,9 @@ namespace dgn_ElementHandler
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
+#define PROPNAME_Data "Data"
+#define PROPNAME_Descr "Descr"
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -30,8 +33,8 @@ DgnDbStatus DgnMaterial::_OnDelete() const
 void dgn_ElementHandler::Material::_GetClassParams(ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
-    params.Add("Descr");
-    params.Add("Data");
+    params.Add(PROPNAME_Descr);
+    params.Add(PROPNAME_Data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -65,7 +68,7 @@ DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
-        m_data.Init(stmt.GetValueText(params.GetSelectIndex("data")), stmt.GetValueText(params.GetSelectIndex("Descr")));
+        m_data.Init(stmt.GetValueText(params.GetSelectIndex(PROPNAME_Data)), stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr)));
     
     return status;
     }
@@ -75,8 +78,8 @@ DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnMaterial::BindParams(ECSqlStatement& stmt)
     {
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Descr"), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Data"), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
+        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Data), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
         return DgnDbStatus::BadArg;
     else
         return DgnDbStatus::Success;
@@ -253,6 +256,47 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
     return importedElem.IsValid()? DgnMaterialId(importedElem->GetElementId().GetValue()): DgnMaterialId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE_YII
+DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sourceDb, DgnMaterialId source)
+    {
+    Material sourceMaterial = sourceDb.Materials().Query(source);
+    if (!sourceMaterial.IsValid())
+        {
+        BeAssert(!source.IsValid() && "look up should fail only for an invalid materialid");
+        return DgnMaterialId();
+        }
+
+    // If the destination Db already contains a material by this name, then remap to it. Don't create another copy.
+    DgnMaterialId destMaterialId = context.GetDestinationDb().Materials().QueryMaterialId(sourceMaterial.GetName(), sourceMaterial.GetPalette());
+    if (destMaterialId.IsValid())
+        return destMaterialId;
+
+    //  Must copy and remap the source material.
+    Material destMaterial(sourceMaterial);
+    if (sourceMaterial.GetParentId().IsValid())
+        destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));
+
+    Json::Value renderingAsset;
+
+    if (SUCCESS == destMaterial.GetRenderingAsset (renderingAsset))
+        {
+        RenderMaterialPtr       renderMaterial = JsonRenderMaterial::Create (renderingAsset, source);
+        JsonRenderMaterial*     jsonRenderMaterial = dynamic_cast <JsonRenderMaterial*> (renderMaterial.get());
+
+        if (nullptr != jsonRenderMaterial &&
+            SUCCESS == jsonRenderMaterial->DoImport (context, sourceDb))
+           destMaterial.SetRenderingAsset (jsonRenderMaterial->GetValue());
+        }
+
+    Insert (destMaterial);
+
+    return context.AddMaterialId(source, destMaterial.GetId());
+    }
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/

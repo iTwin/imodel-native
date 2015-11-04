@@ -55,6 +55,7 @@
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp" />
+    <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp" />
     <ClCompile Include="Performance\PerformanceElementsTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
@@ -74,6 +75,8 @@
     <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
     <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
+    <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
+    <ClCompile Include="Published\ElementGroup_Tests.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\NamedVolume_Test.cpp" />
@@ -99,6 +102,7 @@
     <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceElements.h" />
+    <ClInclude Include="Performance\PerformanceElementsCRUDTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />
     <ClInclude Include="Published\AnnotationTestFixture.h" />
@@ -151,18 +155,18 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>$(OutRoot)Winx86\Product\BeGTest\bin\BeGTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -a x86 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
     <NMakeIncludeSearchPath>$(OutRoot)Winx86\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx86\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx86\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\DgnPlatform-Gtest\DgnPlatformTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest re dgnplatform:backdoor* dgnplatform:unittest* dgnplatform:gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest re dgnplatform:backdoor* dgnplatform:unittest* dgnplatform:gtest -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\</NMakeIncludeSearchPath>
   </PropertyGroup>

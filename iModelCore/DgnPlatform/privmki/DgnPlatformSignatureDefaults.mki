@@ -2,14 +2,9 @@
 #|
 #|     $Source: privmki/DgnPlatformSignatureDefaults.mki $
 #|
-#| $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#| $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #|
 #+--------------------------------------------------------------------------------------*/
-
-%if !defined (__ConfigurePolicy_mki__)
-%error ConfigurePolicy.mki must be included before DgnPlatformSignatureDefaults.mki
-%endif
-
 #
 #  The default for sharedmki/linkMixedAssembly.mki is to NOT strongly name.  We choose
 #  to enforce an opposite default for MicroStation here.
@@ -19,7 +14,7 @@
 %endif
 
 %if !defined (DLM_NO_SIGN) && !defined (DLM_NO_RCSIGN) && !defined (ASSEMBLY_NO_RIGHTS_COMPLIANCE_CHECK)
-    %include $(SrcBsiCommon)sharedmki/isrightscompliant.mki
+    %include $(SrcRoot)bsicommon/sharedmki/isrightscompliant.mki
 %endif
 
 TLBIMP_KEYFILE_OPTION = keyfile
@@ -43,9 +38,9 @@ TLBIMP_KEYFILE_OPTION = keyfile
         %endif
     %else
         %if defined (isRightsCompliant) || defined (isRightsNeutral)
-            ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)RightsCompliant.snk
+            ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCertificateDirectory)RightsCompliant.snk
         %else
-            ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)NonRightsCompliant.snk
+            ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCertificateDirectory)NonRightsCompliant.snk
         %endif
     %endif
 %elif $(StrongNameSignature) == "NoSignature" || $(StrongNameSignature) == "TestSignature"
@@ -53,14 +48,14 @@ TLBIMP_KEYFILE_OPTION = keyfile
     %if $(StrongNameSignature) == "NoSignature"
         ASSEMBLY_SKIPPABLE_VERIFICATION = 1
     %else
-        ASSEMBLY_TESTKEYFILE_DEFAULT = $(bsiCerts)Test.snk
+        ASSEMBLY_TESTKEYFILE_DEFAULT = $(bsiCertificateDirectory)Test.snk
         ASSEMBLY_TESTSIGN=1
     %endif
     TLBIMP_KEYFILE_OPTION = publickey
     %if defined (isRightsCompliant)
-        ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)PublicPrgRightsCompliant.snk
+        ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCertificateDirectory)PublicPrgRightsCompliant.snk
     %else
-        ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)PublicPrgNonRightsCompliant.snk
+        ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCertificateDirectory)PublicPrgNonRightsCompliant.snk
     %endif
 %else
     %error StrongNameSignature has invalid value of $(StrongNameSignature).  If it helps, pascal case is required on values.

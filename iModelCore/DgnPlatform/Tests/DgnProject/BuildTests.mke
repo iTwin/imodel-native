@@ -19,7 +19,7 @@ tempInclude = $(OutputRootDir)build/DgnPlatform/UnitTests/include/
 cIncs + -I$(tempInclude)
 
 # backdoor: Allow published tests (and all tests) to include ScopedDgnHost.h (which is not in the published api) at a predictable location
-$(tempInclude)DgnPlatform/DgnHandlers/ScopedDgnHost.h : $(BuildContext)PublicAPI/DgnPlatform/DgnHandlers/UnitTests/ScopedDgnHost.h
+$(tempInclude)DgnPlatform/ScopedDgnHost.h : $(BuildContext)PublicAPI/DgnPlatform/UnitTests/ScopedDgnHost.h
     $(msg)
     $(LinkFirstDepToFirstTarget)
 
@@ -34,7 +34,7 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/DgnProject/
 %endif
 
-%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}

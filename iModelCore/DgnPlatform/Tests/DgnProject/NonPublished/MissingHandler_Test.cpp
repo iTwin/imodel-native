@@ -37,6 +37,8 @@ public:
     static uint64_t GetRestrictions()
         {
         return RestrictedAction::Delete
+             | RestrictedAction::Insert
+             | RestrictedAction::SetCode
              | RestrictedAction::DeleteChild
              | RestrictedAction::Move
              | RestrictedAction::SetGeometry;
@@ -126,6 +128,7 @@ struct MissingHandlerTest : public ::testing::Test
     DgnCategoryId   m_alternateCategoryId;
     ElemInfo        m_elem1Info;
     ElemInfo        m_elem2Info;
+    DgnAuthorityId  m_authorityId;
 
     template<typename T> void CreateElement(ElemInfo& info, DgnDbR db);
     DgnElementId CreatePhysicalElement(DgnDbR db, DgnElementId parentId = DgnElementId());
@@ -177,6 +180,12 @@ void MissingHandlerTest::InitDb(DgnDbR db)
     ASSERT_TRUE(altCat.Insert(DgnSubCategory::Appearance()).IsValid());
     m_alternateCategoryId = altCat.GetCategoryId();
     ASSERT_TRUE(m_alternateCategoryId.IsValid());
+
+    auto authority = NamespaceAuthority::CreateNamespaceAuthority("MissingHandlerTest", db);
+    ASSERT_TRUE(authority.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, db.Authorities().Insert(*authority));
+    m_authorityId = authority->GetAuthorityId();
+    ASSERT_TRUE(m_authorityId.IsValid());
 
     CreateElement<Elem1>(m_elem1Info, db);
     CreateElement<Elem2>(m_elem2Info, db);
@@ -246,6 +255,13 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     status = pElem->SetParentId(parentId);
     EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetParent));
     EXPECT_EQ(ALLOWED(Restriction::SetParent), pElem->GetParentId() == parentId);
+
+    // Change code
+    static char s_codeChar = 'A';
+    Utf8String codeValue(1, s_codeChar++);
+    auto code = db.Authorities().Get<NamespaceAuthority>(m_authorityId)->CreateCode(codeValue);
+    status = pElem->SetCode(code);
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetCode));
 
     // Change category
     status = pElem->SetCategoryId(m_alternateCategoryId);

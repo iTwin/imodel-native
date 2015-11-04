@@ -9,7 +9,7 @@
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
-#include "DgnPlatform/DgnCore/Annotations/TextAnnotationDraw.h"
+#include "DgnPlatform/Annotations/TextAnnotationDraw.h"
 
 using namespace flatbuffers;
 
@@ -1185,15 +1185,25 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCR geomToElem)
+void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCP geomToElem)
     {
+    if (nullptr == geomToElem)
+        {
+        FlatBufferBuilder fbb;
+
+        auto mloc = FB::CreateBeginSubCategory(fbb, subCategory.GetValueUnchecked());
+
+        fbb.Finish(mloc);
+        Append(Operation(OpCode::BeginSubCategory, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        return;
+        }
+
     DPoint3d            origin;
     RotMatrix           rMatrix;
     YawPitchRollAngles  angles;
 
-    geomToElem.GetTranslation(origin);
-    geomToElem.GetMatrix(rMatrix);
-
+    geomToElem->GetTranslation(origin);
+    geomToElem->GetMatrix(rMatrix);
     YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix);
 
     FlatBufferBuilder fbb;
@@ -1569,7 +1579,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnSubCategoryId& subCate
 
     subCategory = DgnSubCategoryId((uint64_t)ppfb->subCategoryId());
 
-    DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
+    DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
     geomToElem = angles.ToTransform(origin);
@@ -2183,7 +2193,10 @@ static bool SetActive(ViewContextR context, bool enable)
     if (GeomStreamEntryId::Type::Invalid != entryId.GetType() && entryId.GetGeomPartId().IsValid())
         {
         if (!enable)
+            {
             entryId.SetGeomPartId(DgnGeomPartId()); // Clear part and remain active...
+            context.SetGeomStreamEntryId(entryId);
+            }
 
         return false; // Already active (or remaining active)...
         }
@@ -2260,7 +2273,7 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                     {
                     DgnSubCategoryId remappedSubCategoryId = importer.FindSubCategory(subCategory); 
                     BeAssert(remappedSubCategoryId.IsValid() && "Category and all subcategories should have been remapped by the element that owns this geometry");
-                    writer.Append(remappedSubCategoryId, geomToElem);   
+                    writer.Append(remappedSubCategoryId, &geomToElem);   
                     }
                 break;
                 }
@@ -2301,6 +2314,257 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
     dest.SaveData(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, bool isPart)
+    {
+    Collection  collection(stream.GetData(), stream.GetSize());
+    Reader      reader(db);
+
+    IdSet<DgnGeomPartId> parts;
+
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::Header:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Header\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BeginSubCategory:
+                {
+                DgnSubCategoryId subCategory;
+                Transform        geomToElem;
+
+                if (!reader.Get(egOp, subCategory, geomToElem))
+                    break;
+
+                output._DoOutputLine(Utf8PrintfString("\nOpCode::BeginSubCategory - SubCategoryId: %" PRIu64 " - Have GeomToElem: %s\n", subCategory.GetValue(), geomToElem.IsIdentity() ? "No" : "Yes").c_str());
+
+                if (!output._WantVerbose() || geomToElem.IsIdentity())
+                    break;
+
+                for (int i=0; i<3; i++)
+                    output._DoOutputLine(Utf8PrintfString("  [%lf, \t%lf, \t%lf, \t%lf]\n", geomToElem.form3d[i][0], geomToElem.form3d[i][1], geomToElem.form3d[i][2], geomToElem.form3d[i][3]).c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                {
+                DgnGeomPartId partId;
+
+                if (!reader.Get(egOp, partId))
+                    break;
+
+                if (output._WantPartGeometry())
+                    parts.insert(partId);
+
+                output._DoOutputLine(Utf8PrintfString("OpCode::GeomPartInstance - PartId: %" PRIu64 "\n", partId.GetValue()).c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BasicSymbology:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::PointPrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::PointPrimitive2d:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive2d\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::ArcPrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::ArcPrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::CurveVector:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::CurveVector\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::Polyface:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Polyface\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::CurvePrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::CurvePrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::SolidPrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::SolidPrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BsplineSurface:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BsplineSurface\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::ParasolidBRep:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::ParasolidBRep\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepPolyface:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyface\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepPolyfaceExact:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyfaceExact\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepEdges:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepEdges\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepFaceIso:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepFaceIso\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::LineStyle:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::LineStyle\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::AreaFill:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::AreaFill\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::Pattern:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Pattern\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::Material:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Material\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::TextString:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::TextString\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::LineStyleModifiers:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::LineStyleModifiers\n").c_str());
+                break;
+                }
+
+            default:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode - %d\n", egOp.m_opCode).c_str());
+                break;
+                }
+            }
+        }
+
+    if (0 != parts.size())
+        {
+        for (DgnGeomPartId partId : parts)
+            {
+            output._DoOutputLine(Utf8PrintfString("\n[--- PartId: %" PRIu64 " ---]\n\n", partId.GetValue()).c_str());
+
+            DgnGeomPartPtr partGeometry = db.GeomParts().LoadGeomPart(partId);
+
+            if (!partGeometry.IsValid())
+                continue;
+
+            ElementGeomIO::Debug(output, partGeometry->GetGeomStream(), db, true);
+            }
+        }
+
+    if (output._WantGeomEntryIds() && !isPart)
+        {
+        ElementGeometryCollection collection(db, stream);
+
+        output._DoOutputLine(Utf8PrintfString("\n--- GeomStream Entry Ids ---\n\n"));
+
+        for (ElementGeometryPtr geom : collection)
+            {
+            GeomStreamEntryId geomId = collection.GetGeomStreamEntryId();
+            Utf8String        geomType;
+
+            switch (geom->GetGeometryType())
+                {
+                case ElementGeometry::GeometryType::CurvePrimitive:
+                    geomType.assign("CurvePrimitive");
+                    break;
+
+                case ElementGeometry::GeometryType::CurveVector:
+                    geomType.assign("CurveVector");
+                    break;
+
+                case ElementGeometry::GeometryType::SolidPrimitive:
+                    geomType.assign("SolidPrimitive");
+                    break;
+
+                case ElementGeometry::GeometryType::BsplineSurface:
+                    geomType.assign("BsplineSurface");
+                    break;
+
+                case ElementGeometry::GeometryType::Polyface:
+                    geomType.assign("Polyface");
+                    break;
+
+                case ElementGeometry::GeometryType::SolidKernelEntity:
+                    geomType.assign("SolidKernelEntity");
+                    break;
+
+                case ElementGeometry::GeometryType::TextString:
+                    geomType.assign("TextString");
+                    break;
+
+                default:
+                    geomType.assign("Unknown");
+                    break;
+                }
+
+            if (!geomId.GetGeomPartId().IsValid())
+                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d]\n", geomType.c_str(), geomId.GetIndex()).c_str());
+            else
+                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d | PartId: %" PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeomPartId().GetValue(), geomId.GetPartIndex()).c_str());
+            }
+
+        output._DoOutputLine(Utf8PrintfString("\n"));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3178,20 +3442,6 @@ static bool is3dGeometryType(ElementGeometry::GeometryType geomType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementGeometryBuilder::GetPlacement(Placement3dR placement)
-    {
-    if (!m_is3d)
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-    placement = m_placement3d;
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementGeometryBuilder::GetGeomStream(GeomStreamR geom)
     {
     if (0 == m_writer.m_buffer.size())
@@ -3347,6 +3597,9 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
         localRange.Extend(range);
         }
 
+    if (!geomToElement.IsIdentity())
+        geomToElement.Multiply(localRange, localRange);
+
     OnNewGeom(localRange, &geomToElement);
     m_writer.Append(geomPartId);
 
@@ -3356,29 +3609,31 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geomToElementIn)
+void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomToElement)
     {
     if (m_isPartCreate)
-        return; // Don't need placement or want ElemDisplayParams...
+        {
+        // NOTE: Don't need placement or want OpCode::BeginSubCategory to be added, but we do want to 
+        //       store symbology/material attachments that aren't from the sub-category appearance.
+        if (m_appearanceChanged)
+            {
+            m_writer.Append(m_elParams);
+            m_appearanceChanged = false;
+            }
 
-    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
-    DRange3d  localRange = localRangeIn;
-
-    if (!geomToElem.IsIdentity())
-        geomToElem.Multiply(localRange, localRange);
+        return;
+        }
 
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
 
-    // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...geometry class?)
-    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))
+    // Establish "geometry group" boundaries at sub-category and GeomPart changes...geomToElement should only be non-null when inserting a GeomPart..
+    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || nullptr != geomToElement))
         {
-        m_writer.Append(m_elParams.GetSubCategoryId(), geomToElem);
-
+        m_writer.Append(m_elParams.GetSubCategoryId(), geomToElement);
         m_prevSubCategory = m_elParams.GetSubCategoryId();
-        m_prevGeomToElem = geomToElem;
         }
 
     if (m_appearanceChanged)
@@ -3454,10 +3709,10 @@ bool ElementGeometryBuilder::AppendLocal(ElementGeometryCR geom)
     {
     DRange3d localRange;
 
-    if (!geom.GetRange(localRange, nullptr))
+    if (!geom.GetRange(localRange))
         return false;
 
-    OnNewGeom(localRange, nullptr);
+    OnNewGeom(localRange);
 
     if (!m_writer.AppendSimplified(geom, m_is3d))
         m_writer.Append(geom);
@@ -3522,7 +3777,7 @@ bool ElementGeometryBuilder::Append(ICurvePrimitiveCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
 
         if (!m_writer.AppendSimplified(geom, false, m_is3d))
             m_writer.Append(geom);
@@ -3547,7 +3802,7 @@ bool ElementGeometryBuilder::Append(CurveVectorCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
 
         if (!m_writer.AppendSimplified(geom, m_is3d))
             m_writer.Append(geom);
@@ -3578,7 +3833,7 @@ bool ElementGeometryBuilder::Append(ISolidPrimitiveCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3607,7 +3862,7 @@ bool ElementGeometryBuilder::Append(MSBsplineSurfaceCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3636,7 +3891,7 @@ bool ElementGeometryBuilder::Append(PolyfaceQueryCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3665,7 +3920,7 @@ bool ElementGeometryBuilder::Append(ISolidKernelEntityCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(geom);
 
         return true;
@@ -3693,7 +3948,7 @@ bool ElementGeometryBuilder::Append(TextStringCR text)
         if (!getRange(text, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange, nullptr);
+        OnNewGeom(localRange);
         m_writer.Append(text);
 
         return true;
@@ -3822,6 +4077,34 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
     m_haveLocalGeom = m_havePlacement = m_isPartCreate = false;
     m_elParams.SetCategoryId(categoryId);
     m_appearanceChanged = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR stream, DgnDbR db)
+    {
+    ElementGeometryBuilderPtr builder = new ElementGeometryBuilder(db, DgnCategoryId(), Placement3d());
+    ElementGeomIO::Collection collection(stream.GetData(), stream.GetSize());
+
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::Header:
+            case ElementGeomIO::OpCode::BeginSubCategory:
+                break; // Already have header, can't change sub-category, and part geometry is always in local coords...
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                return nullptr; // Nested parts aren't supported...
+
+            default:
+                builder->m_writer.Append(egOp); // Append raw data so we don't lose bReps, etc. even when we don't have Parasolid available...
+                break;
+            }
+        }
+
+    return builder;
     }
 
 /*---------------------------------------------------------------------------------**//**

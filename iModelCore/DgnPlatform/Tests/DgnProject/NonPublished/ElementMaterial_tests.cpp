@@ -8,8 +8,8 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <numeric>
-#include <DgnPlatform/DgnCore/DgnMaterial.h>
-#include <DgnPlatform/DgnCore/DgnTexture.h>
+#include <DgnPlatform/DgnMaterial.h>
+#include <DgnPlatform/DgnTexture.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry Builder
@@ -184,9 +184,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
-    Placement3d        placement;
-
-    builder->GetPlacement (placement);
+    Placement3d placement = builder->GetPlacement3d();
 
     setUpView (*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
     m_db->SaveSettings();   

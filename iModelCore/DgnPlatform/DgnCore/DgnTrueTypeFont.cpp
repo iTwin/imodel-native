@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnFontData.h>
+#include <DgnPlatform/DgnFontData.h>
 #include <regex>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -525,7 +525,7 @@ bool DgnTrueTypeGlyph::_IsBlank() const
 //---------------------------------------------------------------------------------------
 static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
     {
-    style = DgnFont::ComputeFontStyle(isBold, isItalic);
+    style = DgnFont::FontStyleFromBoldItalic(isBold, isItalic);
     FT_Face face = data._GetFaceP(style);
     if (nullptr == face)
         face = data._GetFaceP(DgnFontStyle::Regular);
@@ -566,9 +566,9 @@ DgnGlyphCP DgnTrueTypeFont::_FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle fo
     {
     if (!IsResolved())
         return nullptr;
-    
-    bool isBold = ((DgnFontStyle::Bold == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
-    bool isItalic = ((DgnFontStyle::Italic == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+
+    bool isBold, isItalic;
+    DgnFont::FontStyleToBoldItalic(isBold, isItalic, fontStyle);
     FT_Face effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
 
     return FindGlyphCP(effectiveFace, glyphId, fontStyle);
@@ -707,4 +707,16 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+double DgnTrueTypeFont::_GetDescenderRatio(DgnFontStyle fontStyle) const
+    {
+    bool isBold, isItalic;
+    DgnFont::FontStyleToBoldItalic(isBold, isItalic, fontStyle);
+    FT_Face effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
+
+    return fabs ((double)effectiveFace->descender / (double)effectiveFace->ascender);
     }

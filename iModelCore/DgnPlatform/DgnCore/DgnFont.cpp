@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnFontData.h>
+#include <DgnPlatform/DgnFontData.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
@@ -855,7 +855,7 @@ bool DgnFont::IsResolved() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     10/2015
 //---------------------------------------------------------------------------------------
-DgnFontStyle DgnFont::ComputeFontStyle(bool isBold, bool isItalic)
+DgnFontStyle DgnFont::FontStyleFromBoldItalic(bool isBold, bool isItalic)
     {
     DgnFontStyle fontStyle = DgnFontStyle::Regular;
     if (isBold && isItalic)
@@ -866,6 +866,15 @@ DgnFontStyle DgnFont::ComputeFontStyle(bool isBold, bool isItalic)
         fontStyle = DgnFontStyle::Italic;
     
     return fontStyle;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+void DgnFont::FontStyleToBoldItalic(bool& isBold, bool& isItalic, DgnFontStyle fontStyle)
+    {
+    isBold = ((DgnFontStyle::Bold == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+    isItalic = ((DgnFontStyle::Italic == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
     }
 
 //---------------------------------------------------------------------------------------

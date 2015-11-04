@@ -13,7 +13,7 @@
 #include <ECDb/ECDbApi.h>
 #include <ECObjects/ECSchema.h>
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnCore/DgnDb.h>
+#include <DgnPlatform/DgnDb.h>
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 

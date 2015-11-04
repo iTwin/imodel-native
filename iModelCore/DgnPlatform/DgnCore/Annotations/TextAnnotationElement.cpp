@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
-#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -95,18 +95,14 @@ DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus TextAnnotationItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
-#else
-DgnDbStatus TextAnnotationItem::GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
-#endif
+void TextAnnotationItem::GenerateElementGeometry(GeometricElementR el, GenerateReason reason) const
     {
     // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
     if (m_isGeometrySuppressed)
-        return DgnDbStatus::Success;
+        return;
     
     if (!m_annotation.IsValid())
-        return DgnDbStatus::Success;
+        return;
 
     ElementGeometryBuilderPtr builder;
     DgnElement3dCP elem3d = el.ToElement3d();
@@ -123,8 +119,6 @@ DgnDbStatus TextAnnotationItem::GenerateElementGeometry(GeometricElementR el, Ge
     
     builder->Append(*m_annotation);
     builder->SetGeomStreamAndPlacement(el);
-    
-    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -136,36 +130,28 @@ static TextAnnotationItemR getItemR(DgnElementR el)
     if (nullptr == item)
         {
         item = new TextAnnotationItem();
-        TextAnnotationItem::SetAspect(el, *item); // *** WIP_ELEMENT_ITEM 
+        TextAnnotationItem::SetAspect(el, *item);
         }
 
     return *item;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     09/2015
-//---------------------------------------------------------------------------------------
 TextAnnotationItemR TextAnnotationElement::GetItemR() { return getItemR(*this); }
 TextAnnotationItemR PhysicalTextAnnotationElement::GetItemR() { return getItemR(*this); }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/2015
+// @bsimethod                                                   Jeff.Marker     10/2015
 //---------------------------------------------------------------------------------------
-TextAnnotationItemCP TextAnnotationItem::GetCP(DgnElementCR el) // *** WIP_ELEMENT_ITEM 
+static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, GeometricElementR el, TextAnnotationItemCP item, DgnElement::UniqueAspect::GenerateReason reason)
     {
-    ECN::ECClassCP ecclass = QueryECClass(el.GetDgnDb());
-    if (nullptr == ecclass)
-        return nullptr;
-    return UniqueAspect::Get<TextAnnotationItem>(el, *ecclass); 
-    }
+    if (DgnDbStatus::Success != superStatus)
+        return superStatus;
+    
+    if (nullptr != item)
+        item->GenerateElementGeometry(el, reason);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/2015
-//---------------------------------------------------------------------------------------
-TextAnnotationItemP TextAnnotationItem::GetP(DgnElementR el) // *** WIP_ELEMENT_ITEM 
-    {
-    ECN::ECClassCP ecclass = QueryECClass(el.GetDgnDb());
-    if (nullptr == ecclass)
-        return nullptr;
-    return UniqueAspect::GetP<TextAnnotationItem>(el, *ecclass);
+    return DgnDbStatus::Success;
     }
+DgnDbStatus TextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus PhysicalTextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus TextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+DgnDbStatus PhysicalTextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }

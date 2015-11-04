@@ -3,7 +3,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnFontData.h>
+#include <DgnPlatform/DgnFontData.h>
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2012
@@ -102,6 +102,7 @@ void IDgnShxFontData::LoadNonUnicodeGlyphFPosCacheAndMetrics()
     if (nullptr == zeroGlyphFPos)
         {
         m_ascender = 1;
+        m_descender = 1;
         return;
         }
 
@@ -129,6 +130,7 @@ void IDgnShxFontData::LoadNonUnicodeGlyphFPosCacheAndMetrics()
 
     size_t iOffset = (iLen + 1);
     m_ascender = pBuf.GetData()[iOffset++];
+    m_descender = pBuf.GetData()[iOffset++];
 
     // This hack comes from the OpenDWG code. I don't understand it but see TR#182253 for font with this problem (gbcbig.shx).
     if (0 == m_ascender)
@@ -165,15 +167,18 @@ void IDgnShxFontData::LoadUnicodeGlyphFPosCacheAndMetrics()
     // ascender
     m_ascender = fontInfo.GetData()[fontInfoDataOffset++];
     
-    // skip descender
-    ++fontInfoDataOffset;
+    // descender
+    m_descender = fontInfo.GetData()[fontInfoDataOffset++];
 
     // Skip "modes".
     ++fontInfoDataOffset;
 
     // Special case when the "encoding" is "shape file".
     if (2 == fontInfo.GetData()[fontInfoDataOffset])
+        {
         m_ascender = 1;
+        m_descender = 1;
+        }
 
     uint64_t nextAddress = _Tell();
 
@@ -231,15 +236,6 @@ DgnShxFont::GlyphFPos const* IDgnShxFontData::GetGlyphFPos(DgnGlyph::T_Id glyphI
 
     return nullptr;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2015
-//---------------------------------------------------------------------------------------
-Byte IDgnShxFontData::GetAscender()
-    {
-    LoadGlyphFPosCacheAndMetrics();
-    return m_ascender;
-    }   
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     03/2015
