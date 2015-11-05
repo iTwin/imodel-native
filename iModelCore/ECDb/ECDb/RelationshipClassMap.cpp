@@ -327,8 +327,17 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
     auto otheEndClassMap = GetECDbMap ().GetClassMapCP (*otherEndClass, true);
     size_t otherEndTableCount = GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint);
 
+    
+    //we need to know if its KeyProp
+    ECDbSqlColumn const* keyPropCol = nullptr;
+    if (SUCCESS != TryGetKeyPropertyColumn(keyPropCol, otherEndConstraint, *relationshipClassMapInfo.GetECClass().GetRelationshipClassCP(), thisEnd))
+        return MapStatus::Error;
+
     //*** persistence end table
-    SetTable (&thisEndClassMap->GetRootTable ());
+    if (keyPropCol == nullptr)
+        SetTable (&thisEndClassMap->GetRootTable ());
+    else
+        SetTable(&thisEndClassMap->GetTable());
 
     //if no class id column on this end is required, store the class id directly so that it can be used as literal in the native SQL
     const ECClassId defaultThisEndECClassId = thisEndClass->GetId ();
@@ -373,7 +382,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
             }
 
         auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap()->GetFirstColumn();
-        auto& foreignTable = GetRootTable ();
+        auto& foreignTable = GetTable ();
         auto primaryClassMap = GetECDbMap().GetClassMap(*otherEndConstraintMap.GetRelationshipConstraint().GetClasses()[0]);
 
         BeAssert(primaryClassMap!=nullptr && "Primary Class map is null");
