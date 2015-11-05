@@ -356,7 +356,7 @@ struct NullContext : ViewContext
 {
 void _AllocateScanCriteria () override{;}
 QvElem* _DrawCached (IStrokeForCache&){return nullptr;}
-void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
+void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip) override {}
 void _DeleteSymbol (IDisplaySymbol*) override {}
 bool _FilterRangeIntersection (GeometricElementCR element) override {return false;}
 void _CookDisplayParams (ElemDisplayParamsR, ElemMatSymbR) override {}
