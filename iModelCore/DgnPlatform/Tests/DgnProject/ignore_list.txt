@@ -23,3 +23,4 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # WIP_ELEMENT
 
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
 
+ComponentModelTest.SimulateDeveloperAndClient		# Sam is debugging ...
