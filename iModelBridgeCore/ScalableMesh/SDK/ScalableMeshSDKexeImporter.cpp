@@ -1,5 +1,9 @@
 #include "ScalableMeshSDKexeImporter.h"
+
+#include <ScalableTerrainModel\IMrDTMSources.h>
+
 #include <windows.h>
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 namespace ScalableMeshSDKexe
     {
@@ -131,11 +135,11 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
         }
 
 
-    IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
-                                  DTMSourceDataType importedType,
-                                  BeXmlNodeP        pTestChildNode)
+    Bentley::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
+                                                  Bentley::MrDTM::DTMSourceDataType importedType,
+                                                  BeXmlNodeP                        pTestChildNode)
         {
-        ILocalFileMonikerPtr monikerPtr(ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
+        Bentley::MrDTM::ILocalFileMonikerPtr monikerPtr(Bentley::MrDTM::ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
 
         if (0 == _wcsicmp(L"dgn", BeFileName::GetExtension(sourcePath.c_str()).c_str()))
             {
@@ -172,13 +176,13 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
             assert(status == SUCCESS);
 
-            return IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
+            return Bentley::MrDTM::IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
             }
 
-        return IDTMLocalFileSource::Create(importedType, monikerPtr).get();
+        return Bentley::MrDTM::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
         }
 
-    bool AddOptionToSource(IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode)
+    bool AddOptionToSource(Bentley::MrDTM::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode)
         {
         WString datasetIs3D;
         WString datasetIsGround;
@@ -187,6 +191,8 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
         if (status == BEXML_Success)
             {
+            assert(!"Not supported yet");
+            /*
             if (datasetIs3D.Equals(L"1"))
                 {
                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
@@ -196,12 +202,15 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
                 sourceImportConfig.SetReplacementSMData(data);
                 }
+                */
             }
 
         status = pTestChildNode->GetAttributeStringValue(datasetIsGround, "grounddetection");
 
         if (status == BEXML_Success)
             {
+            assert(!"Not supported yet");
+            /*
             if (datasetIsGround.Equals(L"1"))
                 {
                 SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
@@ -212,6 +221,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
                 sourceImportConfig.SetReplacementSMData(data);
                 }
+                */
             }
 
         /*
@@ -233,7 +243,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
         return true;
         }
 
-    void GetSourceDataType(DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
+    void GetSourceDataType(Bentley::MrDTM::DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
         {
         WString dataTypeStr;
 
@@ -243,17 +253,17 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
             {
             if (dataTypeStr.CompareTo(L"POINT") == 0)
                 {
-                dataType = DTM_SOURCE_DATA_POINT;
+                dataType = Bentley::MrDTM::DTM_SOURCE_DATA_POINT;
                 }
             else
                 if (dataTypeStr.CompareTo(L"DTM") == 0)
                     {
-                    dataType = DTM_SOURCE_DATA_DTM;
+                    dataType = Bentley::MrDTM::DTM_SOURCE_DATA_DTM;
                     }
                 else
                     if (dataTypeStr.CompareTo(L"BREAKLINE") == 0)
                         {
-                        dataType = DTM_SOURCE_DATA_BREAKLINE;
+                        dataType = Bentley::MrDTM::DTM_SOURCE_DATA_BREAKLINE;
                         }
                     else
                         {
@@ -263,7 +273,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
         }
 
 
-    bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
+    bool ParseSourceSubNodes(Bentley::MrDTM::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
         {
         bool isSuccess = true;
 
@@ -281,14 +291,14 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
                 if (status == BEXML_Success)
                     {
-                    DTMSourceDataType dataType = DTM_SOURCE_DATA_POINT;
+                    Bentley::MrDTM::DTMSourceDataType dataType = Bentley::MrDTM::DTM_SOURCE_DATA_POINT;
 
                     GetSourceDataType(dataType, pTestChildNode);
 
                     if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                         (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                         {
-                        IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                        Bentley::MrDTM::IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
                         AddOptionToSource(srcPtr, pTestChildNode);
                         if (BSISUCCESS != sourceCollection.Add(srcPtr))
                             {
@@ -313,7 +323,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                             WString extension;
                             name.ParseName(NULL, NULL, NULL, &extension);
                             if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
-                            IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
+                            Bentley::MrDTM::IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
                             AddOptionToSource(srcPtr, pTestChildNode);
                             if (BSISUCCESS != sourceCollection.Add(srcPtr))
                                 {

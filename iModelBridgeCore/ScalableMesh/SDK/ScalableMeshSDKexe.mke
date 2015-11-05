@@ -49,7 +49,9 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableTerrainModel.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
+
 
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RmgrTools.lib
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RasterCore.lib

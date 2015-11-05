@@ -12,6 +12,8 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSourceCollection.h>
 
+#include <ScalableTerrainModel\IMrDTMSourceCollection.h>
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 namespace ScalableMeshSDKexe
@@ -29,13 +31,13 @@ namespace ScalableMeshSDKexe
                                                       bool                    pi_SearchSubFolders) const;
 
            bool                   ParseFilePaths(WString&                pio_FilePaths,
-                                                           WString&                pio_FirstPath) const;
+                                                 WString&                pio_FirstPath) const;
         };
 
-    bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
-    IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
-                                  DTMSourceDataType importedType,
-                                  BeXmlNodeP        pTestChildNode = 0);
-    bool AddOptionToSource(IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode);
-    void GetSourceDataType(DTMSourceDataType& dataType, BeXmlNodeP pSourceNode);
+    bool ParseSourceSubNodes(Bentley::MrDTM::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
+    Bentley::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
+                                                  Bentley::MrDTM::DTMSourceDataType importedType,
+                                                  BeXmlNodeP                        pTestChildNode = 0);
+    bool AddOptionToSource(Bentley::MrDTM::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode);
+    void GetSourceDataType(Bentley::MrDTM::DTMSourceDataType& dataType, BeXmlNodeP pSourceNode);
     };

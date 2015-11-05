@@ -2,6 +2,16 @@
 #include "ScalableMeshSDKexe.h"
 #include "ScalableMeshSDKexeImporter.h"
 
+#include <TerrainModel\Core\bcDTMClass.h>
+#include <TerrainModel\Core\IDTM.h>
+#include <ScalableTerrainModel\IMrDTM.h>
+#include <ScalableTerrainModel\IMrDTMCreator.h>
+#include <ScalableTerrainModel\IMrDTMQuery.h>
+
+
+USING_NAMESPACE_BENTLEY_MRDTM
+USING_NAMESPACE_BENTLEY_TERRAINMODEL    
+
 namespace ScalableMeshSDKexe
     {   
 
@@ -175,6 +185,9 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
 
     BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pTestNode)
         {
+        
+//NEEDS_WORK_MST Remove
+#if 0 
         BeXmlStatus status;
 
        // s_pPointResultFile = fopen("D:\\MyDoc\\CC - Iteration 6\\YIIDataset\\saltLakeWithCC.xyz", "w+");                
@@ -204,312 +217,135 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
 
             if (ParseSourceSubNodes(importerPtr->EditSources(), pTestNode) == true)
                 {
-
                 return importerPtr->Import() ? SUCCESS : ERROR;
                 }
             }
 
         //fclose(s_pPointResultFile);
-
+#endif
         return SUCCESS;
         }
 
-#if 0 
-int ConvertMrDTMtoFullResDTM(RefCountedPtr<IBcDTM>&        singleResolutionDtm,
-                             const std::vector<DPoint3d>&  regionPoints,
-                             bool                          applyClip, 
-                             UInt64                        maximumNbPoints)
-    {    
-    DTMPtr        dtmPtr = 0;
-    const UInt64 MAX_POINT_COUNT = maximumNbPoints;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 11/2015
++---------------+---------------+---------------+---------------+---------------+------*/    
+StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMPtr,                                                                                                   
+                                             const std::vector<DPoint3d>& regionPointsInStorageCS,                                             
+                                             unsigned int*                nbPointsForPointFeatures, 
+                                             unsigned int*                nbPointsForLinearFeatures)
+    {
+    DTMPtr         dtmPtr = 0;       
+    IMrDTMQueryPtr fullResLinearQueryPtr;
+
+    //Query the linears 
     
-    size_t  remainingPointCount = static_cast<size_t>(MAX_POINT_COUNT);
-
-    double decimationFactorRequested; 
-
-    vector<__int64> approximateNbPointsForLinearFeaturesList;
-
-    if (useFullResolution == false)  
-        {
-        __int64 approximateTotalNbPoints = 0;
-                               
-        for (ElementAgenda::const_iterator elemIter = agenda.begin(); elemIter != agenda.end(); ++elemIter)
-            {            
-            unsigned int approximateNbPointsForPointFeatures;
-            unsigned int approximateNbPointsForLinearFeatures;            
-                           
-            //MST TBD - Check what occurs with this param : applyClip
-            StatusInt status = GetApproximationNbPtsNeedToExtract(*elemIter, regionPoints, &approximateNbPointsForPointFeatures, &approximateNbPointsForLinearFeatures);
-
-            if (status != SUCCESS)
-                {
-                //MST TBD - What should we do?
-                approximateNbPointsForLinearFeaturesList.push_back(0);
-                }
-            else
-                {                
-                approximateTotalNbPoints += approximateNbPointsForPointFeatures + approximateNbPointsForLinearFeatures;
-                approximateNbPointsForLinearFeaturesList.push_back(approximateNbPointsForLinearFeatures);
-                }            
-            }    
+    //Get the query interfaces
+    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_LINEAR);
+    
+    if (fullResLinearQueryPtr != 0)
+        {              
+        IMrDTMFullResolutionLinearQueryParamsPtr mrDtmFullResLinearParametersPtr(IMrDTMFullResolutionLinearQueryParams::CreateParams());                          
+        mrDtmFullResLinearParametersPtr->SetTriangulationState(false);                
+        mrDtmFullResLinearParametersPtr->SetUseDecimation(false);             
+        mrDtmFullResLinearParametersPtr->SetCutLinears(false);
         
-
-        if (remainingPointCount < approximateTotalNbPoints)
-            {
-            decimationFactorRequested = (double)remainingPointCount / approximateTotalNbPoints;
-            }
-        else
-            {
-            decimationFactorRequested = 1.0;
-            }        
-        }
-    else
-        {
-        decimationFactorRequested = DECIMATION_FACTOR_REQUESTED_FULL_RESOLUTION;
+        if (fullResLinearQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), (IMrDTMQueryParametersPtr&)mrDtmFullResLinearParametersPtr) != IMrDTMQuery::S_SUCCESS)
+            return ERROR;           
+                                                                    
+        *nbPointsForLinearFeatures = (unsigned int)dtmPtr->GetPointCount();
         }   
+                          
+    dtmPtr = 0;                    
     
-    StatusInt updateStatus;
+    IMrDTMQueryPtr fixResPointQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                  
 
+    assert(fixResPointQueryPtr != 0 || mrDTMPtr->GetPointCount() == 0);
 
-    int nbPointsForLinearFeatureInd = 0;    
-    int maxNbTries;
+    if (fixResPointQueryPtr != 0)
+        {        
+        // Find the last res that have the less than 200000 points
+        IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
+    
+        int  res = 0;
+        bool found = false;
+        DTMPtr singleResolutionViewDtmPtr = 0;                             
 
-    if (useFullResolution == false)
-        {
-        maxNbTries = 20;
-        }
-    else
-        {
-        maxNbTries = 1;
-        }
+        for (res=0; res<mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT); res++) 
+            {                
+            mrDtmFixResqueryParamsPtr->SetResolutionIndex(res);  
+            mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
 
-    int tryInd = 0;    
-
-    double       decimationFactorForPointFeatures = decimationFactorRequested;   
-    unsigned int maximumNbLinearFeaturePoints;
-     
-    for (; tryInd < maxNbTries; tryInd++)
-        {
-        updateStatus = IMrDTMQuery::S_SUCCESS;
-        nbPointsForLinearFeatureInd = 0;        
-
-    for (ElementAgenda::const_iterator elemIter = agenda.begin(); elemIter != agenda.end(); ++elemIter)
-        {      
-        if (decimationFactorRequested == DECIMATION_FACTOR_REQUESTED_FULL_RESOLUTION)
-            {
-            maximumNbLinearFeaturePoints = NB_LINEAR_FEATURE_POINTS_REQUESTED_FULL_RESOLUTION;            
-            }
-        else
-            {
-            maximumNbLinearFeaturePoints = (unsigned int)(approximateNbPointsForLinearFeaturesList[nbPointsForLinearFeatureInd] * decimationFactorRequested);
-            }        
-
-        if (IsProcessTerminatedByUser())
-            return Extract_ABORT;
-
-        ElemHandleCP eh = &*elemIter;                            
-
-        Transform fromModelRefToActiveTransform;
-        Transform invertFromModelRefToActiveTransform;
-
-        GetFromModelRefToActiveTransform(fromModelRefToActiveTransform, eh->GetModelRef());
-
-        BoolInt invertSuccess = bsiTransform_invertTransform(&invertFromModelRefToActiveTransform, &fromModelRefToActiveTransform);
-        assert(invertSuccess != 0);
-                    
-        Transform trsf;
-        Transform invertTrsf;
-        DTMElementHandlerManager::GetStorageToUORTransformation(*eh, trsf);
-
-        invertSuccess = bsiTransform_invertTransform(&invertTrsf, &trsf);
-        assert(invertSuccess != 0);
+            singleResolutionViewDtmPtr = 0;                             
+            if (fixResPointQueryPtr->Query(singleResolutionViewDtmPtr, 0, 0, (IMrDTMQueryParametersPtr&)mrDtmFixResqueryParamsPtr) != IMrDTMQuery::S_SUCCESS)
+                return ERROR;
         
-        Transform activeToStorageTrsf;
-        bsiTransform_multiplyTransformTransform(&activeToStorageTrsf, &invertTrsf, &invertFromModelRefToActiveTransform);
-        
-        std::vector<DPoint3d> regionPointsInStorageCS(regionPoints);
-        bsiTransform_multiplyDPoint3dArrayInPlace(&activeToStorageTrsf, &regionPointsInStorageCS[0], regionPointsInStorageCS.size());           
-
-        s_queryProcessTerminatedByUser = false;
+            if (singleResolutionViewDtmPtr->GetPointCount() < 200000)
+                {
+                found = true;            
+                break;
+                }
+            }                                
+         
+        if (!found) 
+            return ERROR;
+                
+        IMrDTMPtr      singleResMrDTMViewPtr = IMrDTMPtr((IMrDTM*)singleResolutionViewDtmPtr.get());
+        IMrDTMQueryPtr fullResQueryPtr;
        
-        updateStatus = updateDTMPtrWithSTM(dtmPtr, 
-                                           &regionPointsInStorageCS[0], regionPointsInStorageCS.size(), 
-                                           *eh, 
-                                           remainingPointCount, 
-                                           applyClip,
-                                           DTMOutputUnit, 
-                                           decimationFactorForPointFeatures, 
-                                           maximumNbLinearFeaturePoints);       
-
-        if (useFullResolution == false)
-            {            
-            nbPointsForLinearFeatureInd++;
-            }
-
-        if ((BSISUCCESS != updateStatus) || (s_queryProcessTerminatedByUser == true))
-            {
-            if (IMrDTMQuery::S_NBPTSEXCEEDMAX == updateStatus)
-                {
-                break; 
-                }
-            else if (s_queryProcessTerminatedByUser)
-                {   
-                break;
-                }
-            else
-                {
-                break;
-                }
-            } 
-        }
-
-        if (BSISUCCESS != updateStatus)
-            {            
-            if (IMrDTMQuery::S_NBPTSEXCEEDMAX == updateStatus)
-                {
-                if (useFullResolution == false)
-                    {   
-                    //MST TBD - When there is only with STM containing only points dividing by 4 is more optimal.
-                    decimationFactorRequested /= 2;
-                    remainingPointCount = static_cast<size_t>(MAX_POINT_COUNT);
-                    }
-                else
-                    {
-                    return Extract_NBPTSEXCEEDMAX;
-                    }
-                }
-            else if (s_queryProcessTerminatedByUser)
-                {   
-                return Extract_ABORT;
-                }
-            else
-                {
-                return Extract_ERROR;                 
-                }
-            } 
-        else
-            {
-            break;
-            }
-        }
-
-    if (mdlSystem_extendedAbortRequested() || ESC_KEY == mdlSystem_getChar())
-        {
-        return Extract_ABORT;
-        }
-
-    if (tryInd == maxNbTries)
-        {
-        return Extract_ERROR;   
-        }
+        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                
         
-    if (NULL == &*dtmPtr)
-        return Extract_SUCCESS; // NTERAY: Should it really be a success??
+        assert(fullResQueryPtr != 0);
 
-    if (dtmPtr->GetPointCount() <= 0)
-        return Extract_NOPOINTS;
-
-    MrDTMClipContainer clips;
-    if (BSISUCCESS != addClipsToClipContainer(clips, agenda, regionPoints, applyClip, DTMOutputUnit))
-        return Extract_ERROR;
-
-    if (s_outputTINinMemDTMbeforeTri)
-        {            
-        dumpDTMInTinFile(dtmPtr->GetIBcDTM(), 
-                                     wstring(L"C:\\Users\\Richard.Bois\\Documents\\TRs\\Bug - Wrong triangle 5\\InMemDTMBeforeTri%I64i.tin"), 
-                                     &s_outputTINinMemDTMindexBeforeTri);
-
-        s_outputTINinMemDTMindexBeforeTri++;
+        IMrDTMFullResolutionQueryParamsPtr mrDtmFullResQueryParam(IMrDTMFullResolutionQueryParams::CreateParams());
+        mrDtmFullResQueryParam->SetTriangulationState(false);                
+        mrDtmFullResQueryParam->SetReturnAllPtsForLowestLevel(false);
+        
+        if (fullResQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), (IMrDTMQueryParametersPtr&)mrDtmFullResQueryParam) != IMrDTMQuery::S_SUCCESS)     
+            return ERROR;
+                     
+        *nbPointsForPointFeatures = (unsigned int)dtmPtr->GetPointCount() * (int)pow(4.0, mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT) - res - 1);
         }
-
-    s_queryProcessTerminatedByUser = false;
-
-    if (BSISUCCESS != triangulateDTMAndApplyClips(dtmPtr, selectedElement, clips))
-        {
-        if (s_queryProcessTerminatedByUser == true)
-            {
-            return Extract_ABORT;
-            }
-        else
-            {
-            return Extract_ERROR;
-            }
-        }
-
-    singleResolutionDtm = dtmPtr->GetIBcDTM();
-    return Extract_SUCCESS;
-    }      
+                                                   
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mathieu.St-Pierre 08/2013
+* @bsimethod                                                    Mathieu.St-Pierre 11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size_t nbPts, IMrDTMPtr mrDTMPtr, 
-                                 bool applyTriangulation, size_t& remainingPointCount, vector<ClipInfo> clips, 
-                                 bool applyClip, int edgeMethod, double edgeMethodLength, DRange3d drange, MstnGCSP destinationGCS, 
-                                 double decimationFactorForPointFeatures, unsigned int maximumNbLinearFeaturePoints)
-
-StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size_t nbPts, IMrDTMPtr mrDTMPtr, 
-                                 size_t& remainingPointCount, vector<ClipInfo> clips, 
-                                 bool applyClip, int edgeMethod, double edgeMethodLength, DRange3d drange, MstnGCSP destinationGCS, 
-                                 double decimationFactorForPointFeatures, unsigned int maximumNbLinearFeaturePoints)
-    {   
-    bool isSet = SetTriangulationTerminationCallback(CheckTriangulationStopCallback);
-    assert(true == isSet);
-    //Not implemented yet. 
-    assert((applyClip == false) || (applyTriangulation == false));
-                             
+StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr, 
+                                 const DPoint3d* regionPts, 
+                                 size_t          nbPts, 
+                                 IMrDTMPtr       mrDTMPtr, 
+                                 size_t&         remainingPointCount, 
+                                 double          decimationFactorForPointFeatures, 
+                                 unsigned int    maximumNbLinearFeaturePoints)
+    {                                            
     StatusInt            status;
     IMrDTMQueryPtr fullResLinearQueryPtr;
      
-    //Query the linears 
-    if ((mrDTMPtr->GetBaseGCS() == 0)|| (destinationGCS == 0))
-        {            
-        //Get the query interfaces
-        fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(DTM_QUERY_FULL_RESOLUTION, DTM_QUERY_DATA_LINEAR);
-        }
-    else
-        {                                                
-        fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(DTM_QUERY_FULL_RESOLUTION, DTM_QUERY_DATA_LINEAR,
-            Bentley::GeoCoordinates::BaseGCSPtr(destinationGCS), drange);              
-        }
+    //Query the linears     
+    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_LINEAR);
 
-    IMrDTMQueryPtr fixResPointQueryPtr(mrDTMPtr->GetQueryInterface(DTM_QUERY_FIX_RESOLUTION_VIEW, DTM_QUERY_DATA_POINT));    
+    IMrDTMQueryPtr fixResPointQueryPtr(mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, Bentley::MrDTM::DTM_QUERY_DATA_POINT));    
 
     if (fullResLinearQueryPtr != 0)
         {                                    
-        MrDTMFullResolutionLinearQueryParamsPtr mrDtmFullResLinearParametersPtr(MrDTMFullResolutionLinearQueryParams::CreateParams());
-
-        mrDtmFullResLinearParametersPtr->SetEdgeOptionTriangulationParam(edgeMethod);            
-        mrDtmFullResLinearParametersPtr->SetMaxSideLengthTriangulationParam(edgeMethodLength);
-
-        if (fixResPointQueryPtr != 0 || !applyTriangulation)
+        IMrDTMFullResolutionLinearQueryParamsPtr mrDtmFullResLinearParametersPtr(IMrDTMFullResolutionLinearQueryParams::CreateParams());
+        
+        if (fixResPointQueryPtr != 0)
             {                        
             mrDtmFullResLinearParametersPtr->SetTriangulationState(false);                
             }
         
         //Currently the high quality display mode is not influencing the maximum number of linear 
-        //points use to obtain a single resolution representation of the MrDTM.
-        
-        if (maximumNbLinearFeaturePoints == NB_LINEAR_FEATURE_POINTS_REQUESTED_FULL_RESOLUTION)
-            {
-            unsigned int maxNbLinearFeaturePoints = max(remainingPointCount, 11);        
+        //points use to obtain a single resolution representation of the MrDTM.        
+        unsigned int maxNbLinearFeaturePoints = max(maximumNbLinearFeaturePoints, (unsigned int)11);        
 
-            mrDtmFullResLinearParametersPtr->SetMaximumNumberOfPointsForLinear(maxNbLinearFeaturePoints);
-            mrDtmFullResLinearParametersPtr->SetUseDecimation(false);             
-            }
-        else
-            {
-            unsigned int maxNbLinearFeaturePoints = max(maximumNbLinearFeaturePoints, 11);        
-
-            mrDtmFullResLinearParametersPtr->SetMaximumNumberOfPointsForLinear(maxNbLinearFeaturePoints);
-            mrDtmFullResLinearParametersPtr->SetUseDecimation(true);             
-            }
+        mrDtmFullResLinearParametersPtr->SetMaximumNumberOfPointsForLinear(maxNbLinearFeaturePoints);
+        mrDtmFullResLinearParametersPtr->SetUseDecimation(true);             
        
         mrDtmFullResLinearParametersPtr->SetCutLinears(true);
-        
-        status = AddClipOnQuery(fullResLinearQueryPtr, clips);
-        assert(status == SUCCESS);        
-
+                
         size_t nbPointsBefore;
 
         if (dtmPtr != 0)
@@ -521,10 +357,8 @@ StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size
             nbPointsBefore = 0;
             }                        
 
-        if ((status = fullResLinearQueryPtr->Query(dtmPtr, regionPts, nbPts, (IMrDTMQueryParametersPtr&)mrDtmFullResLinearParametersPtr)) != SUCCESS)      
-            {
-            bool isSet = SetTriangulationTerminationCallback(0);
-            assert(true == isSet);
+        if ((status = fullResLinearQueryPtr->Query(dtmPtr, regionPts, (int)nbPts, (IMrDTMQueryParametersPtr&)mrDtmFullResLinearParametersPtr)) != SUCCESS)      
+            {                        
             return status;           
             }
                 
@@ -546,81 +380,43 @@ StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size
         //Query the view
         DTMPtr singleResolutionViewDtmPtr = 0;             
 
-        MrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(MrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
+        IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
 
-        if (decimationFactorForPointFeatures == DECIMATION_FACTOR_REQUESTED_FULL_RESOLUTION)
+        if (decimationFactorForPointFeatures == 1.0)
             {
-            mrDtmFixResqueryParamsPtr->SetResolutionIndex(mrDTMPtr->GetNbResolutions(DTM_QUERY_DATA_POINT)-1);                      
+            mrDtmFixResqueryParamsPtr->SetResolutionIndex(mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT)-1);                      
             }
         else
             {
-            int nbResolutions = mrDTMPtr->GetNbResolutions(DTM_QUERY_DATA_POINT);
+            int nbResolutions = mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT);
             assert(nbResolutions >= 1);
             assert(decimationFactorForPointFeatures <= 1.0);
                         
             double resolutionInd = nbResolutions - 1 - log(1.0 / decimationFactorForPointFeatures) / log(4.0);
             
-            resolutionInd = min(max(0, floor(resolutionInd)), nbResolutions - 1);
+            resolutionInd = min(max(0.0, floor(resolutionInd)), (double)nbResolutions - 1);
             
             mrDtmFixResqueryParamsPtr->SetResolutionIndex((int)resolutionInd);                      
             }        
-
-        mrDtmFixResqueryParamsPtr->SetEdgeOptionTriangulationParam(edgeMethod);            
-        mrDtmFixResqueryParamsPtr->SetMaxSideLengthTriangulationParam(edgeMethodLength);                
-            
-        if (!applyTriangulation)
-            {                        
-            mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
-            }
-            
+        
+        mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
+                    
         status = fixResPointQueryPtr->Query(singleResolutionViewDtmPtr, 0, 0, (IMrDTMQueryParametersPtr&)mrDtmFixResqueryParamsPtr);
 
         assert(singleResolutionViewDtmPtr != 0);
 
         IMrDTMPtr      singleResMrDTMViewPtr = IMrDTMPtr((IMrDTM*)singleResolutionViewDtmPtr.get());
         IMrDTMQueryPtr fullResQueryPtr;
-
-        if ((mrDTMPtr->GetBaseGCS() == 0) || (destinationGCS == 0))
-            {
-            fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(DTM_QUERY_FULL_RESOLUTION, DTM_QUERY_DATA_POINT);                
-            }
-        else
-            {           
-            fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(DTM_QUERY_FULL_RESOLUTION, DTM_QUERY_DATA_POINT, 
-                Bentley::GeoCoordinates::BaseGCSPtr(destinationGCS), drange);     
-            }
-
+                
+        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                                
         assert(fullResQueryPtr != 0);
 
-        MrDTMFullResolutionQueryParamsPtr mrDtmFullResQueryParam(MrDTMFullResolutionQueryParams::CreateParams());
-
-        if (!applyTriangulation)
-            {                        
-            mrDtmFullResQueryParam->SetTriangulationState(false); 
-            }
-
-        mrDtmFullResQueryParam->SetEdgeOptionTriangulationParam(edgeMethod);            
-        mrDtmFullResQueryParam->SetMaxSideLengthTriangulationParam(edgeMethodLength);
-
-        /*
-        if (decimationFactorRequested == DECIMATION_FACTOR_REQUESTED_FULL_RESOLUTION)
-            {
-            mrDtmFullResQueryParam->SetMaximumNumberOfPoints(remainingPointCount);
-            }
-            /*
-            }
-        else
-            {
-            mrDtmFullResQueryParam->SetMaximumNumberOfPoints(remainingPointCount);
-            }
-            */
+        IMrDTMFullResolutionQueryParamsPtr mrDtmFullResQueryParam(IMrDTMFullResolutionQueryParams::CreateParams());
        
+        mrDtmFullResQueryParam->SetTriangulationState(false);                              
         mrDtmFullResQueryParam->SetMaximumNumberOfPoints(remainingPointCount);
         mrDtmFullResQueryParam->SetReturnAllPtsForLowestLevel(false);
-            
-        status = AddClipOnQuery(fullResQueryPtr, clips);
-        assert(status == SUCCESS);                    
-
+                            
         size_t nbPointsBefore;
 
         if (dtmPtr != 0)
@@ -632,10 +428,8 @@ StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size
             nbPointsBefore = 0;
             }                        
         
-        if ((status = fullResQueryPtr->Query(dtmPtr, regionPts, nbPts, (IMrDTMQueryParametersPtr&)mrDtmFullResQueryParam)) != SUCCESS)                         
-            {
-            bool isSet = SetTriangulationTerminationCallback(0);
-            assert(true == isSet);
+        if ((status = fullResQueryPtr->Query(dtmPtr, regionPts, (int)nbPts, (IMrDTMQueryParametersPtr&)mrDtmFullResQueryParam)) != SUCCESS)                         
+            {            
             return status;                  
             }
 
@@ -651,18 +445,128 @@ StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size
             remainingPointCount = 0;            
             }
         }
-        
-    isSet = SetTriangulationTerminationCallback(0);
-    assert(true == isSet);
-
+            
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 11/2015
++---------------+---------------+---------------+---------------+---------------+------*/    
+int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
+                               IMrDTMPtr&                   mrdtmPtr, 
+                               const std::vector<DPoint3d>& regionPoints,                               
+                               UInt64                       maximumNbPoints)
+    {    
+    DTMPtr        dtmPtr = 0;
+    const UInt64 MAX_POINT_COUNT = maximumNbPoints;
+    
+    size_t  remainingPointCount = static_cast<size_t>(MAX_POINT_COUNT);
+
+    double decimationFactorRequested; 
+
+    vector<__int64> approximateNbPointsForLinearFeaturesList;
+    
+    size_t approximateTotalNbPoints = 0;
+     
+#if 0 
+    for (ElementAgenda::const_iterator elemIter = agenda.begin(); elemIter != agenda.end(); ++elemIter)
+        {            
+        unsigned int approximateNbPointsForPointFeatures;
+        unsigned int approximateNbPointsForLinearFeatures;            
+                               
+        StatusInt status = GetApproximationNbPtsNeedToExtract(*elemIter, regionPoints, &approximateNbPointsForPointFeatures, &approximateNbPointsForLinearFeatures);
+
+        if (status != SUCCESS)
+            {
+            //MST TBD - What should we do?
+            approximateNbPointsForLinearFeaturesList.push_back(0);
+            }
+        else
+            {                
+            approximateTotalNbPoints += approximateNbPointsForPointFeatures + approximateNbPointsForLinearFeatures;
+            approximateNbPointsForLinearFeaturesList.push_back(approximateNbPointsForLinearFeatures);
+            }            
+        }    
 #endif
+
+    unsigned int approximateNbPointsForPointFeatures;
+    unsigned int approximateNbPointsForLinearFeatures;          
+
+    StatusInt status = GetApproximationNbPtsNeedToExtract(mrdtmPtr,                                                                                                      
+                                                          regionPoints,                          
+                                                          &approximateNbPointsForPointFeatures, 
+                                                          &approximateNbPointsForLinearFeatures);
+
+    assert(status == SUCCESS);
+
+    approximateTotalNbPoints = approximateNbPointsForPointFeatures + approximateNbPointsForLinearFeatures;
+
+    if (remainingPointCount < approximateTotalNbPoints)
+        {
+        decimationFactorRequested = (double)remainingPointCount / approximateTotalNbPoints;
+        }
+    else
+        {
+        decimationFactorRequested = 1.0;
+        }        
+     
+    StatusInt updateStatus;
+
+    int nbPointsForLinearFeatureInd = 0;    
+    int maxNbTries = 20;
+
+    int tryInd = 0;    
+
+    double       decimationFactorForPointFeatures = decimationFactorRequested;   
+    unsigned int maximumNbLinearFeaturePoints;
+     
+    for (; tryInd < maxNbTries; tryInd++)
+        {
+        updateStatus = IMrDTMQuery::S_SUCCESS;
+        nbPointsForLinearFeatureInd = 0;        
+                
+        maximumNbLinearFeaturePoints = (unsigned int)(approximateNbPointsForLinearFeatures * decimationFactorRequested);
+                                
+        updateStatus = QuerySubResolutionData(dtmPtr, 
+                                              &regionPoints[0], 
+                                              regionPoints.size(), 
+                                              mrdtmPtr, 
+                                              remainingPointCount,
+                                              decimationFactorForPointFeatures, 
+                                              maximumNbLinearFeaturePoints);
+                                                                                                                                 
+        if (BSISUCCESS != updateStatus)
+            {            
+            if (IMrDTMQuery::S_NBPTSEXCEEDMAX == updateStatus)
+                {                                
+                decimationFactorRequested /= 4;
+                remainingPointCount = static_cast<size_t>(MAX_POINT_COUNT);                
+                }                        
+            else
+                {
+                break;
+                }
+            }    
+        else
+            {
+            break;
+            }
+        }
+    
+    if (tryInd == maxNbTries)
+        {
+        return ERROR;   
+        }
+            
+    if (dtmPtr == 0 || dtmPtr->GetPointCount() <= 0)
+        return ERROR;
+                
+    singleResolutionDtm = dtmPtr->GetBcDTM();
+    return SUCCESS;
+    }      
 
     BentleyStatus ScalableMeshSDKexe::ParseImportDefinitionNew(BeXmlNodeP pTestNode)
         {
-#if 0 
         BeXmlStatus status;
 
        // s_pPointResultFile = fopen("D:\\MyDoc\\CC - Iteration 6\\YIIDataset\\saltLakeWithCC.xyz", "w+");                        
@@ -690,7 +594,7 @@ StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size
         if (status == BEXML_Success)
             {
             BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
-            StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
+            StatusInt status = mrdtmCreatorPtr->SetBaseGCS(baseGCSPtr);
             assert(status == SUCCESS);
             }
 
@@ -700,6 +604,14 @@ StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size
             {            
             maxNbPointsToImport = numeric_limits<UInt64>::max();
             }
+        /*
+        status = pTestNode->GetAttributeUInt64Value(maxNbPointsToImport, "");
+
+        if (status != BEXML_Success)
+            {            
+            maxNbPointsToImport = numeric_limits<UInt64>::max();
+            }
+            */
 
         if (ParseSourceSubNodes(mrdtmCreatorPtr->EditSources(), pTestNode) == false)
             {                
@@ -711,11 +623,34 @@ StatusInt QuerySubResolutionData(DTMPtr& dtmPtr, const DPoint3d* regionPts, size
             return ERROR;
             }                
 
-        mrdtmCreatorPtr
-#endif
+        mrdtmCreatorPtr = 0;
 
-        //fclose(s_pPointResultFile);
+        IMrDTMPtr mrDtmPtr(IMrDTM::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm", true, true));
 
+        if (mrDtmPtr == 0)
+            return ERROR;
+
+        RefCountedPtr<BcDTM> singleResolutionDtm;
+
+        DRange3d range;
+        std::vector<DPoint3d> regionPoints(8);
+
+        mrDtmPtr->GetRange(range);
+        range.Get8Corners(&regionPoints[0]);
+
+        regionPoints.resize(4);
+                
+        int statusInt = QueryStmFromBestResolution(singleResolutionDtm, mrDtmPtr, regionPoints, maxNbPointsToImport);
+
+        assert(statusInt == SUCCESS);
+
+        mrDtmPtr = 0;
+        statusInt = _wremove(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm");
+        assert(status == 0);
+                       
+        if (statusInt != SUCCESS || singleResolutionDtm == 0)
+            return ERROR;
+                        
         return SUCCESS;
         }
 
