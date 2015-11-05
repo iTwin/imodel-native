@@ -1,18 +1,22 @@
 //! Script that is executed by one of the unit tests in DgnScriptContext_Test.cpp
 module DgnScriptTests {
-    BentleyApi.Dgn.JsUtils.ReportError(':Test1 A');
+    function logMessage(msg: string): void {
+        BentleyApi.Dgn.Logging.Message('TestRunner', BentleyApi.Dgn.LoggingSeverity.Info, msg);
+    }
+
+    logMessage('Test1 A');
     
     var checker = new DgnScriptChecker.Checker();
-    BentleyApi.Dgn.JsUtils.ReportError(':Test1 B');
+    logMessage('Test1 B');
     // Test1 - DPoint3d properties
     function test1(): void {
         var point = new BentleyApi.Dgn.JsDPoint3d(2, 1, 3);
         if (point.X != 2)
-            BentleyApi.Dgn.JsUtils.ReportError('bad X');
+            BentleyApi.Dgn.Script.ReportError('bad X');
         if (point.Y != 1)
-            BentleyApi.Dgn.JsUtils.ReportError('bad Y');
+            BentleyApi.Dgn.Script.ReportError('bad Y');
         if (point.Z != 3)
-            BentleyApi.Dgn.JsUtils.ReportError('bad Z');
+            BentleyApi.Dgn.Script.ReportError('bad Z');
     }
 
     function test2(): void {
@@ -265,7 +269,7 @@ module DgnScriptTests {
     function ExerciseMesh(mesh: BentleyApi.Dgn.JsPolyfaceMesh, expectedFacets : number)
         {
         var faceData = mesh.InspectFaces();
-        BentleyApi.Dgn.JsUtils.ReportError(":Start Mesh Exercise");
+        logMessage("Start Mesh Exercise");
         
         var visitor = BentleyApi.Dgn.JsPolyfaceVisitor.CreateVisitor(mesh, 1);
         var facetCount = 0;
@@ -282,7 +286,7 @@ module DgnScriptTests {
                 }
             }
         checker.NearDouble (expectedFacets, facetCount, true);
-        BentleyApi.Dgn.JsUtils.ReportError(":End Mesh Exercise");
+        logMessage("End Mesh Exercise");
         }
     
     function t_polyfaceMeshA ()
@@ -309,6 +313,6 @@ module DgnScriptTests {
 
     t_polyfaceMeshA ();  
 
-    BentleyApi.Dgn.JsUtils.ReportError(':Test1 Z');
+    logMessage('Test1 Z');
 }
 

@@ -1,6 +1,10 @@
 //! Script that is executed by one of the unit tests in DgnScriptContext_Test.cpp
 module DgnScriptTests {
-    BentleyApi.Dgn.JsUtils.ReportError(':TSG_GeometryB A');
+    function logMessage(msg: string): void {
+        BentleyApi.Dgn.Logging.Message('TestRunner', BentleyApi.Dgn.LoggingSeverity.Info, msg);
+    }
+
+    logMessage('TSG_GeometryB A');
     var checker = new DgnScriptChecker.Checker();
 
     function t_pointVectorOps3d (origin: BentleyApi.Dgn.JsDPoint3d,
@@ -110,19 +114,19 @@ module DgnScriptTests {
         }
         }
     //debugger ;
-    BentleyApi.Dgn.JsUtils.ReportError(':TSG_GeometryB t_pointVectorOps3d');
+    logMessage('TSG_GeometryB t_pointVectorOps3d');
     t_pointVectorOps3d(new BentleyApi.Dgn.JsDPoint3d(1, 2, 3),
         new BentleyApi.Dgn.JsDVector3d(0.2, 0.4, 0.8),
         new BentleyApi.Dgn.JsDVector3d(-0.4, 0.2, 0),
         new BentleyApi.Dgn.JsDVector3d(0, 0.4, -0.8));
 
-    BentleyApi.Dgn.JsUtils.ReportError(':TSG_GeometryB t_vectorVectorOps2d');
+    logMessage('TSG_GeometryB t_vectorVectorOps2d');
 
     t_vectorVectorOps2d(new BentleyApi.Dgn.JsDVector2d (1, 2),
         new BentleyApi.Dgn.JsDVector2d(0.2, 0.4),
         new BentleyApi.Dgn.JsDVector2d(-0.4, 0.2),
         new BentleyApi.Dgn.JsDVector2d(0, 0.4));
-    BentleyApi.Dgn.JsUtils.ReportError(':TSG_GeometryB t_pointVectorOps2d');
+    logMessage('TSG_GeometryB t_pointVectorOps2d');
 
     t_pointVectorOps2d(new BentleyApi.Dgn.JsDPoint2d(1, 2),
         new BentleyApi.Dgn.JsDVector2d(0.2, 0.4),
@@ -133,6 +137,6 @@ module DgnScriptTests {
         new BentleyApi.Dgn.JsDVector3d(0.2, 0.4, 0.8));
     
 
-    BentleyApi.Dgn.JsUtils.ReportError(':TSG_GeometryB B Exit');
+    logMessage('TSG_GeometryB B Exit');
 }
 
