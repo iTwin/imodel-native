@@ -1513,7 +1513,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
     if (pointMap != nullptr)
         {
         BeAssert(columns.size() == (pointMap->Is3d() ? 3 : 2));
-        for (int ii = 0; ii < columns.size(); ii++)
+        for (int ii = 0; ii < (int) columns.size(); ii++)
             {
             Utf8PrintfString childAccessString("%s.%s", accessString.c_str(), (ii == 0) ? "X" : ((ii == 1) ? "Y" : "Z"));
             Utf8StringCR columnName = columns[ii]->GetName();
