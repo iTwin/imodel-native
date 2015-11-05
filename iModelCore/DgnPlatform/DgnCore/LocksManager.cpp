@@ -601,12 +601,21 @@ LockStatus LocalLocksManager::_AcquireLocks(LockRequestR locks)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* We still don't have a server. Some apps apparently use briefcase IDs other than zero
+* (ConceptStation). Therefore, always use the unrestricted locks manager until we have
+* an actual server implementation; or while explicitly enabled for tests.
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool s_enableLocking = false;
+void ILocksManager::BackDoor_SetLockingEnabled(bool enable) { s_enableLocking = enable; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILocksManagerPtr DgnPlatformLib::Host::LocksAdmin::_CreateLocksManager(DgnDbR db) const
     {
     // NEEDSWORK: Bogus. Currently we have no way of determining if locking is required for a given DgnDb...and we have no actual server
-    return db.IsMasterCopy() ? UnrestrictedLocksManager::Create(db) : LocalLocksManager::Create(db);
+    return (db.IsMasterCopy() || !s_enableLocking) ? UnrestrictedLocksManager::Create(db) : LocalLocksManager::Create(db);
     }
 
 /*---------------------------------------------------------------------------------**//**

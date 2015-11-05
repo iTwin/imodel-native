@@ -343,6 +343,12 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
     LocksManagerTest()
         {
         m_host.SetLocksAdmin(this);
+        BackDoor::ILocksManager::SetLockingEnabled(true);
+        }
+
+    ~LocksManagerTest()
+        {
+        BackDoor::ILocksManager::SetLockingEnabled(false);
         }
 
     virtual ILocksServerP _GetLocksServer(DgnDbR) const override { return &m_server; }

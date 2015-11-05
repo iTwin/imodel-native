@@ -254,6 +254,9 @@ public:
     LockStatus LockElement(DgnElementCR el, LockLevel level); //!< Used internally to lock an element for direct changes.
     LockStatus LockModel(DgnModelCR model, LockLevel level); //!< Used internally to lock a model for direct changes.
     LockStatus LockDb(LockLevel level); //!< Used internally to lock the DgnDb
+//__PUBLISH_SECTION_END__
+    DGNPLATFORM_EXPORT static void BackDoor_SetLockingEnabled(bool enable);
+//__PUBLISH_SECTION_START__
 };
 
 //=======================================================================================
