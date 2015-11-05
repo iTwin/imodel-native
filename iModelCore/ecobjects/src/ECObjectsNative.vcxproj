@@ -38,9 +38,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild ECObjectsNative </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild ECObjectsNative </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild ECObjectsNative -c</NMakeCleanCommandLine>
     <NMakeOutput>ecobjects.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;__ECOBJECTS_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

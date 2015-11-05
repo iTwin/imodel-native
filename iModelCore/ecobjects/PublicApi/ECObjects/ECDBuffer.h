@@ -69,7 +69,6 @@ public:
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset),
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     PropertyLayout (){}
@@ -108,7 +107,6 @@ public:
     ECOBJECTS_EXPORT Utf8String                     ToString();
     };
 
-/*__PUBLISH_SECTION_END__*/
 struct less_classLayout
 {
 bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
@@ -116,7 +114,6 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 
  typedef bmap<ClassLayoutCP, bool, less_classLayout>   CompatibleClassLayoutsMap;
 
- /*__PUBLISH_SECTION_START__*/
  /*=================================================================================**//**
 * @bsistruct
 * Responsible for managing the layout of the portion of an ECD buffer storing property
@@ -124,7 +121,6 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout : RefCountedBase
     {
-/*__PUBLISH_SECTION_END__*/
     friend struct ECDBuffer;
 private:
     struct AccessStringIndexPair : bpair<Utf8CP, uint32_t>
@@ -220,11 +216,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        FinishLayout ();
     ECOBJECTS_EXPORT ClassLayoutPtr         Clone (Utf8CP name = nullptr) const;
     ECOBJECTS_EXPORT void                   SetPropertyLayoutModifierData (PropertyLayoutCR layout, uint32_t modifierData);
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
-private:
-    //ClassLayout (){}
-
 public:
 
     //! Given a class, will create the ClassLayout that manages that class
@@ -319,7 +310,6 @@ public:
     ClassLayoutP                            GetClassLayoutP (ClassIndex classIndex) { return const_cast<ClassLayoutP>(GetClassLayout(classIndex)); }
 
     ECOBJECTS_EXPORT ClassLayoutCP           FindClassLayout (Utf8CP className, ClassIndex* classIndex) const;
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     SchemaLayout (){}
@@ -511,7 +501,6 @@ private:
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
     mutable bool        m_allPropertiesCalculated;
 
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/
 
     uint32_t            GetOffsetToPropertyData() const;

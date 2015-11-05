@@ -1057,7 +1057,6 @@ public:
 
     ECValueAccessorR    GetValueAccessorR ();
 
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Gets the root IECInstance containing this ECPropertyValue
@@ -1106,7 +1105,6 @@ private:
     ECPropertyValue     GetFirstPropertyValue (IECInstanceCR);
     ECPropertyValue     GetChildPropertyValue (ECPropertyValueCR parentPropertyValue);
 
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 
 public:
@@ -1131,7 +1129,6 @@ struct ECValuesCollection : RefCountedBase
     {
 public:
     typedef VirtualCollectionIterator<ECValuesCollectionIterator> const_iterator;
-/*__PUBLISH_SECTION_END__*/
     friend struct ECPropertyValue;
 
 private:
@@ -1142,8 +1139,7 @@ private:
     ECValuesCollection (ECPropertyValueCR parentPropValue);
 public:
     ECOBJECTS_EXPORT ECValuesCollection (IECInstanceCR);
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
+
     //! Gets an iterator pointing to the beginning of the collection
     //! @return an iterator pointing to the beginning of this ECValuesCollection
     ECOBJECTS_EXPORT const_iterator begin () const;

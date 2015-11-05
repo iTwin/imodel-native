@@ -2,16 +2,42 @@
 #
 #     $Source: ecobjects.prewire.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
+%include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
 # Wire in my own public header files.
 always:
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECObjects=$(ecobjectsPublicAPISrc)"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentation=$(ecpresentationPublicAPISrc)"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentationRules=$(ecpresentationRulesPublicAPISrc)"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECUnits=$(ecunitsPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)ECObjects=$(ecobjectsPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)ECPresentation=$(ecpresentationPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)ECPresentationRules=$(ecpresentationRulesPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)ECUnits=$(ecunitsPublicAPISrc)"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        

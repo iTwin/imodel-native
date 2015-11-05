@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct ParserRegex
     {
 private:
-    STD_TR1::regex             m_regex;
+    std::regex             m_regex;
     bvector<Utf8String>        m_capturedPropertyNames;        // order indicates capture group number - 1
 
     ParserRegex() { }
@@ -45,7 +45,7 @@ ParserRegexP ParserRegex::Create (Utf8CP regexStr, bool doNotUseECMA)
         {
         try
             {
-            parserRegex->m_regex = STD_TR1::regex (fixedRegexStr.c_str(), doNotUseECMA ? STD_TR1::regex_constants::extended : STD_TR1::regex_constants::ECMAScript);
+            parserRegex->m_regex = std::regex (fixedRegexStr.c_str(), doNotUseECMA ? std::regex_constants::extended : std::regex_constants::ECMAScript);
             }
         catch (...)
             {
@@ -155,8 +155,8 @@ static bool SETVALUE_SUCCEEDED (ECObjectsStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::Apply (IECInstanceR instance, Utf8CP calculatedValue) const
     {
-    STD_TR1::match_results<Utf8CP> matches;
-    if (!STD_TR1::regex_match (calculatedValue, matches, m_regex) || matches.size() != m_capturedPropertyNames.size() + 1)
+    std::match_results<Utf8CP> matches;
+    if (!std::regex_match (calculatedValue, matches, m_regex) || matches.size() != m_capturedPropertyNames.size() + 1)
         return false;
 
     for (size_t i = 0; i < m_capturedPropertyNames.size(); i++)

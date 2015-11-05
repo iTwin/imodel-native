@@ -254,8 +254,6 @@ public:
 
                                     { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
 
-// constructors are hidden from published API -> make it abstract in the published API
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
     //! By default, property values obtained from IECInstances are subject to type conversion. The ConvertToExpressionType() method of
     //! the IECTypeAdapter associated with the ECProperty will be called to perform conversion.
@@ -447,8 +445,6 @@ public:
 
     ExpressionStatus                GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
                                                 { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
-// constructors are hidden from published API -> make it abstract in the published API
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 
 };  // End of class Symbol
@@ -966,11 +962,11 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          Node : RefCountedBase
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     bool                m_inParens;  //  Only used for ToString
 protected:
                         Node () { m_inParens = false; }
+/*__PUBLISH_SECTION_END__*/
     virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
     virtual Utf8String  _ToString() const = 0;
 
@@ -1034,8 +1030,6 @@ public:
 
     ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context);
 
-// constructors are hidden from published API -> make it abstract in the published API
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Tries to generate a resolved tree.

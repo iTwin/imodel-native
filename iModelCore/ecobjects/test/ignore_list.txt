@@ -16,8 +16,6 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 
 CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
-ECRelationshipTests.DumpToString
-
 ECSchemaUnitsManagerTests.*                         # Need to handle UnitSpecification which is both CA and Struct
 SchemaTest.GetBaseClassProperty                     # References Units schema
 UnitsTest.TestUnitSpecifications                    # References Units schema

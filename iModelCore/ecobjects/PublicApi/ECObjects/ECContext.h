@@ -71,7 +71,6 @@ public:
     IECSchemaRemapperCP GetRemapper() const                         { return m_remapper; }
     void                SetRemapper (IECSchemaRemapperCP remapper)  { m_remapper = remapper; }
     void                ResolveClassName (Utf8StringR serializedClassName, ECSchemaCR schema) const;
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Host should call to establish search paths for standard ECSchemas.
@@ -145,10 +144,8 @@ struct ECInstanceReadContext : RefCountedBase
         virtual PrimitiveType       _ResolvePrimitiveArrayType (ArrayECPropertyCR ecproperty) const = 0;
         };
 
-/*__PUBLISH_SECTION_END__*/
 private:
     IStandaloneEnablerLocaterP          m_standaloneEnablerLocater;
-    StandaloneECInstancePtr             m_dummy;
     ECSchemaCR                          m_fallBackSchema;
     IPrimitiveTypeResolver const*       m_typeResolver;
     IECSchemaRemapperCP                 m_schemaRemapper;
@@ -180,8 +177,6 @@ public:
 
     ECSchemaCR GetFallBackSchema ();
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 
     //! - For use when the caller knows the schema of the instance he is deserializing.

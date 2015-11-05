@@ -2,15 +2,16 @@
 #
 #     $Source: PublicApi/PublishAPI.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
+%include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
-genDir       = $(buildDir)PublishedAPI
 
-stampFileName = $(genDir).stamp
+BuildContextPublishedApiDir = $(BuildContext)Delivery/PublishedAPI/
+genDir                      = $(OutECObjects)PublishedAPI
+stampFileName               = $(genDir).stamp
 
 %if defined(BMAKE_DELETE_ALL_TARGETS)
 cleanopt = --clean
@@ -20,4 +21,4 @@ cleanopt =
 
 always:
     PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(cleanopt) -x$(TARGET_PLATFORM)
-    @CreateSymLinks.py -d"$(BuildContextPublishedApiDir)=$(genDir)"
+    ~linkdir "$(BuildContextPublishedApiDir)=$(genDir)"

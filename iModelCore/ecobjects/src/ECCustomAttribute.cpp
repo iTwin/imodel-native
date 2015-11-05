@@ -393,7 +393,7 @@ bool requireSchemaReference
 )
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
-    if (ECClassType::CustomAttribute != classDefinition.GetClassType())
+    if (!classDefinition.IsCustomAttributeClass())
         {
         BeAssert (false);
         return ECObjectsStatus::NotCustomAttributeClass;

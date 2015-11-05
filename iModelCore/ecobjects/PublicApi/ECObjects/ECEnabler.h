@@ -58,7 +58,7 @@ struct ECEnabler : RefCountedBase
     enum PropertyProcessingOptions {PROPERTY_PROCESSING_OPTIONS_SingleType=0, PROPERTY_PROCESSING_OPTIONS_AllTypes=1};
 #endif
 
-/*__PUBLISH_SECTION_END__*/
+
 private:
     ECClassCR                    m_ecClass;
     IStandaloneEnablerLocaterP   m_standaloneInstanceEnablerLocater;    // can't be const because the m_standaloneInstanceEnablerLocater may grow if a new enabler is added to its cache
@@ -110,9 +110,6 @@ public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (Utf8CP accessString) const;
     ECOBJECTS_EXPORT bool                       IsPropertyReadOnly (uint32_t propertyIndex) const;
 
-// constructors are hidden from published API -> make it abstract in the published API
-//__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_START__*/
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     //! @return An enabler name for debugging/logging purposes.

@@ -5,8 +5,8 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
+%include $(SrcRoot)ecobjects/mki/ECObjects.mki
    
 $(ContextDeliveryDir)logging.config.xml: $(ecobjectsSrc)test/logging.config.xml
     $(LinkFirstDepToFirstTarget)

@@ -6,11 +6,10 @@
 #
 #----------------------------------------------------------------------------------------
 # *** NEEDS WORK: Must turn off clang warnings until we can clean up these tests
-NO_DEFAULT_CLANG_WARNINGS=1
-
-PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
+NO_DEFAULT_CLANG_WARNINGS   = 1
 
 %include mdl.mki
+%include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
 %ifndef TestDir
     %error must define TestDir
@@ -19,17 +18,17 @@ PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
 baseDir = $(_MakeFilePath)
 
 # Compile and Link the unit tests
-BEGTEST_NAME  = $(TestDir)ECObjects
-BEGTEST_INPUT = $(baseDir)$(TestDir)/
-BEGTEST_IGNORE= $(baseDir)ignore_list.txt
-BEGTEST_OUTPUT=$(OutputRootDir)build/ECObjects/UnitTests/
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+BEGTEST_NAME    = $(TestDir)ECObjects
+BEGTEST_INPUT   = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE  = $(baseDir)ignore_list.txt
+BEGTEST_OUTPUT  = $(OutputRootDir)build/ECObjects/UnitTests/
+o               = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/ECObjects/
 %endif
 
-%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}

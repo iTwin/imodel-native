@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-/*__BENTLEY_INTERNAL_ONLY__*/
+//__PUBLISH_SECTION_START__
 
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECValue.h>

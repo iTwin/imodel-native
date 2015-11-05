@@ -10,10 +10,8 @@
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
-/*__PUBLISH_SECTION_END__*/
 #include <ECObjects/CalculatedProperty.h>
 #include <ECObjects/SchemaLocalizedStrings.h>
-/*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
@@ -27,7 +25,6 @@ EC_TYPEDEFS(QualifiedECAccessor);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_END__*/
 /*=================================================================================**//**
 * Comparison function that is used within various schema related data structures
 * for string comparison in STL collections.
@@ -71,8 +68,6 @@ public:
     void                SetName (Utf8CP name);
     void                SetDisplayLabel (Utf8CP label);
     };
-
-/*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
 //! Handles validation, encoding, and decoding of names for ECSchemas, ECClasses, and
@@ -207,7 +202,6 @@ struct SupplementedSchemaBuilder;
 //=======================================================================================
 struct IECCustomAttributeContainer
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECCustomAttributeInstanceIterable;
     friend struct SupplementedSchemaBuilder;
@@ -239,13 +233,13 @@ protected:
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
+/*__PUBLISH_SECTION_END__*/
 public:
     ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR className);
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
@@ -333,13 +327,12 @@ private:
     bool                        m_includeBaseContainers;
     bool                        m_includeSupplementalAttributes;
     ECCustomAttributeInstanceIterable( IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes) : m_container(container), m_includeBaseContainers(includeBase),
-    m_includeSupplementalAttributes(includeSupplementalAttributes) {};
+        m_includeSupplementalAttributes(includeSupplementalAttributes) {};
 public:
     struct IteratorState : RefCountedBase
         {
         friend struct const_iterator;
-
-//__PUBLISH_CLASS_VIRTUAL__
+        public:
 /*__PUBLISH_SECTION_END__*/
         ECCustomAttributeCollection* m_customAttributes;
         ECCustomAttributeCollection::const_iterator m_customAttributesIterator;
@@ -418,7 +411,6 @@ public:
     typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, uint32_t componentIndex);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
     static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, uint32_t componentIndex = COMPONENT_INDEX_None);
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
     static const uint32_t COMPONENT_INDEX_None = -1;
     };
@@ -503,7 +495,6 @@ public:
 
     //! Returns a default value which can be used as a placeholder for e.g. testing formatting options
     ECOBJECTS_EXPORT bool       GetPlaceholderValue (ECValueR v, IECTypeAdapterContextCR context) const;
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! @return true if it is possible to convert the underlying type to a string
@@ -591,7 +582,6 @@ public:
 //=======================================================================================
 struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
 {
-/*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 
 private:
@@ -647,6 +637,7 @@ protected:
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) { return false; }
 
     void                                InvalidateClassLayout();
+/*__PUBLISH_SECTION_END__*/
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
@@ -774,7 +765,6 @@ protected:
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
@@ -808,7 +798,6 @@ protected:
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! The property type.
@@ -946,7 +935,6 @@ public:
             ~IteratorState();
             static RefCountedPtr<IteratorState> Create (ECClassCR ecClass, bool includeBaseProperties)
                 { return new IteratorState(ecClass, includeBaseProperties); };
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
         };
 
@@ -984,12 +972,9 @@ public:
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
 typedef bvector<ECClassP> ECConstraintClassesList;
-/*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 struct SchemaXmlReader;
 struct SchemaXmlWriter;
-
-/*__PUBLISH_SECTION_START__*/
 
 struct StandaloneECEnabler;
 struct SearchPathSchemaFileLocater;
@@ -1025,8 +1010,6 @@ friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() 
 public:
     //! Value of unset ECClassId.
     static const ECClassId UNSET_ECCLASSID = 0ULL;
-
-//__PUBLISH_SECTION_END__
 
 private:
     mutable Utf8String              m_fullName;
@@ -1083,6 +1066,7 @@ protected:
     //! Before this method is invoked the schema containing the class must have loaded all schema references and stubs for all classes within
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
+    //! @param[in]  context         The read context that contains information about schemas used for deserialization
     //! @return   Status code
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context);
 
@@ -1119,15 +1103,13 @@ public:
     ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert(UNSET_ECCLASSID == m_ecClassId); m_ecClassId = id; };
     ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != UNSET_ECCLASSID; };
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECClassId             GetId() const;
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
 
-    // The type of derived ECClass this is
+    //! The type of derived ECClass this is
     ECOBJECTS_EXPORT ECClassType           GetClassType() const;
 
     //! Used to avoid dynamic_cast
@@ -1705,7 +1687,6 @@ protected:
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
@@ -2045,7 +2026,6 @@ private:
 public:
     ECOBJECTS_EXPORT ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {}; //public for test purposes only
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //=======================================================================================
@@ -2060,7 +2040,6 @@ public:
 
             IteratorState (ClassMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
             static RefCountedPtr<IteratorState> Create (ClassMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
         };
 
@@ -2105,7 +2084,6 @@ private:
 protected:
     virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) = 0;
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 
 public:
@@ -2158,7 +2136,6 @@ protected:
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
     ECObjectsStatus DropAllReferencesOfSchema(ECSchemaR schema);
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Adds a schema to the cache
@@ -2226,16 +2203,13 @@ typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECSchema : RefCountedBase
-//__PUBLISH_SECTION_END__
-                                          , IECCustomAttributeContainer
-//__PUBLISH_SECTION_START__
+struct ECSchema : RefCountedBase, IECCustomAttributeContainer
 {
 private:
     ECSchema (ECSchema const&);
     ECSchema& operator= (ECSchema const&);
 
-/*__PUBLISH_SECTION_END__*/
+
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
 friend struct SchemaXmlReader;
@@ -2261,7 +2235,9 @@ private:
     bool                        m_immutable;
 
     bmap<ECSchemaP, Utf8String> m_referencedSchemaNamespaceMap;
+    /*__PUBLISH_SECTION_END__*/
     SchemaLocalizedStrings      m_localizedStrings;
+    /*__PUBLISH_SECTION_START__*/
 
     ECSchema ();
     virtual ~ECSchema();
@@ -2281,6 +2257,7 @@ private:
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
+/*__PUBLISH_SECTION_END__*/
 public:
     ECOBJECTS_EXPORT void               ReComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
@@ -2291,7 +2268,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, Utf8CP newName);
     SchemaLocalizedStringsCR            GetLocalizedStrings() const { return m_localizedStrings; }
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const; //!< Returns a SchemaKey fully describing this schema
