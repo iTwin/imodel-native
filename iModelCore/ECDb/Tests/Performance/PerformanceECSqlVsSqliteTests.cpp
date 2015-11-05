@@ -112,6 +112,8 @@ protected:
         }
     };
 
+int const PerformanceECSqlVsSqliteTests::s_opCount;
+
 BeFileName PerformanceECSqlVsSqliteTests::s_seedFilePath;
 
 //---------------------------------------------------------------------------------------

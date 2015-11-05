@@ -1094,7 +1094,7 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, Extra
 
     if (!m_tableMap->GetIsMapped())
         {
-        LOG.infov("ChangeSummary skipping table %s since it's not mapped", m_tableMap->GetTableName());
+        LOG.infov("ChangeSummary skipping table %s since it's not mapped", m_tableMap->GetTableName().c_str());
         return SUCCESS;
         }
 
