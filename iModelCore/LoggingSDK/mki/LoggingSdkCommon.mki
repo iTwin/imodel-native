@@ -37,8 +37,9 @@ smtpLib                 = $(buildDir)libsmtp/lib/
 devdocDir               = $(docDir)$(devdocProject)
 
 BuildContext            = $(OutBuildContexts)LoggingSDK/
-BuildContextDelivery    = $(BuildContext)Delivery/
+BuildContextPublicAPI   = $(BuildContext)PublicAPI/
 BuildContextVendorAPI   = $(BuildContext)VendorAPI/
+BuildContextDelivery    = $(BuildContext)Delivery/
 BuildContextSubParts    = $(BuildContext)SubParts/
 
 always:
