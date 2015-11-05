@@ -138,7 +138,7 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
 
     return r_status;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 2/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -205,13 +205,6 @@ StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, cons
                 continue;
                 }
             }
-        }
-
-    // Setup ECInstanceId
-    if (jsonValue.isMember ("$ECInstanceId"))
-        {
-        ECInstanceId ecInstanceId (BeJsonUtilities::Int64FromValue (jsonValue["$ECInstanceId"]));
-        ECInstanceAdapterHelper::SetECInstanceId (instance, ecInstanceId);
         }
 
     return status;

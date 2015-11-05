@@ -14,10 +14,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsInstanceIdProperty(Utf8StringCR propertyName)
+bool IsIdProperty (Utf8StringCR propertyName)
     {
-    return (0 == propertyName.CompareTo("ECInstanceId") || 0 == propertyName.CompareTo("SourceECInstanceId") || 
-        0 == propertyName.CompareTo("TargetECInstanceId"));
+    return (0 == propertyName.CompareTo ("ECInstanceId") || 0 == propertyName.CompareTo("ECClassId") ||
+        0 == propertyName.CompareTo("SourceECInstanceId") || 0 == propertyName.CompareTo("TargetECInstanceId") ||
+        0 == propertyName.CompareTo("SourceECClassId") || 0 == propertyName.CompareTo("TargetECClassId"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,7 +86,7 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNodeR paren
     BeAssert(ecProperty != nullptr && "This iteration cannot be on an array reader, and the column cannot represent an array value");
 
     // Skip instance id node
-    if (isRootReader && IsInstanceIdProperty(ecProperty->GetName()))
+    if (isRootReader && IsIdProperty (ecProperty->GetName()))
         return;
 
     // If reading the root (top level) columns, determine the index of the instance that the property belongs in
@@ -1005,7 +1006,7 @@ bool JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue cons
         ECPropertyCP ecProperty = propertyPath.At(ii).GetProperty();
         BeAssert(ecProperty != nullptr && "According to the ECSqlStatement API, this can happen only for array readers, where this method should never have been called");
         Utf8String ecPropertyName(ecProperty->GetName());
-        if (IsInstanceIdProperty(ecPropertyName))
+        if (IsIdProperty (ecPropertyName))
             {
             ecPropertyName = "$" + ecPropertyName;
             isInstanceIdColumn = true;

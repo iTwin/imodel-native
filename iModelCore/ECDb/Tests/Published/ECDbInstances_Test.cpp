@@ -1168,7 +1168,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     EXPECT_EQ(ERROR, sms);
 
     JsonUpdater jsonUpdater(db, *employee);
-    sms = jsonUpdater.Update(jsonInput);
+    sms = jsonUpdater.Update(instanceKey.GetECInstanceId(), jsonInput);
     EXPECT_EQ(ERROR, sms);
 
     JsonDeleter jsonDeleter(db, *employee);
@@ -1214,5 +1214,115 @@ TEST_F(ECDbInstances, DomainCustomAttributeStructCombinations)
     sms = inserter3.Insert(instanceKey, *instance);
     EXPECT_EQ(SUCCESS, sms);
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String GetLabelPropertyFromRelation(ECDbR db, ECInstanceId relInstanceId)
+    {
+    ECSqlStatement stmt;
+    ECSqlStatus prepareStatus = stmt.Prepare(db, "SELECT Label FROM stco.RelationWithLinkTableMapping WHERE ECInstanceId=?");
+    if (prepareStatus != ECSqlStatus::Success)
+        {
+        BeAssert(false);
+        return "";
+        }
+
+    stmt.BindId(1, relInstanceId);
+    DbResult stepStatus = stmt.Step();
+    if (stepStatus != BE_SQLITE_ROW)
+        {
+        BeAssert(false);
+        return "";
+        }
+
+    return stmt.GetValueText(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbInstances, UpdateRelationshipProperty)
+    {
+    ECDbTestProject saveTestProject;
+    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+
+    // Reopen the test project
+    ECDb db;
+    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+
+    ECSqlStatement stmt;
+    ECSqlStatus prepareStatus = stmt.Prepare (db, "INSERT INTO stco.Employee (FirstName,LastName) VALUES('Elon', 'Musk')");
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ECInstanceKey employeeKey;
+    DbResult stepStatus = stmt.Step(employeeKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    stmt.Finalize();
+    prepareStatus = stmt.Prepare(db, "INSERT INTO stco.Hardware (Cost) VALUES(25.34)");
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ECInstanceKey hardwareKey;
+    stepStatus = stmt.Step(hardwareKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    Utf8String expectedLabel, actualLabel;
+
+    stmt.Finalize();
+    prepareStatus = stmt.Prepare (db, "INSERT INTO stco.RelationWithLinkTableMapping (SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId, Label) VALUES (?, ?, ?, ?, ?)");
+    stmt.BindInt64(1, employeeKey.GetECClassId());
+    stmt.BindId(2, employeeKey.GetECInstanceId());
+    stmt.BindInt64(3, hardwareKey.GetECClassId());
+    stmt.BindId(4, hardwareKey.GetECInstanceId());
+    expectedLabel = "InitialLabel";
+    stmt.BindText(5, expectedLabel.c_str(), IECSqlBinder::MakeCopy::No);
+    ECInstanceKey relKey;
+    stepStatus = stmt.Step(relKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
+
+    actualLabel = GetLabelPropertyFromRelation(db, relKey.GetECInstanceId());
+    ASSERT_STREQ(expectedLabel.c_str(), actualLabel.c_str());
+
+    ECClassCP relClass = db.Schemas().GetECClass("StartupCompany", "RelationWithLinkTableMapping");
+    ASSERT_TRUE(relClass != nullptr);
+
+    JsonReader reader(db, relClass->GetId());
+    Json::Value relJson;
+    BentleyStatus status = reader.ReadInstance(relJson, relKey.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    ASSERT_EQ(SUCCESS, status);
+    ECDbTestUtility::DebugDumpJson (relJson);
+    ASSERT_STREQ(expectedLabel.c_str(), relJson["Label"].asCString());
+    
+    /*
+     * Update relationship properties using JsonCpp
+     */
+
+    expectedLabel = "JsonCppLabel";
+    JsonUpdater updater(db, *relClass);
+    relJson["Label"] = expectedLabel;
+    status = updater.Update(relKey.GetECInstanceId(), relJson, employeeKey, hardwareKey);
+    ASSERT_EQ (SUCCESS, status);
+
+    actualLabel = GetLabelPropertyFromRelation(db, relKey.GetECInstanceId());
+    ASSERT_STREQ(expectedLabel.c_str(), actualLabel.c_str());
+
+    /*
+    * Update relationship properties using RapidJson
+    */
+    rapidjson::Document relRapidJson;
+    relRapidJson.SetObject();
+    expectedLabel = "RapidJsonLabel";
+    relRapidJson.AddMember("Label", expectedLabel.c_str(), relRapidJson.GetAllocator());
+    relRapidJson.AddMember("$SourceECInstanceId", employeeKey.GetECInstanceId().GetValue(), relRapidJson.GetAllocator());
+    relRapidJson.AddMember("$SourceECClassId", (int64_t) employeeKey.GetECClassId(), relRapidJson.GetAllocator());
+    relRapidJson.AddMember("$TargetECInstanceId", hardwareKey.GetECInstanceId().GetValue(), relRapidJson.GetAllocator());
+    relRapidJson.AddMember("$TargetECClassId", (int64_t) hardwareKey.GetECClassId(), relRapidJson.GetAllocator());
+
+    status = updater.Update(relKey.GetECInstanceId(), relRapidJson, employeeKey, hardwareKey);
+    ASSERT_EQ(SUCCESS, status);
+
+    actualLabel = GetLabelPropertyFromRelation(db, relKey.GetECInstanceId());
+    ASSERT_STREQ(expectedLabel.c_str(), actualLabel.c_str());
+    }
 
 END_ECDBUNITTESTS_NAMESPACE
