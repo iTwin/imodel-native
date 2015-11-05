@@ -904,7 +904,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
                 diff->Add ((*itor).c_str(), DiffNodeId::Reference)->ImplGetValueRight().SetValue (rightR->GetFullSchemaName().c_str());
             else
                 //donot compare leftR->GetSchemaKey() != rightR->GetSchemaKey() as it compare hash and 
-                //ecdb doesnt not have same hash for store schema as it strip out comments and while reading back
+                //ecdb doesn't not have same hash for store schema as it strip out comments and while reading back
                 //may not have even same order of class and properties.
                 if (leftR->GetSchemaKey().GetFullSchemaName() != rightR->GetSchemaKey().GetFullSchemaName())
                     diff->Add ((*itor).c_str(), DiffNodeId::Reference)->SetValue (leftR->GetFullSchemaName().c_str(), rightR->GetFullSchemaName().c_str());
@@ -937,17 +937,17 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (Utf8CP className, ECSchemaCR schemaLeft
     if (( (left->GetCustomAttributeClassCP() != NULL)) != (right->GetCustomAttributeClassCP() != NULL))
         diff->Add (DiffNodeId::IsCustomAttributeClass)->SetValue (left->GetCustomAttributeClassCP() != NULL, right->GetCustomAttributeClassCP() != NULL );
 
-    if (left->GetClassType() != right->GetClassType())
-        {
-        if (ECClassType::Struct == left->GetClassType() || ECClassType::Struct == right->GetClassType())
-            diff->Add (DiffNodeId::IsStruct)->SetValue (ECClassType::Struct == left->GetClassType(), ECClassType::Struct == right->GetClassType());
-        if (ECClassType::CustomAttribute == left->GetClassType() || ECClassType::CustomAttribute == right->GetClassType())
-            diff->Add(DiffNodeId::IsCustomAttributeClass)->SetValue(ECClassType::CustomAttribute == left->GetClassType(), ECClassType::CustomAttribute == right->GetClassType());
-        if (ECClassType::Relationship == left->GetClassType() || ECClassType::Relationship == right->GetClassType())
-            diff->Add (DiffNodeId::IsRelationshipClass)->SetValue (left->GetRelationshipClassCP() != NULL, right->GetRelationshipClassCP() != NULL );
-        if (ECClassType::Entity == left->GetClassType() || ECClassType::Entity == right->GetClassType())
-            diff->Add(DiffNodeId::IsEntityClass)->SetValue(ECClassType::Entity == left->GetClassType(), ECClassType::Entity == right->GetClassType());
-        }
+    if (left->IsStructClass() != right->IsStructClass())
+        diff->Add (DiffNodeId::IsStruct)->SetValue (left->IsStructClass(), right->IsStructClass());
+
+    if (left->IsCustomAttributeClass() != right->IsCustomAttributeClass())
+        diff->Add(DiffNodeId::IsCustomAttributeClass)->SetValue(left->IsCustomAttributeClass(), right->IsCustomAttributeClass());
+
+    if (left->IsRelationshipClass() != right->IsRelationshipClass())
+        diff->Add (DiffNodeId::IsRelationshipClass)->SetValue (left->IsRelationshipClass(), right->IsRelationshipClass());
+        
+    if (left->IsEntityClass() != right->IsEntityClass())
+        diff->Add(DiffNodeId::IsEntityClass)->SetValue(left->IsEntityClass(), right->IsEntityClass());
 
     if (left->GetClassModifier() != right->GetClassModifier())
         {
@@ -1277,10 +1277,10 @@ ECDiffNodeP ECSchemaDiffTool::AppendClass (ECDiffNodeR parent , ECClassCR ecClas
     if (ecClass.GetIsDisplayLabelDefined())
         diff->Add (DiffNodeId::DisplayLabel)->GetValue(direction).SetValue (ecClass.GetDisplayLabel().c_str());
     diff->Add (DiffNodeId::Description)->GetValue(direction).SetValue (ecClass.GetDescription().c_str());
-    diff->Add (DiffNodeId::IsCustomAttributeClass)->GetValue(direction).SetValue (ECClassType::CustomAttribute == ecClass.GetClassType());
-    diff->Add (DiffNodeId::IsStruct)->GetValue(direction).SetValue (ECClassType::Struct == ecClass.GetClassType());
-    diff->Add (DiffNodeId::IsEntityClass)->GetValue(direction).SetValue (ECClassType::Entity == ecClass.GetClassType());
-    diff->Add (DiffNodeId::IsRelationshipClass)->GetValue(direction).SetValue (ECClassType::Relationship == ecClass.GetClassType());
+    diff->Add (DiffNodeId::IsCustomAttributeClass)->GetValue(direction).SetValue (ecClass.IsCustomAttributeClass());
+    diff->Add (DiffNodeId::IsStruct)->GetValue(direction).SetValue (ecClass.IsStructClass());
+    diff->Add (DiffNodeId::IsEntityClass)->GetValue(direction).SetValue (ecClass.IsEntityClass());
+    diff->Add (DiffNodeId::IsRelationshipClass)->GetValue(direction).SetValue (ecClass.IsRelationshipClass());
     diff->Add(DiffNodeId::IsAbstract)->GetValue(direction).SetValue(ecClass.GetClassModifier() == ECClassModifier::Abstract);
     diff->Add(DiffNodeId::IsSealed)->GetValue(direction).SetValue(ecClass.GetClassModifier() == ECClassModifier::Sealed);
     AppendCustomAttributes (*diff, ecClass, direction);
