@@ -1,6 +1,10 @@
 //! Script that is executed by one of the unit tests in DgnScriptContext_Test.cpp
 module DgnScriptChecker {
-    BentleyApi.Dgn.JsUtils.ReportError(':Checker A');
+    function logMessage(msg: string): void {
+        BentleyApi.Dgn.Logging.Message('TestRunner', BentleyApi.Dgn.LoggingSeverity.Info, msg);
+    }
+
+    logMessage('Checker A');
 
     export class Checker {
         AbsTol: number;
@@ -9,14 +13,14 @@ module DgnScriptChecker {
         constructor() {
             this.AbsTol = 1.0e-12;
             this.RelTol = 1.0e-12;
-            BentleyApi.Dgn.JsUtils.ReportError(':Checker Constructor');
+            logMessage('Checker Constructor');
 
         }
 
         Abs(a: number) : number { return a >= 0 ? a : -a; }
         ConstructErrorString(a: number, b: number) : string 
             {
-            var labelA = ":Value of A was: "
+            var labelA = "Value of A was: "
             var labelB = " Value of B was: "
             var fullA = labelA.concat(a.toString());
             var fullB = labelB.concat(b.toString());
@@ -30,7 +34,7 @@ module DgnScriptChecker {
             return true;
         if (reportError)
             var message = this.ConstructErrorString(a,b);
-            BentleyApi.Dgn.JsUtils.ReportError(message);
+            logMessage(message);
             return false;
         }
 
@@ -40,7 +44,7 @@ module DgnScriptChecker {
                 && this.NearDouble(this.Abs(a.Z - b.Z), 0.0, false)
                 )
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError(':NearPoint');
+            logMessage('NearPoint');
             return false;
         }
 
@@ -50,7 +54,7 @@ module DgnScriptChecker {
                 && this.NearDouble(this.Abs(a.Y - b.Y), 0.0, false)
                 )
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError(':NearPoint');
+            logMessage('NearPoint');
             return false;
         }
 
@@ -61,7 +65,7 @@ module DgnScriptChecker {
                 && this.NearDouble(this.Abs(a.Z - b.Z), 0.0, false)
                 )
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError(':NearVector');
+            logMessage('NearVector');
             return false;
         }
 
@@ -71,7 +75,7 @@ module DgnScriptChecker {
                 && this.NearDouble(this.Abs(a.Y - b.Y), 0.0, false)
                 )
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError(':NearVector');
+            logMessage('NearVector');
             return false;
         }
 
@@ -81,21 +85,21 @@ module DgnScriptChecker {
             var d = b.MaxDiff (c);
             var a = b.MaxAbs () + c.MaxAbs ();
             if(reportError)
-            return(this.NearDouble(a,a+d,true));
-            else
-                BentleyApi.Dgn.JsUtils.ReportError(':NearRotmatrix');
+                return(this.NearDouble(a,a+d,true));
+
+            logMessage('NearRotmatrix');
             }
 
         CheckBool(a: boolean, b: boolean) : boolean
             {
             if(a==b)
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError(":Not Equal");
+            BentleyApi.Dgn.Script.ReportError("Not Equal");
             return false;
             }
     }
 
 
-    BentleyApi.Dgn.JsUtils.ReportError(':Checker B');
+    logMessage('Checker B');
 }
 

@@ -110,7 +110,7 @@ JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void JsUtils::ImportLibrary (Utf8StringCR libName)
+void Script::ImportLibrary (Utf8StringCR libName)
     {
     T_HOST.GetScriptAdmin().ImportScriptLibrary(libName.c_str());
     }
@@ -118,9 +118,42 @@ void JsUtils::ImportLibrary (Utf8StringCR libName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void JsUtils::ReportError (Utf8StringCR description)
+void Script::ReportError (Utf8StringCR description)
     {
-    T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler::Category::ReportedByScript, description.c_str(), "");
+    T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::ReportedByScript, description.c_str(), "");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void Logging::Message(Utf8StringCR category, LoggingSeverity severity, Utf8StringCR message)
+    {
+    T_HOST.GetScriptAdmin().HandleLogMessage(category.c_str(), (DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity)severity, message.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+static NativeLogging::SEVERITY toNativeLoggingSeverity(LoggingSeverity severity)
+    {
+    // *** NB: ScriptAdmin::LoggingSeverity must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
+    return (NativeLogging::SEVERITY)(-(int32_t)severity); 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void Logging::SetSeverity(Utf8StringCR category, LoggingSeverity severity)
+    {
+    NativeLogging::LoggingConfig::SetSeverity(category.c_str(), toNativeLoggingSeverity(severity));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+bool Logging::IsSeverityEnabled(Utf8StringCR category, LoggingSeverity severity)
+    {
+    return NativeLogging::LoggingManager::GetLogger(category.c_str())->isSeverityEnabled(toNativeLoggingSeverity(severity));
     }
 
 //---------------------------------------------------------------------------------------

@@ -839,117 +839,6 @@ public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
 };
 
-#ifdef WIP_COMPONENT_MODEL // *** don't think we need "SolutionId"
-//! Identifies a ComponentModel solution.
-struct SolutionId
-{
-    friend struct ComponentModel;
-    friend struct ComponentSolution;
-private:
-    Utf8String m_modelName;
-    Utf8String m_solutionName;
-
-    SolutionId(Utf8String m, Utf8String s) : m_modelName(m), m_solutionName(s) { ; }
-
-public:
-    SolutionId() { ; }
-
-    bool IsValid() const { return !m_modelName.empty() && !m_solutionName.empty(); }
-
-    bool operator==(SolutionId const& rhs) const { return m_modelName == rhs.m_modelName && m_solutionName == rhs.m_solutionName; }
-};
-#endif
-
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-//=======================================================================================
-//! Captures the results of "solving" a ComponentModel.
-//! The basic pattern for placing instances of component solutions is:
-//!     -# Make sure the component's schema has been generated. See ComponentModel::AddAllToECSchema.
-//!     -# Once per schema, import the component's schema into the target DgnDb. See ComponentModel::ImportSchema.
-//!     -# Once per component model, copy the model into the client's DgnDb. See ComponentModel::ImportModel.
-//!     -# Once per solution parameter set, solve and capture a solution. See ComponentSolution.
-//!     -# Create and place as many instances of a captured solution as you like. See ComponentSolution::CreateInstance.
-//! @see ComponentModel
-// @bsiclass                                                    Keith.Bentley   10/11
-//=======================================================================================
-struct ComponentSolution : DgnDbTable
-{
-    DEFINE_T_SUPER(DgnDbTable)
-
-public:
-    //! Access to the geometry of a captured solution
-    struct Solution
-        {
-        friend struct ComponentSolution;
-      private:
-        uint64_t m_rowId;
-        SolutionId m_id;
-        ModelSolverDef::ParameterSet m_parameters;
-        DgnModelId  m_componentModelId;
-        ElementAlignedBox3d m_range;
-
-      public:
-        Solution() : m_rowId(0) {;}
-
-        bool IsValid() {return m_id.IsValid() && m_rowId != 0;}
-
-        //! Get the parameter set that was used to generate this solution
-        ModelSolverDef::ParameterSet const& GetParameters() {return m_parameters;}
-
-        //! Get the range of the solution geometry.
-        ElementAlignedBox3d GetRange() const {return m_range;}
-
-        //! Read the captured solution geometry
-        //! @param[out]  geomStream     Where to write the geometry
-        //! @param[in]   db             The DgnDb to query
-        //! @return non-zero if the geometry could not be read
-        DgnDbStatus QueryGeomStream(GeomStreamR geomStream, DgnDbR db) const;
-        };
-
-    ComponentSolution(DgnDbR db) : T_Super(db) {;}
-
-    //! @name Capturing Solutions
-    //@{
-
-    //! Look up a captured solution
-    //! @param[out] solution  The solution data
-    //! @param[in] sid     The solution id
-    //! @return non-zero if no such solution exists
-    //! @see CaptureSolution
-    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, SolutionId sid);
-
-    //! Harvest geometry from the component model and store in the solutions table.
-    //! @param[in] componentModel The ComponentModel that is to be harvested
-    //! @return The ID of the captured solution
-    //! @see ComponentModel::Solve
-    DGNPLATFORM_EXPORT SolutionId CaptureSolution(ComponentModelR componentModel);
-    //@}
-
-    //! @name Creating a Solution Instance
-    //@{
-    //! A convenience method to create a new element that will hold an instance of a captured solution geometry. The caller must insert the returned element into the Db.
-    //! This convenience method creates an element based on the class specified by ComponentModel::GetElementECClassName and assigns it to the category
-    //! specified by ComponentModel::GetItemCategoryName. The caller should call CreateSolutionInstanceItem next.
-    //! @note The caller does not have to call this method to capture an instance. The caller could create an instance element based on a different class or in a different category, as long as it is 
-    //! compatible with the ComponentModel's generated item.
-    //! @param[in] destinationModel The model where the instance will be inserted by the caller
-    //! @param[in] solutionId Identifies a captured solution. See CaptureSolution and QuerySolutionId
-    //! @param[in] origin The element's placement origin
-    //! @param[in] angles The element's placement angles
-    //! @return An new element that could be inserted as an instance of a captured solution (but only \em after calling CreateSolutionInstanceItem)
-    //! @see CreateSolutionInstanceItem, CaptureSolution, QuerySolution
-    DGNPLATFORM_EXPORT DgnElementPtr CreateSolutionInstanceElement(DgnModelR destinationModel, SolutionId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
-
-    //! Create an item that holds the geometry from specified solution and set it on the specified element.
-    //! @param instanceElement  The element to update with the new item
-    //! @param itemProperties   An ECInstance that contains the item's properties. It is up to the caller to transfer these properties to the DgnElement::Item object before inserting or updating the element.
-    //! @param solutionId       Identifies the solution to use
-    //! @return non-zero error status if the item could not be created
-    DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, SolutionId solutionId);
-    //@}
-    };
-#endif
-
 /*=======================================================================================*//**
 * A ComponentModel represents a set of possible configurations of a single type of thing. 
 *
@@ -1017,16 +906,27 @@ public:
 private:
     CompProps m_compProps;
 
-    DPoint3d _GetGlobalOrigin() const override SEALED_ATTRIBUTE {return DPoint3d::FromZero();}
-    CoordinateSpace _GetCoordinateSpace() const override SEALED_ATTRIBUTE {return CoordinateSpace::Local;}
+    DPoint3d _GetGlobalOrigin() const override final {return DPoint3d::FromZero();}
+    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
 
 protected:
+    //! @private
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
+    //! @private
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
 
+    //! @private
+    DgnElement::Code CreateCatalogItemCode(Utf8StringCR slnId);
+
+    //! @private
+    DGNPLATFORM_EXPORT PhysicalElementCPtr HarvestSolution(DgnDbStatus& status, PhysicalModelR catalogModel, Utf8StringCR solutionName, DgnElement::Code const& icode);
+
 public:
+    //! @private - used in testing only 
+    DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
+
     /**
      *The constructor for ComponentModel.
     * @see DgnScript
@@ -1049,46 +949,28 @@ public:
     //! Get the name of the CodeAuthority that should be used when creating an instance Item from this component.
     DGNPLATFORM_EXPORT Utf8String GetItemCodeAuthority() const;
 
-    /**
-     * Solve the component model for the given set of parameters. This method is just a short cut for setting the component model solver's 
-     * parameters and then invoking Update on the model and SaveChanges on the DgnDb. The result is to update the component model.
-     * @return DgnDbStatus::Success if the solution was created and written to the component model; DgnDbStatus::ValidationFailed if the solver failed; 
-     * or DgnDbStatus::SQLiteError if some other error prevented the transaction from being saved to the DgnDb.
-     * @see ComputeSolutionName, GetSolver, ModelSolverDef::GetParameters
-    */
-    DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
-
-#ifdef WIP_COMPONENT_MODEL // *** don't think we need "SolutionId"
-    //! Compute a string that can be used to identify the current solution. It is based on the parameter names and values.
-    //! @return a generated name for the current solution
-    //! @see ComponentModel::GetSolver::GetParametersValues
-    SolutionId ComputeSolutionId() {return ComputeSolutionId(GetSolver().GetParameters());}
-    
-    //! Compute a string that can be used to identify the solution to the specified ParameterSet. It is based on the parameter names and values.
-    //! @return a generated name for the current solution
-    //! @see ComponentModel::GetSolver::GetParametersValues
-    DGNPLATFORM_EXPORT SolutionId ComputeSolutionId(ModelSolverDef::ParameterSet const& params);
-#endif
-
     //! Get the name of the component.
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
 
-    //! Extract the current solution from this ComponentModel and store it in the form of one or more items in the specified output model.
+    //! Solve with the specified parameters and capture the results as one or more Items in the specified catalogModel. 
+    //! If the solution has already been captured, this function will return the previously created Item.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the item fails.
     //! @param[in] catalogModel The output catalog model, where the harvested solution item(s) is(are) stored.
-    //! @return The item generated to hold the solution results. If more than one element was created, this is the parent.
-    DGNPLATFORM_EXPORT DgnElementCPtr HarvestSolution(DgnDbStatus* stat, PhysicalModelR catalogModel);
+    //! @param[in] parameters   The parameters that should be used to generate the solution
+    //! @return The Item generated to hold the solution results. If more than one element was created, this is the parent.
+    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters);
 
-    //! convenience method to place an instance of a catalog item 
+    //! Make a persistent copy of a specified solution Item, along with all of its children.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
-    //! @param[in] targetModel  The model where copy instance is inserted
-    //! @param[in] catalogItem  The item that is to be copied
+    //! @param[in] targetModel  The model where the instance is to be inserted
+    //! @param[in] catalogItem  The catalog item that is to be copied
     //! @param[in] origin       The original of the new instance element's placement.
     //! @param[in] angles       The angles of the new instance element's placement. 
-    //! @param[in] code         The code to assign to the new item. If invalid, then a code will be generated by the catalogItem's CodeAuthority
+    //! @param[in] code         The code to assign to the new item. If invalid, then a code will be generated by the templateItem's CodeAuthority
     //! @return the instance item if successfull
-    DGNPLATFORM_EXPORT static PhysicalElementCPtr CopyCatalogItem(DgnDbStatus* stat, PhysicalModelR targetModel, PhysicalElementCR catalogItem, 
-        DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code);
+    //! @see CaptureSolution
+    DGNPLATFORM_EXPORT static PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, PhysicalElementCR catalogItem,
+                                                    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code);
 };
 
 //=======================================================================================
