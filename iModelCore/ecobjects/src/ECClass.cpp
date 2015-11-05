@@ -166,6 +166,13 @@ ECClassType ECClass::GetClassType() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECClass::IsEntityClass() const
+    {
+    return _IsEntityClass();
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECEntityClassCP ECClass::GetEntityClassCP() const
@@ -179,6 +186,14 @@ ECEntityClassCP ECClass::GetEntityClassCP() const
 ECEntityClassP ECClass::GetEntityClassP()
     {
     return _GetEntityClassP();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECClass::IsCustomAttributeClass() const
+    {
+    return _IsCustomAttributeClass();
     }
 
 //---------------------------------------------------------------------------------------
@@ -198,6 +213,14 @@ ECCustomAttributeClassP ECClass::GetCustomAttributeClassP()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECClass::IsStructClass() const
+    {
+    return _IsStructClass();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECStructClassCP ECClass::GetStructClassCP() const
@@ -211,6 +234,14 @@ ECStructClassCP ECClass::GetStructClassCP() const
 ECStructClassP ECClass::GetStructClassP()
     {
     return _GetStructClassP();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECClass::IsRelationshipClass() const
+    {
+    return _IsRelationshipClass();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1374,9 +1405,9 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
-    xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, this->GetClassType() == ECClassType::Struct);
+    xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, IsStructClass());
     xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, this->GetClassModifier() == ECClassModifier::Abstract);
-    xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, this->GetClassType() == ECClassType::CustomAttribute);
+    xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass());
     if (nullptr != additionalAttributes)
         {
         for (bmap<Utf8CP, Utf8CP>::iterator iter = additionalAttributes->begin(); iter != additionalAttributes->end(); ++iter)

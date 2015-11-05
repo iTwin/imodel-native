@@ -83,7 +83,7 @@ void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
     EXPECT_STREQ ("Project", pClass->GetDisplayLabel ().c_str ());
     EXPECT_TRUE (pClass->GetIsDisplayLabelDefined ());
     EXPECT_STREQ ("Project Class", pClass->GetDescription ().c_str ());
-    EXPECT_TRUE (pClass->GetClassType() == ECClassType::Entity);
+    EXPECT_TRUE (pClass->IsEntityClass());
     EXPECT_FALSE (pClass->HasBaseClasses ());
     ECPropertyP pProperty = GetPropertyByName (*pClass, "Name");
     ASSERT_TRUE (NULL != pProperty);
@@ -108,7 +108,7 @@ void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
     EXPECT_STREQ ("AccessCustomAttributes", customAttribClass->GetDisplayLabel ().c_str ());
     EXPECT_FALSE (customAttribClass->GetIsDisplayLabelDefined ());
     EXPECT_STREQ ("", customAttribClass->GetDescription ().c_str ());
-    EXPECT_TRUE (customAttribClass->GetClassType() == ECClassType::CustomAttribute);
+    EXPECT_TRUE (customAttribClass->IsCustomAttributeClass());
     EXPECT_FALSE (customAttribClass->HasBaseClasses ());
 
     pClass = schema->GetClassP ("Struct1");
@@ -117,7 +117,7 @@ void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
     EXPECT_STREQ ("Struct1", pClass->GetDisplayLabel ().c_str ());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined ());
     EXPECT_STREQ ("", pClass->GetDescription ().c_str ());
-    EXPECT_TRUE (pClass->GetClassType() == ECClassType::Struct);
+    EXPECT_TRUE (pClass->IsStructClass());
     EXPECT_FALSE (pClass->HasBaseClasses ());
 
     pClass = schema->GetClassP ("Struct2");
@@ -126,7 +126,7 @@ void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
     EXPECT_STREQ ("Struct2", pClass->GetDisplayLabel ().c_str ());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined ());
     EXPECT_STREQ ("", pClass->GetDescription ().c_str ());
-    EXPECT_TRUE (pClass->GetClassType() == ECClassType::Struct);
+    EXPECT_TRUE (pClass->IsStructClass());
     EXPECT_FALSE (pClass->HasBaseClasses ());
     pProperty = GetPropertyByName (*pClass, "NestedArray");
     EXPECT_TRUE (NULL != pProperty);
@@ -643,7 +643,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequired
     EXPECT_STREQ ("OnlyRequiredECClassAttributes", pClass->GetDisplayLabel ().c_str ());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined ());
     EXPECT_STREQ ("", pClass->GetDescription ().c_str ());
-    EXPECT_TRUE (pClass->GetClassType() == ECClassType::Entity);
+    EXPECT_TRUE (pClass->IsEntityClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -696,7 +696,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStr
     EXPECT_STREQ ("Project", pClass->GetDisplayLabel ().c_str ());
     EXPECT_TRUE (pClass->GetIsDisplayLabelDefined ());
     EXPECT_STREQ ("Project ECClass", pClass->GetDescription ().c_str ());
-    EXPECT_TRUE (pClass->GetClassType() == ECClassType::Entity);
+    EXPECT_TRUE (pClass->IsEntityClass());
     EXPECT_FALSE (pClass->HasBaseClasses ());
     ECPropertyP pProperty = GetPropertyByName (*pClass, "Name");
     ASSERT_TRUE (NULL != pProperty);
@@ -1422,11 +1422,11 @@ TEST_F (SchemaCreationTest, CanFullyCreateASchema)
 
     EXPECT_EQ (0, strcmp (class1->GetDescription ().c_str (), "Class for testing purposes"));
     EXPECT_EQ (0, strcmp (class1->GetDisplayLabel ().c_str (), "Test Class"));
-    EXPECT_TRUE (class1->GetClassType() == ECClassType::Entity);
+    EXPECT_TRUE (class1->IsEntityClass());
     EXPECT_EQ (ECObjectsStatus::Success, class1->AddBaseClass (*baseClass));
     EXPECT_TRUE (class1->HasBaseClasses ());
 
-    EXPECT_TRUE (structClass->GetClassType () == ECClassType::Struct);
+    EXPECT_TRUE (structClass->IsStructClass());
 
     PrimitiveECPropertyP stringProp;
     StructECPropertyP structProp;
