@@ -412,7 +412,7 @@ bool AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType a
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (UNEXPECTED_CONDITION (!statement.IsValid()))
-        return nullptr;
+        return false;
 
     if (DbResult::BE_SQLITE_DONE != statement->Step())
         return true;
