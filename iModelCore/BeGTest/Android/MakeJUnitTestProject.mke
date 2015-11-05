@@ -224,8 +224,11 @@ $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/$(BENTLEY_ANDROID_Libgnustl_shared) : $(
 always:
     @$(_MakeFilePath)CopyAllTo.py   $(LINKER_LIBRARIES) $(libsDir)$(BENTLEY_ANDROID_AndroidABI)
 
+# Don't strip the SOs in libs if we plan to debug. VisualStudio needs to find the symbols in the SOs that are in the APK.
+%if !defined (GCC_DEBUG)
 always:
     -$(BENTLEY_ANDROID_TOOLCHAIN_strip) $(StripCmdOptions) $[@wildcard $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/*$(shlibext)]
+%endif
 
 #--------------------------------------------------------------------------------------
 # Generate some files needed for debugging (see ndk-gdb)
