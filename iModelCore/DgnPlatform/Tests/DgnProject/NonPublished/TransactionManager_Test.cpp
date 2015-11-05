@@ -10,6 +10,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/WebMercator.h>
+#include <DgnPlatform/DgnTexture.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -31,6 +32,9 @@ struct TxnMonitorVerifier : TxnMonitor
     void Clear();
     void _OnCommit(TxnManager&) override;
     void _OnReversedChanges(TxnManager&) override {m_OnTxnReversedCalled = true;}
+
+    bool IsEmpty() const { return !m_OnTxnClosedCalled && !m_OnTxnReversedCalled && !HasInstances(); }
+    bool HasInstances() const { return m_adds.size() + m_deletes.size() + m_mods.size() > 0; }
     };
 
 /*=================================================================================**//**
@@ -943,8 +947,6 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
     }
 
-BEGIN_UNNAMED_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -958,13 +960,13 @@ struct DynamicTxnsTest : TransactionManagerTests
         m_db->Txns().EnableTracking(true);
         }
 
-    void InsertElement(bvector<DgnElementId>& ids)
+    void InsertElement(bvector<DgnElementId>& ids, bool saveIfNotInDynamics=true)
         {
         static char s_code = 'A';
         Utf8PrintfString code("%c", s_code++);
         DgnElementCPtr elem = T_Super::InsertElement(code);
         EXPECT_TRUE(elem.IsValid());
-        if (!m_db->Txns().IsInDynamics())
+        if (saveIfNotInDynamics && !m_db->Txns().IsInDynamics())
             EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
 
         ids.push_back(elem->GetElementId());
@@ -995,9 +997,8 @@ struct DynamicTxnsTest : TransactionManagerTests
     };
 };
 
-END_UNNAMED_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
+* Test how the API behaves during dynamic vs normal txns.
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, BasicInvariants)
@@ -1043,6 +1044,7 @@ TEST_F(DynamicTxnsTest, BasicInvariants)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Test how temporary changes interact with persistent changes, undo/redo, etc.
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, DynamicTxns)
@@ -1101,5 +1103,305 @@ TEST_F(DynamicTxnsTest, DynamicTxns)
     txns.EndDynamicOperation();
     ExpectNoneExist(innerElemIds);
     ExpectNoneExist(outerElemIds);
+
+    // Abandoning changes abandons dynamic changes
+    persistentElemIds.clear();
+    dynamicElemIds.clear();
+    InsertElement(persistentElemIds, false);
+    txns.BeginDynamicOperation();
+    InsertElement(dynamicElemIds);
+    ExpectAllExist(persistentElemIds);
+    ExpectAllExist(dynamicElemIds);
+    EXPECT_EQ(BE_SQLITE_OK, db.AbandonChanges());
+    EXPECT_FALSE(txns.IsInDynamics());
+    ExpectNoneExist(dynamicElemIds);
+    ExpectNoneExist(persistentElemIds);
+
+    // A normal txn interrupted by dynamic txns can be resumed transparently
+    persistentElemIds.clear();
+    EXPECT_EQ(DgnDbStatus::Success, txns.BeginMultiTxnOperation());
+    InsertElement(persistentElemIds);
+    txns.BeginDynamicOperation();
+        InsertElement(dynamicElemIds);
+    txns.EndDynamicOperation();
+    InsertElement(persistentElemIds);
+    EXPECT_EQ(DgnDbStatus::Success, txns.EndMultiTxnOperation());
+    ExpectAllExist(persistentElemIds);
+    txns.ReverseSingleTxn();
+    ExpectNoneExist(persistentElemIds);
+    ExpectNoneExist(dynamicElemIds);
+    txns.ReinstateTxn();
+    ExpectAllExist(persistentElemIds);
+    ExpectNoneExist(dynamicElemIds);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Currently TxnMonitors receive no callbacks for dynamic txns. We may want to change that
+* - but if so, they should be distinct callbacks. We should not be erroneously invoking
+* their normal callbacks for dynamic changes.
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DynamicTxnsTest, TxnMonitors)
+    {
+    SetupProject(L"TxnMonitors.dgndb");
+
+    DgnDbR db = *m_db;
+    auto& txns = db.Txns();
+
+    TxnMonitorVerifier monitor;
+
+    bvector<DgnElementId> persistentIds, dynamicIds;
+    InsertElement(persistentIds);
+    EXPECT_TRUE(monitor.m_OnTxnClosedCalled);
+    EXPECT_EQ(1, monitor.m_adds.size());
+
+    monitor.Clear();
+    EXPECT_TRUE(monitor.IsEmpty());
+
+    txns.BeginDynamicOperation();
+        EXPECT_TRUE(monitor.IsEmpty());
+        InsertElement(dynamicIds);
+        EXPECT_TRUE(monitor.IsEmpty());
+    txns.EndDynamicOperation();
+    EXPECT_TRUE(monitor.IsEmpty());
+
+    txns.ReverseSingleTxn();
+    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_FALSE(monitor.HasInstances());
+    EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
+
+    monitor.Clear();
+    txns.ReinstateTxn();
+    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_FALSE(monitor.HasInstances());
+    EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
+
+    monitor.Clear();
+    InsertElement(persistentIds);
+    txns.BeginDynamicOperation();
+        InsertElement(dynamicIds);
+        InsertElement(dynamicIds);
+    txns.EndDynamicOperation();
+    InsertElement(persistentIds);
+
+    EXPECT_EQ(2, monitor.m_adds.size());
+    EXPECT_EQ(0, monitor.m_deletes.size());
+    EXPECT_EQ(0, monitor.m_mods.size());
+
+    monitor.Clear();
+    txns.ReverseTxns(2);
+    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_FALSE(monitor.HasInstances());
+
+    monitor.Clear();
+    txns.ReinstateTxn();
+    txns.ReinstateTxn();
+    EXPECT_TRUE(monitor.m_OnTxnReversedCalled);
+    EXPECT_FALSE(monitor.HasInstances());
+    EXPECT_FALSE(monitor.m_OnTxnClosedCalled);
+
+    ExpectAllExist(persistentIds);
+    ExpectNoneExist(dynamicIds);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint32_t getDependentWidth(DgnElementId id, DgnDbR db)
+    {
+    auto tx = db.Elements().Get<DgnTexture>(id);
+    BeAssert(tx.IsValid());
+    return tx.IsValid() ? static_cast<uint32_t>(tx->GetData().GetWidth()) : -1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void incrementDependentWidth(DgnElementId id,DgnDbR db)
+    {
+    auto cpTx = db.Elements().Get<DgnTexture>(id);
+    BeAssert(cpTx.IsValid());
+    auto pTx = cpTx.IsValid() ? cpTx->MakeCopy<DgnTexture>() : nullptr;
+    if (pTx.IsValid())
+        {
+        pTx->SetData(DgnTexture::Data(DgnTexture::Format::TIFF, {1, 2, 3}, pTx->GetData().GetWidth() + 1, 0));
+        pTx->Update();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void tickleElement(DgnElementId id, DgnDbR db)
+    {
+    BeThreadUtilities::BeSleep(1);
+    auto el = db.Elements().GetElement(id)->CopyForEdit();
+    el->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct RootChangedCallback : TestElementDrivesElementHandler::Callback
+{
+    size_t m_invocationCount;
+
+    virtual void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target)
+        {
+        ++m_invocationCount;
+        incrementDependentWidth(target, db);
+        }
+
+    RootChangedCallback() : m_invocationCount(0)
+        {
+        TestElementDrivesElementHandler::SetCallback(this);
+        }
+
+    ~RootChangedCallback()
+        {
+        TestElementDrivesElementHandler::SetCallback(nullptr);
+        }
+
+    size_t GetInvokeCount() const { return m_invocationCount; }
+    void ResetInvokeCount() { m_invocationCount = 0; }
+    bool WasInvoked() const { return 0 != m_invocationCount; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DynamicChangesProcessor : IDynamicChangeProcessor
+{
+    size_t m_expectedCount;
+    uint32_t m_expectedWidth;
+    DgnElementId m_depId;
+    RootChangedCallback& m_cb;
+    DgnDbR m_db;
+    size_t m_actualCount;
+    uint32_t m_actualWidth;
+
+    DynamicChangesProcessor(RootChangedCallback& cb, DgnElementId depId, DgnDbR db)
+        : m_expectedCount(0), m_expectedWidth(0), m_depId(depId), m_cb(cb), m_db(db),
+          m_actualCount(0), m_actualWidth(0) { }
+
+    virtual void _ProcessDynamicChanges() override
+        {
+        m_actualCount = m_cb.GetInvokeCount();
+        m_actualWidth = getDependentWidth(m_depId, m_db);
+        }
+
+    void Expect(size_t count, uint32_t width)
+        {
+        Reset();
+        m_expectedCount = count;
+        m_expectedWidth = width;
+        }
+
+    void Reset()
+        {
+        m_actualCount = 0;
+        m_actualWidth = 0;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DynamicTxnsTest, IndirectChanges)
+    {
+    SetupProject(L"IndirectChanges.dgndb");
+
+    DgnDbR db = *m_db;
+    auto& txns = db.Txns();
+
+    // Set up a dependency between two elements, and register a callback
+    DgnCategory cat(DgnCategory::CreateParams(db, "Root", DgnCategory::Scope::Any));
+    EXPECT_TRUE(cat.Insert(DgnSubCategory::Appearance()).IsValid());
+    DgnElementId rootId = cat.GetElementId();
+
+    bvector<Byte> textureBytes { 1, 2, 3 };
+    DgnTexture::Data textureData(DgnTexture::Format::TIFF, textureBytes, 0, 0);
+    DgnTexture texture(DgnTexture::CreateParams(db, "Dependent", textureData));
+    EXPECT_TRUE(texture.Insert().IsValid());
+    auto depId = texture.GetElementId();
+    db.SaveChanges();
+
+    RootChangedCallback cb;
+    TestElementDrivesElementHandler::Insert(*m_db, rootId, depId);
+    db.SaveChanges();
+
+    // Make sure our callback is working as expected under normal txns
+    // Note the initial addition of the relationship invokes the callback.
+    EXPECT_EQ(1, cb.GetInvokeCount());
+    EXPECT_EQ(1, getDependentWidth(depId, db));
+
+    // Modifying the root will invoke the callback
+    cb.ResetInvokeCount();
+    tickleElement(rootId, db);
+    db.SaveChanges();
+    EXPECT_EQ(1, cb.GetInvokeCount());
+    EXPECT_EQ(2, getDependentWidth(depId, db));
+
+    // Undo/redo should not invoke the callback, but should revert/reinstate the effects of the callback
+    cb.ResetInvokeCount();
+    txns.ReverseSingleTxn();
+    EXPECT_FALSE(cb.WasInvoked());
+    EXPECT_EQ(1, getDependentWidth(depId, db));
+
+    cb.ResetInvokeCount();
+    txns.ReinstateTxn();
+    EXPECT_FALSE(cb.WasInvoked());
+    EXPECT_EQ(2, getDependentWidth(depId, db));
+
+    // Now test in dynamics
+    // Changes should be propagated on EndDynamicOperation()
+    cb.ResetInvokeCount();
+    DynamicChangesProcessor proc(cb, depId, db);
+    txns.BeginDynamicOperation();
+        tickleElement(rootId, db);
+        EXPECT_FALSE(cb.WasInvoked());
+        proc.Expect(1, 3);
+    txns.EndDynamicOperation(&proc);
+
+    // EndDynamicOperation should have propagated changes and notified our processor
+    EXPECT_EQ(1, proc.m_actualCount);
+    EXPECT_EQ(3, proc.m_actualWidth);
+
+    // Once dynamic operation ends, changes should be reverted
+    EXPECT_EQ(1, cb.GetInvokeCount());
+    EXPECT_EQ(2, getDependentWidth(depId, db));
+
+    // Test nested dynamics
+    cb.ResetInvokeCount();
+    txns.BeginDynamicOperation();
+        tickleElement(rootId, db);
+        txns.BeginDynamicOperation();
+            // make no changes - ensure outer changes not propagated
+            proc.Expect(0, 2);
+        txns.EndDynamicOperation(&proc);
+        EXPECT_EQ(0, proc.m_actualCount);
+        EXPECT_EQ(2, getDependentWidth(depId, db));
+
+        cb.ResetInvokeCount();
+        txns.BeginDynamicOperation();
+            tickleElement(rootId, db);
+            proc.Expect(1, 3);
+        txns.EndDynamicOperation(&proc);
+        EXPECT_EQ(1, proc.m_actualCount);
+        EXPECT_EQ(3, proc.m_actualWidth);
+        EXPECT_EQ(2, getDependentWidth(depId, db));
+
+        cb.ResetInvokeCount();
+        proc.Expect(1, 3);
+    txns.EndDynamicOperation(&proc);
+    EXPECT_EQ(1, proc.m_actualCount);
+    EXPECT_EQ(3, proc.m_actualWidth);
+    EXPECT_EQ(2, getDependentWidth(depId, db));
+
+    cb.ResetInvokeCount();
+    db.SaveChanges();
+    EXPECT_EQ(2, getDependentWidth(depId, db));
+    EXPECT_FALSE(cb.WasInvoked());
+    }
+
 

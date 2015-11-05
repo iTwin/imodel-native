@@ -270,14 +270,22 @@ TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TxnManager::PropagateChanges()
     {
-    SetMode(Mode::Indirect);
+    return DoPropagateChanges(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
+    {
+    tracker.SetMode(Mode::Indirect);
     for (auto table :  m_tables)
         {
         table->_PropagateChanges();
         if (HasFatalErrors())
             break;
         }
-    SetMode(Mode::Direct);
+    tracker.SetMode(Mode::Direct);
 
     return HasFatalErrors() ? BSIERROR : BSISUCCESS;
     }
@@ -604,8 +612,6 @@ void TxnManager::AddChanges(Changes const& changes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
     {
-    BeAssert(!HasChanges() && !IsInDynamics());
-
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
     BeAssert(rc == BE_SQLITE_OK);
@@ -613,9 +619,6 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
 
     OnChangesetApplied(changeset, action);
 
-    T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
-
-    BeAssert(!HasChanges());
     return rc;
     }
 
@@ -659,10 +662,17 @@ void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction acti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     {
+    BeAssert(!HasChanges() && !IsInDynamics());
+
     UndoChangeSet changeset;
     ReadChangeSet(changeset, rowId, action);
 
     auto rc = ApplyChangeSet(changeset, action);
+
+    T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
+
+    BeAssert(!HasChanges());
+
     if (BE_SQLITE_OK != rc)
         return;
 
@@ -1474,7 +1484,17 @@ void TxnManager::EndDynamicOperation(IDynamicChangeProcessor* processor)
 
         if (nullptr != processor)
             {
-            PropagateChanges();
+            Restart();
+
+            DoPropagateChanges(*tracker);
+
+            if (tracker->HasChanges())
+                {
+                UndoChangeSet indirectChanges;
+                indirectChanges.FromChangeTrack(*tracker);
+                changeset.ConcatenateWith(indirectChanges);
+                }
+
             processor->_ProcessDynamicChanges();
             }
 

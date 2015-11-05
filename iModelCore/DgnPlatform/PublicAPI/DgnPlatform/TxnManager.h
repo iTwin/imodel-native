@@ -270,6 +270,7 @@ private:
     bool PrepareForUndo();
     DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
     BentleyStatus PropagateChanges();
+    BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     void DeleteReversedTxns();
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
