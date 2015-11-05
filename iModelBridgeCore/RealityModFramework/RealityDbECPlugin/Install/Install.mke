@@ -102,8 +102,6 @@ $(InstallDataDir)CreateOSMEntry.sql : $(_MakeFilePath)Data/CreateOSMEntry.sql
 	%error MAIN_INSTALLER_LANGUAGE
 %endif
 
-%include $(SrcRoot)bsicommon\PublicSDK\AssertToolSet.mki
-
 always:
 !~@mkdir $(o)
 
