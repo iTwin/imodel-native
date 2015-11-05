@@ -69,7 +69,6 @@ struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
     private:
         static const int64_t m_firstInstanceId = INT64_C (11);
         static const int m_initialInstanceCount = 1000000;
-        void SetUpPopulatedDb (WCharCP dbName, Utf8CP className);
 
         DgnModelPtr CreateElements (int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements)
             {
@@ -133,4 +132,7 @@ struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
         void SqlSelectTime (int numInstances, Utf8CP className);
         void SqlUpdateTime (int numInstances, Utf8CP className);
         void SqlDeleteTime (int numInstances, Utf8CP className);
+
+        virtual void _RegisterDomainAndImportSchema (ECN::ECSchemaPtr schema) override;
+        virtual void _CreateAndInsertElements (Utf8CP className) override;
     };
