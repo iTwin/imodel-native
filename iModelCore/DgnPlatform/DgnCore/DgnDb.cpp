@@ -42,6 +42,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr)
     {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,6 +108,22 @@ TxnManagerR DgnDb::Txns()
         m_txnManager = new TxnManager(*this);
 
     return *m_txnManager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ILocksManagerR DgnDb::Locks()
+    {
+    // This is here rather than in the constructor because _CreateLocksManager() requires briefcase ID, which is obtained from m_dbFile,
+    // which is not initialized in constructor.
+    if (m_locksManager.IsNull())
+        {
+        m_locksManager = T_HOST.GetLocksAdmin()._CreateLocksManager(*this);
+        BeAssert(m_locksManager.IsValid());
+        }
+
+    return *m_locksManager;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +442,14 @@ void DgnImportContext::ComputeGcsAdjustment()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+DgnCloneContext::DgnCloneContext()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAdjustment();
     }

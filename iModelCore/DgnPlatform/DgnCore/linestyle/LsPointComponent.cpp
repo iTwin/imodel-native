@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-#include    <DgnPlatform/DgnCore/LsLocal.h>
+#include    <DgnPlatform/LsLocal.h>
 
 #define LCPOINT_ANYVERTEX   (LCPOINT_LINEORG | LCPOINT_LINEEND | LCPOINT_LINEVERT)
 

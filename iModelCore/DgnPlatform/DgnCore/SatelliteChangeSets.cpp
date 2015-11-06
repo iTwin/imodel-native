@@ -8,7 +8,7 @@
 #include "DgnPlatformInternal.h"
 
 #include <BeSQLite/SHA1.h>
-#include <DgnPlatform/DgnCore/SatelliteChangeSets.h>
+#include <DgnPlatform/SatelliteChangeSets.h>
 #include <Bentley/BeDirectoryIterator.h>
 
 #define MUSTBEDBRESULT(stmt,RESULT) {auto rc = stmt; if (rc != RESULT) {SetLastError(rc); return BSIERROR;}}
@@ -827,7 +827,8 @@ void SatelliteChangeSets::GetExpirationDate(DateTime& dt)
 void SatelliteChangeSets::SetLastError(BeSQLite::DbResult rc)
     {
     m_lastError = rc;
-    m_lastErrorDescription = m_dgndb->GetLastError();
+    if (nullptr != m_dgndb)
+        m_lastErrorDescription = m_dgndb->GetLastError();
     }
 
 /*---------------------------------------------------------------------------------**//**

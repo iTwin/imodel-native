@@ -9,7 +9,7 @@
 #endif
 
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnFontData.h>
+#include <DgnPlatform/DgnFontData.h>
 #include <regex>
 #include <ft2build.h>
 #include FT_FREETYPE_H

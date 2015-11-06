@@ -8,7 +8,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
-#include <DgnPlatform/DgnCore/Annotations/TextAnnotationSeed.h>
+#include <DgnPlatform/Annotations/TextAnnotationSeed.h>
 #include "Annotations.fb.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

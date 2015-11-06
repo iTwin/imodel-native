@@ -8,7 +8,7 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -178,20 +178,19 @@ TEST(DgnScriptTest, Test1)
 /*=================================================================================**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +===============+===============+===============+===============+===============+======*/
-struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
+struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
     {
     void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
-        if (description[0] == ':')// || category == Category::Info)
-            {
-            //GTEST_MESSAGE_ (description, ::testing::TestPartResult::kSuccess);
-            printf ("%s\n", description);
-            BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_INFO, description);
-//                    Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
-            }
-        else
-            FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
+        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
         }
+
+    void _HandleLogMessage(Utf8CP category, DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity sev, Utf8CP msg) override
+        {
+        ScriptNotificationHandler::_HandleLogMessage(category, sev, msg);  // logs it
+        printf ("%s\n", msg);
+        }
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -201,7 +200,7 @@ TEST(DgnScriptTest, RunScripts)
     {
     ScopedDgnHost  autoDgnHost;
 
-    T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
@@ -224,7 +223,7 @@ TEST(DgnScriptTest, CRUD)
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
-    T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);

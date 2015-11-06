@@ -13,10 +13,6 @@
 #include "PerformanceTestFixture.h"
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-#include <Logging/bentleylogging.h>
-
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"DgnDbPerformance"))
-
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -40,7 +36,7 @@ struct PerformanceElement : Dgn::PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, Dgn::PhysicalElement);
 
     protected:
-        PerformanceElement (CreateParams const& params): T_Super(params) {}
+        PerformanceElement (CreateParams const& params) : T_Super (params) {}
 
     public:
         static PerformanceElementPtr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id);
@@ -71,6 +67,9 @@ struct PerformanceElementTestDomain : DgnDomain
 struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
     {
     private:
+        static const int64_t m_firstInstanceId = INT64_C (11);
+        static const int m_initialInstanceCount = 1000000;
+
         DgnModelPtr CreateElements (int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements)
             {
             DgnModelPtr modelPtr;
@@ -79,9 +78,6 @@ struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
             }
 
         void CreateElements (int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements, DgnModelPtr& modelPtr);
-        void InitializeProject (WCharCP dbName);
-
-    protected:
 
         //Generate Sql CRUD Statements.
         void GetInsertSql (Utf8CP className, Utf8StringR insertSql, DgnClassId classId);
@@ -100,28 +96,32 @@ struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
         DgnDbStatus BindElement2PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
         DgnDbStatus BindElement3PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
         DgnDbStatus BindElement4PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        void BindParams (DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className, bool updateParams);
+        void BindParams (DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className);
+        void BindUpdateParams (BeSQLite::Statement& stmt, Utf8CP className);
 
         //ECsql Overloads to Bind business Property values
         DgnDbStatus BindElement1PropertyParams (ECSqlStatement& stmt, bool updateParams);
         DgnDbStatus BindElement2PropertyParams (ECSqlStatement& stmt, bool updateParams);
         DgnDbStatus BindElement3PropertyParams (ECSqlStatement& stmt, bool updateParams);
         DgnDbStatus BindElement4PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        void BindParams (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className, bool updateParams);
+        void BindParams (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
+        void BindUpdateParams (ECSqlStatement& stmt, Utf8CP className);
 
         //Methods to verify Business Property Values returned by Sql Statements. 
         DgnDbStatus GetElement1Params (BeSQLite::Statement& stmt);
         DgnDbStatus GetElement2Params (BeSQLite::Statement& stmt);
         DgnDbStatus GetElement3Params (BeSQLite::Statement& stmt);
         DgnDbStatus GetElement4Params (BeSQLite::Statement& stmt);
-        void GetPropertyValues (DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className);
+        void GetPropertyValues (BeSQLite::Statement& stmt, Utf8CP className);
 
         //OverLoaded Methods to Verify Business property Values returned by ECSql Statements. 
         DgnDbStatus GetElement1Params (ECSqlStatement& stmt);
         DgnDbStatus GetElement2Params (ECSqlStatement& stmt);
         DgnDbStatus GetElement3Params (ECSqlStatement& stmt);
         DgnDbStatus GetElement4Params (ECSqlStatement& stmt);
-        void GetPropertyValues (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
+        void GetPropertyValues (ECSqlStatement& stmt, Utf8CP className);
+
+    protected:
 
         void ECSqlInsertTime (int numInstances, Utf8CP className);
         void ECSqlSelectTime (int numInstances, Utf8CP className);
@@ -132,4 +132,7 @@ struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
         void SqlSelectTime (int numInstances, Utf8CP className);
         void SqlUpdateTime (int numInstances, Utf8CP className);
         void SqlDeleteTime (int numInstances, Utf8CP className);
+
+        virtual void _RegisterDomainAndImportSchema (ECN::ECSchemaPtr schema) override;
+        virtual void _CreateAndInsertElements (Utf8CP className) override;
     };

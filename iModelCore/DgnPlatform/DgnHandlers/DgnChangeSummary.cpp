@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnHandlers/DgnChangeSummary.h>
+#include    <DgnPlatform/DgnChangeSummary.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -42,7 +42,7 @@ void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanc
         else /* if (dbOpcode == DbOpcode::Update) */
             {
             // The end instance id may not be part of the update record - look in the current database if it's not present. 
-            if (relInstance.HasValue(endInstanceIdAccessStr))
+            if (relInstance.ContainsValue(endInstanceIdAccessStr))
                 {
                 newEndInstanceId = relInstance.GetNewValue(endInstanceIdAccessStr).GetValueId<ECInstanceId>();
                 oldEndInstanceId = relInstance.GetOldValue(endInstanceIdAccessStr).GetValueId<ECInstanceId>();

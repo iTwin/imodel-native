@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: DgnPlatform/DgnHandlers/Dimension/NoteInternal.h $
+|     $Source: DgnHandlers/Dimension/NoteInternal.h $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

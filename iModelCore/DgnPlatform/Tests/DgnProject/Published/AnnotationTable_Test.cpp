@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/DgnDbTables.h>
-#include <DgnPlatform/DgnCore/AnnotationTable.h>
+#include <DgnPlatform/DgnDbTables.h>
+#include <DgnPlatform/AnnotationTable.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -38,6 +38,7 @@ static bvector<TestAnnotationTableAspectDescr> const& getAspectDescrs ()
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableRow),      false   },
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableColumn),   false   },
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableCell),     false   },
+        { DGN_TABLE(DGN_CLASSNAME_AnnotationTableMerge),    false   },
         };
 
     return s_aspectDescrs;
@@ -59,6 +60,23 @@ public:
 
         // Every table at least one symbology aspect
         //AddEntry (DGN_CLASSNAME_AnnotationTableSymbology, 1);
+        }
+
+    /* ctor */  ExpectedAspectCounts (uint32_t rowsExpected, uint32_t colsExpected, uint32_t cellsExpected, uint32_t mergesExpected)
+        :
+        ExpectedAspectCounts()
+        {
+        if (0 < rowsExpected)
+            AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableRow), rowsExpected);
+
+        if (0 < colsExpected)
+            AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableColumn), colsExpected);
+
+        if (0 < cellsExpected)
+            AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableCell), cellsExpected);
+
+        if (0 < mergesExpected)
+            AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableMerge), mergesExpected);
         }
 
     void        AddEntry (Utf8CP tableName, size_t count)
@@ -243,6 +261,92 @@ DgnElementId    CreateBasicTablePersisted (int numRows = 5, int numCols = 3)
     return InsertElement (*tableElement);
     }
 
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct MergeDescr
+    {
+    AnnotationTableCellIndex    m_rootIndex;
+    uint32_t                    m_rowSpan;
+    uint32_t                    m_colSpan;
+
+    MergeDescr (AnnotationTableCellIndexCR i, uint32_t r, uint32_t c) : m_rootIndex(i), m_rowSpan(r), m_colSpan(c) {}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     BuildExpectedCellList (bvector<AnnotationTableCellIndex>& expectedCells, uint32_t numRows, uint32_t numCols, bvector<AnnotationTableCellIndex> const* exclusions)
+    {
+    for (uint32_t iRow = 0; iRow < numRows; iRow++)
+        {
+        for (uint32_t iCol = 0; iCol < numCols; iCol++)
+            {
+            AnnotationTableCellIndex index (iRow, iCol);
+
+            if (NULL != exclusions)
+                {
+                if (exclusions->end() != std::find (exclusions->begin(), exclusions->end(), index))
+                    continue;
+                }
+
+            expectedCells.push_back (index);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     VerifyCellCollection (AnnotationTableElementCR table, bvector<AnnotationTableCellIndex> const* exclusions)
+    {
+    bvector<AnnotationTableCellIndex> expectedCells;
+    BuildExpectedCellList (expectedCells, table.GetRowCount(), table.GetColumnCount(), exclusions);
+
+    uint32_t iCell = 0;
+
+    for (AnnotationTableCellCR cell : table.GetCellCollection())
+        {
+        AnnotationTableCellIndex  foundIndex      = cell.GetIndex();
+        AnnotationTableCellIndex  expectedIndex   = expectedCells[iCell++];
+
+        ASSERT_TRUE (expectedIndex == foundIndex);
+        }
+
+    ASSERT_EQ (expectedCells.size(), iCell);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     VerifyCellsWithMergeBlocks (AnnotationTableElementCR table, bvector<MergeDescr> mergeBlocks)
+    {
+    // Verify that the expected cells were consumed
+    bvector<AnnotationTableCellIndex> cellsThatWereConsumed;
+
+    for (MergeDescr const& merge : mergeBlocks)
+        {
+        bool    skippedFirst = false;
+        size_t  oldConsumedCount = cellsThatWereConsumed.size();
+
+        for (uint32_t iRow = merge.m_rootIndex.row; iRow < merge.m_rootIndex.row + merge.m_rowSpan; iRow++)
+            {
+            for (uint32_t iCol = merge.m_rootIndex.col; iCol < merge.m_rootIndex.col + merge.m_colSpan; iCol++)
+                {
+                if ( ! skippedFirst)
+                    { skippedFirst = true; continue; }
+
+                cellsThatWereConsumed.push_back (AnnotationTableCellIndex (iRow, iCol));
+                }
+            }
+
+        // double check
+        EXPECT_EQ (merge.m_rowSpan * merge.m_colSpan - 1, cellsThatWereConsumed.size() - oldConsumedCount);
+        }
+
+    AnnotationTableTest::VerifyCellCollection (table, &cellsThatWereConsumed);
+    }
+
 }; // AnnotationTableTest
 
 /*---------------------------------------------------------------------------------**//**
@@ -393,7 +497,7 @@ struct AnnotationTableTestAction
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool    _CreateTable (AnnotationTableElementPtr&, AnnotationTextStyleId textStyleID, DgnModelId) { return false; }
+    virtual bool    _CreateTable (AnnotationTableElementPtr&, DgnDbR, DgnModelId, DgnCategoryId, AnnotationTextStyleId) { return false; }
     virtual void    _PreAction (AnnotationTableElementR) {}
     virtual void    _DoAction (AnnotationTableElementR) = 0;
     virtual void    _VerifyAction (AnnotationTableElementCR) const = 0;
@@ -421,7 +525,7 @@ public:
         {
         AnnotationTableElementPtr    table;
 
-        if (testAction._CreateTable (table, GetTextStyleId(), GetModelId()))
+        if (testAction._CreateTable (table, GetDgnDb(), GetModelId(), GetCategoryId(), GetTextStyleId()))
             return table;
 
         return CreateBasicTable();
@@ -1079,6 +1183,1086 @@ TEST_F (AnnotationTableActionTest, Modify_DeleteRow)
     uint32_t          rowIndex = 1;
 
     DeleteRowAction   testAction (rowIndex);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct MergeCellsAction : AnnotationTableTestAction
+{
+private:
+    AnnotationTableCellIndex    m_rootIndex;
+    uint32_t                    m_rowSpan;
+    uint32_t                    m_colSpan;
+    bool                        m_expectFail;
+
+public:
+    /* ctor */  MergeCellsAction (AnnotationTableCellIndex i, uint32_t r, uint32_t c, bool e) : m_rootIndex (i), m_rowSpan (r), m_colSpan (c), m_expectFail(e) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+        {
+        uint32_t          numRows  = 3;
+        uint32_t          numCols  = 3;
+
+        //       0     1     2   
+        //    |------------------
+        //  0 |     |     |     |
+        //    |-----+-----+-----+
+        //  1 |     |     |     |
+        //    |-----+-----+-----|
+        //  2 |     |     |     |
+        //    |-----+-----+-----+
+
+        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
+        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+
+        return true;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        // Merge a block of cells
+        bool          failed = (SUCCESS != table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan));
+        ASSERT_EQ (m_expectFail, failed);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        bvector <AnnotationTableTest::MergeDescr> mergeBlocks;
+
+        if ( ! m_expectFail)
+            mergeBlocks.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+
+        AnnotationTableTest::VerifyCellsWithMergeBlocks (table, mergeBlocks);
+
+        ExpectedAspectCounts expectedCounts (0, 0, 0, (uint32_t) mergeBlocks.size());
+        expectedCounts.VerifyCounts(table);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCells_TopLeft)
+    {
+    AnnotationTableCellIndex    cellIndex (0, 0);
+    uint32_t                    rowSpan = 2;
+    uint32_t                    colSpan = 2;
+
+        //       0     1     2   
+        //    |------------------
+        //  0 |           |     |
+        //    |           +-----+
+        //  1 |           |     |
+        //    |-----+-----+-----+
+        //  2 |     |     |     |
+        //    |-----+-----+-----+
+
+    MergeCellsAction   testAction (cellIndex, rowSpan, colSpan, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCells_BottomRight)
+    {
+    AnnotationTableCellIndex    cellIndex (1, 1);
+    uint32_t                    rowSpan = 2;
+    uint32_t                    colSpan = 2;
+
+        //       0     1     2   
+        //    |-----+-----+-----|
+        //  0 |     |     |     |
+        //    |-----+-----+-----|
+        //  1 |     |           |
+        //    |-----+           |
+        //  2 |     |           |
+        //    |-----+-----+-----|
+
+    MergeCellsAction   testAction (cellIndex, rowSpan, colSpan, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCells_FullRow)
+    {
+    AnnotationTableCellIndex    cellIndex (0, 0);
+    uint32_t                    rowSpan = 1;
+    uint32_t                    colSpan = 3;
+
+        //       0     1     2  
+        //    |-----------------|
+        //  0 |                 |
+        //    |-----+-----+-----|
+        //  1 |     |     |     |
+        //    |-----+-----+-----|
+        //  2 |     |     |     |
+        //    |-----+-----+-----|
+
+    MergeCellsAction   testAction (cellIndex, rowSpan, colSpan, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCells_FullColumn)
+    {
+    AnnotationTableCellIndex    cellIndex (0, 2);
+    uint32_t                    rowSpan = 3;
+    uint32_t                    colSpan = 1;
+
+        //       0     1     2
+        //    |-----------------|
+        //  0 |     |     |     |
+        //    |-----+-----+     |
+        //  1 |     |     |     |
+        //    |-----+-----+     |
+        //  2 |     |     |     |
+        //    |-----+-----+-----|
+
+    MergeCellsAction   testAction (cellIndex, rowSpan, colSpan, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCells_TooWide)
+    {
+    AnnotationTableCellIndex    cellIndex (0, 1);
+    uint32_t                    rowSpan = 1;
+    uint32_t                    colSpan = 3;
+
+        //       0     1     2 
+        //    |----------------|
+        //  0 |     | fail     xxxx
+        //    |-----+-----+----|
+        //  1 |     |     |    |
+        //    |-----+-----+----|
+        //  2 |     |     |    |
+        //    |-----+-----+----|
+
+    MergeCellsAction   testAction (cellIndex, rowSpan, colSpan, true);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCells_TooTall)
+    {
+    AnnotationTableCellIndex    cellIndex (1, 2);
+    uint32_t                    rowSpan = 3;
+    uint32_t                    colSpan = 1;
+
+        //       0     1     2
+        //    |-----------------|
+        //  0 |     |     |     |  origin 1,2
+        //    |-----+-----+-----|  span   3,1
+        //  1 |     |     |     |
+        //    |-----+-----+ fail|
+        //  2 |     |     |     |
+        //    |-----+-----+     |
+        //                 xxxxx
+
+    MergeCellsAction   testAction (cellIndex, rowSpan, colSpan, true);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct MergeCellsWithExistingAction : AnnotationTableTestAction
+{
+private:
+    AnnotationTableCellIndex  m_rootIndex;
+    uint32_t        m_rowSpan;
+    uint32_t        m_colSpan;
+    bool            m_expectFail;
+    bool            m_expectConsume;
+
+    AnnotationTableTest::MergeDescr      m_existingMerge;
+
+public:
+    /* ctor */  MergeCellsWithExistingAction (AnnotationTableTest::MergeDescr e, AnnotationTableCellIndex i, uint32_t r, uint32_t c, bool f, bool consume) : 
+        m_rootIndex (i), m_rowSpan (r), m_colSpan (c), m_expectFail(f), m_expectConsume(consume),
+        m_existingMerge (e) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    03/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+        {
+        uint32_t          numRows  = 4;
+        uint32_t          numCols  = 4;
+
+        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
+        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+
+        table->MergeCells (m_existingMerge.m_rootIndex, m_existingMerge.m_rowSpan, m_existingMerge.m_colSpan);
+
+        return true;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    03/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        // Merge a block of cells
+        bool          failed = (SUCCESS != table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan));
+        ASSERT_EQ (m_expectFail, failed);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    03/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        bvector <AnnotationTableTest::MergeDescr> mergeBlocks;
+
+        if ( ! m_expectConsume)
+            mergeBlocks.push_back (m_existingMerge);
+
+        if ( ! m_expectFail)
+            mergeBlocks.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+
+        AnnotationTableTest::VerifyCellsWithMergeBlocks (table, mergeBlocks);
+
+        ExpectedAspectCounts expectedCounts (0, 0, 0, (uint32_t) mergeBlocks.size());
+        expectedCounts.VerifyCounts(table);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_AboveLeft)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (0, 0);
+    uint32_t                    rowSpan = 2;
+    uint32_t                    colSpan = 2;
+
+    //       0     1     2     3             0     1     2     3             0     1     2     3
+    //    |-----------------------|  +    |-----------------------|  =    |-----------------------|
+    //  0 |     |     |     |     |  +  0 |origin 0,0 |     |     |  =  0 |           |     |     |
+    //    |-----+-----+-----+-----|  +    |span   2,2 +-----+-----|  =    |   new     +-----+-----|
+    //  1 |     |     |     |     |  +  1 |           |     |     |  =  1 |           |     |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  2 |     |           |     |  +  2 |     |     |     |     |  =  2 |     |           |     |
+    //    |-----+    old    +-----|  +    |-----+-----+-----+-----|  =    |-----+    old    +-----|
+    //  3 |     |           |     |  +  3 |     |     |     |     |  =  3 |     |           |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, false, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_AboveRight)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (0, 2);
+    uint32_t                    rowSpan = 2;
+    uint32_t                    colSpan = 2;
+
+    //       0     1     2     3            0     1     2     3              0     1     2     3  
+    //    |-----------------------|  +    |-----------------------|  =    |-----------------------|
+    //  0 |     |     |     |     |  +  0 |     |     |origin 0,2 |  =  0 |     |     |           |
+    //    |-----+-----+-----+-----|  +    |-----+-----+span   2,2 |  =    |-----+-----+    new    |
+    //  1 |     |     |     |     |  +  1 |     |     |           |  =  1 |     |     |           |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  2 |     |           |     |  +  2 |     |     |     |     |  =  2 |     |           |     |
+    //    |-----+    old    +-----|  +    |-----+-----+-----+-----|  =    |-----+    old    +-----|
+    //  3 |     |           |     |  +  3 |     |     |     |     |  =  3 |     |           |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, false, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_ConsumedLeft)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (0, 0), 1, 2);
+    AnnotationTableCellIndex    cellIndex (0, 0);
+    uint32_t                    rowSpan = 1;
+    uint32_t                    colSpan = 3;
+
+    //       0     1     2     3            0     1     2     3              0     1     2     3  
+    //    |-----------------------|  +    |-----------------------|  =    |-----------------------|
+    //  0 |    old    |     |     |  +  0 |       new       |     |  =  0 |     consumed    |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  1 |     |     |     |     |  +  1 |     |     |     |     |  =  1 |     |     |     |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  2 |     |     |     |     |  +  2 |     |     |     |     |  =  2 |     |     |     |     |
+    //    |-----+-----+-----|-----|  =    |-----+-----+-----|-----|       |-----+-----+-----|-----|
+    //  3 |     |     |     |     |  +  3 |     |     |     |     |  =  3 |     |     |     |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, false, true);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_ConsumedRight)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (1, 1), 1, 2);
+    AnnotationTableCellIndex    cellIndex (1, 0);
+    uint32_t                    rowSpan = 1;
+    uint32_t                    colSpan = 3;
+
+    //       0     1     2     3            0     1     2     3              0     1     2     3  
+    //    |-----------------------|  +    |-----------------------|  =    |-----------------------|
+    //  0 |     |     |     |     |  +  0 |     |     |     |     |  =  0 |     |     |     |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  1 |     |    old    |     |  +  1 |       new       |     |  =  1 |     consumed    |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  2 |     |     |     |     |  +  2 |     |     |     |     |  =  2 |     |     |     |     |
+    //    |-----+-----+-----|-----|  =    |-----+-----+-----|-----|       |-----+-----+-----|-----|
+    //  3 |     |     |     |     |  +  3 |     |     |     |     |  =  3 |     |     |     |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, false, true);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_ConsumedFromAbove)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (0, 1);
+    uint32_t                    rowSpan = 4;
+    uint32_t                    colSpan = 2;
+
+    //       0     1     2     3            0     1     2     3              0     1     2     3  
+    //    |-----------------------|  +    |-----------------------|  =    |-----------------------|
+    //  0 |     |     |     |     |  +  0 |     |           |     |  =  0 |     |           |     |
+    //    |-----+-----+-----+-----|  +    |-----+           +-----|  =    |-----+           +-----|
+    //  1 |     |     |     |     |  +  1 |     |           |     |  =  1 |     |           |     |
+    //    |-----+-----+-----+-----|  +    |-----+    new    +-----|  =    |-----+  consumed +-----|
+    //  2 |     |           |     |  +  2 |     |           |     |  =  2 |     |           |     |
+    //    |-----+    old    +-----|  +    |-----+           +-----|  =    |-----+           +-----|
+    //  3 |     |           |     |  +  3 |     |           |     |  =  3 |     |           |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, false, true);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_ConsumedLeftAndRight)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (2, 0);
+    uint32_t                    rowSpan = 2;
+    uint32_t                    colSpan = 4;
+
+    //       0     1     2     3            0     1     2     3              0     1     2     3  
+    //    |-----------------------|  +    |-----------------------|  =    |-----------------------|
+    //  0 |     |     |     |     |  +  0 |     |     |     |     |  =  0 |     |     |     |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  1 |     |     |     |     |  +  1 |     |     |     |     |  =  1 |     |     |     |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+    //  2 |     |           |     |  +  2 |                       |  =  2 |                       |
+    //    |-----+    old    +-----|  +    |          new          |  =    |       consumed        |
+    //  3 |     |           |     |  +  3 |                       |  =  3 |                       |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, false, true);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_ConsumedFromAboveLeft)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (0, 0);
+    uint32_t                    rowSpan = 4;
+    uint32_t                    colSpan = 3;
+
+    //       0     1     2     3            0     1     2     3              0     1     2     3  
+    //    |-----------------------|  +    |-----------------------|  =    |-----------------------|
+    //  0 |     |     |     |     |  +  0 |                 |     |  =  0 |                 |     |
+    //    |-----+-----+-----+-----|  +    |                 +-----|  =    |                 +-----|
+    //  1 |     |     |     |     |  +  1 |                 |     |  =  1 |                 |     |
+    //    |-----+-----+-----+-----|  +    |       new       +-----|  =    |    consumed     +-----|
+    //  2 |     |           |     |  +  2 |                 |     |  =  2 |                 |     |
+    //    |-----+    old    +-----|  +    |                 +-----|  =    |                 +-----|
+    //  3 |     |           |     |  +  3 |                 |     |  =  3 |                 |     |
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =    |-----+-----+-----+-----|
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, false, true);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_OverlapOneCell)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (0, 2);
+    uint32_t                    rowSpan = 3;
+    uint32_t                    colSpan = 1;
+
+    //       0     1     2     3            0     1     2     3         
+    //    |-----------------------|  +    |-----------------------|  =  
+    //  0 |     |     |     |     |  +  0 |     |     |     |     |  =  
+    //    |-----+-----+-----+-----|  +    |-----+-----+     +-----|  =  
+    //  1 |     |     |     |     |  +  1 |     |     | new |     |  =   FAIL
+    //    |-----+-----+-----+-----|  +    |-----+-----+     +-----|  =   DUE TO
+    //  2 |     |           |     |  +  2 |     |     |     |     |  =   OVERLAP
+    //    |-----+    old    +-----|  +    |-----+-----+-----+-----|  =  
+    //  3 |     |           |     |  +  3 |     |     |     |     |  =  
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =  
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, true, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_OverlapTwoCell)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (0, 1);
+    uint32_t                    rowSpan = 3;
+    uint32_t                    colSpan = 2;
+
+    //       0     1     2     3            0     1     2     3         
+    //    |-----------------------|  +    |-----------------------|  =  
+    //  0 |     |     |     |     |  +  0 |     |           |     |  =  
+    //    |-----+-----+-----+-----|  +    |-----+           +-----|  =  
+    //  1 |     |     |     |     |  +  1 |     |    new    |     |  =   FAIL
+    //    |-----+-----+-----+-----|  +    |-----+           +-----|  =   DUE TO
+    //  2 |     |           |     |  +  2 |     |           |     |  =   OVERLAP
+    //    |-----+    old    +-----|  +    |-----+-----+-----+-----|  =  
+    //  3 |     |           |     |  +  3 |     |     |     |     |  =  
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =  
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, true, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_OverlapAcrossTop)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (2, 0);
+    uint32_t                    rowSpan = 1;
+    uint32_t                    colSpan = 4;
+
+    //       0     1     2     3            0     1     2     3         
+    //    |-----------------------|  +    |-----------------------|  =  
+    //  0 |     |     |     |     |  +  0 |     |     |     |     |  =  
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =  
+    //  1 |     |     |     |     |  +  1 |     |     |     |     |  =   FAIL
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =   DUE TO
+    //  2 |     |           |     |  +  2 |          new          |  =   OVERLAP
+    //    |-----+    old    +-----|  +    |-----+-----+-----+-----|  =  
+    //  3 |     |           |     |  +  3 |     |     |     |     |  =  
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =  
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, true, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, MergeCellsWithExisting_OverlapAcrossBottom)
+    {
+    MergeDescr                  old (AnnotationTableCellIndex (2, 1), 2, 2);
+    AnnotationTableCellIndex    cellIndex (3, 0);
+    uint32_t                    rowSpan = 1;
+    uint32_t                    colSpan = 4;
+
+    //       0     1     2     3            0     1     2     3         
+    //    |-----------------------|  +    |-----------------------|  =  
+    //  0 |     |     |     |     |  +  0 |     |     |     |     |  =  
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =  
+    //  1 |     |     |     |     |  +  1 |     |     |     |     |  =   FAIL
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =   DUE TO
+    //  2 |     |           |     |  +  2 |     |     |     |     |  =   OVERLAP
+    //    |-----+    old    +-----|  +    |-----+-----+-----+-----|  =  
+    //  3 |     |           |     |  +  3 |          new          |  =  
+    //    |-----+-----+-----+-----|  +    |-----+-----+-----+-----|  =  
+
+    MergeCellsWithExistingAction   testAction (old, cellIndex, rowSpan, colSpan, true, false);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct DeleteMergedCellsAction : AnnotationTableTestAction
+{
+public:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class DeleteTarget
+    {
+    Nothing         = 0,    // No delete
+
+    RowBefore       = 1,    // Delete the row preceeding the merge block
+    RowWithRoot     = 2,    // Delete the row containing the root of the merge block
+    RowInterior     = 3,    // Delete a row that intersects the merge block
+    RowAllMerged    = 4,    // Delete all the rows that intersect the merge block
+    RowAfter        = 5,    // Delete the row after the merge block
+
+    ColumnBefore    = 6,    // Delete the column preceeding the merge block
+    ColumnWithRoot  = 7,    // Delete the column containing the root of the merge block
+    ColumnInterior  = 8,    // Delete a column that intersects the merge block
+    ColumnAllMerged = 9,    // Delete all the column that intersect the merge block
+    ColumnAfter     = 10,   // Delete the column after the merge block
+    };
+
+private:
+        DeleteTarget              m_deleteTarget;
+        AnnotationTableCellIndex  m_rootIndex;
+        uint32_t                  m_rowSpan;
+        uint32_t                  m_colSpan;
+        uint32_t                  m_numMergeInstances;
+
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    /* ctor */  DeleteMergedCellsAction (DeleteTarget deleteTarget)
+        :
+        m_deleteTarget (deleteTarget),
+        m_rootIndex (1, 1),
+        m_rowSpan(2),
+        m_colSpan(2),
+        m_numMergeInstances(0)
+        {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+        {
+        uint32_t          numRows  = 4;
+        uint32_t          numCols  = 4;
+
+        // We want a table big enough that the merge block isn't on the edges.  So that
+        // we can insert and delete rows/cols before after the merge.
+
+        //       0     1     2     3  
+        //    |-----------------------|
+        //  0 |     |     |     |     |
+        //    |-----+-----+-----+-----|
+        //  1 |     |           |     |
+        //    |-----+           +-----|
+        //  2 |     |           |     |
+        //    |-----+-----+-----+-----|
+        //  3 |     |     |     |     |
+        //    |-----+-----+-----+-----|
+
+        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
+        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+
+        return true;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        // Merge a block of cells
+        table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan);
+
+        // At this point, the table should have one merge instance
+        m_numMergeInstances = 1;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        bvector<uint32_t>     rowsToDelete;
+        bvector<uint32_t>     colsToDelete;
+        uint32_t              rootRowChange       = 0;
+        uint32_t              rootColChange       = 0;
+        uint32_t              rowSpanChange       = 0;
+        uint32_t              colSpanChange       = 0;
+        uint32_t              numInstancesChange  = 0;
+
+        switch (m_deleteTarget)
+            {
+            case DeleteTarget::Nothing:         { rootRowChange = 0; rowSpanChange = 0; numInstancesChange = 0;                                                                                      break; }
+
+            case DeleteTarget::RowBefore:       { rootRowChange = 1; rowSpanChange = 0; numInstancesChange = 0; rowsToDelete.push_back (m_rootIndex.row - 1);                                        break; }
+            case DeleteTarget::RowWithRoot:     { rootRowChange = 0; rowSpanChange = 1; numInstancesChange = 0; rowsToDelete.push_back (m_rootIndex.row);                                            break; }
+            case DeleteTarget::RowInterior:     { rootRowChange = 0; rowSpanChange = 1; numInstancesChange = 0; rowsToDelete.push_back (m_rootIndex.row + 1);                                        break; }
+            case DeleteTarget::RowAllMerged:    { rootRowChange = 0; rowSpanChange = 2; numInstancesChange = 1; rowsToDelete.push_back (m_rootIndex.row); rowsToDelete.push_back (m_rootIndex.row);  break; }
+            case DeleteTarget::RowAfter:        { rootRowChange = 0; rowSpanChange = 0; numInstancesChange = 0; rowsToDelete.push_back (m_rootIndex.row + m_rowSpan);                                break; }
+
+            case DeleteTarget::ColumnBefore:    { rootColChange = 1; colSpanChange = 0; numInstancesChange = 0; colsToDelete.push_back (m_rootIndex.col - 1);                                        break; }
+            case DeleteTarget::ColumnWithRoot:  { rootColChange = 0; colSpanChange = 1; numInstancesChange = 0; colsToDelete.push_back (m_rootIndex.col);                                            break; }
+            case DeleteTarget::ColumnInterior:  { rootColChange = 0; colSpanChange = 1; numInstancesChange = 0; colsToDelete.push_back (m_rootIndex.col + 1);                                        break; }
+            case DeleteTarget::ColumnAllMerged: { rootColChange = 0; colSpanChange = 2; numInstancesChange = 1; colsToDelete.push_back (m_rootIndex.col); colsToDelete.push_back (m_rootIndex.col);  break; }
+            case DeleteTarget::ColumnAfter:     { rootColChange = 0; colSpanChange = 0; numInstancesChange = 0; colsToDelete.push_back (m_rootIndex.col + m_colSpan);                                break; }
+
+            default:                            { FAIL(); }
+            }
+
+        for (uint32_t const& row : rowsToDelete)
+            EXPECT_EQ (SUCCESS, table.DeleteRow (row));
+
+        for (uint32_t const& col : colsToDelete)
+            EXPECT_EQ (SUCCESS, table.DeleteColumn (col));
+
+        m_rootIndex.row     -= rootRowChange;
+        m_rootIndex.col     -= rootColChange;
+        m_rowSpan           -= rowSpanChange;
+        m_colSpan           -= colSpanChange;
+        m_numMergeInstances -= numInstancesChange;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        bvector <AnnotationTableTest::MergeDescr> mergeBlocks;
+
+        if (1 == m_numMergeInstances)
+            mergeBlocks.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+
+        AnnotationTableTest::VerifyCellsWithMergeBlocks (table, mergeBlocks);
+
+        ExpectedAspectCounts expectedCounts (0, 0, 0, (uint32_t) mergeBlocks.size());
+        expectedCounts.VerifyCounts(table);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_Nothing)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::Nothing);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowBefore)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowBefore);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowWithRoot)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowWithRoot);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowInterior)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowInterior);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowAllMerged)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowAllMerged);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowAfter)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowAfter);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnBefore)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnBefore);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnWithRoot)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnWithRoot);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnInterior)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnInterior);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnAllMerged)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnAllMerged);
+    DoModifyTableTest (testAction);
+    }
+
+TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnAfter)
+    {
+    DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnAfter);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct InsertMergedCellsAction : AnnotationTableTestAction
+{
+public:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class InsertTarget
+    {
+    Nothing         = 0,    // No delete
+
+    RowBefore       = 1,    // Insert a row before the merge block
+    RowJustBefore   = 2,    // Insert a row immediately before the rootIndex of the merge block
+    RowInterior     = 3,    // Insert a row that intersects the merge block
+    RowJustAfter    = 4,    // Insert a row immediately after the last row of the merge block
+    RowAfter        = 5,    // Insert a row after the merge block
+
+    ColumnBefore    = 6,    // Insert a column before the merge block
+    ColumnJustBefore= 7,    // Insert a column immediately before the rootIndex of the merge block
+    ColumnInterior  = 8,    // Insert a column that intersects the merge block
+    ColumnJustAfter = 9,    // Insert a column immediately after the last column of the merge block
+    ColumnAfter     = 10,   // Insert a column after the merge block
+    };
+
+private:
+        InsertTarget                                m_insertTarget;
+        AnnotationTableCellIndex                    m_rootIndex;
+        uint32_t                                    m_rowSpan;
+        uint32_t                                    m_colSpan;
+        bvector <AnnotationTableTest::MergeDescr>   m_expectedMerges;
+
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    /* ctor */  InsertMergedCellsAction (InsertTarget insertTarget)
+        :
+        m_insertTarget (insertTarget),
+        m_rootIndex (1, 1),
+        m_rowSpan(2),
+        m_colSpan(2)
+        {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+        {
+        uint32_t          numRows  = 4;
+        uint32_t          numCols  = 4;
+
+        // We want a table big enough that the merge block isn't on the edges.  So that
+        // we can insert and delete rows/cols before after the merge.
+
+        //       0     1     2     3  
+        //    |-----------------------|
+        //  0 |     |     |     |     |
+        //    |-----+-----+-----+-----|
+        //  1 |     |           |     |
+        //    |-----+           +-----|
+        //  2 |     |           |     |
+        //    |-----+-----+-----+-----|
+        //  3 |     |     |     |     |
+        //    |-----+-----+-----+-----|
+
+        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
+        table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
+
+        for (uint32_t iRow = 0; iRow < table->GetRowCount(); ++iRow)
+            table->GetRow(iRow)->SetHeight(10.0);
+
+        return true;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        // Merge a block of cells
+        table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        switch (m_insertTarget)
+            {
+            case InsertTarget::Nothing:
+                {
+                // Do nothing.
+
+                // Expect no change to the existing merge.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+                break;
+                }
+            case InsertTarget::RowBefore:
+                {
+                // Add the row before the row that's above the merge.
+                table.InsertRow (m_rootIndex.row - 1, TableInsertDirection::Before);
+
+                // Expect the merge to move down by one row.
+                AnnotationTableCellIndex rootIndex (m_rootIndex.row + 1, m_rootIndex.col);
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (rootIndex, m_rowSpan, m_colSpan));
+                break;
+                }
+            case InsertTarget::RowJustBefore:
+                {
+                // Add the row immediately before the merge.
+                table.InsertRow (m_rootIndex.row, TableInsertDirection::Before);
+
+                // Expect a new merge since the cells were merged in the seed row.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, 1, m_colSpan));
+
+                // Also expect the original merge to move down by one row.
+                AnnotationTableCellIndex rootIndex (m_rootIndex.row + 1, m_rootIndex.col);
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (rootIndex, m_rowSpan, m_colSpan));
+                break;
+                }
+            case InsertTarget::RowInterior:
+                {
+                // Add the row within the merge.
+                table.InsertRow (m_rootIndex.row, TableInsertDirection::After);
+
+                // Expect the merge to grow by one row.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan+1, m_colSpan));
+                break;
+                }
+            case InsertTarget::RowJustAfter:
+                {
+                // Add the row immediately after the merge.
+                table.InsertRow (m_rootIndex.row + m_rowSpan - 1, TableInsertDirection::After);
+
+                // Expect no change to the original merge.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+
+                // Also expect a new merge since the cells were merged in the seed row.
+                AnnotationTableCellIndex rootIndex (m_rootIndex.row + m_rowSpan, m_rootIndex.col);
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (rootIndex, 1, m_colSpan));
+                break;
+                }
+            case InsertTarget::RowAfter:
+                {
+                // Add the row after the row that's past the merge.
+                table.InsertRow (m_rootIndex.row + m_rowSpan, TableInsertDirection::After);
+
+                // Expect no change to the merge.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+                break;
+                }
+            case InsertTarget::ColumnBefore:
+                {
+                // Add a column before the column that's above the merge.
+                table.InsertColumn (m_rootIndex.col - 1, TableInsertDirection::Before);
+
+                // Expect the merge to move right by one column.
+                AnnotationTableCellIndex rootIndex (m_rootIndex.row, m_rootIndex.col + 1);
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (rootIndex, m_rowSpan, m_colSpan));
+                break;
+                }
+            case InsertTarget::ColumnJustBefore:
+                {
+                // Add a column immediately before the merge.
+                table.InsertColumn (m_rootIndex.col, TableInsertDirection::Before);
+
+                // Expect a new merge since the cells were merged in the seed column.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, 1));
+
+                // Also expect the original merge to move right by one column.
+                AnnotationTableCellIndex rootIndex (m_rootIndex.row, m_rootIndex.col + 1);
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (rootIndex, m_rowSpan, m_colSpan));
+                break;
+                }
+            case InsertTarget::ColumnInterior:
+                {
+                // Add the row within the merge.
+                table.InsertColumn (m_rootIndex.col, TableInsertDirection::After);
+
+                // Expect the merge to grow by one column.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan+1));
+                break;
+                }
+            case InsertTarget::ColumnJustAfter:
+                {
+                // Add a column immediately after the merge.
+                table.InsertColumn (m_rootIndex.col + m_colSpan - 1, TableInsertDirection::After);
+
+                // Expect no change to the original merge.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+
+                // Also expect a new merge since the cells were merged in the seed row.
+                AnnotationTableCellIndex rootIndex (m_rootIndex.row, m_rootIndex.col + m_colSpan);
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (rootIndex, m_rowSpan, 1));
+                break;
+                }
+            case InsertTarget::ColumnAfter:
+                {
+                // Add the row after the row that's past the merge.
+                table.InsertColumn (m_rootIndex.col + m_colSpan, TableInsertDirection::After);
+
+                // Expect no change to the merge.
+                m_expectedMerges.push_back (AnnotationTableTest::MergeDescr (m_rootIndex, m_rowSpan, m_colSpan));
+                break;
+                }
+            default:
+                {
+                FAIL();
+                }
+            }
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        AnnotationTableTest::VerifyCellsWithMergeBlocks (table, m_expectedMerges);
+
+        ExpectedAspectCounts expectedCounts (table.GetRowCount(), 0, 0, (uint32_t) m_expectedMerges.size());
+        expectedCounts.VerifyCounts(table);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_Nothing)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::Nothing);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_RowBefore)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::RowBefore);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_RowJustBefore)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::RowJustBefore);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_RowInterior)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::RowInterior);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_RowJustAfter)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::RowJustAfter);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_RowAfter)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::RowAfter);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnBefore)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::ColumnBefore);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnJustBefore)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::ColumnJustBefore);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnInterior)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::ColumnInterior);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnJustAfter)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::ColumnJustAfter);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnAfter)
+    {
+    InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::ColumnAfter);
     DoModifyTableTest (testAction);
     }
 

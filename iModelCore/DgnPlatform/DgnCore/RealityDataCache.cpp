@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/HttpHandler.h>
+#include <DgnPlatform/HttpHandler.h>
 
 #ifndef BENTLEY_WINRT
     #include <curl/curl.h>
