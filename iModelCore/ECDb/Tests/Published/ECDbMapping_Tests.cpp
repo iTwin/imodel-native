@@ -1216,11 +1216,11 @@ TEST_F(ECDbMappingTestFixture, TablePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMappingTestFixture, SharedColumnsForSubclassesOnHierarchyAccrossMultipleSchemas)
+TEST_F (ECDbMappingTestFixture, SharedColumnsAcrossMultipleSchemaImports)
     {
     SchemaItem testItem
         ("<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='ReferedSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='Base' isDomainClass='False'>"
         "        <ECCustomAttributes>"
@@ -1234,44 +1234,28 @@ TEST_F (ECDbMappingTestFixture, SharedColumnsForSubclassesOnHierarchyAccrossMult
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P0' typeName='int' />"
         "    </ECClass>"
-        "    <ECClass typeName='Sub1' isDomainClass='True'>"
-        "         <BaseClass>Base</BaseClass>"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub2' isDomainClass='True'>"
-        "         <BaseClass>Sub1</BaseClass>"
-        "        <ECProperty propertyName='P1' typeName='int' />"
-        "        <ECProperty propertyName='P2' typeName='int' />"
-        "    </ECClass>"
-        "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to succeed");
+         "    <ECClass typeName='Sub1' isDomainClass='True'>"
+         "         <BaseClass>Base</BaseClass>"
+         "        <ECProperty propertyName='P1' typeName='int' />"
+         "    </ECClass>"
+         "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to succeed");
 
     SchemaItem secondTestItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='ReferedSchema' version='01.00' prefix='rs' />"
-        "    <ECClass typeName='Sub3' isDomainClass='True'>"
-        "         <BaseClass>rs:Sub2</BaseClass>"
-        "        <ECProperty propertyName='P3' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub4' isDomainClass='True'>"
-        "         <BaseClass>Sub3</BaseClass>"
-        "        <ECProperty propertyName='P4' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='DerivedSub4A' isDomainClass='True'>"
-        "        <BaseClass>Sub3</BaseClass>"
-        "        <ECProperty propertyName='P5' typeName='double' />"
-        "    </ECClass>"
-        "    <ECClass typeName='DerivedSub4B' isDomainClass='True'>"
-        "        <BaseClass>Sub3</BaseClass>"
-        "        <ECProperty propertyName='P6' typeName='string' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECSchemaReference name='ReferredSchema' version='01.00' prefix='rs' />"
+        "    <ECClass typeName='Sub2' isDomainClass='True'>"
+        "         <BaseClass>rs:Sub1</BaseClass>"
+        "        <ECProperty propertyName='P2' typeName='int' />"
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
 
     Utf8String ecdbFilePath;
         {
         ECDb testDb;
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "SharedColumnsForSubclasses.ecdb"));
         bool asserted = false;
-        AssertSchemaImport (asserted, testDb, testItem);
+        AssertSchemaImport(testDb, asserted, testItem, "SharedColumnsForSubclasses.ecdb");
         ASSERT_FALSE (asserted);
         testDb.SaveChanges ();
         ecdbFilePath = testDb.GetDbFileName ();
@@ -1286,109 +1270,13 @@ TEST_F (ECDbMappingTestFixture, SharedColumnsForSubclassesOnHierarchyAccrossMult
 
         //verify Number and Names of Columns in BaseClass
         BeSQLite::Statement statement;
-        const int expectedColCount = 8;
+        const int expectedColCount = 5;
         ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (testDb, "SELECT * FROM rs_Base"));
         ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
         ASSERT_EQ (expectedColCount, statement.GetColumnCount ());
 
         //verify that the columns generated are same as expected
-        Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02sc03sc04sc05";
-        Utf8String actualColumnNames;
-        for (int i = 0; i < expectedColCount; i++)
-            {
-            actualColumnNames.append (statement.GetColumnName (i));
-            }
-        ASSERT_STREQ (expectedColumnNames.c_str (), actualColumnNames.c_str ());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMappingTestFixture, DisableSharedColumnsOnHierarchyAccrossMultipleSchemas)
-    {
-    SchemaItem testItem
-        ("<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='ReferedSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECClass typeName='Base' isDomainClass='False'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                  <Strategy>SharedTable</Strategy>"
-        "                  <Options>SharedColumnsForSubClasses</Options>"
-        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P0' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub1' isDomainClass='True'>"
-        "         <BaseClass>Base</BaseClass>"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub2' isDomainClass='True'>"
-        "         <BaseClass>Sub1</BaseClass>"
-        "        <ECProperty propertyName='P1' typeName='int' />"
-        "        <ECProperty propertyName='P2' typeName='int' />"
-        "    </ECClass>"
-        "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to succeed");
-
-    SchemaItem secondTestItem (
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECSchemaReference name='ReferedSchema' version='01.00' prefix='rs' />"
-        "    <ECClass typeName='Sub3' isDomainClass='True'>"
-        "         <BaseClass>rs:Sub2</BaseClass>"
-        "        <ECProperty propertyName='P3' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub4' isDomainClass='True'>"
-        "         <BaseClass>Sub3</BaseClass>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                  <Options>DisableSharedColumns</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P4' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='DerivedSub4A' isDomainClass='True'>"
-        "        <BaseClass>Sub4</BaseClass>"
-        "        <ECProperty propertyName='P5' typeName='double' />"
-        "    </ECClass>"
-        "    <ECClass typeName='DerivedSub4B' isDomainClass='True'>"
-        "        <BaseClass>Sub4</BaseClass>"
-        "        <ECProperty propertyName='P6' typeName='string' />"
-        "    </ECClass>"
-        "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
-
-    Utf8String ecdbFilePath;
-        {
-        ECDb testDb;
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "SharedColumnsForSubclasses.ecdb"));
-        bool asserted = false;
-        AssertSchemaImport (asserted, testDb, testItem);
-        ASSERT_FALSE (asserted);
-        testDb.SaveChanges ();
-        ecdbFilePath = testDb.GetDbFileName ();
-        }
-
-        ECDb testDb;
-        ASSERT_EQ (BE_SQLITE_OK, testDb.OpenBeSQLiteDb (ecdbFilePath.c_str (), ECDb::OpenParams (Db::OpenMode::ReadWrite)));
-
-        bool asserted = false;
-        AssertSchemaImport (asserted, testDb, secondTestItem);
-        ASSERT_FALSE (asserted);
-
-        //verify Number and Names of Columns in BaseClass
-        BeSQLite::Statement statement;
-        const int expectedColCount = 8;
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (testDb, "SELECT * FROM rs_Base"));
-        ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
-        ASSERT_EQ (expectedColCount, statement.GetColumnCount ());
-
-        //verify that the columns generated are same as expected
-        Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02sc03P4sc04";
+        Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02";
         Utf8String actualColumnNames;
         for (int i = 0; i < expectedColCount; i++)
             {

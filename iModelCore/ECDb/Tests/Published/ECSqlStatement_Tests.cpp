@@ -1069,6 +1069,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateTest)
     // Create and populate a sample project
     ECDbR ecdb = SetupECDb("PolymorphicUpdateTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
     PopulateTestDb(ecdb);
+    ecdb.SaveChanges();
 
     //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
     ECSqlStatement stmt;
