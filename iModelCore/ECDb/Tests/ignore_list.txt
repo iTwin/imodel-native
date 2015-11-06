@@ -25,3 +25,7 @@ ECSqlStatementTestFixture.PolymorphicUpdateTest
 JsonUpdaterTests.UpdateRelationshipProperty
 
 ECDbInstances.UpdateRelationshipProperty # notified Raman
+
+#TFS333030 to address these
+ECDbMappingTestFixture.SharedColumnsForSubclassesOnHierarchyAccrossMultipleSchemas
+ECDbMappingTestFixture.DisableSharedColumnsOnHierarchyAccrossMultipleSchemas
