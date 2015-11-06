@@ -2892,24 +2892,30 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "    </ECClass>"
             "</ECSchema>", true, "");
         
+        ECClassId sub3ClassId = ECClass::UNSET_ECCLASSID;
+        Utf8String ecdbFilePath;
+
+        {
         ECDb ecdb;
         bool asserted = false;
         AssertSchemaImport(ecdb, asserted, testItem, "userdefinedindextest.ecdb");
         ASSERT_FALSE(asserted);
-
-        ECClassId sub3ClassId = ecdb.Schemas().GetECClassId("TestSchema", "Sub3");
+        ecdb.SaveChanges();
+        ecdbFilePath = ecdb.GetDbFileName();
+        sub3ClassId = ecdb.Schemas().GetECClassId("TestSchema", "Sub3");
 
         AssertIndex(ecdb, "uix_base_code", true, "ts_Base", {"Code"});
 
         Utf8String indexWhereClause;
         indexWhereClause.Sprintf("ECClassId=%lld", sub3ClassId);
         AssertIndex(ecdb, "uix_sub3_prop", true, "ts_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
-
-        ecdb.SaveChanges();
-        ecdb.ClearECDbCache();
+        }
 
         //after second import new subclass in hierarchy must be reflected by indices
-        asserted = false;
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+
+        bool asserted = false;
         AssertSchemaImport(asserted, ecdb, secondSchemaTestItem);
         ASSERT_FALSE(asserted);
 
@@ -2918,6 +2924,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         
         //This index must include the new subclass Sub4
         ECClassId sub4ClassId = ecdb.Schemas().GetECClassId("TestSchema2", "Sub4");
+        Utf8String indexWhereClause;
         indexWhereClause.Sprintf("ECClassId=%lld OR ECClassId=%lld", sub3ClassId, sub4ClassId);
         AssertIndex(ecdb, "uix_sub3_prop", true, "ts_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
         }
