@@ -1306,13 +1306,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnsForSubclassesOnHierarchyAccrossMult
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to succeed");
 
-    ECDb testDb;
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "SharedColumnsForSubclasses.ecdb"));
-    bool asserted = false;
-    AssertSchemaImport (asserted, testDb, testItem);
-    ASSERT_FALSE (asserted);
-
-    SchemaItem derivedItem(
+    SchemaItem secondTestItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ReferedSchema' version='01.00' prefix='rs' />"
@@ -1334,24 +1328,39 @@ TEST_F (ECDbMappingTestFixture, SharedColumnsForSubclassesOnHierarchyAccrossMult
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
 
-    AssertSchemaImport (asserted, testDb, derivedItem);
-    ASSERT_FALSE (asserted);
-
-    //verify Number and Names of Columns in BaseClass
-    BeSQLite::Statement statement;
-    const int expectedColCount = 8;
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (testDb, "SELECT * FROM rs_Base"));
-    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
-    ASSERT_EQ (expectedColCount, statement.GetColumnCount ());
-
-    //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02sc03sc04sc05";
-    Utf8String actualColumnNames;
-    for (int i = 0; i < expectedColCount; i++)
+    Utf8String ecdbFilePath;
         {
-        actualColumnNames.append (statement.GetColumnName (i));
+        ECDb testDb;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "SharedColumnsForSubclasses.ecdb"));
+        bool asserted = false;
+        AssertSchemaImport (asserted, testDb, testItem);
+        ASSERT_FALSE (asserted);
+        testDb.SaveChanges ();
+        ecdbFilePath = testDb.GetDbFileName ();
         }
-    ASSERT_STREQ (expectedColumnNames.c_str (), actualColumnNames.c_str ());
+
+        ECDb testDb;
+        ASSERT_EQ (BE_SQLITE_OK, testDb.OpenBeSQLiteDb (ecdbFilePath.c_str (), ECDb::OpenParams (Db::OpenMode::ReadWrite)));
+
+        bool asserted = false;
+        AssertSchemaImport (asserted, testDb, secondTestItem);
+        ASSERT_FALSE (asserted);
+
+        //verify Number and Names of Columns in BaseClass
+        BeSQLite::Statement statement;
+        const int expectedColCount = 8;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (testDb, "SELECT * FROM rs_Base"));
+        ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+        ASSERT_EQ (expectedColCount, statement.GetColumnCount ());
+
+        //verify that the columns generated are same as expected
+        Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02sc03sc04sc05";
+        Utf8String actualColumnNames;
+        for (int i = 0; i < expectedColCount; i++)
+            {
+            actualColumnNames.append (statement.GetColumnName (i));
+            }
+        ASSERT_STREQ (expectedColumnNames.c_str (), actualColumnNames.c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1385,13 +1394,7 @@ TEST_F (ECDbMappingTestFixture, DisableSharedColumnsOnHierarchyAccrossMultipleSc
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to succeed");
 
-    ECDb testDb;
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "DisableSharedColumns.ecdb"));
-    bool asserted = false;
-    AssertSchemaImport (asserted, testDb, testItem);
-    ASSERT_FALSE (asserted);
-
-    SchemaItem derivedItem (
+    SchemaItem secondTestItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1421,24 +1424,39 @@ TEST_F (ECDbMappingTestFixture, DisableSharedColumnsOnHierarchyAccrossMultipleSc
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option SharedColumnForSubClasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
 
-    AssertSchemaImport (asserted, testDb, derivedItem);
-    ASSERT_FALSE (asserted);
-
-    //verify Number and Names of Columns in BaseClass
-    BeSQLite::Statement statement;
-    const int expectedColCount = 8;
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (testDb, "SELECT * FROM rs_Base"));
-    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
-    ASSERT_EQ (expectedColCount, statement.GetColumnCount ());
-
-    //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02sc03P4sc04";
-    Utf8String actualColumnNames;
-    for (int i = 0; i < expectedColCount; i++)
+    Utf8String ecdbFilePath;
         {
-        actualColumnNames.append (statement.GetColumnName (i));
+        ECDb testDb;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "SharedColumnsForSubclasses.ecdb"));
+        bool asserted = false;
+        AssertSchemaImport (asserted, testDb, testItem);
+        ASSERT_FALSE (asserted);
+        testDb.SaveChanges ();
+        ecdbFilePath = testDb.GetDbFileName ();
         }
-    ASSERT_STREQ (expectedColumnNames.c_str (), actualColumnNames.c_str ());
+
+        ECDb testDb;
+        ASSERT_EQ (BE_SQLITE_OK, testDb.OpenBeSQLiteDb (ecdbFilePath.c_str (), ECDb::OpenParams (Db::OpenMode::ReadWrite)));
+
+        bool asserted = false;
+        AssertSchemaImport (asserted, testDb, secondTestItem);
+        ASSERT_FALSE (asserted);
+
+        //verify Number and Names of Columns in BaseClass
+        BeSQLite::Statement statement;
+        const int expectedColCount = 8;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (testDb, "SELECT * FROM rs_Base"));
+        ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+        ASSERT_EQ (expectedColCount, statement.GetColumnCount ());
+
+        //verify that the columns generated are same as expected
+        Utf8String expectedColumnNames = "ECInstanceIdECClassIdP0sc01sc02sc03P4sc04";
+        Utf8String actualColumnNames;
+        for (int i = 0; i < expectedColCount; i++)
+            {
+            actualColumnNames.append (statement.GetColumnName (i));
+            }
+        ASSERT_STREQ (expectedColumnNames.c_str (), actualColumnNames.c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1447,37 +1465,32 @@ TEST_F (ECDbMappingTestFixture, DisableSharedColumnsOnHierarchyAccrossMultipleSc
 TEST_F (ECDbMappingTestFixture, JoinedTableForSubclassesOnHierarchyAccrossMultipleSchemas)
     {
     SchemaItem testItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='ReferedSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='Base' isDomainClass='False'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                  <Strategy>SharedTable</Strategy>"
-    "                  <Options>JoinedTableForSubclasses</Options>"
-    "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='P0' typeName='int' />"
-    "    </ECClass>"
-    "    <ECClass typeName='Sub1' isDomainClass='True'>"
-    "         <BaseClass>Base</BaseClass>"
-    "    </ECClass>"
-    "    <ECClass typeName='Sub2' isDomainClass='True'>"
-    "         <BaseClass>Sub1</BaseClass>"
-    "        <ECProperty propertyName='P1' typeName='int' />"
-    "        <ECProperty propertyName='P2' typeName='int' />"
-    "    </ECClass>"
-    "</ECSchema>", true, "Mapstrategy Option JoinedTableForSubclasses (applied to subclasses) is expected to succeed");
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='ReferedSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Base' isDomainClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>JoinedTableForSubclasses</Options>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P0' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub1' isDomainClass='True'>"
+        "         <BaseClass>Base</BaseClass>"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub2' isDomainClass='True'>"
+        "         <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "        <ECProperty propertyName='P2' typeName='int' />"
+        "    </ECClass>"
+        "</ECSchema>", true, "Mapstrategy Option JoinedTableForSubclasses (applied to subclasses) is expected to succeed");
 
-    ECDb testDb;
-    bool asserted = false;
-    AssertSchemaImport (testDb, asserted, testItem, "joinedtableforsubclasses.ecdb");
-    ASSERT_FALSE (asserted);
-
-    SchemaItem derivedItem(
+    SchemaItem secondTestItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ReferedSchema' version='01.00' prefix='rs' />"
@@ -1491,27 +1504,40 @@ TEST_F (ECDbMappingTestFixture, JoinedTableForSubclassesOnHierarchyAccrossMultip
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option JoinedTableForSubclasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
 
-    AssertSchemaImport (asserted, testDb, derivedItem);
-    ASSERT_FALSE (asserted);
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, testDb.SaveChanges ());
-
-    //verify tables
-    std::vector<Utf8String> tableNames;
+    Utf8String ecdbFilePath;
         {
-        Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (testDb, "SELECT name FROM sqlite_master WHERE name Like 'rs_%' and type='table'"));
-        while (BE_SQLITE_ROW == stmt.Step ())
-            {
-            tableNames.push_back (stmt.GetValueText (0));
-            }
+        ECDb testDb;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "SharedColumnsForSubclasses.ecdb"));
+        bool asserted = false;
+        AssertSchemaImport (asserted, testDb, testItem);
+        ASSERT_FALSE (asserted);
+        testDb.SaveChanges ();
+        ecdbFilePath = testDb.GetDbFileName ();
         }
-        ASSERT_EQ (2, tableNames.size ());
 
-        auto it = std::find (tableNames.begin (), tableNames.end (), "rs_Base");
-        ASSERT_TRUE (it != tableNames.end ()) << "Table ts_Base is expected to exist";
+        ECDb testDb;
+        ASSERT_EQ (BE_SQLITE_OK, testDb.OpenBeSQLiteDb (ecdbFilePath.c_str (), ECDb::OpenParams (Db::OpenMode::ReadWrite)));
 
-        it = std::find (tableNames.begin (), tableNames.end (), "rs_Base_Joined");
-        ASSERT_TRUE (it != tableNames.end ()) << "Table ts_Base_Joined is expected to exist";
+        bool asserted = false;
+        AssertSchemaImport (asserted, testDb, secondTestItem);
+        ASSERT_FALSE (asserted);
+        //verify tables
+        std::vector<Utf8String> tableNames;
+            {
+            Statement stmt;
+            ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (testDb, "SELECT name FROM sqlite_master WHERE name Like 'rs_%' and type='table'"));
+            while (BE_SQLITE_ROW == stmt.Step ())
+                {
+                tableNames.push_back (stmt.GetValueText (0));
+                }
+            }
+            ASSERT_EQ (2, tableNames.size ());
+
+            auto it = std::find (tableNames.begin (), tableNames.end (), "rs_Base");
+            ASSERT_TRUE (it != tableNames.end ()) << "Table ts_Base is expected to exist";
+
+            it = std::find (tableNames.begin (), tableNames.end (), "rs_Base_Joined");
+            ASSERT_TRUE (it != tableNames.end ()) << "Table ts_Base_Joined is expected to exist";
     }
 
 //---------------------------------------------------------------------------------------
