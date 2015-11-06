@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+              >
+
+    <Product Name="BeTestAndroidTested">
+        <Directories DirectoryListName="BeTestAndroidProductDirectoryList" />
+        <SubProduct ProductName="BeTestAndroid"/>
+        <SubPart PartName="RunBeTestAndroid" LibType="Static"/>
+    </Product>
+
+    <Product Name="BeTestAndroid">
+        <Directories DirectoryListName="BeTestAndroidProductDirectoryList" />
+        <SubPart PartName="MakeJUnitTestProject"        LibType="Static"/>
+        <SubPart PartName="BuildApk"                    LibType="Static"/>
+    </Product>
+
+    <Part Name="Prewire" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="Android*">
+        <Bindings>
+            <PublicAPI Domain="BeTestAndroid" />
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildApk" BentleyBuildMakeFile="BuildApk.mke" BMakeOptions="+dBETEST_RUN_TESTS"  ExcludeLibType="Dynamic" OnlyPlatforms="Android*">
+    </Part>
+
+    <Part Name="RunBeTestAndroid" BentleyBuildMakeFile="RunBeTestAndroid.mke" BMakeOptions="+dBETEST_RUN_TESTS" OnlyPlatforms="Android*">
+        <SubProduct ProductName="BeTestAndroid"/>
+    </Part>
+
+    <Part Name="MakeJUnitTestProject" BentleyBuildMakeFile="MakeJUnitTestProject.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="Prewire" LibType="Static"/>
+        <Bindings>
+            <Directory SourceName="Delivery/project" ProductDirectoryName="BeTestAndroidProject" />
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="BeTestAndroidProductDirectoryList" >
+        <ProductDirectory Name="BeTestAndroidProject"             LibType="static" Path="project"/>
+
+        <!-- MakeJUnitTestProject.mke does all workspace directory layout explicitly. We don't use the product directory for any layout. -->
+        <ProductDirectory Name="PublicAPI"                          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"                      LibType="static" Deliver="false"/>
+        <ProductDirectory Name="Libs"                               LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"            LibType="static" Deliver="false"/>
+
+        <ProductDirectory Name="GeomNativeAssemblies"               LibType="static" Deliver="false"/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="ECSchemas"                          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"                LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BeCurlAssemblies"                   LibType="static" Deliver="false"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts"         LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformFont"                    LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnViewDecorators"                  LibType="static" Deliver="false"/>
+        <ProductDirectory Name="PPNativeAssemblies"                 LibType="static" Deliver="false"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"           LibType="static" Deliver="false"/>
+        <ProductDirectory Name="sqlang"                             LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnClientFxNativeAssemblies"          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="WSClientAssemblies"                 LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnClientSdkIncludeDirectory"       LibType="static" Deliver="false"/>
+
+    </ProductDirectoryList>
+
+</BuildContext>
