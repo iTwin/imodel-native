@@ -175,6 +175,9 @@
     <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECDbJoinedTable_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
     <ClCompile Include="Published\ECDbSql_Test.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>

@@ -151,7 +151,16 @@ public:
     bool IsParentOfJoinedTable() const;
     IClassMap const* FindRootOfJoinedTable() const;
     const std::set<ECDbSqlTable const*> GetJoinedTables() const;
-
+    ECDbSqlTable& GetRootTable() const
+        {
+        if (IsJoinedTable())
+            {
+            auto root = FindRootOfJoinedTable();
+            BeAssert(root != nullptr && "This should never be null");
+            return root->GetTable();           
+            }
+        return GetTable();
+        }
     PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.

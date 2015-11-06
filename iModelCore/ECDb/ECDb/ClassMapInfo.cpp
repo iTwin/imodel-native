@@ -163,7 +163,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         parentClassMap = baseClassMaps[0];
 
     ECClassCR parentClass = parentClassMap->GetClass();
-
+    //ECDB_ISSUE: Following does not work accross two schema imports. as schema import context is reset there for userstraget come empty - Affan   
     UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClass);
     if (parentUserStrategy == nullptr)
         {
@@ -180,14 +180,15 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
     if (polymorphicSharedTableClassMaps.size() == 1)
         {
         m_parentClassMap = parentClassMap;
-        BeAssert(parentClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentClassMap->GetMapStrategy().AppliesToSubclasses ());
+        BeAssert(parentClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentClassMap->GetMapStrategy().AppliesToSubclasses());
 
         ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
-        if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) && 
-                (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) || 
-                 Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
+        if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) &&
+            (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) ||
+                Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
             options = ECDbMapStrategy::Options::SharedColumns;
 
+    #if 0 //Options are not inherited accross multiple schema sessions
         if (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses))
             {
             options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
@@ -195,6 +196,17 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             if (!m_parentClassMap->GetTable().GetName().EndsWithI(TABLESUFFIX_JOINEDTABLE))
                 m_tableName.append(TABLESUFFIX_JOINEDTABLE);
             }
+    #endif
+
+        if (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses)
+            || parentClassMap->IsJoinedTable() || parentClassMap->IsParentOfJoinedTable())
+            {
+            options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
+            m_tableName = m_parentClassMap->GetTable().GetName();
+            if (!m_parentClassMap->GetTable().GetName().EndsWithI(TABLESUFFIX_JOINEDTABLE))
+                m_tableName.append(TABLESUFFIX_JOINEDTABLE);
+            }
+
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, true);
         }
 

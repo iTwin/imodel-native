@@ -238,7 +238,6 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
             }
         }
 
-
     auto classMapPtr = ClassMapFactory::Load (mapStatus, ecClass, *this);
     if (classMapPtr != nullptr)
         {
@@ -689,14 +688,17 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (ECClassCP ecClass : classes)
         {
-        if (ClassMap::IsAnyClass (*ecClass))
+        if (ClassMap::IsAnyClass(*ecClass))
             return SIZE_MAX;
 
-        IClassMap const* classMap = GetClassMap (*ecClass, false);
-        if (classMap->GetMapStrategy ().IsNotMapped ())
+        IClassMap const* classMap = GetClassMap(*ecClass, false);
+        if (classMap->GetMapStrategy().IsNotMapped())
             continue;
 
-        tables.insert(&classMap->GetTable());
+        if (auto rootMap = classMap->FindRootOfJoinedTable())
+            tables.insert(&rootMap->GetTable());
+        else
+            tables.insert(&classMap->GetTable());
         }
 
     return tables.size();
@@ -1309,13 +1311,21 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
     if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
 
+
     HorizontalPartition const* partition = GetHorizontalPartition(table);
     if (partition == nullptr)
         {
-        BeAssert(false && "Should always find a partition for the given table");
-        return ERROR;
-        }
+        if (!GetVerticalPartitions().empty())
+            {
+            partition = GetHorizontalPartition(GetVerticalPartitions().back().GetTable());
+            }
 
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            return ERROR;
+            }
+        }
     NativeSqlBuilder classIdColSql;
     if (fullyQualifyColumnName)
         {

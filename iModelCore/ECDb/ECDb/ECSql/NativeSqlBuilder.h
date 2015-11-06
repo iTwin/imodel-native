@@ -101,6 +101,13 @@ struct NativeSqlBuilder
     NativeSqlBuilder& Append (UnarySqlOperator op, bool appendTrailingSpace = true);
     //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
     NativeSqlBuilder& AppendParameter (Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex);
+    NativeSqlBuilder& ImportParameters(NativeSqlBuilder const& sqlBuilder)
+        {
+        if (this != &sqlBuilder)
+            m_parameterIndexMappings = sqlBuilder.m_parameterIndexMappings;
+
+        return *this;
+        } 
     //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
     NativeSqlBuilder& AppendParameter (Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex);
     NativeSqlBuilder& Append (ECN::ECClassId ecClassId);
