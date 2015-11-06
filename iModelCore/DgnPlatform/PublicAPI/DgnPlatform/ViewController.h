@@ -157,6 +157,7 @@ protected:
     friend struct  PhysicalRedlineViewController;
     friend struct  IACSManager;
     friend struct  ToolAdmin;
+    friend struct  ViewDefinition;
 
     DgnDbR         m_dgndb;
     ViewFlags      m_viewFlags;

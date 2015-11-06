@@ -226,6 +226,7 @@ DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
 DGNPLATFORM_TYPEDEFS (RenderMaterial)
 DGNPLATFORM_TYPEDEFS (RenderMaterialMap)
+DGNPLATFORM_TYPEDEFS (ViewDefinition)
 DGNPLATFORM_TYPEDEFS (ImageBuffer)
 
 /** @endcond */
@@ -260,6 +261,7 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnAuthority)
 DGNPLATFORM_REF_COUNTED_PTR (RenderMaterial)
 DGNPLATFORM_REF_COUNTED_PTR (RenderMaterialMap)
 DGNPLATFORM_REF_COUNTED_PTR (ImageBuffer)
+DGNPLATFORM_REF_COUNTED_PTR (ViewDefinition)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
@@ -310,6 +312,7 @@ BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationFrameStyleId, DgnElementId) //!< An eleme
 BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationLeaderStyleId, DgnElementId) //!< An element Id that refers to an AnnotationLeaderStyle. @ingroup Annotations
 BEBRIEFCASEBASED_ID_SUBCLASS(TextAnnotationSeedId, DgnElementId) //!< An element Id that refers to an TextAnnotationSeed. @ingroup Annotations
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
+BEBRIEFCASEBASED_ID_SUBCLASS(WIPViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)

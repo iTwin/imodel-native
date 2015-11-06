@@ -1029,6 +1029,62 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Value" displayLabel="" typeName="string" />
     </ECClass>
 
+    <ECClass typeName="ViewDefinition" isDomainClass="True">
+        <!-- abstract -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+        <ECProperty propertyName="Source" displayLabel="Source" typeName="int" />
+        <ECProperty propertyName="BaseModelId" displayLabel="Base Model" typeName="long">
+            <!-- Foreign key relationship: ViewUsesBaseModel.ModelId -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <!-- TODO: Why is the target model list in the settings table rather than here, other than because it is a list? -->
+    </ECClass>
+    <ECRelationshipClass typeName="ViewUsesBaseModel" description="Associates a view with its base model" isDomainClass="True" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="True">
+            <Class class="Model" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="True">
+            <Class class="ViewDefinition">
+                <Key>
+                    <Property name="BaseModelId" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="PhysicalViewDefinition" isDomainClass="True">
+        <!-- abstract -->
+        <BaseClass>ViewDefinition</BaseClass>
+    </ECClass>
+    <ECClass typeName="CameraViewDefinition" isDomainClass="True">
+        <BaseClass>PhysicalViewDefinition</BaseClass>
+    </ECClass>
+    <ECClass typeName="ViewDefinition2d" isDomainClass="True">
+        <!-- abstract -->
+        <BaseClass>ViewDefinition</BaseClass>
+    </ECClasS>
+    <ECClass typeName="DrawingViewDefinition" isDomainClass="True">
+        <BaseClass>ViewDefinition2d</BaseClass>
+    </ECClass>
+    <ECClass typeName="SheetViewDefinition" isDomainClass="True">
+        <BaseClass>ViewDefinition2d</BaseClass>
+    </ECClass>
+    <ECClass typeName="RedlineViewDefinition" isDOmainClass="True">
+        <BaseClass>SheetViewDefinition</BaseClass>
+    </ECClass>
+
     <ECClass typeName="Style" description="Styles help define properties and standards shared among many elements, such as formatting peroperties for text.">
         <!-- WIP convert all to elements. -->
         <ECCustomAttributes>

@@ -484,6 +484,14 @@ DgnAuthority::Code LightDefinition::CreateLightDefinitionCode(Utf8StringCR name)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code ViewDefinition::CreateCode(Utf8StringCR name)
+    {
+    return createResourceCode(name, DGN_CLASSNAME_ViewDefinition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::Code DgnTexture::CreateTextureCode(Utf8StringCR name)
