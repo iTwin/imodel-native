@@ -635,24 +635,66 @@ struct DoubleBriefcaseTest : LocksManagerTest
     DgnDbPtr m_dbA;
     DgnDbPtr m_dbB;
 
-    static WCharCP SeedFileName() { return L"ElementsSymbologyByLeveldgn.i.idgndb"; }
-    static DgnModelId Model3dId() { return DgnModelId((uint64_t)2); }
-    static DgnModelId Model2dId() { return DgnModelId((uint64_t)3); }
+    DgnModelId m_modelIds[2];
+    DgnElementId m_elemIds[4];
 
-    static DgnElementId Elem3dId1() { return DgnElementId((uint64_t)8); }
-    static DgnElementId Elem3dId2() { return DgnElementId((uint64_t)9); }
-    static DgnElementId Elem2dId1() { return DgnElementId((uint64_t)11); }
-    static DgnElementId Elem2dId2() { return DgnElementId((uint64_t)12); }
+    static WCharCP SeedFileName() { return L"ElementsSymbologyByLeveldgn.i.idgndb"; }
+
+    DgnModelId Model3dId() { return m_modelIds[0]; }
+    DgnModelId Model2dId() { return m_modelIds[1]; }
+
+    DgnElementId Elem3dId1() { return m_elemIds[0]; } 
+    DgnElementId Elem3dId2() { return m_elemIds[1]; } 
+    DgnElementId Elem2dId1() { return m_elemIds[2]; } 
+    DgnElementId Elem2dId2() { return m_elemIds[3]; } 
 
     DgnModelPtr GetModel(DgnDbR db, bool twoD) { return db.Models().GetModel(twoD ? Model2dId() : Model3dId()); }
     DgnElementCPtr GetElement(DgnDbR db, DgnElementId id) { return db.Elements().GetElement(id); }
+
+    bool LookupElementIds(DgnElementId* ids, DgnModelR model)
+        {
+        model.FillModel();
+        uint32_t nElemsFound = 0;
+        for (auto const& elem : model)
+            {
+            ids[nElemsFound++] = elem.first;
+            if (2 == nElemsFound)
+                return true;
+            }
+
+        return false;
+        }
 
     void SetupDbs()
         {
         m_dbA = SetupDb(L"DbA.dgndb", BeBriefcaseId(1), SeedFileName());
         m_dbB = SetupDb(L"DbB.dgndb", BeBriefcaseId(2), SeedFileName());
+
         ASSERT_TRUE(m_dbA.IsValid());
         ASSERT_TRUE(m_dbB.IsValid());
+
+        // Model + element IDs may vary each time we convert the v8 file...need to look them up.
+        DgnModelId model2d, model3d;
+        for (auto const& entry : m_dbA->Models().MakeIterator())
+            {
+            auto model = m_dbA->Models().GetModel(entry.GetModelId());
+            if (model.IsValid() && !model->IsDictionaryModel())
+                {
+                if (!model3d.IsValid() && LookupElementIds(m_elemIds, *model))
+                    {
+                    model3d = entry.GetModelId();
+                    }
+                else if (!model2d.IsValid() && LookupElementIds(m_elemIds+2, *model))
+                    {
+                    model2d = entry.GetModelId();
+                    break;
+                    }
+                }
+            }
+
+        ASSERT_TRUE(model2d.IsValid() && model3d.IsValid());
+        m_modelIds[0] = model3d;
+        m_modelIds[1] = model2d;
         }
 };
 
