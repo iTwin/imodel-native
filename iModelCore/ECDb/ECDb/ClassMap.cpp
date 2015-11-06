@@ -643,6 +643,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
         std::vector<ECDbSqlColumn const*> totalColumns;
         NativeSqlBuilder whereExpression;
 
+        bset<ECDbSqlTable const*> involvedTables;
         for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
             PropertyMapCP propertyMap = GetPropertyMap(propertyAccessString.c_str());
@@ -672,7 +673,6 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            totalColumns.insert(totalColumns.end(), columns.begin(), columns.end());
             for (ECDbSqlColumn const* column : columns)
                 {
                 if (column->GetPersistenceType() == PersistenceType::Virtual)
@@ -684,6 +684,31 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                     return ERROR;
                     }
 
+                ECDbSqlTable const& table = column->GetTable();
+                if (!involvedTables.empty() && involvedTables.find(&table) == involvedTables.end())
+                    {
+                    if (Enum::Intersects(GetMapStrategy().GetOptions(), Enum::Or(ECDbMapStrategy::Options::JoinedTable, ECDbMapStrategy::Options::ParentOfJoinedTable)))
+                        {
+                        issues.Report(ECDbIssueSeverity::Error,
+                                      "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
+                                      "The properties that make up the index are mapped to different tables because the MapStrategy option 'JoinedTableForSubclasses' is applied to this class hierarchy.",
+                                      i, GetClass().GetFullName());
+                        }
+                    else
+                        {
+                        issues.Report(ECDbIssueSeverity::Error,
+                                      "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
+                                      "The properties that make up the index are mapped to different tables.",
+                                      i, GetClass().GetFullName());
+
+                        BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable MapStrategy option is not applied.");
+                        }
+
+                    return ERROR;
+                    }
+
+                involvedTables.insert(&table);
+                totalColumns.push_back(column);
                 switch (indexInfo->GetWhere())
                     {
                         case EC::ClassIndexInfo::WhereConstraint::NotNull:

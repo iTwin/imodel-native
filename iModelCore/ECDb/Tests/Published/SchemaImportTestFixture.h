@@ -39,8 +39,52 @@ protected:
     static std::vector<IndexInfo> RetrieveIndicesForTable(ECDbCR, Utf8CP tableName);
 
 public:
-    SchemaImportTestFixture() {}
+    SchemaImportTestFixture() : ECDbTestFixture() {}
     virtual ~SchemaImportTestFixture() {}
     };
 
+//=======================================================================================    
+// @bsiclass                                   Krischan.Eberle                  10/15
+//=======================================================================================    
+struct ECDbMappingTestFixture : SchemaImportTestFixture
+    {
+protected:
+    //This is a mirror of the internal MapStrategy used by ECDb and persisted in the DB.
+    //The values can change, so in that case this struct needs to be updated accordingly.
+    struct PersistedMapStrategy
+        {
+        enum class Strategy
+            {
+            NotMapped,
+            OwnTable,
+            SharedTable,
+            ExistingTable,
+
+            ForeignKeyRelationshipInTargetTable = 100,
+            ForeignKeyRelationshipInSourceTable = 101
+            };
+
+        enum class Options
+            {
+            None = 0,
+            SharedColumns = 1,
+            ParentOfJoinedTable = 2,
+            JoinedTable = 4
+            };
+
+        Strategy m_strategy;
+        Options m_options;
+        bool m_appliesToSubclasses;
+
+        PersistedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None), m_appliesToSubclasses(false) {}
+        PersistedMapStrategy(Strategy strategy, Options options, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_appliesToSubclasses(appliesToSubclasses) {}
+        };
+
+    bool TryGetPersistedMapStrategy(PersistedMapStrategy& strategy, ECDbCR ecdb, ECN::ECClassId classId) const;
+
+public:
+    ECDbMappingTestFixture () : SchemaImportTestFixture() {}
+
+    virtual ~ECDbMappingTestFixture() {}
+    };
 END_ECDBUNITTESTS_NAMESPACE

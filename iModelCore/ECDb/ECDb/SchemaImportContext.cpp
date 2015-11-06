@@ -103,16 +103,6 @@ ECDbSqlIndex* SchemaImportECDbMapDb::CreateIndex(ECDbCR ecdb, ECDbSqlTable& tabl
         return nullptr;
         }
 
-    for (auto column : columns)
-        {
-        if (&column->GetTable() != &table)
-            {
-            LOG.errorv("Column '%s.%s' does not exist in table '%s' which index '%s' is been created", column->GetTable().GetName().c_str(), column->GetName().c_str(), table.GetName().c_str(), indexName);
-            BeAssert(false && "Index column must exist in same table on which index is been created.");
-            return nullptr;
-            }
-        }
-
     Utf8String generatedIndexName;
     if (Utf8String::IsNullOrEmpty(indexName))
         {

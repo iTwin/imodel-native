@@ -12,68 +12,6 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//=======================================================================================    
-// @bsiclass                                   Krischan.Eberle                  10/15
-//=======================================================================================    
-struct ECDbMappingTestFixture : SchemaImportTestFixture
-    {
-protected:
-    //This is a mirror of the internal MapStrategy used by ECDb and persisted in the DB.
-    //The values can change, so in that case this struct needs to be updated accordingly.
-    struct PersistedMapStrategy
-        {
-        enum class Strategy
-            {
-            NotMapped,
-            OwnTable,
-            SharedTable,
-            ExistingTable,
-
-            ForeignKeyRelationshipInTargetTable = 100,
-            ForeignKeyRelationshipInSourceTable = 101
-            };
-
-        enum class Options
-            {
-            None = 0,
-            SharedColumns = 1,
-            ParentOfJoinedTable = 2,
-            JoinedTable = 4
-            };
-
-        Strategy m_strategy;
-        Options m_options;
-        bool m_appliesToSubclasses;
-
-        PersistedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None), m_appliesToSubclasses(false) {}
-        PersistedMapStrategy(Strategy strategy, Options options, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_appliesToSubclasses(appliesToSubclasses) {}
-        };
-
-    //---------------------------------------------------------------------------------
-    // @bsimethod                                   Affan.Khan                         02/15
-    //+---------------+---------------+---------------+---------------+---------------+------
-    bool TryGetPersistedMapStrategy(PersistedMapStrategy& strategy, ECDbCR ecdb, ECClassId classId) const
-        {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses FROM ec_ClassMap WHERE ClassId = ?");
-        EXPECT_TRUE(stmt != nullptr);
-
-        stmt->BindInt64(1, classId);
-        if (BE_SQLITE_ROW == stmt->Step())
-            {
-            const PersistedMapStrategy::Strategy strat = (PersistedMapStrategy::Strategy) stmt->GetValueInt(0);
-            const PersistedMapStrategy::Options options = (PersistedMapStrategy::Options) stmt->GetValueInt(1);
-            const bool appliesToSubclasses = stmt->GetValueInt(2) == 1;
-            strategy = PersistedMapStrategy(strat, options, appliesToSubclasses);
-            return true;
-            }
-
-        return false;
-        }
-
-public:
-    virtual ~ECDbMappingTestFixture() {}
-    };
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2789,39 +2727,39 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "    </ECClass>"
             "</ECSchema>", false, "Property in index does not exist"),
 
-                SchemaItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                    "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
-                    "        <ECProperty propertyName='AuthorityId' typeName='long' />"
-                    "        <ECProperty propertyName='Namespace' typeName='string' />"
-                    "        <ECProperty propertyName='Val' typeName='string' />"
-                    "    </ECClass>"
-                    "    <ECClass typeName='Element' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.01.00'>"
-                    "                <MapStrategy>"
-                    "                   <Strategy>SharedTable</Strategy>"
-                    "                   <Options>SharedColumnsForSubclasses</Options>"
-                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                    "                 </MapStrategy>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <IsUnique>True</IsUnique>"
-                    "                       <Name>uix_element_code</Name>"
-                    "                       <Properties>"
-                    "                          <string>Code</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </ClassMap>"
-                    "        </ECCustomAttributes>"
-                    "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                    "    </ECClass>"
-                    "</ECSchema>", false, "Cannot define index on struct prop"),
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
+            "        <ECProperty propertyName='AuthorityId' typeName='long' />"
+            "        <ECProperty propertyName='Namespace' typeName='string' />"
+            "        <ECProperty propertyName='Val' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Element' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumnsForSubclasses</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>True</IsUnique>"
+            "                       <Name>uix_element_code</Name>"
+            "                       <Properties>"
+            "                          <string>Code</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Cannot define index on struct prop"),
 
-                SchemaItem(
+         SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2880,43 +2818,80 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "    </ECClass>"
                 "</ECSchema>", false, "Cannot define index on primitive array prop"),
 
-                SchemaItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                    "    <ECClass typeName='A' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.01.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <IsUnique>True</IsUnique>"
-                    "                       <Name>mypoorlynamedindex</Name>"
-                    "                       <Properties>"
-                    "                          <string>Code</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </ClassMap>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Code' typeName='string'/>"
-                    "    </ECClass>"
-                    "    <ECClass typeName='B' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.01.00'>"
-                    "                 <Indexes>"
-                    "                   <DbIndex>"
-                    "                       <IsUnique>False</IsUnique>"
-                    "                       <Name>mypoorlynamedindex</Name>"
-                    "                       <Properties>"
-                    "                          <string>BB</string>"
-                    "                       </Properties>"
-                    "                   </DbIndex>"
-                    "                 </Indexes>"
-                    "            </ClassMap>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='BB' typeName='string'/>"
-                    "    </ECClass>"
-                    "</ECSchema>", false, "Duplicate indexes")};
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='A' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>True</IsUnique>"
+            "                       <Name>mypoorlynamedindex</Name>"
+            "                       <Properties>"
+            "                          <string>Code</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Code' typeName='string'/>"
+            "    </ECClass>"
+            "    <ECClass typeName='B' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>False</IsUnique>"
+            "                       <Name>mypoorlynamedindex</Name>"
+            "                       <Properties>"
+            "                          <string>BB</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='BB' typeName='string'/>"
+            "    </ECClass>"
+            "</ECSchema>", false, "Duplicate indexes"),
+
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='A' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>JoinedTableForSubclasses</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='AProp' typeName='string'/>"
+            "    </ECClass>"
+            "    <ECClass typeName='B' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>False</IsUnique>"
+            "                       <Name>MyIndex</Name>"
+            "                       <Properties>"
+            "                          <string>AProp</string>"
+            "                          <string>BProp</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <BaseClass>A</BaseClass>"
+            "        <ECProperty propertyName='BProp' typeName='string'/>"
+            "    </ECClass>"
+            "</ECSchema>", false, "Index with properties that map to different tables is not supported")
+        };
 
         AssertSchemaImport(testItems, "userdefinedindextest.ecdb");
         }
