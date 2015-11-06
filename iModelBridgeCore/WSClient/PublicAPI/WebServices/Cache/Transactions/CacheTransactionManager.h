@@ -12,7 +12,7 @@
 #include <WebServices/Cache/Transactions/BeSQLiteDbTransactionHandler.h>
 #include <WebServices/Cache/Transactions/CacheTransaction.h>
 #include <WebServices/Cache/Transactions/ICacheTransactionManager.h>
-#include <MobileDgn/Utils/Threading/WorkerThread.h>
+#include <DgnClientFx/Utils/Threading/WorkerThread.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

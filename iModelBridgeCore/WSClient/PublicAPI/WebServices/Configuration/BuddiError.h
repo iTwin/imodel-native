@@ -9,13 +9,13 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <MobileDgn/Utils/Threading/AsyncError.h>
-#include <MobileDgn/Utils/Http/HttpError.h>
-#include <MobileDgn/Utils/Http/HttpResponse.h>
+#include <DgnClientFx/Utils/Threading/AsyncError.h>
+#include <DgnClientFx/Utils/Http/HttpError.h>
+#include <DgnClientFx/Utils/Http/HttpResponse.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 struct BuddiError;
 typedef BuddiError& BuddiErrorR;

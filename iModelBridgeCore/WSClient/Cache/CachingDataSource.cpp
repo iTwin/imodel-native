@@ -14,7 +14,7 @@
 #include <WebServices/Cache/ServerQueryHelper.h>
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
 #include <WebServices/Cache/Util/FileUtil.h>
-#include <MobileDgn/Utils/Http/HttpStatusHelper.h>
+#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
 
 #include "CacheNavigationTask.h"
 #include "Logging.h"
@@ -26,7 +26,7 @@
 #include "SyncLocalChangesTask.h"
 #include "Util/StringHelper.h"
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define CachedResultsName_Navigation    "CachingDataSource.Navigation"

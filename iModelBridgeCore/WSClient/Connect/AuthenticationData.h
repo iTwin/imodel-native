@@ -12,7 +12,7 @@
 // !!! LEGACY CODE - CONSIDER REVIEWING !!!
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#include <MobileDgn/MobileDgnApplication.h>
+#include <DgnClientFx/DgnClientApp.h>
 
 struct AuthenticationData : NonCopyableClass
     {
