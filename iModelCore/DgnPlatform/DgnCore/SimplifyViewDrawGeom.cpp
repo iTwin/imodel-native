@@ -12,10 +12,9 @@
 * @bsiclass                                                     Brien.Bastings  12/07
 +===============+===============+===============+===============+===============+======*/
 struct Dgn::SimplifyDrawUnClippedProcessor
-    {
-    virtual StatusInt _ProcessUnClipped() { return ERROR; }
-
-    }; // SimplifyDrawUnClippedProcessor
+{
+    virtual StatusInt _ProcessUnClipped() {return ERROR;}
+};
 
 /*=================================================================================**//**
 * @bsiclass
@@ -23,7 +22,6 @@ struct Dgn::SimplifyDrawUnClippedProcessor
 struct FacetClipper : PolyfaceQuery::IClipToPlaneSetOutput
 {
 private:
-
     SimplifyViewDrawGeom&   m_output;
     ClipVectorCP            m_clip;
     bool                    m_triangulate;
@@ -105,22 +103,22 @@ SimplifyViewDrawGeom::SimplifyViewDrawGeom(bool addFacetNormals, bool addFacetPa
     {
     m_context = NULL;
 
-    m_viewFlags.InitDefaults();
-    m_viewFlags.styles = false; // don't want linestyles for range calculation - they're added later.
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    ViewFlags viewFlags;
+    viewFlags.InitDefaults();
+    viewFlags.styles = false; // don't want linestyles for range calculation - they're added later.
+    m_context->SetViewFlags(viewFlags);
+#endif
 
     m_defaultFacetOptions = IFacetOptions::New();
     setDefaultFacetOptions(m_defaultFacetOptions.get(), 0.0, addFacetNormals, addFacetParams);
-
-    m_overrideMatSymb.SetFlags(MATSYMB_OVERRIDE_None);
 
     m_inPatternDraw   = false;
     m_inSymbolDraw    = false;
     m_inTextDraw      = false;
     m_inThicknessDraw = false;
-    m_elementTransformStackIndex = 0;
 
     m_processingMaterialGeometryMap = false;
-    m_elementTransformStackIndex = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -979,6 +977,7 @@ void SimplifyViewDrawGeom::ClipAndProcessText(TextStringCR text, double* zDepth)
     m_context->PopTransformClip();
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1001,8 +1000,6 @@ void SimplifyViewDrawGeom::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, Tran
     BeAssert(!m_inSymbolDraw); // Can't have nested symbols...
 
     AutoRestore <bool> saveInSymbolDraw(&m_inSymbolDraw, true);
-    AutoRestore <ElemMatSymb> saveOutputElemMatSymb(&m_currentMatSymb);
-    AutoRestore <OvrMatSymb> saveOutputOvrMatSymb(&m_overrideMatSymb);
     AutoRestore <ElemMatSymb> saveContextElemMatSymb(m_context->GetElemMatSymb());
     AutoRestore <OvrMatSymb> saveContextOvrMatSymb(m_context->GetOverrideMatSymb());
     AutoRestore <ElemDisplayParams> saveContextDisplayParams(&m_context->GetCurrentDisplayParams());
@@ -1029,6 +1026,7 @@ void SimplifyViewDrawGeom::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, Tran
     m_context->GetDisplayParamsIgnores().Clear();
 #endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
@@ -1462,52 +1460,28 @@ void SimplifyViewDrawGeom::_DrawPointCloud(PointCloudDraw* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_ActivateMatSymb(ElemMatSymbCP matSymb)
-    {
-    BeAssert(m_context);
-
-    m_currentMatSymb = *matSymb;
-    }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2007
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb)
-    {
-    if (NULL == ovrMatSymb)
-        m_overrideMatSymb.SetFlags(MATSYMB_OVERRIDE_None);
-    else
-        m_overrideMatSymb = *ovrMatSymb;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2007
-+---------------+---------------+---------------+---------------+---------------+------*/
 ElemMatSymbR     SimplifyViewDrawGeom::GetCurrentMatSymb(ElemMatSymbR matSymb)
     {
-    matSymb = m_currentMatSymb;
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_Color))
-        matSymb.SetLineColor(ColorDef((m_overrideMatSymb.GetLineColor().GetValue() & 0xffffff) | (matSymb.GetLineColor().GetValue() & 0xff000000)));
+    matSymb = *m_context->GetElemMatSymb();
+    Render::OvrMatSymb ovr =  *m_context->GetOverrideMatSymb();
 
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_ColorTransparency))
-        matSymb.SetLineColor(ColorDef((matSymb.GetLineColor().GetValue() & 0xffffff) | (m_overrideMatSymb.GetLineColor().GetValue() & 0xff000000)));
+    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_Color))
+        matSymb.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (matSymb.GetLineColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_FillColor))
-        matSymb.SetFillColor(ColorDef((m_overrideMatSymb.GetFillColor().GetValue() & 0xffffff) | (matSymb.GetFillColor().GetValue() & 0xff000000)));
+    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_ColorTransparency))
+        matSymb.SetLineColor(ColorDef((matSymb.GetLineColor().GetValue() & 0xffffff) | (ovr.GetLineColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_FillColorTransparency))
-        matSymb.SetFillColor(ColorDef((matSymb.GetFillColor().GetValue() & 0xffffff) | (m_overrideMatSymb.GetFillColor().GetValue() & 0xff000000)));
+    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_FillColor))
+        matSymb.SetFillColor(ColorDef((ovr.GetFillColor().GetValue() & 0xffffff) | (matSymb.GetFillColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_Style))
-        matSymb.SetRasterPattern(m_overrideMatSymb.GetRasterPattern());
+    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_FillColorTransparency))
+        matSymb.SetFillColor(ColorDef((matSymb.GetFillColor().GetValue() & 0xffffff) | (ovr.GetFillColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_RastWidth))
-        matSymb.SetWidth(m_overrideMatSymb.GetWidth());
+    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_RastWidth))
+        matSymb.SetWidth(ovr.GetWidth());
 
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_RenderMaterial))
-        matSymb.SetMaterial(m_overrideMatSymb.GetMaterial().get());
+    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_RenderMaterial))
+        matSymb.SetMaterial(ovr.GetMaterial().get());
 
     return matSymb;
     }
@@ -1571,7 +1545,7 @@ MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial() const
     if (m_inTextDraw)
         return NULL;
 
-    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_RenderMaterial))
+    if (0 != (m_overrideMatSymb.GetFlags() & OvrMatSymb::FLAGS_RenderMaterial))
         return m_overrideMatSymb.GetMaterial();
     
     return m_currentMatSymb.GetMaterial();
@@ -2084,8 +2058,7 @@ void    SimplifyViewDrawGeom::StrokeGeometryMap(CurveVectorCR curves)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SimplifyViewDrawGeom::GetElementToWorldTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromIndex(transform, m_elementTransformStackIndex); }
-BentleyStatus SimplifyViewDrawGeom::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, m_elementTransformStackIndex); }
+BentleyStatus SimplifyViewDrawGeom::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, 0); }
 
 
 

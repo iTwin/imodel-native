@@ -457,7 +457,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual StatusInt _ConnectRenderTarget();
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
-    DGNPLATFORM_EXPORT virtual uint32_t _GetIndexedLinePattern(int index) const;
     DGNPLATFORM_EXPORT virtual void _GetViewCorners(DPoint3dR low, DPoint3dR high) const;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
     DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(Render::PaintOptions const&);
@@ -480,6 +479,7 @@ public:
     ViewFlagsP GetViewFlagsP () {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
     uintptr_t GetBackDropTextureId() {return _GetBackDropTextureId();}
+    Render::RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
     DGNPLATFORM_EXPORT void GetGridRoundingDistance(DPoint2dR roundingDistance);
@@ -516,7 +516,6 @@ public:
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT StatusInt RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag);
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
-    DGNPLATFORM_EXPORT static uint32_t GetDefaultIndexedLinePattern(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
@@ -546,22 +545,7 @@ public:
     //! @private
     DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
 
-    //! Get the number width in pixels for a line weight value for this DgnViewport. Users select, and elements store a "line weight"
-    //! value in the range of 0 to 31. Users can also specify a mapping from line weight values to pixels as a user preference.
-    //! This mapping can vary from view to view, and for plotting views. This method returns the number of pixels for a given line weight value
-    //! from the mapping table for this DgnViewport.
-    //! @param[in] index the line weight value in the range of 0 to 31.
-    //! @return  the number of pixels for lineWeightValue
-    //! @private
     int GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
-
-    //! Get the 32 bit on-off "line pattern" for a line code value for this DgnViewport. Users select, and elements store a "line code"
-    //! value in the range of 0 to 7. Output devices can change the on-off patterns based on resolution, etc. This method returns the line pattern
-    //! for a given line code value from the mapping table for this DgnViewport.
-    //! @param[in] index a the range of 0 to 7.
-    //! @return  the line pattern for lineCodeValue
-    //! @private
-    uint32_t GetIndexedLinePattern(int index) const {return _GetIndexedLinePattern(index);}
 
     //! Compute the range of the element when displayed in this DgnViewport
     //! @private

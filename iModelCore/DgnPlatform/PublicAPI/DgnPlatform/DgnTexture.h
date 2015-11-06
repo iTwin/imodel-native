@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/DgnCore/DgnTexture.h $
+|     $Source: PublicAPI/DgnPlatform/DgnTexture.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

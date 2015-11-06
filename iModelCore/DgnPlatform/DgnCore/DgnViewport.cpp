@@ -386,7 +386,7 @@ StatusInt DgnViewport::_ConnectRenderTarget()
     if (!m_renderTarget.IsValid())
         return ERROR;
 
-    StatusInt status = m_renderTarget->AssignRenderDevice(_GetRenderDevice());
+    StatusInt status = m_renderTarget->AssignRenderDevice(*this);
     if (SUCCESS == status)
         m_deviceAssigned = true;
 
@@ -561,8 +561,6 @@ ViewportStatus DgnViewport::_SetupFromViewController()
 
     if (SUCCESS != _ConnectRenderTarget())
         return ViewportStatus::InvalidViewport;
-
-    BeAssert(!m_renderTarget.IsValid() || !m_renderTarget->IsDrawActive());
 
     double compressionFraction;
     if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
@@ -925,10 +923,12 @@ ViewportStatus DgnViewport::_Activate(PaintOptions const& opts)
     if (!m_renderTarget.IsValid() || !m_targetParamsSet)
         return  ViewportStatus::ViewNotInitialized;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_renderTarget->AccumulateDirtyRegion(opts.WantAccumulateDirty());
 
     if (SUCCESS != m_renderTarget->BeginDraw(opts.WantEraseBefore()))
         return  ViewportStatus::DrawFailure;
+#endif
 
     return  ViewportStatus::Success;
     }
@@ -948,25 +948,6 @@ int DgnViewport::GetDefaultIndexedLineWidth(int index)
 int DgnViewport::_GetIndexedLineWidth(int index) const
     {
     return DgnViewport::GetDefaultIndexedLineWidth(index);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnViewport::GetDefaultIndexedLinePattern(int index)
-    {
-    if (index < 0 || index > 7)
-        index = 0;
-
-    return s_rasterLinePatterns[index];
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DgnViewport::_GetIndexedLinePattern(int index) const
-    {
-    return DgnViewport::GetDefaultIndexedLinePattern(index);
     }
 
 /*---------------------------------------------------------------------------------**//**

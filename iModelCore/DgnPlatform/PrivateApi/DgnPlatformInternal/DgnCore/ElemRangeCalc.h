@@ -139,7 +139,6 @@ private:
 public:
     RangeGraphic() {}
 
-    void SetViewFlags(ViewFlagsCR viewFlags) {m_viewFlags = viewFlags; m_viewFlags.SetRenderMode(DgnRenderMode::Wireframe);}
     ElemRangeCalc* GetElemRange() {return &m_elRange;}
 
     void Init(ViewContextP context);

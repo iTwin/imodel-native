@@ -362,6 +362,7 @@ RegionGraphicsDrawGeom::~RegionGraphicsDrawGeom()
     jmdlRG_free(m_pRG);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -383,6 +384,7 @@ void RegionGraphicsDrawGeom::_SetDrawViewFlags(ViewFlags flags)
 
     m_viewFlags.text = false;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12

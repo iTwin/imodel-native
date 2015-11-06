@@ -237,7 +237,7 @@ void SectioningViewController::SetOverrideMatSymb(ViewContextR context) const
     overrideMatSymb->Clear();
     overrideMatSymb->SetLineColor(color);
     overrideMatSymb->SetFillColor(color);
-    overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
+    overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | OvrMatSymb::FLAGS_FillColorTransparency);
     overrideMatSymb->SetWidth(0);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetCurrentGraphicR().ActivateOverrideMatSymb(overrideMatSymb);

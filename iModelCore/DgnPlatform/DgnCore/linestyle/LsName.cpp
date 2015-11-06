@@ -107,6 +107,7 @@ void LsDefinition::SetName (Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsDefinition::SetHWStyle (LsComponentType componentType, LsComponentId componentIDIn)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     uint32_t componentID = componentIDIn.GetValue();
     m_hardwareLineCode = -1;
     if (LsComponentType::Internal == componentType)
@@ -117,6 +118,7 @@ void LsDefinition::SetHWStyle (LsComponentType componentType, LsComponentId comp
         else
             m_hardwareLineCode = 0;
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -139,7 +141,7 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
     SetName (name);
 
     m_textureInitialized = false;
-    m_textureHandle = 0;
+    m_texture = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -280,7 +282,7 @@ void _Stroke(ViewContextR context) const override
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
+Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
@@ -298,19 +300,16 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, NULL, false, viewContext, false);
 #endif
-    return intptr_t(this);
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
     {
     if (!m_lsComp.IsValid())
-        {
-        BeAssert(0 == m_textureHandle);
-        return m_textureHandle;
-        }
+        return nullptr;
 
     if (!m_textureInitialized)
         {
@@ -351,20 +350,17 @@ uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyl
 #if TRYING_DIRECT_LINESTYLES
             m_textureHandle = 0; 
 #else
-            m_textureHandle = GenerateTexture(viewContext, lineStyleSymb);
+            m_texture = GenerateTexture(viewContext, lineStyleSymb);
 #endif
             }
         }
-    
 
-    double          rasterWidth;
+    double rasterWidth;
 
-    if (0 != m_textureHandle &&
-        m_lsComp.IsValid() &&
-        SUCCESS == m_lsComp->_GetTextureWidth (rasterWidth))
+    if (m_texture.IsValid()&& m_lsComp.IsValid() && SUCCESS == m_lsComp->_GetTextureWidth (rasterWidth))
         lineStyleSymb.SetWidth (rasterWidth * scale);
     
-    return m_textureHandle;
+    return m_texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**

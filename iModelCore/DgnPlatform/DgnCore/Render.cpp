@@ -12,7 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Scene::_AddGraphic(Graphic& graphic)
     {
-    m_scene.push_back(&graphic);
+    m_scene.push_back(Node(graphic));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -20,13 +20,15 @@ void Render::Scene::_AddGraphic(Graphic& graphic)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Scene::_DropGraphic(Graphic& graphic)
     {
-    auto it = std::find(m_scene.begin(), m_scene.end(), &graphic);
-    if (it == m_scene.end())
+    for (auto it=m_scene.begin(); it != m_scene.end(); ++it)
         {
-        BeAssert(false);
-        return;
+        if (it->m_graphic.get() == &graphic)
+            {
+            m_scene.erase(it);
+            return;
+            }
+
         }
-    m_scene.erase(it);
     }
 
 /*---------------------------------------------------------------------------------**//**

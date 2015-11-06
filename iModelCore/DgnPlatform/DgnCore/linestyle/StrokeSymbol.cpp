@@ -34,7 +34,9 @@ static double getGeomPartMaxOffset (LsSymbolComponentCR symbol, double angle)
     transform.InitFromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
     DRange3d        range;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     symbol._GetRange(range);
+#endif
     transform.Multiply(range.low);
     transform.Multiply(range.high);
 
@@ -179,6 +181,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
     return  SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -206,6 +209,7 @@ StatusInt LsSymbolComponent::_GetRange (DRange3dR range) const
     return BSISUCCESS;
     }
 
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -314,7 +318,9 @@ void                LsSymbolComponent::SetIsNoScale (bool value) { m_symFlags = 
 bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LSSYM_3D) != 0; }
 void                LsSymbolComponent::GetRange (DRange3dR range) const 
     { 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _GetRange (range);
+#endif
     }
 
 //---------------------------------------------------------------------------------------

@@ -8,37 +8,44 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include    <json/value.h>
+#include <json/value.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 
 //=======================================================================================
 // @bsiclass                                            Ray.Bentley     09/2015
 //=======================================================================================
-struct JsonRenderMaterial : RenderMaterial
+struct JsonRenderMaterial
 {
 protected:
-    Json::Value     m_value;
-    DgnMaterialId   m_materialId;
-
-    JsonRenderMaterial (Json::Value const& value, DgnMaterialId materialId) : m_value (value), m_materialId (materialId) { }
+    Json::Value m_value;
 
 public:
-DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (DgnDbR dgnDb, DgnMaterialId materialId);
-DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (Json::Value const& value, DgnMaterialId materialId);
-                             Json::Value                  GetValue () { return m_value; }
-DGNPLATFORM_EXPORT           BentleyStatus                DoImport (DgnImportContext& context, DgnDbR sourceDb);
+    struct Default
+    {
+        static double const Finish() {return .05;}
+        static double const Specular() {return .05;}
+        static double const Diffuse() {return .5;}
+        static double const Reflect() {return 0.;}
+        static double const Transmit() {return 0.;}
+        static double const Glow() {return 0.;}
+        static double const Refract() {return 0.;}
+        static double const Ambient() {return 0.;}
+        static bool const HasBaseColor() {return false;}
+        static bool const HasSpecularColor() {return false;}
+        static bool const HasFinish() {return false;}
+        static bool const NoShadows() {return false;}
+    };
 
-DGNPLATFORM_EXPORT    virtual     RenderMaterialPtr       _Clone () const override { return new JsonRenderMaterial (*this); }
-DGNPLATFORM_EXPORT    virtual     double                  _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
-DGNPLATFORM_EXPORT    virtual     bool                    _GetBool (char const* key, BentleyStatus* status = NULL) const override;
-DGNPLATFORM_EXPORT    virtual     RgbFactor               _GetColor (char const* key, BentleyStatus* status = NULL) const override;
-DGNPLATFORM_EXPORT    virtual     RenderMaterialMapPtr    _GetMap (char const* key) const override;
-DGNPLATFORM_EXPORT    virtual     uintptr_t               _GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) const override;
+    DGNPLATFORM_EXPORT BentleyStatus DoImport(DgnImportContext& context, DgnDbR sourceDb);
+    DGNPLATFORM_EXPORT BentleyStatus Load(DgnMaterialId materialId, DgnDbR dgnDb);
+
+    double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
+    bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
+    DGNPLATFORM_EXPORT RgbFactor GetColor(Utf8CP name) const;
 };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
 //=======================================================================================
@@ -61,7 +68,8 @@ protected:
     uint32_t        m_width;
     uint32_t        m_height;
     Format          m_format;
-    bvector<Byte>   m_data;  
+    uint32_t        m_nBytes;
+    Byte*           m_dataPtr;
 
     ImageBuffer(); 
     ImageBuffer(uint32_t width, uint32_t height, Format const& format, bvector<Byte>& data);
@@ -84,19 +92,12 @@ public:
     DGNPLATFORM_EXPORT Byte const*  GetDataCP() const;
     DGNPLATFORM_EXPORT size_t       GetDataSize() const; 
 
-
-    //! The size of the image in Units.
-
-    //! Image origin in Units.
-
-
     //! You can turn OFF alpha testing if your image does not have transparent pixels.
-    virtual bool                        _GetEnableAlphaTesting() const {return true;}
+    virtual bool _GetEnableAlphaTesting() const {return true;}
 
     //! Return an ImageBufferPtr or an invalid instance if an error occurs.
-    virtual BentleyStatus               _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const = 0;
+    virtual BentleyStatus _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const = 0;
 };
-
 
 //=======================================================================================
 // @bsiclass                                             
@@ -113,7 +114,6 @@ public:
     static RenderMaterialMapPtr  Create (Json::Value const& value) { return new JsonRenderMaterialMap (value); }
            Json::Value           GetValue () { return m_value; }
            BentleyStatus         DoImport (DgnImportContext& context, DgnDbR sourceDb);
-
 
     DGNPLATFORM_EXPORT    virtual Mode                _GetMode () const override;
     DGNPLATFORM_EXPORT    virtual Units               _GetUnits () const override;

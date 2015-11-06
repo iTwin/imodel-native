@@ -11,6 +11,7 @@
 #include "DgnDb.h"
 #include "DgnElement.h"
 #include "Render.h"
+#include "RenderMaterial.h"
 #include "ECSqlStatementIterator.h"
 
 #define DGN_CLASSNAME_MaterialElement "MaterialElement"

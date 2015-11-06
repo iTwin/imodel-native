@@ -403,9 +403,11 @@ LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
             symbref.SetAngle(0.0);
             }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         DRange3d  range;
         // NEEDSWORK -- linestyles -- don't rely on range from symbol when deciding if symbol will fit in stroke.
         symbref.m_symbol->_GetRange(range);
+#endif
         }
 
     return retval;

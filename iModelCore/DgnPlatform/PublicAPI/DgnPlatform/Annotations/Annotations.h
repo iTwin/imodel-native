@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------------------------- 
-//     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/Annotations.h $ 
+//     $Source: PublicAPI/DgnPlatform/Annotations/Annotations.h $ 
 //  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
 #pragma once

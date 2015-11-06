@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/DgnCore/Render.h $
+|     $Source: PublicAPI/DgnPlatform/Render.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,6 +13,7 @@
 #include "DgnTexture.h"
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
+#include <list>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -20,12 +21,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemDisplayParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(IDisplaySymbol)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(LineTexture)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrMatSymb)
@@ -38,6 +39,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
+DEFINE_REF_COUNTED_PTR(LineTexture)
 DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
 DEFINE_REF_COUNTED_PTR(Renderer)
@@ -150,9 +152,18 @@ struct Texture : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct LineTexture : RefCounted<NonCopyableClass>
+{
+    TexturePtr m_texture;
+    LineTexture(Texture* texture) : m_texture(texture) {}
+};
+
+//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/15
 //=======================================================================================
-struct MultiResImage : IRefCounted, NonCopyableClass
+struct MultiResImage : RefCounted<NonCopyableClass>
 {
 };
 
@@ -213,19 +224,6 @@ public:
 
 struct ISprite;
 struct DgnOleDraw;
-
-//=======================================================================================
-//! This interface defines methods required for a \e DisplaySymbol Definition.
-//! A DisplaySymbol is a set of graphics that is cached once and can then be redrawn
-//! many times at different locations/sizes/clipping/symbology.
-//! @note DisplaySymbol are drawn via GeomDraw::DrawSymbol.
-//=======================================================================================
-struct IDisplaySymbol
-{
-    virtual ~IDisplaySymbol() {}
-    virtual void _Draw(ViewContextR context) = 0;
-    virtual StatusInt _GetRange(DRange3dR range) const = 0;
-};
 
 enum class FillDisplay //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
 {
@@ -338,17 +336,16 @@ private:
         bool m_weight:1;
         bool m_style:1;
         bool m_material:1;
-        bool m_fill:1; // If not set, fill is an opaque fill that matches sub-category appearance color...
+        bool m_fill:1;   // If not set, fill is an opaque fill that matches sub-category appearance color...
         bool m_bgFill:1; // When set, fill is an opaque fill that matches current view background color...
         AppearanceOverrides() {memset(this, 0, sizeof(*this));}
         };
 
-    // NOTE: Constructor uses memset (this, 0, offsetof (ElemDisplayParams, m_material));
     AppearanceOverrides m_appearanceOverrides;          //!< flags for parameters that override SubCategory::Appearance.
-    bool                m_resolved:1;                   //!< whether Resolve has established SubCategory::Appearance/effective values.
+    bool                m_resolved;                     //!< whether Resolve has established SubCategory::Appearance/effective values.
     DgnCategoryId       m_categoryId;                   //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearence of subsequent geometry.
-    DgnMaterialId       m_material;                     //!< render material ID.
+    DgnMaterialId       m_materialId;                   //!< render material ID.
     int32_t             m_elmPriority;                  //!< display priority (applies to 2d only)
     int32_t             m_netPriority;                  //!< net display priority for element/category (applies to 2d only)
     uint32_t            m_weight;
@@ -383,7 +380,7 @@ public:
     void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;} // NOTE: Sets BOTH element and fill transparency...
     void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;}
     void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority;} // Set display priority (2d only).
-    void SetMaterialId(DgnMaterialId material) {m_appearanceOverrides.m_material = true; m_material = material;}
+    void SetMaterialId(DgnMaterialId materialId) {m_appearanceOverrides.m_material = true; m_materialId = materialId;}
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
     //! @cond DONTINCLUDEINDOC
@@ -444,7 +441,7 @@ public:
     double GetFillTransparency() const {return m_fillTransparency;}
 
     //! Get render material.
-    DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material; }
+    DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId; }
 
     //! Get element display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
@@ -462,7 +459,6 @@ private:
     // NOTE: For performance, the constructor initializes members using:
     //         memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows)- offsetof (LineStyleSymb, m_lStyle));
     //         So it will be necessary to update it if first/last member are changed. */
-
     ILineStyleCP    m_lStyle;       // if nullptr, no linestyle active
     struct
         {
@@ -501,7 +497,7 @@ private:
     DPoint3d        m_startTangent;
     DPoint3d        m_endTangent;
     RotMatrix       m_planeByRows;
-    uintptr_t       m_textureHandle;
+    TexturePtr      m_texture;
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
@@ -510,55 +506,55 @@ public:
     DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams(ElemDisplayParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
-    void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_textureHandle = 0; }
+    void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_texture = nullptr; }
     void Init(ILineStyleCP);
 
 public:
-    DGNPLATFORM_EXPORT ILineStyleCP  GetILineStyle() const;
-    DGNPLATFORM_EXPORT void          GetPlaneAsMatrixRows(RotMatrixR matrix) const;
-    DGNPLATFORM_EXPORT double        GetScale() const;
-    DGNPLATFORM_EXPORT double        GetDashScale() const;
-    DGNPLATFORM_EXPORT double        GetGapScale() const;
-    DGNPLATFORM_EXPORT double        GetOriginWidth() const;
-    DGNPLATFORM_EXPORT double        GetEndWidth() const;
-    DGNPLATFORM_EXPORT double        GetPhaseShift() const;
-    DGNPLATFORM_EXPORT double        GetFractionalPhase() const;
-    DGNPLATFORM_EXPORT double        GetMaxCompress() const;
-    DGNPLATFORM_EXPORT int           GetNumIterations() const;
-    DGNPLATFORM_EXPORT double        GetMaxWidth() const;
-    DGNPLATFORM_EXPORT double        GetTotalLength() const;
-    DGNPLATFORM_EXPORT DPoint3dCP    GetStartTangent() const;
-    DGNPLATFORM_EXPORT DPoint3dCP    GetEndTangent() const;
-    DGNPLATFORM_EXPORT uintptr_t     GetTextureHandle() const;
-    DGNPLATFORM_EXPORT bool          IsScaled() const;
-    DGNPLATFORM_EXPORT bool          IsAutoPhase() const;
-    DGNPLATFORM_EXPORT bool          IsCenterPhase() const;
-    DGNPLATFORM_EXPORT bool          IsCosmetic() const;
-    DGNPLATFORM_EXPORT bool          IsTreatAsSingleSegment() const;
-    DGNPLATFORM_EXPORT bool          HasDashScale() const;
-    DGNPLATFORM_EXPORT bool          HasGapScale() const;
-    DGNPLATFORM_EXPORT bool          HasOrgWidth() const;
-    DGNPLATFORM_EXPORT bool          HasEndWidth() const;
-    DGNPLATFORM_EXPORT bool          IsElementClosed() const;
-    DGNPLATFORM_EXPORT bool          IsCurve() const;
-    DGNPLATFORM_EXPORT bool          HasPhaseShift() const;
-    DGNPLATFORM_EXPORT bool          HasIterationLimit() const;
-    DGNPLATFORM_EXPORT bool          HasPlane() const;
-    DGNPLATFORM_EXPORT bool          HasStartTangent() const;
-    DGNPLATFORM_EXPORT bool          HasEndTangent() const;
-    DGNPLATFORM_EXPORT void          SetPlaneAsMatrixRows(RotMatrixCP);
-    DGNPLATFORM_EXPORT void          SetNormalVec(DPoint3dCP);
-    DGNPLATFORM_EXPORT void          SetOriginWidth(double width);
-    DGNPLATFORM_EXPORT void          SetEndWidth(double width);
-    DGNPLATFORM_EXPORT void          SetWidth(double width);
-    DGNPLATFORM_EXPORT void          SetScale(double scaleFactor);
-    DGNPLATFORM_EXPORT void          SetFractionalPhase(bool isOn, double fraction);
-    DGNPLATFORM_EXPORT void          SetCenterPhase(bool isOn);
-    DGNPLATFORM_EXPORT void          SetPhaseShift(bool isOn, double distance);
-    DGNPLATFORM_EXPORT void          SetTreatAsSingleSegment(bool yesNo);
-    DGNPLATFORM_EXPORT void          SetTangents(DPoint3dCP, DPoint3dCP);
-    DGNPLATFORM_EXPORT void          SetLineStyle(ILineStyleCP lstyle);
-    DGNPLATFORM_EXPORT void          ConvertLineStyleToTexture(ViewContextR context, bool force);
+    ILineStyleCP GetILineStyle() const {return m_lStyle;}
+    void GetPlaneAsMatrixRows(RotMatrixR matrix) const {matrix = m_planeByRows;}
+    DGNPLATFORM_EXPORT double GetScale() const;
+    DGNPLATFORM_EXPORT double GetDashScale() const;
+    DGNPLATFORM_EXPORT double GetGapScale() const;
+    DGNPLATFORM_EXPORT double GetOriginWidth() const;
+    DGNPLATFORM_EXPORT double GetEndWidth() const;
+    double GetPhaseShift() const {return m_phaseShift;}
+    double GetFractionalPhase() const {return m_autoPhase;}
+    double GetMaxCompress() const {return m_maxCompress;}
+    int GetNumIterations() const {return m_nIterate;}
+    DGNPLATFORM_EXPORT double GetMaxWidth() const;
+    double GetTotalLength() const {return m_totalLength;}
+    DPoint3dCP GetStartTangent() const {return &m_startTangent;}
+    DPoint3dCP GetEndTangent() const{return &m_endTangent;}
+    Texture* GetTexture() const {return m_texture.get(); }
+    bool IsScaled() const {return m_options.scale;}
+    bool IsAutoPhase() const {return m_options.autoPhase;}
+    bool IsCenterPhase() const{return m_options.centerPhase;}
+    bool IsCosmetic() const {return m_options.cosmetic;}
+    bool IsTreatAsSingleSegment() const {return m_options.treatAsSingleSegment;}
+    bool HasDashScale() const {return m_options.dashScale;}
+    bool HasGapScale() const {return m_options.gapScale;}
+    bool HasOrgWidth() const {return m_options.orgWidth;}
+    bool HasEndWidth() const{return m_options.endWidth;}
+    bool IsElementClosed() const{return m_options.elementIsClosed; }
+    bool IsCurve() const {return m_options.isCurve; }
+    bool HasPhaseShift() const {return m_options.phaseShift;}
+    bool HasIterationLimit() const {return m_options.iterationLimit;}
+    bool HasPlane() const {return m_options.plane;}
+    bool HasStartTangent() const {return m_options.startTangentSet;}
+    bool HasEndTangent() const {return m_options.endTangentSet;}
+    DGNPLATFORM_EXPORT void SetPlaneAsMatrixRows(RotMatrixCP);
+    DGNPLATFORM_EXPORT void SetNormalVec(DPoint3dCP);
+    DGNPLATFORM_EXPORT void SetOriginWidth(double width);
+    DGNPLATFORM_EXPORT void SetEndWidth(double width);
+    DGNPLATFORM_EXPORT void SetWidth(double width);
+    DGNPLATFORM_EXPORT void SetScale(double scaleFactor);
+    DGNPLATFORM_EXPORT void SetFractionalPhase(bool isOn, double fraction);
+    DGNPLATFORM_EXPORT void SetCenterPhase(bool isOn);
+    DGNPLATFORM_EXPORT void SetPhaseShift(bool isOn, double distance);
+    DGNPLATFORM_EXPORT void SetTreatAsSingleSegment(bool yesNo);
+    DGNPLATFORM_EXPORT void SetTangents(DPoint3dCP, DPoint3dCP);
+    void SetLineStyle(ILineStyleCP lstyle) {m_lStyle = lstyle;}
+    DGNPLATFORM_EXPORT void ConvertLineStyleToTexture(ViewContextR context, bool force);
 
     bool HasTrueWidth() const  {return HasOrgWidth() || HasEndWidth();}
     bool HasMaxCompress() const {return m_options.maxCompress;}
@@ -569,46 +565,44 @@ public:
 
     DGNPLATFORM_EXPORT void SetGapScale(double scaleFactor);
     DGNPLATFORM_EXPORT void SetDashScale(double scaleFactor);
-    DGNPLATFORM_EXPORT void SetTotalLength(double);
+    void SetTotalLength(double length) {m_totalLength = length;}
     DGNPLATFORM_EXPORT void SetCosmetic(bool cosmetic);
     DGNPLATFORM_EXPORT void ClearContinuationData();
     DGNPLATFORM_EXPORT void CheckContinuationData();
-}; // LineStyleSymb
+};
 
 //=======================================================================================
 //! DgnCore implements this class for setting/getting the Material and Symbology (ElemMatSymb) used to draw geometry.
 //! An ElemMatSymb is the "cooked" material and symbology that determines the real appearance (e.g. color/width/raster pattern/linestyle,
 //! etc.) used to draw all geometry.
-//!
-//! Viewports always have an "active" ElemMatSymb.
 //=======================================================================================
 struct ElemMatSymb
 {
 private:
-    ColorDef            m_lineColor;
-    ColorDef            m_fillColor;
-    int                 m_elementStyle;
     bool                m_isFilled;
     bool                m_isBlankingRegion;
-    MaterialPtr         m_material;
     uint32_t            m_rasterWidth;
-    uint32_t            m_rasterPat;
+    ColorDef            m_lineColor;
+    ColorDef            m_fillColor;
+    LineTexturePtr      m_lineTexture;
+    MaterialPtr         m_material;
     LineStyleSymb       m_lStyleSymb;
     GradientSymbPtr     m_gradient;
     PatternParamsPtr    m_patternParams;
 
 public:
+    void Cook(ElemDisplayParamsCR, ViewContextR, DPoint3dCP startTan, DPoint3dCP endTan);
+
     DGNPLATFORM_EXPORT ElemMatSymb();
     DGNPLATFORM_EXPORT explicit ElemMatSymb(ElemMatSymbCR rhs);
 
     DGNPLATFORM_EXPORT void Init();
 
-    //! INTERNAL USE ONLY: Should only ever be called by sub-classes of ViewContext, use CookDisplayParams instead!
-    DGNPLATFORM_EXPORT void FromResolvedElemDisplayParams(ElemDisplayParamsCR, ViewContextR, DPoint3dCP startTan, DPoint3dCP endTan);
-    DGNPLATFORM_EXPORT void FromNaturalElemDisplayParams(ElemDisplayParamsR, ViewContextR, DPoint3dCP startTan, DPoint3dCP endTan);
+    //! Get the texture applied to lines for this ElemMatSymb
+    LineTexturePtr GetLineTexture() const {return m_lineTexture;}
 
-    // Get the element style.
-    int GetElementStyle() {return m_elementStyle;}
+    //! Set a LineTexture for this ElemMatSymb
+    void SetLineTexture(LineTextureP texture) {m_lineTexture = texture;}
 
     //! Set the gradient symbology
     void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
@@ -633,13 +627,6 @@ public:
 
     //! Determine whether TrueWidth is on for this ElemMatSymb
     DGNPLATFORM_EXPORT bool HasTrueWidth() const;
-
-    //! Get the raster pattern from this ElemMatSymb. The raster pattern is a 32 bit mask that is
-    //! repeated along geometry. For each bit that is on in the pattern, a pixel is set to the line color.
-    uint32_t GetRasterPattern() const {return m_rasterPat;}
-
-    //! Get the style index from this ElemMatSymb (INVALID_STYLE returned for raster patterns not derived from line codes)
-    int32_t GetRasterPatternIndex() const {return m_elementStyle;}
 
     //! Determine whether the fill flag is on for this ElemMatSymb.
     bool IsFilled() const {return m_isFilled;}
@@ -684,17 +671,6 @@ public:
     //! @note         If either TrueWidthStart or TrueWidthEnd are non-zero, this value is ignored.
     void SetWidth(uint32_t rasterWidth) {m_rasterWidth = rasterWidth;}
 
-    //! Set the raster pattern for this ElemMatSymb.
-    //! @param[in] rasterPat   the 32 bit on-off pattern to be repeated along lines drawn using this ElemMatSymb.
-    //! @see          #GetRasterPattern
-    void SetRasterPattern(uint32_t rasterPat) {m_rasterPat = rasterPat; m_elementStyle = 0;}
-
-    //! Set a raster pattern derived from a line code for this ElemMatSymb. Used to support plotting of cosmetic line styles mapped to line codes.
-    //! @param[in] index       the new line style code.
-    //! @param[in] rasterPat   the 32 bit on-off pattern to be repeated along lines drawn using this ElemMatSymb.
-    //! @see          #GetRasterPattern #GetRasterPatternIndex
-    DGNPLATFORM_EXPORT void SetIndexedRasterPattern(int32_t index, uint32_t rasterPat);
-
     //! Get the LineStyleSymb from this ElemMatSymb for setting line style parameters.
     LineStyleSymbR GetLineStyleSymbR () {return m_lStyleSymb;}
 
@@ -707,40 +683,32 @@ public:
     //@}
 }; // ElemMatSymb
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-enum OvrMatSymbFlags //! flags to indicate the parts of a MatSymb that are to be overridden
-{
-    MATSYMB_OVERRIDE_None                   = (0),      //!< no overrides
-    MATSYMB_OVERRIDE_Color                  = (1<<0),   //!< override outline color
-    MATSYMB_OVERRIDE_ColorTransparency      = (1<<1),   //!< override outline color transparency
-    MATSYMB_OVERRIDE_FillColor              = (1<<2) | (1<<31), //!< override fill color, override blanking fill with bg color
-    MATSYMB_OVERRIDE_FillColorTransparency  = (1<<3),   //!< override fill color transparency
-    MATSYMB_OVERRIDE_RastWidth              = (1<<4),   //!< override raster width
-    MATSYMB_OVERRIDE_Style                  = (1<<5),   //!< override style
-    MATSYMB_OVERRIDE_TrueWidth              = (1<<6),   //!< override true width
-    MATSYMB_OVERRIDE_ExtSymb                = (1<<7),   //!< override extended symbology
-    MATSYMB_OVERRIDE_RenderMaterial         = (1<<8),   //!< override render material
-    // The proxy flags are informational but do not effect the display.
-    MATSYMB_OVERRIDE_IsProxy                = (1<<16),   //!< is proxy
-    MATSYMB_OVERRIDE_IsProxyHidden          = (1<<17),   //!< is proxy edge
-    MATSYMB_OVERRIDE_IsProxyEdge            = (1<<18),   //!< is proxy hidden
-    MATSYMB_OVERRIDE_IsProxyUnderlay        = (1<<19),  //!< proxy underlay.
-    MATSYMB_OVERRIDE_ProxyFlags             = (0xf << 16)  //!< all proxy flags
-};
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct OvrMatSymb
 {
+    enum Flags : uint32_t//! flags to indicate the parts of a MatSymb that are to be overridden
+    {
+        FLAGS_None                   = (0),      //!< no overrides
+        FLAGS_Color                  = (1<<0),   //!< override outline color
+        FLAGS_ColorTransparency      = (1<<1),   //!< override outline color transparency
+        FLAGS_FillColor              = (1<<2) | (0x80000000), //!< override fill color, override blanking fill with bg color
+        FLAGS_FillColorTransparency  = (1<<3),   //!< override fill color transparency
+        FLAGS_RastWidth              = (1<<4),   //!< override raster width
+        FLAGS_Style                  = (1<<5),   //!< override style
+        FLAGS_TrueWidth              = (1<<6),   //!< override true width
+        FLAGS_ExtSymb                = (1<<7),   //!< override extended symbology
+        FLAGS_RenderMaterial         = (1<<8),   //!< override render material
+    };
+
 private:
-    uint32_t        m_flags;
-    ElemMatSymb     m_matSymb;
+    uint32_t    m_flags;
+    ElemMatSymb m_matSymb;
 
 public:
-    OvrMatSymb() : m_flags(MATSYMB_OVERRIDE_None) {}
+    OvrMatSymb() : m_flags(FLAGS_None) {}
     ElemMatSymbCR GetMatSymb() const {return m_matSymb;}
     ElemMatSymbR GetMatSymbR () {return m_matSymb;}
 
@@ -752,28 +720,20 @@ public:
     ColorDef GetLineColor() const {return m_matSymb.GetLineColor();}
     ColorDef GetFillColor() const {return m_matSymb.GetFillColor();}
     uint32_t GetWidth() const {return m_matSymb.GetWidth();}
-    uint32_t GetRasterPattern() const {return m_matSymb.GetRasterPattern();}
-    int32_t GetRasterPatternIndex() const {return m_matSymb.GetRasterPatternIndex();}
     MaterialPtr GetMaterial() const {return m_matSymb.GetMaterial();}
     PatternParamsCP GetPatternParams() const {return m_matSymb.GetPatternParams();}
 
     DGNPLATFORM_EXPORT void Clear();
     void SetFlags(uint32_t flags) {m_flags = flags;}
-    void SetLineColor(ColorDef color) {m_matSymb.SetLineColor(color); m_flags |= MATSYMB_OVERRIDE_Color;}
-    void SetFillColor(ColorDef color) {m_matSymb.SetFillColor(color); m_flags |= MATSYMB_OVERRIDE_FillColor;}
-    void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= MATSYMB_OVERRIDE_ColorTransparency;}
-    void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= MATSYMB_OVERRIDE_FillColorTransparency;}
-    void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= MATSYMB_OVERRIDE_RastWidth;}
-    void SetRasterPattern(uint32_t rasterPat) {m_matSymb.SetRasterPattern(rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
-    void SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern(index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
-    void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
+    void SetLineColor(ColorDef color) {m_matSymb.SetLineColor(color); m_flags |=  FLAGS_Color;}
+    void SetFillColor(ColorDef color) {m_matSymb.SetFillColor(color); m_flags |= FLAGS_FillColor;}
+    void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
+    void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
+    void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
+    void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
-    void SetProxy(bool edge, bool hidden) {m_flags |= (MATSYMB_OVERRIDE_IsProxy | (edge ? MATSYMB_OVERRIDE_IsProxyEdge : 0) | (hidden ? MATSYMB_OVERRIDE_IsProxyHidden: 0)); }
-    bool GetProxy(bool& edge, bool& hidden) {edge = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyEdge); hidden = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyHidden); return 0 != (m_flags & MATSYMB_OVERRIDE_IsProxy); }
-    void SetUnderlay() { m_flags |= MATSYMB_OVERRIDE_IsProxyUnderlay; }
     DGNPLATFORM_EXPORT void SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
-
-}; // OvrMatSymb
+};
 
 //=======================================================================================
 // @bsiclass
@@ -812,6 +772,9 @@ struct Graphic : RefCounted<NonCopyableClass>
         double        m_pixelSize;
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
+
+    struct Overrides : RefCountedBase {};
+    DEFINE_REF_COUNTED_PTR(Overrides)
 
 protected:
     DgnViewportCP m_vp;
@@ -1001,8 +964,15 @@ public:
 //=======================================================================================
 struct Scene : NonCopyableClass
 {
+    struct Node
+    {
+        GraphicPtr m_graphic;
+        Graphic::OverridesPtr m_overrides;
+        explicit Node(Graphic& graphic, Graphic::Overrides* ovr=nullptr) : m_graphic(&graphic), m_overrides(ovr) {}
+    };
+
 protected:
-    bvector<GraphicPtr> m_scene;
+    bvector<Node> m_scene;
 
     virtual void _SetToViewCoords(bool yesNo) = 0;
     virtual void _ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) = 0;
@@ -1069,9 +1039,6 @@ public:
 
     Target& GetRenderTarget() {return _GetRenderTarget();}
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void DefineQVGeometryMap(uintptr_t textureId, GraphicStroker& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false){_DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
-#endif
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
 
 };
@@ -1183,41 +1150,32 @@ struct CursorSource {};
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
-    friend struct HealContext;
-    friend struct IndexedViewport;
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
     virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
-    virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
+    virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
     virtual RenderDevice* _GetRenderDevice() const = 0;
-    virtual StatusInt _AssignRenderDevice(RenderDevice*) = 0;
+    virtual StatusInt _AssignRenderDevice(DgnViewportR) = 0;
     virtual void _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual void _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
-    virtual void _SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRectCP subRect) = 0;
-    virtual DgnDrawBuffer _GetDrawBuffer() const = 0;
     virtual StatusInt _SynchDrawingFromBackingStore() = 0;
     virtual void _SynchDrawingFromBackingStoreAsynch() = 0;
     virtual StatusInt _SynchScreenFromDrawing() = 0;
     virtual void _SynchScreenFromDrawingAsynch() = 0;
     virtual bool _IsScreenDirty(BSIRect*) = 0;
-    virtual void _ShowProgress() = 0;
     virtual bool _IsBackingStoreValid() const = 0;
     virtual void _SetBackingStoreValid(bool) = 0;
     virtual bool _IsAccelerated() const = 0;
     virtual void _ScreenDirtied(BSIRect const* rect) = 0;
-    virtual StatusInt _BeginDraw(bool eraseBefore) = 0;
-    virtual void _EndDraw(PaintOptions const&) = 0;
-    virtual bool _IsDrawActive() = 0;
     virtual void _AccumulateDirtyRegion(bool val) = 0;
     virtual void _ClearHealRegion() = 0;
     virtual void _SetNeedsHeal(BSIRect const* dirty) = 0;
     virtual void _HealComplete(bool aborted) = 0;
     virtual bool _CheckNeedsHeal(BSIRect* rect) = 0;
-    virtual void _BeginDecorating(BSIRect const* rect) = 0;
-    virtual void _BeginOverlayMode() = 0;
     virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
+    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) = 0;
 
 public:
     virtual double _GetCameraFrustumNearScaleLimit() = 0;
@@ -1225,34 +1183,27 @@ public:
     virtual Scene* _GetMainScene() {return nullptr;} // TEMPORARY!
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params) {return _CreateGraphic(params);}
-    void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
+    void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, aaLines, aaText);}
     RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
-    StatusInt AssignRenderDevice(RenderDevice* device) {return _AssignRenderDevice(device);}
+    StatusInt AssignRenderDevice(DgnViewportR vp) {return _AssignRenderDevice(vp);}
     void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = nullptr) {_AddLights(threeDview, rotMatrixP, model);}
     void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
     void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}
-    void SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRect const* subRect) {_SetDrawBuffer(drawBuffer, subRect);}
-    DgnDrawBuffer GetDrawBuffer() const {return _GetDrawBuffer();}
     void HealComplete(bool aborted) {_HealComplete(aborted);}
     StatusInt SynchDrawingFromBackingStore() {return _SynchDrawingFromBackingStore();}
     void SynchDrawingFromBackingStoreAsynch() {_SynchDrawingFromBackingStoreAsynch();}
     StatusInt SynchScreenFromDrawing() {return _SynchScreenFromDrawing();}
     void SynchScreenFromDrawingAsynch() {_SynchScreenFromDrawingAsynch();}
     bool IsScreenDirty(BSIRect* rect) {return _IsScreenDirty(rect);}
-    void ShowProgress() {_ShowProgress();}
     bool IsBackingStoreValid() const {return _IsBackingStoreValid();}
     bool IsAccelerated() const {return _IsAccelerated();}
     void ScreenDirtied(BSIRect const* rect) {_ScreenDirtied(rect);}
-    StatusInt BeginDraw(bool eraseBefore) {return _BeginDraw(eraseBefore);}
-    void EndDraw(PaintOptions const& op){_EndDraw(op);}
-    bool IsDrawActive() {return _IsDrawActive();}
     void AccumulateDirtyRegion(bool val) {_AccumulateDirtyRegion(val);}
     void ClearHealRegion() {_ClearHealRegion();}
     void SetNeedsHeal(BSIRectCP dirty) {_SetNeedsHeal(dirty);}
-    void BeginDecorating(BSIRectCP rect) {_BeginDecorating(rect);}
-    void BeginOverlayMode() {_BeginOverlayMode();}
     BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
     bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
+    MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) {return _GetMaterial(id, dgndb);}
 };
 
 END_BENTLEY_RENDER_NAMESPACE

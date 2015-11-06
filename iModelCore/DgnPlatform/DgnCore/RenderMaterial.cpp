@@ -7,81 +7,36 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-//=======================================================================================
-// RenderMaterial...
-//=======================================================================================
-#define DEFAULT_Finish          .05
-#define DEFAULT_Specular        .05
-#define DEFAULT_Diffuse         .5
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsonRenderMaterial::Load(DgnMaterialId materialId, DgnDbR dgnDb)
+    {
+    DgnMaterialCPtr material = DgnMaterial::QueryMaterial(materialId, dgnDb);
+    return material.IsValid() ? material->GetRenderingAsset(m_value) : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+RgbFactor  JsonRenderMaterial::GetColor(Utf8CP name) const
+    {
+    RgbFactor rgb = {0.0, 0.0, 0.0};
+
+    JsonValueCR value = m_value[name];
+    if (value.size() < 3)
+        {
+        BeAssert (false);
+        return rgb;
+        }
+
+    rgb.red   = value[0].asDouble();
+    rgb.green = value[1].asDouble();
+    rgb.blue  = value[2].asDouble();
+    return rgb;
+    }
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-double      RenderMaterial::_GetDouble (char const* key, BentleyStatus* status) const
-    {
-    if (NULL != status)
-        *status = SUCCESS;
-
-    if (0 == BeStringUtilities::Stricmp(key, RENDER_MATERIAL_Finish))
-        return DEFAULT_Finish;
-
-    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Diffuse))
-        return DEFAULT_Diffuse;
-
-    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Specular))
-        return DEFAULT_Specular;
-
-    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Reflect) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Transmit))
-        return 0.0;
-
-    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Glow) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Refract))
-        return 1.0;
-
-    BeAssert (false);
-    if (NULL != status)
-        *status = ERROR;
-
-    return 0.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool        RenderMaterial::_GetBool (char const* key, BentleyStatus* status) const
-    {
-    if (NULL != status)
-        *status = SUCCESS;
-
-    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasBaseColor) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasSpecularColor) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasFinish) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagNoShadows))
-        return false;
-
-    BeAssert (false);
-    if (NULL != status)
-        *status = ERROR;
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RgbFactor  RenderMaterial::_GetColor (char const* key, BentleyStatus* status) const
-    {
-    BeAssert (false);
-    if (NULL != status)
-        *status = ERROR;
-
-    RgbFactor   color  = {1.0, 1.0, 1.0};
-
-    return color;
-    }
-
 //=======================================================================================
 // RenderMaterialMap...
 //=======================================================================================

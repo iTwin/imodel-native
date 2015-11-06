@@ -147,6 +147,7 @@ void ModifyDrawViewFlags(ViewFlagsR flags)
     flags.patterns = true;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -155,6 +156,7 @@ virtual void _SetDrawViewFlags(ViewFlags flags) override
     T_Super::_SetDrawViewFlags(flags);
     ModifyDrawViewFlags(m_viewFlags);
     }
+#endif
 
 public:
 
@@ -165,7 +167,9 @@ ElementGraphicsDrawGeom(ViewContextP context, IElementGraphicsProcessor& dropObj
     {
     SetViewContext(context);
     m_dropObj = &dropObj;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ModifyDrawViewFlags(m_viewFlags);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,7 +246,7 @@ virtual void _CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatS
     {
     // Apply ignores, resolve effective, and cook ElemMatSymb...
     elParams.Resolve(*this);
-    elMatSymb.FromResolvedElemDisplayParams(elParams, *this, m_startTangent, m_endTangent);
+    elMatSymb.Cook(elParams, *this, m_startTangent, m_endTangent);
     }
 
 }; // ElementGraphicsContext

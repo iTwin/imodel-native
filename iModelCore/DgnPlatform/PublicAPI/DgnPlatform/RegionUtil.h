@@ -130,7 +130,6 @@ private:
     GeometricElementCP  GetCurrentElement();
     bool                ComputePostFlattenTransform (CurveVectorCR region);
     void                ResetPostFlattenTransform ();
-    virtual void        _SetDrawViewFlags (ViewFlags flags) override;
     virtual bool        _ClipPreservesRegions () const override {return false;} // Want fast open curve clip...
     virtual bool        _DoClipping () const override {return m_context->IsAttached ();} // Only want for initial flood create...
     virtual bool        _DoTextGeometry () const override {return false;}

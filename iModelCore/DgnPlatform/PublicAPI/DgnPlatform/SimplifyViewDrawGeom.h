@@ -23,9 +23,6 @@ struct SimplifyViewDrawGeom : RefCounted<Render::Graphic>
 {
 protected:
     ViewContextP        m_context;
-    ViewFlags           m_viewFlags;
-    Render::ElemMatSymb m_currentMatSymb;
-    Render::OvrMatSymb  m_overrideMatSymb;
     IFacetOptionsPtr    m_defaultFacetOptions;
     DVec3d              m_textAxes[2];
     bool                m_inPatternDraw;
@@ -33,7 +30,6 @@ protected:
     bool                m_inTextDraw;
     bool                m_inThicknessDraw;
     bool                m_processingMaterialGeometryMap;
-    size_t              m_elementTransformStackIndex;
 
 private:
     void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
@@ -65,7 +61,7 @@ protected:
     virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR, bool filled) {return ERROR;}
     virtual StatusInt _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled) {return ERROR;}
 
-    DGNPLATFORM_EXPORT virtual void _ActivateMatSymb(Render::ElemMatSymbCP matSymb) override;
+    virtual void _ActivateMatSymb(Render::ElemMatSymbCP matSymb) override {}
     DGNPLATFORM_EXPORT virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
     DGNPLATFORM_EXPORT virtual void _DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
@@ -91,9 +87,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawPointCloud(Render::PointCloudDraw* drawParams) override;
     DGNPLATFORM_EXPORT virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override;
 
-    virtual ViewFlags _GetDrawViewFlags () {return m_viewFlags;}
-    virtual void _SetDrawViewFlags (ViewFlags flags) {m_viewFlags = flags;}
-
 public:
     DGNPLATFORM_EXPORT SimplifyViewDrawGeom(bool addNormals = false, bool addParameters = false);
     virtual ~SimplifyViewDrawGeom() {}
@@ -112,7 +105,9 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessFacetSet(PolyfaceQueryCR, bool filled);
     DGNPLATFORM_EXPORT void ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR, double* zDepth);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DGNPLATFORM_EXPORT void ClipAndProcessSymbol(Render::IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
+#endif
     DGNPLATFORM_EXPORT BentleyStatus CurveVectorOutputProcessor(CurveVectorCR curves, bool filled);
 
     StatusInt ProcessCurvePrimitive(ICurvePrimitiveCR curve, bool closed, bool filled) {return _ProcessCurvePrimitive(curve, closed, filled);}
@@ -123,10 +118,8 @@ public:
     StatusInt ProcessFacetSet(PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet(facets, filled);}
     StatusInt ProcessGeometryMapOrFacetSet(PolyfaceQueryCR facets, bool filled);
 
-    void                            SetCurrentMatSymb(Render::ElemMatSymbCR matSymb) {m_currentMatSymb = matSymb;}
     DGNPLATFORM_EXPORT Render::ElemMatSymbR GetCurrentMatSymb(Render::ElemMatSymbR matSymb);
 
-    uint32_t GetCurrentOverrideFlags() {return m_overrideMatSymb.GetFlags();}
     IFacetOptionsP GetFacetOptions() {return _GetFacetOptions();}
 
     DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range);

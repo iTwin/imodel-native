@@ -70,6 +70,7 @@ void            OnNewElement()
     m_accept        = false;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -97,7 +98,6 @@ virtual void _SetDrawViewFlags (ViewFlags flags) override
         }
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/05
 +---------------+---------------+---------------+---------------+---------------+------*/

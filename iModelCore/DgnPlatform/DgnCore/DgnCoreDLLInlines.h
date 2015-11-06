@@ -166,8 +166,6 @@ DG_INLINE DwgHatchDefCR PatternParams::GetDwgHatchDef() const {return dwgHatchDe
 DG_INLINE DPoint3dCR PatternParams::GetOrigin() const {return origin;}
 DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationscale;}
 
-DG_INLINE void ElemMatSymb::SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_elementStyle = IS_LINECODE(index) ? index : 0; m_rasterPat = rasterPat; }
-
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
 

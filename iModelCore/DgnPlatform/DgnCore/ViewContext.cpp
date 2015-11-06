@@ -464,12 +464,12 @@ void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP origi
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
     {
-    LineStyleSymbR  tSymb = (m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_Style) ? m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR() : m_elemMatSymb.GetLineStyleSymbR();
+    LineStyleSymbR  tSymb = (m_ovrMatSymb.GetFlags() & OvrMatSymb::FLAGS_Style) ? m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR() : m_elemMatSymb.GetLineStyleSymbR();
 
     if (symb)
         *symb = &tSymb;
 
-    return 0 == tSymb.GetTextureHandle() ? tSymb.GetILineStyle() : nullptr;
+    return nullptr == tSymb.GetTexture() ? tSymb.GetILineStyle() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,9 +567,6 @@ void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
     if (!m_viewflags.weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!m_viewflags.styles)
-        ovrMatSymb.SetRasterPattern(DgnViewport::GetDefaultIndexedLinePattern(0));
-
     if (!m_viewflags.transparency)
         {
         ovrMatSymb.SetLineTransparency(0);
@@ -602,7 +599,7 @@ void ViewContext::_CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR e
     _ModifyPreCook(elParams); // Allow context to modify elParams before cooking...
 
     // "cook" the display params into a MatSymb
-    elMatSymb.FromResolvedElemDisplayParams(elParams, *this, m_startTangent, m_endTangent);
+    elMatSymb.Cook(elParams, *this, m_startTangent, m_endTangent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -618,7 +615,7 @@ void ViewContext::CookDisplayParams()
     //  may use the current symbology.  This seems like a horrible place to do this,
     //  so we need to come up with something better.
     LineStyleSymb & lsSym = m_elemMatSymb.GetLineStyleSymbR();
-    if (lsSym.GetTextureHandle() == 0 && lsSym.GetILineStyle() != nullptr && Is3dView())
+    if (nullptr==lsSym.GetTexture() && lsSym.GetILineStyle() != nullptr && Is3dView())
         {
         lsSym.ConvertLineStyleToTexture(*this, true);
         }
@@ -734,7 +731,6 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
 
             m_ovrMatSymb.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_elemMatSymb.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
             m_ovrMatSymb.SetWidth(1);
-            m_ovrMatSymb.SetRasterPattern(0);
             _AddContextOverrides(m_ovrMatSymb);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
@@ -1377,11 +1373,9 @@ void ElemMatSymb::Init()
     {
     m_lineColor         = ColorDef::Black();
     m_fillColor         = ColorDef::Black();
-    m_elementStyle      = 0;
     m_isFilled          = false;
     m_isBlankingRegion  = false;
     m_rasterWidth       = 1;
-    m_rasterPat         = 0;
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
     m_material          = nullptr;
@@ -1410,51 +1404,17 @@ static void     applyScreeningFactor(ColorDef* rgb, double screeningFactor)
     }
 #endif
 
-#define ACAD_LINEWEIGHT_SIGNATURE   (0x80000000)
-#define LINEWEIGHT_SIGNATURE_BITS   (0xff000000)
-#define ACAD_LINEWEIGHT_MAX         (211)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BarryBentley    06/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-static uint32_t   remapAcadLineWeight(uint32_t lineWeight)
-    {
-    if (ACAD_LINEWEIGHT_SIGNATURE != (lineWeight & LINEWEIGHT_SIGNATURE_BITS))
-        return lineWeight;
-
-    lineWeight = (lineWeight & ~LINEWEIGHT_SIGNATURE_BITS);
-
-    // maximum autocad line weight is 211.
-    if (lineWeight > ACAD_LINEWEIGHT_MAX)
-        lineWeight = ACAD_LINEWEIGHT_MAX;
-
-#ifdef BEIJING_DGNPLATFORM_WIP_DWG
-    double          styleScale, weightScale;
-    if (SUCCESS != dwgSaveSettings_getLineCodeAndWeightScale(&styleScale, &weightScale))
-        weightScale = DEFAULT_DWG_WEIGHT_SCALE;
-
-    return (uint32_t) (0.5 + 0.5 * weightScale * lineWeight);
-#endif
-    return lineWeight;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void ElemMatSymb::Cook(ElemDisplayParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
     Init();
 
-    // We store the style index returned from LineStyleSymb::FromResolvedElemDisplayParams in order to
-    // provide PlotContext with the information it needs to handle custom line styles that are
-    // mapped to cosmetic line styles.  PlotContext is different from DrawContext in that it
-    // uses QV extended symbologies for cosmetic line styles rather than pattern codes. TR 225586.
-    m_elementStyle = m_lStyleSymb.FromResolvedElemDisplayParams(elParams, context, startTangent, endTangent);
-
     DgnViewportP vp = context.GetViewport();
 
-    m_rasterPat = (nullptr != vp ? vp->GetIndexedLinePattern(m_elementStyle) : DgnViewport::GetDefaultIndexedLinePattern(m_elementStyle));
-    m_rasterWidth = (nullptr != vp ? vp->GetIndexedLineWidth(remapAcadLineWeight(elParams.GetWeight())) : DgnViewport::GetDefaultIndexedLineWidth(remapAcadLineWeight(elParams.GetWeight())));
+    m_rasterWidth = nullptr != vp ? vp->GetIndexedLineWidth(elParams.GetWeight()) : DgnViewport::GetDefaultIndexedLineWidth(elParams.GetWeight());
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
     double netElemTransparency = elParams.GetNetTransparency();
@@ -1484,9 +1444,8 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_materialId = elParams.GetMaterialId();
-#endif
+    if (vp && elParams.GetMaterialId().IsValid())
+        m_material = vp->GetRenderTarget()->GetMaterial(elParams.GetMaterialId(), context.GetDgnDb());
 
     if (0.0 != netElemTransparency)
         {
@@ -1520,15 +1479,6 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::FromNaturalElemDisplayParams(ElemDisplayParamsR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
-    {
-    elParams.Resolve(context);
-    FromResolvedElemDisplayParams(elParams, context, startTangent, endTangent);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * compare two ElemMatSymb's to see if they're the same.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1539,12 +1489,10 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
 
     if (rhs.m_lineColor        != m_lineColor        ||
         rhs.m_fillColor        != m_fillColor        ||
-        rhs.m_elementStyle     != m_elementStyle     ||
         rhs.m_isFilled         != m_isFilled         ||
         rhs.m_isBlankingRegion != m_isBlankingRegion ||
         rhs.m_material         != m_material         ||
-        rhs.m_rasterWidth      != m_rasterWidth      ||
-        rhs.m_rasterPat        != m_rasterPat)
+        rhs.m_rasterWidth      != m_rasterWidth)
         return false;
 
     if (!(rhs.m_gradient == m_gradient))
@@ -1560,12 +1508,10 @@ ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
     {
     m_lineColor         = rhs.m_lineColor;
     m_fillColor         = rhs.m_fillColor;
-    m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
     m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;
     m_gradient          = rhs.m_gradient;
     }
@@ -1577,12 +1523,10 @@ ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
     {
     m_lineColor         = rhs.m_lineColor;
     m_fillColor         = rhs.m_fillColor;
-    m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
     m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
-    m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;
     m_gradient          = rhs.m_gradient;
     return *this;
@@ -1593,7 +1537,7 @@ ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void OvrMatSymb::Clear()
     {
-    SetFlags(MATSYMB_OVERRIDE_None);
+    SetFlags(FLAGS_None);
     m_matSymb.Init();
     }
 
@@ -1627,7 +1571,7 @@ ElemDisplayParams::ElemDisplayParams(ElemDisplayParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_material              = rhs.m_material;
+    m_materialId            = rhs.m_materialId;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
@@ -1652,7 +1596,7 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
     m_netElmTransparency    = rhs.m_netElmTransparency;
     m_fillTransparency      = rhs.m_fillTransparency;
     m_netFillTransparency   = rhs.m_netFillTransparency;
-    m_material              = rhs.m_material;
+    m_materialId            = rhs.m_materialId;
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
@@ -1665,7 +1609,7 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElemDisplayParams::ElemDisplayParams()
     {
-    m_resolved = 0;
+    m_resolved = false;
     m_elmPriority = 0;
     m_netPriority = 0;    
     m_weight = 0;
@@ -1718,7 +1662,7 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
     if (0 != memcmp(&rhs.m_appearanceOverrides, &m_appearanceOverrides, sizeof(m_appearanceOverrides)))
         return false;
 
-    if (!(m_material == rhs.m_material))
+    if (!(m_materialId == rhs.m_materialId))
         return false;
 
     if (!(m_gradient == rhs.m_gradient))
@@ -1784,7 +1728,7 @@ void ElemDisplayParams::Resolve(ViewContextR context)
         m_styleInfo = LineStyleInfo::Create(appearance.GetStyle(), nullptr).get(); // WIP_LINESTYLE - Need LineStyleParams...
 
     if (!m_appearanceOverrides.m_material)
-        m_material = appearance.GetMaterial();
+        m_materialId = appearance.GetMaterial();
 
     // SubCategory transparency is combined with element transparency to compute net transparency. 
     if (0.0 != appearance.GetTransparency())

@@ -42,7 +42,6 @@ void PickOutput::Init(PickContext* context)
     // can't set up Pick point in screen coordinates until after we've attached to the view
     SetViewContext(context);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
@@ -51,12 +50,11 @@ void PickOutput::_SetDrawViewFlags(ViewFlags flags)
     {
     T_Super::_SetDrawViewFlags(flags);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // NOTE: Treat LocateSurfacesPref::Never as LocateSurfacesPref::ByView, still want to hide edge hits that aren't visible, will truncate returned list to remove surfaces...
     if ((LocateSurfacesPref::Always == m_options.GetLocateSurfaces()) && (DgnRenderMode::Wireframe == m_viewFlags.GetRenderMode()))
         m_viewFlags.SetRenderMode(DgnRenderMode::SmoothShade);
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2008

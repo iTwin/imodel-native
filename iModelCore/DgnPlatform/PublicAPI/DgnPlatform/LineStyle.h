@@ -24,7 +24,6 @@
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
 #define LSID_HWMASK         0x0000000f
-#define IS_LINECODE(styleNo)    ((styleNo) >= MIN_LINECODE && (styleNo) <= MAX_LINECODE)
 
 //__PUBLISH_SECTION_START__
 
@@ -567,7 +566,7 @@ public:
 //!  @ingroup LineStyleManagerModule
 // @bsiclass
 //=======================================================================================
-struct          LsSymbolComponent : LsComponent, Render::IDisplaySymbol
+struct          LsSymbolComponent : LsComponent
     {
 //__PUBLISH_SECTION_END__
 private:
@@ -597,8 +596,10 @@ public:
 
     void                _PostProcessLoad    (DgnModelP modelRef) override;
     void                _ClearPostProcess   () override;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void                _Draw               (ViewContextR) override;
     StatusInt           _GetRange           (DRange3dR range) const override;
+#endif
 
     void                SetGeomPartId       (DgnGeomPartId id) {m_geomPartId = id;}
     DgnGeomPartId       GetGeomPartId       () const {return m_geomPartId;}
@@ -1340,12 +1341,12 @@ private:
 
     // For raster styles...
     mutable bool        m_textureInitialized;
-    mutable uintptr_t   m_textureHandle;
+    mutable Render::TexturePtr  m_texture;
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    intptr_t            GenerateTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb);
+    Render::TexturePtr GenerateTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb);
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
@@ -1377,7 +1378,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    uintptr_t GetTextureHandle(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
+    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;

@@ -414,10 +414,11 @@ CurveVectorPtr ViewContext::ClipStencil::GetCurveVector()
     return m_curveVector;
     }
 
+
 /*=================================================================================**//**
 * @bsiclass                                                     BrienBastings   11/07
 +===============+===============+===============+===============+===============+======*/
-struct PatternSymbol : IDisplaySymbol
+struct PatternSymbol
 {
 private:
 
@@ -426,6 +427,7 @@ mutable DRange3d    m_range;
 
 public:
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -445,6 +447,7 @@ virtual StatusInt _GetRange(DRange3dR range) const override
     
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
@@ -605,8 +608,10 @@ double          rowSpacing,
 double          columnSpacing
 )
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (SUCCESS != symbCell._GetRange(cellRange))
         return false;
+#endif
 
     if (columnSpacing < 0.0)
         spacing.x = -columnSpacing;

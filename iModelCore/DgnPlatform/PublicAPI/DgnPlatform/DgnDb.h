@@ -141,8 +141,6 @@ protected:
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
-    mutable bmap<DgnMaterialId, uintptr_t> m_qvMaterialIds;
-    mutable bmap<DgnTextureId, uintptr_t> m_qvTextureIds;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
