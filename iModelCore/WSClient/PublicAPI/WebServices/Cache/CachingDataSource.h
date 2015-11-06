@@ -122,8 +122,8 @@ struct CachingDataSource :
 
         //! Be sure to initialize APIs before executing caching code:
         //!     [Required] BeSQLite::EC::ECDb::Initialize()
-        //!     [Required] MobileDgn {platform specific} Initialize
-        //!     [Required] MobileDgnL10N::Initialize() (error message localization needs SQLang file built from HttpError.xliff.h)
+        //!     [Required] DgnClientFx {platform specific} Initialize
+        //!     [Required] DgnClientFxL10N::Initialize() (error message localization needs SQLang file built from HttpError.xliff.h)
         //!     [Optional] HttpClient::InitializeNetworkActivityCallback()
 
         WSCACHE_EXPORT static AsyncTaskPtr<OpenResult> OpenOrCreate

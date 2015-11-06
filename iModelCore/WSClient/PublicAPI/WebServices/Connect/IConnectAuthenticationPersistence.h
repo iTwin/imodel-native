@@ -8,12 +8,12 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <MobileDgn/Utils/Http/Credentials.h>
+#include <DgnClientFx/Utils/Http/Credentials.h>
 #include <WebServices/Connect/SamlToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014

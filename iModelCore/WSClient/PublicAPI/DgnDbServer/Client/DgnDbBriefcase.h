@@ -26,8 +26,8 @@ private:
 //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
-    DGNDBSERVERCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> Sync(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    DGNDBSERVERCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> SyncAndPush(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> Sync(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> SyncAndPush(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb();
     DGNDBSERVERCLIENT_EXPORT const BeSQLite::BeBriefcaseId& GetBriefcaseId();

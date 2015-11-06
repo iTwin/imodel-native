@@ -11,11 +11,11 @@
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/BeVersion.h>
-#include <MobileDgn/Utils/Http/Credentials.h>
-#include <MobileDgn/Utils/Http/HttpClient.h>
-#include <MobileDgn/Utils/Http/HttpResponse.h>
-#include <MobileDgn/Utils/Http/HttpStatus.h>
-#include <MobileDgn/Utils/Threading/AsyncTask.h>
+#include <DgnClientFx/Utils/Http/Credentials.h>
+#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <DgnClientFx/Utils/Http/HttpResponse.h>
+#include <DgnClientFx/Utils/Http/HttpStatus.h>
+#include <DgnClientFx/Utils/Threading/AsyncTask.h>
 #include <WebServices/Cache/CachingDataSource.h>
 #include <WebServices/Cache/Util/ECDbHelper.h>
 #include <WebServices/Client/ObjectId.h>
@@ -25,7 +25,7 @@
 #include <iostream>
 #include <ostream>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 std::ostream& operator << (std::ostream &o, WSError::Status status);
@@ -55,7 +55,7 @@ namespace rapidjson
     void PrintTo(const Document& value, ::std::ostream* os);
     }
 
-// Duplicating symbols with MobileDgnUnitTests, enable with custom builds only
+// Duplicating symbols with UnitTests, enable with custom builds only
 // #define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 #ifdef WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 
