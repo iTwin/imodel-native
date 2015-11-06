@@ -1311,13 +1311,21 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
     if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
 
+
     HorizontalPartition const* partition = GetHorizontalPartition(table);
     if (partition == nullptr)
         {
-        BeAssert(false && "Should always find a partition for the given table");
-        return ERROR;
-        }
+        if (!GetVerticalPartitions().empty())
+            {
+            partition = GetHorizontalPartition(GetVerticalPartitions().back().GetTable());
+            }
 
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            return ERROR;
+            }
+        }
     NativeSqlBuilder classIdColSql;
     if (fullyQualifyColumnName)
         {
