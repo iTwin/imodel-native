@@ -136,7 +136,8 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
     // ClassMappingRule: No more than one ancestor of a class can use SharedTable-Polymorphic strategy. Mapping fails if this is violated
     if (polymorphicSharedTableClassMaps.size() > 1)
         {
-        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+        IssueReporter const& issues = m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
+        if (issues.IsSeverityEnabled(ECDbIssueSeverity::Error))
             {
             Utf8String baseClasses;
             for (IClassMap const* baseMap : polymorphicSharedTableClassMaps)
@@ -145,8 +146,8 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
                 baseClasses.append(" ");
                 }
 
-            LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (AppliesToSubclasses)'. This is not supported. The base ECClasses are: %s",
-                       m_ecClass.GetFullName(), baseClasses.c_str());
+            issues.Report(ECDbIssueSeverity::Error, "ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (AppliesToSubclasses)'. This is not supported. The base ECClasses are : %s",
+                          m_ecClass.GetFullName(), baseClasses.c_str());
             }
 
         return ERROR;
