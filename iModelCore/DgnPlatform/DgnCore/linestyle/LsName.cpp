@@ -348,6 +348,12 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
     if (xRange == 0.0)
         return range2d;
 
+    if (xRange > range2d.high.y * 64)
+        range2d.high.y = xRange/32.0;
+
+    if (xRange > -range2d.low.y * 64)
+        range2d.low.y = -xRange/32.0;
+
     //  if xRange is too small  StrokeComponentForRange will fail when it creates the viewport because it will be smaller than the minimum.
     if (xRange < 1)
         {
