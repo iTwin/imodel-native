@@ -27,6 +27,11 @@ namespace IndexECPlugin.Source
             //    policy.StreamBackable = new FileBackedPolicyAssertion(true);
             //}
 
+            if (context.ECClass.Name == "PreparedPackage")
+            {
+                policy.StreamBackable = new FileBackedPolicyAssertion(true);
+            }
+
             if(context.ECClass.Name == "Thumbnail")
             {
                 policy.StreamBackable = new FileBackedPolicyAssertion(true);

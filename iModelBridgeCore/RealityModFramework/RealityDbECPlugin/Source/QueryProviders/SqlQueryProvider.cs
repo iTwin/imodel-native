@@ -98,12 +98,14 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
                 catch (JsonSerializationException)
                 {
+                    Log.Logger.error("Query aborted : The polygon format is not valid.");
                     throw new UserFriendlyException("The polygon format is not valid.");
                 }
 
                 int polygonSRID;
                 if (!int.TryParse(model.coordinate_system, out polygonSRID))
                 {
+                    Log.Logger.error("Query aborted : The polygon format is not valid.");
                     throw new UserFriendlyException("The polygon format is not valid.");
                 }
 
@@ -136,46 +138,6 @@ namespace IndexECPlugin.Source.QueryProviders
 
             List<IECInstance> instanceList = new List<IECInstance>();
 
-            //Note : In the future, we could create one command string per class
-            //and iterate the lines below for each class. Of course with some changes
-            //in the methods in order for all of this to work.
-
-            //*****************************TEST
-            //{
-            //    using (DbCommand sqlCommandtest = new SqlCommand())
-            //    {
-            //        sqlCommandtest.CommandText = "SELECT dbo.SpatialEntities.ID from dbo.SpatialEntities WHERE dbo.SpatialEntities.ID <= @test";
-            //        sqlCommandtest.CommandType = CommandType.Text;
-            //        sqlCommandtest.Connection = sqlConnection;
-
-            //        sqlConnection.Open();
-
-            //        DbParameter param = sqlCommandtest.CreateParameter();
-            //        param.DbType = DbType.String;
-            //        param.Direction = ParameterDirection.Input;
-                    
-            //        param.ParameterName = "@test";
-            //        param.Value = "2";
-
-            //        sqlCommandtest.Parameters.Add(param);
-
-            //        sqlCommandtest.Prepare();
-
-            //        sqlCommandtest.Parameters[0].Value = "2";
-            //        sqlCommandtest.ExecuteNonQuery();
-            //        throw new UserFriendlyException("Nothing went wrong!");
-
-
-
-            //        sqlCommandtest.Parameters[0].Value = param;
-            //    }
-                
-            //}
-
-
-
-            //*********************************
-
             string sqlCommandString;
             string sqlCountString;
             createSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString);
@@ -186,7 +148,6 @@ namespace IndexECPlugin.Source.QueryProviders
             {
 
                 dbCommand.CommandText = sqlCommandString;
-                //throw new UserFriendlyException(dbCommand.CommandText);
                 dbCommand.CommandType = CommandType.Text;
                 dbCommand.Connection = m_dbConnection;
 
@@ -220,6 +181,10 @@ namespace IndexECPlugin.Source.QueryProviders
                         IECInstance instance = ecClass.CreateInstance();
                         if (m_streamColumnQueried)
                         {
+                            //The purpose of this "If" statement is to enable the thumbnail instance to send its data through a stream.
+                            //The fact that the data is always the first row has been hard coded for this to work, and it is quite probably 
+                            //the most obscure and ugly piece of this code. To be rewritten...
+
                             //Since I think getStream only works with sqlServer, we'll use the GetBytes method
                    
                             //Byte[] byteArray = new byte[8040];
@@ -267,6 +232,7 @@ namespace IndexECPlugin.Source.QueryProviders
                                 {
                                     if(!ECTypeHelper.IsString(instancePropertyValue.Type))
                                     {
+                                        Log.Logger.error(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
                                         throw new ProgrammerException(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
                                     }
                                     else
@@ -406,6 +372,7 @@ namespace IndexECPlugin.Source.QueryProviders
             //We can only query SQLEntities. We verify that the custom attribute is set correctly.
             if(queriedClass.GetCustomAttributes("SQLEntity") == null)
             {
+                Log.Logger.error(String.Format("Query aborted: It is not permitted to query instances of the {0} class", queriedClass.Name));
                 throw new UserFriendlyException(String.Format("It is not permitted to query instances of the {0} class", queriedClass.Name));
             }
 
@@ -485,6 +452,7 @@ namespace IndexECPlugin.Source.QueryProviders
             }
             catch (Bentley.ECObjects.ECObjectsException.NullValue)
             {
+                Log.Logger.error(String.Format("Query aborted: Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", queriedClass.Name));
                 throw new ProgrammerException(String.Format("Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", queriedClass.Name));
             }
 
@@ -510,6 +478,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 TableDescriptor tempTable1 = table;
                 if (!queriedClass.Contains(property.Name))
                 {
+                    Log.Logger.error(String.Format("Query aborted: The selected property {0} does not exist in class {1}", property.Name, queriedClass.Name));
                     throw new UserFriendlyException(String.Format("The selected property {0} does not exist in class {1}", property.Name, queriedClass.Name));
                 }
 
@@ -556,6 +525,7 @@ namespace IndexECPlugin.Source.QueryProviders
             {
                 if (queriedClass.BaseClasses.Count() != 1)
                 {
+                    Log.Logger.error("Query aborted: IndexECPlugin only supports classes that have at most one base class.");
                     throw new ProgrammerException("IndexECPlugin only supports classes that have at most one base class.");
                 }
 
@@ -692,6 +662,7 @@ namespace IndexECPlugin.Source.QueryProviders
             int baseClassCount = firstClass.BaseClasses.Count();
             if (baseClassCount > 1)
             {
+                Log.Logger.error("Query aborted: IndexECPlugin only supports classes that have at most one derived class.");
                 throw new ProgrammerException("IndexECPlugin only supports classes that have at most one derived class.");
             }
 
@@ -724,6 +695,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 if (firstTableKeyAttribute.IsNull || newTableKeyAttribute.IsNull)
                 {
+                    Log.Logger.error("Query aborted: The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
                     throw new ProgrammerException("The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
                 }
                 string firstTableKey = firstTableKeyAttribute.StringValue;
@@ -731,6 +703,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 if (String.IsNullOrWhiteSpace(firstTableKey) || String.IsNullOrWhiteSpace(newTableKey))
                 {
+                    Log.Logger.error("Query aborted: The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
                     throw new ProgrammerException("The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
                 }
 
@@ -834,6 +807,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     if (instanceIDExpression.InstanceIdSet.Count() == 0)
                     {
+                        Log.Logger.error("Query aborted: The array of IDs in the ECInstanceIdExpression is empty.");
                         throw new ProgrammerException("The array of IDs in the ECInstanceIdExpression is empty.");
                     }
 
@@ -1082,6 +1056,7 @@ namespace IndexECPlugin.Source.QueryProviders
             }
             if(String.IsNullOrWhiteSpace(columnName))
             {
+                Log.Logger.error("Query aborted: The class for which the user requested a spatial query does not have any spatial property.");
                 throw new UserFriendlyException("The class for which you requested a spatial query does not have any spatial property.");
             }
 

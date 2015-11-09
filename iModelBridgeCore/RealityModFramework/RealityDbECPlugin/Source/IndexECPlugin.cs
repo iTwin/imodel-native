@@ -39,6 +39,10 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
 using System.Text;
+using System.Reflection;
+using Bentley.ECSystem.Configuration;
+using System.Data.Common;
+using System.Data;
 
 namespace Bentley.ECPluginExamples
 {
@@ -72,7 +76,6 @@ namespace Bentley.ECPluginExamples
         public const string PLUGIN_NAME = "IndexECPlugin";
 
         private string m_connectionString = "";
-        private string m_schemaLocation = "";
         private string m_packagesLocation = "";
 
         /// <summary>
@@ -122,7 +125,6 @@ namespace Bentley.ECPluginExamples
                 .SetOperationSupport<InsertOperation>(ExecuteInsertOperation);
             
                 IndexPolicyHandler.InitializeHandlers(builder);
-
         }
 
         private RepositoryIdentifier GetRepositoryIdentifier(RepositoryModule module,
@@ -142,13 +144,16 @@ namespace Bentley.ECPluginExamples
 
 
             
-            ////we did not find an existing identifier, check if the directory on the location exists
-            if (!File.Exists(location))
-            {
-                throw new LocationNotFoundException("The location given was not a valid location file");
-            }
+            //////we did not find an existing identifier, check if the directory on the location exists
+            //if (!File.Exists(location))
+            //{
+            //    throw new LocationNotFoundException("The location given was not a valid location file");
+            //}
 
-            ParseConfigFile(location);
+            //ParseConfigFile(location);
+
+            m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
+            m_packagesLocation = ConfigurationRoot.GetAppSetting("RECPPackagesLocation");
 
             var identifier = new RepositoryIdentifier(module.ParentECPlugin.ECPluginId, location, location, location, null);
             module.RepositoryVerified(session, identifier); //tells the module to include that repository in the list of known repositories from now on
@@ -156,41 +161,36 @@ namespace Bentley.ECPluginExamples
             //}
         }
 
-        private void ParseConfigFile(string location)
-        {
-            XmlDocument doc = new XmlDocument();
-            try
-            {
-                doc.Load(location);
-            }
-            catch(Exception ex)
-            {
-                throw new NotSupportedException(String.Format("An error happened while loading the file at the location {0}", location), ex);
-            }
+        //private void ParseConfigFile(string location)
+        //{
+        //    XmlDocument doc = new XmlDocument();
+        //    try
+        //    {
+        //        doc.Load(location);
+        //    }
+        //    catch(Exception ex)
+        //    {
+        //        throw new NotSupportedException(String.Format("An error happened while loading the file at the location {0}", location), ex);
+        //    }
 
-            XmlNodeList nodelist = doc.SelectNodes("configuration");
-            if(nodelist.Count != 1)
-            {
-                throw new NotSupportedException("There can be one and only one \"configuration\" section in the configuration file");
-            }
+        //    XmlNodeList nodelist = doc.SelectNodes("configuration");
+        //    if(nodelist.Count != 1)
+        //    {
+        //        throw new NotSupportedException("There can be one and only one \"configuration\" section in the configuration file");
+        //    }
 
-            m_connectionString = nodelist[0].SelectSingleNode("ConnectionString").InnerText;
-            m_schemaLocation = nodelist[0].SelectSingleNode("SchemaLocation").InnerText;
-            m_packagesLocation = nodelist[0].SelectSingleNode("PackagesLocation").InnerText;
-            //throw new Exception(String.Format("Testing : {0} {1} {2}", m_connectionString, m_schemaLocation, m_packagesLocation));
+        //    m_connectionString = nodelist[0].SelectSingleNode("ConnectionString").InnerText;
+        //    m_packagesLocation = nodelist[0].SelectSingleNode("PackagesLocation").InnerText;
+        //    //throw new Exception(String.Format("Testing : {0} {1} {2}", m_connectionString, m_schemaLocation, m_packagesLocation));
 
-        }
+        //}
 
         private void PopulateSchemas(SchemaModule module,
                                      ECPluginSchemaManager schemaManager)
         {
-            //*****Following lines show how to read an XML schema and add it.*****
-
-            //TODO : Code a real procedure to load a schema
-            ECSchemaXmlStringReader schemaReader = new ECSchemaXmlStringReader(File.ReadAllText(m_schemaLocation));
+            ECSchemaXmlStreamReader schemaReader = new ECSchemaXmlStreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ECSchemaDB.xml"));
             IECSchema schemaFromXML = schemaReader.Deserialize();
             schemaManager.AddSchema(ref schemaFromXML);
-
         }
 
         private IEnumerable<IECInstance> ExecuteQuery(QueryModule sender,
@@ -203,6 +203,16 @@ namespace Bentley.ECPluginExamples
             SearchClass searchClass = query.SearchClasses.First();
             {
                 //TODO : code a real procedure to fetch our connection string
+                    
+                    //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
+                if ((querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage"))
+                {
+                    IECInstance packageInstance = searchClass.Class.CreateInstance();
+                    ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
+                    packageInstance.InstanceId = exp.RightSideString;
+                    PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, m_connectionString);
+                    return new List<IECInstance>{packageInstance};
+                }
 
                     IECQueryProvider helper/* = new SqlQueryProvider(query)*/;
                     
@@ -262,6 +272,7 @@ namespace Bentley.ECPluginExamples
                     {
                         //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
                         //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
+                        Log.Logger.error("The database server has encountered a problem.");
                         throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
                     }
 
@@ -389,8 +400,11 @@ namespace Bentley.ECPluginExamples
 
             IECInstance fileHolderAttribute = instanceClass.GetCustomAttributes("FileHolder");
 
+            Log.Logger.trace("Retrieving instance " + instance.InstanceId + " of class " + instanceClass.Name);
+
             if (fileHolderAttribute == null)
             {
+                Log.Logger.error("There is no file associate to instances of the class " + instanceClass.Name + ". Aborting retrieval operation.");
                 throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
             }
 
@@ -400,11 +414,12 @@ namespace Bentley.ECPluginExamples
             {
 
                 case "PreparedPackage":
+                    //var resourceManager = new FileResourceManager(connection);
+                    //FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
+                    //var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation, m_connectionString);
+                    //packageRetrievalController.Run();
+                    PackageStreamRetrievalController.SetStreamRetrieval(instance, m_connectionString);
 
-                    var resourceManager = new FileResourceManager(connection);
-                    FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
-                    var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation);
-                    packageRetrievalController.Run();
                     break;
                 case "SQLThumbnail":
                     //var sqlThumbnailRetrievalController = new SQLThumbnailRetrievalController(...);
@@ -416,7 +431,8 @@ namespace Bentley.ECPluginExamples
                     //usgsThumbnailRetrievalController.processThumbnailRetrieval();
                     break;
                 default:
-                    throw new ProgrammerException("This type of file holder attribute is not implemented");
+                    Log.Logger.error("The file holder attribute " + fileHolderAttribute["Type"].StringValue + "is not supported. Correct the ECSchema or the plugin.");
+                    throw new ProgrammerException("This type of file holder attribute is not supported");
             }
 
             //if (instance.ClassDefinition.Name == "BentleyFile")
@@ -445,83 +461,85 @@ namespace Bentley.ECPluginExamples
             switch(className)
             {
                 case "PackageRequest":
+                    Log.Logger.trace("Initiating package creation");
                     InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
                     return;
-                case "AutomaticRequest":
-                    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
-                    return;
+                //case "AutomaticRequest":
+                //    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
+                //    return;
 
                 default:
-                    throw new UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
+                    Log.Logger.error("Package request aborted. Invalid class for insertion.");
+                    throw new Bentley.Exceptions.InvalidInputException("The only insert operation permitted is a PackageRequest instance insertion.");
             }
             
         }
 
-        private string InsertAutomaticRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
-        {
-            if((instance.GetPropertyValue("Polygon") == null) ||
-               (instance.GetPropertyValue("MostRecent") == null) ||
-               (instance.GetPropertyValue("BestResolution") == null) ||
-               (instance.GetPropertyValue("Classification") == null) ||
-               (instance.GetPropertyValue("OSM") == null))
-            {
-                throw new UserFriendlyException("There are missing properties in the request.");
-            }
+        //private string InsertAutomaticRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
+        //{
+        //    if((instance.GetPropertyValue("Polygon") == null) ||
+        //       (instance.GetPropertyValue("MostRecent") == null) ||
+        //       (instance.GetPropertyValue("BestResolution") == null) ||
+        //       (instance.GetPropertyValue("Classification") == null) ||
+        //       (instance.GetPropertyValue("OSM") == null))
+        //    {
+        //        throw new UserFriendlyException("There are missing properties in the request.");
+        //    }
 
-            string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
-            string mostRecent = instance.GetPropertyValue("MostRecent").StringValue;
-            string bestResolution = instance.GetPropertyValue("BestResolution").StringValue;
+        //    string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
+        //    string mostRecent = instance.GetPropertyValue("MostRecent").StringValue;
+        //    string bestResolution = instance.GetPropertyValue("BestResolution").StringValue;
 
 
 
-            IECClass SEWDVClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityWithDetailsView");
+        //    IECClass SEWDVClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityWithDetailsView");
             
-            //Since the request expects from us to find all the entries by ourselves, we query their ids here.
-            ECQuery query = new ECQuery(SEWDVClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(SEWDVClass.First(prop => prop.Name == "Id"));
+        //    //Since the request expects from us to find all the entries by ourselves, we query their ids here.
+        //    ECQuery query = new ECQuery(SEWDVClass);
+        //    query.SelectClause.SelectAllProperties = false;
+        //    query.SelectClause.SelectedProperties = new List<IECProperty>();
+        //    query.SelectClause.SelectedProperties.Add(SEWDVClass.First(prop => prop.Name == "Id"));
 
-            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.IN, SEWDVClass.Properties(false).First(p => p.Name == "Classification"), instance.GetPropertyValue("Classification").StringValue));
-            // We add a special clause for OSM. OSM is to exclude, since it is already added in InsertPackageRequest
-            query.WhereClause.Add(new PropertyExpression(RelationalOperator.NE, SEWDVClass.Properties(false).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("Polygon", "{points:" + selectedRegionStr + ",coordinate_system:\'4326\'}"));
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("MostRecent", mostRecent));
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("BestResolution", bestResolution));
+        //    query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.IN, SEWDVClass.Properties(false).First(p => p.Name == "Classification"), instance.GetPropertyValue("Classification").StringValue));
+        //    // We add a special clause for OSM. OSM is to exclude, since it is already added in InsertPackageRequest
+        //    query.WhereClause.Add(new PropertyExpression(RelationalOperator.NE, SEWDVClass.Properties(false).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("Polygon", "{points:" + selectedRegionStr + ",coordinate_system:\'4326\'}"));
+        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("MostRecent", mostRecent));
+        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("BestResolution", bestResolution));
 
-            var queriedEntities = ExecuteQuery(queryModule, connection, query, null);
+        //    var queriedEntities = ExecuteQuery(queryModule, connection, query, null);
 
-            IECClass packageRequestClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "PackageRequest");
-            //IECClass requestedEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "RequestedEntity");
-
-
-            //We create the PackageRequest instance needed to launch the InsertPackageRequest method
-            IECInstance packageRequestInstance = packageRequestClass.CreateInstance();
-
-            IECArrayValue requestedEntitiesECArray;
-            if (null == (requestedEntitiesECArray = packageRequestInstance["RequestedEntities"] as IECArrayValue))
-            {
-                throw new Bentley.EC.Persistence.Operations.OperationFailedException("The server is unable to complete the requested order");
-            }
-            int i = 0;
-            foreach(var entity in queriedEntities)
-            {
-                IECStructValue requestedEntity = requestedEntitiesECArray[i] as IECStructValue;
-                requestedEntity["ID"].StringValue = entity.InstanceId;
-                requestedEntity["SelectedFormat"].StringValue = "image/png";
-                requestedEntity["SelectedStyle"].StringValue = "default";
-            }
-
-            packageRequestInstance["Polygon"].StringValue = selectedRegionStr;
-            packageRequestInstance["CoordinateSystem"].StringValue = "EPSG:4326";
-            packageRequestInstance["OSM"].NativeValue = instance.GetPropertyValue("OSM").NativeValue;
+        //    IECClass packageRequestClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "PackageRequest");
+        //    //IECClass requestedEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "RequestedEntity");
 
 
-            instance.InstanceId = InsertPackageRequest(sender, connection, packageRequestInstance, queryModule);
+        //    //We create the PackageRequest instance needed to launch the InsertPackageRequest method
+        //    IECInstance packageRequestInstance = packageRequestClass.CreateInstance();
 
-            return instance.InstanceId;
+        //    IECArrayValue requestedEntitiesECArray;
+        //    if (null == (requestedEntitiesECArray = packageRequestInstance["RequestedEntities"] as IECArrayValue))
+        //    {
+        //        throw new Bentley.EC.Persistence.Operations.OperationFailedException("The server is unable to complete the requested order");
+        //    }
+        //    int i = 0;
+        //    foreach(var entity in queriedEntities)
+        //    {
+        //        IECStructValue requestedEntity = requestedEntitiesECArray[i] as IECStructValue;
+        //        requestedEntity["ID"].StringValue = entity.InstanceId;
+        //        requestedEntity["SelectedFormat"].StringValue = "image/png";
+        //        requestedEntity["SelectedStyle"].StringValue = "default";
+        //    }
 
-        }
+        //    packageRequestInstance["Polygon"].StringValue = selectedRegionStr;
+        //    packageRequestInstance["CoordinateSystem"].StringValue = "EPSG:4326";
+        //    packageRequestInstance["OSM"].NativeValue = instance.GetPropertyValue("OSM").NativeValue;
+
+
+        //    instance.InstanceId = InsertPackageRequest(sender, connection, packageRequestInstance, queryModule);
+
+        //    return instance.InstanceId;
+
+        //}
 
         private string InsertPackageRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
         {
@@ -545,6 +563,7 @@ namespace Bentley.ECPluginExamples
             IECArrayValue requestedEntitiesECArray = instance.GetPropertyValue("RequestedEntities") as IECArrayValue;
             if (requestedEntitiesECArray == null)
             {
+                Log.Logger.error("The PackageRequest entry is incorrect. Correct the ECSchema");
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property");
             }
 
@@ -635,13 +654,66 @@ namespace Bentley.ECPluginExamples
                 // Create package.
                 string description = "";
                 string copyright = "";
-                RealityDataPackageNet.Create(m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+                //RealityDataPackageNet.Create(m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+
+                //Until RealityPackageNet is changed, it creates the file in the temp folder, then we copy it in the database. 
+                RealityDataPackageNet.Create(Path.GetTempPath(), name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+                instance.InstanceId = name + ".xrdp";
+
+                using (DbConnection sqlConnection = new SqlConnection(m_connectionString))
+                {
+                    sqlConnection.Open();
+                    using (DbCommand dbCommand = sqlConnection.CreateCommand())
+                    {
+                        dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent) VALUES (@param0, @param1, @param2)";
+                        dbCommand.CommandType = CommandType.Text;
+
+                        DbParameter param0 = dbCommand.CreateParameter();
+                        param0.DbType = DbType.String;
+                        param0.ParameterName = "@param0";
+                        param0.Value = instance.InstanceId;
+                        dbCommand.Parameters.Add(param0);
+
+                        DbParameter param1 = dbCommand.CreateParameter();
+                        param1.DbType = DbType.DateTime;
+                        param1.ParameterName = "@param1";
+                        param1.Value = DateTime.Now;
+                        dbCommand.Parameters.Add(param1);
+
+                        FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
+                        BinaryReader reader = new BinaryReader(fstream);
+
+                        long longLength = fstream.Length;
+                        int intLength;
+                        if(longLength > int.MaxValue)
+                        {
+                            Log.Logger.error("Package requested is too large. Aborting request.");
+                            throw new Bentley.Exceptions.InvalidInputException("Package requested is too large. Please reduce the size of the order");
+                        }
+                        intLength = Convert.ToInt32(longLength);
+                        byte[] fileBytes = new byte[fstream.Length];
+                        fstream.Seek(0,SeekOrigin.Begin);
+                        fstream.Read(fileBytes, 0, intLength);
+
+
+
+                        DbParameter param2 = dbCommand.CreateParameter();
+                        param2.DbType = DbType.Binary;
+                        param2.ParameterName = "@param2";
+                        param2.Value = fileBytes;
+                        dbCommand.Parameters.Add(param2);
+
+                        dbCommand.ExecuteNonQuery();
+                    }
+                    sqlConnection.Close();
+                }
             }
             catch (Exception e)
             {
+                Log.Logger.error("There was a problem with the processing of the package order.");
                 throw new Bentley.EC.Persistence.Operations.OperationFailedException("There was a problem with the processing of the order.", e);
             }
-            instance.InstanceId = name + ".xrdp";
+            Log.Logger.trace("Created the package file " + instance.InstanceId);
             return instance.InstanceId;
         }
 
@@ -662,6 +734,7 @@ namespace Bentley.ECPluginExamples
 
             if (queriedSpatialEntities.Count() == 0)
             {
+                Log.Logger.error("There is no OSM entry in the database.");
                 throw new Bentley.EC.Persistence.Operations.OperationFailedException("There is no OSM entry in the database");
             }
 
@@ -823,6 +896,7 @@ namespace Bentley.ECPluginExamples
 
             if(coordinateSystem == null)
             {
+                Log.Logger.error("Packaging interrupted. Coordinate system was not included");
                 throw new Bentley.Exceptions.InvalidInputException("Please enter a coordinate system when requesting this type of data.");
             }
 
@@ -923,7 +997,8 @@ namespace Bentley.ECPluginExamples
                 }
                 catch (JsonSerializationException)
                 {
-                    throw new UserFriendlyException("The polygon format is not valid.");
+                    Log.Logger.error("Packaging interrupted. The polygon format is not valid");
+                    throw new Bentley.Exceptions.InvalidInputException("The polygon format is not valid.");
                 }
 
                 MapInfo info = new MapInfo
@@ -1002,6 +1077,7 @@ namespace Bentley.ECPluginExamples
         {
             if (structValue.ClassDefinition.Name != "RequestedEntity")
             {
+                Log.Logger.error("The PackageRequest entry is incorrect. Correct the ECSchema");
                 throw new ProgrammerException("Error in the ECSchema. A PackageRequest must be composed of an array of RequestedEntity.");
             }
 
@@ -1041,6 +1117,7 @@ namespace Bentley.ECPluginExamples
             catch (Exception)
             {
                 File.Delete(archivePath);
+                Log.Logger.error("Unable to create archive");
                 throw;
             }
 
@@ -1055,7 +1132,7 @@ namespace Bentley.ECPluginExamples
             //Console.WriteLine("Entering GetConnectionFormat");
             return new List<ConnectionFormatFieldInfo>
                 {
-                //new ConnectionFormatFieldInfo() {ID = "username", DisplayName = "username", IsRequired = true },    
+                //new ConnectionFormatFieldInfo() {ID = "User", DisplayName = "username", IsRequired = true },    
                 //new ConnectionFormatFieldInfo() {ID = "Password", DisplayName = "Password", IsRequired = true, Masked = true },
             //    //new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DomainsKey, DisplayName = "Domain", IsRequired = false, IsAdvanced = true }, unused
             //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DefaultScopeKey, DisplayName = "DefaultScope", IsRequired = false, IsAdvanced = false },

@@ -34,48 +34,39 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Bentley.EC.AbstractUI3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.AbstractUI3\Bentley.EC.AbstractUI3.dll</HintPath>
+    <Reference Include="Bentley.EC.AbstractUI3">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.EC.Persistence3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.Persistence3\Bentley.EC.Persistence3.dll</HintPath>
+    <Reference Include="Bentley.EC.Persistence3">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Persistence3.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.EC.PluginBuilder3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.PluginBuilder3\Bentley.EC.PluginBuilder3.dll</HintPath>
+    <Reference Include="Bentley.EC.PluginBuilder3">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.PluginBuilder3.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.EC.Presentation3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.Presentation3\Bentley.EC.Presentation3.dll</HintPath>
+    <Reference Include="Bentley.EC.Presentation3">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Presentation3.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.ECObjects3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.ECObjects3\Bentley.ECObjects3.dll</HintPath>
+    <Reference Include="Bentley.ECObjects3">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECObjects3.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.ECSystem3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.ECSystem3\Bentley.ECSystem3.dll</HintPath>
+    <Reference Include="Bentley.ECSystem3">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.ECSystem3.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.Exceptions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.Exceptions\Bentley.Exceptions.dll</HintPath>
+    <Reference Include="Bentley.Exceptions">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Exceptions.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.General.1.0, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.General\Bentley.General.1.0.dll</HintPath>
+    <Reference Include="Bentley.General.1.0">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.General.1.0.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.logging-2.0, Version=2.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\LoggingSdk\Bentley.logging-2.0\Bentley.logging-2.0.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.logging-2.0.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.Platform, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.Platform\Bentley.Platform.dll</HintPath>
+    <Reference Include="Bentley.Platform">
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
     </Reference>
     <Reference Include="BentleyWMSPackageNet">
-      <HintPath>..\..\..\out\Winx64\build\RealityModFramework\BentleyWMSPackageNet\BentleyWMSPackageNet.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\BentleyWMSPackageNet.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -97,6 +88,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\FileRetrievalControllers\PackageRetrievalController.cs" />
+    <Compile Include="Source\FileRetrievalControllers\PackageStreamRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\SQLThumbnailRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\USGSThumbnailRetrievalController.cs" />
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
@@ -106,6 +98,7 @@
     <Compile Include="Source\IndexConstants.cs" />
     <Compile Include="Source\IndexPolicyHandler.cs" />
     <Compile Include="Source\JTokenExtension.cs" />
+    <Compile Include="Source\Log.cs" />
     <Compile Include="Source\QueryProviders\SqlQueryProvider.cs" />
     <Compile Include="Source\Helpers\TableDescriptor.cs" />
     <Compile Include="Source\IndexECPlugin.cs" />

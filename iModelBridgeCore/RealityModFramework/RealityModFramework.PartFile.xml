@@ -165,14 +165,7 @@
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
-    <Part Name="RealityDb" BentleyBuildMakeFile="RealityDb\RealityDb.mke">
-        <Bindings>
-             <Files ProductDirectoryName="ECSchemas" SourceName="Delivery">Delivery/ECSchemaNewDB.xml</Files>
-        </Bindings>
-    </Part>
-
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="RealityDb"/>
         <SubPart PartName="BentleyWMSPackageNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
