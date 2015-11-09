@@ -386,7 +386,7 @@ struct ECDbMapAnalyser
 
     public:
         ECDbMapAnalyser(ECDbMapR ecdbMap);
-        BentleyStatus Analyser(bool applyChanges);
+        BentleyStatus Analyse(bool applyChanges);
     };
 
 

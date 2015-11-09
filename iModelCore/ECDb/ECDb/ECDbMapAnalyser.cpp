@@ -1540,7 +1540,7 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapAnalyser::Analyser (bool applyChanges)
+BentleyStatus ECDbMapAnalyser::Analyse (bool applyChanges)
     {
     m_classes.clear ();
     m_derivedClassLookup.clear ();
