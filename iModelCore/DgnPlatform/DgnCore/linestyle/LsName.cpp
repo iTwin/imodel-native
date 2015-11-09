@@ -335,7 +335,11 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     context.PopTransformClip();
     }
 };
-
+//  #define USE_VERTICAL_SHIFT 1
+#define USE_MULTILPLES_OF_LENGTH 1
+#if defined(USE_VERTICAL_SHIFT)
+//  This approach tries to put the line style into the middle of the range by specifying
+//  a vertical shift to use while stroking the geometry map.
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2015
 //---------------------------------------------------------------------------------------
@@ -381,6 +385,65 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, double& verticalShift, D
 
     return range2d;
     }
+#endif
+#if defined(USE_MULTILPLES_OF_LENGTH)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+static DRange2d getAdjustedRange(uint32_t& scaleFactor, double& verticalShift, DRange3dCR lsRange, double componentLength)
+    {
+    scaleFactor = 1;
+
+    //  Use the stroked range, accounting for any leading or trailing pad.
+    DRange2d range2d;
+    range2d.low.x = std::min(0.0, lsRange.low.x);
+    range2d.low.y = lsRange.low.y;
+    range2d.high.x = std::max(lsRange.high.x, componentLength);
+    range2d.high.y = lsRange.high.y;
+
+    double xRange = range2d.high.x - range2d.low.x;
+    BeAssert(xRange != 0.0);
+    if (xRange == 0.0)
+        return range2d;
+
+    //  if xRange is too small  StrokeComponentForRange will fail when it creates the viewport because it will be smaller than the minimum.
+    if (xRange < 1)
+        {
+        scaleFactor = (uint32_t)ceil(1/xRange);
+        range2d.high.Scale(scaleFactor);
+        range2d.low.Scale(scaleFactor);
+        xRange = range2d.high.x - range2d.low.x;
+        }
+
+    //  Theoretically we could make the image smaller and save memory by just guaranteeing that
+    //  the size of the Y range is a multiple of 2 of the X range or vice versa.  However, I don't
+    //  think QV is detecting that correctly so for now I am just going for the same size.  Without
+    //  this change to the range QV scales the contents of the geometry map in one direction or the other.
+    double yVal = xRange/2.0;
+    bool changed = false;
+    while (yVal < range2d.high.y || -yVal > range2d.low.y)
+        {
+        changed = true;
+        yVal *= 2.0;
+        }
+
+    if (!changed)
+        {
+        while (yVal/2.0 >= range2d.high.y && -yVal/2.0 <= range2d.low.y)
+            {
+            yVal /= 2.0;
+            }
+        }
+
+    if (yVal < 2)
+        yVal = 2;
+
+    range2d.low.y = -yVal;
+    range2d.high.y = yVal;
+
+    return range2d;
+    }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
@@ -411,6 +474,14 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     comp->_QuerySymbology(symbologyResults);
     ColorDef lineColor, fillColor;
     bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
+    if (!isColorBySymbol)
+        {
+        //  This should not matter because we pass false for isColorBySymbol causing DefineQVGeometryMap to use QV_GEOTEXTURE_DEFERCLRSEL
+        //  However, at the time this was tested it QV_GEOTEXTURE_DEFERCLRSEL did not provide the expected behavior.
+        lineColor = ColorDef::White();
+        fillColor = ColorDef::White();
+        }
+
     uint32_t lineWeight;
     bool isWeightBySymbol = symbologyResults.IsWeightBySymbol(lineWeight);
     if (!isWeightBySymbol)
