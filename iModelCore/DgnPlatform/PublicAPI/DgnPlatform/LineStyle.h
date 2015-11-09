@@ -17,7 +17,7 @@
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 0
+#define LINESTYLES_ENABLED 1
 
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000

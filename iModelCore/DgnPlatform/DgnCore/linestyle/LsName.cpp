@@ -284,25 +284,18 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, double verticalShift, ColorDef lineColor, ColorDef fillColor, uint32_t lineWeight, LsComponentR component) : 
+ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, ColorDef fillColor, uint32_t lineWeight, LsComponentR component) : 
             ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor), m_lineColor(lineColor), m_fillColor(fillColor), m_lineWeight(lineWeight)
     {
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
 
-    Transform shift;
-    shift.InitFrom(0, -verticalShift, 0);
-
-    //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. This must be a QV bug in applying the texture
-    Transform mirror;
+    //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. Figure out why QV needs it
     DVec3d normal;
     normal.Init(0, 1, 0);
     DPoint3d zero;
     zero.Zero();
-    mirror.InitFromMirrorPlane(zero, normal);
-
-    //  m_transformForTexture.InitFrom(0, -verticalShift, 0);
-    m_transformForTexture.InitProduct(shift, mirror);
+    m_transformForTexture.InitFromMirrorPlane(zero, normal);
     }
 
 //---------------------------------------------------------------------------------------
@@ -335,62 +328,11 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     context.PopTransformClip();
     }
 };
-//  #define USE_VERTICAL_SHIFT 1
-#define USE_MULTILPLES_OF_LENGTH 1
-#if defined(USE_VERTICAL_SHIFT)
-//  This approach tries to put the line style into the middle of the range by specifying
-//  a vertical shift to use while stroking the geometry map.
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2015
 //---------------------------------------------------------------------------------------
-static DRange2d getAdjustedRange(uint32_t& scaleFactor, double& verticalShift, DRange3dCR lsRange, double componentLength)
-    {
-    scaleFactor = 1;
-
-    //  Use the stroked range, accounting for any leading or trailing pad.
-    DRange2d range2d;
-    range2d.low.x = std::min(0.0, lsRange.low.x);
-    range2d.low.y = lsRange.low.y;
-    range2d.high.x = std::max(lsRange.high.x, componentLength);
-    range2d.high.y = lsRange.high.y;
-
-    double xRange = range2d.high.x - range2d.low.x;
-    BeAssert(xRange != 0.0);
-    if (xRange == 0.0)
-        return range2d;
-
-    //  if xRange is too small  StrokeComponentForRange will fail when it creates the viewport because it will be smaller than the minimum.
-    if (xRange < 1)
-        {
-        scaleFactor = (uint32_t)ceil(1/xRange);
-        range2d.high.Scale(scaleFactor);
-        range2d.low.Scale(scaleFactor);
-        xRange = range2d.high.x - range2d.low.x;
-        }
-
-    //  Theoretically we could make the image smaller and save memory by just guaranteeing that
-    //  the size of the Y range is a multiple of 2 of the X range or vice versa.  However, I don't
-    //  think QV is detecting that correctly so for now I am just going for the same size.  Without
-    //  this change to the range QV scales the contents of the geometry map in one direction or the other.
-    double yRange = range2d.high.y - range2d.low.y;
-    verticalShift = range2d.high.y - yRange/2;  //  QV will line up the middle of the pattern with the line, so have to force the pattern's 0 to be in the center.
-    range2d.low.y -= verticalShift;
-    range2d.high.y -= verticalShift;
-    double diff = xRange - yRange;
-    if (diff > 0.0)
-        {
-        range2d.low.y -= diff/2;
-        range2d.high.y += diff/2;
-        }
-
-    return range2d;
-    }
-#endif
-#if defined(USE_MULTILPLES_OF_LENGTH)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2015
-//---------------------------------------------------------------------------------------
-static DRange2d getAdjustedRange(uint32_t& scaleFactor, double& verticalShift, DRange3dCR lsRange, double componentLength)
+static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, double componentLength)
     {
     scaleFactor = 1;
 
@@ -443,7 +385,6 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, double& verticalShift, D
 
     return range2d;
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
@@ -467,8 +408,7 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     rangeStroker.ComputeRange(lsRange);
 
     uint32_t  scaleFactor = 1;
-    double    verticalShift = 0.0;
-    DRange2d range2d = getAdjustedRange(scaleFactor, verticalShift, lsRange, comp->_GetLength());
+    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
 
     SymbologyQueryResults  symbologyResults;
     comp->_QuerySymbology(symbologyResults);
@@ -487,7 +427,7 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     if (!isWeightBySymbol)
         lineWeight = 0;
 
-    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, verticalShift, lineColor, fillColor, lineWeight, *comp);
+    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
 
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, isColorBySymbol, viewContext, false);
 
