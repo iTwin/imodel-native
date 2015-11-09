@@ -45,8 +45,7 @@ std::ostream& operator << (std::ostream &o, DateTimeCR date);
 // EC
 std::ostream& operator << (std::ostream &o, ECValueCR value);
 std::ostream& operator << (std::ostream &o, DbResult value);
-std::ostream& operator << (std::ostream &o, ECSqlStatus status);
-//std::ostream& operator << (std::ostream &o, ECSqlStepStatus status);
+std::ostream& operator << (std::ostream &o, ECSqlStatus::Status status);
 std::ostream& operator << (std::ostream &o, const ECInstanceKeyMultiMap::value_type& pair);
 
 namespace rapidjson
