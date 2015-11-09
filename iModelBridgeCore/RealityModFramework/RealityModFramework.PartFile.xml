@@ -26,13 +26,6 @@
         <SubPart PartName="WMSCapabilitiesNET"/>
     </Part>
 
-    <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="RealityPlatform"/>
-        <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/RealityDataHandlerTester.exe</Assemblies>
-        </Bindings>
-    </Part>
-
     <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
@@ -71,92 +64,13 @@
         </Bindings>
     </Part>
 
-    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
-        <Bindings>
-            <!-- un-comment this if you want to deliver ignore_list.txt
-            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="RealityMod" SubPartDirectory="UnitTests/RealityMod"> Delivery/UnitTests/ignore_list.txt</Files>
-            -->
-            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="xsd">Delivery/UnitTests/RealityPackage.1.0.xsd</Files>
-            </Bindings>
-        </Part>
+    
 
-    <Part Name="RealityPackageUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPackage">
-        <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="RealityPackage"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RealityPackage" SourceName="Delivery/UnitTests/Objects/RealityPackage"/>
-        </Bindings>
-    </Part>
+    
 
-    <Part Name="RealityPlatformUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPlatform">
-        <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="RealityPlatform"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RealityPlatform" SourceName="Delivery/UnitTests/Objects/RealityPlatform"/>
-        </Bindings>
-    </Part>
+    
 
-    <Part Name="CrawlerLibUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=CrawlerLib">
-        <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="CrawlerLib"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CrawlerLib" SourceName="Delivery/UnitTests/Objects/CrawlerLib"/>
-        </Bindings>
-    </Part>
-
-    <!-- Define a test collection product -->
-    <Part Name="Tests">
-        <SubPart PartName="RealityPackageUnitTests"/>
-        <SubPart PartName="RealityPlatformUnitTests"/>
-        <SubPart PartName="CrawlerLibUnitTests"/>
-    </Part>
-
-    <Product Name="Reality-Tests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
-        <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
-        <Directories DirectoryListName="RealityTestsDir"/>
-    </Product>
-
-    <ProductDirectoryList ListName="RealityTestsDir" >
-        <ProductDirectory Name="RealityAssemblies"              Path="Assemblies"/>
-        <ProductDirectory Name="ImagePPAssemblies"              Path="Assemblies"/>
-        <ProductDirectory Name="PPNativeAssemblies"             Path="Assemblies" />
-        <ProductDirectory Name="PdfLibInitNativeAssemblies"     Path="Assemblies" />
-        <ProductDirectory Name="MrSidAssemblies"                Path="Assemblies" />
-        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="Assemblies" />
-        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="Assemblies" />
-        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="Assemblies" />
-        <ProductDirectory Name="ECServicesManagedAssemblies"    Path="Assemblies"/>
-        <ProductDirectory Name="PointoolsAssemblies"            Path="Assemblies"/>
-        <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
-
-        <ProductDirectory Name="AdobeAssemblies"                Path="Assemblies" Deliver="false"/>
-        <ProductDirectory Name="AdobeResource"                  Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
-        <ProductDirectory Name="OracleNativeAssemblies"         Deliver="false"/>
-        <ProductDirectory Name="GdalData"                       Deliver="false"/>
-        <ProductDirectory Name="csmapmergemodules"              Deliver="false" />
-    </ProductDirectoryList>
-
-    <!-- Define a gtest program to run the tests -->
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityTest -dTEST_COLLECTION_PRODUCT=Reality-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubProduct ProductName="Reality-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityTest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RealityTest/Assets" />
-        </Bindings>
-    </Part>
-
-    <Product Name="Reality-Gtest" >
-        <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-    </Product>
-
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Reality-Gtest/RealityTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Reality" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="Reality-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-    </Part>
+    
     
     <Part Name="Reality-Examples">
         <SubPart PartName="RealityDbECPlugin"/>
@@ -265,21 +179,106 @@
 	
     <Product Name="RealityModFramework">
         <SubPart PartName="Reality-Examples"/>
-        <SubProduct ProductName="Reality-Tests"/>
+        <SubPart PartName="RealityModFrameworkTested"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
+    <!-- ********************************************************************************************** -->
+    <!-- Unit tests -->
+    <!-- ********************************************************************************************** -->
+    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <Bindings>
+            <!-- un-comment this if you want to deliver ignore_list.txt
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="RealityMod" SubPartDirectory="UnitTests/RealityMod"> Delivery/UnitTests/ignore_list.txt</Files>
+            -->
+            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="xsd">Delivery/UnitTests/RealityPackage.1.0.xsd</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealityPackageUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPackage">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RealityPackage" SourceName="Delivery/UnitTests/Objects/RealityPackage"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealityPlatformUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPlatform">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RealityPlatform" SourceName="Delivery/UnitTests/Objects/RealityPlatform"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="CrawlerLibUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=CrawlerLib">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="CrawlerLib"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CrawlerLib" SourceName="Delivery/UnitTests/Objects/CrawlerLib"/>
+        </Bindings>
+    </Part>
+
+    <!-- Define a test collection product -->
+    <Part Name="Tests">
+        <SubPart PartName="RealityPackageUnitTests"/>
+        <SubPart PartName="RealityPlatformUnitTests"/>
+        <SubPart PartName="CrawlerLibUnitTests"/>
+    </Part>
+
+    <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
+    <!-- Lay out the test product according to the standard BeGTest layout. -->
+    <ProductDirectoryList ListName="RealityModFrameworkTestsDir" >
+        <ProductDirectory Name="RealityAssemblies"              Path="Assemblies"/>
+        <ProductDirectory Name="ImagePPAssemblies"              Path="Assemblies"/>
+        <ProductDirectory Name="PPNativeAssemblies"             Path="Assemblies" />
+        <ProductDirectory Name="PdfLibInitNativeAssemblies"     Path="Assemblies" />
+        <ProductDirectory Name="MrSidAssemblies"                Path="Assemblies" />
+        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="Assemblies" />
+        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="Assemblies" />
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="Assemblies" />
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path="Assemblies"/>
+        <ProductDirectory Name="PointoolsAssemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
+
+        <ProductDirectory Name="AdobeAssemblies"                Path="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="AdobeResource"                  Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="OracleNativeAssemblies"         Deliver="false"/>
+        <ProductDirectory Name="GdalData"                       Deliver="false"/>
+        <ProductDirectory Name="csmapmergemodules"              Deliver="false" />
+    </ProductDirectoryList>
+    
+    <Product Name="RealityModFramework-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="RealityModFrameworkTestsDir"/>
+    </Product>
+
+    <!-- Define a gtest program to run the tests -->
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="RealityModFramework-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityModFrameworkTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RealityModFrameworkTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="RealityModFramework-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/RealityModFramework-Gtest/RealityModFrameworkTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="RealityModFramework-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!-- This part runs RealityModFrameworkTests on platforms that support it. -->
+    <Part Name="RealityModFrameworkTested">
+        <SubPart PartName="RunGtest" />
+    </Part>
+
 </BuildContext>
-
-<!--
-To build the tests
-bb –sRealityModFramework.Dev b
-
-To run the tests:
-bb -rRealityModFramework -pRealityModFramework:RunGtest b
-
-To re-run the tests:
-bb -rRealityModFramework -pRealityModFramework:RunGtest re RunGtest
-
-To run under the debugger run the exe that you see in %OutRoot%Winx64\Product\Reality-Gtest
--->
