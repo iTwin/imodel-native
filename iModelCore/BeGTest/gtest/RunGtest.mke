@@ -82,10 +82,10 @@ always:
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
     $(RunPrefix) python $(_MakeFilePath)RunTests.py --exename="$(exeName)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(GTEST_OUTPUT_DIR) --log_file=$(LogFile)
-    %if !defined (BEGTEST_DONTVALUATELOGFILE)
+    %if !defined (BEGTEST_DONTVALIDATELOGFILE)
     %if !defined (NO_BREAK)
        $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
     %else
        -$(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
     %endif # !defined (NO_BREAK)
-    %endif # !defined (BEGTEST_DONTVALUATELOGFILE)
+    %endif # !defined (BEGTEST_DONTVALIDATELOGFILE)
