@@ -2248,12 +2248,94 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubc
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
     std::map<ECClassId, PersistedMapStrategy> expectedResults {
-        {ecdb.Schemas().GetECClassId("TestSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::ParentOfJoinedTable, true)},
-        {ecdb.Schemas().GetECClassId("TestSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
-        {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
-        {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)}
+            {ecdb.Schemas().GetECClassId("TestSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::ParentOfJoinedTable, true)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)}
         };
 
+    for (std::pair<ECClassId, PersistedMapStrategy> const& kvPair : expectedResults)
+        {
+        ECClassId classId = kvPair.first;
+        PersistedMapStrategy expectedMapStrategy = kvPair.second;
+        PersistedMapStrategy actualMapStrategy;
+
+        ASSERT_TRUE(TryGetPersistedMapStrategy(actualMapStrategy, ecdb, classId));
+        ASSERT_EQ(expectedMapStrategy.m_strategy, actualMapStrategy.m_strategy);
+        ASSERT_EQ(expectedMapStrategy.m_options, actualMapStrategy.m_options);
+        ASSERT_EQ(expectedMapStrategy.m_appliesToSubclasses, actualMapStrategy.m_appliesToSubclasses);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableAndSharedColumnsForSubclasses)
+    {
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Base' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>JoinedTableForSubclasses, SharedColumnsForSubclasses</Options>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P0' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub1' isDomainClass='True'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='P1' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub2' isDomainClass='True'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='P2' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub11' isDomainClass='True'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECProperty propertyName='P11' typeName='double' />"
+        "    </ECClass>"
+        "</ECSchema>", true, "");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "joinedtableforsubclasses.ecdb");
+    ASSERT_FALSE(asserted);
+
+    //verify tables
+    std::vector<Utf8String> tableNames;
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT name FROM sqlite_master WHERE name Like 'ts_%' and type='table'"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        tableNames.push_back(stmt.GetValueText(0));
+        }
+    }
+    ASSERT_EQ(2, tableNames.size());
+
+    auto it = std::find(tableNames.begin(), tableNames.end(), "ts_Base");
+    ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base is expected to exist";
+
+    it = std::find(tableNames.begin(), tableNames.end(), "ts_Base_Joined");
+    ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base_Joined is expected to exist";
+
+    //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
+    const PersistedMapStrategy::Options sharedColumnsAndJoinedTableOption = (PersistedMapStrategy::Options) (((int) PersistedMapStrategy::Options::JoinedTable) | ((int) PersistedMapStrategy::Options::SharedColumns));
+    std::map<ECClassId, PersistedMapStrategy> expectedResults {
+            {ecdb.Schemas().GetECClassId("TestSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::ParentOfJoinedTable, true)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, sharedColumnsAndJoinedTableOption, true)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, sharedColumnsAndJoinedTableOption, true)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, sharedColumnsAndJoinedTableOption, true)}
+        };
+
+    //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
     for (std::pair<ECClassId, PersistedMapStrategy> const& kvPair : expectedResults)
         {
         ECClassId classId = kvPair.first;
