@@ -24,6 +24,3 @@ ECSqlStatementTestFixture.PolymorphicUpdateTest
 #TFS333029 to address this (Raman)
 JsonUpdaterTests.UpdateRelationshipProperty
 ECDbInstances.UpdateRelationshipProperty
-
-#TFS333030 to address this (Krischan)
-ECDbMappingTestFixture.SharedColumnsAcrossMultipleSchemaImports

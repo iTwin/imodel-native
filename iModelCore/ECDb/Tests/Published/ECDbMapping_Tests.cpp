@@ -100,6 +100,40 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "</ECSchema>", true, "Option JoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses)"),
 
         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "    <ECClass typeName='ClassA' isDomainClass='True'>"
+                   "        <ECCustomAttributes>"
+                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                   "                <MapStrategy>"
+                   "                   <Strategy>SharedTable</Strategy>"
+                   "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "                   <Options>JoinedTableForSubclasses, SharedColumnsForSubclasses</Options>"
+                   "                </MapStrategy>"
+                   "            </ClassMap>"
+                   "        </ECCustomAttributes>"
+                   "        <ECProperty propertyName='Price' typeName='double' />"
+                   "    </ECClass>"
+                   "</ECSchema>", true, "Combination of options JoinedTableForSubclasses and SharedColumnsForSubclasses is expected to work with strategy SharedTable (applied to subclasses)"),
+
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "    <ECClass typeName='ClassA' isDomainClass='True'>"
+                   "        <ECCustomAttributes>"
+                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                   "                <MapStrategy>"
+                   "                   <Strategy>SharedTable</Strategy>"
+                   "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "                   <Options>JoinedTableForSubclasses, SharedColumns</Options>"
+                   "                </MapStrategy>"
+                   "            </ClassMap>"
+                   "        </ECCustomAttributes>"
+                   "        <ECProperty propertyName='Price' typeName='double' />"
+                   "    </ECClass>"
+                   "</ECSchema>", true, "Combination of options JoinedTableForSubclasses and SharedColumns is expected to work with strategy SharedTable (applied to subclasses)"),
+
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                  "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -114,7 +148,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "        </ECCustomAttributes>"
                  "        <ECProperty propertyName='Price' typeName='double' />"
                  "    </ECClass>"
-                 "</ECSchema>", true, "Option JoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses) and with SharedColumnsForSubclasses"),
+                 "</ECSchema>", true, "Combination of options SharedColumnsForSubclasses and JoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses) and with SharedColumnsForSubclasses"),
 
     SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -478,7 +512,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "        <BaseClass>SubSub</BaseClass>"
     "        <ECProperty propertyName='P3' typeName='int' />"
     "    </ECClass>"
-    "</ECSchema>", true, ""),
+    "</ECSchema>", true, "NotMapped on subclass"),
 
 
     SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
@@ -640,7 +674,128 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "        </ECCustomAttributes>"
     "        <ECProperty propertyName='Price' typeName='double' />"
     "    </ECClass>"
-    "</ECSchema>", true, ""),
+    "</ECSchema>", true, "DisableSharedColumns on subclass"),
+    
+    SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Parent' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub1' isDomainClass='True'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub11' isDomainClass='True'>"
+        "        <BaseClass>Sub1</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECClass>"
+        "</ECSchema>", true, "Defining SharedColumns in subclass is expected to work"),
+
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Parent' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub1' isDomainClass='True'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Options>SharedColumnsForSubclasses</Options>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub11' isDomainClass='True'>"
+            "        <BaseClass>Sub1</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Option SharedColumnsForSubclasses is only allowed on class that defines SharedTable."),
+
+
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Parent' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub1' isDomainClass='True'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Options>DisableSharedColumns</Options>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub11' isDomainClass='True'>"
+            "        <BaseClass>Sub1</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", true, "Defining SharedColumns in subclass of class with DisableSharedColumns is expected to work"),
 
     SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
@@ -1971,24 +2126,24 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disa
         "    </ECClass>"
         "    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
         "        <BaseClass>BaseClass</BaseClass>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                  <Options>DisableSharedColumns</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P3' typeName='int' />"
         "    </ECClass>"
         "    <ECClass typeName='DerivedA' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
         "        <BaseClass>ChildDomainClassA</BaseClass>"
         "        <ECProperty propertyName='P4' typeName='double' />"
         "    </ECClass>"
         "    <ECClass typeName='DerivedB' isDomainClass='True'>"
-        "        <BaseClass>ChildDomainClassA</BaseClass>"
+        "        <BaseClass>ChildDomainClassB</BaseClass>"
         "        <ECProperty propertyName='P5' typeName='string' />"
         "    </ECClass>"
-        "</ECSchema>", true, "");
+        "</ECSchema>");
 
     ECDb db;
     bool asserted = false;
@@ -2012,7 +2167,7 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disa
     ASSERT_EQ(BE_SQLITE_DONE, s3.Step());
     ASSERT_EQ(ECSqlStatus::Success, s4.Prepare(db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"));
     ASSERT_EQ(BE_SQLITE_DONE, s4.Step());
-    ASSERT_EQ(ECSqlStatus::Success, s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"));
+    ASSERT_EQ(ECSqlStatus::Success, s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P3, P5) VALUES('DerivedB', 11, 'DerivedB')"));
     ASSERT_EQ(BE_SQLITE_DONE, s5.Step());
 
     //verify No of Columns in BaseClass
@@ -2023,7 +2178,7 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disa
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2sc01P3";
+    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2sc01sc02";
     Utf8String actualColumnNames;
     for (int i = 0; i < expectedColCount; i++)
         {

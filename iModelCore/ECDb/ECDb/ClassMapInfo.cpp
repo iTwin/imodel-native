@@ -163,44 +163,33 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
     else
         parentClassMap = baseClassMaps[0];
 
-    ECClassCR parentClass = parentClassMap->GetClass();
-    //ECDB_ISSUE: Following does not work accross two schema imports. as schema import context is reset there for userstraget come empty - Affan   
-    UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClass);
-    if (parentUserStrategy == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    UserECDbMapStrategy const& rootUserStrategy = userStrategy.AssignRoot(*parentUserStrategy);
-
-    if (!ValidateChildStrategy(rootUserStrategy, userStrategy))
+    ECDbMapStrategy const& parentStrategy = parentClassMap->GetMapStrategy();
+    if (!ValidateChildStrategy(parentStrategy, userStrategy))
         return ERROR;
 
     // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable (AppliesToSubclasses), use this
     if (polymorphicSharedTableClassMaps.size() == 1)
         {
         m_parentClassMap = parentClassMap;
-        BeAssert(parentClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentClassMap->GetMapStrategy().AppliesToSubclasses());
+        BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
+
+        UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap->GetClass());
+        if (parentUserStrategy == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
 
         ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
-        if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) &&
-            (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) ||
-                Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
+        if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) && 
+            (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) ||
+            Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::SharedColumns) ||
+            Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
             options = ECDbMapStrategy::Options::SharedColumns;
 
-    #if 0 //Options are not inherited accross multiple schema sessions
-        if (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses))
-            {
-            options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
-            m_tableName = m_parentClassMap->GetTable().GetName();
-            if (!m_parentClassMap->GetTable().GetName().EndsWithI(TABLESUFFIX_JOINEDTABLE))
-                m_tableName.append(TABLESUFFIX_JOINEDTABLE);
-            }
-    #endif
-
-        if (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses)
-            || parentClassMap->IsJoinedTable() || parentClassMap->IsParentOfJoinedTable())
+        if (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses))
+            options = Enum::Or(options, ECDbMapStrategy::Options::ParentOfJoinedTable);
+        else if (Enum::Intersects(parentStrategy.GetOptions(), Enum::Or(ECDbMapStrategy::Options::JoinedTable, ECDbMapStrategy::Options::ParentOfJoinedTable)))
             {
             options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
             m_tableName = m_parentClassMap->GetTable().GetName();
@@ -225,31 +214,27 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy, UserECDbMapStrategy const& childStrategy) const
+bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const
     {
-    //if root strategy doesn't have any CA, everything is valid on the child
-    if (rootStrategy.IsUnset())
-        return true;
-
-    if (!rootStrategy.AppliesToSubclasses())
+    if (!parentStrategy.AppliesToSubclasses())
         {
-        BeAssert(rootStrategy.AppliesToSubclasses() && "In ClassMapInfo::ValidateChildStrategy rootStrategy should always apply to subclasses");
+        BeAssert(parentStrategy.AppliesToSubclasses() && "In ClassMapInfo::ValidateChildStrategy parentStrategy should always apply to subclasses");
         return false;
         }
 
     bool isValid = true;
     Utf8CP detailError = nullptr;
-    switch (rootStrategy.GetStrategy())
+    switch (parentStrategy.GetStrategy())
         {
-            case UserECDbMapStrategy::Strategy::SharedTable:
+            case ECDbMapStrategy::Strategy::SharedTable:
                 {
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
                     !childStrategy.AppliesToSubclasses() &&
-                    (childStrategy.GetOptions() == UserECDbMapStrategy::Options::None ||
-                    childStrategy.GetOptions() == UserECDbMapStrategy::Options::DisableSharedColumns);
+                    childStrategy.GetOptions() != UserECDbMapStrategy::Options::JoinedTableForSubclasses &&
+                    childStrategy.GetOptions() != UserECDbMapStrategy::Options::SharedColumnsForSubclasses;
 
                 if (!isValid)
-                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and Option must either be unset or 'DisableSharedColumns'.";
+                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and Option must either be unset, 'SharedColumns', or 'DisableSharedColumns'.";
 
                 break;
                 }
@@ -271,8 +256,8 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
     if (!isValid)
         {
         m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
-                     "MapStrategy %s of ECClass '%s' does not match the MapStrategy %s on the root of the class hierarchy. %s",
-                     childStrategy.ToString().c_str(), m_ecClass.GetFullName(), rootStrategy.ToString().c_str(), detailError);
+                     "MapStrategy %s of ECClass '%s' does not match the parent's MapStrategy. %s",
+                     childStrategy.ToString().c_str(), m_ecClass.GetFullName(), detailError);
         }
 
     return isValid;

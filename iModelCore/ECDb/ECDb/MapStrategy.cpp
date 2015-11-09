@@ -28,7 +28,7 @@ bool UserECDbMapStrategy::IsValid() const
     switch (m_strategy)
         {
             case Strategy::None:
-                return !m_appliesToSubclasses && (m_options == Options::None || m_options == Options::DisableSharedColumns);
+                return !m_appliesToSubclasses && (m_options == Options::None || m_options == Options::SharedColumns || m_options == Options::DisableSharedColumns);
 
             case Strategy::SharedTable:
                 {
@@ -48,16 +48,6 @@ bool UserECDbMapStrategy::IsValid() const
                 return m_options == Options::None;
         }
     }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                07/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-UserECDbMapStrategy const& UserECDbMapStrategy::AssignRoot(UserECDbMapStrategy const& parent)
-    {
-    m_root = parent.m_root != nullptr ? parent.m_root : &parent;
-    return *m_root;
-    }
-
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015

@@ -52,7 +52,7 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
 
     for (Utf8StringCR schemaXml : testItem.m_schemaXmlList)
         {
-        ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str())) << testItem.m_assertMessage.c_str();
+        ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str())) << testItem.m_assertMessage.c_str() << " " << schemaXml.c_str();
         }
 
     if (!testItem.m_expectedToSucceed)
