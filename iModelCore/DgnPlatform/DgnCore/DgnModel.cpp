@@ -1706,7 +1706,7 @@ static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool generateSolution)
+PhysicalElementCPtr ComponentModel::GetCapturedSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool generateSolution)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
