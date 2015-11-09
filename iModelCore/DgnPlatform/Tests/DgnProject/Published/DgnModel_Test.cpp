@@ -219,16 +219,16 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
     {
     DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
 
-    GeometricElementPtr gelem;
+    DgnElementPtr gelem;
     if (is3d)
         gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
     else
         gelem = DrawingElement::Create(DrawingElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem))  // We actually catch 2d3d mismatch in SetGeomStreamAndPlacement
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in SetGeomStreamAndPlacement
         {
         ASSERT_FALSE(expectSuccess);
         return;

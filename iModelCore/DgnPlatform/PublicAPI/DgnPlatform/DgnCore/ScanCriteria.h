@@ -52,7 +52,7 @@ private:
     bool UseRangeTree(DgnRangeTree&);
     bool CheckElementRange(DgnElementCR) const;
     virtual bool _CheckRangeTreeNode (DRange3dCR, bool) const override;
-    virtual DgnRangeTree::Match _VisitRangeTreeElem(GeometricElementCP, DRange3dCR) override;
+    virtual DgnRangeTree::Match _VisitRangeTreeElem(GeometrySourceCP, DRange3dCR) override;
 
 public:
     DGNPLATFORM_EXPORT ScanCriteria();

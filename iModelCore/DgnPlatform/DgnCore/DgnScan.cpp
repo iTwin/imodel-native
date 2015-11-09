@@ -193,8 +193,8 @@ ScanCriteria::Result  ScanCriteria::CheckRange(DRange3dCR elemRange, bool is3d) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScanCriteria::CheckElementRange(DgnElementCR element) const
     {
-    GeometricElementCP geom = element.ToGeometricElement();
-    return geom ? _CheckRangeTreeNode(geom->CalculateRange3d(), geom->Is3d()) : false;
+    GeometrySourceCP geom = element.ToGeometrySource();
+    return geom ? _CheckRangeTreeNode(geom->CalculateRange3d(), element.Is3d()) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -215,7 +215,7 @@ ScanCriteria::Result ScanCriteria::CheckElement(DgnElementCR element, bool doRan
     {
     if (m_type.testCategory)
         {
-        auto geomEl = element.ToGeometricElement();
+        auto geomEl = element.ToGeometrySource();
         if (nullptr == geomEl || !m_categories->Contains(geomEl->GetCategoryId()))
             return  ScanCriteria::Result::Fail;
         }
@@ -233,8 +233,13 @@ ScanCriteria::Result ScanCriteria::CheckElement(DgnElementCR element, bool doRan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTree::Match ScanCriteria::_VisitRangeTreeElem(GeometricElementCP element, DRange3dCR range)
+DgnRangeTree::Match ScanCriteria::_VisitRangeTreeElem(GeometrySourceCP source, DRange3dCR range)
     {
+    DgnElementCP element = source->ToElement();
+
+    if (nullptr == element)
+        return DgnRangeTree::Match::Ok;
+
     if (ScanCriteria::Result::Pass != CheckRange(range, element->Is3d()))
         return DgnRangeTree::Match::Ok;
 

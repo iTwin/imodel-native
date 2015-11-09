@@ -268,26 +268,26 @@ virtual void _CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatS
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, GeometricElementCR element)
+void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, GeometrySourceCR source)
     {
     ElementGraphicsDrawGeom output;
     ElementGraphicsContext  context(&dropObj, output);
 
-    context.SetDgnDb(element.GetDgnDb());
+    context.SetDgnDb(source.GetSourceDgnDb());
     
-    if (nullptr != element.ToElement3d())
+    if (nullptr != source.ToGeometrySource3d())
         {
         // NOTE: The processor only wants curves/edges. Don't output brep polyface when Parasolid isn't
         //       available, output the exact pre-computed wireframe geometry instead. Also better to avoid
         //       creating a ISolidKernelEntity un-neccesarily even when Parasolid is available.
         if (!dropObj._ProcessAsBody(true) && !dropObj._ProcessAsFacets(false))
             {
-            if (context.ElementIsUndisplayed(element))
+            if (context.ElementIsUndisplayed(source))
                 return;
 
-            context.SetCurrentElement(&element);
+            context.SetCurrentElement(&source);
 
-            ElementGeometryCollection collection(element);
+            ElementGeometryCollection collection(source);
 
             collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Edges | ElementGeometryCollection::BRepOutput::FaceIso);
 
@@ -308,7 +308,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometri
             }
         }
     
-    context.VisitElement(element);
+    context.VisitElement(source);
     }
 
 /*----------------------------------------------------------------------------------*//**

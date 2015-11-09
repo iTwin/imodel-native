@@ -263,7 +263,7 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
         if (!elRef.IsValid())
             continue; // id is in the list but not in the file
 
-        GeometricElementCP geom=elRef->ToGeometricElement();
+        GeometrySourceCP geom=elRef->ToGeometrySource();
         if (nullptr==geom || !geom->HasGeometry())
             continue;
 

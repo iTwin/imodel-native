@@ -1076,17 +1076,21 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
         }
 
     // We do this here to avoid having to do another (ECSql) SELECT statement solely to retrieve the CategoryId from the row we just selected...
-    auto geomEl = categoryId.IsValid() ? el->ToGeometricElementP() : nullptr;
+    auto geomEl = categoryId.IsValid() ? el->ToGeometrySourceP() : nullptr;
     if (nullptr != geomEl)
+#if defined (NOT_NOW_GEOMETRY_SOURCE)
         geomEl->InitializeCategoryIdInternal(categoryId);
+#else
+        geomEl->SetCategoryId(categoryId); // NEEDSWORK: Need to move to ElementGeom table... 
+#endif
 
     if (DgnDbStatus::Success != el->_LoadFromDb())
         return nullptr;
 
     if (makePersistent)
         {
-        if (m_selectionSet.Contains(el->GetElementId()))
-            el->SetInSelectionSet(true);
+        if (nullptr != geomEl && m_selectionSet.Contains(el->GetElementId()))
+            geomEl->SetInSelectionSet(true);
 
         el->GetModel()->_OnLoadedElement(*el);
         AddToPool(*el);

@@ -351,7 +351,7 @@ DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
 DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
     {
     auto status = T_Super::_OnInsertElement(el);
-    if (DgnDbStatus::Success == status && nullptr != el.ToGeometricElement())
+    if (DgnDbStatus::Success == status && el.IsGeometricElement())
         status = DgnDbStatus::WrongModel;
 
     return status;
@@ -542,7 +542,7 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
     if (nullptr == m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element.ToGeometricElement();
+    GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != m_rangeIndex && nullptr != geom && geom->HasGeometry())
         m_rangeIndex->AddGeomElement(*geom);
     }
@@ -555,7 +555,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element.ToGeometricElement();
+    GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
         m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->CalculateRange3d(), *geom));
     }
@@ -568,11 +568,11 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP origGeom = original.ToGeometricElement();
+    GeometrySourceCP origGeom = original.ToGeometrySource();
     if (nullptr == origGeom)
         return;
 
-    GeometricElementCP newGeom = (GeometricElementCP) &modified;
+    GeometrySourceCP newGeom = (GeometrySourceCP) &modified;
     AxisAlignedBox3d origBox = origGeom->HasGeometry() ? origGeom->CalculateRange3d() : AxisAlignedBox3d();
     AxisAlignedBox3d newBox  = newGeom->HasGeometry() ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
 
@@ -1973,7 +1973,7 @@ DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalM
     FillModel();
     for (auto const& mapEntry : *this)
         {
-        GeometricElementCP componentElement = mapEntry.second->ToGeometricElement();
+        GeometrySourceCP componentElement = mapEntry.second->ToGeometrySource();
         if (nullptr == componentElement)
             continue;
 

@@ -370,7 +370,7 @@ DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToElement();
 
 DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, GeomStreamCR geom);
-DGNPLATFORM_EXPORT ElementGeometryCollection (GeometricElementCR element);
+DGNPLATFORM_EXPORT ElementGeometryCollection (GeometrySourceCR source);
 DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
 
 }; // ElementGeometryCollection
@@ -436,7 +436,7 @@ Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private
 DGNPLATFORM_EXPORT BentleyStatus GetGeomStream (GeomStreamR); //!< @private
 
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
-DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
+DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometrySourceR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
 DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
@@ -458,10 +458,10 @@ DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, Dgn
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
 
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometricElementCR); //! Create builder from element using current placement.
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometricElementCR);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometrySource3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometrySource2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometrySourceCR); //! Create builder from GeometrySource using current placement.
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometrySourceCR);
 
 }; // ElementGeometryBuilder
 

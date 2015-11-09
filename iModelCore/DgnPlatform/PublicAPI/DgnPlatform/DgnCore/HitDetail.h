@@ -181,7 +181,7 @@ protected:
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
-    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometricElementCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
 
@@ -204,7 +204,7 @@ public:
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
 #endif
 
-    DGNPLATFORM_EXPORT GeometricElementCPtr GetElement() const;
+    DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
     DgnElementId GetElementId() const {return m_elementId;}
     DGNPLATFORM_EXPORT DgnModelR GetDgnModel() const;
     DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;

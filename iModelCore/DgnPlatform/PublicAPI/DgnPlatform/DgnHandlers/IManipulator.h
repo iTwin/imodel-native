@@ -175,7 +175,7 @@ struct IEditManipulatorExtension : DgnDomain::Handler::Extension
 {
 public:
 
-virtual IEditManipulatorPtr _GetIEditManipulator (GeometricElementCR elm) = 0;
+virtual IEditManipulatorPtr _GetIEditManipulator (GeometrySourceCR elm) = 0;
 virtual IEditManipulatorPtr _GetIEditManipulator (HitDetailCR hit) = 0;
 HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
 

@@ -948,15 +948,15 @@ struct IStrokeForCache
 struct EXPORT_VTABLE_ATTRIBUTE StrokeElementForCache : IStrokeForCache
 {
 protected:
-    GeometricElementCR  m_element;
+    DgnElementCR    m_element;
 
 public:
 
-    explicit StrokeElementForCache(GeometricElementCR element) : m_element(element) {}
+    explicit StrokeElementForCache(DgnElementCR element) : m_element(element) {}
 
     virtual DgnDbR _GetDgnDb() const override {return m_element.GetDgnDb();}
-    virtual DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
-    virtual QvCacheP _GetQVCache() const override {return m_element.GetMyQvCache();}
+    virtual DRange3d _GetRange() const override {GeometrySourceCP geom = m_element.ToGeometrySource(); return (nullptr == geom ? DRange3d::NullRange() : geom->CalculateRange3d());}
+    virtual QvCacheP _GetQVCache() const override {return m_element.GetDgnDb().Models().GetQvCache();}
 
     DGNPLATFORM_EXPORT virtual QvElemP _GetQvElem(double pixelSize) const;
     DGNPLATFORM_EXPORT virtual void _SaveQvElem(QvElemP, double pixelSize, double sizeDependentRatio) const;

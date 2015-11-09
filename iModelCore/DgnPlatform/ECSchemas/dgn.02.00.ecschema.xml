@@ -359,17 +359,27 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="GeometricElement" isDomainClass="False">
-        <BaseClass>Element</BaseClass>
+
+    <ECClass typeName="GeometrySource" isDomainClass="False">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
     </ECClass>
+
     <ECClass typeName="DictionaryElement" isDomainClass="False">
         <BaseClass>Element</BaseClass>
     </ECClass>
     <ECClass typeName="Element3d" isDomainClass="False">
-        <BaseClass>GeometricElement</BaseClass>
+        <BaseClass>Element</BaseClass>
+        <BaseClass>GeometrySource</BaseClass>
     </ECClass>
     <ECClass typeName="Element2d" isDomainClass="False">
-        <BaseClass>GeometricElement</BaseClass>
+        <BaseClass>Element</BaseClass>
+        <BaseClass>GeometrySource</BaseClass>
     </ECClass>
     <ECClass typeName="PhysicalElement" isDomainClass="True">
         <ECCustomAttributes>
@@ -666,7 +676,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="GeometricElement" />
+            <Class class="Element" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
             <Class class="ElementGeom">

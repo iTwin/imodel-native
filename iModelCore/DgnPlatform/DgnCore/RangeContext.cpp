@@ -931,10 +931,10 @@ bool _ScanRangeFromPolyhedron()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt _VisitElement(GeometricElementCR element) override
+StatusInt _VisitElement(GeometrySourceCR source) override
     {
-    DRange3d range = element.CalculateRange3d();
-    if (IsRangeContainedInCurrentRange(range, element.Is3d()))
+    DRange3d range = source.CalculateRange3d();
+    if (IsRangeContainedInCurrentRange(range, nullptr != source.ToGeometrySource3d()))
         return SUCCESS;
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...
@@ -1003,7 +1003,7 @@ StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR rangeUnion, DgnElemen
         if (!elem.IsValid())
             continue;
 
-        GeometricElementCP geomElem = elem->ToGeometricElement();
+        GeometrySourceCP geomElem = elem->ToGeometrySource();
 
         if (nullptr == geomElem)
             continue;
@@ -1032,7 +1032,7 @@ struct DepthFitContext : public FitContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitElement(GeometricElementCR element)
+virtual StatusInt _VisitElement(GeometrySourceCR element)
     {
     // Check range - this is much less expensive than clipping and accumulating ranges for geometry outside the view.
     if (_FilterRangeIntersection(element))

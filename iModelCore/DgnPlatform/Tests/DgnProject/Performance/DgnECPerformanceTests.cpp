@@ -45,7 +45,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (!element.IsValid())
         return ERROR;
 
-    GeometricElementP geomElement = element->ToGeometricElementP();
+    GeometrySourceP geomElement = element->ToGeometrySourceP();
 
     if (nullptr == geomElement)
         return ERROR;
