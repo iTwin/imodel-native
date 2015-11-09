@@ -84,6 +84,12 @@ WSObjectsResult StubInstances::ToWSObjectsResult(Utf8StringCR eTag) const
     return WSObjectsResult::Success(ToWSObjectsResponse(eTag));
     }
 
+WSChangesetResult StubInstances::ToWSChangesetResult() const
+    {
+    auto body = HttpStringBody::Create(ToChangesetResponseJson());
+    return WSChangesetResult::Success(body);
+    }
+
 Utf8String StubInstances::ToJsonWebApiV1() const
     {
     Utf8String mainSchemaName;
@@ -125,11 +131,22 @@ Utf8String StubInstances::ToJsonWebApiV2() const
     return dataJson.toStyledString();
     }
 
-StubInstances::StubRelationshipInstances::StubRelationshipInstances
-(
-bvector<std::shared_ptr<StubRelationshipInstance>>& relationshipInstances
-) :
-m_relationshipInstances(relationshipInstances)
+Utf8String StubInstances::ToChangesetResponseJson() const
+    {
+    Json::Value dataJson;
+    dataJson["changedInstances"] = Json::arrayValue;
+
+    for (auto& instance : m_instances)
+        {
+        auto& instanceJson = dataJson["changedInstances"].append(Json::objectValue);
+        instanceJson["instanceAfterChange"] = ConvertStubInstanceToJson(instance);
+        }
+
+    return dataJson.toStyledString();
+    }
+
+StubInstances::StubRelationshipInstances::StubRelationshipInstances(bvector<std::shared_ptr<StubRelationshipInstance>>& relationships) :
+m_relationshipInstances(relationships)
     {}
 
 StubInstances::StubRelationshipInstances StubInstances::StubRelationshipInstances::AddRelated

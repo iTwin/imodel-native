@@ -59,7 +59,10 @@ BentleyStatus BeSQLiteDbTransactionHandler::BeginTransaction()
     {
     if (m_transactionSavepoint || 0 != m_db->GetCurrentSavepointDepth())
         {
-        BeAssert(false && "Transaction is already active. Nesting transactions are not allowed. Commit existing transaction or extend its lifetime.");
+        BeAssert(false &&
+            "Transaction is already active. Nesting transactions are not allowed. "
+            "Commit existing transaction or extend its lifetime. "
+            "Check if there are no transactions used in paralel in other threads.");
         return ERROR;
         }
 
