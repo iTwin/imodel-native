@@ -17,6 +17,7 @@
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/GeomJsApi.h>
+#include <Logging/bentleylogging.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -33,15 +34,63 @@ struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
         };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
 };
+
+//=======================================================================================
+//! Logging Severity 
+// *** TRICKY: Note that BEJAVASCRIPT_EXPORT_CLASS must be followed by the Typescript module name in parentheses.
+//              That is, even though this enum is defined in the BentleyApi::Dgn, you mus tell the TS API generator 
+//              explicitly that this enum should be defined in the 'BentleyApi.Dgn' module.
+//
+// @bsiclass                                                    Sam.Wilson      10/15
+//=======================================================================================
+BEJAVASCRIPT_EXPORT_CLASS
+(BentleyApi.Dgn)
+enum class LoggingSeverity : uint32_t
+    {
+    // *** WARNING: Keep this consistent with DgnPlatformLib::ScriptAdmin::LoggingSeverity
+    Fatal   = 0, 
+    Error   = 1, 
+    Warning = 2, 
+    Info    = 3, 
+    Debug   = 4, 
+    Trace   = 5
+    };
+
+//=======================================================================================
+//! Access to the message log
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct Logging : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derive from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
+    {
+    //! Set the severity level for the specified category
+    //! @param category     The logging category
+    //! @param severity     The minimum severity to display. Note that messages will not be logged if their severity is below this level.
+    static void SetSeverity(Utf8StringCR category, LoggingSeverity severity);
+
+    //! Test if the specified severity level is enabled for the specified category
+    //! @param category     The logging category
+    //! @param severity     The severity of the message. Note that the message will not be logged if 'severity' is below the current logging severity level
+    static bool IsSeverityEnabled(Utf8StringCR category, LoggingSeverity severity);
+
+    //! Send a message to the log
+    //! @param category     The logging category
+    //! @param severity     The severity of the message. Note that the message will not be logged if \a severity is below the severity level set by calling SetSeverity
+    //! @param message      The message to log
+    static void Message(Utf8StringCR category, LoggingSeverity severity, Utf8StringCR message);
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsUtils : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derived from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
+struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derive from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
 {
+    //! Make sure the that specified library is loaded
+    //! @param libName  The name of the library that is to be loaded
     static void ImportLibrary (Utf8StringCR libName);
+
+    //! Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
+    //! @param description  A description of the error
     static void ReportError(Utf8StringCR description);
 };
 

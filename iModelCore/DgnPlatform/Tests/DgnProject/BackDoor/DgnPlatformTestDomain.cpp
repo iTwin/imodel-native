@@ -228,7 +228,11 @@ void TestElementDrivesElementHandler::_OnRootChanged(DgnDbR db, ECInstanceId rel
     {
     if (s_shouldFail)
         db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Warning, "ABC failed"));
+
     m_relIds.push_back(relationshipId);
+
+    if (nullptr != s_callback)
+        s_callback->_OnRootChanged(db, relationshipId, source, target);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -345,4 +349,6 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
 
     return DgnDbStatus::Success;
     }
+
+TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;
 
