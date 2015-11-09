@@ -419,6 +419,8 @@ public:
 
     BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempPath (BeFileNameR tempPath);
 
+    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempFileName (BeFileName& tempFileName, BeFileName const& pathName, WCharCP prefixString);
+
 /** @} */
 
 /** @name Copy, delete, move a file by name */
