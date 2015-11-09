@@ -61,7 +61,7 @@ DgnDbStatus ViewDefinition::_BindInsertParams(ECSqlStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewDefinition::_BindUpdateParams(ECSqlStatement& stmt)
     {
-    auto status = T_Super::_BindInsertParams(stmt);
+    auto status = T_Super::_BindUpdateParams(stmt);
     if (DgnDbStatus::Success == status)
         status = BindParams(stmt);
 
@@ -185,4 +185,94 @@ ViewControllerPtr DrawingViewDefinition::_SupplyController() const
     return new DrawingViewController(GetDgnDb(), WIP_TO_VIEW_ID(GetViewId()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition::IsBaseModelValid() const
+    {
+    auto mid = GetBaseModelId();
+    auto model = mid.IsValid() ? GetDgnDb().Models().GetModel(mid) : nullptr;
+    return model.IsValid() && _IsValidBaseModel(*model);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::_OnInsert()
+    {
+    auto status = T_Super::_OnInsert();
+    if (DgnDbStatus::Success == status && !IsBaseModelValid())
+        status = DgnDbStatus::BadModel;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::_OnUpdate(DgnElementCR orig)
+    {
+    auto status = T_Super::_OnUpdate(orig);
+    if (DgnDbStatus::Success == status && !IsBaseModelValid())
+        status = DgnDbStatus::BadModel;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::_OnDelete() const
+    {
+    auto status = T_Super::_OnDelete();
+    if (DgnDbStatus::Success == status)
+        DeleteSettings();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::_RemapIds(DgnImportContext& importer)
+    {
+    T_Super::_RemapIds(importer);   // ###TODO anything?
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ViewDefinition::QuerySettings(Utf8StringR settings, WIPViewId viewId, DgnDbR db)
+    {
+    return db.QueryProperty(settings, DgnViewProperty::Settings(), viewId.GetValue(), 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ViewDefinition::SaveSettings(Utf8StringCR settings, WIPViewId viewId, DgnDbR db)
+    {
+    return db.SavePropertyString(DgnViewProperty::Settings(), settings, viewId.GetValue(), 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ViewDefinition::DeleteSettings(WIPViewId viewId, DgnDbR db)
+    {
+    return db.DeleteProperty(DgnViewProperty::Settings(), viewId.GetValue(), 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewDefinition::Iterator ViewDefinition::MakeIterator(DgnDbR db)
+    {
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,Code," PROPNAME_Source "," PROPNAME_Descr "," PROPNAME_BaseModel ",GetECClassId() FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition);
+
+    Iterator iter;
+    iter.Prepare(db, s_ecsql, 0);
+    return iter;
+    }
 

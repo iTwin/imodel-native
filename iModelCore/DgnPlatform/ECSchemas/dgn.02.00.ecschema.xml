@@ -1029,11 +1029,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Value" displayLabel="" typeName="string" />
     </ECClass>
 
-    <ECClass typeName="ViewDefinition" isDomainClass="True">
+    <ECClass typeName="ViewDefinition" isDomainClass="False">
         <!-- abstract -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int" />
@@ -1041,7 +1038,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <!-- Foreign key relationship: ViewUsesBaseModel.ModelId -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- Want "False" but shared table prohibits that...must enforce in code... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
@@ -1064,25 +1061,37 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </Class>
         </Target>
     </ECRelationshipClass>
-    <ECClass typeName="PhysicalViewDefinition" isDomainClass="True">
+    <ECClass typeName="PhysicalViewDefinition" isDomainClass="False">
         <!-- abstract -->
         <BaseClass>ViewDefinition</BaseClass>
     </ECClass>
     <ECClass typeName="CameraViewDefinition" isDomainClass="True">
         <BaseClass>PhysicalViewDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="ViewDefinition2d" isDomainClass="True">
+    <ECClass typeName="ViewDefinition2d" isDomainClass="False">
         <!-- abstract -->
         <BaseClass>ViewDefinition</BaseClass>
-    </ECClasS>
+    </ECClass>
     <ECClass typeName="DrawingViewDefinition" isDomainClass="True">
         <BaseClass>ViewDefinition2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="SheetViewDefinition" isDomainClass="True">
         <BaseClass>ViewDefinition2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="RedlineViewDefinition" isDOmainClass="True">
         <BaseClass>SheetViewDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
     </ECClass>
 
     <ECClass typeName="Style" description="Styles help define properties and standards shared among many elements, such as formatting peroperties for text.">

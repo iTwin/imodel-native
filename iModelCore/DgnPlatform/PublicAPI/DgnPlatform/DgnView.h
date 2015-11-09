@@ -11,6 +11,7 @@
 #include "DgnDb.h"
 #include "DgnElement.h"
 #include "ElementHandler.h"
+#include "ECSqlStatementIterator.h"
 
 #define DGN_CLASSNAME_ViewDefinition "ViewDefinition"
 #define DGN_CLASSNAME_CameraViewDefinition "CameraViewDefinition"
@@ -82,18 +83,28 @@ protected:
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual Code _GenerateDefaultCode() override { return Code(); }
 
-    virtual ViewControllerPtr _SupplyController() const = 0;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
-    // ###TODO:
-    //  - Is base model valid for this view?
-    //  - Can I add a given model to the viewed models list?
-    //  - Why is viewed models list in the settings table rather than a property of the view?
+    virtual DgnDbStatus _SetParentId(DgnElementId) override { return DgnDbStatus::InvalidParent; }
+    virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override { return DgnDbStatus::InvalidParent; }
+    virtual DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override { return DgnDbStatus::InvalidParent; }
+
+    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
+
+    virtual ViewControllerPtr _SupplyController() const = 0;
+    virtual bool _IsValidBaseModel(DgnModelCR model) const { return true; }
+
+    bool IsBaseModelValid() const;
 public:
     WIPViewId GetViewId() const { return WIPViewId(GetElementId().GetValue()); } //!< This view definition's ID
+    Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
     Utf8StringCR GetDescr() const { return m_data.m_descr; } //!< This view definition's description
     DgnViewSource GetSource() const { return m_data.m_source; } //!< This view definition's source
     DgnModelId GetBaseModelId() const { return m_data.m_baseModelId; } //!< This view definition's base model ID
 
+    DgnDbStatus SetName(Utf8StringCR name) { return SetCode(CreateCode(name)); } //!< Change this view definition's name
     void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Change this view definition's description
     void SetSource(DgnViewSource source) { m_data.m_source = source; } //!< Change this view definition's source
     void SetBaseModelId(DgnModelId modelId) { m_data.m_baseModelId = modelId; } //!< Change the base model ID
@@ -112,6 +123,36 @@ public:
     static ViewDefinitionCPtr QueryView(WIPViewId viewId, DgnDbR db) { return db.Elements().Get<ViewDefinition>(viewId); }
 
     static void AddClassParams(ECSqlClassParams& params); //!< @private
+
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult QuerySettings(Utf8StringR settings, WIPViewId viewId, DgnDbR db);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult SaveSettings(Utf8StringCR settings, WIPViewId viewId, DgnDbR db);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteSettings(WIPViewId viewId, DgnDbR db);
+
+    BeSQLite::DbResult QuerySettings(Utf8StringR settings) const { return QuerySettings(settings, GetViewId(), GetDgnDb()); }
+    BeSQLite::DbResult SaveSettings(Utf8StringCR settings) const { return SaveSettings(settings, GetViewId(), GetDgnDb()); }
+    BeSQLite::DbResult DeleteSettings() const { return DeleteSettings(GetViewId(), GetDgnDb()); }
+
+    struct Entry : ECSqlStatementEntry
+    {
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct DgnView;
+    private:
+        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
+    public:
+        WIPViewId GetId() const { return m_statement->GetValueId<WIPViewId>(0); }
+        Utf8CP GetName() const { return m_statement->GetValueText(1); }
+        DgnViewSource GetSource() const { return static_cast<DgnViewSource>(m_statement->GetValueInt(2)); }
+        DgnModelId GetBaseModelId() const { return m_statement->GetValueId<DgnModelId>(3); }
+        Utf8CP GetDescr() const { return m_statement->GetValueText(4); }
+        DgnClassId GetClassId() const { return m_statement->GetValueId<DgnClassId>(5); }
+    };
+
+    struct Iterator : ECSqlStatementIterator<Entry>
+    {
+    //
+    };
+
+    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR db);
 };
 
 //=======================================================================================
