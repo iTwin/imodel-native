@@ -431,8 +431,8 @@ void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem
         }
 
     DgnDbStatus status;
-    catalogItem = componentModel->GetCapturedSolution(&status, catalogModel, newParameterValues);
-    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::GetCapturedSolution failed with error %x", status);
+    catalogItem = componentModel->GetSolution(&status, catalogModel, newParameterValues);
+    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::GetSolution failed with error %x", status);
     }
 
 /*---------------------------------------------------------------------------------**//**
