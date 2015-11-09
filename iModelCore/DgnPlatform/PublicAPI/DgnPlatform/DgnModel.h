@@ -952,13 +952,14 @@ public:
     //! Get the name of the component.
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
 
-    //! Solve with the specified parameters and capture the results as one or more Items in the specified catalogModel. 
+    //! Detect if a solution for the specified parameters has been captured in the specified catalogModel, and if not optionally solve and capture it. 
     //! If the solution has already been captured, this function will return the previously created Item.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the item fails.
     //! @param[in] catalogModel The output catalog model, where the harvested solution item(s) is(are) stored.
     //! @param[in] parameters   The parameters that should be used to generate the solution
+    //! @param[in] generateSolution If true, generate and capture the solution if it has not already been captured. Pass false if you just want to check if the solution has been captured.
     //! @return The Item generated to hold the solution results. If more than one element was created, this is the parent.
-    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters);
+    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool generateSolution = true);
 
     //! Make a persistent copy of a specified solution Item, along with all of its children.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
