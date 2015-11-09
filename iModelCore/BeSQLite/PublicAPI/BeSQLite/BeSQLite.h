@@ -990,7 +990,7 @@ struct DbDupValue : DbValue, NonCopyableClass
 {
     BE_SQLITE_EXPORT DbDupValue(SqlValueP val);
     DbDupValue(DbDupValue&& other) : DbValue(other.m_val) { other.m_val = nullptr; }
-    DbDupValue& operator=(DbDupValue&& other) { m_val = other.m_val; other.m_val = nullptr; return *this; }
+    BE_SQLITE_EXPORT DbDupValue& operator=(DbDupValue&& other);
     BE_SQLITE_EXPORT ~DbDupValue();
 };
 
