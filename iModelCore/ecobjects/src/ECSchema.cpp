@@ -57,13 +57,14 @@ ECNameValidation::ValidationResult ECNameValidation::Validate (Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECNameValidation::AppendEncodedCharacter (Utf8StringR encoded, Utf8Char c)
+void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
     {
-    Utf8Char buf[5];
-    sprintf(buf, "%04X", c);
-    encoded.append("__x");
+    WChar buf[5];
+    HexFormatOptions opts = (HexFormatOptions)(static_cast<int>(HexFormatOptions::LeadingZeros) | static_cast<int>(HexFormatOptions::Uppercase));
+    BeStringUtilities::FormatUInt64 (buf, _countof(buf), (uint64_t)c, opts, 4);
+    encoded.append(L"__x");
     encoded.append(buf);
-    encoded.append("__");
+    encoded.append(L"__");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,17 +92,23 @@ bool ECNameValidation::DecodeFromValidName (Utf8StringR decoded, Utf8StringCR na
     //  012345678
 
     decoded = name;
+    if (Utf8String::npos == name.find("__x"))
+        return false; // => no decoding was required
+
+    // TFS#298776: The encoding has always been done using UTF-16 - first in .NET, then in Vancouver.
+    // Therefore we must convert.
+    WString buf(name.c_str(), BentleyCharEncoding::Utf8);
     size_t pos = 0;
     bool wasDecoded = false;
-    while (pos + 8 < decoded.length() && Utf8String::npos != (pos = decoded.find ("__x", pos)))
+    while (pos + 8 < buf.length() && Utf8String::npos != (pos = buf.find (L"__x", pos)))
         {
-        if ('_' == decoded[pos+7] && '_' == decoded[pos+8])
+        if ('_' == buf[pos+7] && '_' == buf[pos+8])
             {
             uint32_t charCode;
-            if (1 == BE_STRING_UTILITIES_UTF8_SSCANF (decoded.c_str() + pos + 3, "%x", &charCode))
+            if (1 == swscanf(buf.c_str() + pos + 3, L"%x", &charCode))
                 {
-                decoded[pos] = (Utf8Char)charCode;
-                decoded.erase (pos+1, 8);
+                buf[pos] = (WChar)charCode;
+                buf.erase (pos+1, 8);
                 wasDecoded = true;
                 pos++;
                 continue;
@@ -112,18 +119,47 @@ bool ECNameValidation::DecodeFromValidName (Utf8StringR decoded, Utf8StringCR na
         pos += 3;
         }
 
+    if (wasDecoded)
+        decoded.Assign(buf.c_str());
+
     return wasDecoded;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECNameValidation::EncodeToValidName (Utf8StringR encoded, Utf8StringCR name)
+bool ECNameValidation::EncodeToValidName (Utf8StringR output, Utf8StringCR input)
     {
-    encoded.clear();
-    if (name.empty())
+    output.clear();
+    if (input.empty())
         return false;
 
+    // TFS#298776: The encoding has always been done using UTF-16 - first in .NET, then in Vancouver.
+    // Therefore we must convert.
+    // Let's avoid doing that unnecessarily, since that's the common case; at the expense of having to repeat our loop in the uncommon case
+
+    // First character cannot be a digit
+    bool needToEncode = ('0' <= input[0] && '9' >= input[0]);
+    if (!needToEncode)
+        {
+        for (size_t i = 0; i < input.length(); i++)
+            {
+            if (!IsValidAlphaNumericCharacter (input[i]))
+                {
+                needToEncode = true;
+                break;
+                }
+            }
+        }
+
+    if (!needToEncode)
+        {
+        output = input;
+        return false; // => no encoding was necessary
+        }
+
+    WString name(input.c_str(), BentleyCharEncoding::Utf8);
+    WString encoded;
     encoded.reserve (name.length());
     bool wasEncoded = false;
 
@@ -147,6 +183,7 @@ bool ECNameValidation::EncodeToValidName (Utf8StringR encoded, Utf8StringCR name
             encoded.append (1, name[i]);
         }
 
+    output.Assign(encoded.c_str());
     return wasEncoded;
     }
 

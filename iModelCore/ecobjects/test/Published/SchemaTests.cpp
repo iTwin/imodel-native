@@ -2454,6 +2454,13 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECNameValidationTest, DisplayLabels)
     {
+    // Chinese chars...see TFS#298776...we are stuck with UTF-16 persistent encoding from long ago, should round-trip correctly with UTF-8
+    static const unsigned char s_chineseUtf8[] = { 0xE8, 0x88, 0xAC, 
+                                     0xE6, 0xA8, 0xA1,
+                                     0xE5, 0x9E, 0x8B,
+                                     '\0' };
+    // UTF-16: 822C 6A21 578B
+
     static const Utf8CP s_testValues[] =
         {
         "NothingSpecial", "NothingSpecial",
@@ -2466,6 +2473,7 @@ TEST_F (ECNameValidationTest, DisplayLabels)
         "__xNotAChar__", "__xNotAChar__",
         "__xTTTT__", "__xTTTT__",
         "__x####__", "__x__x0023____x0023____x0023____x0023____",
+        (Utf8CP)s_chineseUtf8, "__x822C____x6A21____x578B__",
         NULL, NULL
         };
 
