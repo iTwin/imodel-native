@@ -34,15 +34,24 @@ struct StubInstances
         //! Clear any added instances
         void Clear();
         //! Add instance with optional properties and eTag
-        StubRelationshipInstances Add(ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties = std::map<Utf8String, Json::Value>(), Utf8StringCR eTag = "");
+        StubRelationshipInstances Add
+            (
+            ObjectIdCR objectId, std::map<Utf8String,
+            Json::Value> properties = std::map<Utf8String, Json::Value>(),
+            Utf8StringCR eTag = ""
+            );
         //! Create server objects result to be used in caching
         WSObjectsResponse ToWSObjectsResponse(Utf8StringCR eTag = "") const;
-        //! Create success WS Client result
+        //! Create success WSObjectsResult
         WSObjectsResult ToWSObjectsResult(Utf8StringCR eTag = "") const;
+        //! Create success WSChangesetResult
+        WSChangesetResult ToWSChangesetResult() const;
         //! Create WSG 1.3 server response body JSON string
         Utf8String ToJsonWebApiV1() const;
         //! Create WSG 2.0 server response body JSON string
         Utf8String ToJsonWebApiV2() const;
+        //! Create server changeset response body JSON string
+        Utf8String ToChangesetResponseJson() const;
     };
 
 struct StubInstances::StubRelationshipInstances
@@ -58,7 +67,7 @@ struct StubInstances::StubRelationshipInstances
             ObjectIdCR relationshipObjectId,
             ObjectIdCR relatedObjectId,
             std::map<Utf8String, Json::Value> relatedProperties = std::map<Utf8String, Json::Value>(),
-            BentleyApi::ECN::ECRelatedInstanceDirection direction = BentleyApi::ECN::ECRelatedInstanceDirection::Forward,
+            ECRelatedInstanceDirection direction = ECRelatedInstanceDirection::Forward,
             std::map<Utf8String, Json::Value> relationshipProperties = std::map<Utf8String, Json::Value>()
             );
     };
