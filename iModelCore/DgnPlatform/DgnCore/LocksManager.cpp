@@ -59,7 +59,7 @@ void LockRequest::Insert(DgnElementCR el, LockLevel level)
     if (LockLevel::Shared == level)
         level = LockLevel::Exclusive;
 
-    Insert(LockableId(el.GetElementId()), level);
+    InsertLock(LockableId(el.GetElementId()), level);
     if (LockLevel::Exclusive == level)
         {
         DgnModelPtr model = el.GetModel();
@@ -74,7 +74,7 @@ void LockRequest::Insert(DgnElementCR el, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LockRequest::Insert(DgnModelCR model, LockLevel level)
     {
-    Insert(LockableId(model.GetModelId()), level);
+    InsertLock(LockableId(model.GetModelId()), level);
     if (LockLevel::None != level)
         Insert(model.GetDgnDb(), LockLevel::Shared);
     }
@@ -84,13 +84,13 @@ void LockRequest::Insert(DgnModelCR model, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LockRequest::Insert(DgnDbCR db, LockLevel level)
     {
-    Insert(LockableId(db), level);
+    InsertLock(LockableId(db), level);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::Insert(LockableId id, LockLevel level)
+void LockRequest::InsertLock(LockableId id, LockLevel level)
     {
     if (LockLevel::None == level || !id.IsValid())
         return;
@@ -134,8 +134,8 @@ BeFileName ILocksManager::GetLockTableFileName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level)
     {
-    // We don't acquire locks for indirect changes.
-    if (TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
+    // We don't acquire locks for indirect or dynamic changes.
+    if (GetDgnDb().Txns().IsInDynamics() || TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
         return LockStatus::Success;
 
     LockRequest request;
@@ -148,8 +148,8 @@ LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus ILocksManager::_LockModel(DgnModelCR model, LockLevel level)
     {
-    // We don't acquire locks for indirect changes.
-    if (TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
+    // We don't acquire locks for indirect or dynamic changes.
+    if (GetDgnDb().Txns().IsInDynamics() || TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
         return LockStatus::Success;
 
     LockRequest request;

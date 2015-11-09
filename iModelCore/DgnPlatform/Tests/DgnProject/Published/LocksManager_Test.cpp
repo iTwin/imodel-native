@@ -845,3 +845,44 @@ TEST_F(DoubleBriefcaseTest, AutomaticLocking)
     ExpectLevel(*pElemB3d2, LockLevel::Exclusive);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Locks are not required for dynamic operations, as all changes will be reverted when
+* the operation completes.
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DoubleBriefcaseTest, Dynamics)
+    {
+    SetupDbs();
+    DgnDbR dbA = *m_dbA;
+    DgnDbR dbB = *m_dbB;
+
+    // Briefcase A exclusively locks model
+    auto modelA = GetModel(dbA, true);
+    auto elemA = GetElement(dbA, Elem2dId1());
+    ExpectAcquire(*modelA, LockLevel::Exclusive);
+    ExpectAcquire(*elemA, LockLevel::Exclusive);
+
+    // Briefcase B cannot obtain locks during normal transactions
+    auto modelB = GetModel(dbB, true);
+    auto elemB = GetElement(dbB, Elem2dId1());
+    ExpectDenied(*modelB, LockLevel::Shared);
+    ExpectDenied(*elemB, LockLevel::Exclusive);
+
+    // Briefcase B starts a dynamic operation
+    auto& txns = dbB.Txns();
+    txns.BeginDynamicOperation();
+        // within dynamics, Briefcase A can make temporary changes without acquiring locks
+        // delete an element within the model
+        EXPECT_EQ(DgnDbStatus::Success, elemB->Delete());
+        ExpectLevel(*elemB, LockLevel::None);
+        ExpectLevel(*modelB, LockLevel::None);
+        EXPECT_EQ(DgnDbStatus::Success, modelB->Delete());
+        ExpectLevel(*modelB, LockLevel::None);
+    txns.EndDynamicOperation();
+
+    ExpectLevel(*modelB, LockLevel::None);
+    ExpectLevel(*modelA, LockLevel::Exclusive);
+    ExpectLevel(*elemB, LockLevel::None);
+    ExpectLevel(*elemA, LockLevel::Exclusive);
+    }
+
