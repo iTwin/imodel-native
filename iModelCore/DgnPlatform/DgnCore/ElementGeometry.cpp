@@ -1260,9 +1260,11 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
         LineStyleParamsCP lsParams = lsInfo->GetStyleParams();
         if (nullptr != lsInfo)
             {
-            //  NEEDSWORK_LINESTYLES -- get yaw, pitch, roll
+            YawPitchRollAngles  angles;
+
+            YawPitchRollAngles::TryFromRotMatrix(angles, lsParams->rMatrix);
             auto modifiers = FB::CreateLineStyleModifiers(fbb, lsParams->modifiers, lsParams->scale, lsParams->dashScale, lsParams->gapScale, lsParams->startWidth, lsParams->endWidth, lsParams->distPhase, lsParams->fractPhase,
-                                                            (FB::DPoint3d*)&lsParams->normal, 0 /* yaw */, 0 /* pitch */, 0 /* roll */);
+                                                            (FB::DPoint3d*)&lsParams->normal, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
             fbb.Finish(modifiers);
             Append(Operation(OpCode::LineStyleModifiers, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
             }
@@ -1791,7 +1793,8 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
             styleParams.distPhase = ppfb->distPhase();
             styleParams.fractPhase = ppfb->fractPhase();
             styleParams.normal = *(DPoint3d*)ppfb->normal();
-            //  RotMatrix   rMatrix;
+            YawPitchRollAngles ypr(AngleInDegrees::FromDegrees(ppfb->yaw()), AngleInDegrees::FromDegrees(ppfb->pitch()), AngleInDegrees::FromDegrees(ppfb->roll()));
+            styleParams.rMatrix = ypr.ToRotMatrix();
 
             LineStyleInfoPtr    lsInfo = LineStyleInfo::Create(styleId, &styleParams);
             elParams.SetLineStyle(lsInfo.get());
