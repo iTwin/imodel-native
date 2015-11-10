@@ -88,6 +88,8 @@ enum class DgnDbStatus : int
     WrongModel,
     InvalidCategory,
     DeletionProhibited,
+    InDynamicTransaction,
+    NoMultiTxnOperation,
     };
 
 //! Status Values for DgnViewport methods

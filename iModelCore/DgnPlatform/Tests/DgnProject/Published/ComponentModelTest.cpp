@@ -510,95 +510,107 @@ void ComponentModelTest::SimulateDeveloper()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::SimulateClient()
     {
-    OpenClientDb(Db::OpenMode::ReadWrite);
-
-    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-    PhysicalModelPtr targetModel;
-    createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
-
-    //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
-    for (int i=0; i<10; ++i)
-        Client_InsertNonInstanceElement("Instances");
-
-    //  Once per component, import the component model
-    Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
-
-    PhysicalModelPtr catalogModel;
-    createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
-
-    // Now start placing instances of Widgets
     Json::Value wsln1(Json::objectValue);
     wsln1["X"] = 10;
     wsln1["Y"] = 11;
     wsln1["Z"] = 12;
-    DgnElementId w1, w2;
-    Client_SolveAndPlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
-    Client_SolveAndPlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, true);
-    ASSERT_TRUE( w1.IsValid() );
-    ASSERT_TRUE( w2.IsValid() );
-    ASSERT_NE( w1.GetValue() , w2.GetValue() );
-    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
-    Client_CheckComponentInstance(w2, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
-    
-    //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
-    for (int i=0; i<5; ++i)
-        Client_InsertNonInstanceElement("Instances");
 
     Json::Value wsln3 = wsln1;
     wsln3["X"] = 100;
-    DgnElementId w3;
-    Client_SolveAndPlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln3, false);
-    
-    Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
-    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
 
-    //  new instance of new solution should not affect existing instances of other solutions
-    if (true)
-        {
-        DgnElementId w1_second_time;
-        Client_SolveAndPlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, true);
-        Client_CheckComponentInstance(w1_second_time, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
-        }
-
-    // Just for a little variety, close the client Db and re-open it
-    CloseClientDb();
+    DgnElementId w1, w2, w3;
 
     OpenClientDb(Db::OpenMode::ReadWrite);
-    Json::Value wsln4 = wsln3;
-    wsln4["X"] = 2;
-    DgnElementId w4;
-    Client_SolveAndPlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln4, false);
+        {
+        //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+        PhysicalModelPtr targetModel;
+        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
-    Client_CheckComponentInstance(w4, 2, wsln4["X"].asDouble(), wsln4["Y"].asDouble(), wsln4["Z"].asDouble());
-    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+        //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
+        for (int i=0; i<10; ++i)
+            Client_InsertNonInstanceElement("Instances");
 
-    // Now start placing instances of Gadgets
-    Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
-    Json::Value gsln1(Json::objectValue);
-    gsln1["Q"] = 3;
-    gsln1["W"] = 2;
-    gsln1["R"] = 1;
-    gsln1["T"] = "text";
-    DgnElementId g1, g2;
-    Client_SolveAndPlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, gsln1, false);
-    BeTest::SetFailOnAssert(false);
-    Client_SolveAndPlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, gsln1, true);
-    BeTest::SetFailOnAssert(true);
+        //  Once per component, import the component model
+        Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
 
-    Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
-    Client_CheckComponentInstance(g2, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+        PhysicalModelPtr catalogModel;
+        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
 
-    //  And place another Widget
-    Json::Value wsln44 = wsln4;
-    wsln44["X"] = 44;
-    DgnElementId w44;
-    Client_SolveAndPlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln44, false);
+        // Now start placing instances of Widgets
+        Client_SolveAndPlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
+        Client_SolveAndPlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, true);
+        ASSERT_TRUE( w1.IsValid() );
+        ASSERT_TRUE( w2.IsValid() );
+        ASSERT_NE( w1.GetValue() , w2.GetValue() );
+        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
+        Client_CheckComponentInstance(w2, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
+    
+        //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
+        for (int i=0; i<5; ++i)
+            Client_InsertNonInstanceElement("Instances");
 
-    Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
-    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
-    Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+        Client_SolveAndPlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln3, false);
+    
+        Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
+        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
 
-    CloseClientDb();
+        //  new instance of new solution should not affect existing instances of other solutions
+        if (true)
+            {
+            DgnElementId w1_second_time;
+            Client_SolveAndPlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, true);
+            Client_CheckComponentInstance(w1_second_time, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+            }
+
+        // Just for a little variety, close the client Db and re-open it
+        catalogModel = nullptr;
+        CloseClientDb();
+        }
+
+    ASSERT_TRUE(w1.IsValid());
+    ASSERT_TRUE(w2.IsValid());
+    ASSERT_TRUE(w3.IsValid());
+
+    OpenClientDb(Db::OpenMode::ReadWrite);
+        {
+        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+
+        Json::Value wsln4 = wsln3;
+        wsln4["X"] = 2;
+        DgnElementId w4;
+        Client_SolveAndPlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln4, false);
+
+        Client_CheckComponentInstance(w4, 2, wsln4["X"].asDouble(), wsln4["Y"].asDouble(), wsln4["Z"].asDouble());
+        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+
+        // Now start placing instances of Gadgets
+        Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
+        Json::Value gsln1(Json::objectValue);
+        gsln1["Q"] = 3;
+        gsln1["W"] = 2;
+        gsln1["R"] = 1;
+        gsln1["T"] = "text";
+        DgnElementId g1, g2;
+        Client_SolveAndPlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, gsln1, false);
+        BeTest::SetFailOnAssert(false);
+        Client_SolveAndPlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, gsln1, true);
+        BeTest::SetFailOnAssert(true);
+
+        Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+        Client_CheckComponentInstance(g2, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+
+        //  And place another Widget
+        Json::Value wsln44 = wsln4;
+        wsln44["X"] = 44;
+        DgnElementId w44;
+        Client_SolveAndPlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln44, false);
+
+        Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
+        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
+        Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+
+        CloseClientDb();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

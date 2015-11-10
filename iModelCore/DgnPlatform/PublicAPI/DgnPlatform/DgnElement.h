@@ -1534,13 +1534,33 @@ public:
 };
 
 //=======================================================================================
-//! Templated class used for an element to group other member elements.
+//! Base interface to query a group (element) that has other elements as members
+//! @see IElementGroupOf
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    11/15
+//=======================================================================================
+struct IElementGroup
+{
+protected:
+    //! Override to return the <em>this</em> pointer of the group DgnElement
+    virtual DgnElementCP _ToGroupElement() const = 0;
+
+public:
+    //! Query for the members of this group
+    DgnElementIdSet QueryMembers() const {return ElementGroupsMembers::QueryMembers(*_ToGroupElement());}
+    //! Returns true if this group has the specified member
+    bool HasMemberElement(DgnElementCR member) const {return ElementGroupsMembers::HasMember(*_ToGroupElement(), member);}
+};
+
+//=======================================================================================
+//! Templated class used for an element to group other member elements and manage the
+//! members of the group in a type-safe way.
 //! @note Template type T must be a subclass of DgnElement.
 //! @note The class that implements this interface must also be an element.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Shaun.Sewall    10/15
 //=======================================================================================
-template<class T> class IElementGroup
+template<class T> class IElementGroupOf : public IElementGroup
 {
 protected:
     //! Called prior to member being added to group
@@ -1553,12 +1573,9 @@ protected:
     //! Called after member removed from group
     virtual void _OnMemberRemoved(T const& member) const {}
 
-    //! Override to return the <em>this</em> pointer of the group DgnElement
-    virtual DgnElementCP _ToGroupElement() const = 0;
-
-    IElementGroup()
+    IElementGroupOf()
         {
-        static_assert(std::is_base_of<DgnElement, T>::value, "IElementGroup can only group subclasses of DgnElement");
+        static_assert(std::is_base_of<DgnElement, T>::value, "IElementGroupOf can only group subclasses of DgnElement");
         }
 
 public:
@@ -1601,17 +1618,8 @@ public:
     //! Returns true if this group has the specified member
     bool HasMember(T const& member) const
         {
-        DgnElementCR groupElement = *_ToGroupElement();
         DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
-
-        return ElementGroupsMembers::HasMember(groupElement, memberElement);
-        }
-
-    //! Query for the members of this group
-    DgnElementIdSet QueryMembers() const
-        {
-        DgnElementCR groupElement = *_ToGroupElement();
-        return ElementGroupsMembers::QueryMembers(groupElement);
+        return HasMemberElement(memberElement);
         }
 
     //! Query for the groups that the specified element is a member of
