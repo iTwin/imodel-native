@@ -1316,9 +1316,7 @@ virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this metho
 virtual DgnCategoryId _GetCategoryId() const = 0;
 virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
 virtual GeomStreamCR _GetGeomStream() const = 0;
-virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) = 0;
 virtual bool _HasGeometry() const {return _GetGeomStream().HasGeometry();}
-virtual bool _IsPlacementValid() const = 0;
 virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
 DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
@@ -1344,10 +1342,7 @@ DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
 DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 
 GeomStreamCR GetGeomStream() const {return _GetGeomStream();}
-DgnDbStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
-
 bool HasGeometry() const {return _HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
-bool IsPlacementValid() const {return _IsPlacementValid();}
 AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
 DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
@@ -1374,12 +1369,12 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
 
-virtual bool _IsPlacementValid() const override final {return _GetPlacement().IsValid();}
 virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
-DGNPLATFORM_EXPORT virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) override final;
-
 virtual Placement3dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
+
+DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
+DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
 
 public:
 
@@ -1395,12 +1390,12 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
 
-virtual bool _IsPlacementValid() const override final {return _GetPlacement().IsValid();}
 virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
-DGNPLATFORM_EXPORT virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) override final;
-
 virtual Placement2dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
+
+DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
+DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
 
 public:
 
@@ -1442,6 +1437,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
+    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
 
     virtual DgnCategoryId _GetCategoryId() const final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId);
@@ -1463,8 +1459,6 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
 
 }; // DgnElement3d
@@ -1502,6 +1496,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
+    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
 
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
@@ -1523,8 +1518,6 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-
     explicit DgnElement2d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
 
 }; // DgnElement2d
