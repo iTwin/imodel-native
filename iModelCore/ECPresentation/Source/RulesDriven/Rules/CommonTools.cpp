@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-
-#include "CommonTools.h"
+#include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 
 USING_NAMESPACE_BENTLEY_EC
 

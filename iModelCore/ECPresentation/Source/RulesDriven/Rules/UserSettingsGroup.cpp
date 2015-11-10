@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -54,7 +54,7 @@ bool UserSettingsGroup::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_categoryLabel, USER_SETTINGS_XML_ATTRIBUTE_CATEGORY_LABEL))
         m_categoryLabel = L"";
 
-    CommonTools::LoadRulesFromXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems, USER_SETTINGS_ITEM_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems, USER_SETTINGS_ITEM_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings, USER_SETTINGS_XML_NODE_NAME);
 
     return true;
