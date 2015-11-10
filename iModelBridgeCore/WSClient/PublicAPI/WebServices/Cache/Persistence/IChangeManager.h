@@ -58,33 +58,32 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         virtual ~IChangeManager()
             {};
 
-        // -- Making local changes to existing data --
+        //! -- Making local changes to existing data --
 
         // Check if sync is currently active - when modifications to existing changes cannot be done.
         virtual bool IsSyncActive() const = 0;
         // Internal use only! Set sync active so modifications to existing changes could not be done.
         virtual void SetSyncActive(bool active) = 0;
 
-        // For legacy server (version < 2.0) only. Create new object in local cache under specified parent
+        //! For legacy server (version < 2.0) only. Create new object in local cache under specified parent
         virtual ECInstanceKey LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
-        // For legacy server (version < 2.0) only. Get relationship class is used in LegacyCreateObject()
-        virtual ECN::ECRelationshipClassCP GetLegacyParentRelationshipClass() = 0;
+        //! For legacy server (version < 2.0) only. Get relationship class is used in LegacyCreateObject()
+        virtual ECRelationshipClassCP GetLegacyParentRelationshipClass() = 0;
 
-        // Create new object in local cache
-        // object id should be unique (e.g. GUID) to later identify created instance.
-        // TODO: remove the need for filling in remoteId. ECInstanceKey should be enough to find instance in cache. Remote id should be empty
+        //! Create new object in local cache
+        //! object id should be unique (e.g. GUID) to later identify created instance.
+        //! TODO: remove the need for filling in remoteId. ECInstanceKey should be enough to find instance in cache. Remote id should be empty
         virtual ECInstanceKey CreateObject(ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
-        // Modify object properties
+        //! Modify object properties
         virtual BentleyStatus ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
-        // Delete object from cache and mark it for sync
+        //! Delete object from cache and mark it for sync
         virtual BentleyStatus DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
         //! Add new relationship between instances.
-        virtual ECInstanceKey CreateRelationship
-            (
+        virtual ECInstanceKey CreateRelationship(
             ECRelationshipClassCR relationshipClass,
             ECInstanceKeyCR source,
             ECInstanceKeyCR target,
@@ -92,8 +91,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
             ) = 0;
 
         //! Delete existing relationship between instances.
-        virtual BentleyStatus DeleteRelationship
-            (
+        virtual BentleyStatus DeleteRelationship(
             ECInstanceKeyCR relationshipKey,
             SyncStatus syncStatus = SyncStatus::Ready
             ) = 0;
@@ -105,29 +103,29 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! @param[in] syncStatus
         virtual BentleyStatus ModifyFile(ECInstanceKeyCR instnaceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
-        // Change whether or not an object is ready to be synced to the server
+        //! Change whether or not an object is ready to be synced to the server
         virtual BentleyStatus SetSyncStatus(ECInstanceKeyCR instnaceKey, SyncStatus syncStatus) = 0;
 
         // -- Getting changes --
 
-        // Check if local cache has any pending changes
+        //! Check if local cache has any pending changes
         virtual bool HasChanges() = 0;
 
-        // Get all pending uncommited changes. Will always return valid changes or ERROR.
+        //! Get all pending uncommited changes. Will always return valid changes or ERROR.
         virtual BentleyStatus GetChanges(Changes& changesOut, bool onlyReadyToSync = false) = 0;
-        // Get pending uncommited changes for specified instance.
+        //! Get pending uncommited changes for specified instance.
         virtual BentleyStatus GetChanges(ECInstanceKeyCR instanceKey, Changes& changesOut) = 0;
-        // Get pending uncommited relationship changes for specified end instance.
+        //! Get pending uncommited relationship changes for specified end instance.
         virtual BentleyStatus GetCreatedRelationships(ECInstanceKeyCR endInstancekey, bvector<RelationshipChange>& changesOut) = 0;
 
-        // Get change. Will return ERROR if no object changes for specified key exist
+        //! Get change. Will return ERROR if no object changes for specified key exist
         virtual ObjectChange GetObjectChange(ECInstanceKeyCR instanceKey) = 0;
-        // Get change. Will return ERROR if no relationship changes for specified key exist
+        //! Get change. Will return ERROR if no relationship changes for specified key exist
         virtual RelationshipChange GetRelationshipChange(ECInstanceKeyCR relationshipKey) = 0;
-        // Get change. Will return ERROR if no file changes for specified key exist
+        //! Get change. Will return ERROR if no file changes for specified key exist
         virtual FileChange GetFileChange(ECInstanceKeyCR instanceKey) = 0;
 
-        // More efficient way to get ChangeStatus
+        //! More efficient way to get ChangeStatus
         virtual ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instance) = 0;
         // More efficient way to get SyncStatus
         virtual SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instance) = 0;
@@ -139,18 +137,17 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
 
         // -- Commiting changes --
 
-        // Commit changes for created objects/relationships/files
+        //! Commit changes for created objects/relationships/files
         virtual BentleyStatus CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds) = 0;
 
-        // Commit changes for object in local cache.
+        //! Commit changes for object in local cache.
         virtual BentleyStatus CommitObjectChanges(ECInstanceKeyCR instanceKey) = 0;
 
-        // Commit changes for object file content in local cache.
+        //! Commit changes for object file content in local cache.
         virtual BentleyStatus CommitFileChanges(ECInstanceKeyCR instanceKey) = 0;
 
-        // Update created instance with new properties and update class if changed. Returns same or new class instance key.
-        virtual BentleyStatus UpdateCreatedInstance
-            (
+        //! Update created instance with new properties and update class if changed. Returns same or new class instance key.
+        virtual BentleyStatus UpdateCreatedInstance(
             ObjectIdCR instanceId,
             WSObjectsResponseCR instanceResponse,
             bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
@@ -194,8 +191,7 @@ struct IChangeManager::RelationshipChange : public IChangeManager::ObjectChange
 
     public:
         WSCACHE_EXPORT RelationshipChange();
-        WSCACHE_EXPORT RelationshipChange
-            (
+        WSCACHE_EXPORT RelationshipChange(
             ECInstanceKeyCR relationship,
             ECInstanceKeyCR source,
             ECInstanceKeyCR target,
