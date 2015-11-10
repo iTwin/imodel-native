@@ -15,6 +15,7 @@
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
 #include <WebServices/Cache/Util/FileUtil.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
+#include <Bentley/BeTimeUtilities.h>
 
 #include "CacheNavigationTask.h"
 #include "Logging.h"
@@ -128,6 +129,8 @@ CacheEnvironmentCR cacheEnvironment,
 WorkerThreadPtr cacheAccessThread
 )
     {
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
     if (cacheAccessThread == nullptr)
         {
         Utf8PrintfString threadName("Cache '%s'", client->GetRepositoryId().c_str());
@@ -200,8 +203,11 @@ WorkerThreadPtr cacheAccessThread
             openResult->SetSuccess(ds);
             });
         })
-            ->Then<OpenResult>([=]
+        ->Then<OpenResult>([=]
             {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms", openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+
             return *openResult;
             });
     }

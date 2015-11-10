@@ -108,7 +108,7 @@ void ECDbDebugInfoHolder::Log(Utf8StringCR context)
         {
         message += m_info.GetDataDebugInfo(schema);
         }
-    LOG.debug(message);
+    LOG.trace(message);
     }
 
 /*--------------------------------------------------------------------------------------+
