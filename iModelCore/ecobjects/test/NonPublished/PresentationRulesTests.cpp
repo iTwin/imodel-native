@@ -254,10 +254,10 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     
     GroupingRuleP groupingRule = new GroupingRule ("TestCondition7", 7, true, "DummySchemaName", "DummyClassName", "ContextMenuCondition", "ContextMenuLabel", "SettingsId");
     ClassGroupP classGroup = new ClassGroup ("ContextMenuLabel", true, "SchemaName", "BaseClassName");
-    groupingRule->GetGroups ().push_back (classGroup);
+    groupingRule->GetGroupsR ().push_back (classGroup);
     PropertyGroupP propertyGroup = new PropertyGroup ("ImageId", "ContextMenuLabel", true, "PropertyName");
-    propertyGroup->GetRanges ().push_back (new PropertyRangeGroupSpecification ("Label", "ImageId", "FromValue", "ToValue"));
-    groupingRule->GetGroups ().push_back (propertyGroup);
+    propertyGroup->GetRangesR ().push_back (new PropertyRangeGroupSpecification ("Label", "ImageId", "FromValue", "ToValue"));
+    groupingRule->GetGroupsR ().push_back (propertyGroup);
     ruleSet->AddPresentationRule(*groupingRule);
 
     //Serialize RuleSet to string and deserialize from the same string.
