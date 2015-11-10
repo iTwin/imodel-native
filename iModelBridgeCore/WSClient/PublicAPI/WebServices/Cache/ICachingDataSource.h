@@ -13,8 +13,8 @@
 #include <WebServices/Cache/WebServicesCache.h>
 
 #include <Bentley/bset.h>
-#include <MobileDgn/Utils/Threading/AsyncResult.h>
-#include <MobileDgn/Utils/Threading/WorkerThread.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/WorkerThread.h>
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Cache/Transactions/CacheTransaction.h>
 #include <WebServices/Cache/IQueryProvider.h>
