@@ -514,10 +514,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="FillKey"                      typeName="int"/>
         <ECProperty propertyName="Alignment"                    typeName="int"/>
         <ECProperty propertyName="Orientation"                  typeName="int"/>
-        <ECProperty propertyName="MarginTop"                    typeName="double)"/>
-        <ECProperty propertyName="MarginBottom"                 typeName="double)"/>
-        <ECProperty propertyName="MarginLeft"                   typeName="double)"/>
-        <ECProperty propertyName="MarginRight"                  typeName="double)"/>
+        <ECProperty propertyName="MarginTop"                    typeName="double"/>
+        <ECProperty propertyName="MarginBottom"                 typeName="double"/>
+        <ECProperty propertyName="MarginLeft"                   typeName="double"/>
+        <ECProperty propertyName="MarginRight"                  typeName="double"/>
     </ECClass>
 
     <ECClass typeName="AnnotationTableMerge" isDomainClass="True">
