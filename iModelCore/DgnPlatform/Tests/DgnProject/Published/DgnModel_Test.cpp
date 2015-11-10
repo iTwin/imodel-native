@@ -228,13 +228,14 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in SetGeomStreamAndPlacement
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP())) // Won't catch 2d/3d mismatch from just GeometrySource as we don't know a DgnModel...
         {
         ASSERT_FALSE(expectSuccess);
         return;
         }
 
-    ASSERT_EQ( expectSuccess , db.Elements().Insert(*gelem)->GetElementKey().IsValid() );
+    DgnElementCPtr newElem = db.Elements().Insert(*gelem);
+    ASSERT_EQ( expectSuccess , newElem.IsValid() && newElem->GetElementKey().IsValid() );
     }
 
 //---------------------------------------------------------------------------------------

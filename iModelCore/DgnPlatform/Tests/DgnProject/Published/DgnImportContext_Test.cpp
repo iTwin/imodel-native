@@ -417,7 +417,7 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
     DgnCategoryCPtr destCat = DgnCategory::QueryCategory(gdestElem->GetCategoryId(), destDb);
     ASSERT_TRUE(destCat.IsValid() );
     
-    ASSERT_NE(destCat->ToGeometrySource()->GetCategoryId(), sourceElem.ToGeometrySource()->GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
+    ASSERT_NE(destCat->GetCategoryId(), sourceElem.ToGeometrySource()->GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
 
     DgnCategoryCPtr sourceCat = DgnCategory::QueryCategory(sourceElem.ToGeometrySource()->GetCategoryId(), sourceDb);
 
