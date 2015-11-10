@@ -9,6 +9,7 @@
 
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentationRules/SpecificationVisitor.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -28,6 +29,11 @@ CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChi
     m_type (type), m_label (label), m_description (description), m_imageId (imageId)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void CustomNodeSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

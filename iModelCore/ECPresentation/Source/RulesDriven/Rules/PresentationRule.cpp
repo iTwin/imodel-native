@@ -112,3 +112,8 @@ void PresentationRule::SetCondition (Utf8String value)         { m_condition = v
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationRule::GetOnlyIfNotHandled (void) const     { return m_onlyIfNotHandled; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PresentationRuleSpecification::Accept(PresentationRuleSpecificationVisitor& visitor) {_Accept(visitor);}
