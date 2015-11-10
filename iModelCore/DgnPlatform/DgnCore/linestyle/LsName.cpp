@@ -193,6 +193,9 @@ Utf8String         LsDefinition::GetStyleName () const
     return Utf8String(lsName);
     }
 
+#define NUMBER_ITERATIONS_ComponentStroker   (1)
+#define MAX_XRANGE_RATIO (256 * NUMBER_ITERATIONS_ComponentStroker)
+
 //=======================================================================================
 //! Base class for StrokeComponentForRange and ComponentToTextureStroker
 // @bsiclass                                                    John.Gooding    10/2015
@@ -210,7 +213,7 @@ public:
 //---------------------------------------------------------------------------------------
 ComponentStroker(DgnDbR dgndb, LsComponentR component, double scale) : m_dgndb(dgndb), m_component(&component)
     {
-    double length = component._GetLength();
+    double length = component._GetLength() * NUMBER_ITERATIONS_ComponentStroker;
 
     if (length <  mgds_fc_epsilon)
         {
@@ -348,11 +351,11 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
     if (xRange == 0.0)
         return range2d;
 
-    if (xRange > range2d.high.y * 64)
-        range2d.high.y = xRange/32.0;
+    if (xRange > range2d.high.y * MAX_XRANGE_RATIO)
+        range2d.high.y = 2 * xRange/MAX_XRANGE_RATIO;
 
-    if (xRange > -range2d.low.y * 64)
-        range2d.low.y = -xRange/32.0;
+    if (xRange > -range2d.low.y * MAX_XRANGE_RATIO)
+        range2d.low.y = -2 * xRange/MAX_XRANGE_RATIO;
 
     //  if xRange is too small  StrokeComponentForRange will fail when it creates the viewport because it will be smaller than the minimum.
     if (xRange < 1)

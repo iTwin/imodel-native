@@ -1258,7 +1258,7 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
         fbb.Finish(mloc);
         Append(Operation(OpCode::LineStyle, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         LineStyleParamsCP lsParams = lsInfo->GetStyleParams();
-        if (nullptr != lsInfo)
+        if (nullptr != lsParams)
             {
             YawPitchRollAngles  angles;
 
