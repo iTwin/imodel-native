@@ -944,6 +944,24 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
     EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenReferencingNonExistingUnitAttributesSchema)
+    {
+    Utf8CP schemaXML = "<ECSchema schemaName=\"ReferencesUnits\" nameSpacePrefix=\"ru\" Description=\"Schema that references the unavailable U_A.1.1 schema\" "
+        "version=\"1.1\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECSchemaReference name=\"Unit_Attributes\" version=\"01.01\" prefix=\"ua\" />"
+        "</ECSchema>";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    }
+
 #if defined (NEEDSWORK_LIBXML)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
