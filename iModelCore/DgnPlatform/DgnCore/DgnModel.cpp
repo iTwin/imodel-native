@@ -572,7 +572,10 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (nullptr == origGeom)
         return;
 
-    GeometrySourceCP newGeom = (GeometrySourceCP) &modified;
+    GeometrySourceCP newGeom = modified.ToGeometrySource();
+    if (nullptr == newGeom)
+        return;
+
     AxisAlignedBox3d origBox = origGeom->HasGeometry() ? origGeom->CalculateRange3d() : AxisAlignedBox3d();
     AxisAlignedBox3d newBox  = newGeom->HasGeometry() ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
 
