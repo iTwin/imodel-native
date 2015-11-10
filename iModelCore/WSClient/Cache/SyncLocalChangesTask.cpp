@@ -196,11 +196,14 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                 };
 
             auto txn = m_ds->StartCacheTransaction();
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(createdInstanceIds))
+            for (auto& pair : createdInstanceIds)
                 {
-                SetError();
-                return;
-                };
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(pair.first, pair.second))
+                    {
+                    SetError();
+                    return;
+                    };
+                }
 
             for (auto& pair : *changesetIdMap)
                 {
@@ -320,11 +323,13 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
 
             auto txn = m_ds->StartCacheTransaction();
 
-            std::map<ECInstanceKey, Utf8String> changedRemoteIds = ReadChangedRemoteIds(*changeGroup, objectsResult.GetValue());
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(changedRemoteIds))
+            for (auto& pair : ReadChangedRemoteIds(*changeGroup, objectsResult.GetValue()))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
-                return;
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(pair.first, pair.second))
+                    {
+                    SetError(CachingDataSource::Status::InternalCacheError);
+                    return;
+                    }
                 }
 
             changeGroup->SetSynced(true);
