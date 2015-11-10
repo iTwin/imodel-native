@@ -1,14 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/presentation/PresentationRules/CommonTools.h $
+|     $Source: PublicApi/EcPresentationRules/CommonTools.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
-#include "PresentationRuleXmlConstants.h"
+/*__PUBLISH_SECTION_START__*/
+#include <ECPresentationRules/PresentationRule.h>
+#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
 #include <ECPresentationRules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -61,6 +62,28 @@ public:
 
         for (BeXmlNodeP& ruleNode: ruleNodes)
             LoadRuleFromXmlNode<RuleType, RuleCollectionType> (ruleNode, rulesCollection);
+        }
+
+    //! Load specification from XmlNode and adds to collection
+    template<typename SpecificationType, typename SpecificationsCollectionType>
+    static void                        LoadSpecificationFromXmlNode (BeXmlNodeP specificationNode, SpecificationsCollectionType& specificationsCollection)
+        {
+        SpecificationType* specification = new SpecificationType();
+        if (specification->ReadXml (specificationNode))
+            specificationsCollection.push_back(specification);
+        else
+            delete specification;
+        }
+
+    //! Load specifications from parent XmlNode and adds to collection
+    template<typename SpecificationType, typename SpecificationsCollectionType>
+    static void                        LoadSpecificationsFromXmlNode (BeXmlNodeP xmlNode, SpecificationsCollectionType& specificationsCollection, char const* specificationXmlElementName)
+        {
+        BeXmlDom::IterableNodeSet specificationNodes;
+        xmlNode->SelectChildNodes (specificationNodes, specificationXmlElementName);
+
+        for (BeXmlNodeP& specificationNode: specificationNodes)
+            LoadSpecificationFromXmlNode<SpecificationType, SpecificationsCollectionType> (specificationNode, specificationsCollection);
         }
 
     //! Write rules to XmlNode
