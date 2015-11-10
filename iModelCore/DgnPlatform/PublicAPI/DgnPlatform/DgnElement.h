@@ -1328,6 +1328,7 @@ GeomStreamR GetGeomStreamR() {return const_cast<GeomStreamR>(_GetGeomStream());}
 
 public:
 
+virtual void PLEASE_DELETE_ME(DgnCategoryId categoryId) = 0;
 DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
 DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
 DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
@@ -1433,6 +1434,7 @@ protected:
     GeomStream      m_geom;
     Placement3d     m_placement;
 
+    virtual void PLEASE_DELETE_ME(DgnCategoryId categoryId) override final {m_categoryId = categoryId;}
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
@@ -1492,6 +1494,7 @@ protected:
     GeomStream      m_geom;
     Placement2d     m_placement;
 
+    virtual void PLEASE_DELETE_ME(DgnCategoryId categoryId) override final {m_categoryId = categoryId;}
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
