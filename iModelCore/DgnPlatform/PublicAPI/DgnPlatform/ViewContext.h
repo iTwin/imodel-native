@@ -345,7 +345,7 @@ protected:
     IDrawGeomP              m_IDrawGeom;
     ICachedDrawP            m_ICachedDraw;
     DgnDbP                  m_dgnDb;
-    DgnElementPtr           m_currentElement;
+    DgnElementCPtr          m_currentElement;
     ScanCriteriaP           m_scanCriteria;
     int32_t                 m_displayPriorityRange[2];
     ElemDisplayParams       m_currDisplayParams;
@@ -375,7 +375,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
     virtual void _SetupOutputs() = 0;
-    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual void _DrawSymbol(IDisplaySymbol*, TransformCP, ClipPlaneSetP);
@@ -390,7 +390,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual QvElem* _DrawCached(IStrokeForCache&);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements(bool includeTransients);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
@@ -399,7 +399,7 @@ protected:
     virtual QvExtSymbID _BuildExtSymbID (uint32_t rasterWidth, int styleIndex) const { BeAssert(false); return 0; }
     DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin(DPoint3dCP origin);
     DGNPLATFORM_EXPORT virtual void _PopTransformClip();
-    DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual void _OnPreDrawTransient() {m_ovrMatSymb.Clear(); GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);}
@@ -421,7 +421,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT virtual void _SetCurrentElement(GeometricElementCP);
+    DGNPLATFORM_EXPORT virtual void _SetCurrentElement(GeometrySourceCP);
     DGNPLATFORM_EXPORT virtual void _ClearZ ();
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT virtual void _DrawAligned(DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker);
@@ -515,7 +515,7 @@ public:
 
 public:
 
-DGNPLATFORM_EXPORT StatusInt VisitElement(GeometricElementCR);    
+DGNPLATFORM_EXPORT StatusInt VisitElement(GeometrySourceCR);    
 
 /// @name Coordinate Query and Conversion
 //@{
@@ -686,14 +686,14 @@ DGNPLATFORM_EXPORT void SetViewFlags(ViewFlagsCP);
 DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
 
 //! Get the current persistent element being visited by this ViewContext.
-DGNPLATFORM_EXPORT GeometricElementCP GetCurrentElement() const;
+DGNPLATFORM_EXPORT GeometrySourceCP GetCurrentElement() const;
 
 /** @cond BENTLEY_SDK_Scope1 */
 //! Set the project for this ViewContext when not attaching a viewport.
 DGNPLATFORM_EXPORT void SetDgnDb(DgnDbR);
 
 //! Set or clear the current persistent element.
-DGNPLATFORM_EXPORT void SetCurrentElement(GeometricElementCP);
+DGNPLATFORM_EXPORT void SetCurrentElement(GeometrySourceCP);
 /** @endcond */
 
 //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
@@ -766,7 +766,7 @@ DGNPLATFORM_EXPORT void SetCurrentLevelOfDetail(double levelOfDetail);
 //! Check the current display style for a monochrome color override.
 //! @return       whether monochrome style is currently active.
 DGNPLATFORM_EXPORT bool IsMonochromeDisplayStyleActive();
-DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometricElementCR);
+DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometrySourceCR);
 
 DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
 

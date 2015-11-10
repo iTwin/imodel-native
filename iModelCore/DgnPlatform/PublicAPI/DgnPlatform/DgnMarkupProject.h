@@ -365,8 +365,8 @@ protected:
     virtual void _DrawBackgroundGraphics(ViewContextR context) override;
     virtual void _DrawZBufferedGraphics(ViewContextR context) override;
 
-    virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
-    virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size)  override;
+    virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
+    virtual void _DrawElementFiltered(ViewContextR, GeometrySourceCR, DPoint3dCP pts, double size)  override;
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
     virtual void _OnAttachedToViewport(DgnViewportR) override;

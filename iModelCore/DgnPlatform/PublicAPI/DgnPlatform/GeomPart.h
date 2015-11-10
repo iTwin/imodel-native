@@ -24,6 +24,8 @@ struct DgnGeomPart : RefCountedBase
 {
 //__PUBLISH_SECTION_END__
     friend struct DgnGeomParts;
+    friend struct DgnImportContext;
+    friend struct ElementGeometryBuilder;
 
 //__PUBLISH_SECTION_START__
 private:
@@ -36,6 +38,11 @@ private:
     void SetId(DgnGeomPartId id) {m_id = id;}
     void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
     
+protected:
+
+    //! Only ElementGeometryBuilder should have write access to the GeomStream...
+    GeomStreamR GetGeomStreamR() {return m_geometry;}
+
 public:
     //! Create a DgnGeomPart
     //! @see DgnGeomParts::InsertGeomPart
@@ -51,9 +58,6 @@ public:
 
     //! Get the geometry for this part (part local coordinates)
     GeomStreamCR GetGeomStream() const {return m_geometry;}
-
-    //! Get a writable reference to the GeomStream for initially creating this part.
-    GeomStreamR GetGeomStreamR() {return m_geometry;}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

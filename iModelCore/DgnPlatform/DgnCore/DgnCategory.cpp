@@ -766,6 +766,14 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnImportContext::RemapGeomStreamIds(GeomStreamR geom)
+    {
+    return ElementGeomIO::Import(geom, geom, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnCategory::IsValidName(Utf8StringCR name)

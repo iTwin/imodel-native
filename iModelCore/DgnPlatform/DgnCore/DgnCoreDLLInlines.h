@@ -138,8 +138,8 @@ DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Poin
 
 DG_INLINE DgnDbR ViewContext::GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 DG_INLINE void ViewContext::SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
-DG_INLINE GeometricElementCP ViewContext::GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometricElement() : nullptr);}
-DG_INLINE void ViewContext::SetCurrentElement(GeometricElementCP element) {_SetCurrentElement(element);}
+DG_INLINE GeometrySourceCP ViewContext::GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometrySource() : nullptr);}
+DG_INLINE void ViewContext::SetCurrentElement(GeometrySourceCP element) {_SetCurrentElement(element);}
 
 DG_INLINE DrawPurpose ViewContext::GetDrawPurpose() const {return m_purpose;}
 DG_INLINE bool ViewContext::IsCameraOn() const {return m_isCameraOn;}
@@ -190,7 +190,7 @@ DG_INLINE void ViewContext::DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse
 DG_INLINE void ViewContext::DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
 DG_INLINE void ViewContext::DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_DrawStyledBSplineCurve3d(curve);}
 DG_INLINE void ViewContext::PushViewIndependentOrigin(DPoint3dCP origin) {_PushViewIndependentOrigin(origin);}
-DG_INLINE StatusInt ViewContext::VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
+DG_INLINE StatusInt ViewContext::VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
 DG_INLINE void ViewContext::AllocateScanCriteria(){_AllocateScanCriteria();}
 DG_INLINE void ViewContext::VisitDgnModel(DgnModelP modelRef) {_VisitDgnModel(modelRef);}
 DG_INLINE void ViewContext::SetScanReturn() {_SetScanReturn();}

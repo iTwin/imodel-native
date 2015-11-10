@@ -3037,9 +3037,9 @@ struct DrawGeomStream : StrokeElementForCache
 {
 ViewFlags       m_flags;
 
-explicit DrawGeomStream(GeometricElementCR element, ViewFlagsCR flags) : StrokeElementForCache(element)
+explicit DrawGeomStream(DgnElementCR element, ViewFlagsCR flags) : StrokeElementForCache(element)
     {
-    m_flags = flags; // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change...
+    m_flags = flags; // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change... 
     }
 
 virtual int32_t _GetQvIndex() const override
@@ -3050,7 +3050,12 @@ virtual int32_t _GetQvIndex() const override
 
 virtual void _StrokeForCache(ViewContextR context, double pixelSize) override
     {
-    ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), m_flags);
+    GeometrySourceCP source = m_element.ToGeometrySource();
+
+    if (nullptr == source)
+        return;
+
+    ElementGeomIO::Collection(source->GetGeomStream().GetData(), source->GetGeomStream().GetSize()).Draw(context, source->GetCategoryId(), m_flags);
     }
 
 }; // DrawGeomStream
@@ -3058,8 +3063,13 @@ virtual void _StrokeForCache(ViewContextR context, double pixelSize) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_Draw(ViewContextR context) const
+void GeometrySource::_Draw(ViewContextR context) const
     {
+    DgnElementCP el = ToElement();
+
+    if (nullptr == el)
+        return;
+
     // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver...
     ViewFlags   viewFlags;
 
@@ -3069,8 +3079,8 @@ void GeometricElement::_Draw(ViewContextR context) const
         viewFlags.InitDefaults();
 
     // NEEDSWORK: Want separate QvElems per-subCategory...
-    Transform      placementTrans = (Is3d() ? ToElement3d()->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform());
-    DrawGeomStream stroker(*this, viewFlags);
+    Transform      placementTrans = GetPlacementTransform();
+    DrawGeomStream stroker(*el, viewFlags);
 
     context.PushTransform(placementTrans);
     context.DrawCached(stroker);
@@ -3080,7 +3090,7 @@ void GeometricElement::_Draw(ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometricElement::_DrawHit(HitDetailCR hit, ViewContextR context) const
+bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
     {
     if (DrawPurpose::Flash != context.GetDrawPurpose())
         return false;
@@ -3168,7 +3178,7 @@ bool GeometricElement::_DrawHit(HitDetailCR hit, ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus GeometricElement::_OnSnap(SnapContextR context) const
+SnapStatus GeometrySource::_OnSnap(SnapContextR context) const
     {
     return context.DoDefaultDisplayableSnap();
     }
@@ -3448,13 +3458,13 @@ ElementGeometryCollection::ElementGeometryCollection(DgnDbR dgnDb, GeomStreamCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::ElementGeometryCollection(GeometricElementCR element)
+ElementGeometryCollection::ElementGeometryCollection(GeometrySourceCR source)
     {
     m_bRepOutput = BRepOutput::BRep;
-    m_data = element.GetGeomStream().GetData();
-    m_dataSize = element.GetGeomStream().GetSize();
-    m_elemToWorld = (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform());
-    m_context = new ElementGeometryCollectionContext(element.GetDgnDb());
+    m_data = source.GetGeomStream().GetData();
+    m_dataSize = source.GetGeomStream().GetSize();
+    m_elemToWorld = source.GetPlacementTransform();
+    m_context = new ElementGeometryCollectionContext(source.GetSourceDgnDb());
     m_context->PushTransform(m_elemToWorld);
     }
 
@@ -3516,7 +3526,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStream(DgnGeomPartR part)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElementR element)
+BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometrySourceR source)
     {
     if (m_isPartCreate)
         return ERROR; // Invalid builder for creating element geometry...
@@ -3527,10 +3537,13 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElement
     if (!m_havePlacement)
         return ERROR;
 
-    if (element.GetCategoryId() != m_elParams.GetCategoryId())
+    if (source.GetCategoryId() != m_elParams.GetCategoryId())
         return ERROR;
 
-    if (element.GetElementHandler()._IsRestrictedAction(GeometricElement::RestrictedAction::SetGeometry))
+    // NOT_NOW_GEOMETRY_SOURCE - Where should this check go???
+    DgnElementCP el = source.ToElement();
+
+    if (nullptr != el && el->GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::SetGeometry))
         return ERROR;
 
     if (m_is3d)
@@ -3538,27 +3551,27 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElement
         if (!m_placement3d.IsValid())
             return ERROR;
 
-        DgnElement3dP element3d;
+        GeometrySource3dP source3d;
 
-        if (nullptr == (element3d = element.ToElement3dP()))
+        if (nullptr == (source3d = source.ToGeometrySource3dP()))
             return ERROR;
 
-        element3d->SetPlacement(m_placement3d);
+        source3d->SetPlacement(m_placement3d);
         }
     else
         {
         if (!m_placement2d.IsValid())
             return ERROR;
 
-        DgnElement2dP element2d;
+        GeometrySource2dP source2d;
 
-        if (nullptr == (element2d = element.ToElement2dP()))
+        if (nullptr == (source2d = source.ToGeometrySource2dP()))
             return ERROR;
 
-        element2d->SetPlacement(m_placement2d);
+        source2d->SetPlacement(m_placement2d);
         }
 
-    element.GetGeomStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+    source.GetGeomStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
 
     return SUCCESS;
     }
@@ -4231,40 +4244,64 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld(DgnModelR model, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create(DgnElement3dCR element, DPoint3dCR origin, YawPitchRollAngles const& angles)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create(GeometrySource3dCR source, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
-    return ElementGeometryBuilder::Create(*element.GetModel(), element.GetCategoryId(), origin, angles);
+    DgnCategoryId categoryId = source.GetCategoryId();
+
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    Placement3d placement;
+
+    placement.GetOriginR() = origin;
+    placement.GetAnglesR() = angles;
+
+    return new ElementGeometryBuilder(source.GetSourceDgnDb(), categoryId, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create(DgnElement2dCR element, DPoint2dCR origin, AngleInDegrees const& angle)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create(GeometrySource2dCR source, DPoint2dCR origin, AngleInDegrees const& angle)
     {
-    return ElementGeometryBuilder::Create(*element.GetModel(), element.GetCategoryId(), origin, angle);
+    DgnCategoryId categoryId = source.GetCategoryId();
+
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    Placement2d placement;
+
+    placement.GetOriginR() = origin;
+    placement.GetAngleR()  = angle;
+
+    return new ElementGeometryBuilder(source.GetSourceDgnDb(), categoryId, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::Create(GeometricElementCR element)
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create(GeometrySourceCR source)
     {
-    if (element.Is3d())
-        {
-        Placement3d placement3d = element.ToElement3d()->GetPlacement();
+    DgnCategoryId categoryId = source.GetCategoryId();
 
-        return ElementGeometryBuilder::Create(*element.ToElement3d(), placement3d.GetOrigin(), placement3d.GetAngles());
-        }
+    if (!categoryId.IsValid())
+        return nullptr;
 
-    Placement2d placement2d = element.ToElement2d()->GetPlacement();
+    if (nullptr != source.ToGeometrySource3d())
+        return new ElementGeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource3d()->GetPlacement());
 
-    return ElementGeometryBuilder::Create(*element.ToElement2d(), placement2d.GetOrigin(), placement2d.GetAngle());
+    return new ElementGeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource2d()->GetPlacement());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld(GeometricElementCR element)
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld(GeometrySourceCR source)
     {
-    return ElementGeometryBuilder::CreateWorld(*element.GetModel(), element.GetCategoryId());
+    DgnCategoryId categoryId = source.GetCategoryId();
+
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    return new ElementGeometryBuilder(source.GetSourceDgnDb(), categoryId, nullptr != source.ToGeometrySource3d());
     }

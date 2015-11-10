@@ -292,14 +292,14 @@ void ViewContext::DirectPopTransClipOutput(IDrawGeomR drawGeom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetCurrentElement(GeometricElementCP element)
+void ViewContext::_SetCurrentElement(GeometrySourceCP source)
     {
-    if (nullptr == element)
+    if (nullptr == source)
         GetIDrawGeom().PopMethodState();
     else
         GetIDrawGeom().PushMethodState();
 
-    m_currentElement = (DgnElementP) element;
+    m_currentElement = (nullptr == source ? nullptr : source->ToElement());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -685,6 +685,44 @@ uint32_t ViewContext::GetLocalTransformKey() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/06
++---------------+---------------+---------------+---------------+---------------+------*/
+T_QvElemSet* getQvElems(DgnElementCR element, bool createIfNotPresent)
+    {
+    static DgnElement::AppData::Key s_qvElemsKey;
+    T_QvElemSet* qvElems = (T_QvElemSet*) element.FindAppData(s_qvElemsKey);
+    if (qvElems)
+        return qvElems;
+
+    if (!createIfNotPresent)
+        return nullptr;
+
+    HeapZone& zone = element.GetHeapZone();
+    qvElems = new T_QvElemSet(zone);
+
+    element.AddAppData(s_qvElemsKey, qvElems);
+    return qvElems;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   06/03
++---------------+---------------+---------------+---------------+---------------+------*/
+QvElem* getQvElem(DgnElementCR element, uint32_t id)
+    {
+    T_QvElemSet* qvElems = getQvElems(element, false);
+    return qvElems ? qvElems->Find(id) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   06/03
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool setQvElem(DgnElementCR element, QvElem* qvElem, uint32_t index)
+    {
+    getQvElems(element, true)->Add(index, qvElem);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 QvElem* StrokeElementForCache::_GetQvElem(double pixelSize) const
@@ -698,7 +736,7 @@ QvElem* StrokeElementForCache::_GetQvElem(double pixelSize) const
         nullptr != (qvElem = cacheSet->Find(nullptr, pixelSize, unsizedKey)))
         return qvElem;
 
-    return unsizedKey.IsNull() ? m_element.GetQvElem(_GetQvIndex()) : nullptr;
+    return unsizedKey.IsNull() ? getQvElem(m_element, _GetQvIndex()) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -710,7 +748,7 @@ void StrokeElementForCache::_SaveQvElem(QvElemP qvElem, double pixelSize, double
 
     if (0.0 == sizeDependentRatio && unsizedKey.IsNull())
         {
-        (const_cast <GeometricElementR> (m_element)).SetQvElem(qvElem, _GetQvIndex());
+        setQvElem(m_element, qvElem, _GetQvIndex());
         return;
         }
 
@@ -817,7 +855,7 @@ void ViewContext::InvalidateScanRange()     { m_scanRangeValid = false; }
 * @return true if the element is outside the range and should be ignored.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
+bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     {
     if (RangeResult::Inside == m_parentRangeResult)
         return false;
@@ -825,20 +863,20 @@ bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
     if (RangeResult::Outside == m_parentRangeResult)
         return true;
 
-    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(element.CalculateRange3d(), element.Is3d());
+    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(source.CalculateRange3d(), nullptr != source.ToGeometrySource3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputElement(GeometricElementCR element)
+void ViewContext::_OutputElement(GeometrySourceCR source)
     {
     ResetContextOverrides();
 
     if (m_viewport)
-        return m_viewport->GetViewControllerR()._DrawElement(*this, element);
+        return m_viewport->GetViewControllerR()._DrawElement(*this, source);
 
-    element._Draw(*this);
+    source.Draw(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -931,9 +969,9 @@ void ViewContext::ResetContextOverrides()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::ElementIsUndisplayed(GeometricElementCR element)
+bool ViewContext::ElementIsUndisplayed(GeometrySourceCR source)
     {
-    return (!_WantUndisplayed() && element.IsUndisplayed());
+    return (!_WantUndisplayed() && source.IsUndisplayed());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -981,16 +1019,16 @@ void ViewContext::DrawBox(DPoint3dP box, bool is3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitElement(GeometricElementCR element)
+StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
     {
     if (_CheckStop())
         return ERROR;
 
-    if (ElementIsUndisplayed(element))
+    if (ElementIsUndisplayed(source))
         return SUCCESS;
 
-    _SetCurrentElement(&element);
-    _OutputElement(element);
+    _SetCurrentElement(&source);
+    _OutputElement(source);
 
     // Output element or local range for debugging if requested...
     switch (GetDrawPurpose())
@@ -1006,9 +1044,10 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
                 break;
 
             DPoint3d  p[8];
-            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(element.CalculateRange3d()) : 
-                                   (element.Is3d() ? BoundingBox3d(element.ToElement3d()->GetPlacement().GetElementBox()) : BoundingBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
-            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform()));
+            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : (nullptr != source.ToGeometrySource3d() ? 
+                                    BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()) : 
+                                    BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox())));
+            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform());
 
             p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
             p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
@@ -1024,7 +1063,7 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
             m_IDrawGeom->ActivateOverrideMatSymb(&m_ovrMatSymb);
 
             PushTransform(placementTrans);
-            DrawBox(p, element.Is3d());
+            DrawBox(p, nullptr != source.ToGeometrySource3d());
             PopTransformClip();
 
             ResetContextOverrides();
@@ -1057,7 +1096,7 @@ void            ViewContext::_VisitTransientGraphics(bool isPreUpdate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCriteriaR sc)
     {
-    GeometricElementCP geomElement = element.ToGeometricElement();
+    GeometrySourceCP geomElement = element.ToGeometrySource();
     if (nullptr == geomElement)
         return SUCCESS;
     

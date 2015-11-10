@@ -120,7 +120,7 @@ private:
     virtual void            _SetupOutputs () override;
     virtual bool            _CheckStop() override;
     virtual StatusInt       _VisitDgnModel (DgnModelP inDgnModel) override;
-    virtual void            _OutputElement (GeometricElementCR) override;
+    virtual void            _OutputElement (GeometrySourceCR) override;
     virtual void            _OnPreDrawTransient() override;
     virtual void            _DrawAreaPattern (ViewContext::ClipStencil& boundary) override;
     virtual void            _DrawSymbol (IDisplaySymbolP, TransformCP, ClipPlaneSetP) override;
