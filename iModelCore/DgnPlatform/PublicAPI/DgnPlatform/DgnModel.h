@@ -952,15 +952,27 @@ public:
     //! Get the name of the component.
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
 
-    //! Get the element that captures the result of solving for the specified parameters. If the solution has already been captured in the specified catalogModel
-    //! then the existing solution is returned. If not already captured, then the model is solved and a new solution is captured, but only if \a createSolutionIfNecessary is true.
-    //! If the solution has already been captured, this function will return the previously created Item.
-    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the item fails.
-    //! @param[in] catalogModel The output catalog model, where the harvested solution item(s) is(are) stored.
-    //! @param[in] parameters   The parameters that should be used to generate the solution
-    //! @param[in] createSolutionIfNecessary If true, generate and capture the solution if it has not already been captured. Pass false if you just want to check if the solution has been captured.
-    //! @return The Item generated to hold the solution results. If more than one element was created, this is the parent.
-    DGNPLATFORM_EXPORT PhysicalElementCPtr GetSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool generateSolution = true);
+    //! Get the element that captures the result of solving for the specified parameters. If the solution has already been captured 
+    //! then the existing solution is returned. If not already captured, then, if \a createSolutionIfNecessary is true, this component model is solved and a new 
+    //! solution is captured in the specified output catalog model.  
+    //! @param[out] stat        Optional. If not null and if the solution cannot be returned, then an error code is stored here to explain what happened, as explained below.
+    //! @param[in] catalogModel The output catalog model, where the captured solution item(s) is(are) stored.
+    //! @param[in] parameters   The parameters that specify the solution
+    //! @param[in] createSolutionIfNecessary Pass true solve and capture a solution if it does not already exists. Pass false if you just want to check if the solution has already been captured.
+    //! @return A handle to the Item that was created to capture the solution results. If more than one element was created, this is the parent. 
+    //! @note This function is used only for solutions that result in PhysicalElements. That is, The ECClass identified by #GetItemECClassName must be a subclass of PhysicalElement.
+    //! @note An existing solution is returned even if it is is not assigned to \a catalogModel.
+    //! @note When a solution cannot be returned, the error code will be:
+    //!     * DgnDbStatus::NotFound - solution does not exist and \a createSolutionIfNecessary is \a false, or no element in the solution is in the category identified by #GetItemCategoryName.
+    //!     * DgnDbStatus::ValidationFailed - The model could not be solved, possibly because the values in \a parameters are invalid.
+    //!     * DgnDbStatus::SQLiteError or DgnDbStatus::WriteError - The solution could not be written to the Db. 
+    //!     * DgnDbStatus::LockNotHeld  - This component model cannot be locked.
+    //!     * DgnDbStatus::InvalidCategory - The category identified by #GetItemCategoryName does not exist in this Db.
+    //!     * DgnDbStatus::MissingDomain - The ECClass identified by #GetItemECClassName does not exist in this Db.
+    //!     * DgnDbStatus::MissingHandler - The handler for the ECClass identified by #GetItemECClassName has not been registered.
+    //!     * DgnDbStatus::WrongClass - The ECClass identified by #GetItemECClassName is not a subclass of PhysicalElement.
+    //! @see MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT PhysicalElementCPtr GetSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool createSolutionIfNecessary = true);
 
     //! Make a persistent copy of a specified solution Item, along with all of its children.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.

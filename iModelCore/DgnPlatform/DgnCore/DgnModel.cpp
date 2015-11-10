@@ -1788,7 +1788,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
     if (!iclass.IsValid())
         {
         BeAssert(false);
-        status = DgnDbStatus::BadSchema;
+        status = DgnDbStatus::MissingDomain;
         return nullptr;
         }
 
