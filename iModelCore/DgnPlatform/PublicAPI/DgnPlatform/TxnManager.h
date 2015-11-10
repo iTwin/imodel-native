@@ -81,6 +81,10 @@ struct TxnTable : RefCountedBase
     //! Return the name of the table handled by this TxnTable.
     virtual Utf8CP _GetTableName() const = 0;
 
+    //! Create any temp tables that will be used by _OnValidate. The results of this method will be committed before
+    //! any actual changes are validated or txns are created.
+    virtual void _Initialize() = 0;
+
     //! @name Validating Direct Changes
     //@{
     //! Called before a Txn is committed (or explicitly to propagate changes within a Txn).
@@ -284,6 +288,7 @@ public:
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
     DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
+    BeSQLite::DbResult InitializeTableHandlers(); //!< @private
 
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
@@ -479,6 +484,7 @@ namespace dgn_TxnTable
 
         Element(TxnManager& mgr) : TxnTable(mgr) {}
 
+        void _Initialize() override;
         void _OnValidate() override;
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
@@ -527,6 +533,7 @@ namespace dgn_TxnTable
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
+        void _Initialize() override;
         void _OnValidate() override;
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
@@ -547,6 +554,7 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const {return MyTableName();}
 
         ElementDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
+        void _Initialize() override;
         void _OnValidate() override;
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {UpdateSummary(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Update);}
@@ -567,6 +575,7 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const {return MyTableName();}
         ModelDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
 
+        void _Initialize() override {}
         void _OnValidateAdd(BeSQLite::Changes::Change const&) override;
         void _OnValidateUpdate(BeSQLite::Changes::Change const&) override;
         void _PropagateChanges() override;
@@ -580,6 +589,7 @@ namespace dgn_TxnTable
         static Utf8CP MyTableName() {return BEDB_TABLE_Property;}
         Utf8CP _GetTableName() const {return MyTableName();}
         BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
+        void _Initialize() override {}
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
     };
 };
