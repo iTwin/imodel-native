@@ -47,9 +47,8 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         void SyncNextCacheChangeGroup();
 
-#ifdef WIP_MERGE
-        bool CanSyncChangeset(ChangeGroupCR changeGroup) const;
-#endif
+        bool CanSyncChangeset(CacheChangeGroupCR changeGroup) const;
+
         AsyncTaskPtr<void> SyncNextChangeset();
 
         AsyncTaskPtr<void> SyncCacheChangeGroup(CacheChangeGroupPtr changeGroup);
@@ -69,17 +68,17 @@ struct SyncLocalChangesTask : public CachingTaskBase
             IDataSourceCache& cache,
             WSChangeset& changeset,
             bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
-            bvector<ChangeGroup*>& changesetChangeGroupsOut
+            bvector<CacheChangeGroup*>& changesetChangeGroupsOut
             );
-#ifdef WIP_MERGE
+
         WSChangeset::Instance* AddChangeToChangeset
             (
             IDataSourceCache& cache,
             WSChangeset& changeset,
-            ChangeGroupCR changeGroup,
+            CacheChangeGroupCR changeGroup,
             bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
             );
-#endif
+
         BentleyStatus BuildSyncJson(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
         BentleyStatus BuildSyncJsonForObjectCreation(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
         BentleyStatus BuildSyncJsonForRelationshipCreation(IDataSourceCache& cache, ChangeManager::RelationshipChangeCR relationshipChange, JsonValueR syncJsonOut) const;

@@ -102,10 +102,10 @@ struct MockCachingDataSource : public ICachingDataSource
             AsyncTaskPtr<BatchResult> (const bvector<ObjectId>& filesIds, bool skipCachedFiles, FileCache fileCacheLocation, LabeledProgressCallback onProgress, ICancellationTokenPtr cancellationToken));
         MOCK_METHOD2 (DownloadAndCacheChildren,
             AsyncTaskPtr<Result> (const bvector<ObjectId>& parentIds, ICancellationTokenPtr cancellationToken));
-        MOCK_METHOD2 (SyncLocalChanges,
-            AsyncTaskPtr<BatchResult> (SyncProgressCallback, ICancellationTokenPtr));
         MOCK_METHOD3 (SyncLocalChanges,
-            AsyncTaskPtr<BatchResult> (const bset<ECInstanceKey>&, SyncProgressCallback, ICancellationTokenPtr));
+            AsyncTaskPtr<BatchResult>(SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
+        MOCK_METHOD4 (SyncLocalChanges,
+            AsyncTaskPtr<BatchResult> (const bset<ECInstanceKey>&, SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
         MOCK_METHOD5 (SyncCachedData,
             AsyncTaskPtr<BatchResult> (bvector<ECInstanceKey>, bvector<IQueryProvider::Query>, bvector<IQueryProviderPtr>, ProgressCallback, ICancellationTokenPtr));
         MOCK_METHOD5 (CacheNavigation,
