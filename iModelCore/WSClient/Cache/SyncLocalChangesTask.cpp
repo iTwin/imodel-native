@@ -198,7 +198,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
             auto txn = m_ds->StartCacheTransaction();
             for (auto& pair : createdInstanceIds)
                 {
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(pair.first, pair.second))
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChange(pair.first, pair.second))
                     {
                     SetError();
                     return;
@@ -212,7 +212,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                     {
                     continue;
                     }
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(changedInstanceKey))
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChange(changedInstanceKey))
                     {
                     SetError();
                     return;
@@ -325,7 +325,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
 
             for (auto& pair : ReadChangedRemoteIds(*changeGroup, objectsResult.GetValue()))
                 {
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(pair.first, pair.second))
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChange(pair.first, pair.second))
                     {
                     SetError(CachingDataSource::Status::InternalCacheError);
                     return;
@@ -439,7 +439,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(ChangeGroupPtr c
                 }
 
             auto txn = m_ds->StartCacheTransaction();
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChange(instanceKey))
                 {
                 SetError(CachingDataSource::Status::InternalCacheError);
                 return;
@@ -480,7 +480,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(ChangeGroupPtr cha
 
             auto txn = m_ds->StartCacheTransaction();
             m_totalBytesUploaded += currentFileSize;
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChanges(instanceKey))
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChange(instanceKey))
                 {
                 SetError(CachingDataSource::Status::InternalCacheError);
                 return;
@@ -534,7 +534,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(ChangeGroupPtr chang
                 }
 
             auto txn = m_ds->StartCacheTransaction();
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChange(instanceKey))
                 {
                 SetError(CachingDataSource::Status::InternalCacheError);
                 return;
