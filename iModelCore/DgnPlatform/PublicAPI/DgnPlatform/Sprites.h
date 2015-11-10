@@ -23,7 +23,7 @@ protected:
     Point2d         m_size;
     bool            m_isLoaded;
 
-    bvector<Byte>   m_rgbaBuffer;  //  Expanded PNG
+    ByteStream   m_rgbaBuffer;  //  Expanded PNG
     DGNPLATFORM_EXPORT virtual void LoadSprite ();
     void PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
 

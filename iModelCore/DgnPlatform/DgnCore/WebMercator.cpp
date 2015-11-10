@@ -584,7 +584,7 @@ BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture (uintptr_t& cachedT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
+uintptr_t WebMercatorTileDisplayHelper::DefineTexture (ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (!imageInfo.isBGR);
@@ -673,17 +673,17 @@ void WebMercatorTileDisplayHelper::DrawAndCacheTile (ViewContextR context, WebMe
     
     BentleyStatus status;
 
-    m_rgbBuffer.clear(); // reuse the same buffer, in order to minimize mallocs
+    m_rgbBuffer.Clear(); // reuse the same buffer, in order to minimize mallocs
 
     if (contentType.Equals ("image/png"))
         {
-        status = ImageUtilities::ReadImageFromPngBuffer (m_rgbBuffer, actualImageInfo, data.data(), data.size());
+        status = ImageUtilities::ReadImageFromPngBuffer (m_rgbBuffer, actualImageInfo, data.GetData(), data.GetSize());
         if (SUCCESS != status)
             LOG.warningv("Invalid png image data: %s", url.c_str());
         }
     else if (contentType.Equals ("image/jpeg"))
         {
-        status = ImageUtilities::ReadImageFromJpgBuffer (m_rgbBuffer, actualImageInfo, data.data(), data.size(), expectedImageInfo);
+        status = ImageUtilities::ReadImageFromJpgBuffer (m_rgbBuffer, actualImageInfo, data.GetData(), data.GetSize(), expectedImageInfo);
         if (SUCCESS != status)
             LOG.warningv("Invalid jpeg image data: %s", url.c_str());
         }
@@ -1619,7 +1619,7 @@ bool TiledRaster::_IsExpired() const {return DateTime::CompareResult::EarlierTha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Byte> const& TiledRaster::GetData() const {return m_data;}
+ByteStream const& TiledRaster::GetData() const {return m_data;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
@@ -1760,7 +1760,8 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 
     m_contentType = contentTypeIter->second.c_str();
     m_rasterInfo = *options.GetExpectedImageInfo();
-    m_data = body;
+
+    m_data.SaveData(&body.front(), (uint32_t) body.size());
 
     return BSISUCCESS;
     }
@@ -1784,7 +1785,7 @@ BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, 
 
         auto raster     = stmt->GetValueBlob(0);
         auto rasterSize = stmt->GetValueInt(1);
-        m_data.assign((Byte*) raster,(Byte*) raster + rasterSize);
+        m_data.SaveData((Byte*) raster, rasterSize);
 
         m_rasterInfo = DeserializeRasterInfo(stmt->GetValueText(2));
         DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(3));
@@ -1805,7 +1806,7 @@ BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     {
-    int bufferSize = (int) GetData().size();
+    int bufferSize = (int) GetData().GetSize();
 
     int64_t creationTime = 0;
     if (SUCCESS != GetCreationDate().ToUnixMilliseconds(creationTime))
@@ -1846,7 +1847,7 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
 
         stmt->ClearBindings();
         stmt->BindText (1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindBlob (2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
+        stmt->BindBlob (2, GetData().GetData(), bufferSize, BeSQLite::Statement::MakeCopy::No);
         stmt->BindInt  (3, bufferSize);
         stmt->BindText (4, SerializeRasterInfo(m_rasterInfo).c_str(), BeSQLite::Statement::MakeCopy::Yes);
         stmt->BindInt64(5, creationTime);

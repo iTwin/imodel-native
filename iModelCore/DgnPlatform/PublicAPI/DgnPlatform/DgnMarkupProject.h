@@ -221,7 +221,7 @@ public:
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(bvector<uint8_t> const& imageData, ImageUtilities::RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(ByteStream const& imageData, ImageUtilities::RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
     //! @param jpegData         The image data in JPEG format.

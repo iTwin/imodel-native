@@ -1291,7 +1291,7 @@ struct FileRealityDataSource : AsyncRealityDataSource<FileRealityDataSource>
             //! @param[in] filepath     The path of the file that the data was read from.
             //! @param[in] data         The file content.
             //! @param[in] options      The request options.
-            virtual BentleyStatus _InitFrom(Utf8CP filepath, bvector<Byte> const& data, RequestOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data, RequestOptions const& options) = 0;
         };
 
     //===================================================================================

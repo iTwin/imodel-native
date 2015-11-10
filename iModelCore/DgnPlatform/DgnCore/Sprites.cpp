@@ -182,7 +182,7 @@ void RgbaSprite::PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t 
     if (BSISUCCESS != ImageUtilities::ReadImageFromPngBuffer (m_rgbaBuffer, info, inputBuffer, numberBytes) || !info.hasAlpha)
         {
         m_isLoaded = false;
-        m_rgbaBuffer.clear();
+        m_rgbaBuffer.Clear();
         return;
         }
 
@@ -284,6 +284,6 @@ RgbaSprite::RgbaSprite ()
     m_size.x = m_size.y = 0;
     }
 
-Byte const* RgbaSprite::GetRgbaDefinition() { LoadSprite(); return m_rgbaBuffer.size() > 0 ? &m_rgbaBuffer[0] : nullptr; }
+Byte const* RgbaSprite::GetRgbaDefinition() { LoadSprite(); return m_rgbaBuffer.GetSize() > 0 ? m_rgbaBuffer.GetData() : nullptr; }
 void RgbaSprite::GetSize (Point2d* size) {  LoadSprite(); *size = m_size;}
 

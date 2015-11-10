@@ -21,6 +21,8 @@
 DgnElement::Item::Key&  DgnElement::Item::GetKey() {static Key s_key; return s_key;}
 #endif
 
+
+void From(bvector<uint8_t>& from);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1303,58 +1305,6 @@ DgnElementPtr DgnElement::CopyForEdit() const
     BeAssert(typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
     newEl->_CopyFrom(*this);
     return newEl;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream::GeomStream(GeomStream const& other)
-    {
-    m_size = m_allocSize = 0;
-    m_data = nullptr;
-    SaveData(other.m_data, other.m_size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomStream::ReserveMemory(uint32_t size)
-    {
-    m_size = size;
-    if (size<=m_allocSize)
-        return;
-
-    m_data = (uint8_t*) realloc(m_data, size);
-    m_allocSize = size;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream::~GeomStream()
-    {
-    FREE_AND_CLEAR(m_data);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStream& GeomStream::operator= (GeomStream const& other)
-    {
-    if (this != &other)
-        SaveData(other.m_data, other.m_size);
-
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomStream::SaveData(uint8_t const* data, uint32_t size)
-    {
-    ReserveMemory(size);
-    if (data)
-        memcpy(m_data, data, size);
     }
 
 BEGIN_UNNAMED_NAMESPACE

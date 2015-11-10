@@ -166,8 +166,6 @@ DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
 DGNPLATFORM_TYPEDEFS (IViewTransients)
 DGNPLATFORM_TYPEDEFS (IndexedViewSet)
 DGNPLATFORM_TYPEDEFS (IndexedViewport)
-DGNPLATFORM_TYPEDEFS (Material)
-DGNPLATFORM_TYPEDEFS (MaterialAssignment)
 DGNPLATFORM_TYPEDEFS (NotificationManager)
 DGNPLATFORM_TYPEDEFS (ParagraphProperties)
 DGNPLATFORM_TYPEDEFS (PatternParams)
@@ -858,6 +856,53 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMAXI8      INT64_MAX
 #define   IMINI8      INT64_MIN
 #define   IMAXUI8     UINT64_MAX
+
+//=======================================================================================
+//! A stream of bytes in a resizeable buffer. Released on destruction, never gets smaller.
+//! This class is more efficient than bvector<byte> since it does not initialize the memory to zeros.
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct ByteStream
+{
+private:
+    uint32_t m_size;
+    uint32_t m_allocSize;
+    uint8_t* m_data;
+    void swap(ByteStream& rhs) {std::swap(m_size,rhs.m_size); std::swap(m_allocSize,rhs.m_allocSize); std::swap(m_data,rhs.m_data);}
+
+public:
+    void Init() {m_size=m_allocSize=0; m_data=nullptr;}
+    ByteStream() {Init();}
+    ByteStream(uint8_t const* data, uint32_t size) {Init(); SaveData(data, size);}
+    ByteStream(ByteStream const& other) {Init(); SaveData(other.m_data, other.m_size);}
+    ~ByteStream() {Clear();}
+    ByteStream(ByteStream&& rhs) : m_size(rhs.m_size), m_allocSize(rhs.m_allocSize), m_data(rhs.m_data) {rhs.m_size=rhs.m_allocSize=0; rhs.m_data=nullptr;}
+    ByteStream& operator=(ByteStream const& other) {if (this != &other) SaveData(other.m_data, other.m_size); return *this;}
+    ByteStream& operator=(ByteStream&& rhs) {ByteStream(std::move(rhs)).swap(*this); return *this;}
+
+    //! Get the size, in bytes, of the memory allocated for this ByteStream.
+    //! @note The allocated size may be larger than the currently used size returned by GetSize.
+    uint32_t GetAllocSize() const {return m_allocSize;}
+    uint32_t GetSize() const {return m_size;}   //!< Get the size in bytes of the current data in this ByteStream.
+    uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the ByteStream.
+    uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the ByteStream.
+    bool HasData() const {return 0 != m_size;}  //!< return false if this ByteStream is empty.
+    void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
+
+    //! Reserve memory for this ByteStream.
+    //! @param[in] size the number of bytes to reserve
+    void ReserveMemory(uint32_t size) {m_size=size; if (size<=m_allocSize) return; m_data = (uint8_t*) realloc(m_data, size); m_allocSize = size;}
+
+    //! Save a stream of bytes into this ByteStream.
+    //! @param[in] data the data to save
+    //! @param[in] size number of bytes in data
+    void SaveData(uint8_t const* data, uint32_t size) {ReserveMemory(size); if (data) memcpy(m_data, data, size);}
+
+    //! Append a stream of byes to the current end of this ByteStream.
+    //! @param[in] data the data to save
+    //! @param[in] size number of bytes in data
+    void Append(uint8_t const* data, uint32_t size) {ReserveMemory(size+m_size); if (data) memcpy(m_data+m_size, data, size);}
+};
 
 //=======================================================================================
 //! RGBA values for a color

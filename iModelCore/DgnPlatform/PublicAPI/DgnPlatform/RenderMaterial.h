@@ -37,95 +37,103 @@ public:
         static bool const NoShadows() {return false;}
     };
 
+    //=======================================================================================
+    // Materials can have textures mapped into them
+    // @bsiclass                                                    Keith.Bentley   11/15
+    //=======================================================================================
+    struct TextureMap
+    {
+
+        struct Trans {double m_val[2][3];};
+
+        enum class Type
+        {
+            None                    = 0,
+            Pattern                 = 1,
+            Bump                    = 2,
+            Specular                = 3,
+            Reflect                 = 4,
+            Transparency            = 5,
+            Translucency            = 6,
+            Finish                  = 7,
+            Diffuse                 = 8,
+            GlowAmount              = 9,
+            ClearcoatAmount         = 10,
+            AnisotropicDirection    = 11,
+            SpecularColor           = 12,
+            TransparentColor        = 13,
+            TranslucencyColor       = 14,
+            Displacement            = 15,
+            Normal                  = 16,
+            FurLength               = 17,
+            FurDensity              = 18,
+            FurJitter               = 19,
+            FurFlex                 = 20,
+            FurClumps               = 21,
+            FurDirection            = 22,
+            FurVector               = 23,
+            FurBump                 = 24,
+            FurCurls                = 25,
+            GlowColor               = 26,
+            ReflectColor            = 27,
+            RefractionRoughness     = 28,
+            SpecularFresnel         = 29,
+            Geometry                = 30,
+        };
+
+        enum class Mode : int
+        {
+            None                    = -1,
+            Parametric              = 0,
+            ElevationDrape          = 1,
+            Planar                  = 2,
+            DirectionalDrape        = 3,
+            Cubic                   = 4,
+            Spherical               = 5,
+            Cylindrical             = 6,
+            Solid                   = 7,
+            //! Only valid for lights.
+            FrontProject            = 8,
+        };
+
+        enum class Units
+        {
+            Relative               = 0,
+            Meters                 = 3,
+            Millimeters            = 4,
+            Feet                   = 5,
+            Inches                 = 6,
+        };
+
+        Json::Value const& m_value;
+        Type m_type;
+
+        bool IsValid() const {return !m_value.isNull();}
+        DGNPLATFORM_EXPORT Trans GetTransform() const;
+        DGNPLATFORM_EXPORT DPoint2d GetScale() const;
+        DGNPLATFORM_EXPORT DPoint2d GetOffset() const;
+        DGNPLATFORM_EXPORT Units GetUnits() const;
+        DGNPLATFORM_EXPORT Mode GetMode() const;
+        DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
+        Type GetType() const {return m_type;}
+        double GetUnitScale(Units units) const;
+        double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
+        bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
+
+        TextureMap(Json::Value const& val, Type type) : m_value(val), m_type(type) {}
+    };
+
     DGNPLATFORM_EXPORT BentleyStatus DoImport(DgnImportContext& context, DgnDbR sourceDb);
     DGNPLATFORM_EXPORT BentleyStatus Load(DgnMaterialId materialId, DgnDbR dgnDb);
 
     double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
     bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
     DGNPLATFORM_EXPORT RgbFactor GetColor(Utf8CP name) const;
+    DGNPLATFORM_EXPORT TextureMap GetPatternMap();
 };
+
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//=======================================================================================
-// @bsiclass                                                    BentleySystems
-//=======================================================================================
-struct ImageBuffer: public RefCountedBase
-{   
-public:
-    // __PUBLISH_SECTION_END__
-    // These enum values are expected to match with QV_*_FORMAT.
-    // __PUBLISH_SECTION_START__
-    enum class Format
-        {
-        Rgba        = 0,
-        Bgra        = 1,
-        Rgb         = 2,
-        Bgr         = 3,
-        Gray        = 4,
-        };
-
-protected:
-    uint32_t        m_width;
-    uint32_t        m_height;
-    Format          m_format;
-    uint32_t        m_nBytes;
-    Byte*           m_dataPtr;
-
-    ImageBuffer(); 
-    ImageBuffer(uint32_t width, uint32_t height, Format const& format, bvector<Byte>& data);
-
-    static size_t BytesPerPixel(Format const& format);
-
-public:
-
-    //! Create an uninitialized buffer that it is going to be filled later.
-    DGNPLATFORM_EXPORT static ImageBufferPtr Create(uint32_t width, uint32_t height, Format const& format);
-
-    //! Create from a vector. 'data' is not copied, std::move is used to avoid a buffer copy.
-    DGNPLATFORM_EXPORT static ImageBufferPtr Create(uint32_t width, uint32_t height, Format const& format, bvector<Byte>& data);
-       
-    DGNPLATFORM_EXPORT uint32_t     GetWidth() const;
-    DGNPLATFORM_EXPORT uint32_t     GetHeight() const;
-
-    DGNPLATFORM_EXPORT Format       GetFormat() const;
-    DGNPLATFORM_EXPORT Byte*        GetDataP();
-    DGNPLATFORM_EXPORT Byte const*  GetDataCP() const;
-    DGNPLATFORM_EXPORT size_t       GetDataSize() const; 
-
-    //! You can turn OFF alpha testing if your image does not have transparent pixels.
-    virtual bool _GetEnableAlphaTesting() const {return true;}
-
-    //! Return an ImageBufferPtr or an invalid instance if an error occurs.
-    virtual BentleyStatus _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const = 0;
-};
-
-//=======================================================================================
-// @bsiclass                                             
-//=======================================================================================
-struct JsonRenderMaterialMap : RenderMaterialMap
-{
-protected:
-    Json::Value     m_value;
-
-    JsonRenderMaterialMap (Json::Value const& value) : m_value (value) { }
-
-public:
-
-    static RenderMaterialMapPtr  Create (Json::Value const& value) { return new JsonRenderMaterialMap (value); }
-           Json::Value           GetValue () { return m_value; }
-           BentleyStatus         DoImport (DgnImportContext& context, DgnDbR sourceDb);
-
-    DGNPLATFORM_EXPORT    virtual Mode                _GetMode () const override;
-    DGNPLATFORM_EXPORT    virtual Units               _GetUnits () const override;
-    DGNPLATFORM_EXPORT    virtual DPoint2d            _GetScale (BentleyStatus* status = NULL) const override;
-    DGNPLATFORM_EXPORT    virtual DPoint2d            _GetOffset (BentleyStatus* status = NULL) const override;
-    DGNPLATFORM_EXPORT    virtual double              _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
-    DGNPLATFORM_EXPORT    virtual bool                _GetBool (char const* key, BentleyStatus* status = NULL) const override;
-    DGNPLATFORM_EXPORT    virtual ImageBufferPtr      _GetImage (DgnDbR dgnDb) const override;
-    DGNPLATFORM_EXPORT    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
-
-};
-
 //=======================================================================================
 // @bsiclass                                             
 //=======================================================================================
@@ -146,15 +154,6 @@ public:
 
     DGNPLATFORM_EXPORT virtual ImageBufferPtr   _GetImage (DgnDbR dgnDb) const override;
                                                                                                  
-};
-//=======================================================================================
-// @bsiclass                                             
-//=======================================================================================
-struct RenderMaterialUtil
-{
-    DGNPLATFORM_EXPORT static double    GetMapUnitScale (RenderMaterialMap::Units mapUnits);
-    DGNPLATFORM_EXPORT static void      SetColor (Json::Value& renderMaterial, char const* keyword, RgbFactorCR color);
-    DGNPLATFORM_EXPORT static void      SetPoint (Json::Value& renderMaterial, char const* keyword, DPoint3dCR point);
 };
 #endif
 

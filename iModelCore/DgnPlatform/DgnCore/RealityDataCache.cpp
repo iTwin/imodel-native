@@ -859,9 +859,9 @@ protected:
         rewind (file);
 
         // read file content
-        bvector<Byte> data;
-        data.resize(size);
-        size_t bytesRead = fread (&data[0], sizeof (Utf8Char), size, file);
+        ByteStream data;
+        data.ReserveMemory(size);
+        size_t bytesRead = fread (data.GetDataR(), sizeof (Utf8Char), size, file);
         fclose(file);
         if (bytesRead != size)
             {

@@ -130,7 +130,7 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
 
 private:
     Utf8String      m_url;
-    bvector<Byte>   m_data;
+    ByteStream      m_data;
     DateTime        m_creationDate;
     Utf8String      m_contentType;
     ImageUtilities::RgbImageInfo m_rasterInfo;
@@ -152,7 +152,7 @@ protected:
 
 public:
     static RefCountedPtr<TiledRaster> Create();    
-    bvector<Byte> const& GetData() const;
+    ByteStream const& GetData() const;
     DateTime GetCreationDate() const;
     ImageUtilities::RgbImageInfo const& GetImageInfo() const;
     Utf8String GetContentType() const;
@@ -166,7 +166,7 @@ struct WebMercatorTileDisplayHelper
     {
 //protected:
     WebMercatorUorConverter m_converter;
-    bvector<Byte> m_rgbBuffer;
+    ByteStream m_rgbBuffer;
     bool m_drawingSubstituteTiles;
 public:
 
@@ -181,7 +181,7 @@ public:
     //! @return a unique ID to identify the texture
     //! @param[in] rgbData  The raw image data
     //! @param[in] imageInfo Defines the format, size, and orientation of the raw image data
-    static uintptr_t DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo);
+    static uintptr_t DefineTexture (ByteStream const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo);
 
     //! Add texture to temporary cache, or if a texture is already cached for this url, then replace it.
     //! @note Do not delete the texture. The cache will delete it if and when it is removed by trim or by replacement.

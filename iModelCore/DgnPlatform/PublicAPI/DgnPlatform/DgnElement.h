@@ -1186,38 +1186,10 @@ public:
 //! @ingroup ElementGeometryGroup
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-struct GeomStream
+struct GeomStream : ByteStream
 {
-private:
-    uint32_t m_size;
-    uint32_t m_allocSize;
-    uint8_t* m_data;
-    void swap(GeomStream& rhs) {std::swap(m_size,rhs.m_size); std::swap(m_allocSize,rhs.m_allocSize); std::swap(m_data,rhs.m_data);}
-
 public:
-    GeomStream() {m_size=m_allocSize=0; m_data=nullptr;}
-    DGNPLATFORM_EXPORT GeomStream(GeomStream const&);
-    DGNPLATFORM_EXPORT ~GeomStream();
-    GeomStream(GeomStream&& rhs) : m_size(rhs.m_size), m_allocSize(rhs.m_allocSize), m_data(rhs.m_data) {rhs.m_size=rhs.m_allocSize=0; rhs.m_data=nullptr;}
-    DGNPLATFORM_EXPORT GeomStream& operator=(GeomStream const&);
-    GeomStream& operator=(GeomStream&& rhs) {GeomStream(std::move(rhs)).swap(*this); return *this;}
-
-    //! Get the size, in bytes, of the memory allocated for this GeomStream.
-    //! @note The allocated size may be larger than the currently used size returned by GetSize.
-    uint32_t GetAllocSize() const {return m_allocSize;}
-    uint32_t GetSize() const {return m_size;}   //!< Get the size in bytes of the current data in this GeomStream.
-    uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the GeomStream.
-    uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the GeomStream.
-    bool HasGeometry() const {return 0 != m_size;}  //!< return false if this GeomStream is empty.
-    void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
-
-    //! Reserve memory for this GeomStream.
-    //! @param[in] size the number of bytes to reserve
-    DGNPLATFORM_EXPORT void ReserveMemory(uint32_t size);
-    //! Save a stream of geometry into this GeomStream.
-    //! @param[in] data the data to save
-    //! @param[in] size number of bytes in data
-    DGNPLATFORM_EXPORT void SaveData(uint8_t const* data, uint32_t size);
+    bool HasGeometry() const {return HasData();}  //!< return false if this GeomStream is empty.
 
     DgnDbStatus WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
     DgnDbStatus ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId);
@@ -1864,6 +1836,7 @@ private:
 
     virtual int64_t _CalculateBytesConsumed() const override { return GetTotalAllocated(); }
     virtual int64_t _Purge(int64_t memTarget) override;
+
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}

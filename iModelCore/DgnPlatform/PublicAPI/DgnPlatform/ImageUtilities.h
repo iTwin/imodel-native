@@ -36,7 +36,7 @@ struct ImageUtilities
     //! @param[in]  inputBufferSize The number of bytes in \a inputBuffer
     //! @return non-zero if the image could not be read.
     //! @remarks The image data written to \a imageData is always in top-down row order. It is in RGB format if \a hasAlpha is \a false, else RGBA. It is always 8-bit color.
-    DGNPLATFORM_EXPORT static BentleyStatus ReadImageFromPngBuffer (bvector<Byte>& imageData, RgbImageInfo& info, Byte const*inputBuffer, size_t inputBufferSize);  
+    DGNPLATFORM_EXPORT static BentleyStatus ReadImageFromPngBuffer(ByteStream& imageData, RgbImageInfo& info, Byte const*inputBuffer, size_t inputBufferSize);  
 
     //! Extract an RGB[A] image from a file in the PNG format.
     //! @param[out] imageData   Image data read from PNG file.
@@ -46,7 +46,7 @@ struct ImageUtilities
     //! @return non-zero if the image could not be read.
     //! @remarks The image data written to \a imageData is always in top-down row order. It is in RGB format if \a hasAlpha is \a false, else RGBA. It is always 8-bit color.
     //! The PNG data is in compressed format with 8-bit color.
-    DGNPLATFORM_EXPORT static BentleyStatus ReadImageFromPngFile (bvector<Byte>& imageData, RgbImageInfo& info, BeFile& pngFile);
+    DGNPLATFORM_EXPORT static BentleyStatus ReadImageFromPngFile(ByteStream& imageData, RgbImageInfo& info, BeFile& pngFile);
 
     //! Write an image in RGB or RGBA format to PNG format.
     //! @param[out] pngData      The image in PNG format.
@@ -56,7 +56,7 @@ struct ImageUtilities
     //! @note The data in \a imageData may be modified. If the data is in BGR order, it is converted to RGB. If the data contains alpha values that are 0,
     //! they are set to 0xff.
     //! @remarks The PNG data is written in compressed format with 8-bit color.
-    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToPngFormat (bvector<uint8_t>& pngData, bvector<uint8_t>& imageData, RgbImageInfo const& info);
+    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToPngFormat(ByteStream& pngData, ByteStream& imageData, RgbImageInfo const& info);
 
     //! Write an image in RGB or RGBA format to a PNG file.
     //! @param[in] pngFile      The file to write to. Must be open for write.
@@ -66,7 +66,7 @@ struct ImageUtilities
     //! @note The data in \a imageData may be modified. If the data is in BGR order, it is converted to RGB. If the data contains alpha values that are 0,
     //! they are set to 0xff.
     //! @remarks The PNG data is written in compressed format with 8-bit color.
-    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToPngFile (BeFile& pngFile, bvector<uint8_t>& imageData, RgbImageInfo const& info);
+    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToPngFile(BeFile& pngFile, ByteStream& imageData, RgbImageInfo const& info);
 /** @} */
 
 /** @name JPEG Support for the JPEG format */
@@ -78,7 +78,7 @@ struct ImageUtilities
     //! @param[in]  jpegBufferSize The number of bytes in \a inputBuffer
     //! @param[in]  jpegInfoIn      Information about stored image format. Note that the image dimensions in \a info are ignored.
     //! @return non-zero if the image could not be read.
-    DGNPLATFORM_EXPORT static BentleyStatus ReadImageFromJpgBuffer (bvector<Byte>& rgbBuffer, RgbImageInfo& info, Byte const*jpegBuffer, size_t jpegBufferSize, RgbImageInfo const& jpegInfoIn);
+    DGNPLATFORM_EXPORT static BentleyStatus ReadImageFromJpgBuffer(ByteStream& rgbBuffer, RgbImageInfo& info, Byte const*jpegBuffer, size_t jpegBufferSize, RgbImageInfo const& jpegInfoIn);
 
     //! Read an image in RGB format from a JPEG file
     //! @param[out] jpegData   The image in JPEG format.
@@ -87,7 +87,7 @@ struct ImageUtilities
     //! @param[in] quality     The image quality to preserve. A value in the range 0-100, inclusive. 100 is loss-less. Any value less than 100 is lossy. 
     //! @return non-zero if the image could not be written.
     //! @note the data in \a rgbBuffer must be in RGB format, have no alpha, and be in bottom-up row order. No other format is currently supported.
-    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToJpgBuffer (bvector<Byte>& jpegData, bvector<Byte> const& rgbBuffer, RgbImageInfo const& info, int quality);
+    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToJpgBuffer(ByteStream& jpegData, ByteStream const& rgbBuffer, RgbImageInfo const& info, int quality);
 /** @} */
 };
 

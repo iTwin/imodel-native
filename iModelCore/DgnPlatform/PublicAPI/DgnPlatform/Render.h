@@ -10,7 +10,6 @@
 
 #include "DgnModel.h"
 #include "DgnCategory.h"
-#include "DgnTexture.h"
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
 #include <list>
@@ -22,7 +21,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
@@ -35,9 +34,11 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
 
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
+DEFINE_REF_COUNTED_PTR(Image)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 DEFINE_REF_COUNTED_PTR(LineTexture)
 DEFINE_REF_COUNTED_PTR(Material)
@@ -47,7 +48,6 @@ DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Texture)
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
@@ -71,10 +71,45 @@ struct Task : IRefCounted, NonCopyableClass
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   09/15
+// @bsiclass                                                    BentleySystems
 //=======================================================================================
-struct Material : RefCounted<NonCopyableClass>
+struct Image : RefCounted<NonCopyableClass>
 {
+    enum class Format
+        {
+        Rgba = 0,
+        Bgra = 1,
+        Rgb  = 2,
+        Bgr  = 3,
+        Gray = 4,
+        };
+    static size_t BytesPerPixel(Format format)
+        {
+        switch (format)
+            {
+            case Format::Rgba:
+            case Format::Bgra:
+                return 4;
+            case Format::Rgb:
+            case Format::Bgr:
+                return 3;
+            }
+        return 1;
+        }
+
+protected:
+    uint32_t m_width;
+    uint32_t m_height;
+    Format   m_format;
+    ByteStream m_image;
+
+public:
+    Image(uint32_t width, uint32_t height, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_image(data, size) {}
+    uint32_t GetWidth() const {return m_width;}
+    uint32_t GetHeight() const {return m_height;}
+    Format GetFormat() const {return m_format;}
+    ByteStream const& GetByteStream() const {return m_image;}
+    ByteStream& GetByteStreamR() {return m_image;}
 };
 
 //=======================================================================================
@@ -82,73 +117,15 @@ struct Material : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
-    struct Trans {double m_val[2][3];};
+};
 
-    enum class Type
-    {
-        None                    = 0,
-        Pattern                 = 1,
-        Bump                    = 2,
-        Specular                = 3,
-        Reflect                 = 4,
-        Transparency            = 5,
-        Translucency            = 6,
-        Finish                  = 7,
-        Diffuse                 = 8,
-        GlowAmount              = 9,
-        ClearcoatAmount         = 10,
-        AnisotropicDirection    = 11,
-        SpecularColor           = 12,
-        TransparentColor        = 13,
-        TranslucencyColor       = 14,
-        Displacement            = 15,
-        Normal                  = 16,
-        FurLength               = 17,
-        FurDensity              = 18,
-        FurJitter               = 19,
-        FurFlex                 = 20,
-        FurClumps               = 21,
-        FurDirection            = 22,
-        FurVector               = 23,
-        FurBump                 = 24,
-        FurCurls                = 25,
-        GlowColor               = 26,
-        ReflectColor            = 27,
-        RefractionRoughness     = 28,
-        SpecularFresnel         = 29,
-        Geometry                = 30,
-    };
-
-    enum class Mode : int
-    {
-        None                    = -1,
-        Parametric              = 0,
-        ElevationDrape          = 1,
-        Planar                  = 2,
-        DirectionalDrape        = 3,
-        Cubic                   = 4,
-        Spherical               = 5,
-        Cylindrical             = 6,
-        Solid                   = 7,
-        //! Only valid for lights.
-        FrontProject            = 8,
-    };
-
-    enum class Units
-    {
-        Relative               = 0,
-        Meters                 = 3,
-        Millimeters            = 4,
-        Feet                   = 5,
-        Inches                 = 6,
-    };
-
-    DGNPLATFORM_EXPORT static Trans GetPatternTransform(Json::Value const&);
-    DGNPLATFORM_EXPORT static double GetUnitScale(Units units);
-    DGNPLATFORM_EXPORT static Units GetUnits(JsonValueCR in);
-    DGNPLATFORM_EXPORT static Mode GetMode(JsonValueCR);
-    DGNPLATFORM_EXPORT static void SetPoint(JsonValueR out, Utf8CP keyword, DPoint3dCR point);
-    DGNPLATFORM_EXPORT static void SetColor(JsonValueR out, Utf8CP keyword, RgbFactorCR color);
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Material : RefCounted<NonCopyableClass>
+{
+    bvector<TexturePtr> m_mappedTextures;
+    void AddMappedTexture(TextureR texture) {m_mappedTextures.push_back(&texture);}
 };
 
 //=======================================================================================
@@ -599,7 +576,7 @@ public:
     DGNPLATFORM_EXPORT void Init();
 
     //! Get the texture applied to lines for this ElemMatSymb
-    LineTexturePtr GetLineTexture() const {return m_lineTexture;}
+    LineTextureP GetLineTexture() const {return m_lineTexture.get();}
 
     //! Set a LineTexture for this ElemMatSymb
     void SetLineTexture(LineTextureP texture) {m_lineTexture = texture;}
@@ -626,7 +603,7 @@ public:
     uint32_t GetWidth() const {return m_rasterWidth;}
 
     //! Determine whether TrueWidth is on for this ElemMatSymb
-    DGNPLATFORM_EXPORT bool HasTrueWidth() const;
+    bool HasTrueWidth() const {return m_lStyleSymb.HasTrueWidth();}
 
     //! Determine whether the fill flag is on for this ElemMatSymb.
     bool IsFilled() const {return m_isFilled;}
@@ -641,7 +618,7 @@ public:
     GradientSymbCP GetGradientSymb() const {return m_gradient.get();}
 
     //! Get the render material.
-    MaterialPtr GetMaterial() const {return m_material;}
+    MaterialP GetMaterial() const {return m_material.get();}
 
     //! Get the area pattern params.
     PatternParamsCP GetPatternParams() const {return m_patternParams.get();}
@@ -1175,8 +1152,10 @@ protected:
     virtual void _HealComplete(bool aborted) = 0;
     virtual bool _CheckNeedsHeal(BSIRect* rect) = 0;
     virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
-    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) = 0;
-
+    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
+    virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
+    virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
+                                                
 public:
     virtual double _GetCameraFrustumNearScaleLimit() = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
@@ -1203,7 +1182,9 @@ public:
     void SetNeedsHeal(BSIRectCP dirty) {_SetNeedsHeal(dirty);}
     BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
     bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
-    MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) {return _GetMaterial(id, dgndb);}
+    MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
+    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
+    TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 };
 
 END_BENTLEY_RENDER_NAMESPACE

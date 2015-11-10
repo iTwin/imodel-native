@@ -1178,7 +1178,7 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageData(bvector<uint8_t> const& imageData, Target::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
+void RedlineModel::StoreImageData(ByteStream const& imageData, Target::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Grab possibly updated image definition data
@@ -1253,7 +1253,7 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
 void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, Target::CapturedImageInfo const& imageInfoIn, bool fitToX)
     {
     Target::CapturedImageInfo imageInfo;
-    bvector<uint8_t> rgbData;
+    ByteStream rgbData;
     if (ImageUtilities::ReadImageFromJpgBuffer(rgbData, imageInfo, jpegData, jpegDataSize, imageInfoIn) != BSISUCCESS)
         return;
     StoreImageData(rgbData, imageInfo, fitToX, /*compresssImageProperty*/false);
