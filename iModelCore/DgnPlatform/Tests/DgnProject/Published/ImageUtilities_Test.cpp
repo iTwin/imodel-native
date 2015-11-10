@@ -13,21 +13,24 @@
 //---------------------------------------------------------------------------------------
 TEST (ImageUtilities_Tests, Test1)
     {
-    bvector<uint8_t> testImage;
+    ByteStream testImage;
     ImageUtilities::RgbImageInfo info;
     info.isBGR = false;
     info.hasAlpha = true;
     info.isTopDown = true;
     info.width = 100;
     info.height = 200;
+
+    testImage.ReserveMemory(info.height * info.width * 4);
+    Byte* p=testImage.GetDataP();
     for (uint8_t y = 0; y<info.height; ++y)
         {
         for (uint8_t x = 0; x<info.width; ++x)
             {
-            testImage.push_back (y%256); // R
-            testImage.push_back (x%256); // G
-            testImage.push_back (0xff);  // B
-            testImage.push_back (0xff);  // A
+            *p++ = (y%256); // R
+            *p++ = (x%256); // G
+            *p++ = (0xff);  // B
+            *p++ = (0xff);  // A
             }
         }
 
@@ -39,7 +42,7 @@ TEST (ImageUtilities_Tests, Test1)
 
     ASSERT_TRUE( ImageUtilities::WriteImageToPngFile (pngFile, testImage, info) == BSISUCCESS);
 
-    bvector<uint8_t> imageRead;
+    ByteStream imageRead;
     ImageUtilities::RgbImageInfo infoRead;
     memset (&infoRead, 0, sizeof(infoRead));
     pngFile.Close();
@@ -49,7 +52,7 @@ TEST (ImageUtilities_Tests, Test1)
     ASSERT_EQ( infoRead.height, info.height );
     ASSERT_EQ( infoRead.hasAlpha, info.hasAlpha );
     ASSERT_TRUE( infoRead.isTopDown ); // PNG is always top-down
-    ASSERT_TRUE( imageRead == testImage ); // Since our input was RGBA, there was no transformation on the way out to the file.
+    ASSERT_TRUE( 0==memcmp(imageRead.GetDataP(), testImage.GetDataP(), imageRead.GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
     }
 
 #if defined (COMMENT_OUT)

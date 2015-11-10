@@ -682,7 +682,6 @@ LineStyleInfoPtr LineStyleInfo::Create (DgnStyleId styleId, LineStyleParamsCP pa
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnStyleId LineStyleInfo::GetStyleId () const {return m_styleId;}
 LineStyleParamsCP LineStyleInfo::GetStyleParams () const {return 0 != m_styleParams.modifiers ? &m_styleParams : nullptr;}
 
 /*----------------------------------------------------------------------------------*//**

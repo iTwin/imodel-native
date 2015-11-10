@@ -823,7 +823,7 @@ DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colnam
     ReserveMemory(header.m_size);
 
     uint32_t actuallyRead;
-    snappy.ReadAndFinish(GetDataR(), GetSize(), actuallyRead);
+    snappy.ReadAndFinish(GetDataP(), GetSize(), actuallyRead);
 
     if (actuallyRead != GetSize())
         {

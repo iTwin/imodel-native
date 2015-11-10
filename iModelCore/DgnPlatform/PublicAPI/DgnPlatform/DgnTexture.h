@@ -111,6 +111,7 @@ public:
     TextureData const& GetTextureData() const { return m_data; } //!< The texture data
     Utf8StringCR GetDescription() const { return m_descr; } //!< The description of this texture
     TextureData& GetTextureDataR() { return m_data; } //!< A writable reference to the texture data
+    void SetTextureData(TextureData const& data) { m_data = data; } //!< Set the texture data
     void SetDescription(Utf8StringCR descr) { m_descr = descr; } //!< Set the description
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Texture); } //!< Return the class ID used for textures

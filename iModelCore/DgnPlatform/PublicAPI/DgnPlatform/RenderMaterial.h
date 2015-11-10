@@ -121,7 +121,7 @@ public:
         bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
 
         TextureMap(Json::Value const& val, Type type) : m_value(val), m_type(type) {}
-    };
+    }; // TextureMap
 
     DGNPLATFORM_EXPORT BentleyStatus DoImport(DgnImportContext& context, DgnDbR sourceDb);
     DGNPLATFORM_EXPORT BentleyStatus Load(DgnMaterialId materialId, DgnDbR dgnDb);
@@ -129,34 +129,12 @@ public:
     double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
     bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
     DGNPLATFORM_EXPORT RgbFactor GetColor(Utf8CP name) const;
+    DGNPLATFORM_EXPORT void SetColor(Utf8CP name, RgbFactor);
+    void SetBool(Utf8CP name, bool val) {m_value[name]=val;}
+    Json::Value& GetValueR() {return m_value;}
+    Json::Value const& GetValue() const {return m_value;}
     DGNPLATFORM_EXPORT TextureMap GetPatternMap();
 };
-
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//=======================================================================================
-// @bsiclass                                             
-//=======================================================================================
-struct SimpleBufferPatternMap : RenderMaterialMap
-{
-protected:
-    mutable uintptr_t   m_qvTextureId;
-    ImageBufferPtr      m_imageBuffer;
-
-    DGNPLATFORM_EXPORT SimpleBufferPatternMap (ImageBufferR buffer);
-    DGNPLATFORM_EXPORT ~SimpleBufferPatternMap ();
-
-public:
-    //! Create a material map from an ImageBuffer. No copy occurs, 'buffer' refcount will be incremented.
-    DGNPLATFORM_EXPORT static RenderMaterialMapPtr  Create (ImageBufferR buffer);
-    
-    DGNPLATFORM_EXPORT virtual uintptr_t        _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
-
-    DGNPLATFORM_EXPORT virtual ImageBufferPtr   _GetImage (DgnDbR dgnDb) const override;
-                                                                                                 
-};
-#endif
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

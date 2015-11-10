@@ -24,11 +24,7 @@ namespace {
 struct PngReadData
 {
 public:
-    PngReadData(Byte const* pPngData, size_t dataSize)
-        :m_pData(pPngData),
-         m_size(dataSize),
-         m_position(0)
-        {}
+    PngReadData(Byte const* pPngData, size_t dataSize) : m_pData(pPngData), m_size(dataSize), m_position(0){}
 
     static void Read (png_structp png_ptr, png_bytep data, png_size_t length)
         {
@@ -129,7 +125,7 @@ static BentleyStatus readPngToBuffer(ByteStream& outPixels, ImageUtilities::RgbI
     outPixels.ReserveMemory((uint32_t) (info.height*bytesPerRow));
 
     for(uint32_t line=0; line < info.height; ++line)
-        memcpy(outPixels.GetDataR() + line*bytesPerRow, rows_pointers[line], bytesPerRow);
+        memcpy(outPixels.GetDataP() + line*bytesPerRow, rows_pointers[line], bytesPerRow);
 
 #if 0 //DUMP_TO_FILE
     WString filename;
@@ -191,9 +187,9 @@ struct FileWriter
 //=======================================================================================
 struct BufferWriter
 {
-    ByteStream&     m_pngBuffer;
+    ByteStream& m_pngBuffer;
 
-    BufferWriter (ByteStream& b) : m_pngBuffer(b) {;}
+    BufferWriter(ByteStream& b) : m_pngBuffer(b) {;}
 
     static void Write (png_structp png_ptr, png_bytep data, png_size_t length)
         {
@@ -262,7 +258,7 @@ static BentleyStatus prepareForPng (int& pngformat, bvector <png_bytep>& rows, B
     rows.resize (pngInfo.height);
 
     int    rowSize = pngInfo.width * bytesPerPixel;
-    uint8_t* row     = pngInfo.isTopDown? img.GetDataR(): img.GetDataR() + (pngInfo.height-1)*rowSize;
+    uint8_t* row     = pngInfo.isTopDown ? img.GetDataP() : img.GetDataP() + (pngInfo.height-1)*rowSize;
     int    rowStep = pngInfo.isTopDown? rowSize: -rowSize;
     for (size_t i=0; i<rows.size(); ++i)
         {
@@ -280,7 +276,7 @@ template<typename WRITER>
 BentleyStatus writeImageToPng (WRITER& writer, ByteStream& imageData, ImageUtilities::RgbImageInfo const& pngInfo)
     {
     int pngFormat;
-    bvector <png_bytep> rowPointers;
+    bvector<png_bytep> rowPointers;
     if (prepareForPng (pngFormat, rowPointers, imageData, pngInfo) != BSISUCCESS)
         return BSIERROR;
 
@@ -374,6 +370,6 @@ BentleyStatus ImageUtilities::ReadImageFromJpgBuffer (ByteStream& rgbaBuffer, Rg
         return ERROR;
 
     rgbaBuffer.ReserveMemory((uint32_t) (info.width*info.height*computeBytesPerPixel(info)));
-    return reader.Decompress(rgbaBuffer.GetDataR(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(info));
+    return reader.Decompress(rgbaBuffer.GetDataP(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(info));
     }
 

@@ -195,7 +195,7 @@ public:
     //! Compare two LineStyleInfo.
     DGNPLATFORM_EXPORT bool operator==(LineStyleInfoCR rhs) const;
 
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnStyleId GetStyleId() const {return m_styleId;}
     DGNPLATFORM_EXPORT LineStyleParamsCP GetStyleParams() const;
 };
 
@@ -283,19 +283,18 @@ public:
     //! Compare two GradientSymb.
     DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
 
-    DGNPLATFORM_EXPORT int GetNKeys() const;
-    DGNPLATFORM_EXPORT GradientMode GetMode() const;
-    DGNPLATFORM_EXPORT uint16_t GetFlags() const;
-    DGNPLATFORM_EXPORT double GetShift() const;
-    DGNPLATFORM_EXPORT double GetTint() const;
-    DGNPLATFORM_EXPORT double GetAngle() const;
-    DGNPLATFORM_EXPORT void GetKey(ColorDef& color, double& value, int index) const;
-
-    DGNPLATFORM_EXPORT void SetMode(GradientMode mode);
-    DGNPLATFORM_EXPORT void SetFlags(uint16_t flags);
-    DGNPLATFORM_EXPORT void SetAngle(double angle);
-    DGNPLATFORM_EXPORT void SetTint(double tint);
-    DGNPLATFORM_EXPORT void SetShift(double shift);
+    int GetNKeys() const {return m_nKeys;}
+    GradientMode GetMode() const {return m_mode;}
+    uint16_t GetFlags() const {return m_flags;}
+    double GetShift() const {return m_shift;}
+    double GetTint() const {return m_tint;}
+    double GetAngle() const {return m_angle;}
+    void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index], value = m_values[index];}
+    void SetMode(GradientMode mode) {m_mode = mode;}
+    void SetFlags(uint16_t flags) {m_flags = flags;}
+    void SetAngle(double angle) {m_angle = angle;}
+    void SetTint(double tint) {m_tint = tint;}
+    void SetShift(double shift) {m_shift = shift;}
     DGNPLATFORM_EXPORT void SetKeys(uint16_t nKeys, ColorDef const* colors, double const* values);
 };
 

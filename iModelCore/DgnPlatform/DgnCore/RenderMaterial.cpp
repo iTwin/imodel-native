@@ -192,6 +192,20 @@ JsonRenderMaterial::TextureMap JsonRenderMaterial::GetPatternMap()
     return TextureMap(maps[RENDER_MATERIAL_MAP_Pattern], TextureMap::Type::Pattern);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      08/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void  JsonRenderMaterial::SetColor(Utf8CP keyword, RgbFactor color)
+    {
+    Json::Value    colorValue;
+
+    colorValue[0] = color.red;
+    colorValue[1] = color.green;
+    colorValue[2] = color.blue;
+
+    m_value[keyword] = colorValue;
+    }
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2015

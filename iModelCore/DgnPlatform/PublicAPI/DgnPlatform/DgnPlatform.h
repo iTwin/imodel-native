@@ -873,6 +873,7 @@ private:
 public:
     void Init() {m_size=m_allocSize=0; m_data=nullptr;}
     ByteStream() {Init();}
+    explicit ByteStream(uint32_t size) {Init(); ReserveMemory(size);}
     ByteStream(uint8_t const* data, uint32_t size) {Init(); SaveData(data, size);}
     ByteStream(ByteStream const& other) {Init(); SaveData(other.m_data, other.m_size);}
     ~ByteStream() {Clear();}
@@ -885,7 +886,7 @@ public:
     uint32_t GetAllocSize() const {return m_allocSize;}
     uint32_t GetSize() const {return m_size;}   //!< Get the size in bytes of the current data in this ByteStream.
     uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the ByteStream.
-    uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the ByteStream.
+    uint8_t* GetDataP() const {return m_data;}      //!< Get a writable pointer to the ByteStream.
     bool HasData() const {return 0 != m_size;}  //!< return false if this ByteStream is empty.
     void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
 

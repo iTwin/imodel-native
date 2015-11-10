@@ -78,9 +78,9 @@ static DgnTexture::Format extractFormat(int value)
         case DgnTexture::Format::PNG:
         case DgnTexture::Format::TIFF:
             return fmt;
-        default:
-            return DgnTexture::Format::Unknown;
         }
+    
+    return DgnTexture::Format::Unknown;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,11 +162,10 @@ Render::ImagePtr DgnTexture::ExtractImage() const
         {
         case DgnTexture::Format::RAW:
             image->GetByteStreamR() = std::move(m_data); // extracts the data
-            return image;
+            break;
 
         case DgnTexture::Format::PNG:  
             ImageUtilities::ReadImageFromPngBuffer(image->GetByteStreamR(), imageInfo, m_data.GetData(), m_data.GetSize());
-            m_data.Clear();
             break;
 
         case DgnTexture::Format::JPEG:
@@ -180,7 +179,6 @@ Render::ImagePtr DgnTexture::ExtractImage() const
             jpegInfo.isTopDown = true;
             
             ImageUtilities::ReadImageFromJpgBuffer(image->GetByteStreamR(), imageInfo, m_data.GetData(), m_data.GetSize(), jpegInfo);
-            m_data.Clear();
             break;
             }
     
@@ -188,6 +186,11 @@ Render::ImagePtr DgnTexture::ExtractImage() const
             BeAssert(false);
             return nullptr;
         }
+
+    // This is tricky. We may have just transferred ownership of the image data to the the caller. That means that this
+    // element is no longer in its "persistent" state. Drop if from the pool so if anyone else attempts to use it we will reload it.
+    if (IsPersistent())
+        GetDgnDb().Elements().DropFromPool(*this);
 
     return image;
     }

@@ -38,12 +38,12 @@ protected:
         return *m_db;
         }
 
-    DgnTexture::Data     MakeTextureData (DgnTexture::Format fmt, uint32_t w, uint32_t h)
+    DgnTexture::TextureData MakeTextureData (DgnTexture::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
         bvector<Byte> bytes (w*h);
         std::iota (bytes.begin(), bytes.end(), 0);
-        return DgnTexture::Data (fmt, &bytes[0], bytes.size(), w, h);
+        return DgnTexture::TextureData (fmt, &bytes[0], (uint32_t) bytes.size(), w, h);
         }
 
     void Compare(DgnTextureCR lhs, DgnTextureCR rhs)
@@ -52,15 +52,15 @@ protected:
         EXPECT_STREQ (lhs.GetTextureName().c_str(), rhs.GetTextureName().c_str());
         EXPECT_STREQ (lhs.GetDescription().c_str(), rhs.GetDescription().c_str());
 
-        auto const& lhData = lhs.GetData();
-        auto const& rhData = rhs.GetData();
+        auto const& lhData = lhs.GetTextureData();
+        auto const& rhData = rhs.GetTextureData();
 
         EXPECT_EQ (lhData.GetFormat(), rhData.GetFormat());
         EXPECT_EQ (lhData.GetFlags(), rhData.GetFlags());
         EXPECT_EQ (lhData.GetWidth(), rhData.GetWidth());
         EXPECT_EQ (lhData.GetHeight(), rhData.GetHeight());
-        EXPECT_EQ (lhData.GetBytes().size(), rhData.GetBytes().size());
-        EXPECT_EQ (0, memcmp (&lhData.GetBytes()[0], &rhData.GetBytes()[0], lhData.GetBytes().size()));
+        EXPECT_EQ (lhData.GetSize(), rhData.GetSize());
+        EXPECT_EQ (0, memcmp (lhData.GetData(), rhData.GetData(), lhData.GetSize()));
         }
     };
 
@@ -96,7 +96,7 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
 
     tx2Edit->SetDescription("New description");
     EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateTextureCode("Texture2Renamed")));
-    tx2Edit->SetData(MakeTextureData(DgnTexture::Format::JPEG, 9, 18));
+    tx2Edit->SetTextureData(MakeTextureData(DgnTexture::Format::JPEG, 9, 18));
 
     DgnDbStatus status;
     pTx2 = tx2Edit->Update(&status);

@@ -1816,7 +1816,6 @@ private:
     void OnUnreferenced(DgnElementCR);
     void Destroy();
     void AddToPool(DgnElementCR) const;
-    void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const;
@@ -1842,6 +1841,7 @@ public:
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
+    DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
     //! @return A pointer to the element, or nullptr if the is not in the pool.

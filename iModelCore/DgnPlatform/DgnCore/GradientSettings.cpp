@@ -131,7 +131,7 @@ void            GradientSymb::CopyFrom (GradientSymb const& other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            GradientSymb::SetKeys (uint16_t nKeys, ColorDef const* pColors, double const* pValues)
+void GradientSymb::SetKeys (uint16_t nKeys, ColorDef const* pColors, double const* pValues)
     {
     m_nKeys = nKeys > MAX_GRADIENT_KEYS ? MAX_GRADIENT_KEYS : nKeys;
 

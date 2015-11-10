@@ -113,18 +113,6 @@ DG_INLINE StatusInt IAuxCoordSys::GetStandardGridParams(Point2dR gridReps, Point
 DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 
 DG_INLINE GradientSymb::GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
-DG_INLINE int GradientSymb::GetNKeys() const {return m_nKeys;}
-DG_INLINE GradientMode GradientSymb::GetMode() const {return m_mode;}
-DG_INLINE uint16_t GradientSymb::GetFlags() const {return m_flags;}
-DG_INLINE double GradientSymb::GetShift() const {return m_shift;}
-DG_INLINE double GradientSymb::GetTint() const {return m_tint;}
-DG_INLINE double GradientSymb::GetAngle() const {return m_angle;}
-DG_INLINE void GradientSymb::GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index], value = m_values[index];}
-DG_INLINE void GradientSymb::SetMode(GradientMode mode) {m_mode = mode;}
-DG_INLINE void GradientSymb::SetFlags(uint16_t flags) {m_flags = flags;}
-DG_INLINE void GradientSymb::SetAngle(double angle) {m_angle = angle;}
-DG_INLINE void GradientSymb::SetTint(double tint) {m_tint = tint;}
-DG_INLINE void GradientSymb::SetShift(double shift) {m_shift = shift;}
 
 DG_INLINE void PatternParams::SetModifiers(PatternParamsModifierFlags value) {modifiers = value;}
 DG_INLINE void PatternParams::SetOrientation(RotMatrixCR value) {rMatrix = value; modifiers = modifiers |PatternParamsModifierFlags::RotMatrix;}

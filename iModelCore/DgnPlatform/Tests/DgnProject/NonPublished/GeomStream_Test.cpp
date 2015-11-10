@@ -37,7 +37,7 @@ TEST_F(GeomStreamTest, DgnElement)
     GeomStream eg1;         
     ASSERT_TRUE(!hasGeom(eg1));
     eg1.ReserveMemory(3);
-    memset (eg1.GetDataR(), 5, 3);
+    memset (eg1.GetDataP(), 5, 3);
     ASSERT_TRUE(hasGeom(eg1)); 
 
     // a move constructor should steal the data from the other
@@ -72,7 +72,7 @@ TEST_F(GeomStreamTest, DgnElement)
 
     GeomStream eg4;
     eg4.ReserveMemory(10);
-    memset (eg4.GetDataR(), 4, 10);
+    memset (eg4.GetDataP(), 4, 10);
 
     // an element with a graphics buffer that is large enough to hold the data from a copy operator should not need to realloc.
     void const* g4 = eg4.GetData(); 

@@ -861,7 +861,7 @@ protected:
         // read file content
         ByteStream data;
         data.ReserveMemory(size);
-        size_t bytesRead = fread (data.GetDataR(), sizeof (Utf8Char), size, file);
+        size_t bytesRead = fread (data.GetDataP(), sizeof (Utf8Char), size, file);
         fclose(file);
         if (bytesRead != size)
             {

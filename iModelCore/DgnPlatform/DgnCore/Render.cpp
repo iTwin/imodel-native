@@ -27,7 +27,6 @@ void Render::Scene::_DropGraphic(Graphic& graphic)
             m_scene.erase(it);
             return;
             }
-
         }
     }
 

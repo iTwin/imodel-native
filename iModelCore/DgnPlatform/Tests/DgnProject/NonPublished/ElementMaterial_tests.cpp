@@ -50,45 +50,47 @@ static void setUpView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d element
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, Render::Texture::Units unitMode)
+static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, JsonRenderMaterial::TextureMap::Units unitMode)
     {
-    Json::Value                     renderMaterialAsset;
-    RgbFactor                       red = { 1.0, 0.0, 0.0};
-    bvector <Byte>                  fileImageData, imageData;
-    uint32_t                        width, height;
-    ImageUtilities::RgbImageInfo    rgbImageInfo;
-    BeFile                          imageFile;
+    RgbFactor red = { 1.0, 0.0, 0.0};
+    ByteStream fileImageData, imageData;
+    uint32_t width, height;
+    ImageUtilities::RgbImageInfo rgbImageInfo;
    
-    Render::Texture::SetColor(renderMaterialAsset, RENDER_MATERIAL_Color, red);
-    renderMaterialAsset[RENDER_MATERIAL_FlagHasBaseColor] = true;
+    JsonRenderMaterial renderMaterialAsset;
+    renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
+    renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
 
+    BeFile imageFile;
     if (BeFileStatus::Success == imageFile.Open(pngFileName, BeFileAccess::Read) &&
         SUCCESS == ImageUtilities::ReadImageFromPngFile(fileImageData, rgbImageInfo, imageFile))
         {
         width = rgbImageInfo.width;
         height = rgbImageInfo.height;
 
-        imageData.resize(width * height * 4);
-
-        for (size_t i=0, j=0; i<imageData.size(); )
+        imageData.ReserveMemory(width * height * 4);
+        Byte* p = imageData.GetDataP(); 
+        Byte* s = fileImageData.GetDataP(); 
+        for (uint32_t i=0; i<imageData.GetSize(); ++i)
             {
-            imageData[i++] = fileImageData[j++];
-            imageData[i++] = fileImageData[j++];
-            imageData[i++] = fileImageData[j++];
-            imageData[i++] = 255;     // Alpha.
+            *p++ = *s++;
+            *p++ = *s++;
+            *p++ = *s++;
+            *p++ = 255;     // Alpha.
             }
         }
     else
         {
         width = height = 512;
-        imageData.resize(width * height * 4);
+        imageData.ReserveMemory(width * height * 4);
 
         size_t      value = 0;
-        for (auto& imageByte : imageData)
-            imageByte = ++value % 0xff;        
+        Byte* imageByte=imageData.GetDataP();
+        for (uint32_t i=0; i<imageData.GetSize(); ++i)
+            *imageByte++ = ++value % 0xff;        
         }
 
-    DgnTexture::Data textureData(DgnTexture::Format::RAW, &imageData.front(), imageData.size(), width, height);
+    DgnTexture::TextureData textureData(DgnTexture::Format::RAW, imageData.GetData(), imageData.GetSize(), width, height);
     DgnTexture texture(DgnTexture::CreateParams(dgnDb, materialName/*###TODO unnamed textures*/, textureData));
     texture.Insert();
     DgnTextureId textureId = texture.GetTextureId();
@@ -98,13 +100,13 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
 
     patternMap[RENDER_MATERIAL_TextureId]        = textureId.GetValue();
     patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
-    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) Render::Texture::Mode::Parametric;
+    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) JsonRenderMaterial::TextureMap::Mode::Parametric;
 
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
-    renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
+    renderMaterialAsset.GetValueR()[RENDER_MATERIAL_Map] = mapsMap;
 
     DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
-    material.SetRenderingAsset(renderMaterialAsset);
+    material.SetRenderingAsset(renderMaterialAsset.GetValue());
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
     return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
@@ -164,17 +166,16 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
 
     Render::ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
-    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), Render::Texture::Units::Relative));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), JsonRenderMaterial::TextureMap::Units::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     DPoint3d origin = DPoint3d::FromZero();
     appendGeometry(origin, *builder);
 
-    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , Render::Texture::Units::Meters));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , JsonRenderMaterial::TextureMap::Units::Meters));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     appendGeometry(origin, *builder);
-
 
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
