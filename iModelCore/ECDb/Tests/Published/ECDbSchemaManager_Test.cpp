@@ -358,7 +358,7 @@ TEST_F(ECDbSchemaManagerTests, UpdateExistingSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, UpdateExsitingSchemaDifferntCache)
+TEST_F(ECDbSchemaManagerTests, UpdateExistingSchemaDifferentCache)
 {
 
     ECDbTestFixture::Initialize();
