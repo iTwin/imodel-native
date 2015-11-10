@@ -138,7 +138,7 @@
     <Part Name="ImagePP-Tested" PrgOutputDir="ImagePP" OnlyPlatforms="x86,x64">
         <SubPart PartName="ImagePP"/>
         <SubPart PartName="ImagePPUnitTests"    PartFile="ImagePPTest"  Repository="Imagepp"/>
-        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />        
+        <SubPart PartName="Gtest-Tools"         PartFile="BeGTest"      Repository="BeGTest" />        
     </Part>
 
     <Part Name="ImagePP-Dev" OnlyPlatforms="x86,x64">

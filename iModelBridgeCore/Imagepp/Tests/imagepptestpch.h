@@ -103,6 +103,8 @@
 #include <imagePP\all\h\HGFResolutionDescriptor.h>
 #include <ImagePP\all\h\HGF2DProjectiveGrid.h>
 #include <ImagePP\all\h\HGF2DLiteLine.h>
+#include <ImagePP\all\h\HGF2DComplexShape.h>
+#include <ImagePP\all\h\HGF2DHoledShape.h>
 
 // HGS
 #include <ImagePP\all\h\HGSTypes.h>

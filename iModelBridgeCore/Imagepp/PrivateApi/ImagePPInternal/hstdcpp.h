@@ -68,6 +68,7 @@
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
 
 #include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HGF2DComplexShape.h>
 #include <ImagePP/all/h/HVEShape.h>
 #include <ImagePP/all/h/HVE2DRectangle.h>
 #include <ImagePP/all/h/HVE2DUniverse.h>

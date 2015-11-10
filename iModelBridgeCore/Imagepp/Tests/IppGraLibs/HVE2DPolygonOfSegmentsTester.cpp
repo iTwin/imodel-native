@@ -9421,10 +9421,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  SpatialPoisitionWhoFailed)
 
     HFCPtr<HVE2DShape>  pShape2 = new HVE2DPolygonOfSegments(AddPolySegment2);
 
-    HGFSpatialPosition position1 = pShape1->CalculateSpatialPositionOf(*pShape2);
-    HGFSpatialPosition position2 = pShape2->CalculateSpatialPositionOf(*pShape1);
-
-    ASSERT_EQ(S_OUT, position1);
-    ASSERT_EQ(S_OUT, position2);
+    ASSERT_EQ(HVE2DShape::S_OUT, pShape1->CalculateSpatialPositionOf(*pShape2));
+    ASSERT_EQ(HVE2DShape::S_OUT, pShape2->CalculateSpatialPositionOf(*pShape1));
         
     }

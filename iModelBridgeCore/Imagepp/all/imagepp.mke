@@ -97,12 +97,30 @@ HRasterDepends = $(ippAllInc)HRARaster.h \
                  $(ippAllInc)HRAStripedRaster.h
             
 # Create PCH
-CCPchOpts = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
+#$(o)HStdcpp$(oext) $(o)$(appName).pch : $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.cpp $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.h
+#PchCompiland = $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.cpp
+#PchOutputDir = $(o)
+#PchExplicitDepends = $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.h
+#PchExtraOptions = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
+
+
+
+#MultiCompileIntermediatePdbFile =   $(o)$(CCompPDBName).pdb
+#IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+#PchCompiland                    = $(baseDir)ConverterInternal.cpp
+#PchOutputDir                    = $(o)
+#PchExtraOptions                 = -Zm220
+
+#%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Fd$(o)$(appName).pdb -Zm110 
+
 $(o)HStdcpp$(oext) $(o)$(appName).pch : $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.cpp $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.h
 
 # Use PCH
 #CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110 -showIncludes
-CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
+CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110 -Fd$(o)$(appName).pdb
 
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki

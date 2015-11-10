@@ -423,5 +423,347 @@ protected:
     HGF2DLocation   Rect1Point1d0;
 
     HGF2DLocation   RectMidPoint1;
+    
+    // Lite for HGF version
+        // VERTICAL SEGMENT
+    HGF2DSegment    VerticalSegment1A;
+    HGF2DSegment    VerticalSegment2A;
+    HGF2DSegment    VerticalSegment3A;
+    HGF2DSegment    VerticalSegment4A;
+    HGF2DSegment    VerticalSegment5A;
+    HGF2DSegment    CloseVerticalSegment1A;
+
+    HGF2DPosition   VerticalPoint0d0A;
+    HGF2DPosition   VerticalPoint0d1A;
+    HGF2DPosition   VerticalPoint0d5A;
+    HGF2DPosition   VerticalPoint1d0A;
+
+    HGF2DPosition   Vertical3Point0d0A;
+    HGF2DPosition   Vertical3Point0d1A;
+    HGF2DPosition   Vertical3Point0d5A;
+    HGF2DPosition   Vertical3Point1d0A;
+
+    HGF2DPosition   VerticalMidPoint1A;
+    HGF2DPosition   VerticalMidPoint3A;
+
+    HGF2DPosition   VerticalClosePoint1AA;
+    HGF2DPosition   VerticalClosePoint1BA;
+    HGF2DPosition   VerticalClosePoint1CA;
+    HGF2DPosition   VerticalClosePoint1DA;
+    HGF2DPosition   VerticalCloseMidPoint1A;
+
+    HGF2DPosition   VerticalClosePoint3AA;
+    HGF2DPosition   VerticalClosePoint3BA;
+    HGF2DPosition   VerticalClosePoint3CA;
+    HGF2DPosition   VerticalClosePoint3DA;
+    HGF2DPosition   VerticalCloseMidPoint3A;
+
+    // HORIZONTAL SEGMENT
+    HGF2DSegment    HorizontalSegment1A;
+    HGF2DSegment    HorizontalSegment2A;
+    HGF2DSegment    HorizontalSegment3A;
+    HGF2DSegment    HorizontalSegment5A;
+
+    HGF2DPosition   HorizontalPoint0d0A;
+    HGF2DPosition   HorizontalPoint0d1A;
+    HGF2DPosition   HorizontalPoint0d5A;
+    HGF2DPosition   HorizontalPoint1d0A;
+
+    HGF2DPosition   Horizontal3Point0d0A;
+    HGF2DPosition   Horizontal3Point0d1A;
+    HGF2DPosition   Horizontal3Point0d5A;
+    HGF2DPosition   Horizontal3Point1d0A;
+
+    HGF2DPosition   HorizontalMidPoint1A;
+    HGF2DPosition   HorizontalMidPoint3A;
+
+    HGF2DPosition   HorizontalClosePoint1AA;
+    HGF2DPosition   HorizontalClosePoint1BA;
+    HGF2DPosition   HorizontalClosePoint1CA;
+    HGF2DPosition   HorizontalClosePoint1DA;
+    HGF2DPosition   HorizontalCloseMidPoint1A;
+
+    HGF2DPosition   HorizontalClosePoint3AA;
+    HGF2DPosition   HorizontalClosePoint3BA;
+    HGF2DPosition   HorizontalClosePoint3CA;
+    HGF2DPosition   HorizontalClosePoint3DA;
+    HGF2DPosition   HorizontalCloseMidPoint3A;
+
+    // MISC SEGMENTS
+    HGF2DSegment    MiscSegment1A;
+    HGF2DSegment    MiscSegment2A;
+    HGF2DSegment    MiscSegment3B;
+                                
+    HGF2DSegment    MiscSegment4A;
+    HGF2DSegment    MiscSegment6A;
+    HGF2DSegment    MiscSegment7A;
+    HGF2DSegment    DisjointSegment1A;
+    HGF2DSegment    ContiguousExtentSegment1A;
+    HGF2DSegment    FlirtingExtentSegment1A;
+    HGF2DSegment    FlirtingExtentLinkedSegment1A;
+    HGF2DSegment    ParallelSegment1A;
+    HGF2DSegment    LinkedParallelSegment1A;
+    HGF2DSegment    NearParallelSegment1A;
+    HGF2DSegment    CloseNearParallelSegment1A;
+    HGF2DSegment    ConnectedSegment1B;
+    HGF2DSegment    ConnectingSegment1B;
+    HGF2DSegment    ConnectedSegment1AA;
+    HGF2DSegment    ConnectingSegment1AA;
+    HGF2DSegment    LinkedSegment1B;
+    HGF2DSegment    LinkedSegment1AA;
+
+    HGF2DSegment    MiscSegment3AA;
+
+    HGF2DPosition   Misc3Point0d0A;
+    HGF2DPosition   Misc3Point0d1A;
+    HGF2DPosition   Misc3Point0d5A;
+    HGF2DPosition   Misc3Point1d0A;
+    HGF2DPosition   MiscMidPoint1A;
+
+    HGF2DPosition   MiscMidPoint3A;
+    HGF2DPosition   MiscClosePoint3AA;
+    HGF2DPosition   MiscClosePoint3BA;
+    HGF2DPosition   MiscClosePoint3CA;
+    HGF2DPosition   MiscClosePoint3DA;
+    HGF2DPosition   MiscCloseMidPoint3A;
+
+    HGF2DPosition   VeryFarAlignedPointA;
+    HGF2DPosition   VeryFarAlignedNegativePointA;
+    HGF2DPosition   VeryFarNegativePointA;
+    HGF2DPosition   MidPointA;
+
+    HGF2DPosition   MiscMidPoint6A;
+
+    // LARGE SEGMENTS
+    HGF2DSegment    LargeSegment1A;
+    HGF2DSegment    LargeSegment2A;
+    HGF2DSegment    ParallelLargeSegment1A;
+
+    HGF2DPosition   LargePoint0d0A;
+    HGF2DPosition   LargePoint0d1A;
+    HGF2DPosition   LargePoint0d5A;
+    HGF2DPosition   LargePoint1d0A;
+
+    HGF2DPosition   LargeMidPoint1A;
+
+    HGF2DPosition   LargeClosePoint1AA;
+    HGF2DPosition   LargeClosePoint1BA;
+    HGF2DPosition   LargeClosePoint1CA;
+    HGF2DPosition   LargeClosePoint1DA;
+    HGF2DPosition   LargeCloseMidPoint1A;
+
+    // POSITIVE SEGMENTS
+    HGF2DSegment    PositiveSegment1A;
+    HGF2DSegment    PositiveSegment2A;
+    HGF2DSegment    ParallelPositiveSegment1A;
+
+    HGF2DPosition   PositivePoint0d0A;
+    HGF2DPosition   PositivePoint0d1A;
+    HGF2DPosition   PositivePoint0d5A;
+    HGF2DPosition   PositivePoint1d0A;
+
+    HGF2DPosition   PositiveMidPoint1A;
+
+    HGF2DPosition   PositiveClosePoint1AA;
+    HGF2DPosition   PositiveClosePoint1BA;
+    HGF2DPosition   PositiveClosePoint1CA;
+    HGF2DPosition   PositiveClosePoint1DA;
+    HGF2DPosition   PositiveCloseMidPoint1A;
+
+    // NEGATIVE SEGMENTS
+    HGF2DSegment    NegativeSegment1A;
+    HGF2DSegment    NegativeSegment2A;
+    HGF2DSegment    ParallelNegativeSegment1A;
+
+    HGF2DPosition   NegativePoint0d0A;
+    HGF2DPosition   NegativePoint0d1A;
+    HGF2DPosition   NegativePoint0d5A;
+    HGF2DPosition   NegativePoint1d0A;
+
+    HGF2DPosition   NegativeMidPoint1A;
+
+    HGF2DPosition   NegativeClosePoint1AA;
+    HGF2DPosition   NegativeClosePoint1BA;
+    HGF2DPosition   NegativeClosePoint1CA;
+    HGF2DPosition   NegativeClosePoint1DA;
+    HGF2DPosition   NegativeCloseMidPoint1A;
+
+    // NULL SEGMENTS
+    HGF2DSegment    NullSegment1A;
+    HGF2DSegment    NullSegment2A;
+
+    // Special SEGMENTS
+    HGF2DSegment    SegmentInvalidA; 
+    HGF2DSegment    SegmentPSys1A;
+
+
+    // Complex Linears
+     HGF2DPolySegment      EmptyLinearA;
+
+     HGF2DSegment    Linear1Segment1A;
+     HGF2DSegment    Linear1Segment2A;
+     HGF2DSegment    Linear1Segment3A;
+     HGF2DSegment    Linear1Segment4A;
+     HGF2DSegment    Linear1Segment5A;
+     HGF2DSegment    Linear1Segment6A;
+     HGF2DPolySegment      Linear1A; // Open
+
+     HGF2DPosition   Linear1Point0d0A;
+     HGF2DPosition   Linear1Point0d1A;
+     HGF2DPosition   Linear1Point0d5A;
+     HGF2DPosition   Linear1Point1d0A;
+     HGF2DPosition   LinearMidPoint1A;
+
+     HGF2DPosition   LinearClosePoint1AA;
+     HGF2DPosition   LinearClosePoint1BA;
+     HGF2DPosition   LinearClosePoint1CA;
+     HGF2DPosition   LinearClosePoint1DA;
+     HGF2DPosition   LinearCloseMidPoint1A;
+
+     HGF2DSegment    Linear2Segment1A;
+     HGF2DSegment    Linear2Segment2A;
+     HGF2DSegment    Linear2Segment3A;
+     HGF2DSegment    Linear2Segment4A;
+     HGF2DSegment    Linear2Segment5A;
+     HGF2DSegment    Linear2Segment6A;
+     HGF2DPolySegment      Linear2A;  // AutoClosed
+
+     HGF2DPosition   Linear2Point0d0A;
+     HGF2DPosition   Linear2Point0d1A;
+     HGF2DPosition   Linear2Point0d5A;
+     HGF2DPosition   Linear2Point1d0A;
+
+     HGF2DPosition   LinearMidPoint2A;
+
+     HGF2DPosition   LinearClosePoint2AA;
+     HGF2DPosition   LinearClosePoint2BA;
+     HGF2DPosition   LinearClosePoint2CA;
+     HGF2DPosition   LinearClosePoint2DA;
+     HGF2DPosition   LinearCloseMidPoint2A;
+
+      // epsilon size container
+     HGF2DSegment    Linear3Segment1A;
+     HGF2DSegment    Linear3Segment2A;
+     HGF2DSegment    Linear3Segment3A;
+     HGF2DSegment    Linear3Segment4A;
+     HGF2DSegment    Linear3Segment5A;
+     HGF2DPolySegment      Linear3A; // Open
+
+     HGF2DPosition   Linear3Point0d0A;
+     HGF2DPosition   Linear3Point0d1A;
+     HGF2DPosition   Linear3Point0d5A;
+     HGF2DPosition   Linear3Point1d0A;
+     HGF2DPosition   LinearMidPoint3A;
+
+     HGF2DPosition   LinearClosePoint3AA;
+     HGF2DPosition   LinearClosePoint3BA;
+     HGF2DPosition   LinearClosePoint3CA;
+     HGF2DPosition   LinearClosePoint3DA;
+     HGF2DPosition   LinearCloseMidPoint3A;
+
+    // Used for intersection tests
+    HGF2DPolySegment  ComplexLinearCase1A;
+
+    HGF2DPolySegment  ComplexLinearCase2A;
+
+    HGF2DPolySegment  ComplexLinearCase3A;
+
+    HGF2DPolySegment  ComplexLinearCase4A;
+
+    HGF2DPolySegment  ComplexLinearCase5B;
+
+    HGF2DPolySegment  ComplexLinearCase5AA;
+
+    HGF2DPolySegment  ComplexLinearCase6A;
+
+    HGF2DPolySegment  ComplexLinearCase7A;
+
+    HGF2DPolySegment  AutoCrossingLinear1A;
+
+    HGF2DPolySegment  AutoCrossingLinear2A;
+
+    HGF2DPolySegment  AutoConnectingLinear1A;
+
+    HGF2DPolySegment  DisjointLinear1A; // Open
+
+    HGF2DPolySegment  ContiguousExtentLinear1A; // Open
+
+    HGF2DPolySegment  FlirtingExtentLinear1A; // Open
+
+    HGF2DPolySegment  FlirtingExtentLinkedLinear1A; // Open
+
+    HGF2DPolySegment  ConnectedLinear1B; // Open
+   
+    HGF2DPolySegment  ConnectingLinear1B;
+
+    HGF2DPolySegment  ConnectedLinear1AA; // Open
+   
+    HGF2DPolySegment  ConnectingLinear1AA;
+   
+    HGF2DPolySegment  LinkedLinear1B;
+
+    HGF2DPolySegment  LinkedLinear1AA;
+
+    // Shapes
+    HGF2DRectangle  Rect1A;
+
+    HGF2DRectangle  NorthContiguousRectA;
+    HGF2DRectangle  EastContiguousRectA;
+    HGF2DRectangle  WestContiguousRectA;
+    HGF2DRectangle  SouthContiguousRectA;
+
+    HGF2DRectangle  NETipRectA;
+    HGF2DRectangle  NWTipRectA;
+    HGF2DRectangle  SETipRectA;
+    HGF2DRectangle  SWTipRectA;
+
+    HGF2DRectangle  VerticalFitRectA;
+    HGF2DRectangle  HorizontalFitRectA;
+
+    HGF2DRectangle  DisjointRectA;
+    HGF2DRectangle  NegativeRectA;
+
+    HGF2DRectangle  MiscRect1A;
+
+    HGF2DRectangle  EnglobRect1A;
+    HGF2DRectangle  EnglobRect2A;
+    HGF2DRectangle  EnglobRect3A;
+
+    HGF2DRectangle  IncludedRect1A;
+    HGF2DRectangle  IncludedRect2A;
+    HGF2DRectangle  IncludedRect3A;
+    HGF2DRectangle  IncludedRect4A;
+    HGF2DRectangle  IncludedRect5A;
+    HGF2DRectangle  IncludedRect6A;
+    HGF2DRectangle  IncludedRect7A;
+    HGF2DRectangle  IncludedRect8A;
+    HGF2DRectangle  IncludedRect9A;
+
+    HGF2DRectangle  RectPSys1A;
+
+    HGF2DSegment    SWCuttingSegmentA;
+    HGF2DSegment    NECuttingSegmentA;
+    HGF2DSegment    NWCuttingSegmentA;
+    HGF2DSegment    SECuttingSegmentA;
+
+    HGF2DSegment    NorthContiguousSegmentA;
+    HGF2DSegment    SouthContiguousSegmentA;
+    HGF2DSegment    EastContiguousSegmentA;
+    HGF2DSegment    WestContiguousSegmentA;
+
+    HGF2DPosition   RectClosePoint1AA;
+    HGF2DPosition   RectClosePoint1BA;
+    HGF2DPosition   RectClosePoint1CA;
+    HGF2DPosition   RectClosePoint1DA;
+    HGF2DPosition   RectCloseMidPoint1A;
+
+    HGF2DPosition   VeryFarPointA;
+
+    HGF2DPosition   Rect1Point0d0A;
+    HGF2DPosition   Rect1Point0d1A;
+    HGF2DPosition   Rect1Point0d5A;
+    HGF2DPosition   Rect1Point1d0A;
+
+    HGF2DPosition   RectMidPoint1A;
 
     };

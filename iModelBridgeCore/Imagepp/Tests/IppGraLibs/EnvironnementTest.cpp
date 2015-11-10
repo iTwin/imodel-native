@@ -278,6 +278,7 @@
     LinearClosePoint3D = HGF2DLocation(21.1, 10.1, pWorld);
     LinearCloseMidPoint3 = HGF2DLocation(21.1, 10.1, pWorld);
 
+
     // Used for intersection tests
     Case1Segment1 = HVE2DSegment(HGF2DLocation(5.0, 12.0, pWorld), HGF2DLocation(15.0, 15.0, pWorld));
     ComplexLinearCase1 = HVE2DComplexLinear(pWorld);
@@ -476,5 +477,437 @@
     Rect1Point1d0 = HGF2DLocation(10.0, 10.0+1.1*MYEPSILON, pWorld);
 
     RectMidPoint1 = HGF2DLocation(15.0, 20.0, pWorld);
+    
+	// ====================================================================================================================================
+	// SECTION START FOR LITE VERSIONS (non-HVE)
+  	// ====================================================================================================================================
+
+    // VERTICAL SEGMENT
+    VerticalSegment1A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(0.1, 10.1));
+    VerticalSegment2A = HGF2DSegment(HGF2DPosition(0.1, 10.1), HGF2DPosition(0.1, 0.1));
+    VerticalSegment3A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(0.1, 0.1 + MYEPSILON));
+    VerticalSegment4A = HGF2DSegment(HGF2DPosition(0.1 + MYEPSILON, 0.1), HGF2DPosition(0.1+MYEPSILON, 10.1));
+    VerticalSegment5A = HGF2DSegment(HGF2DPosition(-10.0, -10.0), HGF2DPosition(-10.0, 0.0));
+    CloseVerticalSegment1A = HGF2DSegment(HGF2DPosition(0.1+MYEPSILON, 0.1), HGF2DPosition(0.1, 10.1));
+
+    VerticalPoint0d0A = HGF2DPosition(0.1, 0.1);
+    VerticalPoint0d1A = HGF2DPosition(0.1, 1.1);
+    VerticalPoint0d5A = HGF2DPosition(0.1, 5.1);
+    VerticalPoint1d0A = HGF2DPosition(0.1, 10.1);
+
+    Vertical3Point0d0A = HGF2DPosition(0.1, 0.1);
+    Vertical3Point0d1A = HGF2DPosition(0.1, 0.1 + (0.1 * MYEPSILON));
+    Vertical3Point0d5A = HGF2DPosition(0.1, 0.1 + (0.5 * MYEPSILON));
+    Vertical3Point1d0A = HGF2DPosition(0.1, 0.1 + MYEPSILON);
+
+    VerticalMidPoint1A = HGF2DPosition(0.1, 5.1);
+    VerticalMidPoint3A = HGF2DPosition(0.1, 0.1 + (MYEPSILON/2));
+
+    VerticalClosePoint1AA = HGF2DPosition(0.0, 0.0);
+    VerticalClosePoint1BA = HGF2DPosition(0.0, 5.0);
+    VerticalClosePoint1CA = HGF2DPosition(0.2, 7.0);
+    VerticalClosePoint1DA = HGF2DPosition(1000000.0, 10.0);
+    VerticalCloseMidPoint1A = HGF2DPosition(0.0, 5.1);
+
+    VerticalClosePoint3AA = HGF2DPosition(0.0, 0.0);
+    VerticalClosePoint3BA = HGF2DPosition(0.0, 0.1 + (2*MYEPSILON/3));
+    VerticalClosePoint3CA = HGF2DPosition(0.2, 0.1 + (MYEPSILON/3));
+    VerticalClosePoint3DA = HGF2DPosition(1000000.0, 0.1 + (MYEPSILON/2));
+    VerticalCloseMidPoint3A = HGF2DPosition(0.0, 0.1 + (MYEPSILON/2));
+
+    // HORIZONTAL SEGMENT
+    HorizontalSegment1A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(10.1, 0.1));
+    HorizontalSegment2A = HGF2DSegment(HGF2DPosition(10.1, 0.1), HGF2DPosition(0.1, 0.1));
+    HorizontalSegment3A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(0.1 + MYEPSILON, 0.1));
+    HorizontalSegment5A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(10.1 + MYEPSILON, 0.1));
+
+    HorizontalPoint0d0A = HGF2DPosition(0.1, 0.1);
+    HorizontalPoint0d1A = HGF2DPosition(1.1, 0.1);
+    HorizontalPoint0d5A = HGF2DPosition(5.1, 0.1);
+    HorizontalPoint1d0A = HGF2DPosition(10.1, 0.1);
+
+    Horizontal3Point0d0A = HGF2DPosition(0.1, 0.1);
+    Horizontal3Point0d1A = HGF2DPosition(0.1 + (0.1 * MYEPSILON), 0.1);
+    Horizontal3Point0d5A = HGF2DPosition(0.1 + (0.5 * MYEPSILON), 0.1);
+    Horizontal3Point1d0A = HGF2DPosition(0.1 + MYEPSILON, 0.1);
+
+    HorizontalMidPoint1A = HGF2DPosition(5.1, 0.1);
+    HorizontalMidPoint3A = HGF2DPosition(0.1 + (MYEPSILON/2), 0.1);
+
+    HorizontalClosePoint1AA = HGF2DPosition(0.0, 0.0);
+    HorizontalClosePoint1BA = HGF2DPosition(5.0, 0.0);
+    HorizontalClosePoint1CA = HGF2DPosition(7.0, 0.2);
+    HorizontalClosePoint1DA = HGF2DPosition(10.0, 1000000.0);
+    HorizontalCloseMidPoint1A = HGF2DPosition(5.1, 0.0);
+
+    HorizontalClosePoint3AA = HGF2DPosition(0.0, 0.0);
+    HorizontalClosePoint3BA = HGF2DPosition(0.1 + (2*MYEPSILON/3), 0.0);
+    HorizontalClosePoint3CA = HGF2DPosition(0.1 + (MYEPSILON/3), 0.2);
+    HorizontalClosePoint3DA = HGF2DPosition (0.1 + (MYEPSILON/2), 1000000.0);
+    HorizontalCloseMidPoint3A = HGF2DPosition(0.1 + (MYEPSILON/2), 0.0);
+
+    // MISC SEGMENTS
+    MiscSegment1A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(10.1, 10.1));
+    MiscSegment2A = HGF2DSegment(HGF2DPosition(10.1, 10.1), HGF2DPosition(0.1, 0.1));
+    MiscSegment3AA = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DDisplacement(HGFBearing(77.5 * PI/180), MYEPSILON));
+    MiscSegment4A = HGF2DSegment(HGF2DPosition(0.2, 0.1), HGF2DDisplacement((77.5), MYEPSILON));
+    MiscSegment6A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(-9.9, 10.1));
+    MiscSegment7A = HGF2DSegment(HGF2DPosition(0.2, 0.0), HGF2DPosition(-9.8, 10.0));
+    DisjointSegment1A = HGF2DSegment(HGF2DPosition(-0.1, -0.1), HGF2DPosition(-10.1, -10.24));
+    ContiguousExtentSegment1A = HGF2DSegment(HGF2DPosition(10.1, 0.1), HGF2DPosition(20.1, 10.1));
+    FlirtingExtentSegment1A = HGF2DSegment(HGF2DPosition(10.1, 0.1), HGF2DPosition(20.1, -10.1));
+    FlirtingExtentLinkedSegment1A = HGF2DSegment(HGF2DPosition(10.1, 10.1), HGF2DPosition(20.1, 0.1));
+    ParallelSegment1A = HGF2DSegment(HGF2DPosition(0.2, 0.1), HGF2DPosition(10.2, 10.1));
+    LinkedParallelSegment1A = HGF2DSegment(HGF2DPosition(10.1, 10.1), HGF2DPosition(20.1, 20.1));
+    NearParallelSegment1A = HGF2DSegment(HGF2DPosition(0.2, 0.1), HGF2DPosition(10.2, 10.1+MYEPSILON));
+    CloseNearParallelSegment1A = HGF2DSegment(HGF2DPosition(0.1+MYEPSILON, 0.1), HGF2DPosition(10.1+MYEPSILON, 10.1+MYEPSILON));
+    ConnectedSegment1B = HGF2DSegment(HGF2DPosition(0.2, 0.0), HGF2DPosition(0.0, 0.2));
+    ConnectingSegment1B = HGF2DSegment(HGF2DPosition(10.2, 0.0), HGF2DPosition(2.0, 2.0));
+    ConnectedSegment1AA = HGF2DSegment(HGF2DPosition(20.2, 0.0), HGF2DPosition(0.0, 20.2));
+    ConnectingSegment1AA = HGF2DSegment(HGF2DPosition(2.0, 2.0), HGF2DPosition(10.2, 0.0));
+    LinkedSegment1B = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(10.0, 3.2));
+    LinkedSegment1AA = HGF2DSegment(HGF2DPosition(10.1, 10.1), HGF2DPosition(10.0, 3.2));
+
+    MiscSegment3AA = HGF2DSegment(HGF2DPosition(0.1+MYEPSILON, 0.1), HGF2DDisplacement(HGFBearing(77.5 * PI/180), MYEPSILON));
+
+    Misc3Point0d0A = HGF2DPosition(0.1, 0.1);
+    Misc3Point0d1A = HGF2DPosition(0.1, 0.1) + HGF2DDisplacement(HGFBearing(77.5 * PI/180), MYEPSILON * 0.1);
+    Misc3Point0d5A = HGF2DPosition(0.1, 0.1) + HGF2DDisplacement(HGFBearing(77.5* PI/180), MYEPSILON * 0.5);
+    Misc3Point1d0A = HGF2DPosition(0.1, 0.1) + HGF2DDisplacement(HGFBearing(77.5* PI/180), MYEPSILON);
+    MiscMidPoint1A = HGF2DPosition(5.1, 5.1);
+
+    MiscMidPoint3A = HGF2DPosition(0.1, 0.1)+ HGF2DDisplacement(HGFBearing(77.5), MYEPSILON / 2);
+    MiscClosePoint3AA = HGF2DPosition(0.0, 0.0);
+    MiscClosePoint3BA = HGF2DPosition(0.0, 0.1 + (2*MYEPSILON/3));
+    MiscClosePoint3CA = HGF2DPosition(0.2, 0.1 + (MYEPSILON/3));
+    MiscClosePoint3DA = HGF2DPosition(1000000.0, 0.1 + (MYEPSILON/2));
+    MiscCloseMidPoint3A = HGF2DPosition(0.0, 0.1 + (MYEPSILON/2));
+
+    VeryFarAlignedPointA = HGF2DPosition(21E123, 21E123);
+    VeryFarAlignedNegativePointA = HGF2DPosition(-21E123, -21E123);
+    VeryFarNegativePointA = HGF2DPosition(-1E123, -21E123);
+    MidPointA = HGF2DPosition(5.1, 5.1);
+
+    MiscMidPoint6A = HGF2DPosition(-4.9, 5.1);
+
+    // LARGE SEGMENTS
+    LargeSegment1A = HGF2DSegment(HGF2DPosition(-1E123, -21E123), HGF2DPosition(9E123, 19E123));
+    LargeSegment2A =  HGF2DSegment(HGF2DPosition(9E123, 19E123), HGF2DPosition(-1E123, -21E123));
+    ParallelLargeSegment1A = HGF2DSegment(HGF2DPosition(-1.000000001E123, -21E123), HGF2DPosition(9.000000001E123, 19E123));
+
+    LargePoint0d0A = HGF2DPosition(-1E123, -21E123);
+    LargePoint0d1A = HGF2DPosition(0.0, -17E123);
+    LargePoint0d5A = HGF2DPosition(4E123, -1E123);
+    LargePoint1d0A = HGF2DPosition(9E123, 19E123);
+
+    LargeMidPoint1A = HGF2DPosition(4E123, -1E123);
+
+    LargeClosePoint1AA = HGF2DPosition(0.0, 0.0);
+    LargeClosePoint1BA = HGF2DPosition(1E124, 1E124);
+    LargeClosePoint1CA = HGF2DPosition(-1E124, -1E124);
+    LargeClosePoint1DA = HGF2DPosition(10.0, 1E120);
+    LargeCloseMidPoint1A = HGF2DPosition(4.0001E123, -1.0002E123);
+
+    // POSITIVE SEGMENTS
+    PositiveSegment1A = HGF2DSegment(HGF2DPosition(1E123, 21E123), HGF2DPosition(11E123, 41E123));
+    PositiveSegment2A = HGF2DSegment(HGF2DPosition(11E123, 41E123), HGF2DPosition(1E123, 21E123));
+    ParallelPositiveSegment1A = HGF2DSegment(HGF2DPosition(1.000001E123, 21E123), HGF2DPosition(11.000001E123, 41E123));
+
+    PositivePoint0d0A = HGF2DPosition(1E123, 21E123);
+    PositivePoint0d1A = HGF2DPosition(2E123, 23E123);
+    PositivePoint0d5A = HGF2DPosition(6E123, 31E123);
+    PositivePoint1d0A = HGF2DPosition(11E123, 41E123);
+
+    PositiveMidPoint1A = HGF2DPosition(6E123, 31E123);
+
+    PositiveClosePoint1AA = HGF2DPosition(0.0, 0.0);
+    PositiveClosePoint1BA = HGF2DPosition(1E124, 1E124);
+    PositiveClosePoint1CA = HGF2DPosition(-1E124, -1E124);
+    PositiveClosePoint1DA = HGF2DPosition(10.0, 1E120);
+    PositiveCloseMidPoint1A = HGF2DPosition(6.0001E123, 31.0002E123);
+
+    // NEGATIVE SEGMENTS
+    NegativeSegment1A = HGF2DSegment(HGF2DPosition(-1E123, -21E123), HGF2DPosition(-11E123, -41E123));
+    NegativeSegment2A = HGF2DSegment(HGF2DPosition(-11E123, -41E123), HGF2DPosition(-1E123, -21E123));
+    ParallelNegativeSegment1A = HGF2DSegment(HGF2DPosition(-1.000001E123, -21E123), HGF2DPosition(-11.000001E123, -41E123));
+
+    NegativePoint0d0A = HGF2DPosition(-1E123, -21E123);
+    NegativePoint0d1A = HGF2DPosition(-2E123, -23E123);
+    NegativePoint0d5A = HGF2DPosition(-6E123, -31E123);
+    NegativePoint1d0A = HGF2DPosition(-11E123, -41E123);
+
+    NegativeMidPoint1A = HGF2DPosition(-6E123, -31E123);
+
+    NegativeClosePoint1AA = HGF2DPosition(0.0, 0.0);
+    NegativeClosePoint1BA = HGF2DPosition(1E124, 1E124);
+    NegativeClosePoint1CA = HGF2DPosition(-1E124, -1E124);
+    NegativeClosePoint1DA = HGF2DPosition(10.0, 1E120);
+    NegativeCloseMidPoint1A = HGF2DPosition(-6.0001E123, -31.0002E123);
+
+    // NULL SEGMENTS
+    NullSegment1A = HGF2DSegment();
+    NullSegment2A = HGF2DSegment();
+
+    // Special SEGMENTS
+    SegmentInvalidA = HGF2DSegment(HGF2DPosition(0.0, 0.0), HGF2DPosition(10.0, 10.0));
+    SegmentPSys1A = HGF2DSegment(HGF2DPosition(0.0, 0.0), HGF2DPosition(10.0, 10.0));
+
+     // Complex Linears
+    Linear1Segment1A = HGF2DSegment(HGF2DPosition(0.0, 0.0), HGF2DPosition(10.0, 10.0));
+    Linear1Segment2A = HGF2DSegment(HGF2DPosition(10.0, 10.0), HGF2DPosition(20.0, 10.0));
+    Linear1Segment3A = HGF2DSegment(HGF2DPosition(20.0, 10.0), HGF2DPosition(30.0, 10.0));
+    Linear1Segment4A = HGF2DSegment(HGF2DPosition(30.0, 10.0), HGF2DPosition(30.0, 5.0));
+    Linear1Segment5A = HGF2DSegment(HGF2DPosition(30.0, 5.0), HGF2DPosition(30.0, 5.0-MYEPSILON));
+    Linear1Segment6A = HGF2DSegment(HGF2DPosition(30.0, 5.0-MYEPSILON), HGF2DPosition(30.0-MYEPSILON, 0.0));
+    Linear1A = HGF2DPolySegment(); // Open
+    Linear1A.AppendPoint(HGF2DPosition(0.0, 0.0));
+    Linear1A.AppendPoint(HGF2DPosition(10.0, 10.0));
+    Linear1A.AppendPoint(HGF2DPosition(20.0, 10.0));
+    Linear1A.AppendPoint(HGF2DPosition(30.0, 10.0));
+    Linear1A.AppendPoint(HGF2DPosition(30.0, 5.0));
+    Linear1A.AppendPoint(HGF2DPosition(30.0, 5.0-MYEPSILON));
+    Linear1A.AppendPoint(HGF2DPosition(30.0-MYEPSILON, 0.0));
+
+    Linear1Point0d0A = HGF2DPosition(0.0, 0.0);
+    Linear1Point0d1A = HGF2DPosition(3.1213203435596, 3.1213203435596);
+    Linear1Point0d5A = HGF2DPosition(17.928932188135, 10.0);
+    Linear1Point1d0A = HGF2DPosition(30.0-MYEPSILON, 0.0);
+    LinearMidPoint1A = HGF2DPosition(17.928932188135, 10.0);
+
+    LinearClosePoint1AA = HGF2DPosition(21.1, 10.1);
+    LinearClosePoint1BA = HGF2DPosition(-10.0, 10.0);
+    LinearClosePoint1CA = HGF2DPosition(30.0, 10.1);
+    LinearClosePoint1DA = HGF2DPosition(32.1, 5.1);
+    LinearCloseMidPoint1A = HGF2DPosition(17.928932, 9.1);
+
+    Linear2Segment1A = HGF2DSegment(HGF2DPosition(0.0, 0.0), HGF2DPosition(-10.0, -10.0));
+    Linear2Segment2A = HGF2DSegment(HGF2DPosition(-10.0, -10.0), HGF2DPosition(18.0, 9.0));
+    Linear2Segment3A = HGF2DSegment(HGF2DPosition(18.0, 9.0), HGF2DPosition(21.0, 0.0));
+    Linear2Segment4A = HGF2DSegment(HGF2DPosition(21.0, 0.0), HGF2DPosition(24.0, 15.0));
+    Linear2Segment5A = HGF2DSegment(HGF2DPosition(24.0, 15.0), HGF2DPosition(0.0, 15.0));
+    Linear2Segment6A = HGF2DSegment(HGF2DPosition(0.0, 15.0), HGF2DPosition(0.0, 0.0));
+
+    Linear2A = HGF2DPolySegment();  // AutoClosed
+    Linear2A.AppendPoint(HGF2DPosition(0.0, 0.0));
+    Linear2A.AppendPoint(HGF2DPosition(-10.0, -10.0));
+    Linear2A.AppendPoint(HGF2DPosition(18.0, 9.0));
+    Linear2A.AppendPoint(HGF2DPosition(21.0, 0.0));
+    Linear2A.AppendPoint(HGF2DPosition(24.0, 15.0));
+    Linear2A.AppendPoint(HGF2DPosition(0.0, 15.0));
+    Linear2A.AppendPoint(HGF2DPosition(0.0, 0.0));
+
+    Linear2Point0d0A = HGF2DPosition(0.0, 0.0);
+    Linear2Point0d1A = HGF2DPosition(-7.9028994453177, -7.9028994453177);
+    Linear2Point0d5A = HGF2DPosition(20.498817144560, 1.5035485663202);
+    Linear2Point1d0A = HGF2DPosition(0.0, 0.0);
+
+    LinearMidPoint2A = HGF2DPosition(20.498817144560, 1.5035485663202);
+
+    LinearClosePoint2AA = HGF2DPosition(21.1, 10.1);
+    LinearClosePoint2BA = HGF2DPosition(21.1, 10.1);
+    LinearClosePoint2CA = HGF2DPosition(21.1, 10.1);
+    LinearClosePoint2DA = HGF2DPosition(21.1, 10.1);
+    LinearCloseMidPoint2A = HGF2DPosition(21.1, 10.1);
+   
+    // epsilon size container
+    Linear3Segment1A = HGF2DSegment(HGF2DPosition(0.0, 0.0), HGF2DPosition(0.0-MYEPSILON, 0.0));
+    Linear3Segment2A = HGF2DSegment(HGF2DPosition(0.0-MYEPSILON, 0.0), HGF2DPosition(0.0-MYEPSILON, 0.0+MYEPSILON));
+    Linear3Segment3A = HGF2DSegment(HGF2DPosition(0.0-MYEPSILON, 0.0+MYEPSILON), HGF2DPosition(0.0, 0.0+MYEPSILON));
+    Linear3Segment4A = HGF2DSegment(HGF2DPosition(0.0, 0.0+MYEPSILON), HGF2DPosition(0.0+MYEPSILON, 0.0+2*MYEPSILON));
+    Linear3Segment5A = HGF2DSegment(HGF2DPosition(0.0+MYEPSILON, 0.0+2*MYEPSILON), HGF2DPosition(0.0+MYEPSILON, 0.0));
+    Linear3A = HGF2DPolySegment(); // Open
+    Linear3A.AppendPoint(HGF2DPosition(0.0-MYEPSILON, 0.0));
+    Linear3A.AppendPoint(HGF2DPosition(0.0-MYEPSILON, 0.0));
+    Linear3A.AppendPoint(HGF2DPosition(0.0-MYEPSILON, 0.0+MYEPSILON));
+    Linear3A.AppendPoint(HGF2DPosition(0.0, 0.0+MYEPSILON));
+    Linear3A.AppendPoint(HGF2DPosition(0.0+MYEPSILON, 0.0+2*MYEPSILON));
+    Linear3A.AppendPoint(HGF2DPosition(HGF2DPosition(0.0+MYEPSILON, 0.0)));
+
+    Linear3Point0d0A = HGF2DPosition(0.0, 0.0);
+    Linear3Point0d1A = HGF2DPosition(-0.64142135623731 *MYEPSILON, 0.0);
+    Linear3Point0d5A = HGF2DPosition(0.14644660940673*MYEPSILON, 1.1464466094067*MYEPSILON);
+    Linear3Point1d0A = HGF2DPosition(0.0+MYEPSILON, 0.0);
+
+    LinearMidPoint3A = HGF2DPosition(1.4644660940673e-009, 1.1464466094067*MYEPSILON);
+
+    LinearClosePoint3AA = HGF2DPosition(21.1, 10.1);
+    LinearClosePoint3BA = HGF2DPosition(21.1, 10.1);
+    LinearClosePoint3CA = HGF2DPosition(21.1, 10.1);
+    LinearClosePoint3DA = HGF2DPosition(21.1, 10.1);
+    LinearCloseMidPoint3A = HGF2DPosition(21.1, 10.1);
+
+    // Used for intersection tests
+    ComplexLinearCase1A = HGF2DPolySegment();
+    ComplexLinearCase1A.AppendPoint(HGF2DPosition(5.0, 12.0));
+    ComplexLinearCase1A.AppendPoint(HGF2DPosition(15.0, 15.0));
+
+    ComplexLinearCase2A = HGF2DPolySegment();
+    ComplexLinearCase2A.AppendPoint(HGF2DPosition(5.0, 5.0));
+    ComplexLinearCase2A.AppendPoint(HGF2DPosition(10.0, 12.0));
+    ComplexLinearCase2A.AppendPoint(HGF2DPosition(10.0, 15.0));
+    ComplexLinearCase2A.AppendPoint(HGF2DPosition(15.0, 17.0));
+
+    ComplexLinearCase3A = HGF2DPolySegment();
+    ComplexLinearCase3A.AppendPoint(HGF2DPosition(5.0, 5.0));
+    ComplexLinearCase3A.AppendPoint(HGF2DPosition(15.0, 15.0));
+
+    ComplexLinearCase4A = HGF2DPolySegment();
+    ComplexLinearCase4A.AppendPoint(HGF2DPosition(5.0, 10.0));
+    ComplexLinearCase4A.AppendPoint(HGF2DPosition(35.0, 10.0));
+
+    ComplexLinearCase5B = HGF2DPolySegment();
+    ComplexLinearCase5B.AppendPoint(HGF2DPosition(5.0, 10.0));
+    ComplexLinearCase5B.AppendPoint(HGF2DPosition(20.0, 10.0));
+    ComplexLinearCase5B.AppendPoint(HGF2DPosition(15.0, 15.0));
+
+    ComplexLinearCase5AA = HGF2DPolySegment();
+    ComplexLinearCase5AA.AppendPoint(HGF2DPosition(10.0, 10.0));
+    ComplexLinearCase5AA.AppendPoint(HGF2DPosition(20.0, 10.0));
+    ComplexLinearCase5AA.AppendPoint(HGF2DPosition(15.0, 15.0));
+
+    ComplexLinearCase6A = HGF2DPolySegment();
+    ComplexLinearCase6A.AppendPoint(HGF2DPosition(10.0, 10.0));
+    ComplexLinearCase6A.AppendPoint(HGF2DPosition(20.0, 10.0));
+    ComplexLinearCase6A.AppendPoint(HGF2DPosition(20.0, 20.0));
+    ComplexLinearCase6A.AppendPoint(HGF2DPosition(10.0, 20.0));
+
+    ComplexLinearCase7A = HGF2DPolySegment();
+    ComplexLinearCase7A.AppendPoint(HGF2DPosition(5.0, 5.0));
+    ComplexLinearCase7A.AppendPoint(HGF2DPosition(10.0, 10.0));
+
+    AutoCrossingLinear1A = HGF2DPolySegment();
+    AutoCrossingLinear1A.AppendPoint(HGF2DPosition(0.0, 0.0));
+    AutoCrossingLinear1A.AppendPoint(HGF2DPosition(10.0, 10.0));
+    AutoCrossingLinear1A.AppendPoint(HGF2DPosition(15.0, 5.0));
+    AutoCrossingLinear1A.AppendPoint(HGF2DPosition(0.0, 5.0));
+    AutoCrossingLinear1A.AppendPoint(HGF2DPosition(5.0, 0.0));
+    AutoCrossingLinear1A.AppendPoint(HGF2DPosition(20.0, 20.0));
+
+    AutoCrossingLinear2A = HGF2DPolySegment();
+    AutoCrossingLinear2A.AppendPoint(HGF2DPosition(0.0, 0.0));
+    AutoCrossingLinear2A.AppendPoint(HGF2DPosition(10.0, 10.0));
+    AutoCrossingLinear2A.AppendPoint(HGF2DPosition(15.0, 5.0));
+    AutoCrossingLinear2A.AppendPoint(HGF2DPosition(10.0, 5.0));
+    AutoCrossingLinear2A.AppendPoint(HGF2DPosition(10.0, 15.0));
+
+    AutoConnectingLinear1A = HGF2DPolySegment();
+    AutoConnectingLinear1A.AppendPoint(HGF2DPosition(0.0, 0.0));
+    AutoConnectingLinear1A.AppendPoint(HGF2DPosition(10.0, 10.0));
+    AutoConnectingLinear1A.AppendPoint(HGF2DPosition(15.0, 5.0));
+    AutoConnectingLinear1A.AppendPoint(HGF2DPosition(10.0, 0.0));
+    AutoConnectingLinear1A.AppendPoint(HGF2DPosition(-10.0, 0.0));
+
+    DisjointLinear1A = HGF2DPolySegment();
+    DisjointLinear1A.AppendPoint(HGF2DPosition(-10.0, -10.0));
+    DisjointLinear1A.AppendPoint(HGF2DPosition(-20.0, -10.0));
+    DisjointLinear1A.AppendPoint(HGF2DPosition(-30.0, -10.0));
+
+    ContiguousExtentLinear1A = HGF2DPolySegment();
+    ContiguousExtentLinear1A.AppendPoint(HGF2DPosition(-10.0, 0.0));
+    ContiguousExtentLinear1A.AppendPoint(HGF2DPosition(0.0, 10.0));
+    ContiguousExtentLinear1A.AppendPoint(HGF2DPosition(-10.0, 10.0));
+
+    FlirtingExtentLinear1A = HGF2DPolySegment();
+    FlirtingExtentLinear1A.AppendPoint(HGF2DPosition(-10.0, 0.0));
+    FlirtingExtentLinear1A.AppendPoint(HGF2DPosition(0.0, -10.0));
+    FlirtingExtentLinear1A.AppendPoint(HGF2DPosition(-10.0, -10.0));
+
+    FlirtingExtentLinkedLinear1A = HGF2DPolySegment();
+    FlirtingExtentLinkedLinear1A.AppendPoint(HGF2DPosition(-10.0, 0.0));
+    FlirtingExtentLinkedLinear1A.AppendPoint(HGF2DPosition(0.0, -10.0));
+    FlirtingExtentLinkedLinear1A.AppendPoint(HGF2DPosition(0.0, 0.0));
+
+    ConnectedLinear1B = HGF2DPolySegment();
+    ConnectedLinear1B.AppendPoint(HGF2DPosition(-10.0, 10.0));
+    ConnectedLinear1B.AppendPoint(HGF2DPosition(10.0, -10.0));
+    ConnectedLinear1B.AppendPoint(HGF2DPosition(0.0, -10.0));
+
+    ConnectingLinear1B = HGF2DPolySegment();
+    ConnectingLinear1B.AppendPoint(HGF2DPosition(5.0, 5.0));
+    ConnectingLinear1B.AppendPoint(HGF2DPosition(-5.0, 10.0));
+    ConnectingLinear1B.AppendPoint(HGF2DPosition(-15.0, 0.0));
+
+    ConnectedLinear1AA = HGF2DPolySegment();
+    ConnectedLinear1AA.AppendPoint(HGF2DPosition(40.0, 0.0));
+    ConnectedLinear1AA.AppendPoint(HGF2DPosition(10.0, 0.0));
+    ConnectedLinear1AA.AppendPoint(HGF2DPosition(11.0, -10.0));
+
+    ConnectingLinear1AA = HGF2DPolySegment();
+    ConnectingLinear1AA.AppendPoint(HGF2DPosition(21.0, 20.0));
+    ConnectingLinear1AA.AppendPoint(HGF2DPosition(20.0, 15.0));
+    ConnectingLinear1AA.AppendPoint(HGF2DPosition(20.0, 10.0));
+
+    LinkedLinear1B = HGF2DPolySegment();
+    LinkedLinear1B.AppendPoint(HGF2DPosition(21.0, 20.0));
+    LinkedLinear1B.AppendPoint(HGF2DPosition(20.0, 15.0));
+    LinkedLinear1B.AppendPoint(HGF2DPosition(21, 0.0));
+
+    LinkedLinear1AA = HGF2DPolySegment();
+    LinkedLinear1AA.AppendPoint(HGF2DPosition(11.0, 3.0));
+    LinkedLinear1AA.AppendPoint(HGF2DPosition(20.0, 4.0));
+    LinkedLinear1AA.AppendPoint(HGF2DPosition(30.0-MYEPSILON, 0.0));
+
+    // Shapes
+    Rect1A = HGF2DRectangle(10.0, 10.0, 20.0, 20.0);
+
+    NorthContiguousRectA = HGF2DRectangle(10.0, 20.0, 20.0, 30.0);
+    EastContiguousRectA = HGF2DRectangle(20.0, 10.0, 30.0, 20.0);
+    WestContiguousRectA = HGF2DRectangle(0.0, 10.0, 10.0, 20.0);
+    SouthContiguousRectA = HGF2DRectangle(10.0, 0.0, 20.0, 10.0);
+
+    NETipRectA = HGF2DRectangle(20.0, 20.0, 30.0, 30.0);
+    NWTipRectA = HGF2DRectangle(0.0, 20.0, 10.0, 30.0);
+    SETipRectA = HGF2DRectangle(20.0, 0.0, 30.0, 10.0);
+    SWTipRectA = HGF2DRectangle(0.0, 0.0, 10.0, 10.0);
+
+    VerticalFitRectA = HGF2DRectangle(15.0, 10.0, 25.0, 20.0);
+    HorizontalFitRectA = HGF2DRectangle(10.0, 15.0, 20.0, 25.0);
+
+    DisjointRectA = HGF2DRectangle(-10.0, -10.0, 0.0, 0.0);
+    NegativeRectA = HGF2DRectangle(-20.0, -20.0, -10.0, -10.0);
+
+    MiscRect1A = HGF2DRectangle(5.0, 5.0, 15.0, 15.0);
+
+    EnglobRect1A = HGF2DRectangle(10.0, 10.0, 30.0, 30.0);
+    EnglobRect2A = HGF2DRectangle(0.0, 0.0, 30.0, 30.0);
+    EnglobRect3A = HGF2DRectangle(10.0, 10.0, 20.0, 30.0);
+
+    IncludedRect1A = HGF2DRectangle(10.0, 10.0, 15.0, 15.0);
+    IncludedRect2A = HGF2DRectangle(15.0, 10.0, 20.0, 15.0);
+    IncludedRect3A = HGF2DRectangle(15.0, 15.0, 20.0, 20.0);
+    IncludedRect4A = HGF2DRectangle(10.0, 15.0, 15.0, 20.0);
+    IncludedRect5A = HGF2DRectangle(12.0, 12.0, 18.0, 18.0);
+    IncludedRect6A = HGF2DRectangle(10.0, 10.0, 20.0, 15.0);
+    IncludedRect7A = HGF2DRectangle(10.0, 10.0, 15.0, 20.0);
+    IncludedRect8A = HGF2DRectangle(15.0, 10.0, 20.0, 20.0);
+    IncludedRect9A = HGF2DRectangle(10.0, 15.0, 20.0, 20.0);
+
+    RectPSys1A = HGF2DRectangle(10.0, 10.0, 15.0, 15.0);
+
+    SWCuttingSegmentA = HGF2DSegment(HGF2DPosition(5.0, 5.0), HGF2DPosition(15.0, 15.0));
+    NECuttingSegmentA =  HGF2DSegment(HGF2DPosition(15.0, 15.0), HGF2DPosition(25.0, 25.0));
+    NWCuttingSegmentA = HGF2DSegment(HGF2DPosition(5.0, 25.0), HGF2DPosition(15.0, 15.0));
+    SECuttingSegmentA = HGF2DSegment(HGF2DPosition(15.0, 15.0), HGF2DPosition(25.0, 5.0));
+
+    NorthContiguousSegmentA = HGF2DSegment(HGF2DPosition(0.0, 20.0), HGF2DPosition(30.0, 20.0));
+    SouthContiguousSegmentA = HGF2DSegment(HGF2DPosition(0.0, 10.0), HGF2DPosition(30.0, 10.0));
+    EastContiguousSegmentA = HGF2DSegment(HGF2DPosition(20.0, 0.0), HGF2DPosition(20.0, 30.0));
+    WestContiguousSegmentA = HGF2DSegment(HGF2DPosition(10.0, 0.0), HGF2DPosition(10.0, 30.0));
+
+    RectClosePoint1AA = HGF2DPosition(21.1, 10.1);
+    RectClosePoint1BA = HGF2DPosition(9.0, 9.0);
+    RectClosePoint1CA = HGF2DPosition(19.9, 10.0);
+    RectClosePoint1DA = HGF2DPosition(0.1, 15.0);
+    RectCloseMidPoint1A = HGF2DPosition(15.0, 20.1);
+
+    VeryFarPointA = HGF2DPosition(10000.0, 10000.1);
+
+    Rect1Point0d0A = HGF2DPosition(10.0, 10.0);
+    Rect1Point0d1A = HGF2DPosition(15.0, 10.0);
+    Rect1Point0d5A = HGF2DPosition(20.0, 20.0);
+    Rect1Point1d0A = HGF2DPosition(10.0, 10.0+1.1*MYEPSILON);
+
+    RectMidPoint1A = HGF2DPosition(15.0, 20.0);
+    
 
     }
