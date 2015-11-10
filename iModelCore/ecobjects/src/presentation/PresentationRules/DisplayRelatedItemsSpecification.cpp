@@ -9,6 +9,7 @@
 
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentationRules/SpecificationVisitor.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -27,6 +28,11 @@ DisplayRelatedItemsSpecification::DisplayRelatedItemsSpecification (bool logical
     : m_logicalChildren (logicalChildren), m_nestingDepth (nestingDepth), m_relationshipClasses (relationshipClasses)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayRelatedItemsSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012

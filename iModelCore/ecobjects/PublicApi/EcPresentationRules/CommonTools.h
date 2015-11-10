@@ -8,6 +8,7 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
+#include <ECPresentationRules/PresentationRulesTypes.h>
 #include <ECPresentationRules/PresentationRule.h>
 #include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
 #include <ECPresentationRules/PresentationRules.h>
@@ -20,6 +21,10 @@ Helper class for commonly used functions
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CommonTools
 {
+/*__PUBLISH_SECTION_END__*/
+private:
+    CommonTools() {}
+
 public:
     //! Parses TargetTree string value
     static RuleTargetTree              ParseTargetTreeString (Utf8CP targetTreeString);
@@ -92,6 +97,33 @@ public:
         {
         for (RuleType* rule: rulesCollection)
             rule->WriteXml (parentXmlNode);
+        }
+
+/*__PUBLISH_SECTION_START__*/
+public:
+    //! Adds an element to the specified list sorted by elements priority
+    template<typename ElementType, typename ListType> static void AddToListByPriority(ListType& list, ElementType& element)
+        {
+        auto iter = list.rbegin();
+        for (; iter != list.rend(); iter++)
+            {
+            if ((*iter)->GetPriority() >= element.GetPriority())
+                break;
+            }
+        list.insert(iter.base(), &element);
+        }
+
+    //! Removes an element from the specified list
+    template<typename ElementType, typename ListType> static void RemoveFromList(ListType& list, ElementType& element)
+        {
+        auto iter = list.begin();
+        for (; iter != list.end(); iter++)
+            {
+            if (*iter == &element)
+                break;
+            }
+        if (list.end() != iter)
+            list.erase(iter);
         }
 };
 

@@ -10,6 +10,7 @@
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentationRules/SpecificationVisitor.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -36,6 +37,11 @@ Utf8String                 propertyNames
     m_propertyNames (propertyNames)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedPropertiesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

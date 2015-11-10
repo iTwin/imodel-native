@@ -9,6 +9,7 @@
 
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentationRules/SpecificationVisitor.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -35,6 +36,11 @@ bool groupByLabel
     m_groupByClass (groupByClass), m_groupByLabel (groupByLabel)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SearchResultInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

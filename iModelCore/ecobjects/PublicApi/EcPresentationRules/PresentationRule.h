@@ -103,6 +103,20 @@ public:
     ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const;
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PresentationRuleSpecification
+{
+protected:
+    virtual ~PresentationRuleSpecification() {}
+    virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const {}
+
+public:
+    //! Allows the visitor to visit this specification.
+    ECOBJECTS_EXPORT void Accept(PresentationRuleSpecificationVisitor& visitor);
+};
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /** @endcond */

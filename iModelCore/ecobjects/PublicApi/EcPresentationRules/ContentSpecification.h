@@ -21,7 +21,7 @@ typedef bvector<DisplayRelatedItemsSpecificationP> DisplayRelatedItemsSpecificat
 Base class for all ContentSpecifications.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE ContentSpecification
+struct EXPORT_VTABLE_ATTRIBUTE ContentSpecification : PresentationRuleSpecification
     {
 //__PUBLISH_SECTION_END__
 private:

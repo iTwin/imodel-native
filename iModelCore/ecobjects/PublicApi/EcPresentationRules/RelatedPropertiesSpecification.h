@@ -20,7 +20,7 @@ Related properties specification. It allow to extend a content ECQuery to includ
 properties of related classes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RelatedPropertiesSpecification
+struct RelatedPropertiesSpecification : PresentationRuleSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
@@ -29,6 +29,10 @@ struct RelatedPropertiesSpecification
         Utf8String                         m_relatedClassNames;
         Utf8String                         m_propertyNames;
         RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
+
+    protected:
+        //! Allows the visitor to visit this specification.
+        ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
     /*__PUBLISH_SECTION_START__*/
     public:
