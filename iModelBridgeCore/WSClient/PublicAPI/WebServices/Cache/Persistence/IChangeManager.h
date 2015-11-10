@@ -137,8 +137,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
 
         // -- Commiting changes --
 
-        //! Commit changes for created objects/relationships/files
-        virtual BentleyStatus CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds) = 0;
+        //! Commit changes for created object/relationship/file
+        virtual BentleyStatus CommitCreationChanges(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId) = 0;
 
         //! Commit changes for object in local cache.
         virtual BentleyStatus CommitObjectChanges(ECInstanceKeyCR instanceKey) = 0;

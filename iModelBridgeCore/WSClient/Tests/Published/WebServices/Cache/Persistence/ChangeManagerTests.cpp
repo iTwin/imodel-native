@@ -1040,7 +1040,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_NotExistingObject_Error)
     auto cache = GetTestCache();
     auto nonExistingInstance = StubNonExistingInstanceKey(*cache);
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{nonExistingInstance, "newId"}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(nonExistingInstance, "newId");
     // Assert
     EXPECT_EQ(ERROR, status);
     }
@@ -1052,7 +1052,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_NotCreatedObject_Error)
     auto instance = StubInstanceInCache(*cache);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, Json::objectValue));
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{instance, "NewId"}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(instance, "NewId");
     // Assert
     EXPECT_EQ(ERROR, status);
     }
@@ -1064,7 +1064,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_NewObjectIdIsEmpty_Error)
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{instance, ""}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(instance, "");
     // Assert
     ASSERT_EQ(ERROR, status);
     }
@@ -1076,7 +1076,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_CreatedObject_RemovesChangeStat
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{instance, "NewId"}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(instance, "NewId");
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "NewId"}).IsValid());
@@ -1091,7 +1091,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_CreatedObjectWithFile_RemovesFi
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{instance, "NewId"}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(instance, "NewId");
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
@@ -1106,7 +1106,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_NewRemoteIdExistsInCache_Remove
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     auto newInstance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{newInstance, "Foo"}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(newInstance, "Foo");
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(newInstance, cache->FindInstance({"TestSchema.TestClass", "Foo"}));
@@ -1132,7 +1132,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_NewRemoteIdExistsInCacheAndInCa
     auto newInstance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
 
     // Act
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitCreationChanges({{newInstance, "Foo"}}));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitCreationChanges(newInstance, "Foo"));
 
     // Assert
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "Foo"}), newInstance);
@@ -1155,7 +1155,7 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_CreatedRelationship_RemovesChan
     auto target = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
     auto relationship = cache->GetChangeManager().CreateRelationship(*testRelClass, source, target, ChangeManager::SyncStatus::Ready);
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{relationship, "NewId"}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(relationship, "NewId");
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_TRUE(cache->FindRelationship(relationship).IsValid());
@@ -1172,7 +1172,7 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_NewRelationshipIdIsEmpty_Remove
     auto target = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
     auto relationship = cache->GetChangeManager().CreateRelationship(*testRelClass, source, target, ChangeManager::SyncStatus::Ready);
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChanges({{relationship, ""}});
+    auto status = cache->GetChangeManager().CommitCreationChanges(relationship, "");
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_FALSE(cache->FindRelationship(relationship).IsValid());

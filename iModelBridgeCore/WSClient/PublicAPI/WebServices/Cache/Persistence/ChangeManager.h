@@ -129,7 +129,7 @@ struct ChangeManager : public IChangeManager
 
         // -- Commiting changes --
 
-        WSCACHE_EXPORT BentleyStatus CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds) override;
+        WSCACHE_EXPORT BentleyStatus CommitCreationChanges(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId) override;
         WSCACHE_EXPORT BentleyStatus CommitObjectChanges(ECInstanceKeyCR instanceKey) override;
         WSCACHE_EXPORT BentleyStatus CommitFileChanges(ECInstanceKeyCR instanceKey) override;
 
