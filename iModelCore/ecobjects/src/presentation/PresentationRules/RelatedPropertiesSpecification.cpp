@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -65,7 +65,7 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
     else
         m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
-    CommonTools::LoadRulesFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
 
     return true;
     }

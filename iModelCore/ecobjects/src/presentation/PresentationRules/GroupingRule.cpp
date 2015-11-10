@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -78,11 +78,11 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp (child->GetName (), CLASS_GROUP_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<ClassGroup, GroupList> (child, m_groups);
+            CommonTools::LoadSpecificationFromXmlNode<ClassGroup, GroupList> (child, m_groups);
         else if (0 == BeStringUtilities::Stricmp (child->GetName (), PROPERTY_GROUP_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<PropertyGroup, GroupList> (child, m_groups);
+            CommonTools::LoadSpecificationFromXmlNode<PropertyGroup, GroupList> (child, m_groups);
         else if (0 == BeStringUtilities::Stricmp (child->GetName (), SAMEL_LABEL_INSTANCE_GROUP_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups);
+            CommonTools::LoadSpecificationFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups);
         }
 
     return PresentationRule::_ReadXml (xmlNode);
@@ -349,7 +349,7 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
         m_createGroupForSingleItem = false;
 
     //Load Ranges
-    CommonTools::LoadRulesFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
 
     return true;
     }
