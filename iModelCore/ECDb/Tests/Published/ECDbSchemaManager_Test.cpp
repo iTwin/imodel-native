@@ -12,6 +12,9 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 
+struct ECDbSchemaManagerTests : SchemaImportTestFixture
+    {};
+
 static Utf8CP const TEST_SCHEMA_NAME = "ECDbSchemaManagerTest";
 
 void SetupTestECDb (BeFileNameCR filePath);
@@ -20,7 +23,7 @@ ECSchemaPtr CreateTestSchema ();
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemaManager, IncrementalLoading)
+TEST_F (ECDbSchemaManagerTests, IncrementalLoading)
     {
     BeFileName testFilePath (ECDbTestUtility::BuildECDbPath ("ecschemamanagertest.ecdb"));
     SetupTestECDb (testFilePath);
@@ -101,7 +104,7 @@ TEST (ECDbSchemaManager, IncrementalLoading)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemaManager, GetDerivedECClasses)
+TEST_F(ECDbSchemaManagerTests, GetDerivedECClasses)
     {
     BeFileName testFilePath (ECDbTestUtility::BuildECDbPath ("ecschemamanagertest.ecdb"));
     SetupTestECDb (testFilePath);
@@ -127,7 +130,7 @@ TEST (ECDbSchemaManager, GetDerivedECClasses)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemaManager, GetDerivedECClassesWithoutIncrementalLoading)
+TEST_F(ECDbSchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     {
     BeFileName testFilePath (ECDbTestUtility::BuildECDbPath ("ecschemamanagertest.ecdb"));
     SetupTestECDb (testFilePath);
@@ -246,7 +249,7 @@ ECSchemaPtr CreateTestSchema ()
 // @bsimethod                                   Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //Importing a schema containing all the possible combinations of class properties and relationship classes having built-in and user defined cardinalities 
-TEST(ECDbSchemaManager, ImportSchema)
+TEST_F(ECDbSchemaManagerTests, ImportSchema)
     {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"UserWorkBench.01.00.ecschema.xml", true);
@@ -258,7 +261,7 @@ TEST(ECDbSchemaManager, ImportSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, AddDuplicateECSchemaInCache)
+TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)
 {
     ECDbTestFixture::Initialize();
 
@@ -284,7 +287,7 @@ TEST(ECDbSchemaManager, AddDuplicateECSchemaInCache)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, ImportDuplicateSchema)
+TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
 {
     ECDbTestFixture::Initialize();
 
@@ -312,7 +315,7 @@ TEST(ECDbSchemaManager, ImportDuplicateSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, UpdateExistingSchema)
+TEST_F(ECDbSchemaManagerTests, UpdateExistingSchema)
 {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"TestSchema.01.00.ecschema.xml", true);
@@ -355,7 +358,7 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
+TEST_F(ECDbSchemaManagerTests, UpdateExsitingSchemaDifferntCache)
 {
 
     ECDbTestFixture::Initialize();
@@ -418,7 +421,7 @@ TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, SchemaCache)
+TEST_F(ECDbSchemaManagerTests, SchemaCache)
 {
     ECDbTestFixture::Initialize();
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
@@ -453,7 +456,7 @@ TEST(ECDbSchemaManager, SchemaCache)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, ImportingSchemaInDifferentECDB)
+TEST_F(ECDbSchemaManagerTests, ImportingSchemaInDifferentECDB)
 {
     ECDbTestFixture::Initialize();
     ECDb ecdb, testecdb;
@@ -478,7 +481,7 @@ TEST(ECDbSchemaManager, ImportingSchemaInDifferentECDB)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
+TEST_F(ECDbSchemaManagerTests, ImportSupplementedSchemaDoSupplementationFalse)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -517,7 +520,7 @@ TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
+TEST_F(ECDbSchemaManagerTests, ImportMultipalSupplementalSchemas)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -585,7 +588,7 @@ TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
+TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -611,7 +614,7 @@ TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  1/15
 //+---------------+---------------+---------------+---------------+---------------+------
- TEST(ECDbSchemaManager, ImportReferenceSchemaReferedByMultipleSchemas)
+TEST_F(ECDbSchemaManagerTests, ImportReferenceSchemaReferedByMultipleSchemas)
     {
      ECDbTestFixture::Initialize();
      ECDb testecdb;
@@ -636,7 +639,7 @@ TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
  //---------------------------------------------------------------------------------------
  // @bsimethod                                    Muhammad Hassan                  10/14
  //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbSchemaManager, ImportHighPrioritySupplementalSchama)
+TEST_F(ECDbSchemaManagerTests, ImportHighPrioritySupplementalSchama)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -660,7 +663,7 @@ TEST(ECDbSchemaManager, ImportHighPrioritySupplementalSchama)
     ASSERT_TRUE (SchoolSupplSchema != NULL);
     }
 
-TEST(ECDbSchemaManager, TestGetClassResolver)
+TEST_F(ECDbSchemaManagerTests, TestGetClassResolver)
     {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"TestSchema.01.00.ecschema.xml", true);
@@ -680,7 +683,7 @@ TEST(ECDbSchemaManager, TestGetClassResolver)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // A primary schema should be supplemented with the latest available supplemental schema
-TEST (ECDbSchemaManager, SupplementWithLatestCompatibleSupplementalSchema)
+TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -728,7 +731,7 @@ TEST (ECDbSchemaManager, SupplementWithLatestCompatibleSupplementalSchema)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //supplemental schema whose targeted primary schema's major version is greater then the major version of of Schema to supplement.
-TEST(ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
+TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -772,7 +775,7 @@ TEST(ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersi
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //supplemental schema whose Targeted primary schema's minor version is less then minor Version of schema to supplement.
-TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersion)
+TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersion)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -813,7 +816,7 @@ TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersio
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //supplemental schema whose Targeted primary schema's minor version is greater then minor Version of schema to supplement.
-TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
+TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -856,7 +859,7 @@ TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVers
 //---------------------------------------------------------------------------------------
 //                                               Krischan.Eberle                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
+TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
     {
     auto setup = [] (ECInstanceKey& activityKey, ECDbCR ecdb, bool clearCacheAfterFirstImport)
         {
@@ -959,6 +962,56 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
+    }
+
+
+//-------------------------------------------------------------------------------------- -
+// @bsimethod                                     Krischan.Eberle           11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
+    {
+    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                          "    <ECClass typeName='Foo' isDomainClass='True'>"
+                          "        <ECProperty propertyName='g1' typeName='Bentley.Geometry.Common.IGeometry' />"
+                          "        <ECProperty propertyName='g2' typeName='Bentley.GeometryNET.Common.IGeometry' />"
+                          "        <ECProperty propertyName='g3' typeName='Bentley.GeometryNET.Common.ICoordinate' />"
+                          "    </ECClass>"
+                          "</ECSchema>");
+
+
+    ECDb& ecdb = SetupECDb("ecdbgeometrytypes.ecdb", testSchema, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP cl = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(cl != nullptr);
+    ASSERT_EQ(PRIMITIVETYPE_IGeometry, cl->GetPropertyP("g1")->GetAsPrimitiveProperty()->GetType());
+    ASSERT_EQ(PRIMITIVETYPE_IGeometry, cl->GetPropertyP("g2")->GetAsPrimitiveProperty()->GetType());
+    ASSERT_EQ(PRIMITIVETYPE_IGeometry, cl->GetPropertyP("g3")->GetAsPrimitiveProperty()->GetType());
+
+    IGeometryPtr g1 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    IGeometryPtr g2 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(1.0, 1.0, 1.0, 2.0, 2.0, 2.0)));
+    IGeometryPtr g3 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(2.0, 2.0, 2.0, 3.0, 3.0, 3.0)));
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Foo(g1,g2,g3) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(1, *g1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(2, *g2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(3, *g3));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ecdb.SaveChanges();
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT g1,g2,g3 FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_TRUE(stmt.GetValueGeometry(0)->IsSameStructureAndGeometry(*g1));
+    ASSERT_TRUE(stmt.GetValueGeometry(1)->IsSameStructureAndGeometry(*g2));
+    ASSERT_TRUE(stmt.GetValueGeometry(2)->IsSameStructureAndGeometry(*g3));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
