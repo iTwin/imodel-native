@@ -51,6 +51,8 @@ EC_TYPEDEFS (PresentationRuleSpecificationVisitor);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+enum RequiredRelationDirection : unsigned; 
+
 typedef RefCountedPtr<PresentationRuleSet>    		PresentationRuleSetPtr;
 typedef bvector<RootNodeRuleP>                      RootNodeRuleList;
 typedef bvector<ChildNodeRuleP>                     ChildNodeRuleList;

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! This enumerator allows to chose which direction should be honored
 //! when selecting relationships in the query.
-enum RequiredRelationDirection
+enum RequiredRelationDirection : unsigned
     {
     //! Folows relationships in both directions (default).
     RequiredRelationDirection_Both     = 0,

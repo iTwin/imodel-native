@@ -116,4 +116,4 @@ bool PresentationRule::GetOnlyIfNotHandled (void) const     { return m_onlyIfNot
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRuleSpecification::Accept(PresentationRuleSpecificationVisitor& visitor) {_Accept(visitor);}
+void PresentationRuleSpecification::Accept(PresentationRuleSpecificationVisitor& visitor) const {_Accept(visitor);}

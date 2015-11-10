@@ -10,8 +10,6 @@
 /*__PUBLISH_SECTION_START__*/
 #include <ECPresentationRules/PresentationRulesTypes.h>
 #include <ECPresentationRules/PresentationRule.h>
-#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
-#include <ECPresentationRules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
