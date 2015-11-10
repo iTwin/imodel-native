@@ -1298,7 +1298,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 
         SqlTriggerBuilder& builder = viewInfo->GetTriggersR ().Create (SqlTriggerBuilder::Type::Update, SqlTriggerBuilder::Condition::InsteadOf, false);
         builder.GetOnBuilder ().Append (viewInfo->GetViewR ().GetName ());
-        builder.GetNameBuilder ().Append (nclass.GetSqlName ()).Append ("_").Append ("Update");
+        builder.GetNameBuilder ().Append(nclass.GetSqlName()).Append("_").Append (storage->GetTable().GetName().c_str()).Append ("_").Append ("Update");
         NativeSqlBuilder classFilter = GetClassFilter (i);
         if (!classFilter.IsEmpty ())
             {
