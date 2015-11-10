@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include "DgnCoreLog.h"
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnMarkupProject.h>
 #include <BeJpeg/BeJpeg.h>
 
 #define QV_RGBA_FORMAT   0

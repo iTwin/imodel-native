@@ -19,11 +19,7 @@
 
 dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
 
-%if defined(winNT)
-    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
-%else
-    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node $(BuildContext)SubParts/TypeScript/tsc.js
-%endif
+TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
 
 always:
     !~@mkdir $(dgnScriptGen)
@@ -41,7 +37,7 @@ $(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnJsApiTsDir)DgnJsApi.d.ts $(dgnJsApiT
         --declarationPath "$(dgnJsApiTsDir)DgnJsApi.d.ts" \
         --nativeOutputTemplatePath "$(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp" \
         --nativeOutputHeaderTemplatePath "$(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h" \
-        --nativeSourcePaths "$(DgnPlatformAPISrc)DgnPlatform.h" \
+        --nativeSourcePaths "$(DgnPlatformAPISrc)DgnPlatform.h $(DgnPlatformAPISrc)DgnJsApi.h" \
         --typeScriptOutputPath "$(dgnScriptGen)DgnJsApi.ts" \
         --nativeOutputPath "$(dgnScriptGen)DgnJsApiCallbacks.cpp" \
         --nativeOutputHeaderPath "$(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h" \

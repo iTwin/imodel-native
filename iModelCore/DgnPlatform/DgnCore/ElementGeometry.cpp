@@ -9,7 +9,7 @@
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
-#include "DgnPlatform/DgnCore/Annotations/TextAnnotationDraw.h"
+#include "DgnPlatform/Annotations/TextAnnotationDraw.h"
 
 using namespace flatbuffers;
 
@@ -1187,7 +1187,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCP geomToElem)
     {
-    if (nullptr == geomToElem)
+    if (nullptr == geomToElem || geomToElem->IsIdentity())
         {
         FlatBufferBuilder fbb;
 

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DgnPlatformInternal.h"
-#include    <DgnPlatform/DgnCore/SectionClip.h>
+#include    <DgnPlatform/SectionClip.h>
 
 namespace {
 

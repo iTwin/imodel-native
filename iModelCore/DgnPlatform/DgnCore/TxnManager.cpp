@@ -138,8 +138,6 @@ bool TxnManager::IsMultiTxnMember(TxnId rowid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     {
-    m_inDynamics        = false;
-    m_propagateChanges  = true;
     m_action = TxnAction::None;
 
     m_dgndb.SetChangeTracker(this);
@@ -230,23 +228,33 @@ TxnManager::TxnId TxnManager::QueryNextTxnId(TxnId curr) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::BeginMultiTxnOperation()
+DgnDbStatus TxnManager::BeginMultiTxnOperation()
     {
+    BeAssert(!IsInDynamics());
+    if (IsInDynamics())
+        return DgnDbStatus::InDynamicTransaction;
+
     m_multiTxnOp.push_back(GetCurrentTxnId());
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::EndMultiTxnOperation()
+DgnDbStatus TxnManager::EndMultiTxnOperation()
     {
+    BeAssert(!IsInDynamics());
+    if (IsInDynamics())
+        return DgnDbStatus::InDynamicTransaction;
+
     if (m_multiTxnOp.empty())
         {
         BeAssert(0);
-        return;
+        return DgnDbStatus::NoMultiTxnOperation;
         }
 
     m_multiTxnOp.pop_back();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,17 +270,22 @@ TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TxnManager::PropagateChanges()
     {
-    if (!m_propagateChanges)
-        return BSISUCCESS;
+    return DoPropagateChanges(*this);
+    }
 
-    SetMode(Mode::Indirect);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
+    {
+    tracker.SetMode(Mode::Indirect);
     for (auto table :  m_tables)
         {
         table->_PropagateChanges();
         if (HasFatalErrors())
             break;
         }
-    SetMode(Mode::Direct);
+    tracker.SetMode(Mode::Direct);
 
     return HasFatalErrors() ? BSIERROR : BSISUCCESS;
     }
@@ -408,6 +421,17 @@ void TxnManager::OnEndValidate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation)
     {
+    BeAssert(!IsInDynamics() && "How is this being invoked when we have dynamic change trackers on the stack?");
+    CancelDynamics();
+
+    if (!HasChanges())
+        {
+        // DbFile::StopSavepoint() used to check HasChanges() before invoking us here.
+        // It no longer does, because we may have dynamic txns to revert even if TxnManager has no changes of its own
+        // That's taken care of above, so we're finished
+        return OnCommitStatus::Continue;
+        }
+
     DeleteReversedTxns(); // these Txns are no longer reachable.
 
     // Create changeset from modified tables. We'll use this changeset to drive indirect changes.
@@ -462,6 +486,8 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
     {
+    BeAssert(!IsInDynamics());
+
     m_dgndb.Txns().EnableTracking(false);
     DbResult result = changeStream.ApplyChanges(m_dgndb);
     if (result != BE_SQLITE_OK)
@@ -586,8 +612,6 @@ void TxnManager::AddChanges(Changes const& changes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
     {
-    BeAssert(!HasChanges());
-
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
     BeAssert(rc == BE_SQLITE_OK);
@@ -595,9 +619,6 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
 
     OnChangesetApplied(changeset, action);
 
-    T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
-
-    BeAssert(!HasChanges());
     return rc;
     }
 
@@ -641,10 +662,17 @@ void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction acti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     {
+    BeAssert(!HasChanges() && !IsInDynamics());
+
     UndoChangeSet changeset;
     ReadChangeSet(changeset, rowId, action);
 
     auto rc = ApplyChangeSet(changeset, action);
+
+    T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
+
+    BeAssert(!HasChanges());
+
     if (BE_SQLITE_OK != rc)
         return;
 
@@ -661,8 +689,8 @@ void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
     {
-    if (HasChanges())
-        m_dgndb.AbandonChanges();
+    if (HasChanges() || IsInDynamics())
+        m_dgndb.AbandonChanges(); // will cancel dynamics if active
 
     for (TxnId curr=QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr=QueryPreviousTxnId(curr))
         ApplyChanges(curr, TxnAction::Reverse);
@@ -823,7 +851,7 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
     {
     BeAssert(m_curr == revTxn.GetFirst());
 
-    if (HasChanges())
+    if (HasChanges() || IsInDynamics())
         m_dgndb.AbandonChanges();
 
     TxnId last = QueryPreviousTxnId(revTxn.GetLast());
@@ -943,7 +971,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
         return DgnDbStatus::BadArg;
         }
 
-    if (HasChanges())
+    if (HasChanges() || IsInDynamics())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
         return DgnDbStatus::TransactionActive;
@@ -1373,3 +1401,122 @@ void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedo(TxnManager& mgr, TxnAction acti
     {
     CallMonitors(UndoRedoFinishedCaller(mgr, action));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DynamicChangeTracker::DynamicChangeTracker(TxnManager& mgr) : m_txnMgr(mgr)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DynamicChangeTracker::~DynamicChangeTracker()
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DynamicChangeTracker::OnCommitStatus DynamicChangeTracker::_OnCommit(bool isCommit, Utf8CP operation)
+    {
+    BeAssert(!isCommit && "You cannot save changes during a dynamic operation");
+    if (isCommit)
+        return OnCommitStatus::Abort;
+
+    // TxnManager::_OnCommit() is going to pop us from its stack...let's be paranoid that deleting 'this' may have catastrophic effects
+    DynamicChangeTrackerPtr justInCaseThisIsReferenced(this);
+    m_txnMgr.CancelDynamics();
+    return m_txnMgr._OnCommit(false, operation);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DynamicChangeTracker::TrackChangesForTable DynamicChangeTracker::_FilterTable(Utf8CP tableName)
+    {
+    return m_txnMgr._FilterTable(tableName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DynamicChangeTrackerPtr DynamicChangeTracker::Create(TxnManager& mgr)
+    {
+    return new DynamicChangeTracker(mgr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::BeginDynamicOperation()
+    {
+    auto tracker = DynamicChangeTracker::Create(*this);
+    m_dynamics.push_back(tracker);
+    GetDgnDb().SetChangeTracker(tracker.get());
+    tracker->EnableTracking(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::EndDynamicOperation(IDynamicChangeProcessor* processor)
+    {
+    BeAssert(IsInDynamics());
+    if (!IsInDynamics())
+        return;
+
+    auto tracker = m_dynamics.back();
+    if (tracker->HasChanges())
+        {
+        UndoChangeSet changeset;
+        auto rc = changeset.FromChangeTrack(*tracker);
+        BeAssert(BE_SQLITE_OK == rc);
+        UNUSED_VARIABLE(rc);
+
+        OnBeginValidate();
+
+        Changes changes(changeset);
+        AddChanges(changes);
+
+        if (nullptr != processor)
+            {
+            Restart();
+
+            DoPropagateChanges(*tracker);
+
+            if (tracker->HasChanges())
+                {
+                UndoChangeSet indirectChanges;
+                indirectChanges.FromChangeTrack(*tracker);
+                changeset.ConcatenateWith(indirectChanges);
+                }
+
+            processor->_ProcessDynamicChanges();
+            }
+
+        OnEndValidate();
+
+        changeset.Invert();
+        ApplyChangeSet(changeset, TxnAction::Abandon);
+        }
+
+    m_dynamics.pop_back();
+    if (IsInDynamics())
+        GetDgnDb().SetChangeTracker(m_dynamics.back().get());
+    else
+        GetDgnDb().SetChangeTracker(this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::CancelDynamics()
+    {
+    while (IsInDynamics())
+        EndDynamicOperation();
+    }
+

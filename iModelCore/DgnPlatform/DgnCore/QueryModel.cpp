@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#include <DgnPlatform/DgnCore/QueryModel.h>
-#include <DgnPlatform/DgnCore/QueryView.h>
+#include <DgnPlatform/QueryModel.h>
+#include <DgnPlatform/QueryView.h>
 #include "UpdateLogging.h"
 
 //---------------------------------------------------------------------------------------

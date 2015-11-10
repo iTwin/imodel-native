@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnProgressMeter.h>
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnProgressMeter.h>
+#include <DgnPlatform/DgnMarkupProject.h>
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 

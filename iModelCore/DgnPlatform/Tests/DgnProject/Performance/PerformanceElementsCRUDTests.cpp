@@ -41,68 +41,33 @@ PerformanceElementPtr PerformanceElement::Create (Dgn::DgnDbR db, Dgn::DgnModelI
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SetUpPopulatedDb (WCharCP dbName, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::_RegisterDomainAndImportSchema (ECN::ECSchemaPtr schema)
     {
-    BeFileName seedFilePath;
-    WString seedFileName;
-    bool createSeed = false;
+    PerformanceElementTestDomain::RegisterDomainAndImportSchema (*m_db, *schema);
+    }
 
-    WString wClassName;
-    wClassName.AssignUtf8 (className);
-    seedFileName.Sprintf (L"sqlVsecsqlPerformance_%ls_seed%d.idgndb", wClassName.c_str(), DateTime::GetCurrentTimeUtc ().GetDayOfYear ());
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void PerformanceElementsCRUDTestFixture::_CreateAndInsertElements (Utf8CP className)
+    {
+    bvector<DgnElementPtr> testElements;
+    CreateElements (m_initialInstanceCount, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className, testElements);
 
-    BeTest::GetHost ().GetOutputRoot (seedFilePath);
-    seedFilePath.AppendToPath (seedFileName.c_str ());
-    if (seedFilePath.DoesPathExist ())
+    ECSqlStatement stmt;
+    Utf8String insertECSql;
+    GetInsertECSql (className, insertECSql);
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, insertECSql.c_str ()));
+    for (DgnElementPtr& element : testElements)
         {
+        BindParams (element, stmt, className);
+        ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
+        stmt.Reset ();
+        stmt.ClearBindings ();
         }
-    else
-        createSeed = true;
-
-    if (createSeed)
-        {
-        SetupProject (L"3dMetricGeneral.idgndb", seedFileName.c_str (), BeSQLite::Db::OpenMode::ReadWrite);
-        ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext ();
-        BeFileName searchDir;
-        BeTest::GetHost ().GetDgnPlatformAssetsDirectory (searchDir);
-        searchDir.AppendToPath (L"ECSchemas").AppendToPath (L"Dgn");
-        schemaContext->AddSchemaPath (searchDir.GetName ());
-
-        ECN::ECSchemaPtr schema = nullptr;
-        ASSERT_EQ (ECN::SCHEMA_READ_STATUS_Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
-
-        PerformanceElementTestDomain::RegisterDomainAndImportSchema (*m_db, *schema);
-        ASSERT_TRUE (m_db->IsDbOpen ());
-
-        bvector<DgnElementPtr> testElements;
-        CreateElements (m_initialInstanceCount, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className, testElements);
-
-        ECSqlStatement stmt;
-        Utf8String insertECSql;
-        GetInsertECSql (className, insertECSql);
-
-        ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, insertECSql.c_str ()));
-        for (DgnElementPtr& element : testElements)
-            {
-            BindParams (element, stmt, className);
-            ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
-            stmt.Reset ();
-            stmt.ClearBindings ();
-            }
-        stmt.Finalize ();
-        m_db->SaveChanges ();
-        }
-
-    BeFileName dgndbFilePath;
-    BeTest::GetHost ().GetOutputRoot (dgndbFilePath);
-    dgndbFilePath.AppendToPath (dbName);
-
-    ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeCopyFile (seedFilePath, dgndbFilePath, false));
-
-    DbResult status;
-    m_db = DgnDb::OpenDgnDb (&status, dgndbFilePath, DgnDb::OpenParams (Db::OpenMode::ReadWrite));
-    EXPECT_EQ (DbResult::BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE (m_db.IsValid ());
+    stmt.Finalize ();
+    m_db->SaveChanges ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -805,7 +770,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlInsertTime (int numInstances, Utf8
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlInsert%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     //Create elements to Insert
     DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
@@ -850,7 +815,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime (int numInstances, Utf8
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlSelect%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     ECSqlStatement stmt;
     Utf8String selectECSql;
@@ -881,7 +846,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime (int numInstances, Utf8
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlUpdate%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     ECSqlStatement stmt;
     Utf8String updateECSql;
@@ -911,7 +876,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime (int numInstances, Utf8
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlDelete%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     ECSqlStatement stmt;
     Utf8String deleteECSql;
@@ -940,7 +905,7 @@ void PerformanceElementsCRUDTestFixture::SqlInsertTime (int numInstances, Utf8CP
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlInsert%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     //Create elements to Insert
     DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
@@ -986,7 +951,7 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime (int numInstances, Utf8CP
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlSelect%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     BeSQLite::Statement stmt;
     Utf8String selectSql;
@@ -1016,7 +981,7 @@ void PerformanceElementsCRUDTestFixture::SqlUpdateTime (int numInstances, Utf8CP
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlUpdate%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     BeSQLite::Statement stmt;
     Utf8String updateSql;
@@ -1046,7 +1011,7 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime (int numInstances, Utf8CP
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlDelete%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpPopulatedDb (dbName, className);
+    SetUpTestDgnDb (dbName, className);
 
     BeSQLite::Statement stmt;
     Utf8String deleteSql;
@@ -1123,7 +1088,7 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdate)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsDelete)
     {
-    const int insertCount = 10000;
+    const int insertCount = 1000;
     SqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     SqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
     SqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);

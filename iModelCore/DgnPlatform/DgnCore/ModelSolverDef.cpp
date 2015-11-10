@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
 /*---------------------------------------------------------------------------------**//**

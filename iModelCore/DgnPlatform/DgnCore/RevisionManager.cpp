@@ -518,7 +518,7 @@ BentleyStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& mer
         return ERROR;
         }
 
-    if (txnMgr.HasChanges())
+    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() before merging");
         return ERROR;
@@ -623,7 +623,7 @@ BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeG
 DgnRevisionPtr RevisionManager::StartCreateRevision()
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
-    if (txnMgr.HasChanges())
+    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
         return nullptr;

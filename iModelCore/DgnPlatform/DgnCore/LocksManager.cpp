@@ -59,7 +59,7 @@ void LockRequest::Insert(DgnElementCR el, LockLevel level)
     if (LockLevel::Shared == level)
         level = LockLevel::Exclusive;
 
-    Insert(LockableId(el.GetElementId()), level);
+    InsertLock(LockableId(el.GetElementId()), level);
     if (LockLevel::Exclusive == level)
         {
         DgnModelPtr model = el.GetModel();
@@ -74,7 +74,7 @@ void LockRequest::Insert(DgnElementCR el, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LockRequest::Insert(DgnModelCR model, LockLevel level)
     {
-    Insert(LockableId(model.GetModelId()), level);
+    InsertLock(LockableId(model.GetModelId()), level);
     if (LockLevel::None != level)
         Insert(model.GetDgnDb(), LockLevel::Shared);
     }
@@ -84,13 +84,13 @@ void LockRequest::Insert(DgnModelCR model, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LockRequest::Insert(DgnDbCR db, LockLevel level)
     {
-    Insert(LockableId(db), level);
+    InsertLock(LockableId(db), level);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::Insert(LockableId id, LockLevel level)
+void LockRequest::InsertLock(LockableId id, LockLevel level)
     {
     if (LockLevel::None == level || !id.IsValid())
         return;
@@ -134,8 +134,8 @@ BeFileName ILocksManager::GetLockTableFileName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level)
     {
-    // We don't acquire locks for indirect changes.
-    if (TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
+    // We don't acquire locks for indirect or dynamic changes.
+    if (GetDgnDb().Txns().IsInDynamics() || TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
         return LockStatus::Success;
 
     LockRequest request;
@@ -148,8 +148,8 @@ LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus ILocksManager::_LockModel(DgnModelCR model, LockLevel level)
     {
-    // We don't acquire locks for indirect changes.
-    if (TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
+    // We don't acquire locks for indirect or dynamic changes.
+    if (GetDgnDb().Txns().IsInDynamics() || TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
         return LockStatus::Success;
 
     LockRequest request;
@@ -601,12 +601,21 @@ LockStatus LocalLocksManager::_AcquireLocks(LockRequestR locks)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* We still don't have a server. Some apps apparently use briefcase IDs other than zero
+* (ConceptStation). Therefore, always use the unrestricted locks manager until we have
+* an actual server implementation; or while explicitly enabled for tests.
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool s_enableLocking = false;
+void ILocksManager::BackDoor_SetLockingEnabled(bool enable) { s_enableLocking = enable; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILocksManagerPtr DgnPlatformLib::Host::LocksAdmin::_CreateLocksManager(DgnDbR db) const
     {
     // NEEDSWORK: Bogus. Currently we have no way of determining if locking is required for a given DgnDb...and we have no actual server
-    return db.IsMasterCopy() ? UnrestrictedLocksManager::Create(db) : LocalLocksManager::Create(db);
+    return (db.IsMasterCopy() || !s_enableLocking) ? UnrestrictedLocksManager::Create(db) : LocalLocksManager::Create(db);
     }
 
 /*---------------------------------------------------------------------------------**//**

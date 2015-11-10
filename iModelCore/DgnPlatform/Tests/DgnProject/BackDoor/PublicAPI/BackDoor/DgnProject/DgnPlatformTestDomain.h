@@ -8,12 +8,12 @@
 #pragma once
 
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnDomain.h>
-#include <DgnPlatform/DgnCore/DgnDb.h>
-#include <DgnPlatform/DgnCore/DgnElement.h>
-#include <DgnPlatform/DgnCore/DgnModel.h>
-#include <DgnPlatform/DgnCore/ElementHandler.h>
-#include <DgnPlatform/DgnCore/DgnElementDependency.h>
+#include <DgnPlatform/DgnDomain.h>
+#include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnElement.h>
+#include <DgnPlatform/DgnModel.h>
+#include <DgnPlatform/ElementHandler.h>
+#include <DgnPlatform/DgnElementDependency.h>
 
 #define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define DPTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
@@ -252,15 +252,22 @@ struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
 //=======================================================================================
 struct TestElementDrivesElementHandler : Dgn::DgnElementDependencyHandler
     {
+    struct Callback
+    {
+        virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) = 0;
+    };
 private:
     DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, TestElementDrivesElementHandler, Dgn::DgnDomain::Handler, )
     static bool s_shouldFail;
     bvector<EC::ECInstanceId> m_relIds;
+    static Callback* s_callback;
 
     void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
 
 public:
     void Clear() {m_relIds.clear();}
+    static void SetCallback(Callback* cb) { s_callback = cb; }
+
     static void SetShouldFail(bool b) {s_shouldFail = b;}
 
     static void UpdateProperty1(Dgn::DgnDbR, EC::ECInstanceKeyCR);

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Geom/eigensys3d.fdf>
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnMarkupProject.h>
 
 static Utf8CP VIEW_SETTING_Area2d                = "area2d";
 static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";

@@ -10,14 +10,15 @@
 
 #include <Bentley/WString.h>
 #include "DgnPlatform.h"
-#include "DgnCore/IViewOutput.h"
-#include "DgnCore/ColorUtil.h"
-#include "DgnCore/NotificationManager.h"
-#include "DgnCore/TxnManager.h"
-#include "DgnCore/SolidKernel.h"
-#include "DgnCore/RealityDataCache.h"
-#include "DgnCore/DgnViewport.h"
+#include "IViewOutput.h"
+#include "ColorUtil.h"
+#include "NotificationManager.h"
+#include "TxnManager.h"
+#include "SolidKernel.h"
+#include "RealityDataCache.h"
+#include "DgnViewport.h"
 #include <BeSQLite/L10N.h>
+#include <Logging/bentleylogging.h>
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
 typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h because they have a bad include scheme.
@@ -89,6 +90,23 @@ public:
         //! You may subclass ScriptAdmin if you want to add more thread-specific contexts to it.
         struct ScriptAdmin : IHostObject
             {
+            enum class LoggingSeverity : uint32_t
+                {
+                // *** NB: These values must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
+                Fatal   = 0, 
+                Error   = 1, 
+                Warning = 2, 
+                Info    = 3, 
+                Debug   = 4, 
+                Trace   = 5
+                };
+
+            static NativeLogging::SEVERITY ToNativeLoggingSeverity(LoggingSeverity severity)
+                {
+                // *** NB: ScriptAdmin::LoggingSeverity must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
+                return (NativeLogging::SEVERITY)(-(int32_t)severity); 
+                }
+
             //! Interface to be implemented by helpers that can import optional script libraries into the DgnScriptContext
             struct ScriptLibraryImporter : IHostObject
                 {
@@ -97,17 +115,18 @@ public:
                 };
 
             //! Interface for handling errors reported by scripts or that prevent scripts from running
-            struct ScriptErrorHandler : IHostObject
+            struct ScriptNotificationHandler : IHostObject
                 {
                 //! Handle a script error
                 enum class Category {ReportedByScript, ParseError, Exception, Other};
                 DGNPLATFORM_EXPORT virtual void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details);
+                DGNPLATFORM_EXPORT virtual void _HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP msg);
                 };
 
             BeJsEnvironmentP m_jsenv;
             BeJsContextP m_jsContext;
             bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
-            ScriptErrorHandler* m_errorHandler;
+            ScriptNotificationHandler* m_notificationHandler;
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -134,10 +153,13 @@ public:
             DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
 
             //! Register the script error handler
-            ScriptErrorHandler* RegisterScriptErrorHandler(ScriptErrorHandler& h) {auto was  = m_errorHandler; m_errorHandler = &h; return was;}
+            ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h) {auto was  = m_notificationHandler; m_notificationHandler = &h; return was;}
 
             //! Handle a reported script error. Invokes the registered error handler.
-            DGNPLATFORM_EXPORT void HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description, Utf8CP details);
+            DGNPLATFORM_EXPORT void HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details);
+
+            //! Handle a notification sent from the script. Invokes the registered handler.
+            DGNPLATFORM_EXPORT void HandleLogMessage (Utf8CP category, LoggingSeverity sev, Utf8CP msg);
 
             //! Register to import a set of projections or other script classes into the DgnScript JsContext
             //! @param libName  the library's unique ID that will be requested by script client programs

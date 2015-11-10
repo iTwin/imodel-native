@@ -4,8 +4,8 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
-#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

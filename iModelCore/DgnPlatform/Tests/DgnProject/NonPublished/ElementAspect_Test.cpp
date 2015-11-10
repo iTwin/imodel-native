@@ -9,7 +9,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/WebMercator.h>
+#include <DgnPlatform/WebMercator.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC

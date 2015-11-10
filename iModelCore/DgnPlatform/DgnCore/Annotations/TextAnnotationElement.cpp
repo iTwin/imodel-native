@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
-#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

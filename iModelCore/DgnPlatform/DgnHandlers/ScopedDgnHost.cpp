@@ -10,7 +10,7 @@
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeDirectoryIterator.h>
 
-#include <DgnPlatform/DgnHandlers/UnitTests/ScopedDgnHost.h>
+#include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011

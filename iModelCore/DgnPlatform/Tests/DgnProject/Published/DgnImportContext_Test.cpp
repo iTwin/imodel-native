@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
-#include <DgnPlatform/DgnCore/DgnMaterial.h>
-#include <DgnPlatform/DgnCore/DgnTexture.h>
+#include <DgnPlatform/DgnMaterial.h>
+#include <DgnPlatform/DgnTexture.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST

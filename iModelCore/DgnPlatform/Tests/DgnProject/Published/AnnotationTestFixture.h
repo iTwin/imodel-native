@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/Annotations.h>
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014

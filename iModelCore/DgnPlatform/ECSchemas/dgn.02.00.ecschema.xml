@@ -53,6 +53,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECClass>
+    <ECClass typeName="ComponentAuthority" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" isDomainClass="True" strengthDirection="forward" strength="referencing">
         <ECCustomAttributes>
@@ -470,16 +476,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_AnnotationTable_Row</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>ElementId</string>
-                            <string>RowIndex</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="RowIndex"                     typeName="int"/>
@@ -493,16 +489,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_AnnotationTable_Column</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>ElementId</string>
-                            <string>ColumnIndex</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ColumnIndex"                  typeName="int"/>
@@ -521,17 +507,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_AnnotationTable_Cell</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>ElementId</string>
-                            <string>CellIndex.RowIndex</string>
-                            <string>CellIndex.ColumnIndex</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="CellIndex"              typeName="AnnotationTableCellIndex"/>
@@ -545,7 +520,55 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="MarginRight"                  typeName="double)"/>
     </ECClass>
 
-    <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
+    <ECClass typeName="AnnotationTableMerge" isDomainClass="True">
+        <!-- The aspect that holds properties describing merging of cells in an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="RootCell"               typeName="AnnotationTableCellIndex"/>
+        <ECProperty propertyName="RowSpan"                      typeName="int"/>
+        <ECProperty propertyName="ColumnSpan"                   typeName="int"/>
+    </ECClass>
+
+    <!-- An Item in (a catalog/template model) can hold a soultion of a ComponentModel. 
+        There can be many Items, each holding a different solution (based on a unique set of parameters), of a single ComponentModel. 
+        There can be many different ComponentModels.
+    -->
+    <ECRelationshipClass typeName="SolutionOfComponent" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)" roleLabel="many unique solutions" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="of a ComponentModel" polymorphic="True">
+            <Class class="ComponentModel" />
+        </Target>
+    </ECRelationshipClass>
+
+    <!-- An Item can be a copy of a (template) Item. 
+        There can be many copies of a single template Item. 
+        There can be many different template Items. 
+    -->
+    <ECRelationshipClass typeName="InstantiationOfTemplate" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>InstanceId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>TemplateId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="many instances" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="of one template" polymorphic="True">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
             <Class class="Element" />
         </Source>
