@@ -38,7 +38,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTexture::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, TextureData const& data, Utf8StringCR descr)
+DgnTexture::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Data const& data, Utf8StringCR descr)
     : T_Super(db, QueryDgnClassId(db), CreateTextureCode(name)), m_data(data), m_descr(descr)
     {
     }

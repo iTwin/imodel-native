@@ -1211,7 +1211,7 @@ static uint32_t getDependentWidth(DgnElementId id, DgnDbR db)
     {
     auto tx = db.Elements().Get<DgnTexture>(id);
     BeAssert(tx.IsValid());
-    return tx.IsValid() ? static_cast<uint32_t>(tx->GetData().GetWidth()) : -1;
+    return tx.IsValid() ? static_cast<uint32_t>(tx->GetTextureData().GetWidth()) : -1;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,7 +1224,8 @@ static void incrementDependentWidth(DgnElementId id,DgnDbR db)
     auto pTx = cpTx.IsValid() ? cpTx->MakeCopy<DgnTexture>() : nullptr;
     if (pTx.IsValid())
         {
-        pTx->SetData(DgnTexture::Data(DgnTexture::Format::TIFF, {1, 2, 3}, pTx->GetData().GetWidth() + 1, 0));
+        Byte data[] = {1,2,3};
+        pTx->SetTextureData(DgnTexture::Data(DgnTexture::Format::TIFF, data, 3, pTx->GetTextureData().GetWidth() + 1, 0));
         pTx->Update();
         }
     }
@@ -1319,8 +1320,8 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     EXPECT_TRUE(cat.Insert(DgnSubCategory::Appearance()).IsValid());
     DgnElementId rootId = cat.GetElementId();
 
-    bvector<Byte> textureBytes { 1, 2, 3 };
-    DgnTexture::Data textureData(DgnTexture::Format::TIFF, textureBytes, 0, 0);
+    Byte textureBytes[] = { 1, 2, 3 };
+    DgnTexture::Data textureData(DgnTexture::Format::TIFF, textureBytes, 3, 0, 0);
     DgnTexture texture(DgnTexture::CreateParams(db, "Dependent", textureData));
     EXPECT_TRUE(texture.Insert().IsValid());
     auto depId = texture.GetElementId();

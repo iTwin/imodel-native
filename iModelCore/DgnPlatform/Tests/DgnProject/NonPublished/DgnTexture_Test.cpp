@@ -38,12 +38,12 @@ protected:
         return *m_db;
         }
 
-    DgnTexture::TextureData MakeTextureData (DgnTexture::Format fmt, uint32_t w, uint32_t h)
+    DgnTexture::Data MakeTextureData (DgnTexture::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
         bvector<Byte> bytes (w*h);
         std::iota (bytes.begin(), bytes.end(), 0);
-        return DgnTexture::TextureData (fmt, &bytes[0], (uint32_t) bytes.size(), w, h);
+        return DgnTexture::Data (fmt, &bytes[0], (uint32_t) bytes.size(), w, h);
         }
 
     void Compare(DgnTextureCR lhs, DgnTextureCR rhs)
