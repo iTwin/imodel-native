@@ -89,7 +89,11 @@ private:
     mutable std::unique_ptr<ECSqlParseContext> m_context;
 
     //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
-
+    static connectivity::OSQLParser* GetSharedParser()
+        {
+        static std::unique_ptr<connectivity::OSQLParser> s_parser = std::unique_ptr<connectivity::OSQLParser>(new connectivity::OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
+        return s_parser.get();
+        }
     //root nodes
     BentleyStatus parse_select_statement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_insert_statement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const*) const;
