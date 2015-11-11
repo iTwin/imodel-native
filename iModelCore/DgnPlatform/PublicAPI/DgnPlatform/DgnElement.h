@@ -972,8 +972,8 @@ protected:
     virtual DgnElement2dCP _ToElement2d() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
-    virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
+    virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1005,14 +1005,13 @@ public:
     DgnElement2dCP ToElement2d() const {return _ToElement2d();}                   //!< more efficient substitute for dynamic_cast<DgnElement2dCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
-    ElementGroupCP ToElementGroup() const {return _ToElementGroup();}             //!< more efficient substitute for dynamic_cast<ElementGroupCP>(el)
+    IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}          //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());} //!< more efficient substitute for dynamic_cast<GeometricElementP>(el)
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}                       //!< more efficient substitute for dynamic_cast<DgnElement3dP>(el)
     DgnElement2dP ToElement2dP() {return const_cast<DgnElement2dP>(_ToElement2d());}                       //!< more efficient substitute for dynamic_cast<DgnElement2dP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
-    ElementGroupP ToElementGroupP() {return const_cast<ElementGroupP>(_ToElementGroup());}                 //!< more efficient substitute for dynamic_cast<ElementGroupP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
@@ -1651,76 +1650,23 @@ public:
 };
 
 //=======================================================================================
-//! A "logical Group" of elements.
-//! "Logical" groups hold a referencing (not an owning) relationship with their members.
-//! ElementGroup can be subclassed for custom grouping behavior.
-//! @ingroup DgnElementGroup
+//! @note Instead of using this class, create own subclass (somewhere in DgnElement hierarchy)
+//! and use the IElementGroupOf interface to add grouping behavior to that subclass.
+//! @note This class is only temporarily here to support DgnV8 conversion
 //! @private
 // @bsiclass                                                    Shaun.Sewall    05/15
 //=======================================================================================
 // WIP: Obsolete. Replaced by IElementGroup
-struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement, IElementGroupOf<DgnElement>
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
 
 protected:
-    ElementGroupCP _ToElementGroup() const override {return this;}
-
-    //! Called when a member is about to be inserted into this ElementGroup
-    //! Override and return something other than DgnDbStatus::Success to prevent the member from being inserted into this ElementGroup.
-    virtual DgnDbStatus _OnMemberInsert(DgnElementCR member) const {return DgnDbStatus::Success;}
-    //! Called after a member has been inserted into this ElementGroup
-    //! Override if additional processing is required after a member was inserted.
-    virtual void _OnMemberInserted(DgnElementCR member) const {}
-
-    //! Called when a member is about to be deleted from this ElementGroup
-    //! Override and return something other than DgnDbStatus::Success to prevent the member from being deleted from this ElementGroup.
-    virtual DgnDbStatus _OnMemberDelete(DgnElementCR member) const {return DgnDbStatus::Success;}
-    //! Called after a member has been deleted from this ElementGroup
-    //! Override if additional processing is required after a member was deleted.
-    virtual void _OnMemberDeleted(DgnElementCR member) const {}
-
-    //! Called when members of the group are queried
-    DGNPLATFORM_EXPORT virtual DgnElementIdSet _QueryMembers() const;
+    Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
+    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
 
 public:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
-
-    //! Create a new instance of a DgnElement using the specified CreateParams.
-    //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
-    //! use a static method on the subclass.
-    static ElementGroupPtr Create(CreateParams const& params) {return new ElementGroup(params);}
-
-    //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
-    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
-
-    //! Insert a member into this ElementGroup. This creates an ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
-    //! @param[in] member The element to become a member of this ElementGroup.
-    //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
-    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnDbStatus InsertMember(DgnElementCR member) const;
-
-    //! Deletes the ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
-    //! @param[in] member The element to remove from this ElementGroup.
-    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteMember(DgnElementCR member) const;
-
-    //! Deletes all ElementGroupHasMembers ECRelationships from this ElementGroup
-    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteAllMembers() const;
-
-    //! Query for the set of members of this ElementGroup
-    //! @see QueryFromMember
-    DgnElementIdSet QueryMembers() const {return _QueryMembers();}
-
-    //! Query an ElementGroup from a member element.
-    //! @param[in] db the DgnDb to query
-    //! @param[in] groupClassId specify the type of ElementGroup to consider as a DgnElement could be in more than one ElementGroup.
-    //! @param[in] memberElementId the DgnElementId of the member element
-    //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
-    //! @see QueryMembers
-    DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
 //=======================================================================================
