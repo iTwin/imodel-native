@@ -24,6 +24,41 @@ TEST_F(WSChangesetTests, ToRequestString_EmptyChangeset_ReturnsEmptyChangesetAnd
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetIsEmpty_ReturnsEmptyChangesetAndSizeIsSameAsEmptyChangesetJson)
+    {
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    EXPECT_EQ(Utf8String(R"({"instancs":{}})").size(), changeset.CalculateSize());
+    EXPECT_EQ(Utf8String(R"({"instance":{}})"), changeset.ToRequestString());
+    EXPECT_EQ(0, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAddingMoreThanOneInstance_DoesNotAddAdditionalInstance)
+    {
+    WSChangeset changeset(WSChangeset::SingeInstance);
+
+    changeset.AddInstance({"TestSchema.TestClass","A"}, WSChangeset::Existing, std::make_shared<Json::Value>(Json::objectValue));
+
+    BeTest::SetFailOnAssert(false);
+    changeset.AddInstance({"TestSchema.TestClass","B"}, WSChangeset::Existing, std::make_shared<Json::Value>(Json::objectValue));
+    BeTest::SetFailOnAssert(true);
+
+    auto expectedJson = ToJson(R"({
+        "instance":
+            {
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "instanceId":"A"
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(1, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
 TEST_F(WSChangesetTests, ToRequestString_OneExistingInstance_ReturnsChangesetJsonWithNotPropertiesAndCalculateSizeMatches)
     {
     WSChangeset changeset;
@@ -37,6 +72,27 @@ TEST_F(WSChangesetTests, ToRequestString_OneExistingInstance_ReturnsChangesetJso
             "instanceId":"Foo"
             }
         ]})");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(1, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneExistingInstance_ReturnsChangesetJsonWithNotPropertiesAndCalculateSizeMatches)
+    {
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Existing, std::make_shared<Json::Value>(Json::objectValue));
+
+    auto expectedJson = ToJson(R"({
+        "instance":
+            {
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "instanceId":"Foo"
+            }
+        })");
 
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
@@ -61,6 +117,30 @@ TEST_F(WSChangesetTests, ToRequestString_OneCreatedInstance_ReturnsChangesetJson
             "properties":{"TestProperty":"TestValue"}
             }
         ]})");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(1, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneCreatedInstance_ReturnsChangesetJsonWithPropertiesAndWithoutIdAndCalculateSizeMatches)
+    {
+    auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
+
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Created, properties);
+
+    auto expectedJson = ToJson(R"({
+        "instance":
+            {
+            "changeState":"new",
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "properties":{"TestProperty":"TestValue"}
+            }
+        })");
 
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
@@ -97,6 +177,34 @@ TEST_F(WSChangesetTests, ToRequestString_OneModifiedInstance_ReturnsChangesetJso
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneModifiedInstance_ReturnsChangesetJsonWithPropertiesAndIdAndCalculateSizeMatches)
+    {
+    auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
+
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Modified, properties);
+
+    auto expectedJson = ToJson(R"({
+        "instance":
+            {
+            "changeState":"modified",
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "instanceId":"Foo",
+            "properties":
+                {
+                "TestProperty" : "TestValue"
+                }
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(1, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
 TEST_F(WSChangesetTests, ToRequestString_OneDeletedInstance_ReturnsChangesetJsonWithoutPropertiesAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -113,6 +221,30 @@ TEST_F(WSChangesetTests, ToRequestString_OneDeletedInstance_ReturnsChangesetJson
             "instanceId":"Foo"
             }
         ]})");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(1, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneDeletedInstance_ReturnsChangesetJsonWithoutPropertiesAndCalculateSizeMatches)
+    {
+    auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
+
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Deleted, properties);
+
+    auto expectedJson = ToJson(R"({
+        "instance":
+            {
+            "changeState":"deleted",
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "instanceId":"Foo"
+            }
+        })");
 
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
@@ -155,6 +287,48 @@ TEST_F(WSChangesetTests, ToRequestString_OneForwardRelatedInstance_ReturnsChange
                 }
             ]}
         ]})");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(2, changeset.GetInstanceCount());
+    EXPECT_EQ(1, changeset.GetRelationshipCount());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneForwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
+    {
+    auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
+    auto propertiesC = std::make_shared<Json::Value>(ToJson(R"({"Foo":"C"})"));
+
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset
+        .AddInstance({"TestSchemaA.TestClassA","IgnoredId"}, WSChangeset::Created, propertiesA)
+        .AddRelatedInstance({"TestSchemaB.TestClassB","IgnoredId"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+        {"TestSchemaC.TestClassC","IgnoredId"}, WSChangeset::Created, propertiesC);
+
+    auto expectedJson = ToJson(R"({
+        "instance":
+            {
+            "changeState":"new",
+            "schemaName":"TestSchemaA",
+            "className":"TestClassA",
+            "properties":{"Foo": "A"},
+            "relationshipInstances":[
+                {
+                "changeState":"new",
+                "schemaName":"TestSchemaB",
+                "className":"TestClassB",
+                "direction":"forward",
+                "relatedInstance":
+                    {
+                    "changeState":"new",
+                    "schemaName":"TestSchemaC",
+                    "className":"TestClassC",
+                    "properties":{"Foo": "C"}
+                    }
+                }]
+            }
+        })");
 
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
@@ -603,6 +777,63 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelatedInstances_Calls
                     }]
                 }
             }]
+        })");
+
+    int count = 0;
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(*response, [&] (ObjectIdCR oldId, ObjectIdCR newId)
+        {
+        switch (count)
+            {
+            case 0:
+                EXPECT_EQ(ObjectId("TestSchemaA.TestClassA", "A"), oldId);
+                EXPECT_EQ(ObjectId("NewSchemaA.NewClassA", "NewIdA"), newId);
+                break;
+            case 1:
+                EXPECT_EQ(ObjectId("TestSchemaB.TestClassB", "B"), oldId);
+                EXPECT_EQ(ObjectId("NewSchemaB.NewClassB", "NewIdB"), newId);
+                break;
+            case 2:
+                EXPECT_EQ(ObjectId("TestSchemaC.TestClassC", "C"), oldId);
+                EXPECT_EQ(ObjectId("NewSchemaC.NewClassC", "NewIdC"), newId);
+                break;
+            }
+
+        count++;
+        return SUCCESS;
+        }));
+    EXPECT_EQ(3, count);
+    }
+
+TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_SingleInstanceChangesetCreatedRelatedInstances_CallsHandleOnEachCreatedInstance)
+    {
+    WSChangeset changeset (WSChangeset::SingeInstance);
+    changeset
+        .AddInstance({"TestSchemaA.TestClassA","A"}, WSChangeset::Created, nullptr)
+        .AddRelatedInstance({"TestSchemaB.TestClassB","B"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+        {"TestSchemaC.TestClassC","C"}, WSChangeset::Created, nullptr);
+
+    auto response = ToRapidJson(R"({
+        "changedInstance" : 
+            {
+            "instanceAfterChange" : 
+                {
+                "instanceId" : "NewIdA",
+                "className" : "NewClassA",
+                "schemaName" : "NewSchemaA",
+                "relationshipInstances" : 
+                    [{
+                    "instanceId" : "NewIdB",
+                    "className" : "NewClassB",
+                    "schemaName" : "NewSchemaB",
+                    "relatedInstance" : 
+                        {
+                        "instanceId" : "NewIdC",
+                        "className" : "NewClassC",
+                        "schemaName" : "NewSchemaC"
+                        }
+                    }]
+                }
+            }
         })");
 
     int count = 0;
