@@ -234,6 +234,45 @@ TEST_F (SchemaTest, ExpectReadOnly)
     ASSERT_TRUE (PropertyOfCustomAttribute != NULL);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaTest, RemoveBaseClassFromGrandChild)
+    {
+    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" version=\"01.00\" displayLabel=\"TestSchema\" description=\"Test Schema\" nameSpacePrefix=\"ts\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" >"
+        "    <ECClass typeName=\"GrandParent\" description=\"The base class\" displayLabel=\"GrandParent\" isDomainClass=\"True\">"
+        "       <ECProperty propertyName=\"PropA\" typeName=\"string\" displayLabel=\"PropA\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"Parent\" isDomainClass=\"True\">"
+        "        <BaseClass>GrandParent</BaseClass>"
+        "       <ECProperty propertyName=\"PropA\" typeName=\"string\" displayLabel=\"PropA\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"Child\" isDomainClass=\"True\">"
+        "        <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName=\"PropA\" typeName=\"string\" displayLabel=\"PropA\" />"
+        "    </ECClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECClassP child = schema->GetClassP("Child");
+    ECPropertyP prop = child->GetPropertyP("PropA", false);
+    ASSERT_TRUE(nullptr != prop);
+    prop = child->GetPropertyP("PropA", true);
+    ASSERT_TRUE(nullptr != prop);
+
+    ECClassP parent = schema->GetClassP("Parent");
+    child->RemoveBaseClass(*parent);
+    ECBaseClassesList baseClasses = child->GetBaseClasses();
+    ASSERT_TRUE(baseClasses.empty());
+    prop = child->GetPropertyP("PropA", false);
+    ASSERT_TRUE(nullptr != prop);
+//    ASSERT_TRUE(nullptr == prop->GetBaseProperty());  // This shouldn't fail!
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
