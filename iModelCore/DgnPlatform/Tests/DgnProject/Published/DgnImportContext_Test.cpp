@@ -282,23 +282,23 @@ TEST_F(ImportTest, ImportGroups)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static GeometricElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, ElemDisplayParams* customParms)
+static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, ElemDisplayParams* customParms)
     {
     DgnCategoryId cat = DgnSubCategory::QueryCategoryId(subcat, db);
 
-    GeometricElementPtr gelem;
+    DgnElementPtr gelem;
     if (is3d)
         gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
     else
         gelem = DrawingElement::Create(DrawingElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(subcat);
     if (nullptr != customParms)
         builder->Append(*customParms);
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem))
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))
         return nullptr;
 
     return db.Elements().Insert(*gelem);
@@ -307,9 +307,9 @@ static GeometricElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static void getFirstElemDisplayParams(ElemDisplayParams& ret, GeometricElementCR gel)
+static void getFirstElemDisplayParams(ElemDisplayParams& ret, DgnElementCR gel)
     {
-    ElementGeometryCollection gcollection(gel);
+    ElementGeometryCollection gcollection(*gel.ToGeometrySource());
     gcollection.begin(); // has the side-effect of setting up the current element display params on the collection
     ret = gcollection.GetElemDisplayParams();
     }
@@ -356,9 +356,9 @@ struct NullContext : ViewContext
 {
 void _AllocateScanCriteria () override{;}
 QvElem* _DrawCached (IStrokeForCache&){return nullptr;}
-void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
+void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip) override {}
 void _DeleteSymbol (IDisplaySymbol*) override {}
-bool _FilterRangeIntersection (GeometricElementCR element) override {return false;}
+bool _FilterRangeIntersection (GeometrySourceCR element) override {return false;}
 void _CookDisplayParams (ElemDisplayParamsR, ElemMatSymbR) override {}
 void _SetupOutputs () override {SetIViewDraw (*m_IViewDraw);}
 NullContext (DgnDbR db) {m_dgnDb=&db; m_IViewDraw = nullptr; m_IDrawGeom = nullptr; m_ignoreViewRange = true; }
@@ -406,9 +406,9 @@ static bool areDisplayParamsEqual(ElemDisplayParamsCR lhsUnresolved, DgnDbR ldb,
 // Check that imported element is equivalent to source element
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static void checkImportedElement(DgnElementCPtr destElem, GeometricElementCR sourceElem)
+static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceElem)
     {
-    GeometricElementCP gdestElem = destElem->ToGeometricElement();
+    GeometrySourceCP gdestElem = destElem->ToGeometrySource();
     ASSERT_TRUE(nullptr != gdestElem);
     DgnDbR destDb = destElem->GetDgnDb();
 
@@ -417,9 +417,9 @@ static void checkImportedElement(DgnElementCPtr destElem, GeometricElementCR sou
     DgnCategoryCPtr destCat = DgnCategory::QueryCategory(gdestElem->GetCategoryId(), destDb);
     ASSERT_TRUE(destCat.IsValid() );
     
-    ASSERT_NE(destCat->GetCategoryId() , sourceElem.GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
+    ASSERT_NE(destCat->GetCategoryId(), sourceElem.ToGeometrySource()->GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
 
-    DgnCategoryCPtr sourceCat = DgnCategory::QueryCategory(sourceElem.GetCategoryId(), sourceDb);
+    DgnCategoryCPtr sourceCat = DgnCategory::QueryCategory(sourceElem.ToGeometrySource()->GetCategoryId(), sourceDb);
 
     ASSERT_EQ( sourceCat->GetCode(), destCat->GetCode() );
 
@@ -427,7 +427,7 @@ static void checkImportedElement(DgnElementCPtr destElem, GeometricElementCR sou
     getFirstElemDisplayParams(sourceDisplayParams, sourceElem);
 
     ElemDisplayParams destDisplayParams;
-    getFirstElemDisplayParams(destDisplayParams, *gdestElem);
+    getFirstElemDisplayParams(destDisplayParams, *destElem);
     
     DgnSubCategoryId destSubCategoryId = destDisplayParams.GetSubCategoryId();
     ASSERT_TRUE( destSubCategoryId.IsValid() );
@@ -476,18 +476,18 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     ASSERT_TRUE( sourcemod.IsValid() );
 
     // Put elements in this category into the source model
-    GeometricElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, nullptr);   // 1 is based on default subcat
-    GeometricElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
+    DgnElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, nullptr);   // 1 is based on default subcat
+    DgnElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
     ElemDisplayParams customParams;
     customParams.SetCategoryId(sourceCategoryId);
     customParams.SetMaterial(createTexturedMaterial(*sourceDb, "Texture3", L"", RenderMaterialMap::Units::Relative));
-    GeometricElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
+    DgnElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
     sourceDb->SaveChanges();
 
     ElemDisplayParams sourceDisplayParams;
     getFirstElemDisplayParams(sourceDisplayParams, *sourceElem);
 
-    ASSERT_EQ( sourceCategoryId , sourceElem->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above
+    ASSERT_EQ( sourceCategoryId , sourceElem->ToGeometrySource3d()->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above
     ASSERT_EQ( sourceSubCategory1Id , sourceDisplayParams.GetSubCategoryId() ); // check that the source element's geometry really was assigned to the SubCategory that I specified above
 //*** Have to "cook" first    ASSERT_TRUE( sourceDisplayParams.GetLineColor() == sourceAppearanceRequested.GetColor() ); // check that the source element's geometry has the requested appearance
 //*** Have to "cook" first    ASSERT_TRUE( sourceDisplayParams.GetMaterial() == sourceAppearanceRequested.GetMaterial() ); // check that the source element's geometry has the requested appearance

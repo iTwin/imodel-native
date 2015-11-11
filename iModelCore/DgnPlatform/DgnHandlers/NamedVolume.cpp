@@ -378,7 +378,7 @@ DgnDbR dgnDb
         if (!element.IsValid())
             continue;
         
-        GeometricElementCP geomElement = element->ToGeometricElement();
+        GeometrySourceCP geomElement = element->ToGeometrySource();
 
         if (nullptr == geomElement || !fence.AcceptElement (*geomElement))
             continue;
@@ -493,7 +493,7 @@ DgnElementR element,
 bool allowPartialOverlaps /*=true*/
 ) const
     {
-    GeometricElementCP geomElement = element.ToGeometricElement();
+    GeometrySourceCP geomElement = element.ToGeometrySource();
 
     if (nullptr == geomElement)
         return false;
