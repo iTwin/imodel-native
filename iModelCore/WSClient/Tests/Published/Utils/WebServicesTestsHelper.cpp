@@ -258,7 +258,7 @@ ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
     ECSchemaPtr schema;
     auto status = ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context);
 
-    EXPECT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, status);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_TRUE(schema.IsValid());
 
     return schema;

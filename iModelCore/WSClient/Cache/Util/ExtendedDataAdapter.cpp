@@ -152,7 +152,7 @@ BentleyStatus ExtendedDataAdapter::ImportSchema()
     auto context = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
-    if (SchemaReadStatus::SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlString(schema, SCHEMA_ExtendedData_XML, *context))
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, SCHEMA_ExtendedData_XML, *context))
         {
         return ERROR;
         }

@@ -51,12 +51,8 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
 
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (ecClass->GetIsCustomAttributeClass() ||
-            ecClass->GetIsStruct() ||
-            ecClass->GetRelationshipClassCP() != nullptr)
-            {
+        if (!ecClass->IsEntityClass())
             continue;
-            }
 
         int instanceCount = m_dbAdapter.CountClassInstances(ecClass);
 
@@ -68,12 +64,8 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
 
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (ecClass->GetIsCustomAttributeClass() ||
-            ecClass->GetIsStruct() ||
-            ecClass->GetRelationshipClassCP() == nullptr)
-            {
+        if (!ecClass->IsRelationshipClass())
             continue;
-            }
 
         int instanceCount = m_dbAdapter.CountClassInstances(ecClass);
 

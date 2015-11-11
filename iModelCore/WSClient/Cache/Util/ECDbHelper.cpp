@@ -34,7 +34,7 @@ ECSchemaPtr ECDbHelper::LocateSchema(SchemaKeyCR schemaKey, BeFileNameCR schemaD
 ECSchemaPtr ECDbHelper::CopySchema(ECSchemaCR schema, IECSchemaLocater* optionalLocator)
     {
     WString xmlBuffer;
-    if (SCHEMA_WRITE_STATUS_Success != schema.WriteToXmlString(xmlBuffer))
+    if (SchemaWriteStatus::Success != schema.WriteToXmlString(xmlBuffer))
         {
         return nullptr;
         }
@@ -47,7 +47,7 @@ ECSchemaPtr ECDbHelper::CopySchema(ECSchemaCR schema, IECSchemaLocater* optional
         }
 
     ECSchemaPtr schemaCopy;
-    if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlString(schemaCopy, xmlBuffer.c_str(), *copyContext))
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaCopy, xmlBuffer.c_str(), *copyContext))
         {
         return nullptr;
         }
@@ -186,11 +186,7 @@ Utf8String ECDbHelper::UtcDateToString(DateTimeCR utcDate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbHelper::IsObjectClass(ECClassCR ecClass)
     {
-    return
-        !ecClass.GetIsCustomAttributeClass() &&
-        !ecClass.GetIsStruct() &&
-        ecClass.GetIsDomainClass() &&
-        nullptr == ecClass.GetRelationshipClassCP();
+    return (ecClass.IsEntityClass()); // WIP_EC3 - verify this is the correct check
     }
 
 /*--------------------------------------------------------------------------------------+
