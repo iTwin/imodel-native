@@ -123,11 +123,11 @@ TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     auto testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
     ECValue v (1);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("I", v));
+    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("I", v));
 
     v.Clear ();
     v.SetUtf8CP ("ECInstanceInserter");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("S", v));
+    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("S", v));
 
 
     ECInstanceId testId;
@@ -150,7 +150,7 @@ TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     BeThreadUtilities::BeSleep (1000); //so that new last mod differs significantly from old last mod
     v.Clear ();
     v.SetInteger (2);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("I", v));
+    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("I", v));
 
     ECInstanceUpdater updater (ecdb, *testClass);
     ASSERT_TRUE (updater.IsValid ());

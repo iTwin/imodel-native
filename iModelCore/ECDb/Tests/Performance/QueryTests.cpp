@@ -23,7 +23,7 @@ struct PopulateKitchenSinkDb : public ::testing::Test
         ASSERT_TRUE (schemaPtr != NULL);
 
         ECSchemaCachePtr schemacache = ECSchemaCache::Create ();
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, schemacache->AddSchema (*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName ().c_str ();
+        ASSERT_EQ (ECObjectsStatus::Success, schemacache->AddSchema (*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName ().c_str ();
         ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemacache, ECDbSchemaManager::ImportOptions ())) << "Couldn't import test ecschema.";
         ecdb.SaveChanges ();
 

@@ -5366,7 +5366,7 @@ size_t ReferentialIntegrityTestFixture::GetRelationshipInstanceCount(ECDbCR ecdb
 void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const
     {
     ECSchemaPtr testSchema;
-    ECClassP foo = nullptr, goo = nullptr;
+    ECEntityClassP foo = nullptr, goo = nullptr;
     ECRelationshipClassP oneFooHasOneGoo = nullptr, oneFooHasManyGoo = nullptr, manyFooHasManyGoo = nullptr;
     PrimitiveECPropertyP prim;
     auto readContext = ECSchemaReadContext::CreateContext();
@@ -5381,8 +5381,8 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     testSchema->SetNamespacePrefix("ts");
     testSchema->AddReferencedSchema(*ecdbmapSchema);
 
-    testSchema->CreateClass(foo, "Foo");
-    testSchema->CreateClass(goo, "Goo");
+    testSchema->CreateEntityClass(foo, "Foo");
+    testSchema->CreateEntityClass(goo, "Goo");
 
     testSchema->CreateRelationshipClass(oneFooHasOneGoo, "OneFooHasOneGoo");
     testSchema->CreateRelationshipClass(oneFooHasManyGoo, "OneFooHasManyGoo");
@@ -5426,8 +5426,8 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_TRUE(caInstClass != nullptr);
         auto caInst = caInstClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);
-        ASSERT_TRUE(caInst->SetValue("AllowDuplicateRelationships", ECValue(true)) == ECOBJECTS_STATUS_Success);
-        ASSERT_TRUE(manyFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
+        ASSERT_TRUE(caInst->SetValue("AllowDuplicateRelationships", ECValue(true)) == ECObjectsStatus::Success);
+        ASSERT_TRUE(manyFooHasManyGoo->SetCustomAttribute(*caInst) == ECObjectsStatus::Success);
         }
     
     if (allowForeignKeyConstraint)
@@ -5436,8 +5436,8 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_TRUE(fkMapClass != nullptr);
         auto caInst = fkMapClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);
-        ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
-        ASSERT_TRUE(oneFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
+        ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECObjectsStatus::Success);
+        ASSERT_TRUE(oneFooHasManyGoo->SetCustomAttribute(*caInst) == ECObjectsStatus::Success);
         }
     
     if (schemaImportExpectedToSucceed)

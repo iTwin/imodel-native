@@ -309,7 +309,9 @@ struct ECDbSchemaPersistence
     {
     private:
         static int ToInt(ECN::ECRelatedInstanceDirection direction);
+        static int ToInt(ECN::StrengthType strengthType);
         static ECN::ECRelatedInstanceDirection ToECRelatedInstanceDirection(int relatedInstanceDirection);
+        static ECN::StrengthType ToStrengthType(int strengthType);
 
 
     public:

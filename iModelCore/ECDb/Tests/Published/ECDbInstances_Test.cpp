@@ -125,7 +125,7 @@ TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     // Setup Schema
     auto context = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr schema;
-    ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
+    ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
     ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (context->GetCache ()));
 
     ECClassCP rootClass = db.GetClassLocater ().LocateClass ("DSCacheSchema", "Root");
@@ -278,7 +278,7 @@ void PopulatePrimitiveValueWithCustomDataSet (ECValueR value, PrimitiveType prim
             {
             DateTime dt;
             DateTimeInfo dti;
-            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecProperty) == ECOBJECTS_STATUS_Success)
+            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecProperty) == ECObjectsStatus::Success)
                 {
                 DateTime::Info info = dti.GetInfo (true);
                 if (info.GetKind () == DateTime::Kind::Local)
@@ -508,28 +508,26 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     schema->SetDescription("Schema for testing nested struct arrays");
     schema->SetDisplayLabel("Display Label");
 
-    ECClassP struct1;
-    schema->CreateClass(struct1, "Struct1");
+    ECStructClassP struct1;
+    schema->CreateStructClass(struct1, "Struct1");
     PrimitiveECPropertyP boolProp1;
     struct1->CreatePrimitiveProperty(boolProp1, "Struct1BoolMember", PRIMITIVETYPE_Boolean);
     PrimitiveECPropertyP intProp1;
     struct1->CreatePrimitiveProperty(intProp1, "Struct1IntMember", PRIMITIVETYPE_Integer);
-    struct1->SetIsStruct(true);
 
-    ECClassP struct2;
-    schema->CreateClass(struct2, "Struct2");
+    ECStructClassP struct2;
+    schema->CreateStructClass(struct2, "Struct2");
     PrimitiveECPropertyP stringProp2;
     struct2->CreatePrimitiveProperty(stringProp2, "Struct2StringMember", PRIMITIVETYPE_String);
     PrimitiveECPropertyP doubleProp2;
     struct2->CreatePrimitiveProperty(doubleProp2, "Struct2DoubleMember", PRIMITIVETYPE_Double);
-    ArrayECPropertyP structArrayProperty2;
-    struct2->CreateArrayProperty(structArrayProperty2, "NestedArray", struct1);
-    struct2->SetIsStruct(true);
+    StructArrayECPropertyP structArrayProperty2;
+    struct2->CreateStructArrayProperty(structArrayProperty2, "NestedArray", struct1);
 
-    ECClassP testClass;
-    schema->CreateClass(testClass, "TestClass");
-    ArrayECPropertyP nestedArrayProperty;
-    testClass->CreateArrayProperty(nestedArrayProperty, "StructArray", struct2);
+    ECEntityClassP testClass;
+    schema->CreateEntityClass(testClass, "TestClass");
+    StructArrayECPropertyP nestedArrayProperty;
+    testClass->CreateStructArrayProperty(nestedArrayProperty, "StructArray", struct2);
 
     auto schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema(*schema);
@@ -659,7 +657,7 @@ TEST_F(ECDbInstances, UpdateArrayProperty)
     IECInstancePtr selectedInstance = dataAdapter.GetInstance();
     ASSERT_TRUE (selectedInstance.IsValid());
 
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == selectedInstance->GetValue (v, "SmallIntArray"));
+    ASSERT_TRUE (ECObjectsStatus::Success == selectedInstance->GetValue (v, "SmallIntArray"));
     ASSERT_TRUE(v.IsArray());
     ArrayInfo info = v.GetArrayInfo();
     ASSERT_EQ(3, info.GetCount());
@@ -685,7 +683,7 @@ TEST_F(ECDbInstances, UpdateArrayProperty)
     IECInstancePtr updatedInstance = dataAdapter2.GetInstance();
     ASSERT_TRUE (updatedInstance.IsValid());
 
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == updatedInstance->GetValue (v, "SmallIntArray"));
+    ASSERT_TRUE (ECObjectsStatus::Success == updatedInstance->GetValue (v, "SmallIntArray"));
     ASSERT_TRUE(v.IsArray());
     ArrayInfo info2 = v.GetArrayInfo();
     ASSERT_EQ(2, info2.GetCount()); 
@@ -863,7 +861,7 @@ TEST_F(ECDbInstances, FindECInstances)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "intProp"));
+                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "intProp"));
                 ASSERT_TRUE (v.GetInteger() > 0);
                 rows++;
                 }
@@ -882,7 +880,7 @@ TEST_F(ECDbInstances, FindECInstances)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "l"));
+                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "l"));
                 ASSERT_TRUE (v.GetLong() == 123456789L);
                 rows++;
                 }
@@ -901,7 +899,7 @@ TEST_F(ECDbInstances, FindECInstances)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "doubleAAFoo"));
+                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "doubleAAFoo"));
                 ASSERT_TRUE (v.GetDouble() >= 0 && v.GetDouble() <= 100);
                 rows++;
                 }
@@ -968,7 +966,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
         {
         resultInstance = dataAdapter.GetInstance(ecClass->GetId());
         ASSERT_TRUE (resultInstance.IsValid());
-        ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "stringBar"));
+        ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "stringBar"));
         ASSERT_FALSE (v.IsNull ());
         rows++;
         }
@@ -1057,23 +1055,12 @@ TEST_F (ECDbInstances, DeleteWithRelationshipBetweenStructs)
     structSchema->SetDescription("Schema with struct classes and a relationship between them");
     structSchema->SetDisplayLabel("Struct Schema");
 
-    ECClassP struct1;
-    structSchema->CreateClass (struct1, "Struct1");
-    ECClassP struct2;
-    structSchema->CreateClass (struct2, "Struct2");
+    ECStructClassP struct1;
+    structSchema->CreateStructClass (struct1, "Struct1");
+    ECStructClassP struct2;
+    structSchema->CreateStructClass (struct2, "Struct2");
     ECRelationshipClassP relationshipClass;
     structSchema->CreateRelationshipClass (relationshipClass, "StructToStruct");
-
-    struct1->SetIsStruct(true);
-    struct1->SetIsDomainClass(true);
-    struct2->SetIsStruct(true);
-    struct2->SetIsDomainClass(true);
-    
-    ASSERT_TRUE(struct1->GetIsStruct());
-    ASSERT_TRUE(struct1->GetIsDomainClass());
-
-    ASSERT_TRUE(struct2->GetIsStruct());
-    ASSERT_TRUE(struct2->GetIsDomainClass());
 
     PrimitiveECPropertyP stringProp1;
     struct1->CreatePrimitiveProperty (stringProp1, "StringMember1");

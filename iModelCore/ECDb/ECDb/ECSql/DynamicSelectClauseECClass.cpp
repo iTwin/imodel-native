@@ -90,10 +90,10 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize ()
     if (m_schema != nullptr)
         return ECSqlStatus::Success;
 
-    if (ECOBJECTS_STATUS_Success != ECSchema::CreateSchema (m_schema, SCHEMANAME, 1, 0))
+    if (ECObjectsStatus::Success != ECSchema::CreateSchema (m_schema, SCHEMANAME, 1, 0))
         return ECSqlStatus::Error;
 
-    if (ECOBJECTS_STATUS_Success == m_schema->CreateClass(m_class, CLASSNAME))
+    if (ECObjectsStatus::Success == m_schema->CreateEntityClass(m_class, CLASSNAME)) // WIP_EC3 - confirm this really is an entity class
         return ECSqlStatus::Success;
     else
         return ECSqlStatus::Error;
@@ -109,7 +109,7 @@ BentleyStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(Prope
         return ERROR;
     
     ECValue v;
-    if (defMetaDataInst->GetValue(v, "DefinitionBackReference") != ECOBJECTS_STATUS_Success)
+    if (defMetaDataInst->GetValue(v, "DefinitionBackReference") != ECObjectsStatus::Success)
         return ERROR;
 
     return PropertyPath::TryParseQualifiedPath(propertyPath, v.GetUtf8CP(), ecdb);
@@ -161,14 +161,14 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
         return ECSqlStatus::Error;
 
 
-    if (defMetaDataInst->SetValue("DefinitionBackReference",  ECValue(qualifiedPropertyPath.c_str(), false)) != ECOBJECTS_STATUS_Success)
+    if (defMetaDataInst->SetValue("DefinitionBackReference",  ECValue(qualifiedPropertyPath.c_str(), false)) != ECObjectsStatus::Success)
         return ECSqlStatus::Error;
 
     ECSqlStatus status = AddReferenceToStructSchema (*bsca);
     if (!status.IsSuccess())
         return status;
 
-    if (generatedProperty.SetCustomAttribute(*defMetaDataInst) != ECOBJECTS_STATUS_Success)
+    if (generatedProperty.SetCustomAttribute(*defMetaDataInst) != ECObjectsStatus::Success)
         return ECSqlStatus::Error;
 
     return ECSqlStatus::Success;
@@ -266,7 +266,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             {
             PrimitiveECPropertyP primProp = nullptr;
             auto ecstat = GetClassR ().CreatePrimitiveProperty (primProp, propName, typeInfo.GetPrimitiveType ());
-            if (ecstat != ECOBJECTS_STATUS_Success)
+            if (ecstat != ECObjectsStatus::Success)
                 return ECSqlStatus::Error;
 
             generatedProperty = primProp;
@@ -280,9 +280,13 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             if (!stat.IsSuccess())
                 return stat;
 
+            ECStructClassCP asStruct = structType.GetStructClassCP();
+            if (nullptr == asStruct)
+                return ECSqlStatus::Error;
+
             StructECPropertyP structProp = nullptr;
-            auto ecstat = GetClassR ().CreateStructProperty (structProp, propName, structType);
-            if (ecstat != ECOBJECTS_STATUS_Success)
+            auto ecstat = GetClassR ().CreateStructProperty (structProp, propName, *asStruct);
+            if (ecstat != ECObjectsStatus::Success)
                 return ECSqlStatus::Error;
 
             generatedProperty = structProp;
@@ -293,7 +297,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             {
             ArrayECPropertyP arrayProp = nullptr;
             auto ecstat = GetClassR ().CreateArrayProperty (arrayProp, propName, typeInfo.GetPrimitiveType ());
-            if (ecstat != ECOBJECTS_STATUS_Success)
+            if (ecstat != ECObjectsStatus::Success)
                 return ECSqlStatus::Error;
 
             generatedProperty = arrayProp;
@@ -306,12 +310,16 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             if (!stat.IsSuccess())
                 return stat;
 
-            ArrayECPropertyP arrayProp = nullptr;
-            auto ecstat = GetClassR ().CreateArrayProperty (arrayProp, propName, &structType);
-            if (ecstat != ECOBJECTS_STATUS_Success)
+            ECStructClassCP asStruct = structType.GetStructClassCP();
+            if (nullptr == asStruct)
                 return ECSqlStatus::Error;
 
-            generatedProperty = arrayProp;
+            StructArrayECPropertyP structArrayProp = nullptr;
+            auto ecstat = GetClassR ().CreateStructArrayProperty (structArrayProp, propName, asStruct);
+            if (ecstat != ECObjectsStatus::Success)
+                return ECSqlStatus::Error;
+
+            generatedProperty = structArrayProp;
             break;
             }
         default:
@@ -331,7 +339,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddReferenceToStructSchema (ECSchemaCR s
         return ECSqlStatus::Success;
 
     auto stat = GetSchemaR ().AddReferencedSchema (const_cast<ECSchemaR> (structSchema));
-    return stat == ECOBJECTS_STATUS_Success ? ECSqlStatus::Success : ECSqlStatus::Error;
+    return stat == ECObjectsStatus::Success ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

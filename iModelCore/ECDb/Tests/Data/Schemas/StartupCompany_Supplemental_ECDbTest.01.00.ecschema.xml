@@ -125,12 +125,14 @@
         </ECProperty>
         <ECProperty propertyName="TeamSize" typeName="int" displayLabel="Team Size">
             <ECCustomAttributes>
+            <!--
                 <UnitSpecification xmlns="Unit_Attributes.01.00">
                     <KindOfQuantityName>NEUTRON_SOURCE_DENSITY</KindOfQuantityName>
                     <DimensionName>ONE_PER_L3_T</DimensionName>
                     <UnitName />
                     <AllowableUnits />
                 </UnitSpecification>
+                -->
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>

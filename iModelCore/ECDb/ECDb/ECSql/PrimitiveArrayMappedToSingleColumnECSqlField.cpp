@@ -24,7 +24,7 @@ PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumn
     //for empty arrays we cache some information so that we don't have to compute it for each step
     m_emptyArrayValueECInstance = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue arrayMetaInfo;
-    if (m_emptyArrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    if (m_emptyArrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::Success)
         {
         ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
         BeAssert(false && "Could not retrieve array information from array ECInstance.");
@@ -38,7 +38,7 @@ PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumn
         auto property = m_ecsqlColumnInfo.GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECObjectsStatus::Success)
             {
             ReportError(ECSqlStatus::Error, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
             BeAssert(false && "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
@@ -81,7 +81,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
 
         //Get array information 
         ECValue arrayMetaInfo;
-        if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+        if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::Success)
             {
             BeAssert(false && "Could not retrieve array information from array ECInstance.");
             return ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
@@ -221,7 +221,7 @@ DateTime::Info const& dateTimeMetadata
 )
     {
     auto status = instance.GetValue (m_value, 1, arrayIndex);
-    if (status != ECOBJECTS_STATUS_Success)
+    if (status != ECObjectsStatus::Success)
         {
         BeAssert (false && "PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::SetValue> Failed to read array value from ECInstance.");
         return ERROR;

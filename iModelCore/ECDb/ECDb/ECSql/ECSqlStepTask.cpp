@@ -193,7 +193,7 @@ DbResult InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
     if (structArrayParameterValue->IsNull())
         return BE_SQLITE_OK;
     
-    ECClassCP structType = GetPropertyMapR ().GetProperty().GetAsArrayProperty()->GetStructElementType();
+    ECClassCP structType = GetPropertyMapR ().GetProperty().GetAsStructArrayProperty()->GetStructElementType();
     ECDb const& ecdb = preparedStmt->GetECDb();
     IClassMap const* structClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*structType);
     PropertyMapCollection const& structMemberPropMaps = structClassMap->GetPropertyMaps();

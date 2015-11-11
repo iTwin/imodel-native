@@ -220,7 +220,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 
             SupplementedSchemaBuilder builder;
             SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchema, suppSchemas, false /*dont create ca copy while supplementing*/);
-            if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
+            if (SupplementedSchemaStatus::Success != status)
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
                 return ERROR;

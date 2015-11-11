@@ -25,7 +25,7 @@ private:
     static Utf8CP const CLASSNAME;
 
     ECN::ECSchemaPtr m_schema;
-    ECN::ECClassP m_class;
+    ECN::ECEntityClassP m_class;
     bmap<Utf8String, DerivedPropertyExp const*> m_selectClauseNames;
 
     ECSqlStatus Initialize ();

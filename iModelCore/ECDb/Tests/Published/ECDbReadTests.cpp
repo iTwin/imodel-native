@@ -55,9 +55,9 @@ TEST_F(ReadTests, ReadECInstances)
         if (!ECDbTestUtility::CompareECInstances(*importedInstance, *readInstance))
             {
             InstanceWriteStatus s = importedInstance->WriteToXmlFile(L"C:\\testInstance1.xml", true, true);
-            EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, s);
+            EXPECT_EQ(InstanceWriteStatus::Success, s);
             s = readInstance->WriteToXmlFile(L"C:\\testInstance2.xml", true, true);
-            EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, s);
+            EXPECT_EQ(InstanceWriteStatus::Success, s);
             }
         }
     }
@@ -117,7 +117,7 @@ bool SetStringValue (IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP stri
     ECValue ecValue;
     if (SUCCESS != ecValue.SetUtf8CP (stringValue, true))
         return false;
-    if (ECOBJECTS_STATUS_Success != instance.SetValue (propertyAccessor, ecValue))
+    if (ECObjectsStatus::Success != instance.SetValue (propertyAccessor, ecValue))
         return false;
     return true;
     }
@@ -130,7 +130,7 @@ bool SetIntValue (IECInstanceR instance, Utf8CP propertyAccessor, int intValue)
     ECValue ecValue;
     if (SUCCESS != ecValue.SetInteger (intValue))
         return false;
-    if (ECOBJECTS_STATUS_Success != instance.SetValue (propertyAccessor, ecValue))
+    if (ECObjectsStatus::Success != instance.SetValue (propertyAccessor, ecValue))
         return false;
     return true;
     }
@@ -301,7 +301,7 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schemaReadContext, *schema, &schema);
     IECInstancePtr instance;
     InstanceReadStatus status= IECInstance::ReadFromXmlString(instance, instanceXml.c_str(), *instanceContext);
-    ASSERT_TRUE(InstanceReadStatus::INSTANCE_READ_STATUS_Success==status);
+    ASSERT_TRUE(InstanceReadStatus::Success==status);
 
     Savepoint s(db, "Populate");
     auto &ecClass = instance->GetClass();

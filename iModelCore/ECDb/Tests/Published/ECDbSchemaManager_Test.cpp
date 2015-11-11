@@ -179,14 +179,14 @@ ECSchemaPtr CreateTestSchema ()
     {
     ECSchemaPtr testSchema = nullptr;
     auto stat = ECSchema::CreateSchema (testSchema, TEST_SCHEMA_NAME, 1, 0);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     testSchema->SetNamespacePrefix ("test");
     if (testSchema == nullptr)
         return nullptr;
 
-    ECClassP baseClass = nullptr;
-    stat = testSchema->CreateClass (baseClass, "Base");
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    ECEntityClassP baseClass = nullptr;
+    stat = testSchema->CreateEntityClass (baseClass, "Base");
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     if (baseClass == nullptr)
         return nullptr;
 
@@ -194,45 +194,45 @@ ECSchemaPtr CreateTestSchema ()
     baseClass->CreatePrimitiveProperty (prop, "bprop", PrimitiveType::PRIMITIVETYPE_Double);
 
 
-    ECClassP sub1Class = nullptr;
-    stat = testSchema->CreateClass (sub1Class, "Sub1");
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    ECEntityClassP sub1Class = nullptr;
+    stat = testSchema->CreateEntityClass(sub1Class, "Sub1");
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     if (sub1Class == nullptr)
         return nullptr;
 
     sub1Class->CreatePrimitiveProperty (prop, "s1prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub1Class->AddBaseClass (*baseClass);
 
-    ECClassP sub1Sub1Class = nullptr;
-    stat = testSchema->CreateClass (sub1Sub1Class, "Sub1Sub1");
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    ECEntityClassP sub1Sub1Class = nullptr;
+    stat = testSchema->CreateEntityClass(sub1Sub1Class, "Sub1Sub1");
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     if (sub1Sub1Class == nullptr)
         return nullptr;
 
     sub1Sub1Class->CreatePrimitiveProperty (prop, "s1s1prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub1Sub1Class->AddBaseClass (*sub1Class);
 
-    ECClassP sub1Sub2Class = nullptr;
-    stat = testSchema->CreateClass (sub1Sub2Class, "Sub1Sub2");
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    ECEntityClassP sub1Sub2Class = nullptr;
+    stat = testSchema->CreateEntityClass(sub1Sub2Class, "Sub1Sub2");
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     if (sub1Sub2Class == nullptr)
         return nullptr;
 
     sub1Sub2Class->CreatePrimitiveProperty (prop, "s1s2prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub1Sub2Class->AddBaseClass (*sub1Class);
 
-    ECClassP sub2Class = nullptr;
-    stat = testSchema->CreateClass (sub2Class, "Sub2");
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    ECEntityClassP sub2Class = nullptr;
+    stat = testSchema->CreateEntityClass(sub2Class, "Sub2");
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     if (sub2Class == nullptr)
         return nullptr;
 
     sub2Class->CreatePrimitiveProperty (prop, "s2prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub2Class->AddBaseClass (*baseClass);
 
-    ECClassP sub2Sub1Class = nullptr;
-    stat = testSchema->CreateClass (sub2Sub1Class, "Sub2Sub1");
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    ECEntityClassP sub2Sub1Class = nullptr;
+    stat = testSchema->CreateEntityClass(sub2Sub1Class, "Sub2Sub1");
+    EXPECT_EQ (ECObjectsStatus::Success, stat);
     if (sub2Sub1Class == nullptr)
         return nullptr;
 
@@ -272,8 +272,8 @@ TEST(ECDbSchemaManager, AddDuplicateECSchemaInCache)
     ASSERT_TRUE(schemaPtr1 != NULL);
 
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, schemacache->AddSchema(*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName().c_str();
-    ASSERT_EQ(ECOBJECTS_STATUS_DuplicateSchema, schemacache->AddSchema(*schemaPtr1));
+    ASSERT_EQ(ECObjectsStatus::Success, schemacache->AddSchema(*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName().c_str();
+    ASSERT_EQ(ECObjectsStatus::DuplicateSchema, schemacache->AddSchema(*schemaPtr1));
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions())) << "could not import test ecschema.";
     ecdb.SaveChanges();
 
@@ -369,9 +369,9 @@ TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
     ASSERT_TRUE(schemaPtr1 != NULL) << "couldn't read the schema: value = null";
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-    ASSERT_EQ(SUCCESS, schemaCache->AddSchema(*schemaPtr));
+    ASSERT_EQ(ECObjectsStatus::Success, schemaCache->AddSchema(*schemaPtr));
     ECSchemaCachePtr schemaCache1 = ECSchemaCache::Create();
-    ASSERT_EQ(SUCCESS, schemaCache1->AddSchema(*schemaPtr1));
+    ASSERT_EQ(ECObjectsStatus::Success, schemaCache1->AddSchema(*schemaPtr1));
 
     ASSERT_EQ(SUCCESS, testEcdb.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions())) << "Couldn't import the first version of Schema";
     ECClassCP ecClass = testEcdb. Schemas ().GetECClass ("RSComponents", "TestClass");
@@ -444,7 +444,7 @@ TEST(ECDbSchemaManager, SchemaCache)
     EXPECT_TRUE(schemaPtr1 != NULL);
     ASSERT_TRUE(schemaPtr1.IsValid());
 
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, schemaCache->DropSchema(key));
+    ASSERT_EQ(ECObjectsStatus::Success, schemaCache->DropSchema(key));
     EXPECT_EQ(4, schemaCache->GetCount()) << "Number of schema doesn't matches the number of schema read form the disk";
     schemaCache->Clear();
     EXPECT_EQ(0, schemaCache->GetCount()) << "Couldn't clear the cache";
@@ -884,7 +884,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ECSchemaReadContextPtr context1 = ECSchemaReadContext::CreateContext();
         context1->AddSchemaLocater(ecdb.GetSchemaLocater());
         ECSchemaPtr schema1 = nullptr;
-        ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema1, baseSchemaXml, *context1));
+        ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema1, baseSchemaXml, *context1));
         ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context1->GetCache()));
 
         if (clearCacheAfterFirstImport)
@@ -902,7 +902,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
         context2->AddSchemaLocater(ecdb.GetSchemaLocater());
         ECSchemaPtr schema2 = nullptr;
-        ASSERT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema2, secondSchemaXml, *context2));
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, secondSchemaXml, *context2));
         ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context2->GetCache()));
 
         ECInstanceKey newKey;

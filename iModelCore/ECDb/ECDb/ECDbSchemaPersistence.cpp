@@ -157,7 +157,7 @@ BentleyStatus ECDbSchemaPersistence::InsertECClass(ECDbCR db, DbECClassInfo cons
     if (info.ColsInsert & DbECClassInfo::COL_IsDomainClass) stmt->BindInt(6, info.m_isDomainClass ? 1 : 0);
     if (info.ColsInsert & DbECClassInfo::COL_IsStruct) stmt->BindInt(7, info.m_isStruct ? 1 : 0);
     if (info.ColsInsert & DbECClassInfo::COL_IsCustomAttribute) stmt->BindInt(8, info.m_isCustomAttribute ? 1 : 0);
-    if (info.ColsInsert & DbECClassInfo::COL_RelationStrength) stmt->BindInt(9, info.m_relationStrength);
+    if (info.ColsInsert & DbECClassInfo::COL_RelationStrength) stmt->BindInt(9, ToInt(info.m_relationStrength));
     if (info.ColsInsert & DbECClassInfo::COL_RelationStrengthDirection) stmt->BindInt(10, ToInt(info.m_relationStrengthDirection));
     if (info.ColsInsert & DbECClassInfo::COL_IsRelationship) stmt->BindInt(11, info.m_isRelationship ? 1 : 0);
 
@@ -1020,6 +1020,40 @@ ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (
     return ECRelatedInstanceDirection::Forward;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+//static
+int ECDbSchemaPersistence::ToInt(ECN::StrengthType strengthType)
+    {
+    switch (strengthType)
+        {
+        case StrengthType::Embedding:
+            return 0;
+        case StrengthType::Holding:
+            return 1;
+        case StrengthType::Referencing:
+            return 2;
+        default:
+            BeAssert(false && "StrengthType has a new value.  ECDbSchemaPersistence::ToInt needs to adopt to it.");
+            return -1;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+StrengthType ECDbSchemaPersistence::ToStrengthType(int strengthType)
+    {
+    BeAssert((0 == strengthType || 1 == strengthType || 2 == strengthType) && "Integer cannot be converted to StrengthType");
+
+    if (2 == strengthType)
+        return StrengthType::Referencing;
+    if (1 == strengthType)
+        return StrengthType::Holding;
+    return StrengthType::Embedding;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1158,7 +1192,7 @@ IECInstanceR caInstance
                     //store instance id for the rare cases where the client specified one.
                     true);
 
-    if (serializerStat != INSTANCE_WRITE_STATUS_Success)
+    if (serializerStat != InstanceWriteStatus::Success)
         {
         LOG.errorv ("Serializing custom attribute instance to XML failed with error code: %d", serializerStat);
         BeAssert (false && "Serializing custom attribute instance to XML failed.");
@@ -1182,7 +1216,7 @@ ECSchemaCR schema
     IECInstancePtr deserializedCa = nullptr;
     InstanceReadStatus deserializeStat = IECInstance::ReadFromXmlString (deserializedCa, GetCaInstanceXml (), *readContext);
 
-    if (deserializeStat != INSTANCE_READ_STATUS_Success)
+    if (deserializeStat != InstanceReadStatus::Success)
         {
         LOG.errorv ("Deserializing custom attribute instance from XML failed with error code: %d", deserializeStat);
         BeAssert (false && "Deserializing custom attribute instance from XML failed.");

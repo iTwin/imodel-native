@@ -44,7 +44,7 @@ ECN::ECRelationshipEnd thisRelationshipEnd
 void ECInstanceFinder::QueryableRelationship::InitializeRelatedDirection()
     {
     StrengthType strengthType = m_relationshipClass->GetStrength();
-    if (strengthType == STRENGTHTYPE_Referencing)
+    if (strengthType == StrengthType::Referencing)
         {
         m_relatedDirection = RelatedDirection_Referencing;
         return;
@@ -54,13 +54,13 @@ void ECInstanceFinder::QueryableRelationship::InitializeRelatedDirection()
     bool parentsToChildren = (m_thisRelationshipEnd == ECRelationshipEnd_Source && strengthDirection == ECRelatedInstanceDirection::Forward) ||
         (m_thisRelationshipEnd == ECRelationshipEnd_Target && strengthDirection == ECRelatedInstanceDirection::Backward);
 
-    if (strengthType == STRENGTHTYPE_Embedding)
+    if (strengthType == StrengthType::Embedding)
         {
         m_relatedDirection = parentsToChildren ? RelatedDirection_EmbeddedChildren : RelatedDirection_EmbeddingParent;
         return;
         }
         
-    BeAssert (strengthType == STRENGTHTYPE_Holding);
+    BeAssert (strengthType == StrengthType::Holding);
     m_relatedDirection = parentsToChildren ? RelatedDirection_HeldChildren : RelatedDirection_HoldingParents;
     }
 

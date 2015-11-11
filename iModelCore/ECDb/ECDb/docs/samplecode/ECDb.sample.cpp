@@ -89,7 +89,7 @@ BentleyStatus ECDbImportSchemaFromECSchemaXml ()
     // are available in the cache of the schemaContext
     ECSchemaPtr schema = nullptr;
     SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlFile (schema, L"C:\\schema\\foo.ecschema.xml", *schemaContext);
-    if (SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (SchemaReadStatus::Success != deserializeStat)
         {
         // Schema could not be read into memory. Do error handling here
         return ERROR;

@@ -323,7 +323,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
     {
     ECSchemaPtr schema = nullptr;
     auto stat = ECSchema::CreateSchema (schema, "BISDesignTest", 1, 0);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
 
     ECClassId classId = 0ULL;
@@ -384,35 +384,33 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
 //static
 ECClassP PerformanceBisDesignTestFixture::AddTestBaseClass (ECSchemaR schema, ECClassId classId)
     {
-    ECClassP baseClass = nullptr;
-    auto stat = schema.CreateClass (baseClass, BASE_CLASS_NAME);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    ECEntityClassP baseClass = nullptr;
+    auto stat = schema.CreateEntityClass (baseClass, BASE_CLASS_NAME);
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
     //make it an abstract class
-    baseClass->SetIsCustomAttributeClass (false);
-    baseClass->SetIsStruct (false);
-    baseClass->SetIsDomainClass (false);
+    baseClass->SetClassModifier(ECClassModifier::Abstract);
     baseClass->SetId (classId);
 
     PrimitiveECPropertyP prop = nullptr;
     stat = baseClass->CreatePrimitiveProperty (prop, ECINSTANCEID_COLUMN_NAME, PRIMITIVETYPE_Integer);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
 
     stat = baseClass->CreatePrimitiveProperty (prop, CLASSID_COLUMN_NAME, PRIMITIVETYPE_Integer);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
 
     stat = baseClass->CreatePrimitiveProperty (prop, PARENTECINSTANCEID_COLUMN_NAME, PRIMITIVETYPE_Integer);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
 
     stat = baseClass->CreatePrimitiveProperty (prop, BUSINESSKEY_COLUMN_NAME, PRIMITIVETYPE_String);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
 
     stat = baseClass->CreatePrimitiveProperty (prop, GLOBALID_COLUMN_NAME, PRIMITIVETYPE_String);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
 
     return baseClass;
@@ -424,14 +422,11 @@ ECClassP PerformanceBisDesignTestFixture::AddTestBaseClass (ECSchemaR schema, EC
 //static 
 ECClassP PerformanceBisDesignTestFixture::AddTestClassStub (ECSchemaR schema, ECClassCR baseClass, Utf8CP name, ECClassId classId)
     {
-    ECClassP testClass = nullptr;
-    auto stat = schema.CreateClass (testClass, name);
-    if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+    ECEntityClassP testClass = nullptr;
+    auto stat = schema.CreateEntityClass (testClass, name);
+    if (stat != ECObjectsStatus::Success)
         return nullptr;
     //make it a domain class
-    testClass->SetIsDomainClass (true);
-    testClass->SetIsCustomAttributeClass (false);
-    testClass->SetIsStruct (false);
     testClass->SetId (classId);
 
     testClass->AddBaseClass (baseClass);
@@ -477,7 +472,7 @@ BentleyStatus PerformanceBisDesignTestFixture::AddTestClassProperty (ECClassR te
 
     PrimitiveECPropertyP prop = nullptr;
     const auto stat = testClass.CreatePrimitiveProperty (prop, propName, effectiveType);
-    return stat == ECObjectsStatus::ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
+    return stat == ECObjectsStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -623,7 +618,7 @@ void Performance_BisDesign_TablePerClassScenario_TestFixture::_GenerateSqlTestIt
     {
     for (ECClassCP testClass : testSchema.GetClasses ())
         {
-        if (!testClass->GetIsDomainClass ()) //No tests against the abstract base class
+        if (ECClassModifier::Abstract == testClass->GetClassModifier()) //No tests against the abstract base class
             continue;
 
         SqlTestItem& testItem = m_sqlTestItems[testClass];
@@ -675,7 +670,7 @@ void Performance_BisDesign_TablePerClassScenario_TestFixture::_GenerateDdlSql (U
     {
     for (auto testClass : testSchema.GetClasses ())
         {
-        if (!testClass->GetIsDomainClass ()) //is base class which which is not needed in this scenario
+        if (ECClassModifier::Abstract == testClass->GetClassModifier()) //is base class which which is not needed in this scenario
             continue;
 
         Utf8String tableName = GetTableName (*testClass);
@@ -898,7 +893,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_GenerateSqlTestItem
 
     for (auto testClass : testSchema.GetClasses ())
         {
-        if (!testClass->GetIsDomainClass ()) //base class was already handled above
+        if (ECClassModifier::Abstract == testClass->GetClassModifier()) //base class was already handled above
             continue;
 
         Utf8String className (testClass->GetName ());
@@ -959,7 +954,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_GenerateDdlSql (Utf
     for (auto testClass : testSchema.GetClasses ())
         {
         Utf8String tableName = GetTableName (*testClass);
-        const bool isBaseClass = !testClass->GetIsDomainClass ();
+        const bool isBaseClass = ECClassModifier::Abstract == testClass->GetClassModifier();
 
         //CREATE TABLE
         if (isBaseClass) //base class represents the master table, so only CREATE TABLE for base class
@@ -1147,7 +1142,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_Gene
     //process domain classes -> domain table insert and select that joins master and domain table
     for (auto testClass : testSchema.GetClasses ())
         {
-        if (!testClass->GetIsDomainClass ()) //base class was already handled above
+        if (ECClassModifier::Abstract == testClass->GetClassModifier()) //base class was already handled above
             continue;
 
         Utf8String domainTableName (testClass->GetName ());
@@ -1192,7 +1187,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_Gene
     for (auto testClass : testSchema.GetClasses ())
         {
         Utf8String tableName = GetTableName (*testClass);
-        const bool isBaseClass = !testClass->GetIsDomainClass ();
+        const bool isBaseClass = ECClassModifier::Abstract == testClass->GetClassModifier();
 
         //CREATE TABLE
         createTablesSql.append ("CREATE TABLE ").append (tableName).append (" (");

@@ -63,7 +63,7 @@ void PopulatePrimitiveValueWithCustomDataSet2 (ECValueR value, PrimitiveType pri
             {
             DateTime dt;
             DateTimeInfo dti;
-            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecProperty) == ECOBJECTS_STATUS_Success)
+            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecProperty) == ECObjectsStatus::Success)
                 {
                 DateTime::Info info = dti.GetInfo (true);
                 if (info.GetKind () == DateTime::Kind::Local)
@@ -118,7 +118,7 @@ ECSchemaReadContextPtr LocateECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile, EC
         {
         Utf8String schemaName;
         uint32_t schemaMajor, schemaMinor;
-        if (ECSchema::ParseSchemaFullName (schemaName, schemaMajor, schemaMinor, Utf8String(schemaFullName.substr (0, extPos).c_str())) == ECOBJECTS_STATUS_Success)
+        if (ECSchema::ParseSchemaFullName (schemaName, schemaMajor, schemaMinor, Utf8String(schemaFullName.substr (0, extPos).c_str())) == ECObjectsStatus::Success)
             {
             ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext ();
             contextPtr->AddSchemaLocater (ecDB. GetSchemaLocater ());
@@ -441,7 +441,7 @@ TEST(ECDbSchemas, UpdatingExistingECSchema)
     //db.Schemas().GetECSchema(storedSchema, "RSComponents", true);
     for(auto ecClass : modifiedECSchema->GetClasses())
         {
-        if (ecClass->GetRelationshipClassCP() || ecClass->GetIsStruct() || ecClass->GetIsCustomAttributeClass())
+        if (ecClass->IsRelationshipClass() || ecClass->IsStructClass() || ecClass->IsCustomAttributeClass())
             continue; 
 
         ECInstanceInserter inserter (db, *ecClass);
@@ -475,8 +475,8 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     schema12->SetDescription("Schema for testing upgrades");
     schema12->SetDisplayLabel("Test Schema");
 
-    ECClassP widget12;
-    schema12->CreateClass(widget12, "WIDGET");
+    ECEntityClassP widget12;
+    schema12->CreateEntityClass(widget12, "WIDGET");
     PrimitiveECPropertyP stringProp12;
     widget12->CreatePrimitiveProperty(stringProp12, "propA");
 
@@ -496,8 +496,8 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     schema11->SetDescription("Schema for testing upgrades");
     schema11->SetDisplayLabel("Test Schema");
 
-    ECClassP widget11;
-    schema11->CreateClass(widget11, "WIDGET");
+    ECEntityClassP widget11;
+    schema11->CreateEntityClass(widget11, "WIDGET");
     PrimitiveECPropertyP stringProp11;
     widget11->CreatePrimitiveProperty(stringProp11, "propA");
 
@@ -512,10 +512,10 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     schema13->SetDescription("Schema for testing upgrades");
     schema13->SetDisplayLabel("Test Schema");
 
-    ECClassP widget13;
-    ECClassP gadget13;
-    schema13->CreateClass(widget13, "WIDGET");
-    schema13->CreateClass(gadget13, "GADGET");
+    ECEntityClassP widget13;
+    ECEntityClassP gadget13;
+    schema13->CreateEntityClass(widget13, "WIDGET");
+    schema13->CreateEntityClass(gadget13, "GADGET");
     PrimitiveECPropertyP stringProp13;
     PrimitiveECPropertyP intProp13;
     widget13->CreatePrimitiveProperty(stringProp13, "propA");
@@ -1323,19 +1323,19 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema ()
     ECSchemaPtr testSchema = nullptr;
     ECSchema::CreateSchema (testSchema, "test", 1, 0);
     testSchema->SetNamespacePrefix ("t");
-    ECClassP fooClass = nullptr;
-    testSchema->CreateClass (fooClass, "Foo");
+    ECEntityClassP fooClass = nullptr;
+    testSchema->CreateEntityClass (fooClass, "Foo");
     PrimitiveECPropertyP prop = nullptr;
     fooClass->CreatePrimitiveProperty (prop, "Name", PRIMITIVETYPE_String);
 
-    ECClassP gooClass = nullptr;
-    testSchema->CreateClass (gooClass, "Goo");
+    ECEntityClassP gooClass = nullptr;
+    testSchema->CreateEntityClass (gooClass, "Goo");
     prop = nullptr;
     gooClass->CreatePrimitiveProperty (prop, "Price", PRIMITIVETYPE_Double);
 
     ECRelationshipClassP oneToManyRelClass = nullptr;
     testSchema->CreateRelationshipClass (oneToManyRelClass, "FooHasGoo");
-    oneToManyRelClass->SetStrength (STRENGTHTYPE_Holding);
+    oneToManyRelClass->SetStrength (StrengthType::Holding);
     oneToManyRelClass->GetSource ().AddClass (*fooClass);
     oneToManyRelClass->GetSource ().SetCardinality (RelationshipCardinality::OneOne ());
     oneToManyRelClass->GetTarget ().AddClass (*gooClass);
@@ -1343,7 +1343,7 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema ()
 
     ECRelationshipClassP manyToManyRelClass = nullptr;
     testSchema->CreateRelationshipClass (manyToManyRelClass, "RelFooGoo");
-    manyToManyRelClass->SetStrength (STRENGTHTYPE_Referencing);
+    manyToManyRelClass->SetStrength (StrengthType::Referencing);
     manyToManyRelClass->GetSource ().AddClass (*fooClass);
     manyToManyRelClass->GetSource ().SetCardinality (RelationshipCardinality::ZeroMany ());
     manyToManyRelClass->GetTarget ().AddClass (*gooClass);
@@ -1541,29 +1541,20 @@ ECSchemaCachePtr& testSchemaCache
     {
     ECSchemaPtr schema = nullptr;
     ECObjectsStatus stat = ECSchema::CreateSchema (schema, "foo", 1, 0);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating test schema failed";
+    ASSERT_EQ (ECObjectsStatus::Success, stat) << "Creating test schema failed";
     schema->SetNamespacePrefix("f");
 
-    ECClassP domainClass = nullptr;
-    stat = schema->CreateClass (domainClass, "domain1");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating domain class 1 in schema failed";
-    domainClass->SetIsDomainClass (true);
-    domainClass->SetIsCustomAttributeClass (false);
-    domainClass->SetIsStruct (false);
+    ECEntityClassP domainClass = nullptr;
+    stat = schema->CreateEntityClass (domainClass, "domain1");
+    ASSERT_EQ (ECObjectsStatus::Success, stat) << "Creating domain class 1 in schema failed";
 
-    ECClassP domainClass2 = nullptr;
-    stat = schema->CreateClass (domainClass2, "domain2");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating domain class 2 in schema failed";
-    domainClass2->SetIsDomainClass (true);
-    domainClass2->SetIsCustomAttributeClass (false);
-    domainClass2->SetIsStruct (false);
+    ECEntityClassP domainClass2 = nullptr;
+    stat = schema->CreateEntityClass (domainClass2, "domain2");
+    ASSERT_EQ (ECObjectsStatus::Success, stat) << "Creating domain class 2 in schema failed";
 
-    ECClassP caClass = nullptr;
-    stat = schema->CreateClass (caClass, "MyCA");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating CA class in schema failed";
-    caClass->SetIsDomainClass (false);
-    caClass->SetIsCustomAttributeClass (true);
-    caClass->SetIsStruct (false);
+    ECCustomAttributeClassP caClass = nullptr;
+    stat = schema->CreateCustomAttributeClass (caClass, "MyCA");
+    ASSERT_EQ (ECObjectsStatus::Success, stat) << "Creating CA class in schema failed";
 
     PrimitiveECPropertyP dateProp = nullptr;
     caClass->CreatePrimitiveProperty (dateProp, "dateprop", PRIMITIVETYPE_DateTime);
@@ -1605,7 +1596,7 @@ bmap<Utf8String, ECValue> const& caPropValues
     if (instanceId != nullptr)
         {
         stat = ca->SetInstanceId (instanceId);
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Setting instance id in CA instance failed";
+        ASSERT_EQ (ECObjectsStatus::Success, stat) << "Setting instance id in CA instance failed";
         }
 
     typedef bpair<Utf8String, ECValue> T_PropValuePair;
@@ -1613,12 +1604,12 @@ bmap<Utf8String, ECValue> const& caPropValues
     for (T_PropValuePair const& pair : caPropValues)
         {
         stat = ca->SetValue (pair.first.c_str (), pair.second);
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Assigning property value to CA instance failed";
+        ASSERT_EQ (ECObjectsStatus::Success, stat) << "Assigning property value to CA instance failed";
         }
 
     ECClassP containerClass = schema->GetClassP (containerClassName);
     stat = containerClass->SetCustomAttribute (*ca);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Assigning CA instance to container class failed";
+    ASSERT_EQ (ECObjectsStatus::Success, stat) << "Assigning CA instance to container class failed";
 
     caInstance = ca;
     }
@@ -1810,7 +1801,7 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
     //removed property is expected to not be found anymore in the instance
     bool isNull = false;
     ECObjectsStatus ecStat = actualCAInstance->IsPropertyNull (isNull, nameOfCAPropertyToRemove);
-    EXPECT_EQ (ECOBJECTS_STATUS_PropertyNotFound, ecStat) << "Calling IsPropertyNull on CA instance";
+    EXPECT_EQ (ECObjectsStatus::PropertyNotFound, ecStat) << "Calling IsPropertyNull on CA instance";
 
     //now check whether the rest of the instance is still the same
     ECValuesCollectionPtr expectedValueCollection = ECValuesCollection::Create (*expectedCAInstance);
@@ -1824,7 +1815,7 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
 
         ECValue actualValue;
         ecStat = actualCAInstance->GetValue (actualValue, expectedPropertyName);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "Property '" << expectedPropertyName << "' not found in actual CA instance.";
+        EXPECT_EQ (ECObjectsStatus::Success, ecStat) << "Property '" << expectedPropertyName << "' not found in actual CA instance.";
         EXPECT_TRUE (expectedPropertyValue.GetValue ().Equals (actualValue)) << "Property values for property '" << expectedPropertyName << "' do not match";
         }
     }
@@ -1973,16 +1964,16 @@ TEST(ECDbSchemas, DynamicSchemaTest)
     ECDb::Initialize (temporaryDir, &assetsDir);
 
     ECSchemaPtr testSchema; 
-    ASSERT_EQ (ECSchema::CreateSchema(testSchema, "TestSchema", 1, 1), ECOBJECTS_STATUS_Success);
+    ASSERT_EQ (ECSchema::CreateSchema(testSchema, "TestSchema", 1, 1), ECObjectsStatus::Success);
     ASSERT_EQ (testSchema->IsDynamicSchema(), false);
-    ASSERT_EQ (testSchema->SetIsDynamicSchema(true), ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound);
+    ASSERT_EQ (testSchema->SetIsDynamicSchema(true), ECObjectsStatus::DynamicSchemaCustomAttributeWasNotFound);
     //reference BCSA, DynamicSchema CA introduce in 1.6
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     SchemaKey bscaKey ("Bentley_Standard_CustomAttributes", 1, 6);
     ECSchemaPtr bscaSchema =  ctx->LocateSchema (bscaKey, SCHEMAMATCHTYPE_Latest);
     ASSERT_TRUE (bscaSchema.IsValid());
-    ASSERT_EQ (testSchema->AddReferencedSchema(*bscaSchema), ECOBJECTS_STATUS_Success);
-    ASSERT_EQ (testSchema->SetIsDynamicSchema(true), ECOBJECTS_STATUS_Success);
+    ASSERT_EQ (testSchema->AddReferencedSchema(*bscaSchema), ECObjectsStatus::Success);
+    ASSERT_EQ (testSchema->SetIsDynamicSchema(true), ECObjectsStatus::Success);
     ASSERT_TRUE (testSchema->IsDynamicSchema());
     ASSERT_TRUE (StandardCustomAttributeHelper::IsDynamicSchema (*testSchema));
     }
@@ -2536,12 +2527,12 @@ ECSchemaPtr GenerateNewECSchema(Utf8StringCR name, Utf8StringCR prefix)
     ECSchemaPtr newSchema;
     ECSchema::CreateSchema(newSchema, name, 1, 0);
     newSchema->SetNamespacePrefix(prefix);
-    ECClassP equipment, pipe;
+    ECEntityClassP equipment, pipe;
     PrimitiveECPropertyP primitveP;
-    newSchema->CreateClass(equipment, "EQUIPMENT");
+    newSchema->CreateEntityClass(equipment, "EQUIPMENT");
     equipment->CreatePrimitiveProperty(primitveP, "NAME", PrimitiveType::PRIMITIVETYPE_String);
     equipment->CreatePrimitiveProperty(primitveP, "EQID", PrimitiveType::PRIMITIVETYPE_Integer);
-    newSchema->CreateClass(pipe, "PIPE");
+    newSchema->CreateEntityClass(pipe, "PIPE");
     pipe->AddBaseClass(*equipment);
     pipe->CreatePrimitiveProperty(primitveP, "TYPE", PrimitiveType::PRIMITIVETYPE_String);
     pipe->CreatePrimitiveProperty(primitveP, "LENGTH", PrimitiveType::PRIMITIVETYPE_Integer);

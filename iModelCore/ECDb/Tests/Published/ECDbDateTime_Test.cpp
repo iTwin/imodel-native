@@ -89,7 +89,7 @@ bvector<bool>& expectedMatchesDateTimeInfoList
         ECValue value (dateTime);
         Utf8CP propAccessString = propertyAccessStringList[i].c_str ();
         ECObjectsStatus stat = testInstance->SetValue (propAccessString, value);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue ('" << propAccessString << "', "  << dateTime.ToString ().c_str () << ")";
+        EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue ('" << propAccessString << "', "  << dateTime.ToString ().c_str () << ")";
         }
     }
 
@@ -129,7 +129,7 @@ DateTime::Info const& targetMetadata
 
         ECValue arrayElementValue (datetime);
         ECObjectsStatus stat = testInstance->SetValue (arrayPropertyName, arrayElementValue, i);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue ('" << arrayPropertyName << "', " << arrayElementValue.ToString ().c_str () << ", " << i << ") failed";
+        EXPECT_EQ (ECObjectsStatus::Success, stat) << "IECInstance::SetValue ('" << arrayPropertyName << "', " << arrayElementValue.ToString ().c_str () << ", " << i << ") failed";
         }
     }
 
@@ -144,7 +144,7 @@ ECClassCP testClass
 )
     {
     Utf8CP structArrayPropName = "arrayofstructwithdatetimes";
-    ArrayECPropertyCP arrayProp = testClass->GetPropertyP (structArrayPropName)->GetAsArrayProperty ();
+    StructArrayECPropertyCP arrayProp = testClass->GetPropertyP (structArrayPropName)->GetAsStructArrayProperty ();
     ECClassCP structType = arrayProp->GetStructElementType ();
     ASSERT_TRUE (structType != nullptr);
 
@@ -157,22 +157,22 @@ ECClassCP testClass
         ECValue v;
         v.SetDateTime (DateTime::GetCurrentTimeUtc ());
         ECObjectsStatus stat = structInstance->SetValue ("nodatetimeinfo", v);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "StructInstance::SetValue failed";
+        EXPECT_EQ (ECObjectsStatus::Success, stat) << "StructInstance::SetValue failed";
 
         v.SetDateTime (DateTime::GetCurrentTimeUtc ());
         stat = structInstance->SetValue ("utc", v);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "StructInstance::SetValue failed";
+        EXPECT_EQ (ECObjectsStatus::Success, stat) << "StructInstance::SetValue failed";
 
         v.SetDateTime (DateTime (2013, 2, 22));
         stat = structInstance->SetValue ("dateonly", v);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "StructInstance::SetValue failed";
+        EXPECT_EQ (ECObjectsStatus::Success, stat) << "StructInstance::SetValue failed";
 
         ECValue structValue;
         BentleyStatus bstat = structValue.SetStruct (structInstance.get ());
         EXPECT_EQ (SUCCESS, bstat) << "ECValue::SetStruct failed";
 
         stat = testInstance->SetValue (structArrayPropName, structValue, i);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "ECInstance::SetValue (StructValue) failed";
+        EXPECT_EQ (ECObjectsStatus::Success, stat) << "ECInstance::SetValue (StructValue) failed";
         expectedStructArrayElements.push_back (structInstance);
         }
     }

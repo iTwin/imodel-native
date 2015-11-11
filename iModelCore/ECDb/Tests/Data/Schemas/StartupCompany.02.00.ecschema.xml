@@ -516,7 +516,9 @@
     <ECProperty propertyName="NumberOfOffices" typeName="int" displayLabel="Number Of Offices" />
     <ECProperty propertyName="Area" typeName="double">
       <ECCustomAttributes>
+      <!--
         <DisplayUnitSpecification xmlns="Unit_Attributes.01.00" />
+        -->
       </ECCustomAttributes>
     </ECProperty>
     <ECProperty propertyName="FloorCode" typeName="string" displayLabel="Floor Code" />
@@ -600,6 +602,7 @@
     </ECProperty>
     <ECProperty propertyName="Weight" typeName="double">
       <ECCustomAttributes>
+      <!--
         <UnitSpecification xmlns="Unit_Attributes.01.00">
           <DimensionName>M</DimensionName>
           <KindOfQuantityName>MASS</KindOfQuantityName>
@@ -613,6 +616,7 @@
           <DisplayFormatKey />
           <DisplayUnitName>lb</DisplayUnitName>
         </DisplayUnitSpecification>
+        -->
       </ECCustomAttributes>
     </ECProperty>
   </ECClass>
@@ -813,6 +817,7 @@
     <ECProperty propertyName="Vendor" typeName="string" />
     <ECProperty propertyName="Weight" typeName="double">
       <ECCustomAttributes>
+      <!--
         <UnitSpecification xmlns="Unit_Attributes.01.00">
           <DimensionName>M</DimensionName>
           <KindOfQuantityName />
@@ -821,6 +826,7 @@
             <string>POUND</string>
           </AllowableUnits>
         </UnitSpecification>
+        -->
       </ECCustomAttributes>
     </ECProperty>
     <ECProperty propertyName="Type" typeName="int">
@@ -869,6 +875,7 @@
     </ECArrayProperty>
     <ECProperty propertyName="Length" typeName="double">
       <ECCustomAttributes>
+      <!--
         <UnitSpecification xmlns="Unit_Attributes.01.00">
           <DimensionName>L</DimensionName>
           <KindOfQuantityName>LENGTH</KindOfQuantityName>
@@ -882,10 +889,12 @@
         <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
           <DisplayUnitName>FEET</DisplayUnitName>
         </DisplayUnitSpecification>
-      </ECCustomAttributes>
+        -->
+    </ECCustomAttributes>
     </ECProperty>
     <ECProperty propertyName="Breadth" typeName="double">
       <ECCustomAttributes>
+          <!--
         <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
           <DisplayUnitName>FEET</DisplayUnitName>
         </DisplayUnitSpecification>
@@ -900,6 +909,7 @@
             <string>METRE</string>
           </AllowableUnits>
         </UnitSpecification>
+        -->
       </ECCustomAttributes>
     </ECProperty>
     <ECProperty propertyName="NumberOfOccupants" typeName="int" />
@@ -907,6 +917,7 @@
     <ECProperty propertyName="OfficeCode" typeName="string" />
     <ECProperty propertyName="Area" typeName="double">
       <ECCustomAttributes>
+      <!--
         <UnitSpecification xmlns="Unit_Attributes.01.00">
           <DimensionName>L2</DimensionName>
           <KindOfQuantityName>AREA</KindOfQuantityName>
@@ -915,6 +926,7 @@
             <string>FOOT_SQUARED</string>
           </AllowableUnits>
         </UnitSpecification>
+        -->
       </ECCustomAttributes>
     </ECProperty>
     <ECProperty propertyName="RecordKey" typeName="string" displayLabel="Record Key">
@@ -943,6 +955,7 @@
     <ECProperty propertyName="Type" typeName="string" />
     <ECProperty propertyName="Length" typeName="double">
       <ECCustomAttributes>
+      <!--
         <UnitSpecification xmlns="Unit_Attributes.01.00">
           <DimensionName>L</DimensionName>
           <KindOfQuantityName>LENGTH</KindOfQuantityName>
@@ -958,10 +971,12 @@
           <DisplayFormatKey />
           <DisplayUnitName>FEET</DisplayUnitName>
         </DisplayUnitSpecification>
-      </ECCustomAttributes>
+        -->
+    </ECCustomAttributes>
     </ECProperty>
     <ECProperty propertyName="Breadth" typeName="double">
       <ECCustomAttributes>
+          <!--
         <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
           <DisplayFormatString />
           <DisplayFormatKey />
@@ -978,6 +993,7 @@
             <string>METRE</string>
           </AllowableUnits>
         </UnitSpecification>
+        -->
       </ECCustomAttributes>
     </ECProperty>
   </ECClass>
@@ -1264,6 +1280,7 @@
     </ECCustomAttributes>
     <ECProperty propertyName="Size" typeName="int">
       <ECCustomAttributes>
+      <!--
         <UnitSpecification xmlns="Unit_Attributes.01.00">
           <DimensionName>L</DimensionName>
           <KindOfQuantityName>LENGTH</KindOfQuantityName>
@@ -1272,6 +1289,7 @@
             <string>INCH</string>
           </AllowableUnits>
         </UnitSpecification>
+        -->
       </ECCustomAttributes>
     </ECProperty>
     <ECProperty propertyName="Type" typeName="string">
@@ -1294,6 +1312,7 @@
     <ECProperty propertyName="Vendor" typeName="string" />
     <ECProperty propertyName="Weight" typeName="double">
       <ECCustomAttributes>
+      <!--
         <UnitSpecification xmlns="Unit_Attributes.01.00">
           <DimensionName>M</DimensionName>
           <KindOfQuantityName />
@@ -1302,6 +1321,7 @@
             <string>POUND</string>
           </AllowableUnits>
         </UnitSpecification>
+        -->
       </ECCustomAttributes>
     </ECProperty>
   </ECClass>

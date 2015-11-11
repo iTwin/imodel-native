@@ -174,7 +174,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& outECSc
                 return ERROR;
 
             ECObjectsStatus s = key->m_resolvedECSchema->AddReferencedSchema(*referenceSchemaKey->m_resolvedECSchema); 
-            if (s != ECOBJECTS_STATUS_Success)
+            if (s != ECObjectsStatus::Success)
                 return ERROR;
             }
         }
@@ -325,7 +325,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECS
         return ERROR;
 
     if (ECSchema::CreateSchema(ecSchemaOut, info.m_name.c_str(), info.m_versionMajor, info.m_versionMinor) 
-        != ECOBJECTS_STATUS_Success )
+        != ECObjectsStatus::Success )
         return ERROR;
 
     ecSchemaOut->SetId(ecSchemaId);
@@ -366,18 +366,34 @@ BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassI
         return ERROR;
 
     ECRelationshipClassP ecRelationshipClass = nullptr;
+    ECEntityClassP ecEntityClass = nullptr;
+    ECCustomAttributeClassP ecCAClass = nullptr;
+    ECStructClassP ecStructClass = nullptr;
     if (info.m_isRelationship)
         {
-        if ( ecSchemaIn.CreateRelationshipClass (ecRelationshipClass, info.m_name.c_str()) != ECOBJECTS_STATUS_Success )
+        if ( ecSchemaIn.CreateRelationshipClass (ecRelationshipClass, info.m_name.c_str()) != ECObjectsStatus::Success )
             return ERROR;
         ecClassOut = ecRelationshipClass;
         ecRelationshipClass->SetStrength          (info.m_relationStrength);
         ecRelationshipClass->SetStrengthDirection (info.m_relationStrengthDirection);
         }
+    else if (info.m_isStruct)
+        {
+        if ( ecSchemaIn.CreateStructClass (ecStructClass, info.m_name.c_str()) != ECObjectsStatus::Success )
+            return ERROR;
+        ecClassOut = ecStructClass;
+        }
+    else if (info.m_isCustomAttribute)
+        {
+        if (ecSchemaIn.CreateCustomAttributeClass(ecCAClass, info.m_name.c_str()) != ECObjectsStatus::Success)
+            return ERROR;
+        ecClassOut = ecCAClass;
+        }
     else
         {
-        if ( ecSchemaIn.CreateClass (ecClassOut, info.m_name.c_str()) != ECOBJECTS_STATUS_Success )
+        if (ecSchemaIn.CreateEntityClass(ecEntityClass, info.m_name.c_str()) != ECObjectsStatus::Success)
             return ERROR;
+        ecClassOut = ecEntityClass;
         }
 
     if (!(info.ColsNull & DbECClassInfo::COL_DisplayLabel))
@@ -385,9 +401,8 @@ BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassI
 
     ecClassOut->SetId (ecClassId);
     ecClassOut->SetDescription(info.m_description.c_str());
-    ecClassOut->SetIsStruct(info.m_isStruct);
-    ecClassOut->SetIsCustomAttributeClass(info.m_isCustomAttribute);
-    ecClassOut->SetIsDomainClass(info.m_isDomainClass);
+    if (!info.m_isDomainClass)
+        ecClassOut->SetClassModifier(ECClassModifier::Abstract); // WIP_EC3 - Need to change flags to handle ClassModifier: Abstract/Sealed
 
     if (SUCCESS != LoadBaseClassesFromDb(ecClassOut, ecClassId))
         return ERROR;
@@ -438,6 +453,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
     PrimitiveECPropertyP ecPrimitiveProperty = nullptr;
     ArrayECPropertyP ecArrayProperty = nullptr;
     StructECPropertyP ecStructProperty = nullptr;
+    StructArrayECPropertyP ecStructArrayProperty = nullptr;
     info.m_minOccurs = 0;
     info.m_maxOccurs = UINT32_MAX;
 
@@ -448,7 +464,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
             {
             if (~info.ColsNull & DbECPropertyInfo::COL_PrimitiveType)
                 {
-                if (ECOBJECTS_STATUS_Success != ecClass->CreateArrayProperty (ecArrayProperty, info.m_name, info.m_primitiveType))
+                if (ECObjectsStatus::Success != ecClass->CreateArrayProperty (ecArrayProperty, info.m_name, info.m_primitiveType))
                     return ERROR;
                 }
             else if (~info.ColsNull & DbECPropertyInfo::COL_StructType)
@@ -457,8 +473,12 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 if (SUCCESS != ReadECClass (structType, info.m_structType))
                     return ERROR;
 
-                if (ECOBJECTS_STATUS_Success != ecClass->CreateArrayProperty (ecArrayProperty, info.m_name, structType))
+                if (nullptr == structType->GetStructClassCP())
                     return ERROR;
+
+                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty (ecStructArrayProperty, info.m_name, structType->GetStructClassCP()))
+                    return ERROR;
+                ecArrayProperty = ecStructArrayProperty;
                 }
 
             if (~info.ColsNull & DbECPropertyInfo::COL_MinOccurs)
@@ -473,7 +493,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
             {
             if (~info.ColsNull & DbECPropertyInfo::COL_PrimitiveType)
                 {
-                if (ECOBJECTS_STATUS_Success != ecClass->CreatePrimitiveProperty(ecPrimitiveProperty, info.m_name, info.m_primitiveType))
+                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(ecPrimitiveProperty, info.m_name, info.m_primitiveType))
                     return ERROR;
 
                 ecProperty = ecPrimitiveProperty;
@@ -484,7 +504,10 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 if (SUCCESS != ReadECClass(structType, info.m_structType))
                     return ERROR;
 
-                if (ECOBJECTS_STATUS_Success != ecClass->CreateStructProperty(ecStructProperty, info.m_name, *structType))
+                if (nullptr == structType->GetStructClassCP())
+                    return ERROR;
+
+                if (ECObjectsStatus::Success != ecClass->CreateStructProperty(ecStructProperty, info.m_name, *structType->GetStructClassCP()))
                     return ERROR;
 
                 ecProperty = ecStructProperty;
@@ -519,7 +542,7 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, ECClass
         if (SUCCESS != ReadECClass(baseClass, baseClassId))
             return ERROR;
 
-        if (ECOBJECTS_STATUS_Success != ecClass->AddBaseClass(*baseClass))
+        if (ECObjectsStatus::Success != ecClass->AddBaseClass(*baseClass))
             return ERROR;
         }
 

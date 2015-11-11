@@ -403,12 +403,13 @@ void ECSqlTypeInfo::DetermineTypeInfo (ECPropertyCR ecProperty)
     if (isArray)
         {
         auto arrayProperty = ecProperty.GetAsArrayProperty();
-        if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
-            primitiveType = arrayProperty->GetPrimitiveElementType ();
+        auto structArrayProperty = ecProperty.GetAsStructArrayProperty();
+        if (nullptr != structArrayProperty)
+            structType = structArrayProperty->GetStructElementType();
         else
             {
-            BeAssert (arrayProperty->GetKind() == ARRAYKIND_Struct);
-            structType = arrayProperty->GetStructElementType();
+            BeAssert(nullptr != arrayProperty);
+            primitiveType = arrayProperty->GetPrimitiveElementType ();
             }
 
         minOccurs = arrayProperty->GetMinOccurs ();

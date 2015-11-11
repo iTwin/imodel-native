@@ -190,7 +190,7 @@ bool IClassMap::IsAbstractECClass() const
 //static
 bool IClassMap::IsAbstractECClass(ECClassCR ecclass)
     {
-    if (!ecclass.GetIsDomainClass() && !ecclass.GetIsStruct() && !ecclass.GetIsCustomAttributeClass())
+    if (ECClassModifier::Abstract == ecclass.GetClassModifier() && !ecclass.IsStructClass() && !ecclass.IsCustomAttributeClass())
         return true;
 
     //for relationship classes there is another criterion for abstractness: if one of the constraints doesn't have
@@ -226,7 +226,7 @@ bool IClassMap::IsMappedToSecondaryTable() const
 //static
 bool IClassMap::IsMapToSecondaryTableStrategy(ECN::ECClassCR ecClass)
     {
-    return ecClass.GetIsStruct();
+    return ecClass.IsStructClass();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1446,7 +1446,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
     ECValue defaultValue;
     AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECInstanceId, defaultValue);
     AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECClassId, ECValue (classMap.GetClass ().GetId ()));
-    if (classMap.GetClass ().GetIsStruct ())
+    if (classMap.GetClass ().IsStructClass())
         {
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::ParentECInstanceId, defaultValue);
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECPropertyPathId, defaultValue);

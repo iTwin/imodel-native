@@ -54,7 +54,7 @@ void PerformanceSchemaImportTests::SetStruct2Val (StandaloneECInstancePtr instan
 ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes)
     {
     ECSchemaPtr testSchema;
-    ECClassP testClass = nullptr;
+    ECEntityClassP testClass = nullptr;
     PrimitiveECPropertyP primitiveProperty = nullptr;
 
     if (NumberOfCustomAttributes > 4)
@@ -70,31 +70,28 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
     auto bscaKey = SchemaKey ("Bentley_Standard_CustomAttributes", 1, 11);
     auto bscaSchema = readContext->LocateSchema (bscaKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE (bscaSchema.IsValid ());
-    EXPECT_EQ (testSchema->AddReferencedSchema (*bscaSchema), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (testSchema->AddReferencedSchema (*bscaSchema), ECObjectsStatus::Success);
 
     //creating a nested Array CustomAttribute Class
-    ECClassP struct1 = nullptr;
-    testSchema->CreateClass (struct1, "Struct1");
-    EXPECT_TRUE (struct1->SetIsStruct (true) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (struct1->CreatePrimitiveProperty (primitiveProperty, "StructClassIntMember", PrimitiveType::PRIMITIVETYPE_Integer) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (struct1->CreatePrimitiveProperty (primitiveProperty, "StructClassStringMember", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (struct1->CreatePrimitiveProperty (primitiveProperty, "StructClassBoolMember", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
+    ECStructClassP struct1 = nullptr;
+    testSchema->CreateStructClass (struct1, "Struct1");
+    EXPECT_TRUE (struct1->CreatePrimitiveProperty (primitiveProperty, "StructClassIntMember", PrimitiveType::PRIMITIVETYPE_Integer) == ECObjectsStatus::Success);
+    EXPECT_TRUE (struct1->CreatePrimitiveProperty (primitiveProperty, "StructClassStringMember", PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
+    EXPECT_TRUE (struct1->CreatePrimitiveProperty (primitiveProperty, "StructClassBoolMember", PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
 
-    ECClassP struct2 = nullptr;
-    testSchema->CreateClass (struct2, "struct2");
-    EXPECT_TRUE (struct2->SetIsStruct (true) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (struct2->CreatePrimitiveProperty (primitiveProperty, "Struct2StringMember", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (struct2->CreatePrimitiveProperty (primitiveProperty, "Struct2DoubleMember", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
-    ArrayECPropertyP arrayProperty = nullptr;
-    EXPECT_TRUE (struct2->CreateArrayProperty (arrayProperty, "Struct2Array", struct1) == ECOBJECTS_STATUS_Success);
+    ECStructClassP struct2 = nullptr;
+    testSchema->CreateStructClass (struct2, "struct2");
+    EXPECT_TRUE (struct2->CreatePrimitiveProperty (primitiveProperty, "Struct2StringMember", PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
+    EXPECT_TRUE (struct2->CreatePrimitiveProperty (primitiveProperty, "Struct2DoubleMember", PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
+    StructArrayECPropertyP arrayProperty = nullptr;
+    EXPECT_TRUE (struct2->CreateStructArrayProperty (arrayProperty, "Struct2Array", struct1) == ECObjectsStatus::Success);
 
 
-    ECClassP testClassCustomAttribute = nullptr;
-    testSchema->CreateClass (testClassCustomAttribute, "StructArrayCustomAttribute");
-    EXPECT_TRUE (testClassCustomAttribute->SetIsCustomAttributeClass (true) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (testClassCustomAttribute->CreatePrimitiveProperty (primitiveProperty, "intMember", PrimitiveType::PRIMITIVETYPE_Integer) == ECOBJECTS_STATUS_Success);
-    ArrayECPropertyP nestedArrayProperty = nullptr;
-    EXPECT_TRUE (testClassCustomAttribute->CreateArrayProperty (nestedArrayProperty, "NestedArray", struct2) == ECOBJECTS_STATUS_Success);
+    ECCustomAttributeClassP testClassCustomAttribute = nullptr;
+    testSchema->CreateCustomAttributeClass (testClassCustomAttribute, "StructArrayCustomAttribute");
+    EXPECT_TRUE (testClassCustomAttribute->CreatePrimitiveProperty (primitiveProperty, "intMember", PrimitiveType::PRIMITIVETYPE_Integer) == ECObjectsStatus::Success);
+    StructArrayECPropertyP nestedArrayProperty = nullptr;
+    EXPECT_TRUE (testClassCustomAttribute->CreateStructArrayProperty (nestedArrayProperty, "NestedArray", struct2) == ECObjectsStatus::Success);
 
     StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler ();
     StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler ();
@@ -148,15 +145,15 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
         EXPECT_TRUE (ca != nullptr);
         auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
         EXPECT_TRUE (customAttribute != nullptr);
-        EXPECT_TRUE (customAttribute->SetValue ("ContainsUnits", ECValue (false)) == ECOBJECTS_STATUS_Success);
-        EXPECT_TRUE (testSchema->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+        EXPECT_TRUE (customAttribute->SetValue ("ContainsUnits", ECValue (false)) == ECObjectsStatus::Success);
+        EXPECT_TRUE (testSchema->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
         }
 
     for (size_t j = 0; j < noOfClasses; j++)
         {
         Utf8String class1;
         class1.Sprintf ("Class%d", j);
-        EXPECT_TRUE (testSchema->CreateClass (testClass, class1) == ECOBJECTS_STATUS_Success);
+        EXPECT_TRUE (testSchema->CreateEntityClass (testClass, class1) == ECObjectsStatus::Success);
 
         if (customAttributesOnClasses)
             {
@@ -166,7 +163,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                     {
                         case 1:
                             {
-                            EXPECT_TRUE (testClass->SetCustomAttribute (*tc_CustomAttribute) == ECOBJECTS_STATUS_Success);
+                            EXPECT_TRUE (testClass->SetCustomAttribute (*tc_CustomAttribute) == ECObjectsStatus::Success);
                             break;
                             }
                         case 2:
@@ -175,9 +172,9 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                             EXPECT_TRUE (ca != nullptr);
                             auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
                             EXPECT_TRUE (customAttribute != nullptr);
-                            EXPECT_TRUE (customAttribute->SetValue ("Label", ECValue (true)) == ECOBJECTS_STATUS_Success);
-                            EXPECT_TRUE (customAttribute->SetValue ("Description", ECValue (false)) == ECOBJECTS_STATUS_Success);
-                            EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+                            EXPECT_TRUE (customAttribute->SetValue ("Label", ECValue (true)) == ECObjectsStatus::Success);
+                            EXPECT_TRUE (customAttribute->SetValue ("Description", ECValue (false)) == ECObjectsStatus::Success);
+                            EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
                             break;
                             }
                         case 3:
@@ -186,9 +183,9 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                             EXPECT_TRUE (ca != nullptr);
                             auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
                             EXPECT_TRUE (customAttribute != nullptr);
-                            EXPECT_TRUE (customAttribute->SetValue ("Hidden", ECValue (true)) == ECOBJECTS_STATUS_Success);
-                            EXPECT_TRUE (customAttribute->SetValue ("HideRelated", ECValue (false)) == ECOBJECTS_STATUS_Success);
-                            EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+                            EXPECT_TRUE (customAttribute->SetValue ("Hidden", ECValue (true)) == ECObjectsStatus::Success);
+                            EXPECT_TRUE (customAttribute->SetValue ("HideRelated", ECValue (false)) == ECObjectsStatus::Success);
+                            EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
                             break;
                             }
                         case 4:
@@ -196,10 +193,10 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                             auto ca = bscaSchema->GetClassCP ("SearchOptions");
                             EXPECT_TRUE (ca != nullptr);
                             auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
-                            EXPECT_TRUE (customAttribute->SetValue ("ShowWhenDerivedClassIsShown", ECValue (true)) == ECOBJECTS_STATUS_Success);
-                            EXPECT_TRUE (customAttribute->SetValue ("SearchPolymorphically", ECValue (true)) == ECOBJECTS_STATUS_Success);
-                            EXPECT_TRUE (customAttribute->SetValue ("Hidden", ECValue (false)) == ECOBJECTS_STATUS_Success);
-                            EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+                            EXPECT_TRUE (customAttribute->SetValue ("ShowWhenDerivedClassIsShown", ECValue (true)) == ECObjectsStatus::Success);
+                            EXPECT_TRUE (customAttribute->SetValue ("SearchPolymorphically", ECValue (true)) == ECObjectsStatus::Success);
+                            EXPECT_TRUE (customAttribute->SetValue ("Hidden", ECValue (false)) == ECObjectsStatus::Success);
+                            EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
                             break;
                             }
                         default:
@@ -214,7 +211,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
             temp.Sprintf ("_Property%d", i);
             Utf8String prop = class1;
             prop.append (temp);
-            EXPECT_TRUE (testClass->CreatePrimitiveProperty (primitiveProperty, prop, PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
+            EXPECT_TRUE (testClass->CreatePrimitiveProperty (primitiveProperty, prop, PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
 
             if (customAttributesOnProperties)
                 {
@@ -224,7 +221,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                         {
                             case 1:
                                 {
-                                EXPECT_TRUE (primitiveProperty->SetCustomAttribute (*tc_CustomAttribute) == ECOBJECTS_STATUS_Success);
+                                EXPECT_TRUE (primitiveProperty->SetCustomAttribute (*tc_CustomAttribute) == ECObjectsStatus::Success);
                                 break;
                                 }
                             case 2:
@@ -233,9 +230,9 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                                 EXPECT_TRUE (ca != nullptr);
                                 auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
                                 EXPECT_TRUE (customAttribute != nullptr);
-                                EXPECT_TRUE (customAttribute->SetValue ("Hidden", ECValue (true)) == ECOBJECTS_STATUS_Success);
-                                EXPECT_TRUE (customAttribute->SetValue ("HideRelated", ECValue (false)) == ECOBJECTS_STATUS_Success);
-                                EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+                                EXPECT_TRUE (customAttribute->SetValue ("Hidden", ECValue (true)) == ECObjectsStatus::Success);
+                                EXPECT_TRUE (customAttribute->SetValue ("HideRelated", ECValue (false)) == ECObjectsStatus::Success);
+                                EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
                                 break;
                                 }
                             case 3:
@@ -243,9 +240,9 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                                 auto ca = bscaSchema->GetClassCP ("DateTimeInfo");
                                 EXPECT_TRUE (ca != nullptr);
                                 auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
-                                EXPECT_TRUE (customAttribute->SetValue ("DateTimeKind", ECValue ("Utc")) == ECOBJECTS_STATUS_Success);
-                                EXPECT_TRUE (customAttribute->SetValue ("DateTimeComponent", ECValue ("DateTime")) == ECOBJECTS_STATUS_Success);
-                                EXPECT_TRUE (primitiveProperty->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+                                EXPECT_TRUE (customAttribute->SetValue ("DateTimeKind", ECValue ("Utc")) == ECObjectsStatus::Success);
+                                EXPECT_TRUE (customAttribute->SetValue ("DateTimeComponent", ECValue ("DateTime")) == ECObjectsStatus::Success);
+                                EXPECT_TRUE (primitiveProperty->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
                                 break;
                                 }
                             case 4:
@@ -253,7 +250,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, 
                                 auto ca = bscaSchema->GetClassCP ("StrictComparisonOnly");
                                 EXPECT_TRUE (ca != nullptr);
                                 auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
-                                EXPECT_TRUE (primitiveProperty->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+                                EXPECT_TRUE (primitiveProperty->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
                                 break;
                                 }
                             default:
@@ -291,7 +288,7 @@ TEST_F (PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance
         ecSchema = PerformanceSchemaImportTests::CreateTestSchema (5000, 100, true, true, true, i);
         ASSERT_TRUE (ecSchema.IsValid ());
         ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-        ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
+        ASSERT_EQ (ECObjectsStatus::Success, schemaCache->AddSchema (*ecSchema));
 
         StopWatch timer (true);
         ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));

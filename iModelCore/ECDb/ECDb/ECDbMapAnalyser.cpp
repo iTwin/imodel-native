@@ -682,11 +682,11 @@ ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, St
     if (ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ()))
         {
         Utf8String onDeleteActionStr;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction (onDeleteActionStr))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnDeleteAction (onDeleteActionStr))
             return;
 
         Utf8String onUpdateActionStr;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction (onUpdateActionStr))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnUpdateAction (onUpdateActionStr))
             return;
 
         m_onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType (onDeleteActionStr.c_str ());
@@ -732,7 +732,7 @@ ECDbMapAnalyser::Relationship::PersistanceLocation ECDbMapAnalyser::Relationship
 //---------------------------------------------------------------------------------------
 bool ECDbMapAnalyser::Relationship::RequireCascade () const
     {
-    return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () != StrengthType::STRENGTHTYPE_Referencing;
+    return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () != StrengthType::Referencing;
     }
 
 //---------------------------------------------------------------------------------------
@@ -933,7 +933,7 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         return *(itor->second);
 
     Storage& storage = GetStorage (classMap);
-    if (classMap.GetClass ().GetIsStruct ())
+    if (classMap.GetClass ().IsStructClass()) // WIP_EC3 - Do we need another class type here for CustomAttributes?
         m_classes[classMap.GetClass ().GetId ()] = Struct::Ptr (new Struct (classMap, storage, nullptr));
     else
         m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, nullptr));

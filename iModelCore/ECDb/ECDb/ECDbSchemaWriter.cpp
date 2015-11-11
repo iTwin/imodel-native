@@ -60,9 +60,9 @@ BentleyStatus ECDbSchemaWriter::CreateECClassEntry(ECClassCR ecClass, ECClassId 
 
     info.m_ecClassId         = ecClassId;
     info.m_ecSchemaId        = ecClass.GetSchema().GetId();
-    info.m_isCustomAttribute = ecClass.GetIsCustomAttributeClass();
-    info.m_isStruct          = ecClass.GetIsStruct();
-    info.m_isDomainClass     = ecClass.GetIsDomainClass();
+    info.m_isCustomAttribute = ecClass.IsCustomAttributeClass();
+    info.m_isStruct          = ecClass.IsStructClass();
+    info.m_isDomainClass     = ECClassModifier::Abstract != ecClass.GetClassModifier(); // WIP_EC3 - ensure this check is correct
     info.m_isRelationship    = false;
     info.m_name = ecClass.GetName().c_str();
     info.m_description = ecClass.GetDescription().c_str();
@@ -149,10 +149,11 @@ BentleyStatus ECDbSchemaWriter::CreateECPropertyEntry(ECPropertyCR ecProperty, E
     else if( ecProperty.GetIsArray())
         {
         ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
+        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
         info.ColsInsert |= DbECPropertyInfo::COL_MinOccurs;
         info.ColsInsert |= DbECPropertyInfo::COL_MaxOccurs;
 
-        if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
+        if (nullptr == structArrayProperty)
             {
             info.ColsInsert |= DbECPropertyInfo::COL_PrimitiveType;
             info.m_primitiveType = arrayProperty->GetPrimitiveElementType();            
@@ -160,7 +161,7 @@ BentleyStatus ECDbSchemaWriter::CreateECPropertyEntry(ECPropertyCR ecProperty, E
         else // ARRAYKIND_Struct
             {
             info.ColsInsert |= DbECPropertyInfo::COL_StructType;
-            info.m_structType = arrayProperty->GetStructElementType()->GetId();
+            info.m_structType = structArrayProperty->GetStructElementType()->GetId();
             }
 
         info.m_minOccurs = arrayProperty->GetMinOccurs ();
@@ -529,10 +530,10 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, E
         }
     else if (ecProperty.GetIsArray())
         {
-        ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-        if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
+        if (nullptr != structArrayProperty)
             {
-            if (SUCCESS != ImportECClass(*arrayProperty->GetStructElementType()))
+            if (SUCCESS != ImportECClass(*structArrayProperty->GetStructElementType()))
                 return ERROR;
             }
         }

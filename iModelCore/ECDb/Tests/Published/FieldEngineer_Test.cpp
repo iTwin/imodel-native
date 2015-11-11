@@ -122,7 +122,7 @@ IECInstancePtr CreateEmployee (ECClassCR employeeClass, Utf8CP firstName, Utf8CP
     employee->SetValue ("LatestEducation.GPA", ecValue);
     
     ECPropertyP ecProperty = employeeClass.GetPropertyP ("EducationHistory");
-    ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
+    StructArrayECPropertyCP arrayProperty = ecProperty->GetAsStructArrayProperty();
     ECClassCP educationHistoryClass = arrayProperty->GetStructElementType();
 
     employee->AddArrayElements ("EducationHistory", 3);

@@ -244,9 +244,9 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema (ECSchemaReadCon
     {
     ECSchemaPtr ecdbSystemSchema = nullptr;
     auto deserializeStat = ECSchema::ReadFromXmlString (ecdbSystemSchema, GetECDbSystemECSchemaXml (), readContext);
-    if (SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (SchemaReadStatus::Success != deserializeStat)
         {
-        if (SCHEMA_READ_STATUS_ReferencedSchemaNotFound == deserializeStat)
+        if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
             LOG.errorv ("Creating / upgrading ECDb file %s failed because required standard ECSchemas could not be found.", ecdbFileName);
         else
             {

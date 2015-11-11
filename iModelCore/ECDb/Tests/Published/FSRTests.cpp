@@ -86,7 +86,7 @@ struct FSRTests : public ::testing::Test
         while (instanceNode = instanceNode->GetNextSibling())
             {
             InstanceReadStatus status = IECInstance::ReadFromBeXmlNode(instance, *instanceNode->GetFirstChild(BEXMLNODE_Element), *schemaReadContext);
-            BeAssert(status == INSTANCE_READ_STATUS_Success);
+            BeAssert(status == InstanceReadStatus::Success);
             ecInstances.push_back(instance);
             }
         return ecInstances;

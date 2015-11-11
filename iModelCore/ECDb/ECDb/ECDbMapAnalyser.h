@@ -288,9 +288,9 @@ struct ECDbMapAnalyser
                 BeAssert(!IsLinkTable());
                 return GetPersistanceLocation() == PersistanceLocation::To ? From() : To();
                 }
-            bool IsHolding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::STRENGTHTYPE_Holding; }
-            bool IsReferencing() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::STRENGTHTYPE_Referencing; }
-            bool IsEmbedding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::STRENGTHTYPE_Embedding; }
+            bool IsHolding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Holding; }
+            bool IsReferencing() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Referencing; }
+            bool IsEmbedding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Embedding; }
             bool IsMarkedForCascadeDelete() const
                 {
                 BeAssert(!IsLinkTable());

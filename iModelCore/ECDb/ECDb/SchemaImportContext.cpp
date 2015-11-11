@@ -51,7 +51,7 @@ UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass, EC
     if (hasClassMapCA)
         {
         ECDbClassMap::MapStrategy strategy;
-        if (ECOBJECTS_STATUS_Success != classMapCA->TryGetMapStrategy(strategy))
+        if (ECObjectsStatus::Success != classMapCA->TryGetMapStrategy(strategy))
             return nullptr; // error
 
         if (SUCCESS != UserECDbMapStrategy::TryParse(*userStrategy, strategy) || !userStrategy->IsValid())

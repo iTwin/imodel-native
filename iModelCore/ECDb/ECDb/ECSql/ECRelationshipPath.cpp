@@ -648,7 +648,7 @@ BentleyStatus ECRelatedItemsDisplaySpecificationsCache::Initialize ()
             continue;
 
         ECValue specificationsValue;
-        if (ECOBJECTS_STATUS_Success != customAttribute->GetValue (specificationsValue, "Specifications"))
+        if (ECObjectsStatus::Success != customAttribute->GetValue (specificationsValue, "Specifications"))
             continue;
 
         ArrayInfo arrayInfo = specificationsValue.GetArrayInfo ();
@@ -687,7 +687,7 @@ ECSchemaCR customAttributeContainerSchema
     // Find parent or "root" class
     ECValue ecValueParentClass;
     ECObjectsStatus ecStatus = customAttributeSpecification.GetValue (ecValueParentClass, "ParentClass");
-    PRECONDITION (ECOBJECTS_STATUS_Success == ecStatus && !ecValueParentClass.IsNull (), ERROR);
+    PRECONDITION (ECObjectsStatus::Success == ecStatus && !ecValueParentClass.IsNull (), ERROR);
 
     // Append parent or "root" class
     relationshipPathString.append (ecValueParentClass.GetUtf8CP ());
@@ -695,7 +695,7 @@ ECSchemaCR customAttributeContainerSchema
     // Append relationship path string
     ECValue ecValueRelationshipPath;
     ecStatus = customAttributeSpecification.GetValue (ecValueRelationshipPath, "RelationshipPath");
-    PRECONDITION (ECOBJECTS_STATUS_Success == ecStatus && !ecValueRelationshipPath.IsNull (), ERROR);
+    PRECONDITION (ECObjectsStatus::Success == ecStatus && !ecValueRelationshipPath.IsNull (), ERROR);
     relationshipPathString.append (".");
     relationshipPathString.append (ecValueRelationshipPath.GetUtf8CP ());
 
@@ -710,7 +710,7 @@ ECSchemaCR customAttributeContainerSchema
     // Create a relationship path for every DerivedClass specified
     ECValue derivedClassesValue;
     ecStatus = customAttributeSpecification.GetValue (derivedClassesValue, "DerivedClasses");
-    if (ecStatus != ECOBJECTS_STATUS_Success)
+    if (ecStatus != ECObjectsStatus::Success)
         return SUCCESS;
 
     BentleyStatus status = SUCCESS;

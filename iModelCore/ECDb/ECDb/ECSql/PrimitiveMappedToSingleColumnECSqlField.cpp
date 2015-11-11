@@ -25,7 +25,7 @@ PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField
         auto property = m_ecsqlColumnInfo.GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECObjectsStatus::Success)
             {
             ReportError(ECSqlStatus::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
             BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");

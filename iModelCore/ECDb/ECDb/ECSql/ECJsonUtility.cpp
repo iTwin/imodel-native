@@ -101,7 +101,7 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
         return SUCCESS;
 
     ECObjectsStatus status = instance.AddArrayElements (accessString.c_str(), length);
-    POSTCONDITION (ECOBJECTS_STATUS_Success == status, ERROR);
+    POSTCONDITION (ECObjectsStatus::Success == status, ERROR);
 
     if (arrayProperty.GetKind() == ARRAYKIND_Primitive)
         {
@@ -116,13 +116,17 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
                 continue;
                 }
             ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), ecPrimitiveValue, ii);
-            if (ecStatus != ECOBJECTS_STATUS_Success && ecStatus != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                 { BeAssert(false); }
             }
         }
     else /* if (arrayProperty.GetKind() == ARRAYKIND_Struct) */
         {
-        ECClassCP structType = arrayProperty.GetStructElementType();
+        auto structArrayProperty = arrayProperty.GetAsStructArrayProperty();
+        if (nullptr == structArrayProperty)
+            return ERROR;
+
+        ECClassCP structType = structArrayProperty->GetStructElementType();
         BeAssert (structType != nullptr);
         for (uint32_t ii=0; ii<length; ii++)
             {
@@ -131,7 +135,7 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
             ECValue ecStructValue;
             ecStructValue.SetStruct (structInstance.get());
             ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), ecStructValue, ii);
-            if (ecStatus != ECOBJECTS_STATUS_Success && ecStatus != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                 { BeAssert(false); }
             }
         }
@@ -186,7 +190,7 @@ StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, cons
                 }
             ECObjectsStatus ecStatus;
             ecStatus = instance.SetInternalValue (accessString.c_str(), ecValue);
-            BeAssert (ecStatus == ECOBJECTS_STATUS_Success || ecStatus == ECOBJECTS_STATUS_PropertyValueMatchesNoChange);
+            BeAssert (ecStatus == ECObjectsStatus::Success || ecStatus == ECObjectsStatus::PropertyValueMatchesNoChange);
             continue;
             }
         else if (ecProperty->GetIsStruct())
@@ -325,7 +329,7 @@ StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, 
     if (0 == size)
         return SUCCESS;
 
-    if (ECOBJECTS_STATUS_Success != instance.AddArrayElements (accessString.c_str(), size))
+    if (ECObjectsStatus::Success != instance.AddArrayElements (accessString.c_str(), size))
         return ERROR;
 
     switch (arrayProperty.GetKind())
@@ -344,10 +348,10 @@ StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, 
                     }
 
                 ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), primitiveValue, i);
-                if ((ECOBJECTS_STATUS_Success != ecStatus) && (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != ecStatus))
+                if ((ECObjectsStatus::Success != ecStatus) && (ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus))
                     { 
                     BeAssert (false);
-                    returnStatus = ecStatus;
+                    returnStatus = ERROR;
                     }
                 }
 
@@ -356,7 +360,10 @@ StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, 
 
         case ARRAYKIND_Struct:
             {
-            ECClassCP structType = arrayProperty.GetStructElementType();
+            StructArrayECPropertyCP structArrayProperty = arrayProperty.GetAsStructArrayProperty();
+            BeAssert(nullptr != structArrayProperty);
+
+            ECClassCP structType = structArrayProperty->GetStructElementType();
             BeAssert (nullptr != structType);
 
             for (rapidjson::SizeType i=0; i<size; i++)
@@ -368,7 +375,7 @@ StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, 
                 structValue.SetStruct (structInstance.get());
                 
                 ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), structValue, i);
-                if ((ECOBJECTS_STATUS_Success != ecStatus) && (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != ecStatus))
+                if ((ECObjectsStatus::Success != ecStatus) && (ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus))
                     { BeAssert(false); }
                 }
 
@@ -425,7 +432,7 @@ StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instanc
                 }
 
             ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), ecValue);
-            BeAssert ((ECOBJECTS_STATUS_Success == ecStatus) || (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == ecStatus)); (void) ecStatus;
+            BeAssert ((ECObjectsStatus::Success == ecStatus) || (ECObjectsStatus::PropertyValueMatchesNoChange == ecStatus)); (void) ecStatus;
             }
         else if (propertyP->GetIsStruct())
             {

@@ -736,6 +736,7 @@ PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbM
     {
     ECClassCP tableECType = nullptr;
     ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
+    StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
     if (arrayProperty)
         {
         ArrayKind kind =  arrayProperty->GetKind();
@@ -744,8 +745,10 @@ PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbM
             BeAssert(false && "not yet supported");
             tableECType = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecDbMap.GetECDbR(), arrayProperty->GetPrimitiveElementType());
             }
-        else if (kind == ARRAYKIND_Struct)
-            tableECType = arrayProperty->GetStructElementType();
+        else if (kind == ARRAYKIND_Struct && nullptr != structArrayProperty)
+            tableECType = structArrayProperty->GetStructElementType();
+        else
+            BeAssert(false && "Expected a struct array but property not found"); // WIP_EC3 - is this check correct?
         }
     else
         BeAssert (false && "Expecting an array when using PropertyMapToTable");

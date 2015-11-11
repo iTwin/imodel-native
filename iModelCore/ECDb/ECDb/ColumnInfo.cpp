@@ -46,17 +46,17 @@ BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, Utf8CP propertyAcc
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProperty))
         {
-        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetColumnName(m_columnName))
+        if (ECObjectsStatus::Success != customPropMap.TryGetColumnName(m_columnName))
             return ERROR;
 
-        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetIsNullable(m_nullable))
+        if (ECObjectsStatus::Success != customPropMap.TryGetIsNullable(m_nullable))
             return ERROR;
 
-        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetIsUnique(m_unique))
+        if (ECObjectsStatus::Success != customPropMap.TryGetIsUnique(m_unique))
             return ERROR;
 
         Utf8String collationStr;
-        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetCollation(collationStr))
+        if (ECObjectsStatus::Success != customPropMap.TryGetCollation(collationStr))
             return ERROR;
 
         if (!ECDbSqlColumn::Constraint::TryParseCollationString(m_collation, collationStr.c_str()))

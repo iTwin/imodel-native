@@ -602,7 +602,7 @@ BentleyStatus ImportCommand::DeserializeECSchema(ECSchemaReadContextR readContex
     ECN::ECSchemaPtr ecSchema = nullptr;
     const auto stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, ecschemaXmlFile.GetName(), readContext);
     //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
-    return stat == ECN::SCHEMA_READ_STATUS_Success || stat == ECN::SCHEMA_READ_STATUS_DuplicateSchema ? SUCCESS : ERROR;
+    return stat == ECN::SchemaReadStatus::Success || stat == ECN::SchemaReadStatus::DuplicateSchema ? SUCCESS : ERROR;
     }
 
 
@@ -845,7 +845,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         auto const& classes = schema->GetClasses();
         for (auto ecClass : classes)
             {
-            if (!ecClass->GetIsCustomAttributeClass())
+            if (!ecClass->IsCustomAttributeClass())
                 classList.push_back(ecClass);
             };
         };
@@ -1285,14 +1285,14 @@ void ECSchemaDiffCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> 
     auto contextR = ECSchemaReadContext::CreateContext();
 
     auto status = ECSchema::ReadFromXmlFile(left,  leftECSchemaFilePath.GetName(), *contextL);
-    if (status != ECOBJECTS_STATUS_Success)
+    if (status != SchemaReadStatus::Success)
         {
         Console::WriteErrorLine("Failed to load ECSchema file '%s'", leftECSchemaFilePath.GetNameUtf8().c_str());
         return;
         }
 
     status = ECSchema::ReadFromXmlFile(right,  rightECSchemaFilePath.GetName(), *contextR);
-    if (status != ECOBJECTS_STATUS_Success)
+    if (status != SchemaReadStatus::Success)
         {
         Console::WriteErrorLine("Failed to load ECSchema file '%s'", rightECSchemaFilePath.GetNameUtf8().c_str());
         return;

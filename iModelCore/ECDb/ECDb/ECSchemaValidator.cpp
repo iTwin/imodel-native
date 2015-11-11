@@ -430,9 +430,9 @@ bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass (ECN::ECClassCR ecClass, 
         structType = &ecProperty.GetAsStructProperty ()->GetType ();
     else if (ecProperty.GetIsArray ())
         {
-        auto arrayProp = ecProperty.GetAsArrayProperty ();
-        if (arrayProp->GetKind () == ARRAYKIND_Struct)
-            structType = arrayProp->GetStructElementType ();
+        auto structArrayProp = ecProperty.GetAsStructArrayProperty ();
+        if (nullptr != structArrayProp)
+            structType = structArrayProp->GetStructElementType ();
         }
 
     if (structType == nullptr)
@@ -508,7 +508,7 @@ bool ValidRelationshipConstraintsRule::_ValidateSchema(ECN::ECSchemaCR schema, E
     if (relClass == nullptr)
         return true;
 
-    const bool isAbstract = !relClass->GetIsDomainClass() && !relClass->GetIsStruct() && !relClass->GetIsCustomAttributeClass();
+    const bool isAbstract = ECClassModifier::Abstract == relClass->GetClassModifier();
     return ValidateConstraint(*relClass, isAbstract, relClass->GetSource()) && ValidateConstraint(*relClass, isAbstract, relClass->GetTarget());
     }
 
@@ -648,13 +648,13 @@ ConsistentClassHierarchyRule::ClassKind ConsistentClassHierarchyRule::DetermineC
     if (ecclass.GetRelationshipClassCP() != nullptr)
         return ClassKind::Relationship;
 
-    if (ecclass.GetIsStruct())
+    if (ecclass.IsStructClass())
         return ClassKind::Struct;
 
-    if (ecclass.GetIsCustomAttributeClass())
+    if (ecclass.IsCustomAttributeClass())
         return ClassKind::CustomAttribute;
 
-    if (!ecclass.GetIsDomainClass())
+    if (ECClassModifier::Abstract == ecclass.GetClassModifier()) // WIP_EC3 - do we need to consider Sealed, as well?
         return ClassKind::Abstract;
 
     return ClassKind::Regular;

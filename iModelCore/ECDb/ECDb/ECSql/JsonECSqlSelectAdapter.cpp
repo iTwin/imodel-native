@@ -64,13 +64,13 @@ ECClassCP JsonECSqlSelectAdapter::GetClassFromStructOrStructArray(ECPropertyCR e
         }
     else if (ecProperty.GetIsArray())
         {
-        ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-        BeAssert(arrayProperty != nullptr && arrayProperty->GetKind() == ARRAYKIND_Struct);
-        return arrayProperty->GetStructElementType();
+        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
+        BeAssert(structArrayProperty != nullptr);
+        return structArrayProperty->GetStructElementType();
         }
 
     /* else */
-    BeAssert(false && "Properyt has to be a struct or a struct array");
+    BeAssert(false && "Property has to be a struct or a struct array");
     return nullptr;
     }
 

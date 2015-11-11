@@ -361,7 +361,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         return stat;
 
     //! Add referential integrity if user requested it.
-    if (relationshipClassMapInfo.CreateForeignKeyConstraint() && relationshipClass.GetStrength() != StrengthType::STRENGTHTYPE_Holding)
+    if (relationshipClassMapInfo.CreateForeignKeyConstraint() && relationshipClass.GetStrength() != StrengthType::Holding)
         {
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
