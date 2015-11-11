@@ -26,7 +26,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         //printf ("Detach from profiler...\r\n"); getchar ();
 
         deserializationTimer.Stop ();
-        EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+        EXPECT_EQ (SchemaReadStatus::Success, status);
 
         StopWatch serializationTimer ("Serialization", false);
         Utf8String ecSchemaXml;
@@ -36,7 +36,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXml);
         //printf ("Detach from profiler...\r\n"); getchar ();
         serializationTimer.Stop ();
-        EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);
+        EXPECT_EQ (SchemaWriteStatus::Success, status2);
 
         size_t stringLength = ecSchemaXml.length ();
 
@@ -68,7 +68,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         //    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, L"c:\\temp\\data\\ECXA\\Dataset for D-84244\\Schemas\\OpenPlant_3D.01.02.ecschema.xml", *schemaContext);
         SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (schemaName).c_str (), *schemaContext);
 
-        EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+        EXPECT_EQ (SchemaReadStatus::Success, status);
 
         ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
 
@@ -79,14 +79,14 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         readingTimer.Start ();
         instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath (instanceXmlFile).c_str (), *instanceContext);
         readingTimer.Stop ();
-        EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
+        EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
 
         StopWatch writingTimer (L"Serialization", false);
         WString ecInstanceXml;
         writingTimer.Start ();
         InstanceWriteStatus status2 = testInstance->WriteToXmlString (ecInstanceXml, true, true);
         writingTimer.Stop ();
-        EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);
+        EXPECT_EQ (InstanceWriteStatus::Success, status2);
 
         Utf8String dateTime = ECTestFixture::GetDateTime ();
         size_t stringLength = ecInstanceXml.length ();

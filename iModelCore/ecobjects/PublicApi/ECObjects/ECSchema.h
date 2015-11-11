@@ -11,7 +11,9 @@
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/CalculatedProperty.h>
+/*__PUBLISH_SECTION_END__*/
 #include <ECObjects/SchemaLocalizedStrings.h>
+/*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>

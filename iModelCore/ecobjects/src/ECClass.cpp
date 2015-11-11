@@ -29,7 +29,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_ecClassId(0)
+    m_schema(schema), m_ecClassId(0), m_modifier(ECClassModifier::None)
     {
     //
     };

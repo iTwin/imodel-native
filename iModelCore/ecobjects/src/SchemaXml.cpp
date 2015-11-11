@@ -181,18 +181,18 @@ SchemaReadStatus SchemaXmlReader::ReadClassStubsFromXml2(ECSchemaPtr& schemaOut,
                 if (className.CompareTo("TransformationValueMap") != 0)
                     {
                     LOG.errorv("Class %s in Schema %s is marked as both Struct and CustomAttribute.  This is not allowed.", className.c_str(), schemaOut->GetFullSchemaName().c_str());
-                    return SchemaReadStatus::InvalidECSchemaXml;
+                    //return SchemaReadStatus::InvalidECSchemaXml;
                     }
                 }
-            if (isCA)
-                {
-                caClass = new ECCustomAttributeClass(*schemaOut);
-                ecClass = caClass;
-                }
-            else if (isStruct)
+            if (isStruct)
                 {
                 structClass = new ECStructClass(*schemaOut);
                 ecClass = structClass;
+                }
+            else if (isCA)
+                {
+                caClass = new ECCustomAttributeClass(*schemaOut);
+                ecClass = caClass;
                 }
             else
                 ecClass = new ECEntityClass(*schemaOut);
@@ -223,7 +223,10 @@ SchemaReadStatus SchemaXmlReader::ReadClassStubsFromXml2(ECSchemaPtr& schemaOut,
         ECClassP existingClass = schemaOut->GetClassP(ecClass->GetName().c_str());
 
         if (NULL != existingClass)
+            {
+            LOG.errorv("Duplicate class node for %s in schema %s.", ecClass->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
             return SchemaReadStatus::DuplicateClassDefinition;
+            }
         else if (ECObjectsStatus::Success != schemaOut->AddClass(ecClass))
             return SchemaReadStatus::InvalidECSchemaXml;
 
