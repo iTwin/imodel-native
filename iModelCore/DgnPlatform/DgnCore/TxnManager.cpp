@@ -153,10 +153,6 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     if (m_dgndb.IsReadonly())
         return;
 
-    // Pretend that we are using a briefcase             *** NEEDS WORK: Remove this when we start using real briefcases
-    m_dgndb.ChangeBriefcaseId(BeBriefcaseId(1));      // *** NEEDS WORK: Remove this when we start using real briefcases
-                                            
-
     // whenever we open a Briefcase for write access, enable tracking
     if (m_dgndb.IsBriefcase())
         EnableTracking(true);
@@ -167,8 +163,6 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::InitializeTableHandlers()
     {
-    BeAssert(!m_tables.empty() && "Call InitializeTableHandlers after loading domains");
-
     if (!m_isTracking)
         return BE_SQLITE_OK;
 

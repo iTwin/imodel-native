@@ -99,8 +99,8 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
         return rc;
 
-    if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created
-        return rc;
+    if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
+        return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
 
     return BE_SQLITE_OK;
     }
