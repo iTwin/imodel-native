@@ -264,7 +264,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
 
     ECSchemaPtr schemaPtr;
     SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
-    if (SCHEMA_READ_STATUS_Success != readSchemaStatus)
+    if (SchemaReadStatus::Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
@@ -418,13 +418,13 @@ bool DgnDomains::GetHandlerInfo(uint64_t* restrictionMask, DgnClassId handlerId,
 
     // Parse this ECClass's restrictions
     ECN::ECValue restrictions;
-    if (ECN::ECOBJECTS_STATUS_Success == attr->GetValue(restrictions, "Restrictions") && restrictions.IsArray())
+    if (ECN::ECObjectsStatus::Success == attr->GetValue(restrictions, "Restrictions") && restrictions.IsArray())
         {
         uint32_t count = restrictions.GetArrayInfo().GetCount();
         for (uint32_t i = 0; i < count; i++)
             {
             ECValue v;
-            if (ECN::ECOBJECTS_STATUS_Success == attr->GetValue(v, "Restrictions", i) && v.IsString() && !v.IsNull())
+            if (ECN::ECObjectsStatus::Success == attr->GetValue(v, "Restrictions", i) && v.IsString() && !v.IsNull())
                 {
                 uint64_t restriction = handler._ParseRestrictedAction(v.GetUtf8CP());
                 BeAssert(0 == ((*restrictionMask) & restriction) && "Duplicate restriction or bad bitmask");

@@ -247,7 +247,7 @@ DgnDbStatus ModelSolverDef::ParameterSet::SetValuesFromECProperties(ECN::IECInst
     for (auto& parameter : *this)
         {
         ECN::ECValue ecv;
-        if (ECN::ECOBJECTS_STATUS_Success != instance.GetValue(ecv, parameter.GetName().c_str()))
+        if (ECN::ECObjectsStatus::Success != instance.GetValue(ecv, parameter.GetName().c_str()))
             {
             BeDataAssert(false);
             return DgnDbStatus::BadArg;

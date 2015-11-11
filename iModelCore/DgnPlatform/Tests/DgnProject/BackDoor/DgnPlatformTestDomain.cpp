@@ -337,7 +337,7 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
 
     ECN::ECSchemaPtr schemaPtr;
     ECN::SchemaReadStatus readSchemaStatus = ECN::ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
-    if (ECN::SCHEMA_READ_STATUS_Success != readSchemaStatus)
+    if (ECN::SchemaReadStatus::Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))

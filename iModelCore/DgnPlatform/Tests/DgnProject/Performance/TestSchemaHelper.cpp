@@ -59,7 +59,7 @@ Utf8StringCR schemaXml
 
     ECSchemaPtr schema;
     auto ecSchemaStatus = ECSchema::ReadFromXmlString (schema, schemaXml.c_str (), *schemaReadContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, ecSchemaStatus);
+    EXPECT_EQ (SchemaReadStatus::Success, ecSchemaStatus);
     EXPECT_TRUE (schema.IsValid ());
     return schema;
     }

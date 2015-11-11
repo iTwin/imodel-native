@@ -194,8 +194,8 @@ ECSchemaR DgnECSymbolProvider::GetSchema()
     if (m_schema.IsNull())
         {
         ECSchema::CreateSchema (m_schema, "PseudoSchema", 1, 0);
-        ECClassP ecClass;
-        m_schema->CreateClass (ecClass, "ECClass");
+        ECEntityClassP ecClass;
+        m_schema->CreateEntityClass (ecClass, "ECClass");
         PrimitiveECPropertyP ecProp;
         ecClass->CreatePrimitiveProperty (ecProp, "Name", PRIMITIVETYPE_String);
         ecClass->CreatePrimitiveProperty (ecProp, "DisplayLabel", PRIMITIVETYPE_String);
@@ -262,18 +262,18 @@ private:
     ExpressionStatus        m_status;
 
     PredicateProcessor (bool valueToStopOn, bool ignoreErrors, EvaluationResult& result)
-        : m_valueToStopOn(valueToStopOn), m_ignoreErrors(ignoreErrors), m_result(result), m_status(ExprStatus_Success)
+        : m_valueToStopOn(valueToStopOn), m_ignoreErrors(ignoreErrors), m_result(result), m_status(ExpressionStatus::Success)
         {
         m_result.InitECValue().SetBoolean (!valueToStopOn);
         }
 
     virtual bool ProcessResult (ExpressionStatus status, EvaluationResultCR member, EvaluationResultCR result) override
         {
-        if (ExprStatus_Success != status)
+        if (ExpressionStatus::Success != status)
             return m_ignoreErrors;  // stop iteration if we're not ignoring errors
         else if (!result.IsECValue() || !result.GetECValue()->IsBoolean())
             {
-            m_status = ExprStatus_UnknownError;
+            m_status = ExpressionStatus::UnknownError;
             return false;   // stop iteration
             }
         else if (m_valueToStopOn == result.GetECValue()->GetBoolean())
@@ -289,11 +289,11 @@ private:
         {
         LambdaValueCP lambda;
         if (!ExtractArg (lambda, args, 0) || NULL == lambda)
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
 
         PredicateProcessor proc (target, ignoreErrors, evalResult);
         ExpressionStatus status = lambda->Evaluate (valueList, proc);
-        if (ExprStatus_Success == status)
+        if (ExpressionStatus::Success == status)
             status = proc.m_status;
 
         return status;
@@ -331,7 +331,7 @@ ExpressionStatus DgnECSymbolProvider::AllMatch (EvaluationResult& evalResult, IV
 ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
-        return ExprStatus_StructRequired;
+        return ExpressionStatus::StructRequired;
 
     for (IECInstancePtr const& instance: instanceData)
         {
@@ -339,11 +339,11 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResul
         if (!Utf8String::IsNullOrEmpty (instanceId.c_str()))
             {
             evalResult.InitECValue().SetUtf8CP (instanceId.c_str());
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         }
 
-    return ExprStatus_UnknownError;
+    return ExpressionStatus::UnknownError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -352,19 +352,19 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResul
 ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
-        return ExprStatus_StructRequired;
+        return ExpressionStatus::StructRequired;
 
     for (IECInstancePtr const& instance: instanceData)
         {
         Utf8String displayLabel;
-        if (ECOBJECTS_STATUS_Success == instance->GetDisplayLabel (displayLabel))
+        if (ECObjectsStatus::Success == instance->GetDisplayLabel (displayLabel))
             {
             evalResult.InitECValue().SetUtf8CP (displayLabel.c_str());
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         }
 
-    return ExprStatus_UnknownError;
+    return ExpressionStatus::UnknownError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,7 +373,7 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalRe
 ExpressionStatus DgnECSymbolProvider::GetClass (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (0 == instanceData.size())
-        return ExprStatus_StructRequired;
+        return ExpressionStatus::StructRequired;
 
     ECInstanceList classInstances;
     StandaloneECEnablerR classEnabler = *GetProvider().GetSchema().GetClassCP ("ECClass")->GetDefaultStandaloneEnabler();
@@ -392,7 +392,7 @@ ExpressionStatus DgnECSymbolProvider::GetClass (EvaluationResult& evalResult, EC
         }
 
     evalResult.SetInstanceList (classInstances, true);
-    return ExprStatus_Success;
+    return ExpressionStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,9 +425,9 @@ struct ClassVisitor
 ExpressionStatus extractPropertyAccessor (Utf8CP& schemaName, Utf8CP& className, Utf8CP& accessString, EvaluationResultVector& args)
     {
     if (!ExtractArg (schemaName, args, 0, false) || !ExtractArg (className, args, 1, false) || !ExtractArg (accessString, args, 2, false))
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
     else
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
     }
 
 typedef bpair<IECInstanceCP, ECPropertyCP> InstancePropertyPair;
@@ -440,7 +440,7 @@ InstancePropertyPair extractProperty (ExpressionStatus& status, ECInstanceListCR
     InstancePropertyPair pair (nullptr, nullptr);
     Utf8CP schemaName, className;
     status = extractPropertyAccessor (schemaName, className, accessString, args);
-    if (ExprStatus_Success == status)
+    if (ExpressionStatus::Success == status)
         {
         for (auto const& instance : instanceData)
             {
@@ -467,7 +467,7 @@ ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, E
     IECInstancePtr instance;
     Utf8CP schemaname, classname;
     if (2 != args.size() || !SystemSymbolProvider::ExtractArg (classname, args[0]) || !SystemSymbolProvider::ExtractArg (schemaname, args[1]))
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
 
     bool found = false;
     for (IECInstancePtr const& instance: instanceData)
@@ -478,7 +478,7 @@ ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, E
         }
 
     evalResult.InitECValue().SetBoolean (found);
-    return ExprStatus_Success;
+    return ExpressionStatus::Success;
     }
 
 
@@ -491,12 +491,12 @@ ExpressionStatus DgnECSymbolProvider::IsPropertyValueSet (EvaluationResult& eval
     ExpressionStatus status;
     Utf8CP accessString;
     InstancePropertyPair pair = extractProperty (status, instanceData, args, accessString);
-    if (ExprStatus_Success == status)
+    if (ExpressionStatus::Success == status)
         {
         IECInstanceCP instance = pair.first;
         ECPropertyCP prop = pair.second;
             if (nullptr == prop)
-                    return ExprStatus_UnknownError;
+                    return ExpressionStatus::UnknownError;
         
         bool isSet = false;
         IDgnECTypeAdapterP adapter = nullptr != prop && nullptr != instance ? &IDgnECTypeAdapter::GetForProperty (*prop) : nullptr;
@@ -526,16 +526,16 @@ ExpressionStatus DgnECSymbolProvider::ResolveSymbology (EvaluationResult& evalRe
     ExpressionStatus status;
     Utf8CP accessString;
     InstancePropertyPair pair = extractProperty (status, instanceData, args, accessString);
-    if (ExprStatus_Success != status)
+    if (ExpressionStatus::Success != status)
         return status;
 
     IECInstanceCP instance = pair.first;
     ECPropertyCP prop = pair.second;
     ECValue v;
     if (nullptr == instance || nullptr == prop)
-        return ExprStatus_UnknownMember;
+        return ExpressionStatus::UnknownMember;
     else if (ECOBJECTS_STATUS_Success != instance->GetValue (v, accessString))
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
 
     IDgnECTypeAdapterR adapter = IDgnECTypeAdapter::GetForProperty (*prop);
     auto resolver = dynamic_cast<IDgnECSymbologyResolver const*>(&adapter);
@@ -543,7 +543,7 @@ ExpressionStatus DgnECSymbolProvider::ResolveSymbology (EvaluationResult& evalRe
         {
         auto context = IDgnECTypeAdapterContext::CreateStandalone (*prop, *instance, accessString);
         if (!resolver->ResolveSymbology (v, *context))
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
 
         // NEEDSWORK:
         //  We introduced this method for use in Condition Editor (display rules, ecreporting)
@@ -557,7 +557,7 @@ ExpressionStatus DgnECSymbolProvider::ResolveSymbology (EvaluationResult& evalRe
         }
 
     evalResult.InitECValue() = v;
-    return ExprStatus_Success;
+    return ExpressionStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,12 +574,12 @@ ExpressionStatus DgnECSymbolProvider::GetRelatedInstance (EvaluationResult& eval
 
     Utf8CP rawArg;
     if (1 != args.size() || 0 == instanceData.size() || !SystemSymbolProvider::ExtractArg (rawArg, args[0]))
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
 
     bvector<Utf8String> argTokens;
     BeStringUtilities::Split(rawArg, ",", NULL, argTokens);
     if (1 > argTokens.size() || 2 < argTokens.size())
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
 
     Utf8String arg = argTokens[0];     // "relationship:dir:related"
     Utf8String failureSpec = (argTokens.size() > 1) ? argTokens[1] : "";  // " PropertyName:FailureValue
@@ -587,14 +587,14 @@ ExpressionStatus DgnECSymbolProvider::GetRelatedInstance (EvaluationResult& eval
 
     BeStringUtilities::Split(arg.c_str(), ":", NULL, argTokens);
     if (argTokens.size() < 3 || argTokens.size() > 4 || argTokens[1].length() != 1)
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
 
     ECRelatedInstanceDirection direction;
     switch (argTokens[1][0])
         {
     case '0':       direction = STRENGTHDIRECTION_Forward; break;
     case '1':       direction = STRENGTHDIRECTION_Backward; break;
-    default:        return ExprStatus_UnknownError;
+    default:        return ExpressionStatus::UnknownError;
         }
 
     Utf8CP   relationshipName = argTokens[0].c_str(),
@@ -652,7 +652,7 @@ ExpressionStatus DgnECSymbolProvider::GetRelatedInstance (EvaluationResult& eval
     else
         evalResult.InitECValue().SetToNull();
 
-    return ExprStatus_Success;
+    return ExpressionStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

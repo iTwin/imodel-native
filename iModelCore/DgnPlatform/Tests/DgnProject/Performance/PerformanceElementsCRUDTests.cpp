@@ -69,7 +69,7 @@ void PerformanceElementsCRUDTestFixture::SetUpPopulatedDb (WCharCP dbName, Utf8C
         schemaContext->AddSchemaPath (searchDir.GetName ());
 
         ECN::ECSchemaPtr schema = nullptr;
-        ASSERT_EQ (ECN::SCHEMA_READ_STATUS_Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
+        ASSERT_EQ (ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
 
         PerformanceElementTestDomain::RegisterDomainAndImportSchema (*m_db, *schema);
         ASSERT_TRUE (m_db->IsDbOpen ());

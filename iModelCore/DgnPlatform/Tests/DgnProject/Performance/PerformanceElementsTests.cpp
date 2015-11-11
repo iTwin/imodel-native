@@ -606,7 +606,7 @@ void PerformanceElementsTestFixture::InitializeProject(WCharCP dbName)
     schemaContext->AddSchemaPath(searchDir.GetName ());
 
     ECN::ECSchemaPtr schema = nullptr;
-    if (ECN::SCHEMA_READ_STATUS_Success != ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext))
+    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext))
         return;
 
     PerformanceElementsTestDomain::RegisterDomainAndImportSchema(*m_db, *schema);
