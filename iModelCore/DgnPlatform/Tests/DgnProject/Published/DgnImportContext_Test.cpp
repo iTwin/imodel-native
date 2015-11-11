@@ -102,13 +102,13 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
 static void checkGroupHasOneMemberInModel(DgnModelR model)
 {
     BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ECClassId=? AND ModelId=?)");
-    stmt.BindInt64(1, model.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
+    stmt.BindId(1, model.GetDgnDb().Domains().GetClassId(TestGroupHandler::GetHandler()));
     stmt.BindId(2, model.GetModelId());
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    DgnElementId gid = stmt.GetValueId<DgnElementId>(0);
+    DgnElementId groupId = stmt.GetValueId<DgnElementId>(0);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
-    ElementGroupCPtr group = model.GetDgnDb().Elements().Get<ElementGroup>(gid);
+    TestGroupCPtr group = model.GetDgnDb().Elements().Get<TestGroup>(groupId);
     ASSERT_TRUE(group.IsValid());
 
     DgnElementIdSet members = group->QueryMembers();
@@ -217,24 +217,17 @@ TEST_F(ImportTest, ImportGroups)
     ASSERT_TRUE(model1.IsValid());
     {
         // Put a group into moddel1
-        ElementGroupCPtr group;
-        {
-            DgnClassId gclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
-            DgnElementCPtr groupEl = ElementGroup::Create(ElementGroup::CreateParams(*db, model1->GetModelId(), gclassid))->Insert();
-            group = dynamic_cast<ElementGroupCP>(groupEl.get());
-            ASSERT_TRUE(group.IsValid());
-        }
+        TestGroupPtr group = TestGroup::Create(*db, model1->GetModelId(), DgnCategory::QueryHighestCategoryId(*db));
+        ASSERT_TRUE(group.IsValid());
+        ASSERT_TRUE(group->Insert().IsValid());
 
         //  Add a member
-        if (true)
-        {
-            DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
-            DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*db);
-            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()))->Insert();
-            //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
-            ASSERT_TRUE(member.IsValid());
-            ASSERT_EQ(DgnDbStatus::Success, group->InsertMember(*member));
-        }
+        DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+        DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*db);
+        PhysicalElementPtr member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()));
+        ASSERT_TRUE(member.IsValid());
+        ASSERT_TRUE(member->Insert().IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, group->AddMember(*member));
 
         checkGroupHasOneMemberInModel(*model1);
     }

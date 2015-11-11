@@ -1530,116 +1530,6 @@ DgnElementCPtr DgnElement::Update(DgnDbStatus* stat) {return GetDgnDb().Elements
 DgnElementCPtr DgnElement::Insert(DgnDbStatus* stat) {return GetDgnDb().Elements().Insert(*this, stat);}
 DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*this);}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGroup::InsertMember(DgnElementCR member) const
-    {
-    if (!GetElementId().IsValid() || !member.GetElementId().IsValid())
-        return DgnDbStatus::InvalidId;
-
-    DgnDbStatus status = _OnMemberInsert(member); // give subclass a chance to reject member insert
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers) "(SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-
-    statement->BindId(1, GetElementClassId());
-    statement->BindId(2, GetElementId());
-    statement->BindId(3, member.GetElementClassId());
-    statement->BindId(4, member.GetElementId());
-
-    if (BE_SQLITE_DONE != statement->Step())
-        return DgnDbStatus::BadRequest;
-
-    _OnMemberInserted(member); // notify subclass that member was inserted
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGroup::DeleteMember(DgnElementCR member) const
-    {
-    if (!GetElementId().IsValid() || !member.GetElementId().IsValid())
-        return DgnDbStatus::InvalidId;
-
-    DgnDbStatus status = _OnMemberDelete(member); // give subclass a chance to reject member delete
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    CachedStatementPtr statement=GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=? AND MemberId=?");
-    statement->BindId(1, GetElementId());
-    statement->BindId(2, member.GetElementId());
-
-    if (BE_SQLITE_DONE != statement->Step())
-        return DgnDbStatus::BadRequest;
-
-    _OnMemberDeleted(member); // notify subclass that member was deleted
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGroup::DeleteAllMembers() const
-    {
-    DgnElementIdSet memberIds = QueryMembers();
-    for (DgnElementId memberId : memberIds)
-        {
-        DgnElementCPtr member = GetDgnDb().Elements().GetElement(memberId);
-        if (!member.IsValid())
-            {
-            BeAssert(false); // indicates an orphaned relationship
-            continue;
-            }
-
-        DgnDbStatus deleteMemberStatus = DeleteMember(*member);
-        if (DgnDbStatus::Success != deleteMemberStatus)
-            return deleteMemberStatus;
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet ElementGroup::_QueryMembers() const
-    {
-    CachedStatementPtr statement=GetDgnDb().Elements().GetStatement("SELECT MemberId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=?");
-    statement->BindId(1, GetElementId());
-
-    DgnElementIdSet elementIdSet;
-    while (BE_SQLITE_ROW == statement->Step())
-        elementIdSet.insert(statement->GetValueId<DgnElementId>(0));
-
-    return elementIdSet;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ElementGroup::QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberId)
-    {
-    if (!groupClassId.IsValid() || !memberId.IsValid())
-        return DgnElementId();
-
-    CachedStatementPtr statement=db.Elements().GetStatement("SELECT Rel.GroupId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " Rel INNER JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " Elm ON Elm.Id=Rel.GroupId WHERE Elm.ECClassId=? AND Rel.MemberId=?");
-    statement->BindId(1, groupClassId);
-    statement->BindId(2, memberId);
-
-    return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                    06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId ElementGroup::QueryClassId(DgnDbR db)
-    {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
@@ -1696,6 +1586,8 @@ bool ElementGroupsMembers::HasMember(DgnElementCR group, DgnElementCR member)
 //---------------------------------------------------------------------------------------
 DgnElementIdSet ElementGroupsMembers::QueryMembers(DgnElementCR group)
     {
+    BeAssert(nullptr != group.ToIElementGroup());
+
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=?");
 
