@@ -169,6 +169,8 @@ LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefiniti
 LsDefinition::~LsDefinition()
     {
     SetName (NULL);
+    if (m_textureInitialized)
+        T_HOST.GetGraphicsAdmin()._DeleteTexture (m_textureHandle);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -564,6 +566,7 @@ void            LsIdNode::Clear ()
     {
     SetName (NULL);
     m_id      = 0;
+    delete m_nameRec;
     m_nameRec = NULL;
     }
 
