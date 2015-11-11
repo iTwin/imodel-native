@@ -129,7 +129,7 @@ public:
 
     IMAGEPP_EXPORT virtual bool          IsEmpty() const;
     IMAGEPP_EXPORT virtual HGF2DShapeTypeId 
-                                        GetShapeType() const;
+                                         GetShapeType() const;
     IMAGEPP_EXPORT virtual HGF2DShape*   DifferentiateShape(const HGF2DShape& pi_rShape) const;
     IMAGEPP_EXPORT virtual HGF2DShape*   DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
     IMAGEPP_EXPORT virtual HGF2DShape*   IntersectShape(const HGF2DShape& pi_rShape) const;
@@ -139,9 +139,9 @@ public:
     IMAGEPP_EXPORT virtual bool          IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
     IMAGEPP_EXPORT virtual void          MakeEmpty();
     IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition    
-                                        CalculateSpatialPositionOfSingleComponentVector(const HGF2DVector& pi_rVector) const;
+                                         CalculateSpatialPositionOfSingleComponentVector(const HGF2DVector& pi_rVector) const;
     IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition    
-                                        CalculateSpatialPositionOfNonCrossingLinear(const HGF2DLinear& pi_rLinear) const;
+                                         CalculateSpatialPositionOfNonCrossingLinear(const HGF2DLinear& pi_rLinear) const;
 
     IMAGEPP_EXPORT virtual void          Drop(HGF2DPositionCollection* po_pPoint,
                                              double      pi_rTolerance) const;
@@ -172,7 +172,7 @@ public:
 
     // From HGFGraphicObject
     IMAGEPP_EXPORT virtual HGF2DLiteExtent
-                                        GetExtent() const;
+                                         GetExtent() const;
     IMAGEPP_EXPORT virtual void          Move(const HGF2DDisplacement& pi_rDisplacement);
     IMAGEPP_EXPORT virtual void          Scale(double              pi_ScaleFactor,
                                               const HGF2DPosition& pi_rScaleOrigin);
@@ -185,7 +185,7 @@ public:
     IMAGEPP_EXPORT virtual void          PrintState(ostream& po_rOutput) const;
 
 
-    virtual HFCPtr<HGF2DShape>          AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
+    virtual HFCPtr<HGF2DShape>           AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
 
 protected:
 

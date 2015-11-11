@@ -135,13 +135,57 @@
         <SubPart PartName="IppImagingDll" LibType="Static"/>-->
     </Part>    
     
-    <Part Name="ImagePP-Tested" PrgOutputDir="ImagePP" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePP"/>
-        <SubPart PartName="ImagePPUnitTests"    PartFile="ImagePPTest"  Repository="Imagepp"/>
-        <SubPart PartName="Gtest-Tools"         PartFile="BeGTest"      Repository="BeGTest" />        
+    <!-- ********************************************************************************************** -->
+    <!-- Define the collection of all unit tests for the ImagePP repository itself. -->
+    <!-- ********************************************************************************************** -->
+    
+    <!--  <Part Name="ImagePPUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon//sharedmki/BuildUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)Imagepp/Tests/ -dBEGTEST_NAME=ImagePP -dBEGTEST_DEPENDENCIES=$(SrcRoot)Imagepp/Tests/dependencies.mki">  -->
+     <!--   <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" /> --> -->
+     <!--    <SubPart PartName="ImagePP"             PartFile="ImagePP"      Repository="ImagePP" LibType="Static"/> -->
+    <!-- </Part> -->
+    
+    <Part Name="Tests">
+        <!-- <subPart PartName="ImagePPUnitTests" /> -->
+        <subPart PartName="ImagePPUnitTests" PartFile="ImagePPTest" Repository="ImagePP" />
+    </Part>
+    
+    <Product Name="ImagePP-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPTestsDir"/>
+        
+    </Product>    
+    
+    <!-- Define a gtest program to run the tests -->
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTest -dTEST_COLLECTION_PRODUCT=ImagePP-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="ImagePP-Tests"/>
+         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ImagePPTest/Assemblies/*</Files>
+           <!-- <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ImagePPTest/Assets" /> -->
+        </Bindings>
+    </Part>    
+    
+    
+    
+    <Product Name="ImagePP-GTest">
+        <SubPart PartName="GTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>    
+
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ImagePP-GTest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>    
+    
+    <Part Name="ImagePP-Tested" OnlyPlatforms="x86,x64">
+        <SubPart PartName="RunGTest"/>
     </Part>
 
+    
     <Part Name="ImagePP-Dev" OnlyPlatforms="x86,x64">
+        <SubPart PartName= "ImagePP" />
         <SubPart PartName= "ImagePP-Tested" />
         <SubProduct ProductName="ImageppApps"           PartFile="ImageppApps"          Repository="ImageppApps" />
     </Part>
@@ -157,4 +201,8 @@
         <!--SubProduct ProductName="PlatformProducts"      PartFile="PlatformProducts"     Repository="MstnPlatform" /-->
     </Part>
     
+    <ProductDirectoryList ListName="ImagePPTestsDir" >
+
+    </ProductDirectoryList>
+
 </BuildContext>
