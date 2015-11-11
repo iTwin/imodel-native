@@ -33,10 +33,10 @@
     <ClCompile Include="BeTestHost.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\BackDoorMobileDgnUnitTests.cpp">
+    <ClCompile Include="source\BackDoorUnitTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\PublishedMobileDgnUnitTests.cpp">
+    <ClCompile Include="source\PublishedUnitTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\BackDoorECDbUnitTests.cpp">
@@ -54,7 +54,7 @@
     <ClCompile Include="source\NonPublishedDgnProjectUnitTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\NonPublishedMobileDgnUnitTests.cpp">
+    <ClCompile Include="source\NonPublishedUnitTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\PerformanceECDbUnitTests.cpp">
@@ -127,7 +127,7 @@
     <None Include="BeLibxml2.dll" />
     <None Include="BentleyAllocator.dll" />
     <None Include="BentleyG.dll" />
-    <None Include="BentleyG0504.MobileDgn.Win8.dll" />
+    <None Include="BentleyG0504.DgnClientFx.Win8.dll" />
     <None Include="BentleyGeomG.dll" />
     <None Include="BentleyGeomSerializationG.dll" />
     <None Include="BeSQLiteECG.dll" />
@@ -244,15 +244,15 @@
     <None Include="SeedData\Widgets.09.06.ecschema.xml" />
     <None Include="SeedData\WidthDefaults.01.00.ecschema.xml" />
     <None Include="sqlang" />
-    <None Include="sqlang\MobileDgn_de.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_en.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_es.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_it.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_ja.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_pseudo.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_ru.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_zh-cn.sqlang.db3" />
-    <None Include="sqlang\MobileDgn_zh-tw.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_de.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_en.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_es.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_it.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_ja.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_pseudo.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_ru.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_zh-cn.sqlang.db3" />
+    <None Include="sqlang\DgnClientFx_zh-tw.sqlang.db3" />
     <None Include="ToolsubsG.dll" />
     <None Include="WebServicesClient.dll" />
     <None Include="sqlang\BeGTest_en-US.sqlang.db3" />
