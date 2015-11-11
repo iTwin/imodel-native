@@ -2748,10 +2748,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelate
                     "schemaName" : "TestSchema",
                     "className" : "TestRelationshipClass",
                     "direction" : "backward",
-                    "properties" : {},
                     "relatedInstance" :
                         {
-                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "RemoteIdA"
@@ -2859,10 +2857,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
                     "schemaName" : "TestSchema",
                     "className" : "TestRelationshipClass",
                     "direction" : "backward",
-                    "properties" : {},
                     "relatedInstance" :
                         {
-                        "changeState": "existing",  
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -2887,10 +2883,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
                     "schemaName" : "TestSchema",
                     "className" : "TestRelationshipClass",
                     "direction" : "backward",
-                    "properties" : {},
                     "relatedInstance" :
                         {
-                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestDerivedClass",
                         "instanceId" : "NewB"
@@ -2970,10 +2964,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                     "schemaName" : "TestSchema",
                     "className" : "TestRelationshipClass",
                     "direction" : "backward",
-                    "properties" : {},
                     "relatedInstance" :
                         {
-                        "changeState": "existing",  
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -2998,10 +2990,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                     "schemaName" : "TestSchema",
                     "className" : "TestRelationshipClass",
                     "direction" : "backward",
-                    "properties" : {},
                     "relatedInstance" :
                         {
-                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "NewB"
@@ -3105,10 +3095,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                     "schemaName" : "TestSchema",
                     "className" : "TestRelationshipClass",
                     "direction" : "backward",
-                    "properties" : {},
                     "relatedInstance" :
                         {
-                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -3121,7 +3109,6 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
         R"( {
             "instance" :
                 {   
-                "changeState": "existing",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
                 "instanceId" : "B",
@@ -3131,10 +3118,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                     "schemaName" : "TestSchema",
                     "className" : "TestRelationshipClass",
                     "direction" : "forward",
-                    "properties" : {},
                     "relatedInstance" :
                         {
-                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "NewC"
