@@ -56,12 +56,9 @@ MapStatus ClassMapInfo::Initialize()
     //Default values for table name and primary key column name
     if (m_tableName.empty())
         {
-        // ClassMappingRule: if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
-        m_tableName = ResolveTablePrefix(m_ecClass);
-        m_tableName.append("_").append(m_ecClass.GetName());
-
-        if (IClassMap::IsMapToSecondaryTableStrategy(m_ecClass))  // ClassMappingRule: assumes that structs are always used in arrays
-            m_tableName.append(TABLESUFFIX_STRUCTARRAY);
+        // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
+        if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
+            return MapStatus::Error;
         }
 
     if (m_ecInstanceIdColumnName.empty())
@@ -173,6 +170,8 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         m_parentClassMap = parentClassMap;
         BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
 
+        m_tableName = m_parentClassMap->GetTable().GetName();
+
         UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap->GetClass());
         if (parentUserStrategy == nullptr)
             {
@@ -192,9 +191,32 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         else if (Enum::Intersects(parentStrategy.GetOptions(), Enum::Or(ECDbMapStrategy::Options::JoinedTable, ECDbMapStrategy::Options::ParentOfJoinedTable)))
             {
             options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
-            m_tableName = m_parentClassMap->GetTable().GetName();
-            if (!m_parentClassMap->GetTable().GetName().EndsWithI(TABLESUFFIX_JOINEDTABLE))
-                m_tableName.append(TABLESUFFIX_JOINEDTABLE);
+            if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses))
+                {
+                BeAssert(!m_tableName.EndsWithI(TABLESUFFIX_JOINEDTABLE));
+                Utf8String parentClassTablePrefix;
+                if (SUCCESS != IClassMap::DetermineTablePrefix(parentClassTablePrefix, m_parentClassMap->GetClass()))
+                    return ERROR;
+
+                Utf8String parentClassTableName;
+                bool samePrefix = m_tableName.StartsWithI(parentClassTablePrefix.c_str());
+                bool sameTableName = false;
+                if (samePrefix)
+                    {
+                    if (SUCCESS != IClassMap::DetermineTableName(parentClassTableName, m_parentClassMap->GetClass(), parentClassTablePrefix.c_str()))
+                        return ERROR;
+
+                    sameTableName = m_tableName.EqualsI(parentClassTableName);
+                    }
+
+                if (sameTableName)
+                    m_tableName.append(TABLESUFFIX_JOINEDTABLE);
+                else if (samePrefix)
+                    m_tableName.Sprintf("%s_%s" TABLESUFFIX_JOINEDTABLE, m_tableName.c_str(), m_parentClassMap->GetClass().GetName().c_str());
+                else
+                    m_tableName.Sprintf("%s_%s" TABLESUFFIX_JOINEDTABLE, m_tableName.c_str(),
+                                        parentClassTableName.c_str());
+                }
             }
 
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, true);
@@ -229,12 +251,10 @@ bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, 
             case ECDbMapStrategy::Strategy::SharedTable:
                 {
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
-                    !childStrategy.AppliesToSubclasses() &&
-                    childStrategy.GetOptions() != UserECDbMapStrategy::Options::JoinedTableForSubclasses &&
-                    childStrategy.GetOptions() != UserECDbMapStrategy::Options::SharedColumnsForSubclasses;
+                    !childStrategy.AppliesToSubclasses() && childStrategy.GetOptions() != UserECDbMapStrategy::Options::SharedColumnsForSubclasses;
 
                 if (!isValid)
-                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and Option must either be unset, 'SharedColumns', or 'DisableSharedColumns'.";
+                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and Options must not specify SharedColumnsForSubclasses.";
 
                 break;
                 }
@@ -553,29 +573,6 @@ ECClassCR          ecClass
     return true;
     }
     
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan.Khan                          03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
-    {
-    ECSchemaCR schema = ecClass.GetSchema ();
-    ECDbSchemaMap customSchemaMap;
-    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap (customSchemaMap, schema))
-        {
-        Utf8String tablePrefix;
-        if (customSchemaMap.TryGetTablePrefix(tablePrefix) == ECOBJECTS_STATUS_Success && !tablePrefix.empty ())
-            return tablePrefix;
-        }
-
-    Utf8StringCR namespacePrefix = schema.GetNamespacePrefix ();
-    if (namespacePrefix.empty ())
-        return schema.GetName ();
-    
-    return namespacePrefix;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------

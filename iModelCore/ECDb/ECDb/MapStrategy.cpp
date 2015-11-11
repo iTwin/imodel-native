@@ -28,17 +28,21 @@ bool UserECDbMapStrategy::IsValid() const
     switch (m_strategy)
         {
             case Strategy::None:
-                return !m_appliesToSubclasses && (m_options == Options::None || m_options == Options::SharedColumns || m_options == Options::DisableSharedColumns);
-
+            {
+            Options invalidOptions1 = Enum::Or(Options::SharedColumns, Options::SharedColumnsForSubclasses);
+            Options invalidOptions2 = Enum::Or(Options::SharedColumns, Options::DisableSharedColumns);
+            Options invalidOptions3 = Enum::Or(Options::SharedColumnsForSubclasses, Options::DisableSharedColumns);
+            return !m_appliesToSubclasses && !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3);
+            }
             case Strategy::SharedTable:
-                {
-                if (!m_appliesToSubclasses)
-                    return m_options == Options::None || m_options == Options::SharedColumns;
+            {
+            if (!m_appliesToSubclasses)
+                return m_options == Options::None || m_options == Options::SharedColumns;
 
-                Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTableForSubclasses);
-                Options validOptions2 = Enum::Or(Options::SharedColumnsForSubclasses, Options::JoinedTableForSubclasses);
-                return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
-                }
+            Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTableForSubclasses);
+            Options validOptions2 = Enum::Or(Options::SharedColumnsForSubclasses, Options::JoinedTableForSubclasses);
+            return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
+            }
 
             case Strategy::ExistingTable:
                 return !m_appliesToSubclasses && m_options == Options::None;
