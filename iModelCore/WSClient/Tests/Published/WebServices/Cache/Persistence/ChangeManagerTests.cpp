@@ -1083,7 +1083,7 @@ TEST_F(ChangeManagerTests, CommitCreationChange_CreatedObject_RemovesChangeStatu
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetCachedObjectInfo(instance).GetChangeStatus());
     }
 
-TEST_F(ChangeManagerTests, CommitCreationChange_CreatedObjectWithFile_RemovesFileChangeStatus)
+TEST_F(ChangeManagerTests, CommitCreationChange_CreatedObjectWithFile_DoesNotCommitFileChange)
     {
     // Arrange
     auto cache = GetTestCache();
@@ -1091,10 +1091,10 @@ TEST_F(ChangeManagerTests, CommitCreationChange_CreatedObjectWithFile_RemovesFil
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
-    auto status = cache->GetChangeManager().CommitCreationChange(instance, "NewId");
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitCreationChange(instance, "NewId"));
     // Assert
-    ASSERT_EQ(SUCCESS, status);
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetCachedObjectInfo(instance).GetChangeStatus());
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     }
 
 TEST_F(ChangeManagerTests, CommitCreationChange_NewRemoteIdExistsInCache_RemovesOldInstanceAndMovesRootRelationships)

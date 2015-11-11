@@ -137,7 +137,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
 
         // -- Commiting changes --
 
-        //! Commit change for created object/relationship/file
+        //! Commit change for created object or relationship
         virtual BentleyStatus CommitCreationChange(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId) = 0;
 
         //! Commit change for object in local cache.

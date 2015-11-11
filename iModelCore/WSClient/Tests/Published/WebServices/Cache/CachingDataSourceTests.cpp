@@ -3169,7 +3169,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
         EXPECT_TRUE(result.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjet_CommitsChangeAndSetsNewRemoteId)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjet_SetsNewRemoteIdAndCommits)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
@@ -3291,6 +3291,35 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileReque
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdateFileRequestWithCorrectParametersAndCommits)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile(), false);
+    auto cachedFilePath = txn.GetCache().ReadFilePath(instance);
+    txn.Commit();
+
+    // Act & Assert
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR filePath, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(cachedFilePath, filePath);
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}));
+        }));
+
+    ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
     }
 
