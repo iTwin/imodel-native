@@ -19,7 +19,7 @@
 using namespace ::testing;
 using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 Json::Value StubWSObjectCreationJson ()
     {

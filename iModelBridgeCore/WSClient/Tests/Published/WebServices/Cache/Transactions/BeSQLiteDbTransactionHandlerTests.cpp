@@ -9,9 +9,9 @@
 #include "BeSQLiteDbTransactionHandlerTests.h"
 
 #include <WebServices/Cache/Transactions/BeSQLiteDbTransactionHandler.h>
-#include <MobileDgn/Utils/Threading/WorkerThread.h>
+#include <DgnClientFx/Utils/Threading/WorkerThread.h>
 #include "../CachingTestsHelper.h"
-#include "../../../../../../MobileDgn/Tests/Published/Utils/Threading/ThreadingTestsHelper.h"
+#include "../../../../../../DgnClientFx/Tests/Published/Utils/Threading/ThreadingTestsHelper.h"
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES

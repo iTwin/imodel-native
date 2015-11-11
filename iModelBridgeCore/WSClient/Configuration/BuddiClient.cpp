@@ -7,7 +7,7 @@
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Configuration/BuddiClient.h>
-#include <MobileDgn/Utils/Http/HttpError.h>
+#include <DgnClientFx/Utils/Http/HttpError.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
