@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSChangeset::WSChangeset()
+WSChangeset::WSChangeset(Format format) : m_format(format)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -42,18 +42,24 @@ size_t WSChangeset::GetRelationshipCount() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t WSChangeset::CalculateSize() const
     {
-    static const size_t sizeMinimum = Utf8String(R"({"instances":[]})").size();
+    static const size_t sizeMinimumSingle = Utf8String(R"({"instance":{}})").size();
+    static const size_t sizeMinimumMulti = Utf8String(R"({"instances":[]})").size();
 
-    size_t size = sizeMinimum;
+    size_t size = Format::SingeInstance == m_format ? sizeMinimumSingle : sizeMinimumMulti;
 
     for (auto& instance : m_instances)
         {
         size += instance->CalculateSize();
         }
 
-    if (!m_instances.empty())
+    if (!m_instances.empty() && Format::MultipleInstances == m_format)
         {
         size += m_instances.size() - 1; // Seperating ","
+        }
+
+    if (!m_instances.empty() && Format::SingeInstance == m_format)
+        {
+        size -= 2; // size of "{}"
         }
 
     return size;
@@ -65,6 +71,46 @@ size_t WSChangeset::CalculateSize() const
 Utf8String WSChangeset::ToRequestString() const
     {
     Json::Value changesetJson;
+    ToRequestJson(changesetJson);
+    return Json::FastWriter::ToString(changesetJson);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::ToRequestJson(JsonValueR changesetJson) const
+    {
+    changesetJson = Json::objectValue;
+
+    if (Format::SingeInstance == m_format)
+        {
+        ToSingleInstanceRequestJson(changesetJson);
+        }
+    else
+        {
+        ToMultipleInstancesRequestJson(changesetJson);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::ToSingleInstanceRequestJson(JsonValueR changesetJson) const
+    {
+    Json::Value& instanceJson = changesetJson["instance"];
+    instanceJson = Json::objectValue;
+
+    if (!m_instances.empty())
+        {
+        m_instances.front()->ToJson(instanceJson);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::ToMultipleInstancesRequestJson(JsonValueR changesetJson) const
+    {
     Json::Value& instancesJson = changesetJson["instances"];
     instancesJson = Json::arrayValue;
 
@@ -79,18 +125,46 @@ Utf8String WSChangeset::ToRequestString() const
         instance->ToJson(instancesJson[index]);
         ++index;
         }
-
-    return Json::FastWriter::ToString(changesetJson);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSChangeset::ExtractNewIdsFromResponse
-(
-RapidJsonValueCR response,
-const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
-) const
+BentleyStatus WSChangeset::ExtractNewIdsFromResponse(RapidJsonValueCR response, const IdHandler& handler) const
+    {
+    if (Format::SingeInstance == m_format)
+        {
+        return ExtractNewIdsFromSingleInstanceResponse(response, handler);
+        }
+    else
+        {
+        return ExtractNewIdsFromMultipleInstancesResponse(response, handler);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSChangeset::ExtractNewIdsFromSingleInstanceResponse(RapidJsonValueCR response, const IdHandler& handler) const
+    {
+    auto& instanceJson = response["changedInstance"]["instanceAfterChange"];
+    if (!instanceJson.IsObject() || m_instances.empty())
+        {
+        return ERROR;
+        }
+
+    if (SUCCESS != m_instances.front()->ExtractNewIdsFromInstanceAfterChange(instanceJson, handler))
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSChangeset::ExtractNewIdsFromMultipleInstancesResponse(RapidJsonValueCR response, const IdHandler& handler) const
     {
     auto& instancesJson = response["changedInstances"];
     if (!instancesJson.IsArray() || instancesJson.Size() != m_instances.size())
@@ -117,6 +191,12 @@ const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSChangeset::Instance& WSChangeset::AddInstance(ObjectId instanceId, ChangeState state, JsonValuePtr properties)
     {
+    if (Format::SingeInstance == m_format && !m_instances.empty())
+        {
+        BeAssert(false);
+        return *(WSChangeset::Instance*)nullptr;
+        }
+
     m_instances.push_back(std::make_shared<Instance>());
     auto& instance = m_instances.back();
 
@@ -236,11 +316,7 @@ bool WSChangeset::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSChangeset::Instance::ExtractNewIdsFromInstanceAfterChange
-(
-RapidJsonValueCR instanceAfterChange,
-const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
-) const
+BentleyStatus WSChangeset::Instance::ExtractNewIdsFromInstanceAfterChange(RapidJsonValueCR instanceAfterChange, const IdHandler& handler) const
     {
     if (ChangeState::Created == m_state)
         {
