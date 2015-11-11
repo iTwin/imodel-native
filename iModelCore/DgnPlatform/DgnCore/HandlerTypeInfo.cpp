@@ -95,9 +95,9 @@ static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCateg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getCategoryString(Utf8StringR categoryStr, GeometricElementCR element)
+static void getCategoryString(Utf8StringR categoryStr, DgnCategoryId categoryId, DgnDbR dgnDb)
     {
-    DgnCategoryCPtr category = DgnCategory::QueryCategory(element.GetCategoryId(), element.GetDgnDb());
+    DgnCategoryCPtr category = DgnCategory::QueryCategory(categoryId, dgnDb);
 
     if (!category.IsValid())
         return;
@@ -121,14 +121,22 @@ static void getCategoryString(Utf8StringR categoryStr, GeometricElementCR elemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const
+void GeometrySource::_GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const
     {
-    Utf8String categoryStr, modelStr;
+    DgnElementCP el = ToElement();
+    Utf8String   categoryStr, modelStr;
 
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(GetModel()->GetCode().GetValue());
-    getCategoryString(categoryStr, *this);
+    getCategoryString(categoryStr, GetCategoryId(), GetSourceDgnDb());
 
-    descr = GetCode().GetValue();
+    if (nullptr == el)
+        {
+        descr = categoryStr.c_str();
+        return;
+        }
+
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(el->GetModel()->GetCode().GetValue());
+
+    descr = el->GetCode().GetValue();
     descr.append(delimiter).append(modelStr.c_str());
     descr.append(delimiter).append(categoryStr.c_str());
     }
@@ -138,9 +146,11 @@ void GeometricElement::_GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP del
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_GetInfoString(Utf8StringR descr, Utf8CP delimiter) const
     {
-    GeometricElementCPtr element = GetElement();
+    // NOT_NOW_GEOMETRY_SOURCE - ITransientGeometryHandler should provide a GeometrySource...
+    DgnElementCPtr   element = GetElement();
+    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-    if (!element.IsValid())
+    if (nullptr == geom)
         {
         IElemTopologyCP elemTopo = GetElemTopology();
         ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
@@ -150,5 +160,5 @@ void HitDetail::_GetInfoString(Utf8StringR descr, Utf8CP delimiter) const
         return;
         }
 
-    element->_GetInfoString(*this, descr, delimiter);
+    geom->GetInfoString(*this, descr, delimiter);
     }

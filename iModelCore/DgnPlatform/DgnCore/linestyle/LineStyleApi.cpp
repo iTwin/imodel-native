@@ -521,8 +521,8 @@ bool                LsSymbolReference::GetNoPartial ()    const {return 0 != (m_
 bool                LsSymbolReference::GetClipPartial()   const {return 0 == (m_mod1 & LCPOINT_NOCLIP);}
 bool                LsSymbolReference::GetStretchable()   const {return 0 == (m_mod1 & LCPOINT_NOSCALE);}
 bool                LsSymbolReference::GetDgnDb()       const {return 0 != (m_mod1 & LCPOINT_PROJECT);}
-bool                LsSymbolReference::GetUseElementColor()  const {return 0 != (m_mod1 & LCPOINT_COLOR);}
-bool                LsSymbolReference::GetUseElementWeight() const {return 0 != (m_mod1 & LCPOINT_WEIGHT);}
+bool                LsSymbolReference::GetUseElementColor()  const {return 0 == (m_mod1 & LCPOINT_COLOR);}
+bool                LsSymbolReference::GetUseElementWeight() const {return 0 == (m_mod1 & LCPOINT_WEIGHT);}
 double              LsSymbolReference::GetXOffset()         const {return m_offset.x;}
 double              LsSymbolReference::GetYOffset()         const {return m_offset.y;}
 double              LsSymbolReference::GetAngle()           const {return m_angle;}

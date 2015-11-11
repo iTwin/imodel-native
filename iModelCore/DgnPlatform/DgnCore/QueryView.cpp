@@ -527,7 +527,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             context.SetIntermediatePaintsBlocked(false);
             }
 
-        GeometricElementCP geom = results->m_elements[numDrawn]->ToGeometricElement();
+        GeometrySourceCP geom = results->m_elements[numDrawn]->ToGeometrySource();
 
         if (nullptr != geom)
             context.VisitElement(*geom);
@@ -602,7 +602,7 @@ void QueryViewController::_DrawView(ViewContextR context)
     if ((DrawPurpose::UpdateHealing == context.GetDrawPurpose() || 
          DrawPurpose::Update == context.GetDrawPurpose()) && (results->m_reachedMaxElements || results->m_eliminatedByLOD) && !m_noQuery)
         {
-        HighPriorityOperationBlock highPriority;  //  see comments in BeSQLite.h
+        wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
         DgnViewportP vp = context.GetViewport();
         DgnDbR project = m_queryModel.GetDgnDb();
         CachedStatementPtr rangeStmt;

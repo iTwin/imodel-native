@@ -87,6 +87,15 @@ LsCacheP DgnLineStyles::GetLsCacheP (bool loadIfNull)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+void DgnLineStyles::PrepareToQueryLineStyle(BeSQLite::Statement & stmt, DgnStyleId styleId)
+    {
+    stmt.Prepare(m_dgndb, "SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type = " DGN_STYLE_TYPE_Line " AND Id=?");
+    stmt.BindId(1, styleId);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
 void DgnLineStyles::PrepareToQueryAllLineStyles(BeSQLite::Statement & stmt)

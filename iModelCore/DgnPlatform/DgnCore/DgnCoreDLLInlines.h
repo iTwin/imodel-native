@@ -138,8 +138,8 @@ DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Poin
 
 DG_INLINE DgnDbR ViewContext::GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 DG_INLINE void ViewContext::SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
-DG_INLINE GeometricElementCP ViewContext::GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometricElement() : nullptr);}
-DG_INLINE void ViewContext::SetCurrentElement(GeometricElementCP element) {_SetCurrentElement(element);}
+DG_INLINE GeometrySourceCP ViewContext::GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometrySource() : nullptr);}
+DG_INLINE void ViewContext::SetCurrentElement(GeometrySourceCP element) {_SetCurrentElement(element);}
 
 DG_INLINE DrawPurpose ViewContext::GetDrawPurpose() const {return m_purpose;}
 DG_INLINE bool ViewContext::IsCameraOn() const {return m_isCameraOn;}
@@ -181,7 +181,7 @@ DG_INLINE void ViewContext::PopTransformClip() {_PopTransformClip();}
 DG_INLINE void ViewContext::PushTransform(TransformCR trans) {_PushTransform(trans);}
 DG_INLINE void ViewContext::PushClip(ClipVectorCR clip) {_PushClip(clip);}
 DG_INLINE IPickGeomP ViewContext::GetIPickGeom() {return _GetIPickGeom();}
-DG_INLINE void ViewContext::DrawSymbol(IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) {_DrawSymbol(symb, trans, clip, ignoreColor, ignoreWeight);}
+DG_INLINE void ViewContext::DrawSymbol(IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip) {_DrawSymbol(symb, trans, clip);}
 DG_INLINE void ViewContext::InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
 DG_INLINE void ViewContext::DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
 DG_INLINE void ViewContext::DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed){_DrawStyledLineString3d(nPts, pts, range, closed);}
@@ -190,7 +190,7 @@ DG_INLINE void ViewContext::DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse
 DG_INLINE void ViewContext::DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
 DG_INLINE void ViewContext::DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_DrawStyledBSplineCurve3d(curve);}
 DG_INLINE void ViewContext::PushViewIndependentOrigin(DPoint3dCP origin) {_PushViewIndependentOrigin(origin);}
-DG_INLINE StatusInt ViewContext::VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
+DG_INLINE StatusInt ViewContext::VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
 DG_INLINE void ViewContext::AllocateScanCriteria(){_AllocateScanCriteria();}
 DG_INLINE void ViewContext::VisitDgnModel(DgnModelP modelRef) {_VisitDgnModel(modelRef);}
 DG_INLINE void ViewContext::SetScanReturn() {_SetScanReturn();}
@@ -270,7 +270,7 @@ DG_INLINE void IViewDraw::DrawQvElem(QvElem* qvElem, int subElemIndex){_DrawQvEl
 DG_INLINE void IViewDraw::ClearZ() {_ClearZ(); }
 DG_INLINE StatusInt IViewDraw::TestOcclusion(int numVolumes, DPoint3dP verts, int* results){return _TestOcclusion(numVolumes, verts, results);}
 DG_INLINE uintptr_t IViewDraw::DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
-DG_INLINE void IViewDraw::DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
+DG_INLINE void IViewDraw::DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DRange2dCR range, bool useGeometryColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap(textureId, stroker, range, useGeometryColors, seedContext, forAreaPattern);}
 DG_INLINE void IViewDraw::PushClipStencil(QvElem* qvElem) {_PushClipStencil(qvElem);}
 DG_INLINE void IViewDraw::PopClipStencil() {_PopClipStencil(); }
 

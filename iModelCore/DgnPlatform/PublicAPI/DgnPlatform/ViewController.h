@@ -268,11 +268,11 @@ protected:
     //! Draw a single element through a ViewContext.
     //! An application can override _DrawElement to change the symbology of elements.
     //! @remarks For elements that only occupy a few pixels on the screen, DgnPlatform calls \ref _DrawElementFiltered instead of _DrawElement.
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometrySourceCR);
 
     //! DgnPlatform calls _DrawElementFiltered instead of _DrawElement when it needs to draw an element but decides that the
     //! representation in the view is small enough that it can be simplified.
-    DGNPLATFORM_EXPORT virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size);
+    DGNPLATFORM_EXPORT virtual void _DrawElementFiltered(ViewContextR, GeometrySourceCR, DPoint3dCP pts, double size);
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.
@@ -899,7 +899,7 @@ protected:
     DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
 
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
@@ -986,7 +986,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewControl
 
 protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
 
     mutable SectioningViewControllerPtr m_sectionView;  // transient
@@ -1051,7 +1051,7 @@ private:
     Pass m_passesToDraw;
 
     virtual void _DrawView(ViewContextR) override;
-    virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
+    virtual void _DrawElement(ViewContextR, GeometrySourceCR) override;
     virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;

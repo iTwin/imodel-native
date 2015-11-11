@@ -314,7 +314,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnM
     TestElement2dPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode);
 
     DgnModelP model = m_db->Models().GetModel(mid).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
 
@@ -344,7 +344,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMod
     DgnElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
 
     DgnModelP model = m_db->Models().GetModel(mid).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
@@ -373,7 +373,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, D
     DgnElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
 
     DgnModelP model = m_db->Models().GetModel(mid).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
