@@ -114,11 +114,7 @@ bvector<ECClassCP> UpgraderFromV4ToV5::GetDataSourceNodeClasses(ECSchemaCR ecSch
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UpgraderFromV4ToV5::IsDataSourceObjectClass(ECClassCP ecClass)
     {
-    return
-        !ecClass->GetIsCustomAttributeClass() &&
-        !ecClass->GetIsStruct() &&
-        ecClass->GetIsDomainClass() &&
-        nullptr == ecClass->GetRelationshipClassCP();
+    return (ecClass->IsEntityClass()); // WIP_EC3 - verify this is the correct check
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -130,7 +126,7 @@ ECSchemaR schema,
 Utf8StringCR relationshipName,
 ECClassCP parentClass,
 const bvector<ECClassCP>& childClasses,
-StrengthType strength = StrengthType::STRENGTHTYPE_Holding
+StrengthType strength = StrengthType::Holding
 )
     {
     ECRelationshipClassP relationshipClass = nullptr;
@@ -138,7 +134,6 @@ StrengthType strength = StrengthType::STRENGTHTYPE_Holding
 
     relationshipClass->SetStrength(strength);
     relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    relationshipClass->SetIsDomainClass(true);
 
     relationshipClass->GetSource().SetCardinality(RelationshipCardinality::ZeroMany());
     relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroMany());
@@ -157,7 +152,7 @@ StrengthType strength = StrengthType::STRENGTHTYPE_Holding
 void UpgraderFromV4ToV5::CreateWeakRootRelationship(ECSchemaR schema, ECSchemaCR cacheSchema, const bvector<ECClassCP>& childClasses)
     {
     ECClassCP parentClass = cacheSchema.GetClassCP("Root");
-    ECRelationshipClassP relClass = CreateRelationshipHoldingClasses(schema, "WeakRootRelationship", parentClass, childClasses, StrengthType::STRENGTHTYPE_Referencing);
+    ECRelationshipClassP relClass = CreateRelationshipHoldingClasses(schema, "WeakRootRelationship", parentClass, childClasses, StrengthType::Referencing);
     relClass->GetTarget().AddClass(*cacheSchema.GetClassCP("NavigationBase"));
     }
 

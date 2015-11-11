@@ -148,7 +148,7 @@ BeFileName BaseCacheTest::GetTestSchemaPath()
     if (!testSchemaPath.DoesPathExist())
         {
         SchemaWriteStatus status = GetTestSchema()->WriteToXmlFile(testSchemaPath);
-        EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status);
+        EXPECT_EQ(SchemaWriteStatus::Success, status);
         }
 
     return testSchemaPath;

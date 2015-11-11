@@ -279,10 +279,7 @@ IECInstancePtr StubInstance(ECSchemaPtr ecSchema)
 
     for (ECClassCP ecClass : ecSchema->GetClasses())
         {
-        if (ecClass->GetIsDomainClass() &&
-            !ecClass->GetIsStruct() &&
-            !ecClass->GetIsCustomAttributeClass() &&
-            !ecClass->GetRelationshipClassCP())
+        if (ECClassModifier::Abstract != ecClass->GetClassModifier() && ecClass->IsEntityClass())
             {
             instance = StubInstance(ecClass);
             }

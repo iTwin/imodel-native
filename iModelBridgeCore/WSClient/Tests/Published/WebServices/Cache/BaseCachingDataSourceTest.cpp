@@ -125,7 +125,7 @@ WSInfoCR info
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SchemaWriteStatus status = schema->WriteToXmlFile(filePath);
-        EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status);
+        EXPECT_EQ(SchemaWriteStatus::Success, status);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 

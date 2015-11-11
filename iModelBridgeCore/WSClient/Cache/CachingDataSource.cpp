@@ -510,8 +510,8 @@ std::vector<ECSchemaPtr>& loadedSchemasOut
         {
         ECSchemaPtr schema;
         SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPath.GetName(), *readContext);
-        if (SchemaReadStatus::SCHEMA_READ_STATUS_Success != status &&
-            SchemaReadStatus::SCHEMA_READ_STATUS_DuplicateSchema != status)
+        if (SchemaReadStatus::Success != status &&
+            SchemaReadStatus::DuplicateSchema != status)
             {
             return ERROR;
             }

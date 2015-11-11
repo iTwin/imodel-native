@@ -345,8 +345,7 @@ BentleyStatus DataSourceCache::Reset()
     // Remove all cached data
     for (ECClassCP ecClass : m_state->GetCacheSchema()->GetClasses())
         {
-        if (!ecClass->GetIsDomainClass() ||
-            ecClass->GetRelationshipClassCP() != nullptr)
+        if (ecClass->IsEntityClass() || ecClass->IsRelationshipClass()) // WIP_EC3 - verify check is still correct
             {
             continue;
             }
