@@ -1817,11 +1817,13 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                         .AppendEscaped (relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
                         .Append (" = NULL");
 
-                    if (!relationship->To ().GetClassId ()->IsVirtual () && relationship->To ().GetClassId ()->IsMappedToPrimaryTable ())
+                    if (!relationship->To().GetClassId()->IsVirtual()
+                        && relationship->To().GetClassId()->IsMappedToPrimaryTable()
+                        && relationship->To().GetClassId()->GetFirstColumn()->GetKind() != ColumnKind::ECClassId)
                         {
-                        body.Append (", ")
-                            .AppendEscaped (relationship->To ().GetClassId ()->GetFirstColumn ()->GetName ().c_str ())
-                            .Append (" = NULL");
+                        body.Append(", ")
+                            .AppendEscaped(relationship->To().GetClassId()->GetFirstColumn()->GetName().c_str())
+                            .Append(" = NULL");
                         }
 
                     body.Append (" WHERE OLD.")
@@ -1854,7 +1856,9 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                         .AppendEscaped (relationship->PrimaryEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
                         .Append (" = NULL");
 
-                    if (!relationship->To ().GetClassId ()->IsVirtual () && relationship->To ().GetClassId ()->IsMappedToPrimaryTable ())
+                    if (!relationship->To ().GetClassId ()->IsVirtual ()
+                        && relationship->To ().GetClassId ()->IsMappedToPrimaryTable ()
+                        && relationship->To().GetClassId()->GetFirstColumn()->GetKind() != ColumnKind::ECClassId)
                         {
                         body.Append (", ")
                             .AppendEscaped (relationship->PrimaryEnd ().GetClassId ()->GetFirstColumn ()->GetName ().c_str ())
@@ -1868,39 +1872,6 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                     body.Append (";").AppendEOL ();
                     }
                 }
-
-
-            //if (relationship->RequireCascade ())
-            //    {
-            //    for (auto foreignEnd : relationship->ForeignEnd ().GetStorages ())
-            //        {
-            //        auto& builder = const_cast<Storage*>(foreignEnd)->GetTriggerListR ().Create (SqlTriggerBuilder::Type::UpdateOf, SqlTriggerBuilder::Condition::After, false);
-            //        builder.GetNameBuilder ()
-            //            .Append (foreignEnd->GetTable ().GetName ().c_str ())
-            //            .Append ("_")
-            //            .Append (relationship->GetSqlName ())
-            //            .Append ("_Self_CascadeDelete");
-
-            //        auto keyColumn = relationship->PrimaryEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ();
-            //        builder.GetOnBuilder ().Append (foreignEnd->GetTable ().GetName ().c_str ());
-            //        builder.GetWhenBuilder ().AppendFormatted ("NEW.[%s] IS NULL AND OLD.[%s] IS NOT NULL", keyColumn, keyColumn);
-            //        builder.GetUpdateOfColumnsR ().push_back (keyColumn);
-            //        auto& body = builder.GetBodyBuilder ();
-            //        body.Append ("--6").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
-            //        for (auto primaryEnd : relationship->PrimaryEnd ().GetStorages ())
-            //            {
-            //            body.Append ("DELETE FROM ")
-            //                .AppendEscaped (primaryEnd->GetTable ().GetName ().c_str ());
-
-            //            body.Append (" WHERE ")
-            //                .AppendEscaped (relationship->ForeignEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
-            //                .Append (" = OLD.")
-            //                .AppendEscaped (relationship->ForeignEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ());
-            //            body.Append (";").AppendEOL ();
-            //            }
-            //        }
-            //    }
-
             }
         if (relationship->RequireCascade ())
             {
