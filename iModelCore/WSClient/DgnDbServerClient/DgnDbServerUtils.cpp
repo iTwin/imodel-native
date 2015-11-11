@@ -1,9 +1,9 @@
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
-CallbackQueue::CallbackQueue(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback) : m_callback(callback) {}
+CallbackQueue::CallbackQueue(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback) : m_callback(callback) {}
 
 CallbackQueue::Callback::Callback(CallbackQueue& queue) : m_bytesTransfered(0.0), m_bytesTotal(0.0), m_queue(queue)
     {

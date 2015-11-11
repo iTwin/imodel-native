@@ -68,21 +68,21 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-# MobileDgn library name
+# DgnClientFx library name
 %if $(TARGET_PLATFORM)=="WinRT"
-    _mobiledgnLibraryName = Bentley$(BENTLEY_API_NAME).MobileDgn.Win8$(stlibext)
+    _dgnclientfxLibraryName = Bentley$(BENTLEY_API_NAME).DgnClientFx.Win8$(stlibext)
 %elif $(TARGET_PLATFORM)=="Android"
-    _mobiledgnLibraryName = $(libprefix)MobileDgn$(shlibext)
+    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(shlibext)
 %else
-    _mobiledgnLibraryName = $(libprefix)MobileDgn$(stlibext)
+    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
 %endif
 
 %if $(TARGET_PLATFORM)=="Android"
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(shlibext)
     %include dlmlink.mki
 %else
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)

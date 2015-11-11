@@ -9,13 +9,13 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Licensing/UsageTracking.h>
 #include <Bentley/Base64Utilities.h>
-#include <MobileDgn/Utils/Http/HttpClient.h>
+#include <DgnClientFx/Utils/Http/HttpClient.h>
 
 #ifndef BENTLEY_WINRT
 #include <openssl/evp.h>
 #endif
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 static IHttpHandlerPtr s_httpHandler;
 static bool s_usageTrackingInitialized = false;

@@ -9,10 +9,10 @@
 #include <WebServices/Connect/Passport.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <MobileDgn/Utils/Http/HttpClient.h>
+#include <DgnClientFx/Utils/Http/HttpClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 static IHttpHandlerPtr s_httpHandler;
 static bool s_passportInitialized = false;
