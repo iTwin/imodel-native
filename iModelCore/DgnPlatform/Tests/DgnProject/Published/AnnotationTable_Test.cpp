@@ -172,7 +172,7 @@ private:
     AnnotationTextStyleId   m_textStyleId;
 
 public:
-AnnotationTableTest() : GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+AnnotationTableTest() : GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
     {
     }
 

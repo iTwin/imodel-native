@@ -22,7 +22,7 @@ class AnnotationTextStyleTest : public GenericDgnModelTestFixture
     // @bsimethod                                                   Jeff.Marker     05/2014
     //---------------------------------------------------------------------------------------
     public: AnnotationTextStyleTest () :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+        GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
         {
         }
 
