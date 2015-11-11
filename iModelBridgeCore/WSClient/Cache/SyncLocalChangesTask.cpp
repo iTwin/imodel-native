@@ -332,6 +332,15 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
                     }
                 }
 
+            if (changeGroup->GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
+                {
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChange(changeGroup->GetFileChange().GetInstanceKey()))
+                    {
+                    SetError(CachingDataSource::Status::InternalCacheError);
+                    return;
+                    }
+                }
+
             changeGroup->SetSynced(true);
 
             if (changeGroup->GetObjectChange().GetChangeStatus() == IChangeManager::ChangeStatus::Created)

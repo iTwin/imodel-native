@@ -711,16 +711,6 @@ BentleyStatus ChangeManager::CommitInstanceCreation(ECInstanceKeyCR instanceKey,
         return ERROR;
         }
 
-    FileInfo fileInfo = m_fileInfoManager->ReadInfo(info.GetObjectId());
-    if (fileInfo.GetChangeStatus() != ChangeStatus::NoChange)
-        {
-        fileInfo.ClearChangeInfo();
-        if (SUCCESS != m_fileInfoManager->SaveInfo(fileInfo))
-            {
-            return ERROR;
-            }
-        }
-
     return SUCCESS;
     }
 
