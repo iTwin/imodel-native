@@ -90,7 +90,7 @@ GeoCoordinates::BaseGCS::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudDataHandler::PointCloudDataHandler(WCharCP inFilename, PointCloudView view)
+PointCloudData::PointCloudData(Utf8CP inFilename, PointCloudView view)
     {
     //&&JFC TODO: Need to do this only once per session and out of the properties object.
     Initialize();
@@ -103,7 +103,7 @@ PointCloudDataHandler::PointCloudDataHandler(WCharCP inFilename, PointCloudView 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudDataHandler::~PointCloudDataHandler()
+PointCloudData::~PointCloudData()
     {
     //CloseFile();
     Terminate();
@@ -112,7 +112,7 @@ PointCloudDataHandler::~PointCloudDataHandler()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PointCloudDataHandler::Initialize()
+bool PointCloudData::Initialize()
     {
     PointCloudVortex::Initialize();
 
@@ -125,7 +125,7 @@ bool PointCloudDataHandler::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudDataHandler::Terminate()
+void PointCloudData::Terminate()
     {
 
     }
@@ -133,23 +133,26 @@ void PointCloudDataHandler::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<RealityDataHandler> PointCloudDataHandler::Create(WCharCP inFilename, PointCloudView pcView)
+RealityDataPtr PointCloudData::Create(Utf8CP inFilename, PointCloudView pcView)
     {
-    return new PointCloudDataHandler(inFilename, pcView);
+    return new PointCloudData(inFilename, pcView);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudDataHandler::GetFile(WCharCP inFilename)
+void PointCloudData::GetFile(Utf8CP inFilename)
     {
-    PointCloudVortex::OpenPOD(m_cloudFileHandle, m_cloudHandle, inFilename);
+    WString filename;
+    BeStringUtilities::Utf8ToWChar(filename, inFilename);
+
+    PointCloudVortex::OpenPOD(m_cloudFileHandle, m_cloudHandle, filename);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudDataHandler::CloseFile()
+void PointCloudData::CloseFile()
     {
     PointCloudVortex::ClosePOD(m_cloudFileHandle);
     }
@@ -157,7 +160,7 @@ void PointCloudDataHandler::CloseFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PointCloudDataHandler::_GetFootprint(DRange2dP pFootprint) const
+StatusInt PointCloudData::_GetFootprint(DRange2dP pFootprint) const
     {
     return ExtractFootprint(pFootprint);
     }
@@ -165,7 +168,7 @@ StatusInt PointCloudDataHandler::_GetFootprint(DRange2dP pFootprint) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PointCloudDataHandler::ExtractFootprint(DRange2dP pFootprint) const
+StatusInt PointCloudData::ExtractFootprint(DRange2dP pFootprint) const
     {
     if (NULL == m_cloudFileHandle || NULL == m_cloudHandle)
         return 0;
@@ -221,35 +224,99 @@ StatusInt PointCloudDataHandler::ExtractFootprint(DRange2dP pFootprint) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PointCloudDataHandler::_GetThumbnail(HBITMAP *pThumbnailBmp) const
-    {
-    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-    }
+//StatusInt PointCloudDataHandler::_GetThumbnail(HBITMAP *pThumbnailBmp) const
+//    {
+//    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PointCloudDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const
+//StatusInt PointCloudDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const
+//    {
+//    if (NULL == m_cloudFileHandle || NULL == m_cloudHandle)
+//        return ERROR;
+//
+//    // Set density (number of points retrieved) according to number of pixels in bitmap. Using the total number of pixels in the bitmap * 4
+//    // seems to produce generally good results.
+//    float densityValue = (float) (width * height * 4);
+//
+//    // Get transfo matrix to fit the point cloud in the thumbnail
+//    Transform transform;
+//    PointCloudVortex::GetTransformForThumbnail(transform, m_cloudHandle, width, height, m_view);
+//
+//    bool needsWhiteBackground = PointCloudVortex::PointCloudNeedsWhiteBackground(m_cloudHandle);
+//
+//    HRESULT hr = PointCloudVortex::ExtractPointCloud(pThumbnailBmp, width, height, m_cloudHandle, densityValue, transform, needsWhiteBackground);
+//    if (*pThumbnailBmp == NULL)
+//        return ERROR;
+//
+//    if (hr != NOERROR)
+//        return ERROR;
+//
+//    return SUCCESS;
+//    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt PointCloudData::_GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const
+    {
+    return ExtractThumbnail(data, width, height);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt PointCloudData::ExtractThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const
     {
     if (NULL == m_cloudFileHandle || NULL == m_cloudHandle)
         return ERROR;
-
+    
     // Set density (number of points retrieved) according to number of pixels in bitmap. Using the total number of pixels in the bitmap * 4
     // seems to produce generally good results.
     float densityValue = (float) (width * height * 4);
-
+    
     // Get transfo matrix to fit the point cloud in the thumbnail
     Transform transform;
     PointCloudVortex::GetTransformForThumbnail(transform, m_cloudHandle, width, height, m_view);
-
+    
     bool needsWhiteBackground = PointCloudVortex::PointCloudNeedsWhiteBackground(m_cloudHandle);
-
+    
+    HBITMAP* pThumbnailBmp = 0;
     HRESULT hr = PointCloudVortex::ExtractPointCloud(pThumbnailBmp, width, height, m_cloudHandle, densityValue, transform, needsWhiteBackground);
     if (*pThumbnailBmp == NULL)
         return ERROR;
-
+    
     if (hr != NOERROR)
         return ERROR;
+    
+    // Get image data from HBitmap.
+    BITMAPINFO bmpInfo;
+    memset(&bmpInfo, 0, sizeof(BITMAPINFOHEADER));
+    bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    GetDIBits(NULL, *pThumbnailBmp, 0, 0, NULL, &bmpInfo, DIB_RGB_COLORS);
+    bmpInfo.bmiHeader.biBitCount = 32;
+    bmpInfo.bmiHeader.biCompression = BI_RGB;
+    GetDIBits(NULL, *pThumbnailBmp, 0, bmpInfo.bmiHeader.biHeight, buffer.data(), &bmpInfo, DIB_RGB_COLORS);
+    if (buffer.empty())
+        return ERROR;
 
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt PointCloudData::_SaveFootprint(const DRange2dR data, const BeFileName outFilename) const
+    {
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt PointCloudData::_SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const
+    {
     return SUCCESS;
     }

@@ -44,16 +44,17 @@ struct FactoryScanOnOpenGuard
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
+static HFCPtr<HRFRasterFile> GetRasterFile(Utf8CP inFilename)
     {
     HFCPtr<HRFRasterFile> rasterFile;
 
     try
         {
-        WString filename(inFilename);
-
-        if (filename.empty())
+        if (Utf8String::IsNullOrEmpty(inFilename))
             return NULL;
+
+        WString filename;
+        BeStringUtilities::Utf8ToWChar(filename, inFilename);
 
         // Create URL
         HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
@@ -140,7 +141,7 @@ HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(GeoCoordinates::BaseGCSCR proj
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RasterDataHandler::RasterDataHandler(WCharCP inFilename)
+RasterData::RasterData(Utf8CP inFilename)
     : m_filename(inFilename)
     {
     //&&JFC TODO: Need to do this only once per session and out of the properties object.
@@ -150,7 +151,7 @@ RasterDataHandler::RasterDataHandler(WCharCP inFilename)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RasterDataHandler::~RasterDataHandler()
+RasterData::~RasterData()
     {
     Terminate();
     }
@@ -158,7 +159,7 @@ RasterDataHandler::~RasterDataHandler()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RasterDataHandler::Initialize()
+bool RasterData::Initialize()
     {
     //Initialize ImagePP host
     ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
@@ -172,7 +173,7 @@ bool RasterDataHandler::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RasterDataHandler::Terminate()
+void RasterData::Terminate()
     {
     //Terminate ImagePP lib host
     ImagePP::ImageppLib::GetHost().Terminate(true);
@@ -181,15 +182,15 @@ void RasterDataHandler::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<RealityDataHandler> RasterDataHandler::Create(WCharCP inFilename)
+RealityDataPtr RasterData::Create(Utf8CP inFilename)
     {
-    return new RasterDataHandler(inFilename);
+    return new RasterData(inFilename);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterDataHandler::_GetFootprint(DRange2dP pFootprint) const
+StatusInt RasterData::_GetFootprint(DRange2dP pFootprint) const
     {
     return ExtractFootprint(pFootprint);
     }
@@ -197,10 +198,10 @@ StatusInt RasterDataHandler::_GetFootprint(DRange2dP pFootprint) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterDataHandler::ExtractFootprint(DRange2dP pFootprint) const
+StatusInt RasterData::ExtractFootprint(DRange2dP pFootprint) const
     {
     // Get the rasterFile 
-    HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename);
+    HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename.c_str());
 
     if (rasterFile == 0 || rasterFile->CountPages() <= 0)
         return ERROR;
@@ -292,20 +293,70 @@ StatusInt RasterDataHandler::ExtractFootprint(DRange2dP pFootprint) const
     /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterDataHandler::_GetThumbnail(HBITMAP *pThumbnailBmp) const
-    {
-    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-    }
+//StatusInt RasterDataHandler::_GetThumbnail(HBITMAP *pThumbnailBmp) const
+//    {
+//    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RasterDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const
+//StatusInt RasterDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const
+//    {
+//    try
+//        {
+//        // Get the rasterFile 
+//        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename);
+//        if (NULL == rasterFile)
+//            return ERROR;
+//
+//        // Generate the thumbnail
+//        HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(rasterFile, 0, &width, &height, false);
+//        if (NULL == pThumbnail)
+//            return ERROR;
+//
+//        HFCPtr<HRPPixelType> pPixelType = rasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
+//        RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
+//
+//        return SUCCESS;
+//        }
+//    catch (HFCException&)
+//        {
+//        return ERROR;
+//        }
+//    catch (exception &e)
+//        {
+//        //C++ exception
+//        ostringstream errorStr;
+//
+//        errorStr << "Caught " << e.what() << endl;
+//        errorStr << "Type " << typeid(e).name() << endl;
+//
+//        return ERROR;
+//        }
+//    catch (...)
+//        {
+//        return ERROR;
+//        }
+//    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+StatusInt RasterData::_GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const
+    {
+    return ExtractThumbnail(data, width, height);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+StatusInt RasterData::ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const
     {
     try
         {
         // Get the rasterFile 
-        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename);
+        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename.c_str());
         if (NULL == rasterFile)
             return ERROR;
 
@@ -313,9 +364,12 @@ StatusInt RasterDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t w
         HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(rasterFile, 0, &width, &height, false);
         if (NULL == pThumbnail)
             return ERROR;
-
-        HFCPtr<HRPPixelType> pPixelType = rasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
-        RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
+        
+        for (size_t i = 0; i < pThumbnail->GetSizeInBytes(); ++i)
+            data.push_back(pThumbnail->GetDataP()[i]);
+        
+        if (data.empty())
+            return ERROR;
 
         return SUCCESS;
         }
@@ -337,4 +391,28 @@ StatusInt RasterDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t w
         {
         return ERROR;
         }
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt RasterData::_SaveFootprint(const DRange2dR data, const BeFileName outFilename) const
+    {
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt RasterData::_SaveThumbnail(const bvector<Byte>& buffer, const BeFileName outFilename) const
+    {
+    if (buffer.empty())
+        return ERROR;
+
+    /* TODO */
+    //HFCPtr<HRFThumbnail> pThumbnail = 0; 
+    //if (!pThumbnail->Write(buffer.data()))
+    //    return ERROR;
+
+    return SUCCESS;
     }

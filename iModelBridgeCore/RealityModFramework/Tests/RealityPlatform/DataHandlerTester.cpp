@@ -5,7 +5,9 @@
 //:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#ifdef THUMBNAILFOOTPRINTTESTER_ENABLED
+
+#ifdef REALITYMODFRAMEWORK_LOCALTEST
+
 
 #include <Bentley/BeTest.h>
 #include <RealityPlatform/RealityDataHandler.h>
@@ -62,7 +64,7 @@ TEST_F(RealityDataTestFixture, GetRasterThumbnail)
     StatusInt status = ERROR;
 
 
-    RealityDataPtr pRasterData = RealityPlatform::RasterData::Create(RASTER_FILENAME);
+    RealityDataPtr pRasterData = RasterData::Create(RASTER_FILENAME);
     ASSERT_TRUE(pRasterData.IsValid());
 
     status = pRasterData->GetThumbnail(data, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
@@ -100,7 +102,7 @@ TEST_F(RealityDataTestFixture, GetPointCloudThumbnail)
     StatusInt status = ERROR;
 
 
-    RealityDataPtr pPointCloudData = RealityPlatform::PointCloudData::Create(POINTCLOUD_FILENAME, POINTCLOUD_VIEW);
+    RealityDataPtr pPointCloudData = PointCloudData::Create(POINTCLOUD_FILENAME, POINTCLOUD_VIEW);
     ASSERT_TRUE(pPointCloudData.IsValid());
 
     status = pPointCloudData->GetThumbnail(data, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
@@ -138,7 +140,7 @@ TEST_F(RealityDataTestFixture, GetWmsThumbnail)
     StatusInt status = ERROR;
 
 
-    RealityDataPtr pWmsData = RealityPlatform::WmsData::Create(WMS_GETMAP_URL);
+    RealityDataPtr pWmsData = WmsData::Create(WMS_GETMAP_URL);
     ASSERT_TRUE(pWmsData.IsValid());
 
     status = pWmsData->GetThumbnail(data, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);

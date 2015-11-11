@@ -8,6 +8,8 @@
 #pragma once
 
 #include "RealityPlatformAPI.h"
+
+#include <Bentley/BeFilename.h>
 #include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
@@ -23,85 +25,76 @@ enum class PointCloudView
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct MemoryStruct
-    {
-    void*   memory;
-    size_t  size;
-    };
-
-//=====================================================================================
-//! @bsiclass                                   Jean-Francois.Cote               4/2015
-//=====================================================================================
-struct MemoryStructTest
-    {
-    char*   memory;
-    size_t  size;
-    };
-
-//=====================================================================================
-//! @bsiclass                                   Jean-Francois.Cote               4/2015
-//=====================================================================================
-struct RealityDataHandler : public RefCountedBase
+struct RealityData : public RefCountedBase
 {
 public:
     REALITYDATAPLATFORM_EXPORT StatusInt GetFootprint(DRange2dP pFootprint) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
 
-    //&&JFC TODO: Remove HBITMAP and windows header dependency.
-    REALITYDATAPLATFORM_EXPORT StatusInt GetThumbnail(HBITMAP *pThumbnailBmp) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt SaveFootprint(const DRange2dR data, const BeFileName outFilename) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const;
 
 protected:
-   
-    virtual ~RealityDataHandler() {};
-    virtual StatusInt  _GetFootprint(DRange2dP pFootprint) const = 0;
-    virtual StatusInt  _GetThumbnail(HBITMAP *pThumbnailBmp) const = 0;
+    virtual ~RealityData() {};
+
+    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const = 0;
+    virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const = 0;
+
+    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const = 0;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const = 0;
 };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct RasterDataHandler : public RealityDataHandler
+struct RasterData : public RealityData
 {
 public:
-    REALITYDATAPLATFORM_EXPORT static RefCountedPtr<RealityDataHandler> Create(WCharCP inFilename);
+    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8CP inFilename);
 
 protected:
+    RasterData(Utf8CP filename);
+    virtual ~RasterData();
 
     virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
-    virtual StatusInt _GetThumbnail(HBITMAP *pThumbnailBmp) const override;
+    virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const override;
 
-    RasterDataHandler(WCharCP filename);
-    virtual ~RasterDataHandler();
+    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const override;
 
 private:
     StatusInt ExtractFootprint(DRange2dP pFootprint) const;
-    StatusInt ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const;
+    StatusInt ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
 
     bool Initialize();
     void Terminate();
 
-    WCharCP m_filename;
+    Utf8String m_filename;
 };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct PointCloudDataHandler : public RealityDataHandler
+struct PointCloudData : public RealityData
 {
 public:
-    REALITYDATAPLATFORM_EXPORT static RefCountedPtr<RealityDataHandler> Create(WCharCP inFilename, PointCloudView view);
+    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8CP inFilename, PointCloudView view);
 
 protected:
-    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
-    virtual StatusInt _GetThumbnail(HBITMAP *pThumbnailBmp) const override;
+    PointCloudData(Utf8CP filename, PointCloudView view);
+    virtual ~PointCloudData();
 
-    PointCloudDataHandler(WCharCP filename, PointCloudView view);
-    virtual ~PointCloudDataHandler();
+    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
+    virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const override;
+
+    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const override;
 
 private:
     StatusInt ExtractFootprint(DRange2dP pFootprint) const;
-    StatusInt ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const;
+    StatusInt ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
 
-    void GetFile(WCharCP inFilename);
+    void GetFile(Utf8CP inFilename);
     void CloseFile();
     bool Initialize();
     void Terminate();
@@ -114,29 +107,31 @@ private:
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct WMSDataHandler : public RealityDataHandler
+struct WmsData : public RealityData
 {
 public:
-    REALITYDATAPLATFORM_EXPORT static RefCountedPtr<RealityDataHandler> Create(WCharCP url, WCharCP outFilename);
+    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8CP url);
 
 protected:
-    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
-    virtual StatusInt _GetThumbnail(HBITMAP *pThumbnailBmp) const override;
+    WmsData(Utf8CP url);
+    virtual ~WmsData();
 
-    WMSDataHandler(StatusInt& status, WCharCP url, WCharCP outFilename);
-    virtual ~WMSDataHandler();
+    virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
+    virtual StatusInt _GetThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const override;
+
+    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const override;
 
 private:
     StatusInt ExtractFootprint(DRange2dP pFootprint) const;
-    StatusInt ExtractThumbnail() const;
+    StatusInt ExtractThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const;
 
-    StatusInt GetFromServer(Utf8StringR url) const;
+    StatusInt GetFromServer(bvector<Byte>& buffer, Utf8StringCR url) const;
 
     bool Initialize();
     void Terminate();
 
-    WCharCP m_url;
-    WCharCP m_outFilename;
+    Utf8String m_url;
 };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

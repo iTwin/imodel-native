@@ -36,29 +36,28 @@ struct CurlHolder
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 5/2015
 //-------------------------------------------------------------------------------------
-static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
+static size_t WriteData(void* ptr, size_t size, size_t nmemb, void* userp)
     {
-    size_t written = fwrite(buffer, size, nmemb, (FILE*)stream);
-    return written;
+    size_t totalSize = size * nmemb;
+    auto buffer = (bvector<Byte>*) userp;
+    buffer->insert(buffer->end(), (Byte*) ptr, (Byte*) ptr + totalSize);
+    return totalSize;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-WMSDataHandler::WMSDataHandler(StatusInt& status, WCharCP url, WCharCP outFilename)
-    : m_url(url), m_outFilename(outFilename)
+WmsData::WmsData(Utf8CP url)
+    : m_url(url)
     {
-    status = SUCCESS;
-
     // Initialize baseGCS.
-    if (!Initialize())
-        status = ERROR;
+    Initialize();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-WMSDataHandler::~WMSDataHandler()
+WmsData::~WmsData()
     {
     Terminate();
     }
@@ -66,7 +65,7 @@ WMSDataHandler::~WMSDataHandler()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-bool WMSDataHandler::Initialize()
+bool WmsData::Initialize()
     {
     return SessionManager::InitBaseGCS();
     }
@@ -74,7 +73,7 @@ bool WMSDataHandler::Initialize()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-void WMSDataHandler::Terminate()
+void WmsData::Terminate()
     {
 
     }
@@ -82,24 +81,23 @@ void WMSDataHandler::Terminate()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-RefCountedPtr<RealityDataHandler> WMSDataHandler::Create(WCharCP url, WCharCP outFilename)
+RealityDataPtr WmsData::Create(Utf8CP url)
     {
-    StatusInt status;
-    return new WMSDataHandler(status, url, outFilename);
+    return new WmsData(url);
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 4/2015
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt WMSDataHandler::_GetThumbnail(HBITMAP *pThumbnailBmp) const
+StatusInt WmsData::_GetThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const
     {
-    return ExtractThumbnail();
+    return ExtractThumbnail(buffer, width, height);
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 4/2015
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt WMSDataHandler::ExtractThumbnail() const
+StatusInt WmsData::ExtractThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const
     {
     // Get WMS GetMap Url and modified the width and height attributes to get a thumbnail.
     Utf8String thumbnailUrl(m_url);
@@ -113,23 +111,31 @@ StatusInt WMSDataHandler::ExtractThumbnail() const
     size_t endPos = 0;
 
     // Replace width.
+    Utf8String widthStr;
+    widthStr.reserve(21);
+    BeStringUtilities::FormatUInt64((Utf8P) widthStr.c_str(), width);
+
     beginPos = thumbnailUrl.find(widthTag) + widthTag.length();
     endPos = thumbnailUrl.find(endChar, beginPos);
-    thumbnailUrl.replace(beginPos, endPos - beginPos, THUMBNAIL_WIDTH);
+    thumbnailUrl.replace(beginPos, endPos - beginPos, widthStr.c_str());
 
     // Replace height.
+    Utf8String heightStr;
+    heightStr.reserve(21);
+    BeStringUtilities::FormatUInt64((Utf8P) heightStr.c_str(), height);
+
     beginPos = thumbnailUrl.find(heightTag) + heightTag.length();
     endPos = thumbnailUrl.find(endChar, beginPos);
-    thumbnailUrl.replace(beginPos, endPos - beginPos, THUMBNAIL_HEIGHT);
+    thumbnailUrl.replace(beginPos, endPos - beginPos, heightStr.c_str());
 
     // Get response from WMS GetMap request.
-    return GetFromServer(thumbnailUrl);
+    return GetFromServer(buffer, thumbnailUrl);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-StatusInt WMSDataHandler::_GetFootprint(DRange2dP pFootprint) const
+StatusInt WmsData::_GetFootprint(DRange2dP pFootprint) const
     {
     return ExtractFootprint(pFootprint);
     }
@@ -137,9 +143,10 @@ StatusInt WMSDataHandler::_GetFootprint(DRange2dP pFootprint) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-StatusInt WMSDataHandler::ExtractFootprint(DRange2dP pFootprint) const
+StatusInt WmsData::ExtractFootprint(DRange2dP pFootprint) const
     {
-    WString url(m_url);
+    WString url;
+    BeStringUtilities::Utf8ToWChar(url, m_url.c_str());
 
     // URL tags.
     WString srsTag = L"SRS=";
@@ -197,54 +204,83 @@ StatusInt WMSDataHandler::ExtractFootprint(DRange2dP pFootprint) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-StatusInt WMSDataHandler::GetFromServer(Utf8StringR url) const
+StatusInt WmsData::GetFromServer(bvector<Byte>& buffer, Utf8StringCR url) const
     {
     curl_global_init(CURL_GLOBAL_ALL);
 
     CurlHolder curl;
-    static CharCP filename = "WMSThumbnail.png";
-    FILE* data;
 
     // Specify URL to get.
     curl_easy_setopt(curl.Get(), CURLOPT_URL, url);
 
     // Switch on full protocol/debug output while testing.
-    curl_easy_setopt(curl.Get(), CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(curl.Get(), CURLOPT_VERBOSE, 1L);
 
     // Send all data to this function.
     curl_easy_setopt(curl.Get(), CURLOPT_WRITEFUNCTION, WriteData);
 
-    // Open the file.
-    data = _wfopen(m_outFilename, L"wb");
-    if (data)
+    // We pass our struct to the callback function.
+    curl_easy_setopt(curl.Get(), CURLOPT_WRITEDATA, &buffer);
+
+    // Perform the request, res will get the return code.
+    CURLcode res = curl_easy_perform(curl.Get());
+
+    // Check for errors.
+    if (CURLE_OK != res)
         {
-        // We pass our struct to the callback function.
-        curl_easy_setopt(curl.Get(), CURLOPT_WRITEDATA, data);
-
-        // Perform the request, res will get the return code.
-        CURLcode res = curl_easy_perform(curl.Get());
-
-        // Check for errors.
-        if (CURLE_OK != res)
+        switch (res)
             {
-            switch (res)
-                {
-                case CURLE_COULDNT_RESOLVE_HOST:
-                    //&&JFC TODO Status::Error_CouldNotResolveHost
-                    break;
-                case CURLE_COULDNT_CONNECT:
-                    //&&JFC TODO Status::Error_NoConnection
-                    break;
-                default:
-                    //&&JFC TODO Status::Error_Unknown
-                    break;
-                }
-            return ERROR;
+            case CURLE_COULDNT_RESOLVE_HOST:
+                //&&JFC TODO Status::Error_CouldNotResolveHost
+                break;
+            case CURLE_COULDNT_CONNECT:
+                //&&JFC TODO Status::Error_NoConnection
+                break;
+            default:
+                //&&JFC TODO Status::Error_Unknown
+                break;
             }
-
-        // Close the header file.
-        fclose(data);
+        return ERROR;
         }
+
+    // Check if data exists.
+    if (buffer.empty())
+        return ERROR;
     
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt WmsData::_SaveFootprint(const DRange2dR data, const BeFileName outFilename) const
+    {
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt WmsData::_SaveThumbnail(const bvector<Byte>& buffer, const BeFileName outFilename) const
+    {
+    if (buffer.empty())
+        return ERROR;
+
+    BeFile file;
+    uint32_t bytesWritten = 0;
+    uint32_t byteCountToCopy = static_cast<uint32_t>(buffer.size());
+
+    if (BeFileStatus::Success != file.Create(outFilename))
+        return ERROR;
+
+    if (BeFileStatus::Success != file.Open(outFilename, BeFileAccess::Write))
+        return ERROR;
+
+    if ((BeFileStatus::Success != file.Write(&bytesWritten, buffer.data(), byteCountToCopy)) || (bytesWritten != byteCountToCopy))
+        return ERROR;
+
+    if (BeFileStatus::Success != file.Close())
+        return ERROR;
+
     return SUCCESS;
     }
