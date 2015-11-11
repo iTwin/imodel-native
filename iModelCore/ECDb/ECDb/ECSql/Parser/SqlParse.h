@@ -132,7 +132,6 @@ namespace connectivity
     //==========================================================================
     //= OSQLParser
     //==========================================================================
-    struct OSQLParser_Data;
     /** Parser for SQL92
     */
     class OOO_DLLPUBLIC_DBTOOLS OSQLParser
@@ -155,8 +154,6 @@ namespace connectivity
             // informations on the current parse action
             const IParseContext*        m_pContext;
             OSQLParseNode*              m_pParseTree;    // result from parsing
-            ::std::auto_ptr< OSQLParser_Data >
-                m_pData;
             Utf8String                     m_sFieldName;    // current field name for a predicate
             Utf8String                     m_sErrorMessage;// current error msg
 
