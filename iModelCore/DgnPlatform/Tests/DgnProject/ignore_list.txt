@@ -25,3 +25,8 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # WIP_ELEMENT
 
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
 
+# WIP_EC3 - these use the StartupCompany schema which uses Unit_Attributes with the invalid struct/custom attributes
+ChangeSummaryTestFixture.StructArrayChangesFromCurrentTransaction
+ChangeSummaryTestFixture.StructArrayChangesFromSavedTransactions
+ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
+ChangeSummaryTestFixture.RelationshipChangesFromSavedTransaction
