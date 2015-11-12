@@ -729,7 +729,7 @@ virtual bool    _CheckStop() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP, bool ignoreColor, bool ignoreWeight) override
+virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP) override
     {
     // NOTE: Linestyles aren't drawn for fence accept, but area patterns are...
     //       Completely inside/outside decided by boundary...check symbol geometry to detect interior overlaps...
@@ -758,7 +758,7 @@ virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, Clip
         }
 
     // Check symbol geometry...
-    m_output.ClipAndProcessSymbol(symbolDefP, transP, clipPlaneSetP, ignoreColor, ignoreWeight);
+    m_output.ClipAndProcessSymbol(symbolDefP, transP, clipPlaneSetP);
     }
 
 /*---------------------------------------------------------------------------------**//**

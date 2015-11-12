@@ -378,7 +378,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OutputElement(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
-    DGNPLATFORM_EXPORT virtual void _DrawSymbol(IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
+    DGNPLATFORM_EXPORT virtual void _DrawSymbol(IDisplaySymbol*, TransformCP, ClipPlaneSetP);
     DGNPLATFORM_EXPORT virtual void _DeleteSymbol(IDisplaySymbol*);
     DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP*);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
@@ -883,9 +883,7 @@ DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDep
 //! @param[in]      symbolDef        Symbol definition to draw from.
 //! @param[in]      trans            Transform to be applied to the symbol definition to determine location, orientation, size of this instance.
 //! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be NULL.
-//! @param[in]      ignoreColor      If true, ignore the colors in the symbol definition and use the current color from \c context.
-//! @param[in]      ignoreWeight     If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
-DGNPLATFORM_EXPORT void DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight);
+DGNPLATFORM_EXPORT void DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip);
 
 //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
 DGNPLATFORM_EXPORT void DrawTextString(TextStringCR);

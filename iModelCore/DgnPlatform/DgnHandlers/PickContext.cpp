@@ -1216,7 +1216,7 @@ void            PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight)
+void PickContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip)
     {
     DRange3d    range;
 
@@ -1240,7 +1240,7 @@ void PickContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
     if (ClipPlaneContainment_StronglyOutside == GetTransformClipStack().ClassifyPoints(boxPts, 8))
         return;
 
-    m_output.ClipAndProcessSymbol(symbol, trans, clip, ignoreColor, ignoreWeight);
+    m_output.ClipAndProcessSymbol(symbol, trans, clip);
     }
 
 /*---------------------------------------------------------------------------------**//**

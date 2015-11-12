@@ -57,7 +57,7 @@ struct DgnViewsTest : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewsTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
     {
-    DgnDbTestDgnManager tdm (projFile, __FILE__, mode);
+    DgnDbTestDgnManager tdm (projFile, __FILE__, mode, false);
     project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL);
     }

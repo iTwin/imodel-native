@@ -49,10 +49,10 @@ void PerformanceElementsCRUDTestFixture::_RegisterDomainAndImportSchema (ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::_CreateAndInsertElements (Utf8CP className)
+void PerformanceElementsCRUDTestFixture::_CreateAndInsertElements (Utf8CP className, int initialInstanceCount)
     {
     bvector<DgnElementPtr> testElements;
-    CreateElements (m_initialInstanceCount, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className, testElements);
+    CreateElements (initialInstanceCount, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className, testElements);
 
     ECSqlStatement stmt;
     Utf8String insertECSql;
@@ -765,12 +765,12 @@ void PerformanceElementsCRUDTestFixture::GetDeleteECSql (Utf8CP className, Utf8S
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ECSqlInsertTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::ECSqlInsertTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlInsert%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     //Create elements to Insert
     DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
@@ -804,18 +804,18 @@ void PerformanceElementsCRUDTestFixture::ECSqlInsertTime (int numInstances, Utf8
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Insert Time %s", className).c_str (), (int)testElements.size ());
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Insert Time %s_%d", className, initialInstanceCount).c_str (), (int)testElements.size ());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ECSqlSelectTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::ECSqlSelectTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlSelect%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     ECSqlStatement stmt;
     Utf8String selectECSql;
@@ -835,18 +835,18 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime (int numInstances, Utf8
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Read Time %s", className).c_str (), numInstances);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Read Time %s_%d", className, initialInstanceCount).c_str (), numInstances);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlUpdate%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     ECSqlStatement stmt;
     Utf8String updateECSql;
@@ -865,18 +865,18 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime (int numInstances, Utf8
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Update Time %s", className).c_str (), numInstances);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Update Time %s_%d", className, initialInstanceCount).c_str (), numInstances);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"ECSqlDelete%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     ECSqlStatement stmt;
     Utf8String deleteECSql;
@@ -894,18 +894,18 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime (int numInstances, Utf8
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Delete Time %s", className).c_str (), numInstances);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSql Delete Time %s_%d", className, initialInstanceCount).c_str (), numInstances);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SqlInsertTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::SqlInsertTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlInsert%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     //Create elements to Insert
     DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
@@ -940,18 +940,18 @@ void PerformanceElementsCRUDTestFixture::SqlInsertTime (int numInstances, Utf8CP
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Insert Time %s", className).c_str (), (int)testElements.size ());
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Insert Time %s_%d", className, initialInstanceCount).c_str (), (int)testElements.size ());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SqlSelectTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::SqlSelectTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlSelect%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String selectSql;
@@ -970,18 +970,18 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime (int numInstances, Utf8CP
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Read Time %s", className).c_str (), numInstances);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Read Time %s_%d", className, initialInstanceCount).c_str (), numInstances);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SqlUpdateTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::SqlUpdateTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlUpdate%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String updateSql;
@@ -1000,18 +1000,18 @@ void PerformanceElementsCRUDTestFixture::SqlUpdateTime (int numInstances, Utf8CP
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Update Time %s", className).c_str (), numInstances);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Update Time %s_%d", className, initialInstanceCount).c_str (), numInstances);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SqlDeleteTime (int numInstances, Utf8CP className)
+void PerformanceElementsCRUDTestFixture::SqlDeleteTime (int numInstances, Utf8CP className, int initialInstanceCount)
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
     WPrintfString dbName (L"SqlDelete%ls_%d.idgndb", wClassName.c_str (), numInstances);
-    SetUpTestDgnDb (dbName, className);
+    SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String deleteSql;
@@ -1029,7 +1029,7 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime (int numInstances, Utf8CP
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Delete Time %s", className).c_str (), numInstances);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Sql Delete Time %s_%d", className, initialInstanceCount).c_str (), numInstances);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1037,16 +1037,26 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime (int numInstances, Utf8CP
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsInsert)
     {
-    const int insertCount = 1000000;
-    SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    int initCount = 500;
+    int insertions;
+    int initialInsertCount = 100;
+    for (int i = 1; i <= 3; i++)
+        {
+        initialInsertCount = initialInsertCount * 10;
+        for (int j = 1; j <= 3; j++)
+            {
+            insertions = initCount *j;
+            SqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            SqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            SqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            SqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
 
-    ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+            ECSqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            ECSqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            ECSqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            ECSqlInsertTime (insertions, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1054,16 +1064,26 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsInsert)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsRead)
     {
-    const int insertCount = 1000000;
-    SqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    SqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    int initCount = 100;
+    int selectCount;
+    int initialInsertCount = 100;
+    for (int i = 1; i <= 3; i++)
+        {
+        initialInsertCount = initialInsertCount * 10;
+        for (int j = 1; j <= 3; j++)
+            {
+            selectCount = initCount *j;
+            SqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            SqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            SqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            SqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
 
-    ECSqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    ECSqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    ECSqlSelectTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+            ECSqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            ECSqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            ECSqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            ECSqlSelectTime (selectCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1071,16 +1091,26 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsRead)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdate)
     {
-    const int insertCount = 1000000;
-    SqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    SqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    int initCount = 500;
+    int updateCount;
+    int initialInsertCount = 100;
+    for (int i = 1; i <= 3; i++)
+        {
+        initialInsertCount = initialInsertCount * 10;
+        for (int j = 1; j <= 3; j++)
+            {
+            updateCount = initCount *j;
+            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
 
-    ECSqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    ECSqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    ECSqlUpdateTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+            ECSqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            ECSqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            ECSqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            ECSqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1088,14 +1118,24 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdate)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsDelete)
     {
-    const int insertCount = 1000;
-    SqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    SqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    int initCount = 100;
+    int deleteCount;
+    int initialInsertCount = 100;
+    for (int i = 1; i <= 3; i++)
+        {
+        initialInsertCount = initialInsertCount * 10;
+        for (int j = 1; j <= 3; j++)
+            {
+            deleteCount = initCount *j;
+            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
 
-    ECSqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    ECSqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    ECSqlDeleteTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
+            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
+            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
+            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
+            }
+        }
     }

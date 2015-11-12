@@ -123,7 +123,7 @@ private:
     virtual void            _OutputElement (GeometrySourceCR) override;
     virtual void            _OnPreDrawTransient() override;
     virtual void            _DrawAreaPattern (ViewContext::ClipStencil& boundary) override;
-    virtual void            _DrawSymbol (IDisplaySymbolP, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight) override;
+    virtual void            _DrawSymbol (IDisplaySymbolP, TransformCP, ClipPlaneSetP) override;
     virtual void            _DeleteSymbol (IDisplaySymbolP) override {}
     virtual ILineStyleCP    _GetCurrLineStyle (LineStyleSymbP*) override;
     virtual void            _DrawStyledLineString2d (int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;
