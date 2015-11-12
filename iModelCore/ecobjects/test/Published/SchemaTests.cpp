@@ -291,6 +291,25 @@ TEST_F (SchemaNameParsingTest, ParseFullSchemaName)
     ValidateSchemaNameParsing ("12.18", true, NULL, 0, 0);
     }
 
+TEST_F (SchemaDeserializationTest, TestAbstractness)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Abstract' version='01.00' displayLabel='AbstractClasses' description='Schema with abstract class' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='Abstract1' description='Abstract ECClass' displayLabel='Abstract' isDomainClass='false' isCustomAttributeClass='false' isStruct='false'>"
+        "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
+        "    </ECClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    ECClassCP absClass = schema->GetClassCP("Abstract1");
+    ASSERT_TRUE(absClass->IsEntityClass());
+    ASSERT_TRUE(ECClassModifier::Abstract == absClass->GetClassModifier());
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -516,10 +535,10 @@ TEST_F (SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
 
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
 
-    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        "       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />" // typename is mis-capitalized
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
+        "       <ECProperty propertyName='Name' typename='string' displayLabel='Project Name' />" // typename is mis-capitalized
         "    </ECClass>"
         "</ECSchema>";
     ECSchemaPtr schema;
@@ -560,11 +579,11 @@ TEST_F (SchemaDeserializationTest, ExpectUnrecognizedTypeNamesToSurviveRoundtrip
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, ExpectSuccessWithInvalidTypeNameInPrimitiveProperty)
     {
-    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "<ECSchemaReference name=\"EditorCustomAttributes\" version=\"01.00\" prefix=\"beca\" />"
-        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        "       <ECProperty propertyName=\"Name\" typeName=\"strng\" displayLabel=\"Project Name\" />"
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
+        "       <ECProperty propertyName='Name' typeName='strng' displayLabel='Project Name' />"
         "    </ECClass>"
         "</ECSchema>";
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
@@ -587,7 +606,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
 
     ECSchemaPtr schema;
-    //schemaContext->AddSchemaPath(L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\");
+    //schemaContext->AddSchemaPath(L"C:\\temp\\data\\ECXA\\SchemasAndDgn\');
     //SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\Bentley_Plant.06.00.ecschema.xml", *schemaContext);
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"EmptyCustomAttribute.01.00.ecschema.xml").c_str (), *schemaContext);
     EXPECT_EQ (SchemaReadStatus::Success, status);
@@ -665,12 +684,12 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString)
     {
-    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        "       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
-        "       <ECProperty propertyName=\"Geometry\" typeName=\"Bentley.Geometry.Common.IGeometry\" displayLabel=\"Geometry\" />"
-        "       <ECProperty propertyName=\"LineSegment\" typeName=\"Bentley.Geometry.Common.ILineSegment\" displayLabel=\"Line Segment\" />"
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
+        "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
+        "       <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' displayLabel='Geometry' />"
+        "       <ECProperty propertyName='LineSegment' typeName='Bentley.Geometry.Common.ILineSegment' displayLabel='Line Segment' />"
         "    </ECClass>"
         "</ECSchema>";
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
@@ -775,14 +794,14 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
     {
-    Utf8CP widgets_schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "    <ECClass typeName=\"DifferentClass\" isDomainClass=\"True\">"
+    Utf8CP widgets_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='DifferentClass' isDomainClass='True'>"
         "    </ECClass>"
-        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        "       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
+        "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
         "    </ECClass>"
-        "    <ECClass typeName=\"ecProject\" isDomainClass=\"True\">"
+        "    <ECClass typeName='ecProject' isDomainClass='True'>"
         "    </ECClass>"
         "</ECSchema>";
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
@@ -795,13 +814,13 @@ TEST_F (SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
     ECSchemaPtr schema2;
     ECSchemaReadContextPtr   schemaContext2 = ECSchemaReadContext::CreateContext ();
 
-    Utf8CP widgets2_schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"Widgets2\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        "       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
+    Utf8CP widgets2_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Widgets2' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
+        "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
         "    </ECClass>"
-        "    <ECClass typeName=\"ecProject\" description=\"New Project ECClass\" isDomainClass=\"True\">"
-        "       <ECProperty propertyName=\"Author\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        "    <ECClass typeName='ecProject' description='New Project ECClass' isDomainClass='True'>"
+        "       <ECProperty propertyName='Author' typeName='string' displayLabel='Project Name' />"
         "    </ECClass>"
         "</ECSchema>";
     status = ECSchema::ReadFromXmlString (schema2, widgets2_schemaXML, *schemaContext2);
@@ -814,18 +833,18 @@ TEST_F (SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, EnsureSupplementalSchemaCannotHaveBaseClasses)
     {
-    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"SupplementalSchemaWithBaseClasses_Supplemental_Mapping\" nameSpacePrefix=\"ss\" version=\"01.00\" description=\"Test Supplemental Mapping Schema\" displayLabel=\"Electrical Extended Supplemental Mapping\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "<ECClass typeName=\"MAPPING\" displayLabel=\"Mapping\" isStruct=\"false\" isDomainClass=\"true\" isCustomAttributeClass=\"false\"/>"
-        "<ECClass typeName=\"ELECTRICAL_PROPERTY_MAPPING\" displayLabel=\"Electrical Property Mapping\" isStruct=\"false\" isDomainClass=\"false\" isCustomAttributeClass=\"true\">"
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='SupplementalSchemaWithBaseClasses_Supplemental_Mapping' nameSpacePrefix='ss' version='01.00' description='Test Supplemental Mapping Schema' displayLabel='Electrical Extended Supplemental Mapping' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECClass typeName='MAPPING' displayLabel='Mapping' isStruct='false' isDomainClass='true' isCustomAttributeClass='false'/>"
+        "<ECClass typeName='ELECTRICAL_PROPERTY_MAPPING' displayLabel='Electrical Property Mapping' isStruct='false' isDomainClass='false' isCustomAttributeClass='true'>"
         "<BaseClass>MAPPING</BaseClass>"
-        "<ECProperty propertyName=\"APPLICATION_PROPERTY_NAME\" typeName=\"string\" displayLabel=\"Application Property Name\" readOnly=\"false\"/>"
+        "<ECProperty propertyName='APPLICATION_PROPERTY_NAME' typeName='string' displayLabel='Application Property Name' readOnly='false'/>"
         "</ECClass>"
-        "<ECClass typeName=\"ELECTRICAL_ITEM\" displayLabel=\"Electrical Item\" isStruct=\"false\" isDomainClass=\"true\" isCustomAttributeClass=\"false\">"
+        "<ECClass typeName='ELECTRICAL_ITEM' displayLabel='Electrical Item' isStruct='false' isDomainClass='true' isCustomAttributeClass='false'>"
         "<BaseClass>bentley:BENTLEY_BASE_OBJECT</BaseClass>"
-        "<ECProperty propertyName=\"ID\" typeName=\"string\" description=\"Business ID for an electrical item.\" readOnly=\"false\">"
+        "<ECProperty propertyName='ID' typeName='string' description='Business ID for an electrical item.' readOnly='false'>"
         "<ECCustomAttributes>"
-        "<ELECTRICAL_PROPERTY_MAPPING xmlns=\"ElectricalExtended_Supplemental_Mapping.01.00\">"
+        "<ELECTRICAL_PROPERTY_MAPPING xmlns='ElectricalExtended_Supplemental_Mapping.01.00'>"
         "<APPLICATION_PROPERTY_NAME>DeviceID</APPLICATION_PROPERTY_NAME>"
         "</ELECTRICAL_PROPERTY_MAPPING>"
         "</ECCustomAttributes>"
@@ -910,9 +929,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
  +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     {
-    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"ReferencedSchema\" version=\"01.00\" displayLabel=\"Display Label\" description=\"Description\" nameSpacePrefix=\"ref\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "    <ECClass typeName=\"BaseClass\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\" />"
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='ReferencedSchema' version='01.00' displayLabel='Display Label' description='Description' nameSpacePrefix='ref' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='BaseClass' description='Project ECClass' displayLabel='Project' isDomainClass='True' />"
         "</ECSchema>";
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
 
@@ -920,10 +939,10 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     SchemaReadStatus status = ECSchema::ReadFromXmlString (refSchema, schemaXML, *schemaContext);
     EXPECT_EQ (SchemaReadStatus::Success, status);
 
-    schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"Stuff\" version=\"09.06\" displayLabel=\"Display Label\" description=\"Description\" nameSpacePrefix=\"stuff\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "<ECSchemaReference name=\"ReferencedSchema\" version=\"01.00\" prefix=\"ref\" />"
-        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
+    schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Stuff' version='09.06' displayLabel='Display Label' description='Description' nameSpacePrefix='stuff' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchemaReference name='ReferencedSchema' version='01.00' prefix='ref' />"
+        "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
         "       <BaseClass>BaseClassDOESNOTEXIST</BaseClass>"
         "       <BaseClass>ref:BaseClass</BaseClass>"
         "    </ECClass>"
@@ -940,26 +959,26 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F (SchemaDeserializationTest, TestMultipleConstraintClasses)
     {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"ReferencedSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" description=\"Description\" displayLabel=\"Display Label\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName = \"Class\" isDomainClass = \"True\">"
-        "      <ECProperty propertyName = \"Property\" typeName = \"string\" />"
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='ReferencedSchema' nameSpacePrefix='ref' version='01.00' description='Description' displayLabel='Display Label' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "  <ECClass typeName = 'Class' isDomainClass = 'True'>"
+        "      <ECProperty propertyName = 'Property' typeName = 'string' />"
         "  </ECClass>"
-        "  <ECClass typeName = \"Class1\" isDomainClass = \"True\">"
-        "      <ECProperty propertyName = \"Property1\" typeName = \"string\" />"
-        "      <ECProperty propertyName = \"Property2\" typeName = \"string\" />"
+        "  <ECClass typeName = 'Class1' isDomainClass = 'True'>"
+        "      <ECProperty propertyName = 'Property1' typeName = 'string' />"
+        "      <ECProperty propertyName = 'Property2' typeName = 'string' />"
         "  </ECClass>"
-        "  <ECClass typeName = \"Class2\" isDomainClass = \"True\">"
-        "      <ECProperty propertyName = \"Property3\" typeName = \"string\" />"
-        "      <ECProperty propertyName = \"Property4\" typeName = \"string\" />"
+        "  <ECClass typeName = 'Class2' isDomainClass = 'True'>"
+        "      <ECProperty propertyName = 'Property3' typeName = 'string' />"
+        "      <ECProperty propertyName = 'Property4' typeName = 'string' />"
         "  </ECClass>"
-        "  <ECRelationshipClass typeName = \"ClassHasClass1Or2\" isDomainClass = \"True\" strength = \"referencing\" strengthDirection = \"forward\">"
-        "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "          <Class class = \"Class\" />"
+        "  <ECRelationshipClass typeName = 'ClassHasClass1Or2' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'>"
+        "      <Source cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'Class' />"
         "      </Source>"
-        "      <Target cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "          <Class class = \"Class1\" />"
-        "          <Class class = \"Class2\" />"
+        "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'Class1' />"
+        "          <Class class = 'Class2' />"
         "      </Target>"
         "  </ECRelationshipClass>"
         "</ECSchema>";
@@ -985,28 +1004,28 @@ TEST_F (SchemaDeserializationTest, TestRelationshipKeys)
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
 
     ECSchemaPtr ecSchema;
-    Utf8String schemaString ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                             "<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"ReferencedSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" description=\"Description\" displayLabel=\"Display Label\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                             "  <ECClass typeName = \"Class\" isDomainClass = \"True\">"
-                             "      <ECProperty propertyName = \"Property\" typeName = \"string\" />"
+    Utf8String schemaString ("<?xml version='1.0' encoding='UTF-8'?>"
+                             "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='ReferencedSchema' nameSpacePrefix='ref' version='01.00' description='Description' displayLabel='Display Label' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                             "  <ECClass typeName = 'Class' isDomainClass = 'True'>"
+                             "      <ECProperty propertyName = 'Property' typeName = 'string' />"
                              "  </ECClass>"
-                             "  <ECClass typeName = \"Class1\" isDomainClass = \"True\">"
-                             "      <ECProperty propertyName = \"Property1\" typeName = \"string\" />"
-                             "      <ECProperty propertyName = \"Property2\" typeName = \"string\" />"
+                             "  <ECClass typeName = 'Class1' isDomainClass = 'True'>"
+                             "      <ECProperty propertyName = 'Property1' typeName = 'string' />"
+                             "      <ECProperty propertyName = 'Property2' typeName = 'string' />"
                              "  </ECClass>"
-                             "  <ECRelationshipClass typeName = \"RelationshipClass\" isDomainClass = \"True\" strength = \"referencing\" strengthDirection = \"forward\">"
-                             "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-                             "          <Class class = \"Class\">"
+                             "  <ECRelationshipClass typeName = 'RelationshipClass' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'>"
+                             "      <Source cardinality = '(0, 1)' polymorphic = 'True'>"
+                             "          <Class class = 'Class'>"
                              "              <Key>"
-                             "                  <Property name = \"Property\" />"
+                             "                  <Property name = 'Property' />"
                              "              </Key>"
                              "          </Class>"
                              "      </Source>"
-                             "      <Target cardinality = \"(0, 1)\" polymorphic = \"True\">"
-                             "          <Class class = \"Class1\">"
+                             "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
+                             "          <Class class = 'Class1'>"
                              "              <Key>"
-                             "                  <Property name = \"Property1\" />"
-                             "                  <Property name = \"Property2\" />"
+                             "                  <Property name = 'Property1' />"
+                             "                  <Property name = 'Property2' />"
                              "              </Key>"
                              "          </Class>"
                              "      </Target>"
@@ -1035,31 +1054,31 @@ TEST_F (SchemaDeserializationTest, TestRelationshipKeys)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F (SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyProperties)
     {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"ReferencedSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" description=\"Description\" displayLabel=\"Display Label\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName = \"Class\" isDomainClass = \"True\">"
-        "      <ECProperty propertyName = \"Property\" typeName = \"string\" />"
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='ReferencedSchema' nameSpacePrefix='ref' version='01.00' description='Description' displayLabel='Display Label' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "  <ECClass typeName = 'Class' isDomainClass = 'True'>"
+        "      <ECProperty propertyName = 'Property' typeName = 'string' />"
         "  </ECClass>"
-        "  <ECClass typeName = \"Class1\" isDomainClass = \"True\">"
-        "      <ECProperty propertyName = \"Property1\" typeName = \"string\" />"
-        "      <ECProperty propertyName = \"Property2\" typeName = \"string\" />"
+        "  <ECClass typeName = 'Class1' isDomainClass = 'True'>"
+        "      <ECProperty propertyName = 'Property1' typeName = 'string' />"
+        "      <ECProperty propertyName = 'Property2' typeName = 'string' />"
         "  </ECClass>"
-        "  <ECClass typeName = \"Class2\" isDomainClass = \"True\">"
-        "      <ECProperty propertyName = \"Property3\" typeName = \"string\" />"
-        "      <ECProperty propertyName = \"Property4\" typeName = \"string\" />"
+        "  <ECClass typeName = 'Class2' isDomainClass = 'True'>"
+        "      <ECProperty propertyName = 'Property3' typeName = 'string' />"
+        "      <ECProperty propertyName = 'Property4' typeName = 'string' />"
         "  </ECClass>"
-        "  <ECRelationshipClass typeName = \"ClassHasClass1Or2\" isDomainClass = \"True\" strength = \"referencing\" strengthDirection = \"forward\">"
-        "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "          <Class class = \"Class\" />"
+        "  <ECRelationshipClass typeName = 'ClassHasClass1Or2' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'>"
+        "      <Source cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'Class' />"
         "      </Source>"
-        "      <Target cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "          <Class class = \"Class1\">"
+        "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'Class1'>"
         "              <Key>"
-        "                  <Property name = \"Property1\" />"
-        "                  <Property name = \"Property2\" />"
+        "                  <Property name = 'Property1' />"
+        "                  <Property name = 'Property2' />"
         "              </Key>"
         "          </Class>"
-        "          <Class class = \"Class2\" />"
+        "          <Class class = 'Class2' />"
         "      </Target>"
         "  </ECRelationshipClass>"
         "</ECSchema>";
