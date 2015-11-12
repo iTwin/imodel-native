@@ -207,7 +207,7 @@ void SectioningViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void SectioningViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
     {
     if (m_pass == ClipVolumePass::InsideForward)
         {
@@ -216,7 +216,7 @@ void SectioningViewController::_DrawElement(ViewContextR context, GeometricEleme
         }
 
     SetOverrideMatSymb(context);
-    element._Draw(context);
+    element.Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

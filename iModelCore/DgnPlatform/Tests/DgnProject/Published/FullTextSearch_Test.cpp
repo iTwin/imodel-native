@@ -19,7 +19,7 @@ struct SearchableTextTest : public GenericDgnModelTestFixture
 
     typedef DgnSearchableText ST;
 
-    SearchableTextTest() : GenericDgnModelTestFixture(__FILE__, false), m_db(*m_testDgnManager.GetDgnProjectP())
+    SearchableTextTest() : GenericDgnModelTestFixture(__FILE__, false, false), m_db(*m_testDgnManager.GetDgnProjectP())
         {
         BeAssert(nullptr != m_testDgnManager.GetDgnProjectP());
         }

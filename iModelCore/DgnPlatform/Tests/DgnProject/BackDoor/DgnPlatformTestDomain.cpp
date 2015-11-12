@@ -22,6 +22,7 @@ HANDLER_DEFINE_MEMBERS(TestItemHandler)
 #endif
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
+HANDLER_DEFINE_MEMBERS(TestGroupHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
@@ -144,6 +145,17 @@ TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId 
     builder->Append(*computeShape2d(length));
     return (SUCCESS != builder->SetGeomStreamAndPlacement(*geom)) ? nullptr : geom;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId categoryId)
+    {
+    DgnClassId classId = db.Domains().GetClassId(TestGroupHandler::GetHandler());
+    TestGroupPtr group = new TestGroup(CreateParams(db, modelId, classId, categoryId, Placement3d()));
+    BeAssert(group.IsValid());
+    return group;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -276,6 +288,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
+    RegisterHandler(TestGroupHandler::GetHandler());
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
     RegisterHandler(TestItemHandler::GetHandler());
 #endif

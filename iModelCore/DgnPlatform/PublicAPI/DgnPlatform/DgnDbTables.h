@@ -34,7 +34,7 @@
 #define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
-#define DGN_CLASSNAME_ElementGroup          "ElementGroup"
+#define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementLabel          "ElementLabel"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
@@ -71,7 +71,6 @@
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
-#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers" // WIP: obsolete, replaced by ElementGroupsMembers
 #define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"

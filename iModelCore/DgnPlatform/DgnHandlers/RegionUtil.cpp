@@ -223,7 +223,6 @@ static void getDependencyRoots(bvector<DependencyRoot>& depRoots, bvector<Displa
             depRoots.push_back(root);
         }
     }
-#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/13
@@ -302,6 +301,7 @@ static void GetUsed(CurveVectorCR curves, bvector<DgnElementId>& regionRoots)
     }
 
 }; // TextBoxInfo
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
@@ -447,7 +447,9 @@ BentleyStatus   RegionGraphicsDrawGeom::GetMarkedRegions(CurveVectorPtr& regionO
         {
         CurvePrimitivePtrPairVector newToOld;
 
+#if defined (NEEDS_WORK_DGNITEM)
         TextBoxInfo::ClearUsed(*m_textBoundaries); // Clear flag that tells us whether this text loop becames part of result region boundary...
+#endif
 
         if (NULL == localToWorldP)
             {
@@ -472,11 +474,13 @@ BentleyStatus   RegionGraphicsDrawGeom::GetMarkedRegions(CurveVectorPtr& regionO
                     {
                     newToOld[i].curveA->SetCurvePrimitiveInfo(newToOld[i].curveB->GetCurvePrimitiveInfo());
 
+#if defined (NEEDS_WORK_DGNITEM)
                     // Text box appeared in region result...mark as used for DgnRegionElementTool call to GetRoots for process originals...
                     TextBoxInfo* textInfo = dynamic_cast <TextBoxInfo*> (newToOld[i].curveA->GetCurvePrimitiveInfo().get());
 
                     if (textInfo)
                         textInfo->m_used = true;
+#endif
                     }
                 }
             }
@@ -531,12 +535,14 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots(bvector<DgnElementId>& regionRo
 
     if (!nodeInfo)
         {
+#if defined (NEEDS_WORK_DGNITEM)
         TextBoxInfo const* textInfo = dynamic_cast <TextBoxInfo const*> (curvePrimitive.GetCurvePrimitiveInfo().get());
 
         if (!textInfo)
             return ERROR;
 
         regionRoots.push_back(textInfo->m_element->GetElementId());
+#endif
 
         return SUCCESS;
         }
@@ -610,22 +616,16 @@ BentleyStatus   RegionGraphicsDrawGeom::GetRoots(bvector<DgnElementId>& regionRo
             }
         }
 
+#if defined (NEEDS_WORK_DGNITEM)
     if (m_textBoundaries.IsValid())
         TextBoxInfo::GetUsed(*m_textBoundaries, regionRoots); // Add text box paths that have been marked as used in result region boundary...
+#endif
 
     // NOTE: Cull duplicate entries. Used by DgnRegionElementTool for "process originals"...
     std::sort(regionRoots.begin(), regionRoots.end());
     regionRoots.erase(std::unique(regionRoots.begin(), regionRoots.end()), regionRoots.end());
 
     return (regionRoots.empty() ? ERROR : SUCCESS);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometricElementCP RegionGraphicsDrawGeom::GetCurrentElement()
-    {
-    return m_context->GetCurrentElement();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -712,6 +712,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurveVector(CurveVectorCR curves
         {
         if (curves.IsClosedPath() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive())
             {
+#if defined (NEEDS_WORK_DGNITEM)
             TransformCP     placementTransform = m_context->GetCurrLocalToWorldTransformCP ();
             CurveVectorPtr  textBox = curves.Clone();
 
@@ -727,6 +728,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurveVector(CurveVectorCR curves
                 m_textBoundaries = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
 
             m_textBoundaries->Add(textBox);
+#endif
             }
 
         return SUCCESS;
@@ -1048,7 +1050,7 @@ void            RegionGraphicsContext::_DrawTextString(TextStringCR text)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::VisitFloodCandidate(GeometricElementCR element, TransformCP trans)
+BentleyStatus   RegionGraphicsContext::VisitFloodCandidate(GeometrySourceCR element, TransformCP trans)
     {
     ViewContext::ContextMark mark(this);
 
@@ -1061,7 +1063,7 @@ BentleyStatus   RegionGraphicsContext::VisitFloodCandidate(GeometricElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::PushBooleanCandidate(GeometricElementCR element, TransformCP trans)
+BentleyStatus   RegionGraphicsContext::PushBooleanCandidate(GeometrySourceCR element, TransformCP trans)
     {
     if (trans)
         _PushTransform(*trans);
@@ -1074,7 +1076,7 @@ BentleyStatus   RegionGraphicsContext::PushBooleanCandidate(GeometricElementCR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate(GeometricElementCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts, bool allowText)
+BentleyStatus   RegionGraphicsContext::VisitBooleanCandidate(GeometrySourceCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts, bool allowText)
     {
 #if defined (V10_WIP_ELEMENTHANDLER)
     CurveVectorPtr  curves = ICurvePathQuery::ElementToCurveVector(eh);
@@ -1771,7 +1773,7 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElement
         {
         for (DgnElementCPtr curr : *in)
             {
-            GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+            GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
             if (nullptr == geomElement)
                 continue;
@@ -1805,7 +1807,7 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnModelR targetModel, DgnE
 
     for (DgnElementCPtr curr : in)
         {
-        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+        GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
             VisitFloodCandidate(*geomElement, inTrans);
@@ -1829,7 +1831,7 @@ BentleyStatus   RegionGraphicsContext::Flood(DgnModelR targetModel, DgnElementCP
 
     for (DgnElementCPtr curr : in)
         {
-        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+        GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
             VisitFloodCandidate(*geomElement, inTrans);
@@ -1889,7 +1891,7 @@ BentleyStatus   RegionGraphicsContext::Boolean(DgnModelR targetModel, DgnElement
 
     for (DgnElementCPtr curr : in)
         {
-        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+        GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
             VisitBooleanCandidate(*geomElement, inTrans, nullptr, true);
@@ -1924,7 +1926,7 @@ BentleyStatus   RegionGraphicsContext::Boolean(DgnModelR targetModel, DgnElement
 
     for (DgnElementCPtr curr : target)
         {
-        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+        GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
             VisitBooleanCandidate(*geomElement, targetTrans, nullptr, false);
@@ -1937,7 +1939,7 @@ BentleyStatus   RegionGraphicsContext::Boolean(DgnModelR targetModel, DgnElement
 
     for (DgnElementCPtr curr : tool)
         {
-        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+        GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
             VisitBooleanCandidate(*geomElement, toolTrans, nullptr, true);
@@ -1971,7 +1973,7 @@ BentleyStatus   RegionGraphicsContext::BooleanWithHoles(DgnModelR targetModel, D
 
     for (DgnElementCPtr curr : in)
         {
-        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+        GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
             VisitBooleanCandidate(*geomElement, inTrans, m_cullRedundantLoop ? &wireProducts : nullptr);
@@ -1984,7 +1986,7 @@ BentleyStatus   RegionGraphicsContext::BooleanWithHoles(DgnModelR targetModel, D
 
     for (DgnElementCPtr curr : holes)
         {
-        GeometricElementCP geomElement = (curr.IsValid() ? curr->ToGeometricElement() : nullptr);
+        GeometrySourceCP geomElement = (curr.IsValid() ? curr->ToGeometrySource() : nullptr);
 
         if (nullptr != geomElement)
             VisitBooleanCandidate(*geomElement, holeTrans);

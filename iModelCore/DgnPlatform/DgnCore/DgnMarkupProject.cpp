@@ -272,7 +272,7 @@ void PhysicalRedlineViewController::_DrawZBufferedGraphics(ViewContextR context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void PhysicalRedlineViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
     {
     if (m_targetModelIsInSubjectView)
         m_subjectView._DrawElement(context, element);
@@ -283,7 +283,7 @@ void PhysicalRedlineViewController::_DrawElement(ViewContextR context, Geometric
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_DrawElementFiltered(ViewContextR context, GeometricElementCR element, DPoint3dCP pts, double size)
+void PhysicalRedlineViewController::_DrawElementFiltered(ViewContextR context, GeometrySourceCR element, DPoint3dCP pts, double size)
     {
     if (m_targetModelIsInSubjectView)
         m_subjectView._DrawElementFiltered(context, element, pts, size);
