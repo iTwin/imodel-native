@@ -474,7 +474,7 @@ void PerformanceElementTestFixture::CommitAndLogTiming (StopWatch& timer, Utf8CP
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementTestFixture::SetUpTestDgnDb (WCharCP destFileName, Utf8CP className)
+void PerformanceElementTestFixture::SetUpTestDgnDb (WCharCP destFileName, Utf8CP className, int initialInstanceCount)
     {
     BeFileName seedFilePath;
     WString seedFileName;
@@ -482,7 +482,7 @@ void PerformanceElementTestFixture::SetUpTestDgnDb (WCharCP destFileName, Utf8CP
 
     WString wClassName;
     wClassName.AssignUtf8 (className);
-    seedFileName.Sprintf (L"sqlVsecsqlPerformance_%ls_seed%d.idgndb", wClassName.c_str(), DateTime::GetCurrentTimeUtc ().GetDayOfYear ());
+    seedFileName.Sprintf (L"sqlVsecsqlPerformance_%d_%ls_seed%d.idgndb", initialInstanceCount, wClassName.c_str (), DateTime::GetCurrentTimeUtc ().GetDayOfYear ());
 
     BeTest::GetHost ().GetOutputRoot (seedFilePath);
     seedFilePath.AppendToPath (seedFileName.c_str ());
@@ -506,7 +506,8 @@ void PerformanceElementTestFixture::SetUpTestDgnDb (WCharCP destFileName, Utf8CP
 
         _RegisterDomainAndImportSchema (schema);
         ASSERT_TRUE (m_db->IsDbOpen ());
-        _CreateAndInsertElements (className);
+        _CreateAndInsertElements (className, initialInstanceCount);
+        m_db->SaveChanges ();
         }
 
     BeFileName dgndbFilePath;

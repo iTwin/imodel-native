@@ -14,7 +14,7 @@ class AnnotationTextBlockTest : public AnnotationTestFixture
     // @bsimethod                                                   Jeff.Marker     05/2014
     //---------------------------------------------------------------------------------------
     public: AnnotationTextBlockTest () :
-        AnnotationTestFixture(__FILE__, false /*2D*/)
+        AnnotationTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
         {
         }
 

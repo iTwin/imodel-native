@@ -39,7 +39,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
     ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
     ASSERT_EQ( BE_SQLITE_OK , result );
-    db->Txns().EnableTracking(true);
+    TestDataManager::MustBeBriefcase(db, mode);
     }
 
 //---------------------------------------------------------------------------------------
@@ -72,9 +72,9 @@ struct DgnModelTests : public testing::Test
         DgnPlatformTestDomain::Register(); 
         }
 
-    void SetUp()
+    void SetUp() override
         {
-        DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+        DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
         m_dgndb = tdm.GetDgnProjectP();
         }
 
@@ -171,7 +171,7 @@ TEST_F(DgnModelTests, EmptyList)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRange)
     {
-    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
 
@@ -189,7 +189,7 @@ TEST_F(DgnModelTests, GetRange)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
 
@@ -243,7 +243,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, SheetModelCRUD)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
 
     static Utf8CP s_sheet1Name = "Sheet1";
     static Utf8CP s_sheet1NameUPPER = "SHEET1";
@@ -349,7 +349,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, WorkWithDgnModelTable)
 {
-    DgnDbTestDgnManager tdm(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OpenMode::Readonly);
+    DgnDbTestDgnManager tdm(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OpenMode::Readonly, false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
@@ -384,7 +384,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, DictionaryModel)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbR db = *tdm.GetDgnProjectP();
 
     DgnModelPtr model = db.Models().GetModel(DgnModel::DictionaryId());
@@ -418,7 +418,7 @@ TEST_F(DgnModelTests, DictionaryModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ModelsIterator)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP ();
     ASSERT_TRUE (db != nullptr);
 
@@ -488,7 +488,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AbandonChanges)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP ();
     ASSERT_TRUE (db != nullptr);
 
@@ -535,7 +535,7 @@ struct TestAppData : DgnModel::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AddAppData)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP ();
     ASSERT_TRUE (db != nullptr);
 
@@ -563,7 +563,7 @@ TEST_F (DgnModelTests, AddAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, DropAppData)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP ();
     ASSERT_TRUE (db != nullptr);
 
@@ -592,7 +592,7 @@ TEST_F (DgnModelTests, DropAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ReplaceInvalidCharacter)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP ();
     ASSERT_TRUE (db != nullptr);
 
