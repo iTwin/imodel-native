@@ -336,8 +336,6 @@ $(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $
 
 $(CoreObjs)UpdateLogging$(oext) :                   $(DgnCoreDir)UpdateLogging.cpp $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnViewDb$(oext) :                       $(DgnCoreDir)DgnViewDb.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
-
 $(CoreObjs)DgnLink$(oext) :                         $(DgnCoreDir)DgnLink.cpp $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)DgnLink.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}

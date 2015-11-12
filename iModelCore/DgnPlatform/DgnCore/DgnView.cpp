@@ -24,9 +24,10 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
 {
-    VIEWDEF_HANDLER_DEFINE_MEMBERS(CameraViewDef);
+    VIEWDEF_HANDLER_DEFINE_MEMBERS(PhysicalViewDef);
     VIEWDEF_HANDLER_DEFINE_MEMBERS(DrawingViewDef);
     VIEWDEF_HANDLER_DEFINE_MEMBERS(SheetViewDef);
+    HANDLER_DEFINE_MEMBERS(CameraViewDef);
     HANDLER_DEFINE_MEMBERS(RedlineViewDef);
 }
 
@@ -123,16 +124,16 @@ ViewDefinition::CreateParams::CreateParams(DgnDbR db, Code const& code, DgnClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-WIPViewId ViewDefinition::QueryViewId(Code const& code, DgnDbR db)
+DgnViewId ViewDefinition::QueryViewId(Code const& code, DgnDbR db)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
-    return WIPViewId(elemId.GetValueUnchecked());
+    return DgnViewId(elemId.GetValueUnchecked());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr ViewDefinition::LoadViewController(WIPViewId viewId, DgnDbR db, FillModels fill)
+ViewControllerPtr ViewDefinition::LoadViewController(DgnViewId viewId, DgnDbR db, FillModels fill)
     {
     auto view = QueryView(viewId, db);
     return view.IsValid() ? view->LoadViewController(fill) : nullptr;
@@ -158,15 +159,12 @@ ViewControllerPtr ViewDefinition::LoadViewController(FillModels fillModels) cons
     return controller;
     }
 
-// ###TODO: Remove old DgnViewId, rename WIPViewId
-#define WIP_TO_VIEW_ID(WIPID) DgnViewId(WIPID . GetValueUnchecked())
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr CameraViewDefinition::_SupplyController() const
+ViewControllerPtr PhysicalViewDefinition::_SupplyController() const
     {
-    return new QueryViewController(GetDgnDb(), WIP_TO_VIEW_ID(GetViewId()));
+    return new QueryViewController(GetDgnDb(), GetViewId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -174,7 +172,7 @@ ViewControllerPtr CameraViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr SheetViewDefinition::_SupplyController() const
     {
-    return new SheetViewController(GetDgnDb(), WIP_TO_VIEW_ID(GetViewId()));
+    return new SheetViewController(GetDgnDb(), GetViewId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,7 +180,7 @@ ViewControllerPtr SheetViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr DrawingViewDefinition::_SupplyController() const
     {
-    return new DrawingViewController(GetDgnDb(), WIP_TO_VIEW_ID(GetViewId()));
+    return new DrawingViewController(GetDgnDb(), GetViewId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -243,7 +241,7 @@ void ViewDefinition::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewDefinition::QuerySettings(Utf8StringR settings, WIPViewId viewId, DgnDbR db)
+DbResult ViewDefinition::QuerySettings(Utf8StringR settings, DgnViewId viewId, DgnDbR db)
     {
     return db.QueryProperty(settings, DgnViewProperty::Settings(), viewId.GetValue(), 0);
     }
@@ -251,7 +249,7 @@ DbResult ViewDefinition::QuerySettings(Utf8StringR settings, WIPViewId viewId, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewDefinition::SaveSettings(Utf8StringCR settings, WIPViewId viewId, DgnDbR db)
+DbResult ViewDefinition::SaveSettings(Utf8StringCR settings, DgnViewId viewId, DgnDbR db)
     {
     return db.SavePropertyString(DgnViewProperty::Settings(), settings, viewId.GetValue(), 0);
     }
@@ -259,7 +257,7 @@ DbResult ViewDefinition::SaveSettings(Utf8StringCR settings, WIPViewId viewId, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewDefinition::DeleteSettings(WIPViewId viewId, DgnDbR db)
+DbResult ViewDefinition::DeleteSettings(DgnViewId viewId, DgnDbR db)
     {
     return db.DeleteProperty(DgnViewProperty::Settings(), viewId.GetValue(), 0);
     }
@@ -269,10 +267,19 @@ DbResult ViewDefinition::DeleteSettings(WIPViewId viewId, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator ViewDefinition::MakeIterator(DgnDbR db)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,Code," PROPNAME_Source "," PROPNAME_Descr "," PROPNAME_BaseModel ",GetECClassId() FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition);
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,Code," PROPNAME_Source "," PROPNAME_BaseModel "," PROPNAME_Descr ",GetECClassId() FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition);
 
     Iterator iter;
     iter.Prepare(db, s_ecsql, 0);
     return iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ViewDefinition::QueryCount(DgnDbR db)
+    {
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition));
+    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
     }
 

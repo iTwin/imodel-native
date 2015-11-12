@@ -874,50 +874,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Props" typeName="string"/>
     </ECClass>
 
-    <ECClass typeName="View" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <ECProperty propertyName="ViewType" typeName="int" />
-        <ECProperty propertyName="Name" typeName="string" description="Name of view">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Source" typeName="int" />
-        <ECProperty propertyName="BaseModel" typeName="int" />
-    </ECClass>
-    <ECClass typeName="PhysicalView" isDomainClass="True">
-        <BaseClass>View</BaseClass>
-    </ECClass>
-    <ECClass typeName="CameraView" isDomainClass="True">
-        <BaseClass>PhysicalView</BaseClass>
-    </ECClass>
-    <ECClass typeName="View2d" isDomainClass="True">
-        <BaseClass>View</BaseClass>
-    </ECClass>
-    <ECClass typeName="DrawingView" isDomainClass="True">
-        <BaseClass>View2d</BaseClass>
-    </ECClass>
-    <ECClass typeName="SheetView" isDomainClass="True">
-        <BaseClass>View2d</BaseClass>
-    </ECClass>
-    <ECClass typeName="RedlineView" isDomainClass="True">
-        <BaseClass>SheetView</BaseClass>
-    </ECClass>
-
     <ECClass typeName="TrueColor" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
@@ -1042,12 +998,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <!-- TODO: Why is the target model list in the settings table rather than here, other than because it is a list? -->
     </ECClass>
-    <ECRelationshipClass typeName="ViewUsesBaseModel" description="Associates a view with its base model" isDomainClass="True" strength="referencing">
+    <ECRelationshipClass typeName="BaseModelForView" isDomainClass="True" strength="embedding" strengthDirection="forward"><!-- only "embedding" because ECDb requires that for ON DELETE CASCADE... -->
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
+                <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="True">
@@ -1061,9 +1016,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </Class>
         </Target>
     </ECRelationshipClass>
-    <ECClass typeName="PhysicalViewDefinition" isDomainClass="False">
-        <!-- abstract -->
+
+    <ECClass typeName="PhysicalViewDefinition" isDomainClass="True">
         <BaseClass>ViewDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="CameraViewDefinition" isDomainClass="True">
         <BaseClass>PhysicalViewDefinition</BaseClass>

@@ -95,17 +95,10 @@ void ChangeTestFixture::CreateDefaultView()
     {
     ASSERT_TRUE(m_testModel.IsValid());
 
-    DgnViews::View viewRow;
-    DgnClassId classId(m_testDb->Schemas().GetECClassId("dgn", "CameraView"));
-    viewRow.SetDgnViewType(classId, DgnViewType::Physical);
-    viewRow.SetDgnViewSource(DgnViewSource::Generated);
-    viewRow.SetName("Default");
-    viewRow.SetBaseModelId(m_testModel->GetModelId());
-    DbResult result = m_testDb->Views().Insert(viewRow);
-    BeAssert(BE_SQLITE_OK == result);
-    BeAssert(viewRow.GetId().IsValid());
+    CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(m_testModel->GetModelId(), DgnViewSource::Generated)));
+    BeAssert(viewRow.Insert().IsValid());
 
-    PhysicalViewController viewController(*m_testDb, viewRow.GetId());
+    PhysicalViewController viewController(*m_testDb, viewRow.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
 
@@ -119,10 +112,11 @@ void ChangeTestFixture::CreateDefaultView()
         viewController.ChangeModelDisplay(modelId, true);
         }
 
-    result = viewController.Save();
+    auto result = viewController.Save();
     BeAssert(BE_SQLITE_OK == result);
+    UNUSED_VARIABLE(result);
 
-    DgnViewId viewId = viewRow.GetId();
+    DgnViewId viewId = viewRow.GetViewId();
     m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
     m_testDb->SaveSettings();
     }
@@ -136,12 +130,10 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     physicalExtents = m_testDb->Units().ComputeProjectExtents();
     m_testDb->Units().SaveProjectExtents(physicalExtents);
 
-    DgnViews::Iterator iter = m_testDb->Views().MakeIterator((int) DgnViewType::Physical);
-    BeAssert(iter.begin() != iter.end());
+    PhysicalViewDefinitionCPtr view = dynamic_cast<PhysicalViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
+    BeAssert(view.IsValid());
 
-    DgnViewId viewId = iter.begin().GetDgnViewId();
-
-    ViewControllerPtr viewController = m_testDb->Views().LoadViewController(viewId, DgnViews::FillModels::No);
+    ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
     viewController->LookAtVolume(physicalExtents);
     DbResult result = viewController->Save();
     BeAssert(result == BE_SQLITE_OK);
