@@ -19,7 +19,7 @@
 //=======================================================================================
 class DgnLinkTest : public GenericDgnModelTestFixture
 {
-    public: DgnLinkTest () : GenericDgnModelTestFixture (__FILE__, false /*2D*/) {}
+    public: DgnLinkTest () : GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/) {}
 
 }; // DgnLinkTest
 

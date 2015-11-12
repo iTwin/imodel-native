@@ -162,7 +162,7 @@ static void openDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
     ASSERT_TRUE(db.IsValid()) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
     ASSERT_EQ(BE_SQLITE_OK, result);
-    db->Txns().EnableTracking(true);
+    TestDataManager::MustBeBriefcase(db, mode);
 }
 
 //---------------------------------------------------------------------------------------
@@ -207,7 +207,7 @@ static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMo
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportGroups)
 {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP();
 
     // ******************************
@@ -356,7 +356,7 @@ struct NullContext : ViewContext
 {
 void _AllocateScanCriteria () override{;}
 QvElem* _DrawCached (IStrokeForCache&){return nullptr;}
-void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
+void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip) override {}
 void _DeleteSymbol (IDisplaySymbol*) override {}
 bool _FilterRangeIntersection (GeometrySourceCR element) override {return false;}
 void _CookDisplayParams (ElemDisplayParamsR, ElemMatSymbR) override {}
@@ -447,7 +447,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 {
     static Utf8CP s_catName="MyCat";
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP sourceDb = tdm.GetDgnProjectP();
 
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*sourceDb));
@@ -548,7 +548,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithAuthorities)
 {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP();
 
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
@@ -690,9 +690,8 @@ TEST_F(ImportTest, ImportElementsWithItems)
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithDependencies)
 {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, true);
     DgnDbP db = tdm.GetDgnProjectP();
-    db->Txns().EnableTracking(true);
 
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
 

@@ -22,7 +22,7 @@ struct AnnotationFrameStyleTest : public GenericDgnModelTestFixture
     // @bsimethod                                                   Umar.Hayat     07/15
     //---------------------------------------------------------------------------------------
 public: AnnotationFrameStyleTest() :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+        GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
         {
         }
 

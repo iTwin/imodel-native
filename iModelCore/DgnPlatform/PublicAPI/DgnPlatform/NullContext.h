@@ -109,7 +109,7 @@ bool    m_setupScan;
 DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria () override;
 DGNPLATFORM_EXPORT virtual QvElem* _DrawCached (IStrokeForCache&) override;
 
-virtual void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
+virtual void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip) override {}
 virtual void _DeleteSymbol (IDisplaySymbol*) override {}
 virtual bool _FilterRangeIntersection (GeometrySourceCR source) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(source); return false;}
 virtual void _CookDisplayParams (ElemDisplayParamsR, ElemMatSymbR) override {}

@@ -117,6 +117,12 @@ enum class OpCode : uint32_t
     LineStyleModifiers  = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
     };
 
+enum class HeaderFlags : uint32_t
+    {
+    None                    = 0,
+    UseCurrentDisplayParams = 1,    //!< Do not reinitialize mat symb when using drawing this stream
+    };
+
 //=======================================================================================
 //! Internal Header op code
 //! @private
@@ -128,6 +134,7 @@ struct Header
     uint32_t        m_flags;
 
     Header(uint8_t version = 1, uint32_t flags = 0) : m_version(version), m_reserved(0), m_flags(flags) {}
+    bool UseCurrentDisplayParams() const { return m_flags & (uint32_t)HeaderFlags::UseCurrentDisplayParams; }
 
     }; // Header
 
@@ -159,8 +166,8 @@ struct Writer
 
     Writer(DgnDbR db) : m_db(db) {AppendHeader();}
 
-    void AppendHeader() {Header hdr; Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
-    void Reset() {m_buffer.clear(); AppendHeader();};
+    void AppendHeader(uint32_t flags = 0) {Header hdr(1, flags); Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
+    void Reset(uint32_t flags = 0) {m_buffer.clear(); AppendHeader(flags);};
 
     bool AppendSimplified(ICurvePrimitiveCR, bool isClosed, bool is3d);
     bool AppendSimplified(CurveVectorCR, bool is3d);
@@ -451,6 +458,7 @@ DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (TextStringCR);
 DGNPLATFORM_EXPORT bool Append (TextAnnotationCR);
 
+DGNPLATFORM_EXPORT void SetUseCurrentDisplayParams(bool newValue);
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeomStreamCR, DgnDbR db); //!< @private
 

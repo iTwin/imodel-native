@@ -21,7 +21,7 @@ struct AnnotationLeaderTest : public AnnotationTestFixture
     // @bsimethod                                                   Umar.Hayat     07/15
     //---------------------------------------------------------------------------------------
 public: AnnotationLeaderTest() :
-    AnnotationTestFixture(__FILE__, false /*2D*/)
+    AnnotationTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
         {
         }
 
