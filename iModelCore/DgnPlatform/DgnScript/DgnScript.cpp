@@ -207,7 +207,7 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
     m_jsenv = nullptr;
     m_jsContext = nullptr;
-    m_errorHandler = new ScriptErrorHandler;
+    m_notificationHandler = new ScriptNotificationHandler;
     }
 
 //---------------------------------------------------------------------------------------
@@ -288,7 +288,7 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
     auto ilib = m_importers.find(libName);
     if (ilib == m_importers.end())
         {
-        HandleScriptError(ScriptErrorHandler::Category::Other, "Missing library", libName);
+        HandleScriptError(ScriptNotificationHandler::Category::Other, "Missing library", libName);
         return BSIERROR;
         }
     if (ilib->second.second)
@@ -302,19 +302,37 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description, Utf8CP details)
+void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details)
     {
-    if (nullptr == m_errorHandler)
+    if (nullptr == m_notificationHandler)
         return;
-    m_errorHandler->_HandleScriptError(GetDgnScriptContext(), category, description, details);
+    m_notificationHandler->_HandleScriptError(GetDgnScriptContext(), category, description, details);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler::_HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details)
+void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details)
     {
     NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv("Script error category: %x, description: %s, details: %s", (int)category, description, details);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP message)
+    {
+    if (nullptr == m_notificationHandler)
+        return;
+    m_notificationHandler->_HandleLogMessage(category, sev, message);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleLogMessage(Utf8CP category, LoggingSeverity severity, Utf8CP message)
+    {
+    NativeLogging::LoggingManager::GetLogger(category)->message(ToNativeLoggingSeverity(severity), message);
     }
 
 //---------------------------------------------------------------------------------------
@@ -327,8 +345,8 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
         TERMINATE_HOST_OBJECT(entry.second.first, px);
         }
 
-    if (nullptr != m_errorHandler)
-        TERMINATE_HOST_OBJECT(m_errorHandler, px);
+    if (nullptr != m_notificationHandler)
+        TERMINATE_HOST_OBJECT(m_notificationHandler, px);
 
     delete this;
     }
@@ -354,8 +372,8 @@ void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP scr
     if (BeJsContext::EvaluateStatus::Success != evstatus)
         {
         if (BeJsContext::EvaluateStatus::ParseError==evstatus)
-            HandleScriptError(ScriptErrorHandler::Category::ParseError, "", "");
+            HandleScriptError(ScriptNotificationHandler::Category::ParseError, "", "");
         else
-            HandleScriptError(ScriptErrorHandler::Category::Exception, evexception.message.c_str(), evexception.trace.c_str());
+            HandleScriptError(ScriptNotificationHandler::Category::Exception, evexception.message.c_str(), evexception.trace.c_str());
         }
     }

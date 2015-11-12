@@ -199,7 +199,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     if (!geomPartId.IsValid())
         return nullptr;
 
-    HighPriorityOperationBlock hpo;
+    wt_OperationForGraphics hpo;
    
     auto& elements = m_dgndb.Elements();
 

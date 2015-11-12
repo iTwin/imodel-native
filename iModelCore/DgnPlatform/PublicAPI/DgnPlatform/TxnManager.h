@@ -11,6 +11,8 @@
 #include "DgnDb.h"
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
+DGNPLATFORM_TYPEDEFS(DynamicChangeTracker)
+DGNPLATFORM_REF_COUNTED_PTR(DynamicChangeTracker)
 
 #define TXN_TABLE_PREFIX "txn_"
 #define TXN_TABLE(name)  TXN_TABLE_PREFIX name
@@ -79,6 +81,10 @@ struct TxnTable : RefCountedBase
     //! Return the name of the table handled by this TxnTable.
     virtual Utf8CP _GetTableName() const = 0;
 
+    //! Create any temp tables that will be used by _OnValidate. The results of this method will be committed before
+    //! any actual changes are validated or txns are created.
+    virtual void _Initialize() = 0;
+
     //! @name Validating Direct Changes
     //@{
     //! Called before a Txn is committed (or explicitly to propagate changes within a Txn).
@@ -131,6 +137,16 @@ struct TxnTable : RefCountedBase
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
+//! Interface adopted by a callback object supplied to TxnManager::EndDynamicOperation(),
+//! to react to change propagation caused by dynamic operations before they are rolled back.
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE IDynamicChangeProcessor
+{
+    virtual void _ProcessDynamicChanges() = 0;
+};
+
+//=======================================================================================
 //! This class implements the DgnDb::Txns() object. It is a BeSQLite::ChangeTracker.
 //! It handles:
 //!    - validating Txns on Db::SaveChanges
@@ -144,6 +160,7 @@ typedef RefCountedPtr<TxnTable> TxnTablePtr;
 struct TxnManager : BeSQLite::ChangeTracker
 {
     friend struct RevisionManager;
+    friend struct DynamicChangeTracker;
 
     //! Indicates an error when propagating changes for a Txn.
     struct ValidationError
@@ -237,8 +254,7 @@ private:
     TxnAction       m_action;
     bvector<TxnId> m_multiTxnOp;
     bvector<TxnRange> m_reversedTxn;
-    bool            m_inDynamics;
-    bool            m_propagateChanges;
+    bvector<DynamicChangeTrackerPtr> m_dynamics;
     BeSQLite::StatementCache m_stmts;
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
@@ -258,18 +274,21 @@ private:
     bool PrepareForUndo();
     DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
     BentleyStatus PropagateChanges();
+    BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     void DeleteReversedTxns();
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
     bool IsMultiTxnMember(TxnId rowid);
     DgnDbStatus DeleteFromStartTo(TxnId lastId);
     BentleyStatus MergeChanges(BeSQLite::ChangeStream& changeStream);
+    void CancelDynamics();
 
 public:
     void OnBeginValidate(); //!< @private
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
     DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
+    BeSQLite::DbResult InitializeTableHandlers(); //!< @private
 
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
@@ -314,10 +333,10 @@ public:
     //! the entire group of changes are undone together. Multi-Txn operations can be nested, and until the outermost operation is closed,
     //! all changes constitute a single operation.
     //! @remarks This method must \e always be paired with a call to EndMultiTxnAction.
-    DGNPLATFORM_EXPORT void BeginMultiTxnOperation();
+    DGNPLATFORM_EXPORT DgnDbStatus BeginMultiTxnOperation();
 
     //! End a multi-Txn operation
-    DGNPLATFORM_EXPORT void EndMultiTxnOperation();
+    DGNPLATFORM_EXPORT DgnDbStatus EndMultiTxnOperation();
 
     //! Return the depth of the multi-Txn stack. Generally for diagnostic use only.
     size_t GetMultiTxnOperationDepth() {return m_multiTxnOp.size();}
@@ -409,6 +428,44 @@ public:
 
     //! Get the DgnDb for this TxnManager
     DgnDbR GetDgnDb() {return m_dgndb;}
+
+    //! Pushes a dynamic operation onto the stack.
+    //! When operating in dynamics, only temporary changes can be made to the DgnDb.
+    //! This is useful for implementing tools, among other things.
+    //! During a dynamic operation:
+    //!  - Invoking undo or redo will roll back any dynamic changes
+    //!  - Attempting to begin or end a multi-txn operation will produce an error
+    //! Dynamic operations can be nested.
+    DGNPLATFORM_EXPORT void BeginDynamicOperation();
+
+    //! Pops the current dynamic operation from the top of the stack, reverting all temporary changes made during the operation.
+    //! An IDynamicChangeProcessor may be supplied to capture the results of the dynamic changes
+    //! In that case, if any changes exist in the current dynamic operation:
+    //!  - Any indirect changes resulting from the dynamic changes will be computed; then
+    //!  - The change processor will be invoked
+    //! In either case, all changes made since the most recent call to BeginDynamicOperation will be rolled back before the function returns.
+    DGNPLATFORM_EXPORT void EndDynamicOperation(IDynamicChangeProcessor* processor=nullptr);
+
+    //! Returns true if a dynamic operation is in progress.
+    bool IsInDynamics() const { return !m_dynamics.empty(); }
+};
+
+//=======================================================================================
+//! ChangeTracker used by TxnManager to process dynamic operations.
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct DynamicChangeTracker : BeSQLite::ChangeTracker
+{
+private:
+    TxnManager& m_txnMgr;
+
+    DynamicChangeTracker(TxnManager& txnMgr);
+    ~DynamicChangeTracker();
+
+    virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
+    virtual TrackChangesForTable _FilterTable(Utf8CP tableName) override;
+public:
+    static DynamicChangeTrackerPtr Create(TxnManager& txnMgr);
 };
 
 //=======================================================================================
@@ -427,6 +484,7 @@ namespace dgn_TxnTable
 
         Element(TxnManager& mgr) : TxnTable(mgr) {}
 
+        void _Initialize() override;
         void _OnValidate() override;
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
@@ -475,6 +533,7 @@ namespace dgn_TxnTable
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
+        void _Initialize() override;
         void _OnValidate() override;
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
@@ -495,6 +554,7 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const {return MyTableName();}
 
         ElementDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
+        void _Initialize() override;
         void _OnValidate() override;
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {UpdateSummary(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Update);}
@@ -515,6 +575,7 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const {return MyTableName();}
         ModelDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
 
+        void _Initialize() override {}
         void _OnValidateAdd(BeSQLite::Changes::Change const&) override;
         void _OnValidateUpdate(BeSQLite::Changes::Change const&) override;
         void _PropagateChanges() override;
@@ -528,6 +589,7 @@ namespace dgn_TxnTable
         static Utf8CP MyTableName() {return BEDB_TABLE_Property;}
         Utf8CP _GetTableName() const {return MyTableName();}
         BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
+        void _Initialize() override {}
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
     };
 };

@@ -24,7 +24,7 @@ struct AnnotationLeaderStyleTest : public GenericDgnModelTestFixture
     // @bsimethod                                                   Umar.Hayat     07/15
     //---------------------------------------------------------------------------------------
 public: AnnotationLeaderStyleTest() :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+        GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
         {
         }
 

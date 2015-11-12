@@ -92,11 +92,17 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    Txns(); // make sure txnmanager is allocated
     Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
 
     m_units.Load();
-    return Domains().OnDbOpened();
+    
+    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
+        return rc;
+
+    if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
+        return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -442,7 +448,14 @@ void DgnImportContext::ComputeGcsAdjustment()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+DgnCloneContext::DgnCloneContext()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAdjustment();
     }

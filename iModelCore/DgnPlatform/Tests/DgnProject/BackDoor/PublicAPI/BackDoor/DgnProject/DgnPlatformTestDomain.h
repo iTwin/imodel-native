@@ -20,6 +20,7 @@
 #define DPTEST_DUMMY_SCHEMA_NAMEW                       L"DgnPlatformTestDummy"
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
+#define DPTEST_TEST_GROUP_CLASS_NAME                     "TestGroup"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -110,6 +111,37 @@ typedef TestElement2d const& TestElement2dCR;
 struct TestElement2dHandler : Dgn::dgn_ElementHandler::Drawing
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, Dgn::dgn_ElementHandler::Drawing, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/15
+//=======================================================================================
+struct TestGroup : Dgn::PhysicalElement, Dgn::IElementGroupOf<Dgn::PhysicalElement>
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, Dgn::PhysicalElement)
+    friend struct TestGroupHandler;
+
+protected:
+    Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
+    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
+
+    explicit TestGroup(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestGroup> Create(Dgn::DgnDbR, Dgn::DgnModelId, Dgn::DgnCategoryId);
+};
+
+typedef RefCountedPtr<TestGroup> TestGroupPtr;
+typedef RefCountedCPtr<TestGroup> TestGroupCPtr;
+typedef TestGroup& TestGroupR;
+typedef TestGroup const& TestGroupCR;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/15
+//=======================================================================================
+struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
 };
 
 //=======================================================================================
@@ -252,15 +284,22 @@ struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
 //=======================================================================================
 struct TestElementDrivesElementHandler : Dgn::DgnElementDependencyHandler
     {
+    struct Callback
+    {
+        virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) = 0;
+    };
 private:
     DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, TestElementDrivesElementHandler, Dgn::DgnDomain::Handler, )
     static bool s_shouldFail;
     bvector<EC::ECInstanceId> m_relIds;
+    static Callback* s_callback;
 
     void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
 
 public:
     void Clear() {m_relIds.clear();}
+    static void SetCallback(Callback* cb) { s_callback = cb; }
+
     static void SetShouldFail(bool b) {s_shouldFail = b;}
 
     static void UpdateProperty1(Dgn::DgnDbR, EC::ECInstanceKeyCR);

@@ -60,6 +60,7 @@ DgnDbStatus LightDefinition::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlCla
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
         {
         Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr)),
                    value = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Value));

@@ -265,7 +265,7 @@ DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
 DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db)
     {
     CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " WHERE ElementId=?");
     stmt->BindId(1, elemId);
     return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
@@ -406,7 +406,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
+    BeSQLite::wt_OperationForGraphics highPriorityOperationBlock; // See comments on wt_OperationForGraphics
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
@@ -763,6 +763,14 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
         return dest;
 
     return DgnSubCategory::ImportSubCategory(source, destCategoryId, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnImportContext::RemapGeomStreamIds(GeomStreamR geom)
+    {
+    return ElementGeomIO::Import(geom, geom, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

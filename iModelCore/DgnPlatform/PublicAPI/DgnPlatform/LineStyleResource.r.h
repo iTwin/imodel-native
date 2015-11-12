@@ -95,8 +95,6 @@ struct LineStyleParamsResource
     double      endWidth;       /* Taper end width                     */
     double      distPhase;      /* Phase shift by distance             */
     double      fractPhase;     /* Phase shift by fraction             */
-    uint32_t    lineMask;       /* Multiline line mask                 */
-    uint32_t    mlineFlags;     /* Multiline flags                     */
     DPoint3d    normal;
     RotMatrix   rMatrix;
     };

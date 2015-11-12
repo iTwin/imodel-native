@@ -375,9 +375,9 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(DgnViewportR viewport, GeometricElementCP element, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport)
+HitDetail::HitDetail(DgnViewportR viewport, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport)
     {
-    m_elementId         = (nullptr != element ? element->GetElementId() : DgnElementId());
+    m_elementId         = (nullptr != geomSource && nullptr != geomSource->ToElement() ? geomSource->ToElement()->GetElementId() : DgnElementId());
     m_locateSource      = source;
     m_testPoint         = testPoint;
     m_geomDetail        = geomDetail;
@@ -491,7 +491,7 @@ DgnDbR HitDetail::GetDgnDb() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelR HitDetail::GetDgnModel() const
     {
-    GeometricElementCPtr element = GetElement();
+    DgnElementCPtr element = GetElement();
 
     return (element.IsValid() ? *element->GetModel() : *m_viewport.GetViewController().GetTargetModel());
     }
@@ -499,14 +499,12 @@ DgnModelR HitDetail::GetDgnModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricElementCPtr HitDetail::GetElement() const
+DgnElementCPtr HitDetail::GetElement() const
     {
     if (!m_elementId.IsValid())
         return nullptr;
 
-    DgnElementCP element = GetDgnDb().Elements().FindElement(m_elementId);
-
-    return (nullptr != element ? element->ToGeometricElement() : nullptr);
+    return GetDgnDb().Elements().FindElement(m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -514,9 +512,10 @@ GeometricElementCPtr HitDetail::GetElement() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HitDetail::IsInSelectionSet() const
     {
-    GeometricElementCPtr element = GetElement();
+    DgnElementCPtr   element = GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-    return (element.IsValid() ? element->IsInSelectionSet() : false);
+    return (nullptr != source ? source->IsInSelectionSet() : false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,9 +523,10 @@ bool HitDetail::IsInSelectionSet() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Hilited HitDetail::IsHilited() const
     {
-    GeometricElementCPtr element = GetElement();
+    DgnElementCPtr   element = GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-    return (element.IsValid() ? element->IsHilited() : DgnElement::Hilited::None);
+    return (nullptr != source ? source->IsHilited() : DgnElement::Hilited::None);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,18 +534,19 @@ DgnElement::Hilited HitDetail::IsHilited() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_SetHilited(DgnElement::Hilited newState) const
     {
-    GeometricElementCPtr element = GetElement();
+    DgnElementCPtr   element = GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-    if (!element.IsValid())
+    if (nullptr == source)
         return;
     
     // don't turn on/off hilite bit for elements in the selection set.
-    if (element->IsInSelectionSet())
+    if (source->IsInSelectionSet())
         return;
 
     // KLUDGE: Preserve any alternative hilite state (i.e. HILITED_Bold) already set on this element...
-    if (DgnElement::Hilited::None == newState || DgnElement::Hilited::None == element->IsHilited())
-        element->SetHilited(newState);
+    if (DgnElement::Hilited::None == newState || DgnElement::Hilited::None == source->IsHilited())
+        source->SetHilited(newState);
     }
 
 /*---------------------------------------------------------------------------------**//**

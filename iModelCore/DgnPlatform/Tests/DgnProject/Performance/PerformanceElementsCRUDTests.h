@@ -68,8 +68,7 @@ struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
     {
     private:
         static const int64_t m_firstInstanceId = INT64_C (11);
-        static const int m_initialInstanceCount = 1000000;
-        void SetUpPopulatedDb (WCharCP dbName, Utf8CP className);
+        //static const int m_initialInstanceCount = 1000000;
 
         DgnModelPtr CreateElements (int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements)
             {
@@ -124,13 +123,16 @@ struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
 
     protected:
 
-        void ECSqlInsertTime (int numInstances, Utf8CP className);
-        void ECSqlSelectTime (int numInstances, Utf8CP className);
-        void ECSqlUpdateTime (int numInstances, Utf8CP className);
-        void ECSqlDeleteTime (int numInstances, Utf8CP className);
+        void ECSqlInsertTime (int numInstances, Utf8CP className, int initialInstanceCount);
+        void ECSqlSelectTime (int numInstances, Utf8CP className, int initialInstanceCount);
+        void ECSqlUpdateTime (int numInstances, Utf8CP className, int initialInstanceCount);
+        void ECSqlDeleteTime (int numInstances, Utf8CP className, int initialInstanceCount);
 
-        void SqlInsertTime (int numInstances, Utf8CP className);
-        void SqlSelectTime (int numInstances, Utf8CP className);
-        void SqlUpdateTime (int numInstances, Utf8CP className);
-        void SqlDeleteTime (int numInstances, Utf8CP className);
+        void SqlInsertTime (int numInstances, Utf8CP className, int initialInstanceCount);
+        void SqlSelectTime (int numInstances, Utf8CP className, int initialInstanceCount);
+        void SqlUpdateTime (int numInstances, Utf8CP className, int initialInstanceCount);
+        void SqlDeleteTime (int numInstances, Utf8CP className, int initialInstanceCount);
+
+        virtual void _RegisterDomainAndImportSchema (ECN::ECSchemaPtr schema) override;
+        virtual void _CreateAndInsertElements (Utf8CP className, int initialInstanceCount) override;
     };
