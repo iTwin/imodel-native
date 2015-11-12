@@ -1029,11 +1029,11 @@ int ECDbSchemaPersistence::ToInt(ECN::StrengthType strengthType)
     switch (strengthType)
         {
         case StrengthType::Embedding:
-            return 0;
+            return 2;
         case StrengthType::Holding:
             return 1;
         case StrengthType::Referencing:
-            return 2;
+            return 0;
         default:
             BeAssert(false && "StrengthType has a new value.  ECDbSchemaPersistence::ToInt needs to adopt to it.");
             return -1;
@@ -1048,10 +1048,10 @@ StrengthType ECDbSchemaPersistence::ToStrengthType(int strengthType)
     BeAssert((0 == strengthType || 1 == strengthType || 2 == strengthType) && "Integer cannot be converted to StrengthType");
 
     if (2 == strengthType)
-        return StrengthType::Referencing;
+        return StrengthType::Embedding;
     if (1 == strengthType)
         return StrengthType::Holding;
-    return StrengthType::Embedding;
+    return StrengthType::Referencing;
     }
 
 /*---------------------------------------------------------------------------------------
