@@ -34,7 +34,6 @@
 #include <DgnPlatform/VecMath.h>
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCoreAPI.h>
-#include <DgnPlatform/rtypes.r.h>
 #include <DgnPlatform/QvElemSet.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
