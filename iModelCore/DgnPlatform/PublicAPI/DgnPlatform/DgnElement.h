@@ -1328,7 +1328,6 @@ GeomStreamR GetGeomStreamR() {return const_cast<GeomStreamR>(_GetGeomStream());}
 
 public:
 
-virtual void PLEASE_DELETE_ME(DgnCategoryId categoryId) = 0;
 DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
 DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
 DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
@@ -1434,7 +1433,6 @@ protected:
     GeomStream      m_geom;
     Placement3d     m_placement;
 
-    virtual void PLEASE_DELETE_ME(DgnCategoryId categoryId) override final {m_categoryId = categoryId;}
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
@@ -1449,9 +1447,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override final;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
@@ -1494,7 +1490,6 @@ protected:
     GeomStream      m_geom;
     Placement2d     m_placement;
 
-    virtual void PLEASE_DELETE_ME(DgnCategoryId categoryId) override final {m_categoryId = categoryId;}
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
@@ -1509,9 +1504,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override final;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
@@ -1886,7 +1879,7 @@ private:
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);

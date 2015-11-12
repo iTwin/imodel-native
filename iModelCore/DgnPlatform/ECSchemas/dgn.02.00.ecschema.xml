@@ -355,15 +355,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <!-- Is defined in Element table due to significant performance issues. Actually belongs in GeometricElement. -->
-            <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable><!-- Always null for non-geometric elements. Always non-null for GeometricElements. Enforced in code -->
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECClass>
 
     <ECClass typeName="GeometrySource" isDomainClass="False">
@@ -691,6 +682,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Placement" typeName="binary"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="InPhysicalSpace" typeName="int" /><!-- Used strictly for the trigger which updates the range index -->
+        <ECProperty propertyName="CategoryId" typeName="long">
+            <!-- Foreign key relationship: CategoryContainsElementGeom.CategoryId -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECClass>
     <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
@@ -1207,6 +1206,24 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Source>
         <Target cardinality="(0,N)" polymorphic="False">
             <Class class="GeomPart" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CategoryContainsElementGeom" isDomainClass="True" strengthDirection="forward" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction><!-- because you can't actually delete categories currently -->
+                <CreateIndex>True</CreateIndex><!-- because we expect to query for geometry in a particular category -->
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="contains geometry" polymorphic="False">
+            <Class class="Category" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is in category" polymorphic="False">
+            <Class class="ElementGeom">
+                <Key>
+                    <Property name="CategoryId" />
+                </Key>
+            </Class>
         </Target>
     </ECRelationshipClass>
     
