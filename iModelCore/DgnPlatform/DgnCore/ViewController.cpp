@@ -351,15 +351,15 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void ViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
     {
-    element._Draw(context);
+    element.Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElementFiltered(ViewContextR context, GeometricElementCR element, DPoint3dCP pts, double size)
+void ViewController::_DrawElementFiltered(ViewContextR context, GeometrySourceCR element, DPoint3dCP pts, double size)
     {
     // Display nothing...
     }
@@ -945,7 +945,7 @@ void SectionDrawingViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
     {
 #if defined(NEEDS_WORK_VIEW_CONTROLLER)
     if (context.GetViewport() != nullptr)
@@ -1872,9 +1872,10 @@ void ViewController::_DrawLocateCursor(DgnViewportR vp, DPoint3dCR pt, double ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) const
     {
-    GeometricElementCPtr element = hit.GetElement();
+    DgnElementCPtr   element = hit.GetElement();
+    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-    if (!element.IsValid())
+    if (nullptr == geom)
         {
         IElemTopologyCP elemTopo = hit.GetElemTopology();
         ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
@@ -1892,10 +1893,10 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
     ViewContext::ContextMark mark(&context);
 
     // Allow element sub-class involvement for flashing sub-entities...
-    if (element->_DrawHit(hit, context))
+    if (geom->DrawHit(hit, context))
         return SUCCESS;
 
-    return context.VisitElement(*element);
+    return context.VisitElement(*geom);
     }
 
 /*---------------------------------------------------------------------------------**//**

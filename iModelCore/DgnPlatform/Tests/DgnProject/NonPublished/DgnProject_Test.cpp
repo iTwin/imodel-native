@@ -57,7 +57,7 @@ TEST (DgnDb, Settings)
 
     if (true)
         {
-        DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+        DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
         DgnDbP newProject = tdm.GetDgnProjectP();
         ASSERT_TRUE( newProject != NULL );
     
@@ -107,7 +107,7 @@ TEST (DgnDb, CheckStandardProperties)
     //DbResult rc;
     Utf8String val;
 
-    DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly);
+    DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly, false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 

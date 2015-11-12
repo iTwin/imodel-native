@@ -153,7 +153,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 

@@ -115,7 +115,26 @@ table LineStyle
     {
     lineStyleId:long;
     //  LineStyleParams are in a separate table. They are provided only when necessary.
-    } // Material
+    } // LineStyle
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table LineStyleModifiers
+    {
+    modifiers:uint;             //  see STYLEMOD_... 
+    scale:double;               // Applied to all length values
+    dashScale:double;           // Applied to adjustable dash strokes
+    gapScale:double;            // Applied to adjustable gap strokes
+    startWidth:double;          // Taper start width
+    endWidth:double;            // Taper end width
+    distPhase:double;           // Phase shift by distance
+    fractPhase:double;          // Phase shift by fraction
+    normal:DPoint3d;
+    yaw:double;
+    pitch:double;
+    roll:double;
+    }
 
 //=======================================================================================
 // @bsiclass                                                    

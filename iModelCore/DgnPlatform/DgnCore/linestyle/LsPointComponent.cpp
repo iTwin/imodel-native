@@ -68,6 +68,24 @@ StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP in
     return  SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2015
+//---------------------------------------------------------------------------------------
+void LsPointComponent::_QuerySymbology(SymbologyQueryResults& results) const
+    {
+    for (LsSymbolReference const& symref : m_symbols)
+        {
+        LsSymbolComponentCP comp = symref.GetSymbolComponentCP();
+        if (nullptr == comp)
+            continue;
+        if (!symref.GetUseElementWeight())
+            results.SetWeight(comp->GetLineWeight());
+
+        if (!symref.GetUseElementColor())
+            results.SetColors(comp->IsColorByLevel(), comp->GetLineColor(), comp->GetFillColor());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -363,7 +381,7 @@ LsPointComponent::LsPointComponent(LsPointComponentCR source) : LsComponent(sour
     m_strokeComponent = source.m_strokeComponent;
     m_okayForTextureGeneration = source.m_okayForTextureGeneration;
     m_postProcessed = false;
-    for (LsSymbolReference const& ref: m_symbols)
+    for (LsSymbolReference const& ref: source.m_symbols)
         m_symbols.push_back(ref);
     }
 
@@ -394,9 +412,6 @@ LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
             continue;
             }
 
-        LsStrokeP stroke = m_strokeComponent->GetStrokePtr(symbref.GetStrokeNumber());
-        double length = stroke->GetLength();
-        printf("length = %f\n", length);
         if (symbref.GetRotationMode() != LsSymbolReference::ROTATE_Relative)
             {
             symbref.SetRotationMode(LsSymbolReference::ROTATE_Relative);
@@ -417,6 +432,9 @@ LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
 LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
     {
     if (!m_strokeComponent.IsValid())
+        //  If there is not a stroke component then either part of the line style definition is missing
+        //  or all symbols are associated with vertices instead of strokes. Either way, there is no
+        //  way to generate a texture from this line style.
         return LsOkayForTextureGeneration::NotAllowed;
 
     if (m_okayForTextureGeneration != LsOkayForTextureGeneration::Unknown)
@@ -438,6 +456,7 @@ LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
             return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
         }
 
+    UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, VerifySymbols());
     return m_okayForTextureGeneration;
     }
 
@@ -448,6 +467,7 @@ LsPointComponent::LsPointComponent (LsLocation const *pLocation) : LsComponent (
     {
     m_postProcessed   = false;
     m_strokeComponent = NULL;
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -542,14 +562,10 @@ LsComponentReader*    reader
     LsPointComponent* pointComp = new LsPointComponent (reader->GetSource());
     pointComp->SetDescription (lpData->m_descr);
 
-#if defined(NOTNOW)
-    //  Maybe this is necessary to avoid recursing
-    LineStyleCacheManager::CacheAdd (pointComp);
-#endif
     LsLocation      tmpLocation;
     tmpLocation.GetLineCodeLocation (reader);
 
-    LsComponent*       subComp = LsCache::GetLsComponent (tmpLocation);
+    LsComponent*       subComp = DgnLineStyles::GetLsComponent (tmpLocation);
     if (NULL != subComp)
         {
         pointComp->m_strokeComponent = dynamic_cast <LsStrokePatternComponentP> (subComp);
@@ -566,7 +582,7 @@ LsComponentReader*    reader
         while (pRscInfo < pRscEnd)
             {
             tmpLocation.GetPointSymbolLocation (reader, symNum++);
-            LsSymbolComponentP  symbol = (LsSymbolComponentP)LsCache::GetLsComponent (tmpLocation);
+            LsSymbolComponentP  symbol = dynamic_cast<LsSymbolComponentP>(DgnLineStyles::GetLsComponent (tmpLocation));
 
             // Apparently we have symbols that don't participate in the line style.  See TR #308324.
             // These should be removed when there is an opportunity like a file format change.
@@ -596,6 +612,105 @@ LsComponentReader*    reader
         }
 
     return pointComp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsPointComponent::VerifySymbol(double& adjustment, double startOfStroke, double patternLength, uint32_t strokeIndex) const
+    {
+    adjustment = 0;
+
+    LsStrokeCP pStroke = m_strokeComponent->GetStrokeCP(strokeIndex);
+    LsSymbolReferenceCP    symRef = GetSymbolForStrokeCP (strokeIndex);
+    if (NULL == symRef)
+        return  LsOkayForTextureGeneration::NoChangeRequired;
+
+    LsOkayForTextureGeneration retval = LsOkayForTextureGeneration::NoChangeRequired;
+    double xOrigin = 0;
+    double outStrokeLen = pStroke->GetLength();
+
+    switch (symRef->GetJustification())
+        {
+        case LCPOINT_ORIGIN:
+            xOrigin = startOfStroke + symRef->m_offset.x;
+            break;
+
+        case LCPOINT_CENTER:
+            xOrigin = startOfStroke + outStrokeLen/2 + symRef->m_offset.x;
+            break;
+
+        case LCPOINT_END:
+            xOrigin = startOfStroke + outStrokeLen + symRef->m_offset.x;
+            break;
+
+        default:
+            BeAssert(false && L"Unknown stroke justification");
+            return  LsOkayForTextureGeneration::NotAllowed;
+        }
+
+    LsSymbolComponentCP symbolComponent = symRef->GetSymbolComponentCP();
+    BeAssert(NULL != symbolComponent);
+    if (NULL == symbolComponent)
+        return LsOkayForTextureGeneration::NotAllowed;
+
+    DRange3d  range3d;
+
+    symbolComponent->GetRange(range3d);
+
+    //  Now adjust the range.  This is simplified because we just drawing a line that has coordinates (0,0,0), (strokeLen, 0, 0).  We are assuming
+    //  top view so have identity for the view transform.
+    //
+    //  For these tests we are just using a scale factor of 1.
+    //
+    //  Converting to texture always forces Relative rotation so it is okay to assume Relative here.  We should test the range of the rotated graphics but for now will just
+    //  test the unrotated range of the unrotated graphics.  
+    double xLow = range3d.low.x/symbolComponent->GetUnitScale() + xOrigin;
+    double xHigh = range3d.high.x/symbolComponent->GetUnitScale() + xOrigin;
+
+    if (xLow < 0)
+        {
+        adjustment = 0 - xLow;
+        retval = LsOkayForTextureGeneration::ChangeRequired;
+#if defined(NEEDSWORK_LINESTYLE)  //  How can we handle the symbol being larger than the stroke?  It is for Batten. It is easy to make this mistake and notice it if there is a small overlap.
+        if (xHigh + adjustment >= patternLength)
+            retval = LsOkayForTextureGeneration::NotAllowed;
+#endif
+        }
+    else if (xHigh >= patternLength)
+        {
+        adjustment = patternLength - xHigh;
+        retval = LsOkayForTextureGeneration::ChangeRequired;
+#if defined(NEEDSWORK_LINESTYLE)  //  How can we handle the symbol being larger than the stroke?  It is for Batten
+        if (xLow + adjustment < 0)
+            retval = LsOkayForTextureGeneration::NotAllowed;
+#endif
+        }
+
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsPointComponent::VerifySymbols() const
+    {
+    LsOkayForTextureGeneration  result = LsOkayForTextureGeneration::NoChangeRequired;
+    double currentOffset = 0;
+    if (!m_strokeComponent.IsValid())
+        return result;
+
+    double patternLength = m_strokeComponent->GetLength(NULL);
+    for (uint32_t i = 0; i < m_strokeComponent->GetNumberStrokes(); ++i)
+        {
+        double adjustment = 0.0;
+        LsStrokeCP pStroke = m_strokeComponent->GetStrokeCP(i);
+        LsOkayForTextureGeneration temp =  VerifySymbol(adjustment, currentOffset, patternLength, i);
+        UpdateLsOkayForTextureGeneration(result, temp);
+        currentOffset += pStroke->GetLength();
+        }
+
+    return result;
     }
 
 size_t                       LsPointComponent::GetNumberSymbols()         const   {return m_symbols.size ();}

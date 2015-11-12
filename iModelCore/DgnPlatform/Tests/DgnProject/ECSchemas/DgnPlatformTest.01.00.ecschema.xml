@@ -73,6 +73,14 @@
         <ECProperty propertyName="Property1" typeName="string" />
     </ECRelationshipClass>
 
+    <ECClass typeName="TestGroup" isDomainClass="True">
+        <!-- Used to test the IElementGroup interface -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+    </ECClass>
+
     <ECClass typeName="Robot" isDomainClass="true">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />

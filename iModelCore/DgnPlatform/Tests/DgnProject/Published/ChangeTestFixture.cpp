@@ -62,7 +62,7 @@ void ChangeTestFixture::OpenDgnDb(WCharCP testFileName)
     if (modelId.IsValid())
         m_testModel = m_testDb->Models().GetModel(modelId).get();
 
-    m_testDb->Txns().EnableTracking(true); // TODO: Check why this isn't automatically enabled
+    TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
     }
 
 //---------------------------------------------------------------------------------------
