@@ -11,6 +11,7 @@
 //Macros to define members of DgnDomain and Handler
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
+HANDLER_DEFINE_MEMBERS(TestGroupHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 
 /*---------------------------------------------------------------------------------**//**
@@ -20,6 +21,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
+    RegisterHandler(TestGroupHandler::GetHandler());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -384,6 +386,17 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, D
         return DgnElementKey();
 
     return m_db->Elements().Insert(*el)->GetElementKey();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId categoryId)
+    {
+    DgnClassId classId = db.Domains().GetClassId(TestGroupHandler::GetHandler());
+    TestGroupPtr group = new TestGroup(CreateParams(db, modelId, classId, categoryId, Placement3d()));
+    BeAssert(group.IsValid());
+    return group;
     }
 
 /*---------------------------------------------------------------------------------**//**

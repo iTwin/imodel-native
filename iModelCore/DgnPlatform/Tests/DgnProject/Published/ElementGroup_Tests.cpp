@@ -6,9 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
-
-USING_NAMESPACE_BENTLEY_DPTEST
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Group 
