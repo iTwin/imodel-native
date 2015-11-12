@@ -92,9 +92,9 @@ struct WorkItemsCountPredicate : IConditionVariablePredicate
     {
     int m_expectedWorkItemsCount;
     TestWork const* m_work;
-    int const* m_itemsCount;
+    unsigned const* m_itemsCount;
     WorkItemsCountPredicate (TestWork const& work, int expectedWorkItemsCount) : m_work(&work), m_itemsCount(nullptr), m_expectedWorkItemsCount(expectedWorkItemsCount) {}
-    WorkItemsCountPredicate (int const& itemsCount, int expectedWorkItemsCount) : m_work(nullptr), m_itemsCount(&itemsCount), m_expectedWorkItemsCount(expectedWorkItemsCount) {}
+    WorkItemsCountPredicate (unsigned const& itemsCount, int expectedWorkItemsCount) : m_work(nullptr), m_itemsCount(&itemsCount), m_expectedWorkItemsCount(expectedWorkItemsCount) {}
     virtual bool _TestCondition (BeConditionVariable &cv) override 
         {
         if (nullptr != m_work)
@@ -216,7 +216,7 @@ TEST (RealityDataThreadPool, QueueWork_1_Item)
 TEST (RealityDataThreadPool, QueueWork_Many_Items)
     {
     static int workItemsCount = 1000;
-    BeAtomic<unsigned> nCalls(0);
+    unsigned nCalls = 0;
 
     BeConditionVariable cv;
 
@@ -240,7 +240,7 @@ TEST (RealityDataThreadPool, Queueing)
     {
     static int workItemsCount = 5;
     BeAtomic<bool> block(true);
-    BeAtomic<int> nCalls(0);
+    unsigned nCalls = 0;
     BeConditionVariable cv;    
 
     auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
@@ -311,7 +311,7 @@ TEST (RealityDataThreadPool, SpawnsThreads)
     
     BeConditionVariable cv;
     BeAtomic<bool> block(true);
-    BeAtomic<int> nCalls(0);
+    unsigned nCalls = 0;
     bvector<intptr_t> threadIds;
 
     auto pool = RealityDataThreadPool::Create (10, 10, SchedulingMethod::FIFO);
@@ -350,7 +350,7 @@ TEST (RealityDataThreadPool, TerminatesSpawnedThreads)
     
     BeConditionVariable cv;
     BeAtomic<bool> block(true);
-    BeAtomic<int> nCalls(0);
+    unsigned nCalls = 0;
     bvector<intptr_t> threadIds;
 
     auto pool = RealityDataThreadPool::Create (maxThreads, maxIdleThreads, SchedulingMethod::FIFO);
