@@ -17,7 +17,7 @@ void ConnectTests::SetUp ()
     {
     Connect::Initialize (StubClientInfo (), GetHandlerPtr ());
     m_client = std::make_shared<StubBuddiClient>();
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, &m_localState, m_client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_client);
     }
 
 void ConnectTests::TearDown ()
