@@ -165,9 +165,9 @@ DgnDbStatus AnnotationTextStyle::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTextStyleId AnnotationTextStyle::QueryStyleId(Code const& code, DgnDbR db)
+DgnElementId AnnotationTextStyle::QueryStyleId(Code const& code, DgnDbR db)
     {
-    return AnnotationTextStyleId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
+    return DgnElementId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
 
 //---------------------------------------------------------------------------------------
@@ -192,7 +192,7 @@ void AnnotationTextStyle::ResetProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AnnotationTextStyle::ExistsById(AnnotationTextStyleId id, DgnDbR db)
+bool AnnotationTextStyle::ExistsById(DgnElementId id, DgnDbR db)
     {
     PRECONDITION(id.IsValid(), false);
 

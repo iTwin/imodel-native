@@ -99,7 +99,7 @@ TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
 
     // Basics
     EXPECT_TRUE(&project == &style->GetDbR());
-    EXPECT_TRUE(!style->GetStyleId().IsValid()); // Cannot call SetId directly from published API.
+    EXPECT_TRUE(!style->GetElementId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
@@ -135,7 +135,7 @@ TEST_F(AnnotationFrameStyleTest, DeepCopy)
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
     EXPECT_TRUE(&project == &clonedStyle->GetDbR());
-    EXPECT_TRUE(style->GetStyleId() == clonedStyle->GetStyleId());
+    EXPECT_TRUE(style->GetElementId() == clonedStyle->GetElementId());
     VERIFY_DATA_1(clonedStyle);
     }
 
@@ -159,27 +159,27 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
-    ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
     EXPECT_EQ(1, AnnotationFrameStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(AnnotationFrameStyle::ExistsById(testStyle->GetStyleId(), project));
+    EXPECT_TRUE(AnnotationFrameStyle::ExistsById(testStyle->GetElementId(), project));
     EXPECT_TRUE(AnnotationFrameStyle::ExistsByName(name, project));
 
-    AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::QueryStyle(testStyle->GetStyleId(), project);
+    AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::QueryStyle(testStyle->GetElementId(), project);
     ASSERT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
     fileStyle = AnnotationFrameStyle::QueryStyle(name, project);
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -202,7 +202,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -244,7 +244,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Delete
-    auto styleToDelete = AnnotationFrameStyle::QueryStyle(mutatedStyle->GetStyleId(), project);
+    auto styleToDelete = AnnotationFrameStyle::QueryStyle(mutatedStyle->GetElementId(), project);
     ASSERT_TRUE(styleToDelete.IsValid());
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
     }
@@ -273,7 +273,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
         ASSERT_FALSE(AnnotationFrameStyle::ExistsByName(testStyle->GetName(), project));
 
         ASSERT_TRUE(testStyle->Insert().IsValid());
-        ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+        ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
         //.............................................................................................
         // Insert Redundant style
@@ -282,21 +282,21 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Query
-        EXPECT_TRUE(AnnotationFrameStyle::ExistsById(testStyle->GetStyleId(), project));
+        EXPECT_TRUE(AnnotationFrameStyle::ExistsById(testStyle->GetElementId(), project));
         EXPECT_TRUE(AnnotationFrameStyle::ExistsByName(name, project));
 
-        AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::QueryStyle(testStyle->GetStyleId(), project);
+        AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::QueryStyle(testStyle->GetElementId(), project);
         ASSERT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+        EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
         fileStyle = AnnotationFrameStyle::QueryStyle(name, project);
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+        EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
 
@@ -324,7 +324,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
+        EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
         //.............................................................................................
@@ -372,7 +372,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Delete
-        auto styleToDelete = AnnotationFrameStyle::QueryStyle(mutatedStyle->GetStyleId(), project);
+        auto styleToDelete = AnnotationFrameStyle::QueryStyle(mutatedStyle->GetElementId(), project);
         ASSERT_TRUE(styleToDelete.IsValid());
         EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
     }

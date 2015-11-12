@@ -182,43 +182,43 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     docStyle->SetHeight(11.0);
 
     docStyle->Insert();
-    ASSERT_TRUE(docStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(docStyle->GetElementId().IsValid());
 
     AnnotationTextStylePtr parStyle = docStyle->Clone();
     parStyle->SetName("parStyle");
     parStyle->Insert();
-    ASSERT_TRUE(parStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(parStyle->GetElementId().IsValid());
 
     AnnotationTextStylePtr runStyle = docStyle->Clone();
     runStyle->SetName("runStyle");
     runStyle->Insert();
-    ASSERT_TRUE(runStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(runStyle->GetElementId().IsValid());
 
     //.............................................................................................
     AnnotationTextRunPtr textRun = AnnotationTextRun::Create(project);
-    textRun->SetStyleId(runStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
+    textRun->SetStyleId(runStyle->GetElementId(), SetAnnotationTextStyleOptions::Default);
     SET_STYLE_OVERRIDES_1(textRun);
     DECLARE_AND_SET_TEXTRUN_DATA_1(textRun,textRun);
 
     AnnotationLineBreakRunPtr brkRun = AnnotationLineBreakRun::Create(project);
-    brkRun->SetStyleId(runStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
+    brkRun->SetStyleId(runStyle->GetElementId(), SetAnnotationTextStyleOptions::Default);
 
     AnnotationFractionRunPtr fracRun = AnnotationFractionRun::Create(project);
-    fracRun->SetStyleId(runStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
+    fracRun->SetStyleId(runStyle->GetElementId(), SetAnnotationTextStyleOptions::Default);
     SET_STYLE_OVERRIDES_2(fracRun);
     DECLARE_AND_SET_FRACRUN_DATA_1(fracRun,fracRun);
 
     AnnotationParagraphPtr par1 = AnnotationParagraph::Create(project);
-    par1->SetStyleId(parStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
+    par1->SetStyleId(parStyle->GetElementId(), SetAnnotationTextStyleOptions::Default);
     par1->GetRunsR().push_back(textRun);
     par1->GetRunsR().push_back(brkRun);
 
     AnnotationParagraphPtr par2 = AnnotationParagraph::Create(project);
-    par2->SetStyleId(parStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
+    par2->SetStyleId(parStyle->GetElementId(), SetAnnotationTextStyleOptions::Default);
     par2->GetRunsR().push_back(fracRun);
 
     AnnotationTextBlockPtr doc = AnnotationTextBlock::Create(project);
-    doc->SetStyleId(docStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
+    doc->SetStyleId(docStyle->GetElementId(), SetAnnotationTextStyleOptions::Default);
     SET_STYLE_OVERRIDES_3(doc);
     DECLARE_AND_SET_DOC_DATA_1(doc,doc);
 
@@ -228,30 +228,30 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     //.............................................................................................
     AnnotationTextBlockPtr clonedDoc = doc->Clone();
     ASSERT_TRUE(clonedDoc.IsValid());
-    EXPECT_TRUE(docStyle->GetStyleId() == clonedDoc->GetStyleId());
+    EXPECT_TRUE(docStyle->GetElementId() == clonedDoc->GetStyleId());
     VERIFY_STYLE_OVERRIDES_3(clonedDoc);
     VERIFY_DOC_DATA_1(clonedDoc,doc);
     ASSERT_TRUE(2 == clonedDoc->GetParagraphs().size());
 
     AnnotationParagraphPtr clonedPar1 = clonedDoc->GetParagraphs()[0];
-    EXPECT_TRUE(parStyle->GetStyleId() == clonedPar1->GetStyleId());
+    EXPECT_TRUE(parStyle->GetElementId() == clonedPar1->GetStyleId());
     ASSERT_TRUE(2 == clonedPar1->GetRuns().size());
 
     AnnotationRunBasePtr clonedRun1 = clonedPar1->GetRuns()[0];
-    EXPECT_TRUE(runStyle->GetStyleId() == clonedRun1->GetStyleId());
+    EXPECT_TRUE(runStyle->GetElementId() == clonedRun1->GetStyleId());
     VERIFY_STYLE_OVERRIDES_1(clonedRun1);
     AnnotationTextRunCP clonedTextRun = (AnnotationTextRunCP)clonedRun1.get();
     VERIFY_TEXTRUN_DATA_1(clonedTextRun,textRun);
 
     AnnotationRunBasePtr clonedRun2 = clonedPar1->GetRuns()[1];
-    EXPECT_TRUE(runStyle->GetStyleId() == clonedRun2->GetStyleId());
+    EXPECT_TRUE(runStyle->GetElementId() == clonedRun2->GetStyleId());
 
     AnnotationParagraphPtr clonedPar2 = clonedDoc->GetParagraphs()[1];
-    EXPECT_TRUE(parStyle->GetStyleId() == clonedPar2->GetStyleId());
+    EXPECT_TRUE(parStyle->GetElementId() == clonedPar2->GetStyleId());
     ASSERT_TRUE(1 == clonedPar2->GetRuns().size());
 
     AnnotationRunBasePtr clonedRun3 = clonedPar2->GetRuns()[0];
-    EXPECT_TRUE(runStyle->GetStyleId() == clonedRun3->GetStyleId());
+    EXPECT_TRUE(runStyle->GetElementId() == clonedRun3->GetStyleId());
     VERIFY_STYLE_OVERRIDES_2(clonedRun3);
     AnnotationFractionRunCP clonedFracRun = (AnnotationFractionRunCP)clonedRun3.get();
     VERIFY_FRACRUN_DATA_1(clonedFracRun,fracRun);
@@ -287,17 +287,17 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
 
     testStyle->SetName("my style");
     ASSERT_TRUE(testStyle->Insert().IsValid());
-    ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
     //.............................................................................................
     // Create with Valid style id
-    AnnotationTextBlockPtr doc3 = AnnotationTextBlock::Create(project,testStyle->GetStyleId());
+    AnnotationTextBlockPtr doc3 = AnnotationTextBlock::Create(project,testStyle->GetElementId());
     ASSERT_TRUE(doc3.IsValid());
 
     // Basic Check
     EXPECT_TRUE(&project == &doc3->GetDbR());
     EXPECT_TRUE(0 == doc3->GetParagraphs().size());
-    EXPECT_TRUE(testStyle->GetStyleId() == doc3->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == doc3->GetStyleId());
 
     //.............................................................................................
     // Create Annotation Paragraph
@@ -306,24 +306,24 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
 
     //.............................................................................................
     // Create with annotation paragraph
-    AnnotationTextBlockPtr doc5 = AnnotationTextBlock::Create(project,testStyle->GetStyleId(),*para);
+    AnnotationTextBlockPtr doc5 = AnnotationTextBlock::Create(project,testStyle->GetElementId(),*para);
     ASSERT_TRUE(doc5.IsValid());
 
     // Basics Checks
     EXPECT_TRUE(&project == &doc5->GetDbR());
     EXPECT_TRUE(1 == doc5->GetParagraphs().size());
-    EXPECT_TRUE(testStyle->GetStyleId() == doc5->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == doc5->GetStyleId());
 
     //.............................................................................................
     // Create with contents
     const char * contents = "Contents";
-    AnnotationTextBlockPtr doc6 = AnnotationTextBlock::Create(project, testStyle->GetStyleId(), contents);
+    AnnotationTextBlockPtr doc6 = AnnotationTextBlock::Create(project, testStyle->GetElementId(), contents);
     ASSERT_TRUE(doc6.IsValid());
 
     // Basics Checks
     EXPECT_TRUE(&project == &doc6->GetDbR());
     EXPECT_TRUE(1 == doc6->GetParagraphs().size());
-    EXPECT_TRUE(testStyle->GetStyleId() == doc6->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == doc6->GetStyleId());
     ASSERT_TRUE(1 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
     AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
     ASSERT_STREQ(contents, textRun->GetContent().c_str());
@@ -361,10 +361,10 @@ TEST_F(AnnotationTextBlockTest, Unicode)
     WString contentStr = L"عمر حیات";
     char * contents = new char[contentStr.length() + 1];
     contentStr.ConvertToLocaleChars(contents);
-    AnnotationTextBlockPtr doc6 = AnnotationTextBlock::Create(project, testStyle->GetStyleId(), contents);
+    AnnotationTextBlockPtr doc6 = AnnotationTextBlock::Create(project, testStyle->GetElementId(), contents);
     ASSERT_TRUE(doc6.IsValid());
 
-    EXPECT_TRUE(testStyle->GetStyleId() == doc6->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == doc6->GetStyleId());
     ASSERT_TRUE(1 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
     AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
     ASSERT_STREQ(contents, textRun->GetContent().c_str());
@@ -380,7 +380,7 @@ TEST_F(AnnotationTextBlockTest, ToString)
     AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
     style->SetName("style");
     AnnotationTextStyleCPtr fileStyle = style->Insert();
-    AnnotationTextStyleId fileStyleId = fileStyle->GetStyleId();
+    DgnElementId fileStyleId = fileStyle->GetElementId();
     
     static const Utf8String STR_1("Lorem ipsum dolar sit amet.");
     AnnotationTextBlockPtr text = AnnotationTextBlock::Create(db, fileStyleId, STR_1.c_str());

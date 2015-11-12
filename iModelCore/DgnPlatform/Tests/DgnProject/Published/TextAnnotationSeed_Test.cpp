@@ -44,16 +44,16 @@ TEST(BasicTextAnnotationSeedTest, PropertyBagTypes)
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
     Utf8String name = "MySeed";                                                                STYLE_PTR->SetName(name.c_str());\
     Utf8String description = "MySeedDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
-    AnnotationFrameStylePtr frameStyle = createAnnotationFrameStyle(project , "TestFrameStyle" );         STYLE_PTR->SetFrameStyleId(frameStyle->GetStyleId());\
-    AnnotationLeaderStylePtr leaderStyle = createAnnotationLeaderStyle(project, "TestLeaderStyle");       STYLE_PTR->SetLeaderStyleId(leaderStyle->GetStyleId());\
-    AnnotationTextStylePtr textStyle = createAnnotationTextStyle(project, "TestTextStyle");         STYLE_PTR->SetTextStyleId(textStyle->GetStyleId());
+    AnnotationFrameStylePtr frameStyle = createAnnotationFrameStyle(project , "TestFrameStyle" );         STYLE_PTR->SetFrameStyleId(frameStyle->GetElementId());\
+    AnnotationLeaderStylePtr leaderStyle = createAnnotationLeaderStyle(project, "TestLeaderStyle");       STYLE_PTR->SetLeaderStyleId(leaderStyle->GetElementId());\
+    AnnotationTextStylePtr textStyle = createAnnotationTextStyle(project, "TestTextStyle");         STYLE_PTR->SetTextStyleId(textStyle->GetElementId());
 
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
-    EXPECT_TRUE(frameStyle->GetStyleId() == STYLE_PTR->GetFrameStyleId());\
-    EXPECT_TRUE(leaderStyle->GetStyleId() == STYLE_PTR->GetLeaderStyleId());\
-    EXPECT_TRUE(textStyle->GetStyleId() == STYLE_PTR->GetTextStyleId());
+    EXPECT_TRUE(frameStyle->GetElementId() == STYLE_PTR->GetFrameStyleId());\
+    EXPECT_TRUE(leaderStyle->GetElementId() == STYLE_PTR->GetLeaderStyleId());\
+    EXPECT_TRUE(textStyle->GetElementId() == STYLE_PTR->GetTextStyleId());
 
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.
@@ -71,7 +71,7 @@ TEST_F(TextAnnotationSeedTest, DefaultsAndAccessors)
 
     // Basics
     EXPECT_TRUE(&project == &style->GetDbR());
-    EXPECT_TRUE(!style->GetSeedId().IsValid()); // Cannot call SetId directly from published API.
+    EXPECT_TRUE(!style->GetElementId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
@@ -107,7 +107,7 @@ TEST_F(TextAnnotationSeedTest, DeepCopy)
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
     EXPECT_TRUE(&project == &clonedStyle->GetDbR());
-    EXPECT_TRUE(style->GetSeedId() == clonedStyle->GetSeedId());
+    EXPECT_TRUE(style->GetElementId() == clonedStyle->GetElementId());
     VERIFY_DATA_1(clonedStyle);
     }
 
@@ -131,27 +131,27 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
-    ASSERT_TRUE(testStyle->GetSeedId().IsValid());
+    ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
     EXPECT_EQ(1, TextAnnotationSeed::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(TextAnnotationSeed::ExistsById(testStyle->GetSeedId(), project));
+    EXPECT_TRUE(TextAnnotationSeed::ExistsById(testStyle->GetElementId(), project));
     EXPECT_TRUE(TextAnnotationSeed::ExistsByName(name, project));
 
-    auto fileStyle = TextAnnotationSeed::QuerySeed(testStyle->GetSeedId(), project);
+    auto fileStyle = TextAnnotationSeed::QuerySeed(testStyle->GetElementId(), project);
     ASSERT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetSeedId() == fileStyle->GetSeedId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
     fileStyle = TextAnnotationSeed::QuerySeed(name, project);
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetSeedId() == fileStyle->GetSeedId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -169,7 +169,7 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(mutatedStyle->GetSeedId() == fileStyle->GetSeedId());
+    EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -211,7 +211,7 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
 
     //.............................................................................................
     // Delete
-    auto styleToDelete = TextAnnotationSeed::QuerySeed(mutatedStyle->GetSeedId(), project);
+    auto styleToDelete = TextAnnotationSeed::QuerySeed(mutatedStyle->GetElementId(), project);
     ASSERT_TRUE(styleToDelete.IsValid());
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
     }
@@ -240,7 +240,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
         ASSERT_FALSE(TextAnnotationSeed::ExistsByName(testStyle->GetName(), project));
 
         ASSERT_TRUE(testStyle->Insert().IsValid());
-        ASSERT_TRUE(testStyle->GetSeedId().IsValid());
+        ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
         //.............................................................................................
         // Insert Redundant style
@@ -249,21 +249,21 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         //.............................................................................................
         // Query
-        EXPECT_TRUE(TextAnnotationSeed::ExistsById(testStyle->GetSeedId(), project));
+        EXPECT_TRUE(TextAnnotationSeed::ExistsById(testStyle->GetElementId(), project));
         EXPECT_TRUE(TextAnnotationSeed::ExistsByName(name, project));
 
-        auto fileStyle = TextAnnotationSeed::QuerySeed(testStyle->GetSeedId(), project);
+        auto fileStyle = TextAnnotationSeed::QuerySeed(testStyle->GetElementId(), project);
         ASSERT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(testStyle->GetSeedId() == fileStyle->GetSeedId());
+        EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
         fileStyle = TextAnnotationSeed::QuerySeed(name, project);
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(testStyle->GetSeedId() == fileStyle->GetSeedId());
+        EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
 
@@ -286,7 +286,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(mutatedStyle->GetSeedId() == fileStyle->GetSeedId());
+        EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
         //.............................................................................................
@@ -334,7 +334,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         //.............................................................................................
         // Delete
-        auto styleToDelete = TextAnnotationSeed::QuerySeed(mutatedStyle->GetSeedId(), project);
+        auto styleToDelete = TextAnnotationSeed::QuerySeed(mutatedStyle->GetElementId(), project);
         ASSERT_TRUE(styleToDelete.IsValid());
         EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
         EXPECT_EQ(1, TextAnnotationSeed::QueryCount(project));

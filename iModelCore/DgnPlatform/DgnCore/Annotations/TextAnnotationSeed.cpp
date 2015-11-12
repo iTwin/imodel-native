@@ -147,9 +147,9 @@ DgnDbStatus TextAnnotationSeed::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TextAnnotationSeedId TextAnnotationSeed::QuerySeedId(Code const& code, DgnDbR db)
+DgnElementId TextAnnotationSeed::QuerySeedId(Code const& code, DgnDbR db)
     {
-    return TextAnnotationSeedId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
+    return DgnElementId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
 
 //---------------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ void TextAnnotationSeed::ResetProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TextAnnotationSeed::ExistsById(TextAnnotationSeedId id, DgnDbR db)
+bool TextAnnotationSeed::ExistsById(DgnElementId id, DgnDbR db)
     {
     PRECONDITION(id.IsValid(), false);
 
@@ -230,16 +230,16 @@ static void setIntegerValue(TextAnnotationSeedPropertyBagR data, TextAnnotationS
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_FRAMESTYLEID_VALUE = 0;
-AnnotationFrameStyleId TextAnnotationSeed::GetFrameStyleId() const { return AnnotationFrameStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE)); }
-void TextAnnotationSeed::SetFrameStyleId(AnnotationFrameStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE, value.GetValue()); }
+DgnElementId TextAnnotationSeed::GetFrameStyleId() const { return DgnElementId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE)); }
+void TextAnnotationSeed::SetFrameStyleId(DgnElementId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE, value.GetValue()); }
     
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_LEADERSTYLEID_VALUE = 0;
-AnnotationLeaderStyleId TextAnnotationSeed::GetLeaderStyleId() const { return AnnotationLeaderStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE)); }
-void TextAnnotationSeed::SetLeaderStyleId(AnnotationLeaderStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE, value.GetValue()); }
+DgnElementId TextAnnotationSeed::GetLeaderStyleId() const { return DgnElementId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE)); }
+void TextAnnotationSeed::SetLeaderStyleId(DgnElementId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE, value.GetValue()); }
     
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_TEXTSTYLEID_VALUE = 0;
-AnnotationTextStyleId TextAnnotationSeed::GetTextStyleId() const { return AnnotationTextStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE)); }
-void TextAnnotationSeed::SetTextStyleId(AnnotationTextStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, value.GetValue()); }
+DgnElementId TextAnnotationSeed::GetTextStyleId() const { return DgnElementId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE)); }
+void TextAnnotationSeed::SetTextStyleId(DgnElementId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, value.GetValue()); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014

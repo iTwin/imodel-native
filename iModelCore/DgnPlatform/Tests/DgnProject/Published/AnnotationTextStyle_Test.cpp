@@ -90,7 +90,7 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
 
     // Basics
     EXPECT_TRUE(&project == &style->GetDgnDb());
-    EXPECT_TRUE(!style->GetStyleId().IsValid()); // Cannot call SetId directly from published API.
+    EXPECT_TRUE(!style->GetElementId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
@@ -131,7 +131,7 @@ TEST_F(AnnotationTextStyleTest, DeepCopy)
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
     EXPECT_TRUE(&project == &clonedStyle->GetDgnDb());
-    EXPECT_TRUE(style->GetStyleId() == clonedStyle->GetStyleId());
+    EXPECT_TRUE(style->GetElementId() == clonedStyle->GetElementId());
     VERIFY_DATA_1(clonedStyle);
     }
 
@@ -157,27 +157,27 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
-    ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
 	EXPECT_EQ((1 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(AnnotationTextStyle::ExistsById(testStyle->GetStyleId(), project));
+    EXPECT_TRUE(AnnotationTextStyle::ExistsById(testStyle->GetElementId(), project));
     EXPECT_TRUE(AnnotationTextStyle::ExistsByName(name.c_str(), project));
 
-    AnnotationTextStyleCPtr fileStyle = AnnotationTextStyle::QueryStyle(testStyle->GetStyleId(), project);
+    AnnotationTextStyleCPtr fileStyle = AnnotationTextStyle::QueryStyle(testStyle->GetElementId(), project);
     ASSERT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
     fileStyle = AnnotationTextStyle::QueryStyle(name, project);
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -198,7 +198,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
-    EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................

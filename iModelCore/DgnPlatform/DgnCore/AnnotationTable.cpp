@@ -2432,7 +2432,7 @@ void            AnnotationTableCell::ApplyTextStyleByRegion ()
         return;
 
     AnnotationTableRegion  region       = GetTableRegion();
-    AnnotationTextStyleId  textStyleId  = GetTable().GetTextStyleId (region);
+    DgnElementId  textStyleId  = GetTable().GetTextStyleId (region);
 
     /*---------------------------------------------------------------------
         Each cell gets to specify its own justification.
@@ -3671,7 +3671,7 @@ double          TableHeaderAspect::GetDouble (PropIndex propIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-AnnotationTextStyleId  TableHeaderAspect::GetStyleId (PropIndex propIndex) const
+DgnElementId  TableHeaderAspect::GetStyleId (PropIndex propIndex) const
     {
     TableUInt64Value const* int64Value = nullptr;
 
@@ -3685,10 +3685,10 @@ AnnotationTextStyleId  TableHeaderAspect::GetStyleId (PropIndex propIndex) const
         case PropIndex::FooterColumnTextStyle:      { int64Value = &m_footerColumnTextStyle;    break; }
         }
 
-    AnnotationTextStyleId  styleId;
+    DgnElementId  styleId;
 
     if (EXPECTED_CONDITION (nullptr != int64Value))
-        styleId = AnnotationTextStyleId(int64Value->GetValue());
+        styleId = DgnElementId(int64Value->GetValue());
 
     return styleId;
     }
@@ -3806,7 +3806,7 @@ void        TableHeaderAspect::SetDouble (double v, PropIndex propIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-void        TableHeaderAspect::SetStyleId (AnnotationTextStyleId v, PropIndex propIndex)
+void        TableHeaderAspect::SetStyleId (DgnElementId v, PropIndex propIndex)
     {
     TableUInt64Value* value = nullptr;
 
@@ -3958,7 +3958,7 @@ TableCellMarginValues      AnnotationTableElement::GetDefaultMargins () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTextStyleId  AnnotationTableElement::GetTextStyleId (AnnotationTableRegion region) const
+DgnElementId  AnnotationTableElement::GetTextStyleId (AnnotationTableRegion region) const
     {
     switch (region)
         {
@@ -3993,7 +3993,7 @@ static void     doScaleTextStyle (DgnTextStyleR style, double scale)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AnnotationTextStyleCP  AnnotationTableElement::GetTextStyle (AnnotationTableRegion region) const
     {
-    AnnotationTextStyleId   textStyleId = GetTextStyleId(region);
+    DgnElementId   textStyleId = GetTextStyleId(region);
 
     if ( ! textStyleId.IsValid())
         {
@@ -4348,7 +4348,7 @@ BentleyStatus   AnnotationTableColumn::SetHeaderFooterType (TableHeaderFooterTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AnnotationTableElement::SetTextStyleIdDirect (AnnotationTextStyleId val, AnnotationTableRegion region)
+void            AnnotationTableElement::SetTextStyleIdDirect (DgnElementId val, AnnotationTableRegion region)
     {
     switch (region)
         {
@@ -4377,7 +4377,7 @@ void            AnnotationTableElement::ClearTextStyleFromCache (AnnotationTable
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AnnotationTableElement::SetTextStyleId (AnnotationTextStyleId val, AnnotationTableRegion region)
+void            AnnotationTableElement::SetTextStyleId (DgnElementId val, AnnotationTableRegion region)
     {
     SetTextStyleIdDirect (val, region);
 #if defined (NEEDSWORK)
@@ -4431,7 +4431,7 @@ AnnotationTableElementPtr AnnotationTableElement::Create(CreateParams const& par
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-AnnotationTableElementPtr AnnotationTableElement::Create (uint32_t rowCount, uint32_t columnCount, AnnotationTextStyleId textStyleId, double backupTextHeight, CreateParams const& params)
+AnnotationTableElementPtr AnnotationTableElement::Create (uint32_t rowCount, uint32_t columnCount, DgnElementId textStyleId, double backupTextHeight, CreateParams const& params)
     {
     AnnotationTableElementPtr   table = Create (params);
 

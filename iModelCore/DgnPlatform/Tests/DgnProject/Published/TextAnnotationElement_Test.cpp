@@ -12,12 +12,12 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-static AnnotationTextStyleId ensureAnnotationTextStyle1(DgnDbR db)
+static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
     {
     static const CharCP STYLE_NAME = "AnnotationTextStyle1";
     AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::QueryStyle(STYLE_NAME, db);
     if (existingStyle.IsValid())
-        return existingStyle->GetStyleId();
+        return existingStyle->GetElementId();
     
     AnnotationTextStyle style(db);
     style.SetColorType(AnnotationColorType::RGBA);
@@ -28,7 +28,7 @@ static AnnotationTextStyleId ensureAnnotationTextStyle1(DgnDbR db)
 
     style.Insert();
     
-    return style.GetStyleId();
+    return style.GetElementId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", L"TextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
-    AnnotationTextStyleId textStyleId;
+    DgnElementId textStyleId;
     DgnElementId insertedElementId;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
@@ -209,7 +209,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"PhysicalTextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
-    AnnotationTextStyleId textStyleId;
+    DgnElementId textStyleId;
     DgnElementId insertedElementId;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";

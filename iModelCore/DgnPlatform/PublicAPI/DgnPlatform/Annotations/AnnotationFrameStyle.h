@@ -147,7 +147,6 @@ public:
     DGNPLATFORM_EXPORT AnnotationFrameStylePtr CreateEffectiveStyle(AnnotationFrameStylePropertyBagCR overrides) const;
 
     DgnDbR GetDbR() const { return GetDgnDb(); }
-    AnnotationFrameStyleId GetStyleId() const { return AnnotationFrameStyleId(GetElementId().GetValueUnchecked()); }
     Utf8String GetName() const { return GetCode().GetValue(); }
     Utf8StringCR GetDescription() const { return m_descr; }
     void SetDescription(Utf8StringCR value) { m_descr = value; }
@@ -191,12 +190,12 @@ public:
     AnnotationFrameStyleCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<AnnotationFrameStyle>(*this, status); }
     AnnotationFrameStyleCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<AnnotationFrameStyle>(*this, status); }
 
-    DGNPLATFORM_EXPORT static AnnotationFrameStyleId QueryStyleId(Code const& code, DgnDbR db);
-    static AnnotationFrameStyleId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName), db); }
-    static AnnotationFrameStyleCPtr QueryStyle(AnnotationFrameStyleId styleId, DgnDbR db) { return db.Elements().Get<AnnotationFrameStyle>(styleId); }
+    DGNPLATFORM_EXPORT static DgnElementId QueryStyleId(Code const& code, DgnDbR db);
+    static DgnElementId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName), db); }
+    static AnnotationFrameStyleCPtr QueryStyle(DgnElementId styleId, DgnDbR db) { return db.Elements().Get<AnnotationFrameStyle>(styleId); }
     static AnnotationFrameStyleCPtr QueryStyle(Utf8StringCR styleName, DgnDbR db) { return QueryStyle(QueryStyleId(styleName, db), db); }
 
-    DGNPLATFORM_EXPORT static bool ExistsById(AnnotationFrameStyleId id, DgnDbR db);
+    DGNPLATFORM_EXPORT static bool ExistsById(DgnElementId id, DgnDbR db);
     static bool ExistsByName(Utf8StringCR name, DgnDbR db) { return QueryStyleId(name, db).IsValid(); }
 
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db);
@@ -208,7 +207,7 @@ public:
     private:
         Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
     public:
-        AnnotationFrameStyleId GetId() const { return m_statement->GetValueId<AnnotationFrameStyleId>(0); }
+        DgnElementId GetId() const { return m_statement->GetValueId<DgnElementId>(0); }
         Utf8CP GetName() const { return m_statement->GetValueText(1); }
         Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
     };

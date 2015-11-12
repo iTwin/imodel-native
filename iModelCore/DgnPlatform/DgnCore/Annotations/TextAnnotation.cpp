@@ -33,7 +33,7 @@ TextAnnotation::TextAnnotation(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationPtr TextAnnotation::Create(DgnDbR project, TextAnnotationSeedId seedID)
+TextAnnotationPtr TextAnnotation::Create(DgnDbR project, DgnElementId seedID)
     {
     auto annotation = TextAnnotation::Create(project);
     annotation->ApplySeed(seedID);
@@ -71,7 +71,7 @@ void TextAnnotation::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-void TextAnnotation::ApplySeed(TextAnnotationSeedId value)
+void TextAnnotation::ApplySeed(DgnElementId value)
     {
     auto seed = TextAnnotationSeed::QuerySeed(value, *m_dgndb);
     PRECONDITION(seed.IsValid(), );

@@ -86,7 +86,7 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
 
     // Basics
     EXPECT_TRUE(&project == &style->GetDbR());
-    EXPECT_TRUE(!style->GetStyleId().IsValid()); // Cannot call SetId directly from published API.
+    EXPECT_TRUE(!style->GetElementId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
@@ -126,7 +126,7 @@ TEST_F(AnnotationLeaderStyleTest, DeepCopy)
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
     EXPECT_TRUE(&project == &clonedStyle->GetDbR());
-    EXPECT_TRUE(style->GetStyleId() == clonedStyle->GetStyleId());
+    EXPECT_TRUE(style->GetElementId() == clonedStyle->GetElementId());
     VERIFY_DATA_1(clonedStyle);
     }
 
@@ -150,27 +150,27 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
-    ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
     EXPECT_EQ(1, AnnotationLeaderStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(AnnotationLeaderStyle::ExistsById(testStyle->GetStyleId(), project));
+    EXPECT_TRUE(AnnotationLeaderStyle::ExistsById(testStyle->GetElementId(), project));
     EXPECT_TRUE(AnnotationLeaderStyle::ExistsByName(name, project));
 
-    auto fileStyle = AnnotationLeaderStyle::QueryStyle(testStyle->GetStyleId(), project);
+    auto fileStyle = AnnotationLeaderStyle::QueryStyle(testStyle->GetElementId(), project);
     ASSERT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
     fileStyle = AnnotationLeaderStyle::QueryStyle(name, project);
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -191,7 +191,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -233,7 +233,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Delete
-    auto styleToDelete = AnnotationLeaderStyle::QueryStyle(mutatedStyle->GetStyleId(), project);
+    auto styleToDelete = AnnotationLeaderStyle::QueryStyle(mutatedStyle->GetElementId(), project);
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
     }
 

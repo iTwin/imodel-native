@@ -124,7 +124,6 @@ public:
     DGNPLATFORM_EXPORT TextAnnotationSeedPtr CreateEffectiveStyle(TextAnnotationSeedPropertyBagCR overrides) const;
 
     DgnDbR GetDbR() const { return GetDgnDb(); }
-    TextAnnotationSeedId GetSeedId() const { return TextAnnotationSeedId(GetElementId().GetValueUnchecked()); }
     Utf8String GetName() const { return GetCode().GetValue(); }
     Utf8StringCR GetDescription() const { return m_descr; }
     void SetDescription(Utf8StringCR value) { m_descr = value; }
@@ -132,12 +131,12 @@ public:
 
     DGNPLATFORM_EXPORT static Code CreateCodeForSeed(Utf8StringCR name);
 
-    DGNPLATFORM_EXPORT AnnotationFrameStyleId GetFrameStyleId() const;
-    DGNPLATFORM_EXPORT void SetFrameStyleId(AnnotationFrameStyleId);
-    DGNPLATFORM_EXPORT AnnotationLeaderStyleId GetLeaderStyleId() const;
-    DGNPLATFORM_EXPORT void SetLeaderStyleId(AnnotationLeaderStyleId);
-    DGNPLATFORM_EXPORT AnnotationTextStyleId GetTextStyleId() const;
-    DGNPLATFORM_EXPORT void SetTextStyleId(AnnotationTextStyleId);
+    DGNPLATFORM_EXPORT DgnElementId GetFrameStyleId() const;
+    DGNPLATFORM_EXPORT void SetFrameStyleId(DgnElementId);
+    DGNPLATFORM_EXPORT DgnElementId GetLeaderStyleId() const;
+    DGNPLATFORM_EXPORT void SetLeaderStyleId(DgnElementId);
+    DGNPLATFORM_EXPORT DgnElementId GetTextStyleId() const;
+    DGNPLATFORM_EXPORT void SetTextStyleId(DgnElementId);
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationSeed); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
@@ -145,12 +144,12 @@ public:
     TextAnnotationSeedCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<TextAnnotationSeed>(*this, status); }
     TextAnnotationSeedCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<TextAnnotationSeed>(*this, status); }
 
-    DGNPLATFORM_EXPORT static TextAnnotationSeedId QuerySeedId(Code const& code, DgnDbR db);
-    static TextAnnotationSeedId QuerySeedId(Utf8StringCR styleName, DgnDbR db) { return QuerySeedId(CreateCodeForSeed(styleName), db); }
-    static TextAnnotationSeedCPtr QuerySeed(TextAnnotationSeedId styleId, DgnDbR db) { return db.Elements().Get<TextAnnotationSeed>(styleId); }
+    DGNPLATFORM_EXPORT static DgnElementId QuerySeedId(Code const& code, DgnDbR db);
+    static DgnElementId QuerySeedId(Utf8StringCR styleName, DgnDbR db) { return QuerySeedId(CreateCodeForSeed(styleName), db); }
+    static TextAnnotationSeedCPtr QuerySeed(DgnElementId styleId, DgnDbR db) { return db.Elements().Get<TextAnnotationSeed>(styleId); }
     static TextAnnotationSeedCPtr QuerySeed(Utf8StringCR styleName, DgnDbR db) { return QuerySeed(QuerySeedId(styleName, db), db); }
 
-    DGNPLATFORM_EXPORT static bool ExistsById(TextAnnotationSeedId id, DgnDbR db);
+    DGNPLATFORM_EXPORT static bool ExistsById(DgnElementId id, DgnDbR db);
     static bool ExistsByName(Utf8StringCR name, DgnDbR db) { return QuerySeedId(name, db).IsValid(); }
 
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db);
@@ -162,7 +161,7 @@ public:
     private:
         Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
     public:
-        TextAnnotationSeedId GetId() const { return m_statement->GetValueId<TextAnnotationSeedId>(0); }
+        DgnElementId GetId() const { return m_statement->GetValueId<DgnElementId>(0); }
         Utf8CP GetName() const { return m_statement->GetValueText(1); }
         Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
     };

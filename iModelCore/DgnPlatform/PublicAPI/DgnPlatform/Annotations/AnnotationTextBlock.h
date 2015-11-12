@@ -76,7 +76,7 @@ private:
 protected:
     DgnDbP m_dgndb;
 
-    AnnotationTextStyleId m_styleID;
+    DgnElementId m_styleID;
     AnnotationTextStylePropertyBag m_styleOverrides;
     
     DGNPLATFORM_EXPORT explicit AnnotationRunBase(DgnDbR);
@@ -91,8 +91,8 @@ public:
     
     DgnDbR GetDbR() const { return *m_dgndb; }
     AnnotationRunType GetType() const { return _GetType(); }
-    AnnotationTextStyleId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(AnnotationTextStyleId, SetAnnotationTextStyleOptions);
+    DgnElementId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationTextStyleOptions);
     AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
@@ -133,8 +133,8 @@ public:
     AnnotationTextRun(AnnotationTextRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationTextRunR operator=(AnnotationTextRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationTextRunPtr Create(DgnDbR project) { return new AnnotationTextRun(project); }
-    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, AnnotationTextStyleId);
-    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, AnnotationTextStyleId, Utf8CP);
+    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnElementId);
+    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnElementId, Utf8CP);
     AnnotationTextRunPtr CloneAsTextRun() const { return new AnnotationTextRun(*this); }
 
     Utf8StringCR GetContent() const { return m_content; }
@@ -170,8 +170,8 @@ public:
     AnnotationFractionRun(AnnotationFractionRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationFractionRunR operator=(AnnotationFractionRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationFractionRunPtr Create(DgnDbR project) { return new AnnotationFractionRun(project); }
-    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, AnnotationTextStyleId);
-    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, AnnotationTextStyleId, Utf8CP numerator, Utf8CP denominator);
+    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnElementId);
+    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnElementId, Utf8CP numerator, Utf8CP denominator);
     AnnotationFractionRunPtr CloneAsFractionRun() const { return new AnnotationFractionRun(*this); }
 
     Utf8StringCR GetDenominatorContent() const { return m_denominatorContent; }
@@ -198,7 +198,7 @@ public:
     AnnotationLineBreakRun(AnnotationLineBreakRunCR rhs) : T_Super(rhs) { }
     AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR rhs) { T_Super::operator=(rhs); return *this;}
     static AnnotationLineBreakRunPtr Create(DgnDbR project) { return new AnnotationLineBreakRun(project); }
-    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR, AnnotationTextStyleId);
+    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR, DgnElementId);
     AnnotationLineBreakRunPtr CloneAsLineBreakRun() const { return new AnnotationLineBreakRun(*this); }
 };
 
@@ -215,7 +215,7 @@ private:
 
     DgnDbP m_dgndb;
 
-    AnnotationTextStyleId m_styleID;
+    DgnElementId m_styleID;
     AnnotationTextStylePropertyBag m_styleOverrides;
 
     AnnotationRunCollection m_runs;
@@ -227,13 +227,13 @@ public:
     AnnotationParagraph(AnnotationParagraphCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationParagraphR operator=(AnnotationParagraphCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationParagraphPtr Create(DgnDbR project) { return new AnnotationParagraph(project); }
-    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, AnnotationTextStyleId);
-    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, AnnotationTextStyleId, AnnotationRunBaseR);
+    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnElementId);
+    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnElementId, AnnotationRunBaseR);
     AnnotationParagraphPtr Clone() const { return new AnnotationParagraph(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }
-    AnnotationTextStyleId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(AnnotationTextStyleId, SetAnnotationTextStyleOptions);
+    DgnElementId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationTextStyleOptions);
     AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
@@ -290,7 +290,7 @@ private:
     double m_documentWidth;
     HorizontalJustification m_justification;
     
-    AnnotationTextStyleId m_styleID;
+    DgnElementId m_styleID;
     AnnotationTextStylePropertyBag m_styleOverrides;
     
     AnnotationParagraphCollection m_paragraphs;
@@ -303,9 +303,9 @@ public:
     AnnotationTextBlock(AnnotationTextBlockCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationTextBlockR operator=(AnnotationTextBlockCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationTextBlockPtr Create(DgnDbR project) { return new AnnotationTextBlock(project); }
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, AnnotationTextStyleId);
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, AnnotationTextStyleId, AnnotationParagraphR);
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, AnnotationTextStyleId, Utf8CP);
+    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnElementId);
+    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnElementId, AnnotationParagraphR);
+    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnElementId, Utf8CP);
     AnnotationTextBlockPtr Clone() const { return new AnnotationTextBlock(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }
@@ -313,8 +313,8 @@ public:
     void SetDocumentWidth(double value) { m_documentWidth = value; }
     HorizontalJustification GetJustification() const { return m_justification; }
     void SetJustification(HorizontalJustification value) { m_justification = value; }
-    AnnotationTextStyleId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(AnnotationTextStyleId, SetAnnotationTextStyleOptions);
+    DgnElementId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationTextStyleOptions);
     AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
