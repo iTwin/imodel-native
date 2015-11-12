@@ -198,14 +198,65 @@ public:
     //! An iterator over the view definitions stored in a DgnDb
     struct Iterator : ECSqlStatementIterator<Entry>
     {
-    //
+        // Options controlling ViewDefinition iteration
+        struct Options
+        {
+            //! Defines the order in which results should be returned
+            enum class Order : uint8_t
+            {
+                Unordered, //!< No meaningful order
+                Ascending, //!< Order by name ascending
+            };
+
+            //! Defines the view source(s) to include in the query
+            enum class Source : uint8_t
+            {
+                User = DgnViewSource::User, //!< Include user-defined views
+                Generated = DgnViewSource::Generated, //!< Include program-generated views
+                Private = DgnViewSource::Private, //!< Include internally-defined views
+                All = User | Generated | Private, //!< Include views from all sources
+            };
+        private:
+            Utf8String m_customECSql;
+            DgnModelId m_baseModelId;
+            Order m_order;
+            Source m_source;
+
+            Options(DgnModelId baseModelId, Order order, Source source, Utf8StringCR ecsql)
+                : m_customECSql(ecsql), m_baseModelId(baseModelId), m_order(order), m_source(source) { }
+        public:
+            //! Constructor
+            //! @param[in]      baseModelId Optional base model ID by which to filter
+            //! @param[in]      order       Optional order in which to return results
+            //! @param[in]      source      Optional view source(s) to include
+            explicit Options(DgnModelId baseModelId=DgnModelId(), Order order=Order::Unordered, Source source=Source::All) : Options(baseModelId, order, source, Utf8String()) { }
+
+            //! Constructor
+            //! @param[in]      source      View source by which to filter
+            //! @param[in]      order       Optional order in which to return results
+            //! @param[in]      baseModelId Optional base model ID by which to filter
+            explicit Options(Source source, Order order=Order::Unordered, DgnModelId baseModelId=DgnModelId()) : Options(baseModelId, order, source, Utf8String()) { }
+
+            //! Constructor
+            //! @param[in]      ecsql Custom ECSql which is to be appended to the SELECT statement
+            explicit Options(Utf8StringCR ecsql) : Options(DgnModelId(), Order::Unordered, Source::All, ecsql) { }
+
+            //! Returns true if these options do not restrict the results
+            bool IsEmpty() const { return m_customECSql.empty() && !m_baseModelId.IsValid() && Order::Unordered == m_order && Source::All == m_source; }
+
+            //! Convert these options to an ECSql string
+            Utf8String ToString() const;
+        };
+
+        //! Construct an iterator over the view definitions within the specified DgnDb
+        DGNPLATFORM_EXPORT Iterator(DgnDbR db, Options const& options);
     };
 
     //! Create an iterator over the view definitions within the specified DgnDb
-    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR db);
+    static Iterator MakeIterator(DgnDbR db, Iterator::Options const& options=Iterator::Options()) { return Iterator(db, options); }
 
     //! Return the number of view definitions in the specific DgnDb
-    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db);
+    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, Iterator::Options const& options=Iterator::Options());
 
     bool IsPhysicalView() const { return nullptr != _ToPhysicalView(); }
     bool IsDrawingView() const { return nullptr != _ToDrawingView(); }

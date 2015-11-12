@@ -265,21 +265,90 @@ DbResult ViewDefinition::DeleteSettings(DgnViewId viewId, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewDefinition::Iterator ViewDefinition::MakeIterator(DgnDbR db)
+ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
     static const Utf8CP s_ecsql = "SELECT ECInstanceId,Code," PROPNAME_Source "," PROPNAME_BaseModel "," PROPNAME_Descr ",GetECClassId() FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition);
 
-    Iterator iter;
-    iter.Prepare(db, s_ecsql, 0);
-    return iter;
+    Utf8CP ecsql = s_ecsql;
+    Utf8String customECSql;
+    if (!options.IsEmpty())
+        {
+        customECSql = s_ecsql;
+        customECSql.append(options.ToString());
+
+        ecsql = customECSql.c_str();
+        }
+
+    Prepare(db, ecsql, 0);
+    }
+
+ENUM_IS_FLAGS(ViewDefinition::Iterator::Options::Source);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ViewDefinition::Iterator::Options::ToString() const
+    {
+    Utf8String str;
+    if (IsEmpty())
+        return str;
+
+    if (!m_customECSql.empty())
+        {
+        // mutually exclusive with the other options
+        if (!m_customECSql.StartsWith(" "))
+            str.append(1, ' ');
+
+        str.append(m_customECSql);
+        return str;
+        }
+
+    // WHERE
+    Utf8Char buf[0x20];
+    if (m_baseModelId.IsValid())
+        {
+        BeStringUtilities::FormatUInt64(buf, m_baseModelId.GetValue());
+        str.append(" WHERE " PROPNAME_BaseModel " = ");
+        str.append(buf);
+        }
+
+    if (Source::All != m_source)
+        {
+        str.append(str.empty() ? " WHERE " : " AND ");
+
+        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(m_source));
+
+        str.append("0 != (" PROPNAME_Source " & ");
+        str.append(buf);
+        str.append(1, ')');
+        }
+
+    // ORDER BY
+    if (Order::Ascending == m_order)
+        {
+        str.append(" ORDER BY Code");
+        }
+
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ViewDefinition::QueryCount(DgnDbR db)
+size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition));
+    static const Utf8CP s_ecsql = "SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition);
+    
+    Utf8CP ecsql = s_ecsql;
+    Utf8String customECSql;
+    if (!opts.IsEmpty())
+        {
+        customECSql = s_ecsql;
+        customECSql.append(opts.ToString());
+        ecsql = customECSql.c_str();
+        }
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql);
     return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
     }
 
