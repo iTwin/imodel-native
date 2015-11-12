@@ -210,6 +210,8 @@ TEST_F(ImportTest, ImportGroups)
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP();
 
+    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
+
     // ******************************
     //  Create model1
 
