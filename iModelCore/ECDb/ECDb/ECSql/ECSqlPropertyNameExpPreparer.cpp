@@ -61,7 +61,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativ
         classIdentifier = exp->GetClassRefExp()->GetId().c_str();
     else if (currentScopeECSqlType == ECSqlType::Delete)
         {
-        classIdentifier = exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName().c_str();
+        if (!ctx.GetCurrentScope().GetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
+            classIdentifier = exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName().c_str();
         }
 
     auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType, exp->HasParentheses ());

@@ -55,14 +55,30 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
         Finalize ();
         return ECSqlStatus::InvalidECSql;
         }
+    //prepare : INSERT INTO Foo (B1, D1) - parsed
+    //step1
+    //INSERT INTO Boo (B1, ECInstanceId) VALUES(?,?)
+    //INSERT INTO Foo (D1, ECinstanceId) VALUES(?,?)
+    //step2
+    //prepare: INSERT INTO Boo (B1, ECInstanceId) VALUES(?,?) -parsed 
+    //step3
+    //Prepare: INSERT INTO Foo (D1, ECinstanceId) VALUES(?,?)
+    
+    //INSERT INTO Boo(B1)
+
+    //INSERT INTO Foo(D1)
+
+    //INSERT INTO Foo(ECInstanceId)
+
+    //INSERT INTO Boo(B1, ECInstanceId)
 
     //establish joinTable context if any
     if (auto joinTableContext = prepareContext.TrySetupJoinTableContextIfAny(*ecsqlParseTree, ecsql))
         {
         if (joinTableContext->HasECSQlStatement()) //in case joinTable update it is possiable that current could be null
-            ecsql = joinTableContext->GetECSQlStatement();
+            ecsql = joinTableContext->GetECSQlStatement();    //INSERT INTO Boo(B1, ECInstanceId)
         else
-            ecsql = joinTableContext->GetParentECSQlStatement();
+            ecsql = joinTableContext->GetParentECSQlStatement();//INSERT INTO Foo(ECInstanceId)
 
         ecsqlParseTree = nullptr; //delete existing parse tree
         if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode()))
