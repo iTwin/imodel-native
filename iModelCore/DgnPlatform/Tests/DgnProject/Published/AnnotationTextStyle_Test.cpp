@@ -210,9 +210,9 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     for (auto const& style : iter1)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-        ASSERT_TRUE(style.GetId().IsValid());
+        ASSERT_TRUE(style.GetElementId().IsValid());
         
-        AnnotationTextStyleCPtr iterStyle = AnnotationTextStyle::Get(project, style.GetId());
+        AnnotationTextStyleCPtr iterStyle = AnnotationTextStyle::Get(project, style.GetElementId());
         ASSERT_TRUE(iterStyle.IsValid());
 
         if (!foundOurStyle)
@@ -231,9 +231,9 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     for (auto const& style : iter2)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-        ASSERT_TRUE(style.GetId().IsValid());
+        ASSERT_TRUE(style.GetElementId().IsValid());
 
-        auto iterStyle = AnnotationTextStyle::Get(project, style.GetId());
+        auto iterStyle = AnnotationTextStyle::Get(project, style.GetElementId());
         ASSERT_TRUE(iterStyle.IsValid());
 
         if (!foundOurStyle)

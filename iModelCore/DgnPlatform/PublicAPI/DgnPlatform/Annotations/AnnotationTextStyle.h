@@ -122,6 +122,7 @@ protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     virtual Code _GenerateDefaultCode() override { return Code(); }
+    virtual DgnDbStatus _SetCode(Code const&) override { return DgnDbStatus::BadArg; /* Restricted to an internal DgnAuthority; use GetName/SetName. */ }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle); }
@@ -133,9 +134,9 @@ public:
     AnnotationTextStylePtr CreateCopy() const { return MakeCopy<AnnotationTextStyle>(); }
 
     Utf8String GetName() const { return GetCode().GetValue(); }
-    void SetName(Utf8CP value) { SetCode(CreateCodeFromName(value)); }
+    void SetName(Utf8CP value) { T_Super::_SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }
-    void SetDescription(Utf8StringCR value) { m_description = value; }
+    void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
     
     DGNPLATFORM_EXPORT AnnotationColorType GetColorType() const;
     DGNPLATFORM_EXPORT void SetColorType(AnnotationColorType);
@@ -178,7 +179,6 @@ public:
     static AnnotationTextStylePtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
     AnnotationTextStyleCPtr Insert() { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this); }
     AnnotationTextStyleCPtr Update() { return GetDgnDb().Elements().Update<AnnotationTextStyle>(*this); }
-    DgnDbStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
 
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     11/2014
@@ -194,7 +194,7 @@ public:
         Entry(BeSQLite::EC::ECSqlStatement* stmt) : T_Super(stmt) {}
     
     public:
-        DgnElementId GetId() const { return m_statement->GetValueId<DgnElementId>(0); }
+        DgnElementId GetElementId() const { return m_statement->GetValueId<DgnElementId>(0); }
         Utf8CP GetName() const { return m_statement->GetValueText(1); }
         Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
     };
@@ -204,8 +204,6 @@ public:
     DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
 };
-
-//! @endGroup
 
 namespace dgn_ElementHandler
 {
@@ -221,5 +219,7 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
     };
 }
+
+//! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

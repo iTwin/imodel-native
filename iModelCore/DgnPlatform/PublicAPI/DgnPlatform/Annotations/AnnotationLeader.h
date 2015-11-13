@@ -89,7 +89,7 @@ public:
     DgnDbR GetDbR() const { return *m_dgndb; }
     DgnElementId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationLeaderStyleOptions);
-    AnnotationLeaderStylePtr CreateEffectiveStyle() const { return AnnotationLeaderStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationLeaderStylePtr CreateEffectiveStyle() const { return AnnotationLeaderStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationLeaderStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationLeaderStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
     AnnotationLeaderSourceAttachmentType GetSourceAttachmentType() const { return m_sourceAttachmentType; }

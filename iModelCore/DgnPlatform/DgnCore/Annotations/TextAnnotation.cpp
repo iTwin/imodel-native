@@ -73,7 +73,7 @@ void TextAnnotation::Reset()
 //---------------------------------------------------------------------------------------
 void TextAnnotation::ApplySeed(DgnElementId value)
     {
-    auto seed = TextAnnotationSeed::QuerySeed(value, *m_dgndb);
+    auto seed = TextAnnotationSeed::Get(*m_dgndb, value);
     PRECONDITION(seed.IsValid(), );
     
     if (m_text.IsValid())

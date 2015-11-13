@@ -62,7 +62,7 @@ public:
     DgnDbR GetDbR() const { return *m_dgndb; }
     DgnElementId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationFrameStyleOptions);
-    AnnotationFrameStylePtr CreateEffectiveStyle() const { return AnnotationFrameStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationFrameStylePtr CreateEffectiveStyle() const { return AnnotationFrameStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationFrameStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationFrameStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
 };

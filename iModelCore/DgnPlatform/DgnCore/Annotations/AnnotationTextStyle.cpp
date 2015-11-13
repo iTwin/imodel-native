@@ -9,7 +9,6 @@
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextStylePersistence.h>
 
-USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
@@ -259,14 +258,13 @@ void AnnotationTextStyle::SetWidthFactor(double value) { setRealValue(m_data, An
 //---------------------------------------------------------------------------------------
 AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const
     {
-    AnnotationTextStylePtr clone = CreateCopy();
-    clone->InvalidateCode();
-    clone->m_description.clear();
-    clone->InvalidateElementId();
+    AnnotationTextStylePtr copy = CreateCopy();
+    copy->InvalidateElementId();
+    copy->InvalidateCode();
+    copy->m_description.clear();
+    copy->m_data.MergeWith(overrides);
 
-    clone->m_data.MergeWith(overrides);
-
-    return clone;
+    return copy;
     }
 
 //---------------------------------------------------------------------------------------
