@@ -87,7 +87,7 @@ struct ECNameValidation
     {
 private:
 /*__PUBLISH_SECTION_END__*/
-    static void AppendEncodedCharacter (Utf8StringR encoded, Utf8Char c);
+    static void AppendEncodedCharacter (WStringR encoded, WChar c);
 /*__PUBLISH_SECTION_START__*/
 public:
 

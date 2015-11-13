@@ -119,6 +119,10 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaReferencesFromXml(ECSchemaPtr& schem
 
         LOG.debugv("About to locate referenced ECSchema %s", key.GetFullSchemaName().c_str());
 
+        // There are some schemas out there that reference the non-existent Unit_Attributes.1.1 schema.  We need to deliver 1.0, which does not match our criteria
+        // for LatestCompatible.
+        if (0 == key.GetName().CompareTo("Unit_Attributes") && 1 == key.GetVersionMajor() && 1 == key.GetVersionMinor())
+            key.m_versionMinor = 0;
         ECSchemaPtr referencedSchema = schemaOut->LocateSchema(key, m_schemaContext);
 
         if (referencedSchema.IsValid())

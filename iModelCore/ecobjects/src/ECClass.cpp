@@ -1022,10 +1022,12 @@ struct DuplicateInheritanceDetector
     static bool HasDuplicateInheritance(ECClassCP thisClass, const void* arg)
         {
         DuplicateInheritanceDetector const& det = *reinterpret_cast<DuplicateInheritanceDetector const*>(arg);
-        if (det.m_baseClassFound)
-            return true;
-        else if (ECClass::ClassesAreEqualByName(thisClass, &det.m_baseClass))
+        if (ECClass::ClassesAreEqualByName(thisClass, &det.m_baseClass))
+            {
+            if (det.m_baseClassFound)
+                return true;
             det.m_baseClassFound = true;
+            }
 
         return false;
         }
