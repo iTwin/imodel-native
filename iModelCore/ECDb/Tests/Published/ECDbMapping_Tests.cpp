@@ -483,7 +483,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "        <BaseClass>SubSub</BaseClass>"
             "        <ECProperty propertyName='P3' typeName='int' />"
             "    </ECClass>"
-            "</ECSchema>", false, "Option JoinedTableForSubclasses cannot be applied to subclass where base has SharedTable (applies to subclasses)."),
+            "</ECSchema>", true, "Option JoinedTableForSubclasses can be applied to subclass where base has SharedTable (applies to subclasses)."),
 
     SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"

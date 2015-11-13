@@ -248,7 +248,7 @@ bool IClassMap::IsParentOfJoinedTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::FindRootOfJoinedTable() const
+IClassMap const* IClassMap::FindParentOfJoinedTable() const
     {
     auto current = this;
     if (!current->IsJoinedTable())
@@ -331,6 +331,56 @@ Utf8String IClassMap::ToString() const
 
     return str;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus IClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR ecclass, Utf8CP tablePrefix)
+    {
+    if (!Utf8String::IsNullOrEmpty(tablePrefix))
+        tableName.assign(tablePrefix);
+    else
+        {
+        if (SUCCESS != DetermineTablePrefix(tableName, ecclass))
+            return ERROR;
+        }
+
+    tableName.append("_").append(ecclass.GetName());
+
+    if (IsMapToSecondaryTableStrategy(ecclass))
+        tableName.append(TABLESUFFIX_STRUCTARRAY);
+    
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
+    {
+    ECSchemaCR schema = ecclass.GetSchema();
+    ECDbSchemaMap customSchemaMap;
+
+    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
+        {
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECOBJECTS_STATUS_Success)
+            return ERROR;
+        }
+
+    if (tablePrefix.empty())
+        {
+        Utf8StringCR namespacePrefix = schema.GetNamespacePrefix();
+        if (!namespacePrefix.empty())
+            tablePrefix = namespacePrefix;
+        else
+            tablePrefix = schema.GetName();
+        }
+
+    return SUCCESS;
+    }
+
 
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------

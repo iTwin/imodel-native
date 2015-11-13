@@ -19,11 +19,13 @@ public:
     //+---------------+---------------+---------------+---------------+---------------+------
     struct SchemaItem
         {
+        Utf8String m_name;
         std::vector<Utf8String> m_schemaXmlList;
         bool m_expectedToSucceed;
         Utf8String m_assertMessage;
 
-        explicit SchemaItem(Utf8CP schemaXml) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(true) {}
+        SchemaItem(Utf8CP name, Utf8CP schemaXml) : m_name(name), m_schemaXmlList({schemaXml}), m_expectedToSucceed(true) {}
+        explicit SchemaItem(Utf8CP schemaXml) : SchemaItem("", schemaXml) {}
         SchemaItem(std::vector<Utf8String> const& schemaXmlList, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList(schemaXmlList), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
         SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
         SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXmlList({Utf8String(schemaXml)}), m_expectedToSucceed(expectedToSucceeed) {}

@@ -696,7 +696,7 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
         if (classMap->GetMapStrategy().IsNotMapped())
             continue;
 
-        if (auto rootMap = classMap->FindRootOfJoinedTable())
+        if (auto rootMap = classMap->FindParentOfJoinedTable())
             tables.insert(&rootMap->GetTable());
         else
             tables.insert(&classMap->GetTable());
