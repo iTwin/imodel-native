@@ -245,7 +245,7 @@ TEST_F(SchemaTest, RemoveBaseClassFromGrandChild)
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
     SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    EXPECT_EQ (SchemaReadStatus::Success, status);
 
     ECClassP child = schema->GetClassP("Child");
     ECPropertyP prop = child->GetPropertyP("PropA", false);
@@ -939,7 +939,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenReferencingNonExistingUnitAtt
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    EXPECT_EQ (SchemaReadStatus::Success, status);
 
     }
 
