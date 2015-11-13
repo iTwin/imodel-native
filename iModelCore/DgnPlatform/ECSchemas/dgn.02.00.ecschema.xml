@@ -14,6 +14,16 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
     </ECCustomAttributes>
     
+    <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
+         It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
+         It should not be applied to any other ECClass.
+         It is an error to call RegisterHandler() with a handler for an ECClass which lacks this custom attribute. -->
+    <ECClass typeName="ClassHasHandler" isDomainClass="False" isCustomAttributeClass="True" description="Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.">
+        <!-- Defines a list of names of actions which are prohibited when the associated handler is not available (e.g., because the DgnDomain is not loaded).
+             Restrictions are inherited from superclasses; a subclass can only be as or more restrictive than its superclass, never less. -->
+        <ECArrayProperty propertyName="Restrictions" typeName="string" description="List of actions which are not permitted when the associated handler is not available" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
@@ -1137,16 +1147,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
     </ECClass>
     -->
-
-    <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
-         It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
-         It should not be applied to any other ECClass.
-         It is an error to call RegisterHandler() with a handler for an ECClass which lacks this custom attribute. -->
-    <ECClass typeName="ClassHasHandler" isDomainClass="False" isCustomAttributeClass="True" description="Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.">
-        <!-- Defines a list of names of actions which are prohibited when the associated handler is not available (e.g., because the DgnDomain is not loaded).
-             Restrictions are inherited from superclasses; a subclass can only be as or more restrictive than its superclass, never less. -->
-        <ECArrayProperty propertyName="Restrictions" typeName="string" description="List of actions which are not permitted when the associated handler is not available" minOccurs="0" maxOccurs="unbounded" />
-    </ECClass>
 
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>
