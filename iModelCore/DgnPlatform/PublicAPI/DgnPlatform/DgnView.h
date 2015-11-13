@@ -506,5 +506,7 @@ public:
     virtual ViewControllerPtr _SupplyController(ViewDefinitionCR view) = 0;
 };
 
+ENUM_IS_FLAGS(ViewDefinition::Iterator::Options::Source);
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -282,7 +282,59 @@ ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     Prepare(db, ecsql, 0);
     }
 
-ENUM_IS_FLAGS(ViewDefinition::Iterator::Options::Source);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void appendSourceClause(Utf8StringR str, ViewDefinition::Iterator::Options::Source source)
+    {
+#ifdef ECSQL_SUPPORTS_BITWISE_OPS // It doesn't. NEEDSWORK.
+    Utf8Char buf[0x20];
+    BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(m_source));
+
+    str.append("0 != (" PROPNAME_Source " & ");
+    str.append(buf);
+    str.append(1, ')');
+#else
+    // ECSql doesn't support bitwise operators...
+    typedef ViewDefinition::Iterator::Options::Source Source;
+    bool user { 0 != static_cast<uint8_t>(source & Source::User) };
+    bool gen  { 0 != static_cast<uint8_t>(source & Source::Generated) };
+    bool priv { 0 != static_cast<uint8_t>(source & Source::Private) };
+
+    if (!user && !gen && !priv)
+        return;
+
+    // Parens in case we're proceeded by an AND...
+    str.append(1, '(');
+
+    Utf8Char buf[3];
+    if (user)
+        {
+        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::User));
+        str.append(PROPNAME_Source "=").append(buf);
+        }
+
+    if (gen)
+        {
+        if (user)
+            str.append(" OR ");
+
+        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::Generated));
+        str.append(PROPNAME_Source "=").append(buf);
+        }
+
+    if (priv)
+        {
+        if (user || gen)
+            str.append(" OR ");
+
+        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::Private));
+        str.append(PROPNAME_Source "=").append(buf);
+        }
+    
+    str.append(1, ')');
+#endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -315,12 +367,7 @@ Utf8String ViewDefinition::Iterator::Options::ToString() const
     if (Source::All != m_source)
         {
         str.append(str.empty() ? " WHERE " : " AND ");
-
-        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(m_source));
-
-        str.append("0 != (" PROPNAME_Source " & ");
-        str.append(buf);
-        str.append(1, ')');
+        appendSourceClause(str, m_source);
         }
 
     // ORDER BY
