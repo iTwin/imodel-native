@@ -58,9 +58,9 @@ public:
     bool operator== (ClassClause const& rhs) const;
     bool operator!= (ClassClause const& rhs) const;
 
-    bool IsNull () const;
+    ECDB_EXPORT bool IsNull () const;
     ECN::ECClassCR GetClass () const {return *m_class;}
-    Utf8StringCR GetAlias () const;
+    ECDB_EXPORT Utf8StringCR GetAlias () const;
     bool GetIsPolymorphic () const {return m_isPolymorphic;}
 
     Utf8String ToString () const;
@@ -96,14 +96,14 @@ public:
     SelectClause (SelectClause&& rhs);
     SelectClause& operator= (SelectClause&& rhs);
 
-    bool operator== (SelectClause const& rhs) const;
-    bool operator!= (SelectClause const& rhs) const;
+    ECDB_EXPORT bool operator== (SelectClause const& rhs) const;
+    ECDB_EXPORT bool operator!= (SelectClause const& rhs) const;
 
-    bool IsNull () const;
-    bool IsSelectAll () const;
-    Utf8StringCR GetClause () const;
+    ECDB_EXPORT bool IsNull () const;
+    ECDB_EXPORT bool IsSelectAll () const;
+    ECDB_EXPORT Utf8StringCR GetClause () const;
 
-    Utf8String ToString () const;
+    ECDB_EXPORT Utf8String ToString () const;
     };
 
 
@@ -127,9 +127,9 @@ public:
     bool operator== (JoinUsingClause const& rhs) const;
     bool operator!= (JoinUsingClause const& rhs) const;
 
-    bool IsNull () const;
-    ECN::ECRelationshipClassCR GetRelationshipClass () const;
-    JoinDirection GetJoinDirection () const;
+    ECDB_EXPORT bool IsNull () const;
+    ECDB_EXPORT ECN::ECRelationshipClassCR GetRelationshipClass () const;
+    ECDB_EXPORT JoinDirection GetJoinDirection () const;
 
     Utf8String ToString () const;
     };
@@ -165,14 +165,14 @@ public:
         WhereClause (WhereClause&& rhs);
         WhereClause& operator= (WhereClause&& rhs);
 
-        bool operator== (WhereClause const& rhs) const;
-        bool operator!= (WhereClause const& rhs) const;
+        ECDB_EXPORT bool operator== (WhereClause const& rhs) const;
+        ECDB_EXPORT bool operator!= (WhereClause const& rhs) const;
 
-        bool IsNull () const;
+        ECDB_EXPORT bool IsNull () const;
 
         Type GetType () const;
         bool GetRelationshipEnd (Utf8CP& className, Utf8CP& ecInstanceIdExpression, ECN::ECRelationshipEnd relationshipEnd) const;
-        Utf8StringCR GetExpression () const;
+        ECDB_EXPORT Utf8StringCR GetExpression () const;
 
         Utf8String ToString () const;
     };
@@ -200,11 +200,11 @@ public:
     bool operator== (LimitClause const& rhs) const;
     bool operator!= (LimitClause const& rhs) const;
 
-    bool IsNull () const;
+    ECDB_EXPORT bool IsNull () const;
 
-    Utf8StringCR GetLimitClause () const;
-    bool HasOffsetClause () const;
-    Utf8StringCR GetOffsetClause () const;
+    ECDB_EXPORT Utf8StringCR GetLimitClause () const;
+    ECDB_EXPORT bool HasOffsetClause () const;
+    ECDB_EXPORT Utf8StringCR GetOffsetClause () const;
 
     Utf8String ToString () const;
     };
