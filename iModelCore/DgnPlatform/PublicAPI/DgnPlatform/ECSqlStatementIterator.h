@@ -18,9 +18,11 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct ECSqlStatementEntry
     {
-    protected:
-        BeSQLite::EC::ECSqlStatement* m_statement;
-        ECSqlStatementEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : m_statement(statement) {}
+protected:
+    BeSQLite::EC::ECSqlStatement* m_statement;
+    ECSqlStatementEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : m_statement(statement) {}
+public:
+    BeSQLite::EC::ECSqlStatement* GetStatement() const { return m_statement; }
     };
 
 //=======================================================================================

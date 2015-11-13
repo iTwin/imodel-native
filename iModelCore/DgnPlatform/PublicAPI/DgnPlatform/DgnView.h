@@ -193,6 +193,10 @@ public:
         DgnModelId GetBaseModelId() const { return m_statement->GetValueId<DgnModelId>(3); } //!< The view's base model
         Utf8CP GetDescr() const { return m_statement->GetValueText(4); } //!< The view's description
         DgnClassId GetClassId() const { return m_statement->GetValueId<DgnClassId>(5); } //!< The view's ECClass ID
+
+        DGNPLATFORM_EXPORT bool IsPhysicalView() const;
+        DGNPLATFORM_EXPORT bool IsDrawingView() const;
+        DGNPLATFORM_EXPORT bool IsSheetView() const;
     };
 
     //! An iterator over the view definitions stored in a DgnDb

@@ -399,3 +399,26 @@ size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
     return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry const& entry)
+    {
+    auto stmt = entry.GetStatement();
+    DgnDbP db = nullptr != stmt ? const_cast<DgnDbP>(static_cast<DgnDbCP>(stmt->GetECDb())) : nullptr; // ugh constness.
+    if (nullptr == db)
+        return false;
+
+    auto entryClass = db->Schemas().GetECClass(entry.GetClassId().GetValue());
+    auto desiredClass = db->Schemas().GetECClass(T_Desired::QueryClassId(*db).GetValue());
+    return nullptr != entryClass && nullptr != desiredClass && entryClass->Is(desiredClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition::Entry::IsPhysicalView() const { return isEntryOfClass<PhysicalViewDefinition>(*this); }
+bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<DrawingViewDefinition>(*this); }
+bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
+
+
