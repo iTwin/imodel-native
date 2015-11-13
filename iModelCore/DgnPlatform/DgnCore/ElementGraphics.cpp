@@ -223,10 +223,10 @@ virtual void _DrawTextString(TextStringCR text) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _DrawSymbol(IDisplaySymbolP symbolDef, TransformCP trans, ClipPlaneSetP clipPlanes, bool ignoreColor, bool ignoreWeight) override
+virtual void _DrawSymbol(IDisplaySymbolP symbolDef, TransformCP trans, ClipPlaneSetP clipPlanes) override
     {
     // Pass along any symbol that is drawn from _ExpandPatterns/_ExpandLineStyles, etc.
-    m_output.ClipAndProcessSymbol(symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
+    m_output.ClipAndProcessSymbol(symbolDef, trans, clipPlanes);
     }
 
 /*---------------------------------------------------------------------------------**//**

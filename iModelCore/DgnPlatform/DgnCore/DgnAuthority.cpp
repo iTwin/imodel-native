@@ -476,11 +476,35 @@ static DgnAuthority::Code createResourceCode(Utf8StringCR name, Utf8CP nameSpace
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateResourceCode(DgnAuthority::Code const& code, Utf8CP nameSpace)
+    {
+    return code.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Resource) && code.GetNameSpace().Equals(nameSpace) && !code.GetValue().empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::Code LightDefinition::CreateLightDefinitionCode(Utf8StringCR name)
     {
     return createResourceCode(name, DGN_CLASSNAME_LightDefinition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code ViewDefinition::CreateCode(Utf8StringCR name)
+    {
+    return createResourceCode(name, DGN_CLASSNAME_ViewDefinition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition::IsValidCode(Code const& code)
+    {
+    return validateResourceCode(code, DGN_CLASSNAME_ViewDefinition);
     }
 
 /*---------------------------------------------------------------------------------**//**

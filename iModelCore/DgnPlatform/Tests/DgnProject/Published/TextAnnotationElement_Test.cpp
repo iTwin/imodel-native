@@ -92,18 +92,13 @@ TEST(TextAnnotationElementTest, BasicCrud)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DgnViews::View view;
-        view.SetDgnViewType(DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingView")), DgnViewType::Drawing);
-        view.SetDgnViewSource(DgnViewSource::Generated);
-        view.SetName("TextAnnotationElementTest-BasicCrud");
-        view.SetBaseModelId(modelId);
-
-        EXPECT_TRUE(BE_SQLITE_OK == db->Views().Insert(view));
-        EXPECT_TRUE(view.GetId().IsValid());
+        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotationElementTest-BasicCrud",
+                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        DrawingViewController viewController(*db, view.GetId());
+        DrawingViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
@@ -256,18 +251,13 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DgnViews::View view;
-        view.SetDgnViewType(DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalView")), DgnViewType::Physical);
-        view.SetDgnViewSource(DgnViewSource::Generated);
-        view.SetName("PhysicalTextAnnotationElementTest-BasicCrud");
-        view.SetBaseModelId(modelId);
-
-        EXPECT_TRUE(BE_SQLITE_OK == db->Views().Insert(view));
-        EXPECT_TRUE(view.GetId().IsValid());
+        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "PhysicalTextAnnotationElementTest-BasicCrud",
+                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        PhysicalViewController viewController(*db, view.GetId());
+        PhysicalViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);

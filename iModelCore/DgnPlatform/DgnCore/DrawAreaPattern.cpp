@@ -733,7 +733,12 @@ static MaterialPtr CreateGeometryMapMaterial(ViewContextR context, PatternSymbol
     PatternHelper::CookPatternSymbology(*params, context);
     symbCell.ApplyElemDisplayParams(*context.GetCurrentDisplayParams());
 
-    context.GetIViewDraw().DefineQVGeometryMap(*pMaterial, symbCell.GetElemHandle(), &spacing, !symbCell.IsPointCellSymbol(), context, true);
+    DRange2d range;
+    DisplayHandler::GetDPRange(&range.low, &eh.GetElementCP ()->hdr.dhdr.range);
+    range.high.x = range.low.x + spacing.x;
+    range.high.y = range.low.y + spacing.y;
+
+    context.GetIViewDraw().DefineQVGeometryMap(*pMaterial, symbCell.GetElemHandle(), range, !symbCell.IsPointCellSymbol(), context, true);
 
     return pMaterial;
     }
@@ -814,7 +819,7 @@ double          scale
     if (DrawPurpose::Plot == context.GetDrawPurpose())      // Opt for slower, higher quality when plotting.
         return false;
 
-#if 1 || !defined (BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
+#if !defined (BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
     double          pixelSize = context.GetPixelSizeAtPoint(NULL);
     double          tilePixels = MAX (spacing.x, spacing.y) / pixelSize;
     static double   s_maxGeometryMapTile = 32.0;
@@ -968,7 +973,7 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 }
             else
                 {
-                context.DrawSymbol(&symbCell, &cellTrans, NULL, false, false);
+                context.DrawSymbol(&symbCell, &cellTrans, NULL);
                 }
 
             wasAborted = context.WasAborted();

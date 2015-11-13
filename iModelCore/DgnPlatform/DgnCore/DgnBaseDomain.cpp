@@ -60,10 +60,7 @@ HANDLER_DEFINE_MEMBERS(Namespace)
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(ViewHandler)
-
 HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
-HANDLER_EXTENSION_DEFINE_MEMBERS(ViewHandlerOverride)
 
 DOMAIN_DEFINE_MEMBERS(DgnBaseDomain)
 
@@ -73,7 +70,6 @@ DOMAIN_DEFINE_MEMBERS(DgnBaseDomain)
 DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain",1) 
     {
     // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
-    RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
     RegisterHandler(dgn_AspectHandler::TextAnnotationItemHandler::GetHandler());
@@ -110,6 +106,12 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
+
+    RegisterHandler(dgn_ElementHandler::PhysicalViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

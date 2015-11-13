@@ -181,7 +181,7 @@ DG_INLINE void ViewContext::PopTransformClip() {_PopTransformClip();}
 DG_INLINE void ViewContext::PushTransform(TransformCR trans) {_PushTransform(trans);}
 DG_INLINE void ViewContext::PushClip(ClipVectorCR clip) {_PushClip(clip);}
 DG_INLINE IPickGeomP ViewContext::GetIPickGeom() {return _GetIPickGeom();}
-DG_INLINE void ViewContext::DrawSymbol(IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) {_DrawSymbol(symb, trans, clip, ignoreColor, ignoreWeight);}
+DG_INLINE void ViewContext::DrawSymbol(IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip) {_DrawSymbol(symb, trans, clip);}
 DG_INLINE void ViewContext::InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
 DG_INLINE void ViewContext::DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
 DG_INLINE void ViewContext::DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed){_DrawStyledLineString3d(nPts, pts, range, closed);}
@@ -270,7 +270,7 @@ DG_INLINE void IViewDraw::DrawQvElem(QvElem* qvElem, int subElemIndex){_DrawQvEl
 DG_INLINE void IViewDraw::ClearZ() {_ClearZ(); }
 DG_INLINE StatusInt IViewDraw::TestOcclusion(int numVolumes, DPoint3dP verts, int* results){return _TestOcclusion(numVolumes, verts, results);}
 DG_INLINE uintptr_t IViewDraw::DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
-DG_INLINE void IViewDraw::DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
+DG_INLINE void IViewDraw::DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DRange2dCR range, bool useGeometryColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap(textureId, stroker, range, useGeometryColors, seedContext, forAreaPattern);}
 DG_INLINE void IViewDraw::PushClipStencil(QvElem* qvElem) {_PushClipStencil(qvElem);}
 DG_INLINE void IViewDraw::PopClipStencil() {_PopClipStencil(); }
 

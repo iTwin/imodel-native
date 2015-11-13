@@ -940,7 +940,7 @@ void ViewContext::CookDisplayParams()
 
     //  NEEDSWORK_LINESTYLES
     //  If this is a 3d view and we have a line style then we want to convert the line style
-    //  to a texture line style.  We don't do it prior to this because the raster image
+    //  to a texture line style.  We don't do it prior to this because generating the geometry map
     //  may use the current symbology.  This seems like a horrible place to do this,
     //  so we need to come up with something better.
     LineStyleSymb & lsSym = m_elemMatSymb.GetLineStyleSymbR();
@@ -2327,13 +2327,8 @@ void ElemDisplayParams::Resolve(ViewContextR context)
 * draw a symbol into the current context
 * @bsimethod                                                    Keith.Bentley   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight)
+void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip)
     {
-#if defined (DGNPLATFORM_WIP_SYMBOL_SYMBOLOGY)
-    // We need to revisit "ignoreColor" and "ignoreWeight" and remove these args. The DgnGeomPart for the symbol doesn't 
-    // store any symbology, so there should never be a reason to "ignore" anything, the correct symbology, either from the
-    // symbol definition or element, should be setup prior to calling this method.
-#endif
     QvCache* symbolCache = T_HOST.GetGraphicsAdmin()._GetSymbolCache();
 
     if (!symbolCache || CheckICachedDraw())

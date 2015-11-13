@@ -192,7 +192,12 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE( result == BE_SQLITE_OK);
 
+    TestDataManager::MustBeBriefcase(m_db, mode);
+    ASSERT_TRUE(m_db->IsBriefcase());
+    ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
+
     ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
+    //m_db->SaveChanges(); need this?
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
@@ -265,8 +270,6 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
     SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
-
-    m_db->Txns().EnableTracking(true);
     }
 
 /*---------------------------------------------------------------------------------**//**

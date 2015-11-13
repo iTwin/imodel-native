@@ -21,7 +21,7 @@ struct TextAnnotationSeedTest : public AnnotationTestFixture
     // @bsimethod                                                   Umar.Hayat     07/15
     //---------------------------------------------------------------------------------------
 public: TextAnnotationSeedTest() :
-        AnnotationTestFixture (__FILE__, false /*2D*/)
+        AnnotationTestFixture (__FILE__, false /*2D*/, false /*needsBriefcase*/)
         {
         }
 

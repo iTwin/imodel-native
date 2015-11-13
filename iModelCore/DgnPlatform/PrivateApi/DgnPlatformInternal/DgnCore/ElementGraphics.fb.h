@@ -28,6 +28,7 @@ struct BeginSubCategory;
 struct GeomPart;
 struct BasicSymbology;
 struct LineStyle;
+struct LineStyleModifiers;
 struct Material;
 struct AreaFill;
 
@@ -588,6 +589,101 @@ inline flatbuffers::Offset<LineStyle> CreateLineStyle(flatbuffers::FlatBufferBui
    int64_t lineStyleId = 0) {
   LineStyleBuilder builder_(_fbb);
   builder_.add_lineStyleId(lineStyleId);
+  return builder_.Finish();
+}
+
+struct LineStyleModifiers : private flatbuffers::Table {
+  uint32_t modifiers() const { return GetField<uint32_t>(4, 0); }
+  double scale() const { return GetField<double>(6, 0); }
+  double dashScale() const { return GetField<double>(8, 0); }
+  double gapScale() const { return GetField<double>(10, 0); }
+  double startWidth() const { return GetField<double>(12, 0); }
+  double endWidth() const { return GetField<double>(14, 0); }
+  double distPhase() const { return GetField<double>(16, 0); }
+  double fractPhase() const { return GetField<double>(18, 0); }
+  const DPoint3d *normal() const { return GetStruct<const DPoint3d *>(20); }
+  double yaw() const { return GetField<double>(22, 0); }
+  double pitch() const { return GetField<double>(24, 0); }
+  double roll() const { return GetField<double>(26, 0); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint32_t>(verifier, 4 /* modifiers */) &&
+           VerifyField<double>(verifier, 6 /* scale */) &&
+           VerifyField<double>(verifier, 8 /* dashScale */) &&
+           VerifyField<double>(verifier, 10 /* gapScale */) &&
+           VerifyField<double>(verifier, 12 /* startWidth */) &&
+           VerifyField<double>(verifier, 14 /* endWidth */) &&
+           VerifyField<double>(verifier, 16 /* distPhase */) &&
+           VerifyField<double>(verifier, 18 /* fractPhase */) &&
+           VerifyField<DPoint3d>(verifier, 20 /* normal */) &&
+           VerifyField<double>(verifier, 22 /* yaw */) &&
+           VerifyField<double>(verifier, 24 /* pitch */) &&
+           VerifyField<double>(verifier, 26 /* roll */) &&
+           verifier.EndTable();
+  }
+  bool has_modifiers() const { return CheckField(4); }
+  bool has_scale() const { return CheckField(6); }
+  bool has_dashScale() const { return CheckField(8); }
+  bool has_gapScale() const { return CheckField(10); }
+  bool has_startWidth() const { return CheckField(12); }
+  bool has_endWidth() const { return CheckField(14); }
+  bool has_distPhase() const { return CheckField(16); }
+  bool has_fractPhase() const { return CheckField(18); }
+  bool has_normal() const { return CheckField(20); }
+  bool has_yaw() const { return CheckField(22); }
+  bool has_pitch() const { return CheckField(24); }
+  bool has_roll() const { return CheckField(26); }
+};
+
+struct LineStyleModifiersBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_modifiers(uint32_t modifiers) { fbb_.AddElement<uint32_t>(4, modifiers, 0); }
+  void add_scale(double scale) { fbb_.AddElement<double>(6, scale, 0); }
+  void add_dashScale(double dashScale) { fbb_.AddElement<double>(8, dashScale, 0); }
+  void add_gapScale(double gapScale) { fbb_.AddElement<double>(10, gapScale, 0); }
+  void add_startWidth(double startWidth) { fbb_.AddElement<double>(12, startWidth, 0); }
+  void add_endWidth(double endWidth) { fbb_.AddElement<double>(14, endWidth, 0); }
+  void add_distPhase(double distPhase) { fbb_.AddElement<double>(16, distPhase, 0); }
+  void add_fractPhase(double fractPhase) { fbb_.AddElement<double>(18, fractPhase, 0); }
+  void add_normal(const DPoint3d *normal) { fbb_.AddStruct(20, normal); }
+  void add_yaw(double yaw) { fbb_.AddElement<double>(22, yaw, 0); }
+  void add_pitch(double pitch) { fbb_.AddElement<double>(24, pitch, 0); }
+  void add_roll(double roll) { fbb_.AddElement<double>(26, roll, 0); }
+  LineStyleModifiersBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  LineStyleModifiersBuilder &operator=(const LineStyleModifiersBuilder &);
+  flatbuffers::Offset<LineStyleModifiers> Finish() {
+    auto o = flatbuffers::Offset<LineStyleModifiers>(fbb_.EndTable(start_, 12));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<LineStyleModifiers> CreateLineStyleModifiers(flatbuffers::FlatBufferBuilder &_fbb,
+   uint32_t modifiers = 0,
+   double scale = 0,
+   double dashScale = 0,
+   double gapScale = 0,
+   double startWidth = 0,
+   double endWidth = 0,
+   double distPhase = 0,
+   double fractPhase = 0,
+   const DPoint3d *normal = 0,
+   double yaw = 0,
+   double pitch = 0,
+   double roll = 0) {
+  LineStyleModifiersBuilder builder_(_fbb);
+  builder_.add_roll(roll);
+  builder_.add_pitch(pitch);
+  builder_.add_yaw(yaw);
+  builder_.add_fractPhase(fractPhase);
+  builder_.add_distPhase(distPhase);
+  builder_.add_endWidth(endWidth);
+  builder_.add_startWidth(startWidth);
+  builder_.add_gapScale(gapScale);
+  builder_.add_dashScale(dashScale);
+  builder_.add_scale(scale);
+  builder_.add_normal(normal);
+  builder_.add_modifiers(modifiers);
   return builder_.Finish();
 }
 
