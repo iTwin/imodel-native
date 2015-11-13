@@ -217,9 +217,9 @@ public:
             //! Defines the view source(s) to include in the query
             enum class Source : uint8_t
             {
-                User = DgnViewSource::User, //!< Include user-defined views
-                Generated = DgnViewSource::Generated, //!< Include program-generated views
-                Private = DgnViewSource::Private, //!< Include internally-defined views
+                User = (uint8_t)DgnViewSource::User, //!< Include user-defined views
+                Generated = (uint8_t)DgnViewSource::Generated, //!< Include program-generated views
+                Private = (uint8_t)DgnViewSource::Private, //!< Include internally-defined views
                 All = User | Generated | Private, //!< Include views from all sources
             };
         private:
