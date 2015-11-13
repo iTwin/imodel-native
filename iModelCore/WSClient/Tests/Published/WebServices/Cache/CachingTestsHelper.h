@@ -62,6 +62,7 @@ ICachingDataSource::DataOrigin origin = ICachingDataSource::DataOrigin::CachedDa
 
 // Create result with IsModified == false
 WSObjectsResponse StubWSObjectsResponseNotModified();
+WSObjectsResponse StubWSObjectsResponseV2(Utf8StringCR jsonBody, Utf8StringCR eTag = "");
 WSObjectsResult StubWSObjectsResultNotModified();
 WSObjectsResult StubWSObjectsResultInvalidInstances();
 
