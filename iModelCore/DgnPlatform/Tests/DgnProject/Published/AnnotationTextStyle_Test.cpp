@@ -126,7 +126,7 @@ TEST_F(AnnotationTextStyleTest, DeepCopy)
     DECLARE_AND_SET_DATA_1(style);
 
     //.............................................................................................
-    AnnotationTextStylePtr clonedStyle = style->Clone();
+    AnnotationTextStylePtr clonedStyle = style->CreateCopy();
     ASSERT_TRUE(clonedStyle.IsValid());
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
@@ -147,9 +147,9 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Verify initial state.
-	// The GenericDgnModelTestFixture will open 2dMetricGeneral, which contains a text element with style (none), thus there will be 1 style (the equivalent of style (none)).
-	static const size_t SEED_STYLE_COUNT = 1;
-        EXPECT_EQ((0 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
+    // The GenericDgnModelTestFixture will open 2dMetricGeneral, which contains a text element with style (none), thus there will be 1 style (the equivalent of style (none)).
+    static const size_t SEED_STYLE_COUNT = 1;
+    EXPECT_EQ((0 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
 
     //.............................................................................................
     // Insert
@@ -159,21 +159,21 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     ASSERT_TRUE(testStyle->Insert().IsValid());
     ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
-	EXPECT_EQ((1 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
+    EXPECT_EQ((1 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(AnnotationTextStyle::ExistsById(testStyle->GetElementId(), project));
-    EXPECT_TRUE(AnnotationTextStyle::ExistsByName(name.c_str(), project));
+    EXPECT_TRUE(AnnotationTextStyle::Get(project, testStyle->GetElementId()).IsValid());
+    EXPECT_TRUE(AnnotationTextStyle::Get(project, name.c_str()).IsValid());
 
-    AnnotationTextStyleCPtr fileStyle = AnnotationTextStyle::QueryStyle(testStyle->GetElementId(), project);
+    AnnotationTextStyleCPtr fileStyle = AnnotationTextStyle::Get(project, testStyle->GetElementId());
     ASSERT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
     EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = AnnotationTextStyle::QueryStyle(name, project);
+    fileStyle = AnnotationTextStyle::Get(project, name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -182,7 +182,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     
     //.............................................................................................
     // Update
-    AnnotationTextStylePtr mutatedStyle = fileStyle->Clone();
+    AnnotationTextStylePtr mutatedStyle = fileStyle->CreateCopy();
     ASSERT_TRUE(mutatedStyle.IsValid());
 
     name = "DifferentName"; mutatedStyle->SetName(name.c_str());
@@ -192,9 +192,9 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
 
     ASSERT_TRUE(mutatedStyle->Update().IsValid());
 
-	EXPECT_EQ((1 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
+    EXPECT_EQ((1 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
 
-    fileStyle = AnnotationTextStyle::QueryStyle(name, project);
+    fileStyle = AnnotationTextStyle::Get(project, name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -205,44 +205,43 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     // Iterate
     auto iter1 = AnnotationTextStyle::MakeIterator(project);
     size_t numStyles = 0;
-	bool foundOurStyle = false;
+    bool foundOurStyle = false;
 
     for (auto const& style : iter1)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
         ASSERT_TRUE(style.GetId().IsValid());
         
-        AnnotationTextStyleCPtr iterStyle = AnnotationTextStyle::QueryStyle(style.GetId(), project);
+        AnnotationTextStyleCPtr iterStyle = AnnotationTextStyle::Get(project, style.GetId());
         ASSERT_TRUE(iterStyle.IsValid());
 
-		if (!foundOurStyle)
-			foundOurStyle = (0 == name.compare(iterStyle->GetName()));
+        if (!foundOurStyle)
+            foundOurStyle = (0 == name.compare(iterStyle->GetName()));
 
         ++numStyles;
         }
 
-	EXPECT_EQ((1 + SEED_STYLE_COUNT), numStyles);
-	EXPECT_TRUE(foundOurStyle);
+    EXPECT_EQ((1 + SEED_STYLE_COUNT), numStyles);
+    EXPECT_TRUE(foundOurStyle);
 
-    auto iter2 = AnnotationTextStyle::MakeOrderedIterator(project);
+    auto iter2 = AnnotationTextStyle::MakeIterator(project);
     numStyles = 0;
-	foundOurStyle = false;
+    foundOurStyle = false;
     
-	for (auto const& style : iter2)
+    for (auto const& style : iter2)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
         ASSERT_TRUE(style.GetId().IsValid());
 
-        auto iterStyle = AnnotationTextStyle::QueryStyle(style.GetId(), project);
+        auto iterStyle = AnnotationTextStyle::Get(project, style.GetId());
         ASSERT_TRUE(iterStyle.IsValid());
 
-		if (!foundOurStyle)
-			foundOurStyle = (0 == name.compare(iterStyle->GetName()));
+        if (!foundOurStyle)
+            foundOurStyle = (0 == name.compare(iterStyle->GetName()));
 
         ++numStyles;
         }
 
-	EXPECT_EQ((1 + SEED_STYLE_COUNT), numStyles);
-	EXPECT_TRUE(foundOurStyle);
+    EXPECT_EQ((1 + SEED_STYLE_COUNT), numStyles);
+    EXPECT_TRUE(foundOurStyle);
     }
-

@@ -93,7 +93,7 @@ public:
     AnnotationRunType GetType() const { return _GetType(); }
     DgnElementId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationTextStyleOptions);
-    AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
 };
@@ -234,7 +234,7 @@ public:
     DgnDbR GetDbR() const { return *m_dgndb; }
     DgnElementId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationTextStyleOptions);
-    AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
     AnnotationRunCollectionCR GetRuns() const { return m_runs; }
@@ -315,7 +315,7 @@ public:
     void SetJustification(HorizontalJustification value) { m_justification = value; }
     DgnElementId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnElementId, SetAnnotationTextStyleOptions);
-    AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return AnnotationTextStyle::Get(*m_dgndb, m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
     AnnotationParagraphCollectionCR GetParagraphs() const { return m_paragraphs; }

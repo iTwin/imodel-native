@@ -184,12 +184,12 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     docStyle->Insert();
     ASSERT_TRUE(docStyle->GetElementId().IsValid());
 
-    AnnotationTextStylePtr parStyle = docStyle->Clone();
+    AnnotationTextStylePtr parStyle = docStyle->CreateCopy();
     parStyle->SetName("parStyle");
     parStyle->Insert();
     ASSERT_TRUE(parStyle->GetElementId().IsValid());
 
-    AnnotationTextStylePtr runStyle = docStyle->Clone();
+    AnnotationTextStylePtr runStyle = docStyle->CreateCopy();
     runStyle->SetName("runStyle");
     runStyle->Insert();
     ASSERT_TRUE(runStyle->GetElementId().IsValid());

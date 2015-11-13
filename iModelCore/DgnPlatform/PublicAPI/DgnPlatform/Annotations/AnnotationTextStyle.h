@@ -104,58 +104,38 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DictionaryElement
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, DictionaryElement);
-public:
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(AnnotationTextStyle::T_Super::CreateParams);
-
-        AnnotationTextStylePropertyBag  m_data;
-        Utf8String                      m_descr;
-
-        //! Constructor from base class. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
-
-        //! Constructor
-        //! @param[in]      db    DgnDb in which the text style is to reside
-        //! @param[in]      name  The name of the text style. Must be unique within the DgnDb
-        //! @param[in]      data  Style properties
-        //! @param[in]      descr Optional style description
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR name="", AnnotationTextStylePropertyBagCR data=AnnotationTextStylePropertyBag(), Utf8StringCR descr="");
-    };
+    
 private:
     friend struct AnnotationTextStylePersistence;
     friend struct TextStyleInterop;
 
+    Utf8String m_description;
     AnnotationTextStylePropertyBag m_data;
-    Utf8String m_descr;
 
-    void Reset();
-    void ResetProperties();
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    DGNPLATFORM_EXPORT static Code CreateCodeFromName(Utf8CP);
+
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
-    DGNPLATFORM_EXPORT virtual uint32_t _GetMemSize() const override;
-
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
+    virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     virtual Code _GenerateDefaultCode() override { return Code(); }
+
 public:
-    explicit AnnotationTextStyle(DgnDbR db) : AnnotationTextStyle(CreateParams(db)) { }
-    explicit AnnotationTextStyle(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) { }
-
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle); }
+    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
+    
+    explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), Code())) {}
+    explicit AnnotationTextStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationTextStylePtr Create(DgnDbR db) { return new AnnotationTextStyle(db); }
-    AnnotationTextStylePtr Clone() const { return MakeCopy<AnnotationTextStyle>(); }
-
-    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const;
+    AnnotationTextStylePtr CreateCopy() const { return MakeCopy<AnnotationTextStyle>(); }
 
     Utf8String GetName() const { return GetCode().GetValue(); }
-    Utf8StringCR GetDescription() const { return m_descr; }
-    void SetDescription(Utf8StringCR value) { m_descr = value; }
-    void SetName(Utf8StringCR value) { SetCode(CreateStyleCode(value)); }
-
-    DGNPLATFORM_EXPORT static Code CreateStyleCode(Utf8StringCR name);
+    void SetName(Utf8CP value) { SetCode(CreateCodeFromName(value)); }
+    Utf8StringCR GetDescription() const { return m_description; }
+    void SetDescription(Utf8StringCR value) { m_description = value; }
     
     DGNPLATFORM_EXPORT AnnotationColorType GetColorType() const;
     DGNPLATFORM_EXPORT void SetColorType(AnnotationColorType);
@@ -188,42 +168,41 @@ public:
     DGNPLATFORM_EXPORT double GetWidthFactor() const;
     DGNPLATFORM_EXPORT void SetWidthFactor(double);
 
-    DGNPLATFORM_EXPORT DgnFontCR ResolveFont() const;
+    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const;
+    DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle); }
-    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
+    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCodeFromName(name)); }
+    static AnnotationTextStyleCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
+    static AnnotationTextStyleCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTextStyle>(id); }
+    static AnnotationTextStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTextStyle>(id); }
+    static AnnotationTextStylePtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
+    AnnotationTextStyleCPtr Insert() { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this); }
+    AnnotationTextStyleCPtr Update() { return GetDgnDb().Elements().Update<AnnotationTextStyle>(*this); }
+    DgnDbStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
 
-    AnnotationTextStyleCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this, status); }
-    AnnotationTextStyleCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<AnnotationTextStyle>(*this, status); }
-
-    DGNPLATFORM_EXPORT static DgnElementId QueryStyleId(Code const& code, DgnDbR db);
-    static DgnElementId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName), db); }
-    static AnnotationTextStyleCPtr QueryStyle(DgnElementId styleId, DgnDbR db) { return db.Elements().Get<AnnotationTextStyle>(styleId); }
-    static AnnotationTextStyleCPtr QueryStyle(Utf8StringCR styleName, DgnDbR db) { return QueryStyle(QueryStyleId(styleName, db), db); }
-
-    DGNPLATFORM_EXPORT static bool ExistsById(DgnElementId id, DgnDbR db);
-    static bool ExistsByName(Utf8StringCR name, DgnDbR db) { return QueryStyleId(name, db).IsValid(); }
-
-    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db);
-
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     11/2014
+    //=======================================================================================
     struct Entry : ECSqlStatementEntry
     {
+        DEFINE_T_SUPER(ECSqlStatementEntry);
         friend struct ECSqlStatementIterator<Entry>;
         friend struct AnnotationTextStyle;
+    
     private:
-        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
+        Entry() : T_Super(nullptr) {}
+        Entry(BeSQLite::EC::ECSqlStatement* stmt) : T_Super(stmt) {}
+    
     public:
         DgnElementId GetId() const { return m_statement->GetValueId<DgnElementId>(0); }
         Utf8CP GetName() const { return m_statement->GetValueText(1); }
         Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
     };
 
-    struct Iterator : ECSqlStatementIterator<Entry>
-    {
-    };
+    typedef ECSqlStatementIterator<Entry> Iterator;
 
-    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR db, bool ordered=false);
-    static Iterator MakeOrderedIterator(DgnDbR db) { return MakeIterator(db, true); }
+    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
+    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
 };
 
 //! @endGroup
@@ -237,8 +216,9 @@ namespace dgn_ElementHandler
     struct AnnotationTextStyleHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, AnnotationTextStyle, AnnotationTextStyleHandler, Element, DGNPLATFORM_EXPORT);
+
     protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
     };
 }
 

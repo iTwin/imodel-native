@@ -504,7 +504,7 @@ DgnAuthority::Code DgnTexture::_GenerateDefaultCode()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code AnnotationTextStyle::CreateStyleCode(Utf8StringCR name)
+DgnAuthority::Code AnnotationTextStyle::CreateCodeFromName(Utf8CP name)
     {
     return createResourceCode(name, DGN_CLASSNAME_AnnotationTextStyle);
     }

@@ -14,8 +14,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
     {
-    static const CharCP STYLE_NAME = "AnnotationTextStyle1";
-    AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::QueryStyle(STYLE_NAME, db);
+    static const Utf8CP STYLE_NAME = "AnnotationTextStyle1";
+    AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::Get(db, STYLE_NAME);
     if (existingStyle.IsValid())
         return existingStyle->GetElementId();
     

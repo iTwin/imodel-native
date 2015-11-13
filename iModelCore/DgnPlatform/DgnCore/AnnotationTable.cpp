@@ -4006,7 +4006,7 @@ AnnotationTextStyleCP  AnnotationTableElement::GetTextStyle (AnnotationTableRegi
     if (it != m_textStyles.end())
         return it->second.get();
 
-    AnnotationTextStyleCPtr textStyle = AnnotationTextStyle::QueryStyle (textStyleId, GetDgnDb());
+    AnnotationTextStyleCPtr textStyle = AnnotationTextStyle::Get(GetDgnDb(), textStyleId);
 
     // If textStyle can't be found, make a default one with the backup height.  Presumably this
     // can only happen if the style was deleted in an old version since we no longer allow used
@@ -5749,7 +5749,7 @@ void AnnotationTableElement::_CopyFrom(DgnElementCR rhsElement)
     Initialize (false);
 
     for (bpair<AnnotationTableRegion, AnnotationTextStyleCPtr> const& entry : rhs->m_textStyles)
-        m_textStyles[entry.first] = entry.second->Clone();
+        m_textStyles[entry.first] = entry.second->CreateCopy();
 
     for (AnnotationTableColumnCR rhsCol : rhs->m_columns)
         m_columns[rhsCol.GetIndex()].CopyDataFrom (rhsCol);
