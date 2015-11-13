@@ -80,7 +80,7 @@ private:
     std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
     std::vector<ECSqlBinder*> m_binders;
     std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
-    bmap<Utf8String, int> m_nameToIndexMapping;
+    std::map<Utf8String, int> m_nameToIndexMapping;
 
     std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
     std::vector<ECSqlBinder*> m_bindersToCallOnStep;
@@ -105,7 +105,7 @@ public:
 
     ECSqlBinder* AddBinder (ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual = false, bool enforceConstraints = false);
     ECSqlBinder* AddInternalBinder (size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
-    ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder);
+    ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8CP parameterName );
 
     ECSqlStatus OnBeforeStep ();
 

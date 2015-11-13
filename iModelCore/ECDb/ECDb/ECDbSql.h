@@ -681,7 +681,8 @@ struct ECDbClassMapInfo : NonCopyableClass
     public:
         ECDbClassMapInfo (ECDbMapStorage& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
             :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
-            {}
+            {
+            }
 
         ECDbMapStorage& GetMapStorageR () { return m_map; }
         ECDbMapStorage const& GetMapStorage () const{ return m_map; }

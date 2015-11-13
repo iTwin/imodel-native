@@ -45,17 +45,14 @@ private:
     Strategy m_strategy;
     Options m_options;
     bool m_appliesToSubclasses;
-    UserECDbMapStrategy const* m_root;
 
     BentleyStatus Assign(Strategy strategy, Options, bool appliesToSubclasses);
     static BentleyStatus TryParse(Strategy&, Utf8CP str);
     static BentleyStatus TryParse(Options& option, Utf8CP str);
 
 public:
-    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_appliesToSubclasses(false), m_root(nullptr) {}
+    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_appliesToSubclasses(false) {}
     ~UserECDbMapStrategy() {}
-
-    UserECDbMapStrategy const& AssignRoot(UserECDbMapStrategy const& parent);
 
     bool IsValid() const;
 

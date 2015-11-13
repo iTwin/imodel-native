@@ -23,13 +23,12 @@ BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb
     ecsqlParseTree = nullptr;
 
     ScopedContext scopedContext (*this, ecdb, classView);
-
-    RefCountedPtr<com::sun::star::lang::XMultiServiceFactory> serviceFactory = 
-        com::sun::star::lang::XMultiServiceFactory::CreateInstance();
+    //RefCountedPtr<com::sun::star::lang::XMultiServiceFactory> serviceFactory = 
+    //    com::sun::star::lang::XMultiServiceFactory::CreateInstance();
     //Parse statement
     Utf8String error;
-    OSQLParser ecsqlParser (serviceFactory);
-    OSQLParseNode* ecsqlParseTreeRaw = ecsqlParser.parseTree (error, ecsql);
+    OSQLParser* ecsqlParser = GetSharedParser();// (serviceFactory);
+    OSQLParseNode* ecsqlParseTreeRaw = ecsqlParser->parseTree (error, ecsql);
     if (ecsqlParseTreeRaw == nullptr || !error.empty())
         {
         GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str ());

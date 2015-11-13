@@ -10,7 +10,7 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 # TFS 178486 will address these (Affan): (ECSchema Update not working in 06 yet.)
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
-ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
+ECDbSchemaManagerTests.UpdateExistingSchemaDifferentCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
@@ -18,13 +18,9 @@ ECDbSchemas.Verify_TFS_14829_A
 #TFS268976 will address this (Affan)
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 
-#TFS315488 to address this (Affan)
-ECSqlStatementTestFixture.PolymorphicUpdateTest
-
-#TFS327106 to address this
+#TFS333029 to address this (Raman)
 JsonUpdaterTests.UpdateRelationshipProperty
-
-ECDbInstances.UpdateRelationshipProperty # notified Raman
+ECDbInstances.UpdateRelationshipProperty
 
 # WIP_EC3 - mapping logic needs to be fixed with respect to baseclasses and shared tables and struct/CA classes
 ECDbMappingTestFixture.ECDbMapTests 

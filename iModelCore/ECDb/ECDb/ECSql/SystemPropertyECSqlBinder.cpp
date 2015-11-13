@@ -179,6 +179,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
 
     if (!IsNoop())
         {
+        BeAssert(m_sqliteIndex > 0);
         const auto sqliteStat = GetSqliteStatementR ().BindInt64(m_sqliteIndex, value);
         if (sqliteStat != BE_SQLITE_OK)
             return ReportError(sqliteStat, "ECSqlStatement::BindInt64");

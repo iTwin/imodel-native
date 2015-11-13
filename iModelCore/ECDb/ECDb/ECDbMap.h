@@ -120,7 +120,7 @@ private:
     bool                        TryGetClassMap(ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const;
     ClassMapPtr                 DoGetClassMap(ECN::ECClassCR ecClass) const;
     ClassMapPtr                 LoadAddClassMap(ECN::ECClassCR ecClass);
-    MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation);
+    MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation);
     MapStatus                   MapClass(ECN::ECClassCR ecClass, bool forceRevaluationOfMapStrategy);
     MapStatus                   AddClassMap(ClassMapPtr& classMap);
     void                        RemoveClassMap(IClassMap const& classMap);
@@ -143,9 +143,9 @@ public:
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
     bool                        ContainsMappingsForSchema(ECN::ECSchemaCR ecSchema);
     ECDbR                       GetECDbR() const { return m_ecdb; }
-    MapStatus                   MapSchemas(SchemaImportContext& importSchemaContext, bvector<ECN::ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation);
+    MapStatus                   MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&, bool forceMapStrategyReevaluation);
 
-    ClassMapPtr                 LoadClassMap(bmap<ECN::ECClassId, ECN::ECClassCP>& currentlyLoadingClasses, ECN::ECClassCR ecClass);
+    ClassMapPtr                 LoadClassMap(bmap<ECN::ECClassId, ECN::ECClassCP>& currentlyLoadingClasses, ECN::ECClassCR);
 
     //! Gets the class map for the specified ECClass.
     //! @remarks if @p loadIfNotFound is true, the method never returns null for ECClasses which had been 
