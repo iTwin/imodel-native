@@ -365,7 +365,7 @@ BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCl
 
     if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
         {
-        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECOBJECTS_STATUS_Success)
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECObjectsStatus::Success)
             return ERROR;
         }
 
