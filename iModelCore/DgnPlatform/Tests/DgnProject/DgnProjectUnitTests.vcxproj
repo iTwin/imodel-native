@@ -23,8 +23,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
+    <ClCompile Include="BackDoor\DgnDbUtilities.cpp" />
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
-    <ClCompile Include="BackDoor\ElementCreateHelpers.cpp" />
+    <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
@@ -95,8 +96,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnDbUtilities.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\ElementCreateHelpers.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h" />
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
     <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
