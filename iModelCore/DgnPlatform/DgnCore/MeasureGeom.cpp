@@ -1197,9 +1197,9 @@ BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::Process (GeometricElementCR element)
+BentleyStatus MeasureGeomCollector::Process (GeometrySourceCR source)
     {
-    ElementGraphicsOutput::Process (*this, element);
+    ElementGraphicsOutput::Process (*this, source);
     
     return GetOperationStatus ();
     }

@@ -25,10 +25,10 @@ DgnDbTestDgnManager      m_testDgnManager;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson     02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericDgnModelTestFixture (char const* sourcefile, bool is3d)
+GenericDgnModelTestFixture (char const* sourcefile, bool is3d, bool needBriefcase)
     :
     m_is3d(is3d),
-    m_testDgnManager (is3d? L"3dMetricGeneral.idgndb": L"2dMetricGeneral.idgndb", sourcefile)
+    m_testDgnManager (is3d? L"3dMetricGeneral.idgndb": L"2dMetricGeneral.idgndb", sourcefile, BeSQLite::Db::OpenMode::ReadWrite, needBriefcase)
     {
     BeAssert( NULL != GetDgnModelP() );
     }

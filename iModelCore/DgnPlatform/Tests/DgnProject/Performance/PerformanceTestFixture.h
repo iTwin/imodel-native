@@ -69,7 +69,8 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
         BentleyStatus ImportTestSchema() const;
         PhysicalModelPtr CreatePhysicalModel() const;
         void CommitAndLogTiming(StopWatch& timer, Utf8CP scenario, Utf8String testcaseName, Utf8String testName) const;
-
+        virtual void _RegisterDomainAndImportSchema (ECN::ECSchemaPtr schema) {}
+        virtual void _CreateAndInsertElements (Utf8CP className, int initialInstanceCount) {}
     };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

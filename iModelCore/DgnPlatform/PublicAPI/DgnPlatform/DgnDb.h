@@ -132,7 +132,6 @@ protected:
     DgnFonts        m_fonts;
     DgnStyles       m_styles;
     DgnUnits        m_units;
-    DgnViews        m_views;
     DgnGeomParts    m_geomParts;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
@@ -191,7 +190,6 @@ public:
 
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
-    DgnViews& Views() const {return const_cast<DgnViews&>(m_views);}                     //!< The DgnViews for this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
     DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
     DgnGeomParts& GeomParts() const {return const_cast<DgnGeomParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
@@ -226,11 +224,5 @@ public:
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 };
 
-inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::QueryProperty(Utf8StringR value, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryProperty(value, spec, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::QueryPropertySize(uint32_t& size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryPropertySize(size, spec, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::SaveProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, void const* value, uint32_t size, uint64_t id) {return m_dgndb.SaveProperty(spec, value, size, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::SavePropertyString(DgnViewId viewId, DgnViewPropertySpecCR spec, Utf8StringCR value, uint64_t id) {return m_dgndb.SavePropertyString(spec, value, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::DeleteProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) {return m_dgndb.DeleteProperty(spec, viewId.GetValue(), id);}
-
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+

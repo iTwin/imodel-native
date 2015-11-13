@@ -31,11 +31,7 @@ always:
 
 %ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
-%if defined(winNT)
-    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
-%else
-    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node $(BuildContext)SubParts/TypeScript/tsc.js
-%endif
+TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
 
 tsSourceFiles = $[@wildcard $(baseDir)*.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
 

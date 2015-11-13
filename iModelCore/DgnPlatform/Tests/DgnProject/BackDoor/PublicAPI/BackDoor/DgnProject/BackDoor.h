@@ -27,7 +27,7 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 struct DgnDbTestDgnManager : TestDgnManager
 {
-    DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile="", BeSQLite::Db::OpenMode mode=BeSQLite::Db::OpenMode::ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel, bool forceMakeCopy=false);
+    DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile, BeSQLite::Db::OpenMode mode, bool needBriefcase, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel, bool forceMakeCopy=false);
     static BeFileName GetUtDatPath (CharCP callerSourceFile);
     static StatusInt FindTestData (BeFileName& fullFileName, WCharCP fileName, CharCP callerSourceFile);
     static StatusInt GetTestDataOut (BeFileName& outFullFileName, WCharCP fileName, WCharCP outName, CharCP callerSourceFile);
@@ -124,6 +124,18 @@ namespace BackDoor
         +---------------+---------------+---------------+---------------+---------------+------*/
         void RunOnAnotherThread(std::function<void()> const&);
     }; // RealityData
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsinamespace
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    namespace ILocksManager
+    {
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    Paul.Connelly   11/15
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetLockingEnabled(bool enabled);
+    };
+
 }
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

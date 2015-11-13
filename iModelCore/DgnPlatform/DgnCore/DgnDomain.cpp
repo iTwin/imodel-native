@@ -661,11 +661,12 @@ DgnDbStatus dgn_ElementHandler::Element::_VerifySchema(DgnDomains& domains)
     DgnElementPtr thisEl = _CreateInstance(params);
     if (0 != strcmp(thisEl->_GetECClassName(), GetClassName().c_str()))
         {
-        printf("HANDLER SETUP ERROR: Handler [%s] says it handles ECClass '%s', \n"
-               "    but its DgnElement class [%s] says its ECClass is '%s'\n"
-               "    (make sure you have a DGNELEMENT_DECLARE_MEMBERS macro in your DgnElement class).\n",
-                typeid(*this).name(), GetClassName().c_str(), 
-                typeid(*thisEl).name(), thisEl->_GetECClassName());
+        Utf8PrintfString msg("HANDLER SETUP ERROR: Handler [%s] says it handles ECClass '%s', \n"
+            "    but its DgnElement class [%s] says its ECClass is '%s'\n"
+            "    (make sure you have a DGNELEMENT_DECLARE_MEMBERS macro in your DgnElement class).\n",
+            typeid(*this).name(), GetClassName().c_str(),
+            typeid(*thisEl).name(), thisEl->_GetECClassName());
+        printf("%s", msg.c_str());
 
         BeAssert(false);
         }

@@ -10,7 +10,6 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECDbApi.h>
-#include "PerformanceTestFixture.h"
 #include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -64,73 +63,71 @@ struct PerformanceElementTestDomain : DgnDomain
 //---------------------------------------------------------------------------------------
 // @bsiClass                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceElementsCRUDTestFixture : public PerformanceElementTestFixture
+struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
     {
     private:
-        static const int64_t m_firstInstanceId = INT64_C (11);
-        static const int m_initialInstanceCount = 1000000;
-        void SetUpPopulatedDb (WCharCP dbName, Utf8CP className);
+        static const int64_t s_firstElementId = INT64_C(11);
+        static const int s_initialInstanceCount = 1000000;
+        static const int s_opCount = 50000;
+        static Utf8CP const s_testSchemaXml;
 
-        DgnModelPtr CreateElements (int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements)
-            {
-            DgnModelPtr modelPtr;
-            CreateElements (numInstances, schemaName, className, elements, modelPtr);
-            return modelPtr;
-            }
+        void SetUpTestDgnDb(Utf8CP testClassName);
+        PhysicalModelPtr CreatePhysicalModel() const;
 
-        void CreateElements (int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements, DgnModelPtr& modelPtr);
+        void CreateElements(Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements);
 
         //Generate Sql CRUD Statements.
-        void GetInsertSql (Utf8CP className, Utf8StringR insertSql, DgnClassId classId);
-        void GetSelectSql (Utf8CP className, Utf8StringR selectSql);
-        void GetUpdateSql (Utf8CP className, Utf8StringR updateSql);
-        void GetDeleteSql (Utf8StringR deleteSql);
+        void GetInsertSql(Utf8CP className, Utf8StringR insertSql, DgnClassId classId);
+        void GetSelectSql(Utf8CP className, Utf8StringR selectSql);
+        void GetUpdateSql(Utf8CP className, Utf8StringR updateSql);
+        void GetDeleteSql(Utf8StringR deleteSql);
 
         //Generate ECSql CRUD Statements. 
-        void GetInsertECSql (Utf8CP className, Utf8StringR insertECSql);
-        void GetSelectECSql (Utf8CP className, Utf8StringR selectECSql);
-        void GetUpdateECSql (Utf8CP className, Utf8StringR updateECSql);
-        void GetDeleteECSql (Utf8CP className, Utf8StringR deleteECSql);
+        void GetInsertECSql(Utf8CP className, Utf8StringR insertECSql);
+        void GetSelectECSql(Utf8CP className, Utf8StringR selectECSql);
+        void GetUpdateECSql(Utf8CP className, Utf8StringR updateECSql);
+        void GetDeleteECSql(Utf8CP className, Utf8StringR deleteECSql);
 
         //Methods to Bind Business Property Values for Sql Statements
-        DgnDbStatus BindElement1PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        DgnDbStatus BindElement2PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        DgnDbStatus BindElement3PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        DgnDbStatus BindElement4PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        void BindParams (DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className);
-        void BindUpdateParams (BeSQLite::Statement& stmt, Utf8CP className);
+        DgnDbStatus BindElement1PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        DgnDbStatus BindElement2PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        DgnDbStatus BindElement3PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        DgnDbStatus BindElement4PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        void BindParams(DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className);
+        void BindUpdateParams(BeSQLite::Statement& stmt, Utf8CP className);
 
         //ECsql Overloads to Bind business Property values
-        DgnDbStatus BindElement1PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        DgnDbStatus BindElement2PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        DgnDbStatus BindElement3PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        DgnDbStatus BindElement4PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        void BindParams (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
-        void BindUpdateParams (ECSqlStatement& stmt, Utf8CP className);
+        DgnDbStatus BindElement1PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        DgnDbStatus BindElement2PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        DgnDbStatus BindElement3PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        DgnDbStatus BindElement4PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        void BindParams(DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
+        void BindUpdateParams(ECSqlStatement& stmt, Utf8CP className);
 
         //Methods to verify Business Property Values returned by Sql Statements. 
-        DgnDbStatus GetElement1Params (BeSQLite::Statement& stmt);
-        DgnDbStatus GetElement2Params (BeSQLite::Statement& stmt);
-        DgnDbStatus GetElement3Params (BeSQLite::Statement& stmt);
-        DgnDbStatus GetElement4Params (BeSQLite::Statement& stmt);
-        void GetPropertyValues (BeSQLite::Statement& stmt, Utf8CP className);
+        DgnDbStatus GetElement1Params(BeSQLite::Statement& stmt);
+        DgnDbStatus GetElement2Params(BeSQLite::Statement& stmt);
+        DgnDbStatus GetElement3Params(BeSQLite::Statement& stmt);
+        DgnDbStatus GetElement4Params(BeSQLite::Statement& stmt);
+        void GetPropertyValues(BeSQLite::Statement& stmt, Utf8CP className);
 
         //OverLoaded Methods to Verify Business property Values returned by ECSql Statements. 
-        DgnDbStatus GetElement1Params (ECSqlStatement& stmt);
-        DgnDbStatus GetElement2Params (ECSqlStatement& stmt);
-        DgnDbStatus GetElement3Params (ECSqlStatement& stmt);
-        DgnDbStatus GetElement4Params (ECSqlStatement& stmt);
-        void GetPropertyValues (ECSqlStatement& stmt, Utf8CP className);
+        DgnDbStatus GetElement1Params(ECSqlStatement& stmt);
+        DgnDbStatus GetElement2Params(ECSqlStatement& stmt);
+        DgnDbStatus GetElement3Params(ECSqlStatement& stmt);
+        DgnDbStatus GetElement4Params(ECSqlStatement& stmt);
+        void GetPropertyValues(ECSqlStatement& stmt, Utf8CP className);
+
+        static int DetermineElementIdIncrement() { return s_initialInstanceCount / s_opCount; }
 
     protected:
+        void ECSqlInsertTime(Utf8CP className);
+        void ECSqlSelectTime(Utf8CP className);
+        void ECSqlUpdateTime(Utf8CP className);
+        void ECSqlDeleteTime(Utf8CP className);
 
-        void ECSqlInsertTime (int numInstances, Utf8CP className);
-        void ECSqlSelectTime (int numInstances, Utf8CP className);
-        void ECSqlUpdateTime (int numInstances, Utf8CP className);
-        void ECSqlDeleteTime (int numInstances, Utf8CP className);
-
-        void SqlInsertTime (int numInstances, Utf8CP className);
-        void SqlSelectTime (int numInstances, Utf8CP className);
-        void SqlUpdateTime (int numInstances, Utf8CP className);
-        void SqlDeleteTime (int numInstances, Utf8CP className);
+        void SqlInsertTime(Utf8CP className);
+        void SqlSelectTime(Utf8CP className);
+        void SqlUpdateTime(Utf8CP className);
+        void SqlDeleteTime(Utf8CP className);
     };

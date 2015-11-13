@@ -137,7 +137,7 @@ private:
 
     DgnLockSet m_locks;
 
-    void Insert(LockableId id, LockLevel level);
+    void InsertLock(LockableId id, LockLevel level);
 public:
     //! Insert a request to lock an eleemnt.
     //! @param[in]      element The element to insert
@@ -160,6 +160,15 @@ public:
     //! @param[in]      level The desired lock level.
     //! @remarks If the level is LockLevel::None, nothing is inserted
     DGNPLATFORM_EXPORT void Insert(DgnDbCR db, LockLevel level);
+
+    //! Inserts a collection of elements or models into the request at the specified level.
+    //! @param[in]      lockableObjects A collection of elements or models
+    //! @param[in]      level           The level of ownership requested
+    template<typename T> void InsertAllOf(T const& lockableObjects, LockLevel level)
+        {
+        for (auto const& lockableObject : lockableObjects)
+            Insert(lockableObject, level);
+        }
 
     bool Empty() const { return m_locks.empty(); } //!< Determine if this request contains no locks
     size_t Size() const { return m_locks.size(); } //!< Returns the number of locks in this request
@@ -254,6 +263,9 @@ public:
     LockStatus LockElement(DgnElementCR el, LockLevel level); //!< Used internally to lock an element for direct changes.
     LockStatus LockModel(DgnModelCR model, LockLevel level); //!< Used internally to lock a model for direct changes.
     LockStatus LockDb(LockLevel level); //!< Used internally to lock the DgnDb
+//__PUBLISH_SECTION_END__
+    DGNPLATFORM_EXPORT static void BackDoor_SetLockingEnabled(bool enable);
+//__PUBLISH_SECTION_START__
 };
 
 //=======================================================================================

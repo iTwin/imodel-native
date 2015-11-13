@@ -239,65 +239,6 @@ LsComponentReader*    reader
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2015
 //---------------------------------------------------------------------------------------
-LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
-    {
-    LsOkayForTextureGeneration isOkay = _IsOkayForTextureGeneration();
-    BeAssert(LsOkayForTextureGeneration::NotAllowed != isOkay);   //  The caller should have tested for this.
-
-    if (isOkay == LsOkayForTextureGeneration::NoChangeRequired)
-        return const_cast<LsStrokePatternComponentP>(this);
-
-    LsStrokePatternComponentP retval = new LsStrokePatternComponent(this);
-
-    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
-        retval->SetDistancePhase(0.0);
-
-
-    for (size_t i = 0; i < retval->m_nStrokes; ++i)
-        {
-        LsStroke& stroke(*(retval->m_strokes + i));
-        if (stroke.GetCapMode() != LsCapMode::Open)
-            stroke.SetCapMode(LsCapMode::Closed);
-
-        stroke.SetIsStretchable(false);
-        //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
-        //  Since we draw exactly one iteration for generating the texture, corner mode (IsRigid) should not be important.
-        }
-
-    return retval;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2015
-//---------------------------------------------------------------------------------------
-LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration() const 
-    {
-    if (m_okayForTextureGeneration != Dgn::LsOkayForTextureGeneration::Unknown)
-        return m_okayForTextureGeneration;
-
-    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
-
-    if (HasIterationLimit())
-        return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
-
-    //  Need to verify that fixed with a distance != 0 is okay.
-    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
-        m_okayForTextureGeneration = LsOkayForTextureGeneration::ChangeRequired;
-
-    for (size_t i = 0; i < m_nStrokes; ++i)
-        {
-        LsStroke const& stroke(*(m_strokes+i));
-        
-        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open))
-            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, LsOkayForTextureGeneration::ChangeRequired);
-        }
-
-    return m_okayForTextureGeneration;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2015
-//---------------------------------------------------------------------------------------
 void LsCompoundComponent::_StartTextureGeneration() const
     {
     m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown; 
@@ -305,6 +246,17 @@ void LsCompoundComponent::_StartTextureGeneration() const
         comp.m_subComponent->_StartTextureGeneration();
     }
   
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2015
+//---------------------------------------------------------------------------------------
+void LsCompoundComponent::_QuerySymbology (SymbologyQueryResults& results) const
+    {
+    for (LsOffsetComponent const & comp : m_components)
+        {
+        comp.m_subComponent->_QuerySymbology(results);
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2015
 //---------------------------------------------------------------------------------------
@@ -348,6 +300,7 @@ LsOkayForTextureGeneration LsCompoundComponent::_IsOkayForTextureGeneration() co
 LsCompoundComponent::LsCompoundComponent(LsCompoundComponentCR source) : LsComponent(&source), m_postProcessed(false)
     {
     m_size = source.m_size;
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     for (LsOffsetComponent const& child: source.m_components)
         m_components.push_back(child);
     }
@@ -358,6 +311,7 @@ LsCompoundComponent::LsCompoundComponent(LsCompoundComponentCR source) : LsCompo
 LsCompoundComponent::LsCompoundComponent (LsLocation const *pLocation) :
             LsComponent (pLocation), m_postProcessed (false)
     {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     m_postProcessed = false;
     }
 
@@ -516,7 +470,7 @@ LsComponentReader*    reader
         {
         tmpLocation.GetCompoundComponentLocation (reader, i);
         
-        LsOffsetComponent offsetComp (lsRsc->m_component[i].m_offset, LsCache::GetLsComponent (&tmpLocation));
+        LsOffsetComponent offsetComp (lsRsc->m_component[i].m_offset, DgnLineStyles::GetLsComponent (&tmpLocation));
         
         if (offsetComp.m_subComponent.get () == compound)
             {
@@ -595,7 +549,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 
     return SUCCESS;
 #else
-    return ERROR;
+    return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
 #endif
     }
 
@@ -862,7 +816,9 @@ LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
         }
 
     nonConstThis->m_componentLoadPostProcessed = false;
-    LsComponentP    component = LsCache::GetLsComponent (nonConstThis->m_location);
+    LsLocation  location = nonConstThis->m_location;
+
+    LsComponentP    component = DgnLineStyles::GetLsComponent (location);
     if (nullptr == component)
         {
         nonConstThis->m_componentLookupFailed = true;
@@ -900,7 +856,7 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
     if (NULL != m_rsc)
         return SUCCESS;
 
-    HighPriorityOperationBlock highPriority; // see comments in BeSQLite.h
+    wt_OperationForGraphics highPriority; // see comments in BeSQLite.h
     m_componentType = m_source->GetComponentType();
 
     switch ((LsComponentType)m_componentType)
@@ -983,21 +939,31 @@ LsCacheP LsLocation::GetCacheP () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
-LsComponent* LsCache::GetLsComponent(LsLocationCR location)
+LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
     {
-    LsCacheP lsCache = location.GetCacheP();
-    BeAssert(nullptr != lsCache);
-    if (nullptr == lsCache)
-        return nullptr;
+    DgnLineStyles& dgnLineStyles = location.GetDgnDb()->Styles().LineStyles();
 
-    auto iter = lsCache->m_loadedComponents.find(location);
-    if (iter != lsCache->m_loadedComponents.end())
+    auto iter = dgnLineStyles.m_loadedComponents.find(location);
+    if (iter != dgnLineStyles.m_loadedComponents.end())
         return iter->second.get();
 
     LsComponentPtr comp = cacheLoadComponent (location);
     if (comp.IsNull())
         return nullptr;
 
-    lsCache->m_loadedComponents[location] = comp;
+    dgnLineStyles.m_loadedComponents[location] = comp;
     return comp.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr DgnLineStyles::GetLsComponent(LsComponentType componentType, LsComponentId componentId)
+    {
+    if (!componentId.IsValid())
+        return nullptr;
+
+    LsLocation   location;
+    location.SetLocation(m_dgndb, componentType, componentId);
+    return GetLsComponent(location);
     }

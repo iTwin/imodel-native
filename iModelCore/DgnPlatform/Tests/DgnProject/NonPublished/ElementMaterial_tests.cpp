@@ -26,19 +26,13 @@ struct ElementGeometryBuilderTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void setUpView (DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
     {
-    DgnViews::View view;
-
-    view.SetDgnViewType(DgnClassId(dgnDb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalView)), DgnViewType::Physical);
-    view.SetDgnViewSource(DgnViewSource::Generated);
-    view.SetName("TestView");
-    view.SetBaseModelId(model.GetModelId());
-
-    EXPECT_TRUE(BE_SQLITE_OK == dgnDb.Views().Insert(view));
-    EXPECT_TRUE(view.GetId().IsValid());
+    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
+    EXPECT_TRUE(view.Insert().IsValid());
+    EXPECT_TRUE(view.GetViewId().IsValid());
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    PhysicalViewController viewController (dgnDb, view.GetId());
+    PhysicalViewController viewController (dgnDb, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
@@ -159,7 +153,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 
