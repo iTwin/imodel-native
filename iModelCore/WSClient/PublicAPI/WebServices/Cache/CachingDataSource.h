@@ -134,7 +134,7 @@ struct CachingDataSource :
             WorkerThreadPtr cacheAccessThread = nullptr
             );
 
-        //! Used for testing
+        //! DO NOT USE for production! Used only for internal testing and may be removed in future.
         WSCACHE_EXPORT static CachingDataSourcePtr Create
             (
             IWSRepositoryClientPtr client,
