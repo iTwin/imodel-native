@@ -9,9 +9,6 @@
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextStylePersistence.h>
 
-template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
-
-USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
@@ -62,149 +59,99 @@ bool AnnotationTextStylePropertyBag::_IsRealProperty(T_Key key) const
 //*****************************************************************************************************************************************************************************************************
 
 #define PROP_Data "Data"
-#define PROP_Descr "Descr"
+#define PROP_Description "Descr"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
-    HANDLER_DEFINE_MEMBERS(AnnotationTextStyleHandler);
+HANDLER_DEFINE_MEMBERS(AnnotationTextStyleHandler);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
 void AnnotationTextStyleHandler::_GetClassParams(ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     params.Add(PROP_Data);
-    params.Add(PROP_Descr);
+    params.Add(PROP_Description);
     }
 }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTextStyle::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, AnnotationTextStylePropertyBagCR data, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateStyleCode(name)), m_data(data), m_descr(descr)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus AnnotationTextStyle::_ExtractSelectParams(BeSQLite::EC::ECSqlStatement& select, ECSqlClassParams const& params)
     {
-    //
+    DgnDbStatus status = T_Super::_ExtractSelectParams(select, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    int dataSize = 0;
+    ByteCP data = static_cast<ByteCP>(select.GetValueBinary(params.GetSelectIndex(PROP_Data), &dataSize));
+    if (SUCCESS != AnnotationTextStylePersistence::DecodeFromFlatBuf(*this, data, static_cast<size_t>(dataSize)))
+        return DgnDbStatus::BadArg;
+
+    m_description.AssignOrClear(select.GetValueText(params.GetSelectIndex(PROP_Description)));
+
+    return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationTextStyle::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationTextStyleCR style)
     {
     bvector<Byte> data;
-    PRECONDITION(SUCCESS == AnnotationTextStylePersistence::EncodeAsFlatBuf(data, *this, AnnotationTextStylePersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), DgnDbStatus::BadArg);
+    if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, style))
+        return DgnDbStatus::BadArg;
 
-    return ECSqlStatus::Success == stmt.BindText(stmt.GetParameterIndex(PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        && ECSqlStatus::Success == stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), &data[0], static_cast<int>(data.size()), IECSqlBinder::MakeCopy::Yes)
-        ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Description), style.GetDescription().c_str(), IECSqlBinder::MakeCopy::No))
+        return DgnDbStatus::BadArg;
+
+    if (ECSqlStatus::Success != stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), &data[0], static_cast<int>(data.size()), IECSqlBinder::MakeCopy::Yes))
+        return DgnDbStatus::BadArg;
+
+    return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationTextStyle::_ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus AnnotationTextStyle::_BindInsertParams(BeSQLite::EC::ECSqlStatement& insert)
     {
-    DgnDbStatus status = T_Super::_ExtractSelectParams(stmt, params);
-    if (DgnDbStatus::Success == status)
-        {
-        int dataSize = 0;
-        Byte const* data = static_cast<Byte const*>(stmt.GetValueBinary(params.GetSelectIndex(PROP_Data), &dataSize));
-        POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(*this, data, static_cast<size_t>(dataSize)), DgnDbStatus::BadArg);
+    DgnDbStatus status = T_Super::_BindInsertParams(insert);
+    if (DgnDbStatus::Success != status)
+        return status;
 
-        m_descr.AssignOrClear(stmt.GetValueText(params.GetSelectIndex(PROP_Descr)));
-        }
-
-    return status;
+    return bindParams(insert, *this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationTextStyle::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus AnnotationTextStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& update)
     {
-    auto status = T_Super::_BindInsertParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
+    DgnDbStatus status = T_Super::_BindUpdateParams(update);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    return bindParams(update, *this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationTextStyle::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
 void AnnotationTextStyle::_CopyFrom(DgnElementCR src)
     {
     T_Super::_CopyFrom(src);
-    auto other = dynamic_cast<AnnotationTextStyleCP>(&src);
-    BeAssert(nullptr != other);
-    if (nullptr != other)
-        {
-        m_descr = other->m_descr;
-        m_data = other->m_data;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationTextStyle::_OnDelete() const
-    {
-    return DgnDbStatus::DeletionProhibited; // purge only
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTextStyleId AnnotationTextStyle::QueryStyleId(Code const& code, DgnDbR db)
-    {
-    return AnnotationTextStyleId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-void AnnotationTextStyle::Reset()
-    {
-    InvalidateElementId();
-    InvalidateCode();
-    m_descr.clear();
-    ResetProperties();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AnnotationTextStyle::ResetProperties()
-    {
-    m_data.ClearAllProperties();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AnnotationTextStyle::ExistsById(AnnotationTextStyleId id, DgnDbR db)
-    {
-    PRECONDITION(id.IsValid(), false);
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle) " WHERE ECInstanceId=? LIMIT 1");
-    if (stmt.IsValid())
-        {
-        stmt->BindId(1, id);
-        if (BE_SQLITE_ROW == stmt->Step())
-            return 0 < stmt->GetValueInt(0);
-        }
-
-    return false;
+    
+    AnnotationTextStyleCP rhs = dynamic_cast<AnnotationTextStyleCP>(&src);
+    if (nullptr == rhs)
+        return;
+    
+    m_description = rhs->m_description;
+    m_data = rhs->m_data;
     }
 
 //---------------------------------------------------------------------------------------
@@ -311,14 +258,39 @@ void AnnotationTextStyle::SetWidthFactor(double value) { setRealValue(m_data, An
 //---------------------------------------------------------------------------------------
 AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const
     {
-    AnnotationTextStylePtr clone = Clone();
-    clone->InvalidateCode();
-    clone->m_descr.clear();
-    clone->InvalidateElementId();
+    AnnotationTextStylePtr copy = CreateCopy();
+    copy->InvalidateElementId();
+    copy->InvalidateCode();
+    copy->m_description.clear();
+    copy->m_data.MergeWith(overrides);
 
-    clone->m_data.MergeWith(overrides);
+    return copy;
+    }
 
-    return clone;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+size_t AnnotationTextStyle::QueryCount(DgnDbR db)
+    {
+    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle));
+    if (!select.IsValid())
+        return 0;
+    
+    if (BE_SQLITE_ROW != select->Step())
+        return 0;
+
+    return static_cast<size_t>(select->GetValueInt(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+AnnotationTextStyle::Iterator AnnotationTextStyle::MakeIterator(DgnDbR db)
+    {
+    Iterator iter;
+    iter.Prepare(db, "SELECT ECInstanceId, Code, Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle), 0);
+
+    return iter;
     }
 
 //*****************************************************************************************************************************************************************************************************
@@ -398,7 +370,7 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationText
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationTextStyleCR style, FlatBufEncodeOptions options)
+BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationTextStyleCR style)
     {
     FlatBufferBuilder encoder;
     
@@ -465,7 +437,7 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextStyleR style, ByteCP buffer, size_t numBytes)
     {
-    style.ResetProperties();
+    style.m_data.ClearAllProperties();
     
     auto fbStyle = GetRoot<FB::AnnotationTextStyle>(buffer);
 
@@ -478,53 +450,3 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
 
     return SUCCESS;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t AnnotationTextStyle::QueryCount(DgnDbR db)
-    {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle));
-    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? static_cast<size_t>(stmt->GetValueInt(0)) : 0;
-    }
-
-#define SELECT_AnnotationTextStyle "SELECT ECInstanceId, Code, Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle)
-#define SELECT_ORDERED_AnnotationTextStyle SELECT_AnnotationTextStyle " ORDER BY Code"
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTextStyle::Iterator AnnotationTextStyle::MakeIterator(DgnDbR db, bool ordered)
-    {
-    Utf8CP ecSql = ordered? SELECT_ORDERED_AnnotationTextStyle : SELECT_AnnotationTextStyle;
-
-    Iterator iter;
-    iter.Prepare(db, ecSql, 0);
-
-    return iter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnFontCR AnnotationTextStyle::ResolveFont() const
-    {
-    return DgnFontManager::ResolveFont(GetDgnDb().Fonts().FindFontById(GetFontId()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t AnnotationTextStyle::_GetMemSize() const
-    {
-    return T_Super::_GetMemSize() + m_data.GetMemSize() + static_cast<uint32_t>(m_descr.length());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t AnnotationPropertyBag::GetMemSize() const
-    {
-    return sizeof(*this);   // NEEDSWORK accurate mem size
-    }
-

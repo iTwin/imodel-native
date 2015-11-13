@@ -528,32 +528,44 @@ DgnAuthority::Code DgnTexture::_GenerateDefaultCode()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code AnnotationTextStyle::CreateStyleCode(Utf8StringCR name)
+DgnAuthority::Code AnnotationTextStyle::CreateCodeFromName(Utf8CP nameCP)
     {
+    Utf8String name;
+    name.AssignOrClear(nameCP);
+
     return createResourceCode(name, DGN_CLASSNAME_AnnotationTextStyle);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code AnnotationFrameStyle::CreateStyleCode(Utf8StringCR name)
+DgnAuthority::Code AnnotationFrameStyle::CreateCodeFromName(Utf8CP nameCP)
     {
+    Utf8String name;
+    name.AssignOrClear(nameCP);
+
     return createResourceCode(name, DGN_CLASSNAME_AnnotationFrameStyle);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code AnnotationLeaderStyle::CreateStyleCode(Utf8StringCR name)
+DgnAuthority::Code AnnotationLeaderStyle::CreateCodeFromName(Utf8CP nameCP)
     {
+    Utf8String name;
+    name.AssignOrClear(nameCP);
+
     return createResourceCode(name, DGN_CLASSNAME_AnnotationLeaderStyle);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code TextAnnotationSeed::CreateCodeForSeed(Utf8StringCR name)
+DgnAuthority::Code TextAnnotationSeed::CreateCodeFromName(Utf8CP nameCP)
     {
+    Utf8String name;
+    name.AssignOrClear(nameCP);
+
     return createResourceCode(name, DGN_CLASSNAME_TextAnnotationSeed);
     }
 
