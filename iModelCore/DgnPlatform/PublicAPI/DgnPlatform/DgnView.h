@@ -88,6 +88,7 @@ private:
     Data m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    static bool IsValidCode(Code const& code);
 protected:
     explicit ViewDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
@@ -95,6 +96,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual Code _GenerateDefaultCode() override { return Code(); }

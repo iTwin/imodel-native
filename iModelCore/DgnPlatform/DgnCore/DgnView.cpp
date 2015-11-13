@@ -234,9 +234,24 @@ DgnDbStatus ViewDefinition::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::_RemapIds(DgnImportContext& importer)
     {
-    T_Super::_RemapIds(importer);   // ###TODO anything?
+    T_Super::_RemapIds(importer);
+    if (importer.IsBetweenDbs())
+        {
+        // We're not going to deep-copy the model in. We're expecting the user already copied it.
+        m_data.m_baseModelId = importer.FindModelId(m_data.m_baseModelId);
+        BeAssert(m_data.m_baseModelId.IsValid());
+
+        // NOTE: We're not copying or remapping the settings from the db's properties table...
+        }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::_SetCode(Code const& code)
+    {
+    return IsValidCode(code) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
