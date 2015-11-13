@@ -25,7 +25,7 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
     private:
         bool     m_groupByClass;
         bool     m_groupByLabel;
-        WString  m_supportedSchemas;
+        Utf8String  m_supportedSchemas;
 
     protected:
         //! Allows the visitor to visit this specification.
@@ -47,7 +47,7 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
 
         //! Constructor.
         ECOBJECTS_EXPORT AllInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-                                                        bool groupByClass, bool groupByLabel, WStringCR supportedSchemas);
+                                                        bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas);
 
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
@@ -62,10 +62,10 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
         ECOBJECTS_EXPORT void                         SetGroupByLabel (bool value);
 
         //! Returns supported schemas that should be used by this specification.
-        ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetSupportedSchemas (void) const;
 
         //! Sets SupportedSchemas value. Can be string.
-        ECOBJECTS_EXPORT void                         SetSupportedSchemas (WString value);
+        ECOBJECTS_EXPORT void                         SetSupportedSchemas (Utf8StringCR value);
 
     };
 

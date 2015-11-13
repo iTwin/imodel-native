@@ -27,7 +27,7 @@ struct SubCondition
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString                    m_condition;
+        Utf8String                 m_condition;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
 
@@ -37,7 +37,7 @@ struct SubCondition
         ECOBJECTS_EXPORT SubCondition ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SubCondition (WStringCR condition);
+        ECOBJECTS_EXPORT SubCondition (Utf8StringCR condition);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~SubCondition (void);
@@ -49,7 +49,7 @@ struct SubCondition
         ECOBJECTS_EXPORT void                           WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Returns sub-condition string.
-        ECOBJECTS_EXPORT WStringCR                      GetCondition (void);
+        ECOBJECTS_EXPORT Utf8StringCR                   GetCondition (void);
 
         //! Collection of sub-conditions that can be used to separate specifications.
         ECOBJECTS_EXPORT SubConditionList const&        GetSubConditions (void) const;

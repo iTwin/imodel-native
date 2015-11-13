@@ -22,10 +22,10 @@ struct CustomNodeSpecification : public ChildNodeSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString  m_type;
-        WString  m_label;
-        WString  m_description;
-        WString  m_imageId;
+        Utf8String  m_type;
+        Utf8String  m_label;
+        Utf8String  m_description;
+        Utf8String  m_imageId;
 
     protected:
         //! Allows the visitor to visit this specification.
@@ -46,30 +46,30 @@ struct CustomNodeSpecification : public ChildNodeSpecification
         ECOBJECTS_EXPORT CustomNodeSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT CustomNodeSpecification (int priority, bool hideIfNoChildren, WStringCR type, WStringCR label, WStringCR description, WStringCR imageId);
+        ECOBJECTS_EXPORT CustomNodeSpecification (int priority, bool hideIfNoChildren, Utf8StringCR type, Utf8StringCR label, Utf8StringCR description, Utf8StringCR imageId);
 
         //! Returns type of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetNodeType (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetNodeType (void) const;
 
         //! Sets the Node type. Can be string.
-        ECOBJECTS_EXPORT void                         SetNodeType (WString value);
+        ECOBJECTS_EXPORT void                         SetNodeType (Utf8StringCR value);
 
         //! Returns label of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetLabel (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetLabel (void) const;
 
         //! Sets the label. Can be string.
-        ECOBJECTS_EXPORT void                         SetLabel (WString value);
+        ECOBJECTS_EXPORT void                         SetLabel (Utf8StringCR value);
 
         //! Returns description of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetDescription (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetDescription (void) const;
 
         //! Sets the description. Can be string.
-        ECOBJECTS_EXPORT void                         SetDescription (WString value);
+        ECOBJECTS_EXPORT void                         SetDescription (Utf8StringCR value);
 
         //! Returns ImageId of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetImageId (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetImageId (void) const;
         //! Sets the ImageId. Can be string
-        ECOBJECTS_EXPORT void                         SetImageId (WString value);
+        ECOBJECTS_EXPORT void                         SetImageId (Utf8StringCR value);
 
     };
 

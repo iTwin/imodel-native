@@ -15,14 +15,14 @@ USING_NAMESPACE_BENTLEY_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubCondition::SubCondition () : m_condition (L"")
+SubCondition::SubCondition () : m_condition ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubCondition::SubCondition (WStringCR condition) : m_condition (condition)
+SubCondition::SubCondition (Utf8StringCR condition) : m_condition (condition)
     {
     }
 
@@ -41,7 +41,7 @@ SubCondition::~SubCondition ()
 bool SubCondition::ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
-        m_condition = L"";
+        m_condition = "";
 
     CommonTools::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
 
@@ -80,7 +80,7 @@ void SubCondition::WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SubCondition::GetCondition (void) { return m_condition;  }
+Utf8StringCR SubCondition::GetCondition (void) { return m_condition;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
