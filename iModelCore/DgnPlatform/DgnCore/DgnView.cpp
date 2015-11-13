@@ -319,7 +319,7 @@ static void appendSourceClause(Utf8StringR str, ViewDefinition::Iterator::Option
     if (!user && !gen && !priv)
         return;
 
-    // Parens in case we're proceeded by an AND...
+    // Parens in case we're preceded by an AND...
     str.append(1, '(');
 
     Utf8Char buf[3];
