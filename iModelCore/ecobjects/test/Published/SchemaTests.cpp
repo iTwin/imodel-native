@@ -270,7 +270,7 @@ TEST_F(SchemaTest, RemoveBaseClassFromGrandChild)
     ASSERT_TRUE(baseClasses.empty());
     prop = child->GetPropertyP("PropA", false);
     ASSERT_TRUE(nullptr != prop);
-//    ASSERT_TRUE(nullptr == prop->GetBaseProperty());  // This shouldn't fail!
+    ASSERT_TRUE(nullptr == prop->GetBaseProperty());  // This shouldn't fail!
 
     }
 /*---------------------------------------------------------------------------------**//**
