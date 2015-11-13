@@ -593,6 +593,10 @@ bool CachedRelationshipKey::operator < (const CachedRelationshipKey& other) cons
         {
         return true;
         }
+    if (other.m_infoKey < m_infoKey)
+        {
+        return false;
+        }
     return m_relationshipKey < other.m_relationshipKey;
     }
 

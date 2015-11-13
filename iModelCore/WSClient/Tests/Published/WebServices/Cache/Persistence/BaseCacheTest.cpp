@@ -102,6 +102,14 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                     <Class class="TestClass" />
                 </Target>
             </ECRelationshipClass>
+            <ECRelationshipClass typeName="TestRelationshipClass2" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                <Source cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Target>
+            </ECRelationshipClass>
             <ECRelationshipClass typeName="TestDerivedRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
                 <BaseClass>TestRelationshipClass</BaseClass>
                 <Source cardinality="(0,N)" polymorphic="True">
