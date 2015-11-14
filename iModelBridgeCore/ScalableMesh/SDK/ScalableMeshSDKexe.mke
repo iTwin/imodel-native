@@ -31,6 +31,10 @@ $(o)Initialize.obj: $(baseDir)Initialize.cpp ${MultiCompileDepends}
 
 $(o)ScalableMeshSDKexeImporter.obj: $(baseDir)ScalableMeshSDKexeImporter.cpp  ${MultiCompileDepends}
 
+$(o)StmStreamingImporter.obj: $(baseDir)StmStreamingImporter.cpp  ${MultiCompileDepends}
+
+
+
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
@@ -51,6 +55,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableTerrainModel.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib
 
 
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RmgrTools.lib

@@ -31,7 +31,7 @@ namespace ScalableMeshSDKexe
             NULL 
             );
         if (m_pipe == NULL || m_pipe == INVALID_HANDLE_VALUE) fwprintf(stderr, L"Error creating pipe\n");
-        if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
+        //if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
         }
 
     BentleyStatus ScalableMeshSDKexe::Initialize(int argc, WCharP argv[])
@@ -578,7 +578,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         importerPtr->SetFeatureCallback(WriteFeatureCallback);
         importerPtr->SetPointsCallback(WritePointsCallback);
         */
-
+        
         if (mrdtmCreatorPtr == 0)
             {
             printf("ERROR : cannot create importer\r\n");

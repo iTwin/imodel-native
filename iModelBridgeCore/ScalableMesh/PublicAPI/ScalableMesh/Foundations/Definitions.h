@@ -23,7 +23,7 @@
 #include <ImagePP/h/HNumeric.h>
 
 #ifdef FOUNDATIONS_DLLE
-    #error "Export name conflict with another definition of the same name"
+//    #error "Export name conflict with another definition of the same name"
 #endif
 
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_SCALABLEMESH_FOUNDATIONS_EXPORTS
