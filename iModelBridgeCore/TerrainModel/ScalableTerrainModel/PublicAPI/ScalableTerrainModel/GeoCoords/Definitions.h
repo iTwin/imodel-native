@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:42 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,9 +19,6 @@
 
 #include <Geom/GeomApi.h>
 
-#ifdef GEOCOORDS_DLLE
-    #error "Export name conflict with another definition of the same name"
-#endif
 
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_MRDTM_GEOCOODINATES_EXPORTS
     #define GEOCOORDS_DLLE __declspec(dllexport)

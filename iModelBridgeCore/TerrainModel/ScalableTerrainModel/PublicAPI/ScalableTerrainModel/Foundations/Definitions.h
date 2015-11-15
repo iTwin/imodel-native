@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,10 +21,6 @@
 #include <Bentley/WString.h> 
 #include <ImagePP/h/HmrMacro.h>
 #include <ImagePP/h/HNumeric.h>
-
-#ifdef FOUNDATIONS_DLLE
-    #error "Export name conflict with another definition of the same name"
-#endif
 
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_MRDTM_FOUNDATIONS_EXPORTS
     #define FOUNDATIONS_DLLE __declspec(dllexport)
