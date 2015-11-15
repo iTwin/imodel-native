@@ -4,7 +4,9 @@ using namespace std;
 #include <BeXml/BeXml.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <ScalableMesh\IScalableMeshMoniker.h>
+#include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh\ScalableMeshDefs.h>
+//#include <ScalableMesh\IScalableMeshMoniker.h>
 #include <ScalableMesh\IScalableMeshStream.h>
 #include <ScalableMesh\IScalableMeshURL.h>
 #include <ScalableMesh\Import\ScalableMeshData.h>
@@ -35,9 +37,9 @@ namespace ScalableMeshSDKexe
         };
 
     bool ParseSourceSubNodes(Bentley::MrDTM::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
+    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
     Bentley::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
-                                                  Bentley::MrDTM::DTMSourceDataType importedType,
-                                                  BeXmlNodeP                        pTestChildNode = 0);
+                                                  Bentley::MrDTM::DTMSourceDataType importedType);
     bool AddOptionToSource(Bentley::MrDTM::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode);
     void GetSourceDataType(Bentley::MrDTM::DTMSourceDataType& dataType, BeXmlNodeP pSourceNode);
     };

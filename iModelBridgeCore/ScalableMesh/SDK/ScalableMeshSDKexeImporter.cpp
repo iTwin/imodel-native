@@ -136,10 +136,18 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
 
     Bentley::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
-                                                  Bentley::MrDTM::DTMSourceDataType importedType,
-                                                  BeXmlNodeP                        pTestChildNode)
+                                                  Bentley::MrDTM::DTMSourceDataType importedType)
         {
         Bentley::MrDTM::ILocalFileMonikerPtr monikerPtr(Bentley::MrDTM::ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
+       
+        return Bentley::MrDTM::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
+        }
+
+     Bentley::ScalableMesh::IDTMSourcePtr CreateSourceFor(const WString&                          sourcePath,
+                                                          Bentley::ScalableMesh::DTMSourceDataType importedType,
+                                                          BeXmlNodeP                               pTestChildNode)
+        {
+        Bentley::ScalableMesh::ILocalFileMonikerPtr monikerPtr(Bentley::ScalableMesh::ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
 
         if (0 == _wcsicmp(L"dgn", BeFileName::GetExtension(sourcePath.c_str()).c_str()))
             {
@@ -176,13 +184,74 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
             assert(status == SUCCESS);
 
-            return Bentley::MrDTM::IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
+            return Bentley::ScalableMesh::IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
             }
 
-        return Bentley::MrDTM::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
+        return Bentley::ScalableMesh::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
         }
 
     bool AddOptionToSource(Bentley::MrDTM::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode)
+        {
+        WString datasetIs3D;
+        WString datasetIsGround;
+
+        StatusInt status = pTestChildNode->GetAttributeStringValue(datasetIs3D, "is3D");
+
+        if (status == BEXML_Success)
+            {
+            assert(!"Not supported yet");
+            /*
+            if (datasetIs3D.Equals(L"1"))
+                {
+                SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+                ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+
+                data.SetRepresenting3dData(true);
+
+                sourceImportConfig.SetReplacementSMData(data);
+                }
+                */
+            }
+
+        status = pTestChildNode->GetAttributeStringValue(datasetIsGround, "grounddetection");
+
+        if (status == BEXML_Success)
+            {
+            assert(!"Not supported yet");
+            /*
+            if (datasetIsGround.Equals(L"1"))
+                {
+                SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+                ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+
+                data.SetIsGroundDetection(true);
+                data.SetRepresenting3dData(false);
+
+                sourceImportConfig.SetReplacementSMData(data);
+                }
+                */
+            }
+
+        /*
+        UInt64 maxNbPointsToImport;
+
+        status = pTestChildNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
+
+        if (status == BEXML_Success)
+            {            
+            SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+            ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+
+            //NEEDS_WORK_MST : Not really needed
+            data.SetMaximumNbPoints(maxNbPointsToImport);
+            sourceImportConfig.SetReplacementSMData(data);
+            }
+            */
+
+        return true;
+        }
+
+     bool AddOptionToSource(Bentley::ScalableMesh::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode)
         {
         WString datasetIs3D;
         WString datasetIsGround;
@@ -272,6 +341,35 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
             }
         }
 
+    void GetSourceDataType(Bentley::ScalableMesh::DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
+        {
+        WString dataTypeStr;
+
+        StatusInt status = pSourceNode->GetAttributeStringValue(dataTypeStr, "dataType");
+
+        if (status == BEXML_Success)
+            {
+            if (dataTypeStr.CompareTo(L"POINT") == 0)
+                {
+                dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_POINT;
+                }
+            else
+                if (dataTypeStr.CompareTo(L"DTM") == 0)
+                    {
+                    dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_DTM;
+                    }
+                else
+                    if (dataTypeStr.CompareTo(L"BREAKLINE") == 0)
+                        {
+                        dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_BREAKLINE;
+                        }
+                    else
+                        {
+                        printf("Unsupporter/unknown data type");
+                        }
+            }
+        }
+
 
     bool ParseSourceSubNodes(Bentley::MrDTM::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
         {
@@ -298,7 +396,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                     if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                         (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                         {
-                        Bentley::MrDTM::IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                        Bentley::MrDTM::IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType/*, pTestChildNode*/);
                         AddOptionToSource(srcPtr, pTestChildNode);
                         if (BSISUCCESS != sourceCollection.Add(srcPtr))
                             {
@@ -323,7 +421,84 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                             WString extension;
                             name.ParseName(NULL, NULL, NULL, &extension);
                             if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
-                            Bentley::MrDTM::IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
+                            Bentley::MrDTM::IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType/*, pTestChildNode*/);
+                            AddOptionToSource(srcPtr, pTestChildNode);
+                            if (BSISUCCESS != sourceCollection.Add(srcPtr))
+                                {
+                                isSuccess = false;
+                                wprintf(L"ERROR : cannot add %s\r\n", firstPath);
+                                break;
+                                }
+                            }
+                        }
+                    }
+                else
+                    {
+                    printf("ERROR : attribute path for mesher node not found\r\n");
+                    }
+                }
+            else
+                {
+                }
+
+            pTestChildNode = pTestChildNode->GetNextSibling();
+            }
+
+        return isSuccess;
+        }    
+
+
+    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
+        {
+        bool isSuccess = true;
+
+        BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+
+        while ((0 != pTestChildNode) && (isSuccess == true))
+            {
+            if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "source"))
+                {
+                WString datasetPath;
+                WString datasetIs3D;
+                WString datasetIsGround;
+
+                StatusInt status = pTestChildNode->GetAttributeStringValue(datasetPath, "path");
+
+                if (status == BEXML_Success)
+                    {
+                    Bentley::ScalableMesh::DTMSourceDataType dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_POINT;
+
+                    GetSourceDataType(dataType, pTestChildNode);
+
+                    if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
+                        (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
+                        {
+                        Bentley::ScalableMesh::IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                        AddOptionToSource(srcPtr, pTestChildNode);
+                        if (BSISUCCESS != sourceCollection.Add(srcPtr))
+                            {
+                            isSuccess = false;
+                            wprintf(L"ERROR : cannot add %s\r\n", datasetPath);
+                            break;
+                            }
+                        }
+                    else
+                        {
+                        FileFinder fileFinder;
+
+                        WString filePaths;
+
+                        fileFinder.FindFiles(datasetPath, filePaths, true);
+
+                        WString firstPath;
+
+                        while (fileFinder.ParseFilePaths(filePaths, firstPath))
+                            {
+                            BeFileName name(firstPath.c_str());
+                            WString extension;
+                            name.ParseName(NULL, NULL, NULL, &extension);
+                            if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
+                            Bentley::ScalableMesh::IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
                             AddOptionToSource(srcPtr, pTestChildNode);
                             if (BSISUCCESS != sourceCollection.Add(srcPtr))
                                 {

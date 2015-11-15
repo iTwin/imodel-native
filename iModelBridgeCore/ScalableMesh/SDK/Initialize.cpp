@@ -14,6 +14,8 @@ using namespace std;
 #include <PointCloud\PointCloudDisplayHandler.h>
 #include <RasterCore\RasterCoreLib.h>
 #include <RmgrTools\Tools\RscFileManager.h>
+#include <TerrainModel\TerrainModel.h>
+#include <ScalableMesh\ScalableMeshDefs.h>
 #include <ScalableMesh\IScalableMeshMoniker.h>
 #include <ScalableMesh\IScalableMeshStream.h>
 #include <ScalableMesh\IScalableMeshURL.h>

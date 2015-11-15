@@ -10,67 +10,34 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <TerrainModel\TerrainModel.h>
+#include "DataPipe.h"
 #include <ImagePP/h/hstdcpp.h>
 #include <ImagePP\all\h\IDTMTypes.h>
 #include <ImagePP\all\h\IDTMFileDirectories\FeatureHeaderTypes.h>
 #include <ImagePP\all\h\IDTMFeatureArray.h>
 #include <ImagePP\all\h\HPUArray.h>
 #include <GeoCoord\BaseGeoCoord.h>
-#include <ScalableTerrainModel/Import/Plugin/InputExtractorV0.h>
-#include <ScalableTerrainModel/Import/Plugin/SourceV0.h>
+#include <TerrainModel\TerrainModel.h>
 #include <ScalableTerrainModel\MrDTMDefs.h>
-#include <ScalableTerrainModel/Plugin/IMrDTMPolicy.h>
-
-
+#include <ScalableTerrainModel/Import/Plugin/SourceV0.h>
 #include <ScalableTerrainModel/Type/IMrDTMPoint.h>
+#include <ScalableTerrainModel/Import/Plugin/InputExtractorV0.h>
+#include <ScalableTerrainModel/Plugin/IMrDTMPolicy.h>
 #include <ScalableTerrainModel/Type/IMrDTMLinear.h>
 #include <ScalableTerrainModel/Type/IMrDTMTIN.h>
 
 
+//#include <STMInternal/Foundations/PrivateStringTools.h>
 
-#include <STMInternal/Foundations/PrivateStringTools.h>
 
-
+  
 USING_NAMESPACE_BENTLEY_MRDTM_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_MRDTM
 
 //using namespace Bentley::MrDTM::Plugin;
 
-class DataPipe
-    {
-    private : 
 
-        DPoint3d*      m_points;
-        size_t         m_nbOfPoints;
-        DTMFeatureType m_featureType;
-        std::condition_variable m_dataAvailableCond;
-        std::mutex              m_readMutex; 
-                        
-    public : 
-
-        DataPipe()
-            {                        
-            }
-
-        WritePoints(DPoint3d* points,
-                    size_t    nbOfPoints)
-            {                                    
-            std::unique_lock<std::mutex> lck(m_readMutex);
-            m_points = points;
-            m_nbOfPoints = nbOfPoints; 
-            cv.notify_one();
-            }
-
-        ReadPoints(bvector<DPoint3d>& points)
-            { 
-            std::unique_lock<std::mutex> lck(m_readMutex);
-            m_dataAvailableCond.wait(lck);                        
-            points.resize(nbOfPoints);
-            memcpy(&points[0], m_points, sizeof(DPoint3d) * points.size());                       
-            }
-    };
 
 extern DataPipe s_dataPipe = DataPipe();
 
@@ -181,6 +148,7 @@ private:
     PODPacketProxy<DPoint3d>        m_pointPacket;
     HPU::Array<DPoint3d>            m_ptArray;
     bvector<DPoint3d>               m_points;
+    int                             m_nextIndex;
 
     // Dimension groups definition
     enum
@@ -207,14 +175,38 @@ private:
         {
         m_ptArray.Clear();        
         m_pointPacket.SetSize(0);
-        
-        s_dataPipe.ReadPoints(m_points);        
 
-        m_points
-        
-        /*
-        m_pointPacket.SetSize(m_ptArray.GetSize());        
-        */
+        if (m_nextIndex == -1)
+            {        
+            if (m_points.size() > 0)
+                {
+                s_dataPipe.FinishProcessingPoints();
+                m_points.clear();
+                }
+            
+            s_dataPipe.ReadPoints(m_points);
+            m_nextIndex = 0;
+            }
+
+        if (m_points.size() > 0)
+            {            
+            size_t sizeToCopy = min(m_points.size() - m_nextIndex,  m_pointPacket.GetCapacity());
+            m_ptArray.Append(&m_points[m_nextIndex], &m_points[m_nextIndex] + sizeToCopy);
+            m_pointPacket.SetSize(m_ptArray.GetSize());
+
+            m_nextIndex += (int)sizeToCopy;
+
+            assert(m_nextIndex <= m_points.size());
+
+            if (m_nextIndex == m_points.size())
+                {
+                m_nextIndex = -1;
+                }
+            }
+        else
+            {
+            s_dataPipe.FinishProcessingPoints();            
+            }
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -222,12 +214,8 @@ private:
     * @bsimethod                                                  Raymond.Gauthier   10/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool                    _Next                              () override
-        {
-        
-            return false;
-            /*
-        return ++m_typeInfoIter < m_typeInfoEnd;
-        */
+        {        
+        return m_points.size() > 0;        
         }
 public:
     /*---------------------------------------------------------------------------------**//**
@@ -236,6 +224,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     explicit                        StmStreamingPointExtractor             ()         
         {
+        m_nextIndex = -1;
         }
     };
 

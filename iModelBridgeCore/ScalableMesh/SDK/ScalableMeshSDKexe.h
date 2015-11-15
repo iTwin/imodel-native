@@ -1,7 +1,8 @@
 #pragma once
-#include <windows.h> //used for pipes
+
 #include <list>
 #include <iostream>
+#include <windows.h> //used for pipes
 #include <DgnPlatform/DgnPlatform.h>
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
@@ -73,5 +74,7 @@ namespace ScalableMeshSDKexe
 
         };
         
+
+   
 
     };
