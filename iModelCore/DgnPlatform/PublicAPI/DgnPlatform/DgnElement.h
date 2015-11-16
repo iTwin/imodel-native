@@ -40,7 +40,7 @@ struct GraphicSet
 {
     mutable bvector<Render::GraphicPtr> m_graphics;
 
-    DGNPLATFORM_EXPORT Render::Graphic* FindFor(DgnViewportCR, double metersPerPixel) const;
+    DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Save(Render::Graphic&);
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void Clear();

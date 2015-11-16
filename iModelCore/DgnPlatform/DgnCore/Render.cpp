@@ -43,7 +43,7 @@ void Render::Scene::_Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Graphic* CreateSceneContext::_GetCachedGraphic(double pixelSize) 
     {
-    return m_currGeomElement->Graphics().FindFor(*GetViewport(), pixelSize);
+    return m_currGeomElement->Graphics().Find(*GetViewport(), pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
