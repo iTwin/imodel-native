@@ -68,11 +68,11 @@ struct MockChangeManager : public IChangeManager
             SyncStatus (ECInstanceKeyCR instance));
         MOCK_METHOD2 (ReadModifiedProperties,
             BentleyStatus (ECInstanceKeyCR instance, JsonValueR propertiesOut));
-        MOCK_METHOD1 (CommitCreationChanges,
-            BentleyStatus (const std::map<ECInstanceKey, Utf8String>& newRemoteIds));
-        MOCK_METHOD1 (CommitObjectChanges,
+        MOCK_METHOD2 (CommitCreationChange,
+            BentleyStatus (ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId));
+        MOCK_METHOD1 (CommitObjectChange,
             BentleyStatus (ECInstanceKeyCR instanceKey));
-        MOCK_METHOD1 (CommitFileChanges,
+        MOCK_METHOD1 (CommitFileChange,
             BentleyStatus (ECInstanceKeyCR instanceKey));
         MOCK_METHOD3 (UpdateCreatedInstance, 
             BentleyStatus (ObjectIdCR instanceId, WSObjectsResponseCR instanceResponse, bmap<ECInstanceKey, ECInstanceKey>&));
