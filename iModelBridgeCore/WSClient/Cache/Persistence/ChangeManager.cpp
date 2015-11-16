@@ -601,6 +601,95 @@ ChangeManager::SyncStatus ChangeManager::GetObjectSyncStatus(ECInstanceKeyCR ins
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+ChangeManager::InstanceRevisionPtr ChangeManager::ReadInstanceRevision(ECInstanceKeyCR instanceKey)
+    {
+    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
+    if (nullptr == ecClass)
+        {
+        return std::make_shared<InstanceRevision>();
+        }
+
+    if (nullptr != ecClass->GetRelationshipClassCP())
+        {
+        return ReadRelationshipRevision(instanceKey);
+        }
+    else
+        {
+        return ReadObjectRevision(instanceKey);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ChangeManager::InstanceRevisionPtr ChangeManager::ReadObjectRevision(ECInstanceKeyCR instanceKey)
+    {
+    auto revision = std::make_shared<InstanceRevision>();
+    revision->SetInstanceKey(instanceKey);
+
+    auto info = m_objectInfoManager->ReadInfo(instanceKey);
+    revision->SetObjectId(info.GetObjectId());
+
+    if (info.GetChangeStatus() != ChangeStatus::NoChange)
+        {
+        SetupRevisionChanges(info, *revision);
+        revision->SetChangedProperties(ReadChangeProperties(info.GetChangeStatus(), instanceKey));
+        }
+
+    return revision;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ChangeManager::InstanceRevisionPtr ChangeManager::ReadRelationshipRevision(ECInstanceKeyCR instanceKey)
+    {
+    auto revision = std::make_shared<InstanceRevision>();
+    revision->SetInstanceKey(instanceKey);
+
+    auto info = m_relationshipInfoManager->FindInfo(instanceKey);
+    revision->SetObjectId(info.GetRelationshipId());
+
+    if (info.GetChangeStatus() != ChangeStatus::NoChange)
+        {
+        SetupRevisionChanges(info, *revision);
+        }
+
+    return revision;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ChangeManager::FileRevisionPtr ChangeManager::ReadFileRevision(ECInstanceKeyCR instanceKey)
+    {
+    auto revision = std::make_shared<FileRevision>();
+    revision->SetInstanceKey(instanceKey);
+    revision->SetObjectId(m_objectInfoManager->FindCachedInstance(instanceKey));
+
+    auto info = m_fileInfoManager->ReadInfo(instanceKey);
+    if (info.GetChangeStatus() != ChangeStatus::NoChange)
+        {
+        SetupRevisionChanges(info, *revision);
+        revision->SetFilePath(info.GetFilePath());
+        }
+
+    return revision;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void ChangeManager::SetupRevisionChanges(ChangeInfoCR info, Revision& revision)
+    {
+    revision.SetChangeStatus(info.GetChangeStatus());
+    revision.SetSyncStatus(info.GetSyncStatus());
+    revision.SetChangeNumber(info.GetChangeNumber());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut)
     {
     auto info = m_objectInfoManager->ReadInfo(instance);
@@ -637,32 +726,32 @@ BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, Js
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2013
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitCreationChange(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId)
+BentleyStatus ChangeManager::CommitInstanceRevision(InstanceRevisionCR revision)
     {
+    ECInstanceKey instanceKey = revision.GetInstanceKey();
+
     ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
-    if (ecClass == nullptr)
+    if (nullptr == ecClass)
         {
         return ERROR;
         }
 
-    if (ecClass->GetRelationshipClassCP() == nullptr)
+    if (IChangeManager::ChangeStatus::Created == revision.GetChangeStatus())
         {
-        if (SUCCESS != CommitInstanceCreation(instanceKey, newRemoteId))
-            {
-            return ERROR;
-            }
+        if (nullptr != ecClass->GetRelationshipClassCP())
+            return CommitRelationshipCreation(instanceKey, revision.GetObjectId().remoteId);
+        else
+            return CommitInstanceCreation(instanceKey, revision.GetObjectId().remoteId);
         }
     else
         {
-        if (SUCCESS != CommitRelationshipCreation(instanceKey, newRemoteId))
-            {
-            return ERROR;
-            }
+        if (nullptr != ecClass->GetRelationshipClassCP())
+            return CommitRelationshipChange(instanceKey);
+        else
+            return CommitInstanceChange(instanceKey);
         }
-
-    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -670,14 +759,15 @@ BentleyStatus ChangeManager::CommitCreationChange(ECInstanceKeyCR instanceKey, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitInstanceCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId)
     {
-    if (newRemoteId.empty())
+    ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
+    if (info.GetChangeStatus() != ChangeStatus::Created)
         {
         return ERROR;
         }
 
-    ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
-    if (info.GetChangeStatus() != ChangeStatus::Created)
+    if (newRemoteId.empty() || newRemoteId == info.GetObjectId().remoteId)
         {
+        BeAssert(false && "Set remote id with remote value");
         return ERROR;
         }
 
@@ -748,32 +838,6 @@ BentleyStatus ChangeManager::CommitRelationshipCreation(ECInstanceKeyCR instance
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitObjectChange(ECInstanceKeyCR instanceKey)
-    {
-    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
-
-    if (nullptr != ecClass &&
-        nullptr != ecClass->GetRelationshipClassCP())
-        {
-        if (SUCCESS != CommitRelationshipChange(instanceKey))
-            {
-            return ERROR;
-            }
-        }
-    else
-        {
-        if (SUCCESS != CommitInstanceChange(instanceKey))
-            {
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitInstanceChange(ECInstanceKeyCR instanceKey)
     {
     ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
@@ -831,9 +895,9 @@ BentleyStatus ChangeManager::CommitRelationshipChange(ECInstanceKeyCR instanceKe
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitFileChange(ECInstanceKeyCR instanceKey)
+BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
     {
-    FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
+    FileInfo info = m_fileInfoManager->ReadInfo(revision.GetInstanceKey());
     switch (info.GetChangeStatus())
         {
         case ChangeStatus::Modified:
@@ -842,7 +906,7 @@ BentleyStatus ChangeManager::CommitFileChange(ECInstanceKeyCR instanceKey)
                 {
                 return ERROR;
                 }
-            if (SUCCESS != m_fileManager->SetFileCacheLocation(instanceKey, FileCache::Temporary))
+            if (SUCCESS != m_fileManager->SetFileCacheLocation(info.GetInstanceKey(), FileCache::Temporary))
                 {
                 return ERROR;
                 }
@@ -949,4 +1013,167 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
         changedInstanceKeysOut[change.GetInstanceKey()] = relKey;
         }
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonValuePtr ChangeManager::ReadChangeProperties(ChangeStatus status, ECInstanceKeyCR instance)
+    {
+    ECClassCP ecClass = m_dbAdapter->GetECClass(instance);
+    if (nullptr != ecClass && nullptr != ecClass->GetRelationshipClassCP())
+        {
+        return nullptr;
+        }
+
+    auto properties = std::make_shared<Json::Value>();
+
+    if (ChangeStatus::Created == status)
+        {
+        if (SUCCESS != ReadObjectPropertiesForCreation(instance, *properties))
+            {
+            return nullptr;
+            }
+        return properties;
+        }
+    else if (ChangeStatus::Modified == status)
+        {
+        if (SUCCESS != ReadObjectPropertiesForModification(instance, *properties))
+            {
+            return nullptr;
+            }
+        return properties;
+        }
+
+    return nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ChangeManager::ReadObjectPropertiesForCreation(ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut)
+    {
+    if (SUCCESS != ReadObjectProperties(instanceKey, propertiesJsonOut))
+        {
+        return ERROR;
+        }
+
+    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey.GetECClassId());
+    RemoveCalculatedProperties(propertiesJsonOut, *ecClass);
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ChangeManager::ReadObjectPropertiesForModification(ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut)
+    {
+    if (SUCCESS != ReadModifiedProperties(instanceKey, propertiesJsonOut))
+        {
+        return ERROR;
+        }
+
+    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
+    RemoveReadOnlyProperties(propertiesJsonOut, *ecClass);
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ChangeManager::ReadObjectProperties(ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut)
+    {
+    if (SUCCESS != m_dbAdapter->GetJsonInstance(propertiesJsonOut, instanceKey))
+        {
+        return ERROR;
+        }
+
+    RemoveCacheSpecificProperties(propertiesJsonOut);
+
+    // Graphite03 ECDb is incapable of storing NULLABLE structs and arrays so it returns structs with empty array properties.
+    // This causes errors to be returned from the server.
+    // Still needed on Graphite0505 
+    RemoveEmptyMembersRecursively(propertiesJsonOut);
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeManager::RemoveCacheSpecificProperties(JsonValueR propertiesJson)
+    {
+    for (Utf8StringCR member : propertiesJson.getMemberNames())
+        {
+        // Remove cache-specific properties
+
+        // TODO: Remove "type_string" check when implemented sending only changed properties to WSG
+        // "type_string" is not cache specific, it probably came as a workaround from PW_WSG 1.1 schema as it is readonly but not marked so
+        if (member[0] == '$' || member == "type_string")
+            {
+            propertiesJson.removeMember(member);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeManager::RemoveReadOnlyProperties(JsonValueR propertiesJson, ECClassCR ecClass)
+    {
+    for (Utf8StringCR member : propertiesJson.getMemberNames())
+        {
+        ECPropertyCP ecProperty = ecClass.GetPropertyP(member.c_str());
+        if (nullptr != ecProperty && ecProperty->GetIsReadOnly())
+            {
+            propertiesJson.removeMember(member);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeManager::RemoveCalculatedProperties(JsonValueR propertiesJson, ECClassCR ecClass)
+    {
+    for (Utf8StringCR member : propertiesJson.getMemberNames())
+        {
+        ECPropertyCP ecProperty = ecClass.GetPropertyP(member.c_str());
+        if (nullptr != ecProperty->GetCalculatedPropertySpecification())
+            {
+            propertiesJson.removeMember(member);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeManager::RemoveEmptyMembersRecursively(JsonValueR jsonObject)
+    {
+    for (Utf8StringCR memberName : jsonObject.getMemberNames())
+        {
+        RemoveEmptyMembersRecursively(jsonObject[memberName], memberName, jsonObject);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeManager::RemoveEmptyMembersRecursively(JsonValueR childJson, Utf8StringCR childMemberNameInParent, JsonValueR parentJson)
+    {
+    if (childJson.isObject())
+        {
+        for (Utf8StringCR memberName : childJson.getMemberNames())
+            {
+            RemoveEmptyMembersRecursively(childJson[memberName], memberName, childJson);
+            }
+        }
+    if (childJson.empty())
+        {
+        parentJson.removeMember(childMemberNameInParent);
+        return;
+        }
     }

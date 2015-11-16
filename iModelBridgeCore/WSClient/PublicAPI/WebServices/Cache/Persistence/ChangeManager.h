@@ -57,12 +57,25 @@ struct ChangeManager : public IChangeManager
             uint64_t optionalChangeNumber
             );
 
+        InstanceRevisionPtr ReadObjectRevision(ECInstanceKeyCR instanceKey);
+        InstanceRevisionPtr ReadRelationshipRevision(ECInstanceKeyCR instanceKey);
+        static void SetupRevisionChanges(const struct ChangeInfo& info, Revision& revisionInOut);
         BentleyStatus CommitInstanceCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
         BentleyStatus CommitRelationshipCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
         BentleyStatus CommitInstanceChange(ECInstanceKeyCR instanceKey);
         BentleyStatus CommitRelationshipChange(ECInstanceKeyCR instanceKey);
 
         Utf8String CreateRemoteId();
+
+        JsonValuePtr ReadChangeProperties(ChangeStatus status, ECInstanceKeyCR instance);
+        BentleyStatus ReadObjectProperties(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut);
+        BentleyStatus ReadObjectPropertiesForCreation(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut);
+        BentleyStatus ReadObjectPropertiesForModification(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut);
+        static void RemoveCacheSpecificProperties(JsonValueR propertiesJson);
+        static void RemoveReadOnlyProperties(JsonValueR propertiesJson, ECClassCR ecClass);
+        static void RemoveCalculatedProperties(JsonValueR propertiesJson, ECClassCR ecClass);
+        static void RemoveEmptyMembersRecursively(JsonValueR jsonObject);
+        static void RemoveEmptyMembersRecursively(JsonValueR childJson, Utf8StringCR childMemberNameInParent, JsonValueR parentJson);
 
     public:
         WSCACHE_EXPORT ChangeManager
@@ -125,13 +138,15 @@ struct ChangeManager : public IChangeManager
         WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instance) override;
         WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instance) override;
 
+        WSCACHE_EXPORT InstanceRevisionPtr ReadInstanceRevision(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT FileRevisionPtr ReadFileRevision(ECInstanceKeyCR instanceKey) override;
+
         WSCACHE_EXPORT BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut) override;
 
         // -- Commiting changes --
 
-        WSCACHE_EXPORT BentleyStatus CommitCreationChange(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId) override;
-        WSCACHE_EXPORT BentleyStatus CommitObjectChange(ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT BentleyStatus CommitFileChange(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT BentleyStatus CommitInstanceRevision(InstanceRevisionCR revision) override;
+        WSCACHE_EXPORT BentleyStatus CommitFileRevision(FileRevisionCR revision) override;
 
         WSCACHE_EXPORT BentleyStatus UpdateCreatedInstance
             (
