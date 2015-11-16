@@ -315,6 +315,8 @@ $(CoreObjs)DgnMaterial$(oext) :                     $(DgnCoreDir)DgnMaterial.cpp
 
 $(CoreObjs)DgnLight$(oext) :                        $(DgnCoreDir)DgnLight.cpp $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)DgnLight.h ${MultiCompileDepends}
 
+$(CoreObjs)DgnView$(oext) :                         $(DgnCoreDir)DgnView.cpp $(DgnPlatformAPISrc)DgnDb.h $(DgnPlatformAPISrc)DgnView.h ${MultiCompileDepends}
+
 $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
@@ -332,8 +334,6 @@ $(CoreObjs)QueryModel$(oext) :                      $(DgnCoreDir)QueryModel.cpp 
 $(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
 
 $(CoreObjs)UpdateLogging$(oext) :                   $(DgnCoreDir)UpdateLogging.cpp $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
-
-$(CoreObjs)DgnViewDb$(oext) :                       $(DgnCoreDir)DgnViewDb.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnLink$(oext) :                         $(DgnCoreDir)DgnLink.cpp $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)DgnLink.h ${MultiCompileDepends}
 

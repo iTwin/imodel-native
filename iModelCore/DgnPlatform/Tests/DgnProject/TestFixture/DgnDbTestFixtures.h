@@ -23,6 +23,7 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define TMTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
+#define TMTEST_TEST_GROUP_CLASS_NAME                     "TestGroup"
 #define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
 #define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
@@ -113,6 +114,37 @@ public:
 struct TestElement2dHandler : dgn_ElementHandler::Drawing
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, dgn_ElementHandler::Drawing, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/15
+//=======================================================================================
+struct TestGroup : Dgn::PhysicalElement, Dgn::IElementGroupOf<Dgn::PhysicalElement>
+{
+    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_GROUP_CLASS_NAME, Dgn::PhysicalElement)
+    friend struct TestGroupHandler;
+
+protected:
+    Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
+    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
+
+    explicit TestGroup(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestGroup> Create(Dgn::DgnDbR, Dgn::DgnModelId, Dgn::DgnCategoryId);
+};
+
+typedef RefCountedPtr<TestGroup> TestGroupPtr;
+typedef RefCountedCPtr<TestGroup> TestGroupCPtr;
+typedef TestGroup& TestGroupR;
+typedef TestGroup const& TestGroupCR;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    11/15
+//=======================================================================================
+struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
 };
 
 //=======================================================================================

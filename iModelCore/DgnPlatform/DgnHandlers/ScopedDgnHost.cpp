@@ -235,9 +235,27 @@ static DgnModelPtr getAndFill(DgnDbR db, DgnModelId modelID, bool fillCache)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestDataManager::MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
+    {
+    if (db->IsBriefcase())
+        return;
+
+    BeFileName name(db->GetFileName());
+
+    db->ChangeBriefcaseId(BeBriefcaseId(1));
+    db->SaveChanges();
+    db->CloseDb();
+
+    DbResult result = BE_SQLITE_OK;
+    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   TestDataManager::OpenTestFile ()
+BentleyStatus   TestDataManager::OpenTestFile (bool needBriefcase)
     {
     DbResult stat;
     DgnDb::OpenParams params(m_openMode);
@@ -257,6 +275,8 @@ BentleyStatus   TestDataManager::OpenTestFile ()
         return ERROR;
         }
 
+    if (needBriefcase)
+        MustBeBriefcase(m_dgndb, m_openMode);
 
     for (auto const& entry : m_dgndb->Models().MakeIterator())
         {
@@ -287,14 +307,14 @@ void    TestDataManager::CloseTestFile ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool fill)
+TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool needBriefcase, bool fill)
     {
     m_model     = NULL;
     m_fileName  = fullFileName;
     m_openMode  = dbOpenMode;
     m_fill      = fill;
 
-    OpenTestFile ();
+    OpenTestFile (needBriefcase);
     }
 
 /*---------------------------------------------------------------------------------**//**

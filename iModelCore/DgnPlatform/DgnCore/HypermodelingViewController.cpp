@@ -192,7 +192,7 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
 
     DRange3d range = DRange3d::NullRange();
     for (auto const& el : *model)
-        range.Extend(el.second->ToGeometricElement()->CalculateRange3d());
+        range.Extend(el.second->ToGeometrySource()->CalculateRange3d());
 
     range.ScaleAboutCenter (range, 1.10);
 
@@ -312,7 +312,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
+void HypermodelingViewController::_StrokeElement(ViewContextR context, GeometrySourceCR element)
     {
 #if defined (NEEDS_WORK_DGNITEM)
     if (m_pass != PASS_None && !ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler (elIter.GetHandler()))

@@ -498,7 +498,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
         CameraViewControllerP cameraView = GetCameraViewControllerP();
         if (!Allow3dManipulations())
             {
-            // we're in a "2d" view of a physical model. That means that we must have our oreintation with z out of the screen with z=0 at the center.
+            // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
             AlignWithRootZ(); // make sure we're in a z Up view
 
             DRange3d  extents = m_viewController->GetViewedExtents();
@@ -516,12 +516,16 @@ ViewportStatus DgnViewport::_SetupFromViewController()
         else
             {
             m_is3dView = true;
-            m_isCameraOn = (cameraView ? cameraView->IsCameraOn() : false);
-            m_camera = cameraView->GetControllerCamera();
-
-            if (m_isCameraOn)
+            m_isCameraOn = false;
+            if (cameraView)
                 {
-                validateCamera(*cameraView);
+                m_isCameraOn = cameraView->IsCameraOn();
+                m_camera = cameraView->GetControllerCamera();
+
+                if (m_isCameraOn)
+                    {
+                    validateCamera(*cameraView);
+                    }
                 }
 
             _AdjustZPlanesToModel(origin, delta, *viewController);

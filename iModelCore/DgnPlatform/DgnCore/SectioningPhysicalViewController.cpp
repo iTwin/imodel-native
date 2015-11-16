@@ -209,7 +209,7 @@ void SectioningViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
+void SectioningViewController::_StrokeElement(ViewContextR context, GeometrySourceCR element)
     {
     if (m_pass == ClipVolumePass::InsideForward)
         {

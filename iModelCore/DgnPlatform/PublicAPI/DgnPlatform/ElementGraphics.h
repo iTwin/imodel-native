@@ -161,7 +161,7 @@ struct          ElementGraphicsOutput
 //! Visit the supplied element and send it's Draw output to the supplied processor.
 //! @param[in] processor The object to send the Draw output to.
 //! @param[in] elem The element to output the graphics of.
-DGNPLATFORM_EXPORT static void Process(IElementGraphicsProcessorR processor, GeometricElementCR elem);
+DGNPLATFORM_EXPORT static void Process(IElementGraphicsProcessorR processor, GeometrySourceCR source);
 
 //! Call _OutputGraphics on the supplied processor and send whatever it draws to it's process methods.
 //! @param[in] processor The object to send the Draw output to.

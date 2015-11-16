@@ -175,7 +175,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ClipPlaneSet clips (convexClip);
-    context->DrawSymbol (m_symbol.get (), &transform, &clips, !GetUseElementColor(), !GetUseElementWeight());
+    context->DrawSymbol (m_symbol.get (), &transform, &clips);
 #endif
 
     return  SUCCESS;
@@ -219,6 +219,7 @@ LsSymbolComponent::LsSymbolComponent (LsLocation const *pLocation) : LsComponent
     m_storedScale = 0.0;
     m_symFlags    = 0;
     m_postProcessed = false;
+    m_lineColorByLevel = false;
 
     memset (&m_symSize, 0, sizeof(m_symSize));
     }
@@ -272,6 +273,21 @@ void            LsSymbolComponent::_ClearPostProcess ()
     //  Assume we need to regenerate the XGraphics
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2015
+//---------------------------------------------------------------------------------------
+void LsSymbolComponent::SetColors(bool colorByLevel, ColorDef lineColor, ColorDef fillColor)
+    {
+    m_lineColorByLevel = colorByLevel;
+    m_lineColor = lineColor;
+    m_fillColor = fillColor;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2015
+//---------------------------------------------------------------------------------------
+void LsSymbolComponent::SetWeight(uint32_t weight) { m_weight = weight; }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -289,6 +305,9 @@ LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
     //  symbComp->SetXGraphics (v10symData->symBuf, v10symData->nBytes);
 
     symbComp->SetFlags (v10symData->m_symFlags);
+
+    symbComp->SetColors(v10symData->m_colorByLevel, ColorDef(v10symData->m_lineColor), ColorDef(v10symData->m_fillColor));
+    symbComp->SetWeight(v10symData->m_weight);
 
     DPoint3d symSize, symBase = v10symData->m_range.low;
     symSize.x = v10symData->m_range.high.x - v10symData->m_range.low.x;

@@ -123,14 +123,12 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 
     //! The ElementHandler for DrawingElement
     struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 
     //! The ElementHandler for ElementGroup

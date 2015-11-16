@@ -177,6 +177,8 @@ public:
     DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Texture has been imported
     DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
+    //! Make sure that any ids referenced by the supplied GeomStream have been imported
+    DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
     //! @}
 
     //! @name GCS coordinate system shift
@@ -267,6 +269,7 @@ public:
     friend struct dgn_ElementHandler::Element;
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
+    friend struct GeometrySource;
 
     typedef DgnAuthority::Code Code;
 
@@ -308,8 +311,11 @@ public:
         static const uint64_t UpdateChild = InsertChild << 1; //!< Modify a child of this element. "UpdateChild"
         static const uint64_t DeleteChild = UpdateChild << 1; //!< Delete a child of this element. "DeleteChild"
         static const uint64_t SetCode = DeleteChild << 1; //!< Change this element's code. "SetCode"
+        static const uint64_t Move = SetCode << 1; //!< Rotate and/or translate. "Move"
+        static const uint64_t SetCategory = Move << 1; //!< Change element category. "SetCategory"
+        static const uint64_t SetGeometry = SetCategory << 1; //!< Change element geometry. "SetGeometry"
 
-        static const uint64_t Reserved_1 = SetCode << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_1 = SetGeometry << 1; //!< Reserved for future use 
         static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
@@ -977,13 +983,11 @@ protected:
     //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
 
-    virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
-    virtual DgnElement3dCP _ToElement3d() const {return nullptr;}
-    virtual DgnElement2dCP _ToElement2d() const {return nullptr;}
+    virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
-    virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
+    virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1001,7 +1005,6 @@ protected:
 
 public:
     static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
-    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private
@@ -1009,42 +1012,33 @@ public:
 
     //! @name Dynamic casting to DgnElement subclasses
     //! @{
-    GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();} //!< more efficient substitute for dynamic_cast<GeometricElementCP>(el)
+    GeometrySourceCP ToGeometrySource() const {return _ToGeometrySource();} //!< more efficient substitute for dynamic_cast<GeometrySourceCP>(el)
+    DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
+    DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
+
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();} //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
-    DgnElement3dCP ToElement3d() const {return _ToElement3d();}                   //!< more efficient substitute for dynamic_cast<DgnElement3dCP>(el)
-    DgnElement2dCP ToElement2d() const {return _ToElement2d();}                   //!< more efficient substitute for dynamic_cast<DgnElement2dCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
-    ElementGroupCP ToElementGroup() const {return _ToElementGroup();}             //!< more efficient substitute for dynamic_cast<ElementGroupCP>(el)
-    GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());} //!< more efficient substitute for dynamic_cast<GeometricElementP>(el)
+    IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}          //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
+    
+    GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
+    GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
+    GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
+
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
-    DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}                       //!< more efficient substitute for dynamic_cast<DgnElement3dP>(el)
-    DgnElement2dP ToElement2dP() {return const_cast<DgnElement2dP>(_ToElement2d());}                       //!< more efficient substitute for dynamic_cast<DgnElement2dP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
-    ElementGroupP ToElementGroupP() {return const_cast<ElementGroupP>(_ToElementGroup());}                 //!< more efficient substitute for dynamic_cast<ElementGroupP>(el)
     //! @}
 
-    bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
-    bool IsGeometricElement() const {return nullptr != ToGeometricElement();}
+    bool Is3d() const {return nullptr != ToGeometrySource3d();} //!< Determine whether this element is 3d or not
+    bool Is2d() const {return nullptr != ToGeometrySource2d();} //!< Determine whether this element is 2d or not
+    bool IsGeometricElement() const {return nullptr != ToGeometrySource();}
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
-
-    Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;} //!< Get the current Hilited state of this element
-    void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;} //!< Change the current Hilited state of this element
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
     //! @note If this flag is true, this element must be readonly. To modify an element, call CopyForEdit.
     bool IsPersistent() const {return m_flags.m_persistent;}
-
-    //! Test if the element is currently in the selection set.
-    bool IsInSelectionSet() const {return m_flags.m_inSelectionSet;}
-
-    //! Test if the element is not displayed.
-    bool IsUndisplayed() const {return m_flags.m_undisplayed;}
-
-    //! Set this element's undisplayed flag
-    void SetUndisplayedFlag(bool yesNo) {m_flags.m_undisplayed = yesNo;}
 
     //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
@@ -1092,12 +1086,6 @@ public:
 
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
-
-    // *** WIP_ELEMENT_ITEM *** pending redesign
-    //! Get the DgnElement::Item handler for this DgnElement or the ElementHandler if the DgnElement does not have a DgnElement::Item.
-    //! @return DgnDomain::Handler or nullptr if DgnElement specifies a DgnElement::Item who's handler can't be found.
-    //! @remarks Used to find extensions like IEditManipulatorExtension that should coordinate with the item handler whenever it exists.
-    DGNPLATFORM_EXPORT DgnDomain::Handler* GetItemOrElementHandler() const;
 
     //! @name AppData Management
     //! @{
@@ -1291,143 +1279,227 @@ public:
 };
 
 //=======================================================================================
-//! A DgnElement that has a Geometry Aspect.
-//! @note This an abstract class. Subclasses DgnElement2d and DgnElement3d provide concrete implementations.
+// @bsiclass                                                    Brien.Bastings  11/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeometrySource
+{
+//__PUBLISH_SECTION_END__
+    friend struct ElementGeometryBuilder;
+
+//__PUBLISH_SECTION_START__
+protected:
+
+virtual DgnDbR _GetSourceDgnDb() const = 0;
+virtual DgnElementCP _ToElement() const = 0;
+virtual GeometrySource2dCP _ToGeometrySource2d() const = 0; // Either this method or _ToGeometrySource3d must return non-null.
+virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
+
+virtual DgnCategoryId _GetCategoryId() const = 0;
+virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
+virtual GeomStreamCR _GetGeomStream() const = 0;
+virtual bool _HasGeometry() const {return _GetGeomStream().HasGeometry();}
+virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
+
+DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
+DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
+DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
+DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
+
+GeomStreamR GetGeomStreamR() {return const_cast<GeomStreamR>(_GetGeomStream());} // Only ElementGeometryBuilder should have write access to the GeomStream...
+
+public:
+
+DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
+DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
+DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
+
+GeometrySource2dCP ToGeometrySource2d() const {return _ToGeometrySource2d();}
+GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(_ToGeometrySource2d());}
+
+GeometrySource3dCP ToGeometrySource3d() const {return _ToGeometrySource3d();}
+GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
+
+DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
+DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
+
+GeomStreamCR GetGeomStream() const {return _GetGeomStream();}
+bool HasGeometry() const {return _HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
+AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
+DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
+
+// NOT_NOW_GEOMETRY_SOURCE - Make hilite/undisplayed virtual so transients can use them...
+bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;}
+DgnElement::Hilited IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
+
+DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const;
+DGNPLATFORM_EXPORT void SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
+DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
+
+void Draw(ViewContextR context) const {_Draw(context);}
+bool DrawHit(HitDetailCR hit, ViewContextR context) const {return _DrawHit(hit, context);}
+void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
+SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
+
+}; // GeometrySource
+
+//=======================================================================================
+// @bsiclass                                                    Brien.Bastings  11/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
+{
+protected:
+
+virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+virtual Placement3dCR _GetPlacement() const = 0;
+virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
+
+DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
+DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
+
+public:
+
+Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
+DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placement);} //!< Change the Placement3d for this element
+
+}; // GeometrySource3d
+
+//=======================================================================================
+// @bsiclass                                                    Brien.Bastings  11/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
+{
+protected:
+
+virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+virtual Placement2dCR _GetPlacement() const = 0;
+virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
+
+DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
+DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
+
+public:
+
+Placement2dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement2d of this element
+DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
+
+}; // GeometrySource2d
+
+//=======================================================================================
+//! A 3-dimensional geometric element.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement, Render::Stroker
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : DgnElement, GeometrySource3d
 {
     DEFINE_T_SUPER(DgnElement);
 
     struct CreateParams : T_Super::CreateParams
     {
-        DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
+    DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
 
-        DgnCategoryId m_categoryId;
+    DgnCategoryId m_categoryId;
+    Placement3dCR m_placement;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, code, id, parent), m_categoryId(category) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
 
-        explicit CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) { }
-        CreateParams(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId) { }
+    explicit CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId(), Placement3dCR placement = Placement3d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
+    CreateParams(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
     };
 
-    //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of GeometricElement.
-    struct RestrictedAction : T_Super::RestrictedAction
-    {
-        DEFINE_T_SUPER(GeometricElement::T_Super::RestrictedAction);
-
-        static const uint64_t Move = T_Super::NextAvailable; //!< Rotate and/or translate. "Move"
-        static const uint64_t SetCategory = Move << 1; //!< Change element category. "SetCategory"
-        static const uint64_t SetGeometry = SetCategory << 1; //!< Change element geometry. "SetGeometry"
-
-        static const uint64_t Reserved_1 = SetCategory << 1; //!< Reserved for future use
-        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
-        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use
-
-        static const uint64_t NextAvailable = Reserved_3 << 1; //!< Subclasses can add new actions beginning with this value.
-
-        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
-    };
 protected:
-    GeomStream m_geom;
+
     DgnCategoryId m_categoryId;
     mutable Render::GraphicSet m_graphics;
+    GeomStream      m_geom;
+    Placement3d     m_placement;
 
-    //! Change the category of this DgnElement.
-    //! The default implementation sets the category without doing any checking.
-    //! Override to validate the category.
-    //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
+    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    virtual DgnElementCP _ToElement() const override final {return this;}
+    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
+    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
+    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
+
+    virtual DgnCategoryId _GetCategoryId() const final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
+
+    virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override final;
+    DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
+
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
 
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT void _OnReversedUpdate(DgnElementCR changed) const override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
-    virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) = 0;
-    GeometricElementCP _ToGeometricElement() const override {return this;}
-    DgnDbStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
-    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId) {}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
-    virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
-    virtual bool _IsPlacementValid() const = 0;
 
-public:
-    // This exists solely to allow us to load a geometric element using a single SELECT statement from DgnElements::LoadElement() rather than executing
-    // a second SELECT just to retrieve the category ID.
-    void InitializeCategoryIdInternal(DgnCategoryId categoryId) { BeAssert(!m_categoryId.IsValid()); m_categoryId = categoryId; }
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
+    explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
 
-    Render::GraphicSet& Graphics() const {return m_graphics;}
-    DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
-    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
-    DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
-    DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const; //!< Default snap using CurvePrimitive in HitDetail.
-    DGNPLATFORM_EXPORT virtual void _Stroke(ViewContextR context) const override;
-    bool HasGeometry() const {return m_geom.HasGeometry();} //!< return false if this GeometricElement currently has no geometry (is empty).
-    bool IsPlacementValid() const {return _IsPlacementValid(); }
-    AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
-
-    //! Get the GeomStream for this GeometricElement.
-    GeomStreamCR GetGeomStream() const {return m_geom;}
-
-    //! Get a writable reference to the GeomStream for this GeometricElement.
-    GeomStreamR GetGeomStreamR() {return m_geom;}
-
-    //! Get the category of this DgnElement.
-    //! @see SetCategoryId
-    DgnCategoryId GetCategoryId() const {return m_categoryId;}
-
-    //! Set the category of this DgnElement.
-    //! @see GetCategoryId, _SetCategoryId
-    //! @return DgnDbStatus::Success if the category was set
-    //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
-    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
-};
+}; // DgnElement3d
 
 //=======================================================================================
-//! A 3-dimensional GeometricElement.
+//! A 2-dimensional geometric element.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
 {
-    DEFINE_T_SUPER(GeometricElement);
+    DEFINE_T_SUPER(DgnElement);
 
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
+    DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
 
-    Placement3dCR m_placement;
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
+    DgnCategoryId m_categoryId;
+    Placement2dCR m_placement;
 
-    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category = DgnCategoryId(), Placement3dCR placement = Placement3d()) : T_Super(params, category), m_placement(placement) {}
-    CreateParams(GeometricElement::CreateParams const& params, Placement3dCR placement = Placement3d()) : T_Super(params), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
+
+    explicit CreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
+    CreateParams(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     };
 
 protected:
-    Placement3d m_placement;
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindPlacement(BeSQLite::Statement&) override;
-    bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
-    explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
-    DgnElement3dCP _ToElement3d() const override {return this;}
-    AxisAlignedBox3d _CalculateRange3d() const override {return m_placement.CalculateRange();}
+
+    DgnCategoryId   m_categoryId;
+    GeomStream      m_geom;
+    Placement2d     m_placement;
+
+    virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
+    virtual DgnElementCP _ToElement() const override final {return this;}
+    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
+    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
+    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
+
+    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
+    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
+
+    virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override final;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
 
-public:
-    Placement3dCR GetPlacement() const {return m_placement;} //!< Get the Placement3d of this DgnElement3d
-    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement3dCR placement); //!< Change the Placement3d for this DgnElement3d
-};
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
+
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
+
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
+    explicit DgnElement2d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
+
+}; // DgnElement2d
 
 //=======================================================================================
 //! A DgnElement3d that exists in the physical coordinate space of a DgnDb.
@@ -1456,42 +1528,6 @@ public:
     //! Query the DgnClassId for the dgn.PhysicalElement class in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.PhysicalElement class - it does @b not return the class of a specific instance.
     DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
-};
-
-//=======================================================================================
-//! A 2-dimensional GeometricElement.
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
-{
-    DEFINE_T_SUPER(GeometricElement);
-    struct CreateParams : T_Super::CreateParams
-    {
-    DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
-
-    Placement2dCR m_placement;
-
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
-
-    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params, category), m_placement(placement){}
-    };
-
-protected:
-    Placement2d m_placement;
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindPlacement(BeSQLite::Statement&) override;
-    bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
-    DgnElement2dCP _ToElement2d() const override {return this;}
-    AxisAlignedBox3d _CalculateRange3d() const override {return m_placement.CalculateRange();}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
-    explicit DgnElement2d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    Placement2dCR GetPlacement() const {return m_placement;}     //!< Get the Placement2d for this DgnElement2d
-    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement2dCR placement); //!< Change the Placement2d for this Dgnele
 };
 
 //=======================================================================================
@@ -1631,76 +1667,23 @@ public:
 };
 
 //=======================================================================================
-//! A "logical Group" of elements.
-//! "Logical" groups hold a referencing (not an owning) relationship with their members.
-//! ElementGroup can be subclassed for custom grouping behavior.
-//! @ingroup DgnElementGroup
+//! @note Instead of using this class, create own subclass (somewhere in DgnElement hierarchy)
+//! and use the IElementGroupOf interface to add grouping behavior to that subclass.
+//! @note This class is only temporarily here to support DgnV8 conversion
 //! @private
 // @bsiclass                                                    Shaun.Sewall    05/15
 //=======================================================================================
 // WIP: Obsolete. Replaced by IElementGroup
-struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement, IElementGroupOf<DgnElement>
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
 
 protected:
-    ElementGroupCP _ToElementGroup() const override {return this;}
-
-    //! Called when a member is about to be inserted into this ElementGroup
-    //! Override and return something other than DgnDbStatus::Success to prevent the member from being inserted into this ElementGroup.
-    virtual DgnDbStatus _OnMemberInsert(DgnElementCR member) const {return DgnDbStatus::Success;}
-    //! Called after a member has been inserted into this ElementGroup
-    //! Override if additional processing is required after a member was inserted.
-    virtual void _OnMemberInserted(DgnElementCR member) const {}
-
-    //! Called when a member is about to be deleted from this ElementGroup
-    //! Override and return something other than DgnDbStatus::Success to prevent the member from being deleted from this ElementGroup.
-    virtual DgnDbStatus _OnMemberDelete(DgnElementCR member) const {return DgnDbStatus::Success;}
-    //! Called after a member has been deleted from this ElementGroup
-    //! Override if additional processing is required after a member was deleted.
-    virtual void _OnMemberDeleted(DgnElementCR member) const {}
-
-    //! Called when members of the group are queried
-    DGNPLATFORM_EXPORT virtual DgnElementIdSet _QueryMembers() const;
+    Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
+    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
 
 public:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
-
-    //! Create a new instance of a DgnElement using the specified CreateParams.
-    //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
-    //! use a static method on the subclass.
-    static ElementGroupPtr Create(CreateParams const& params) {return new ElementGroup(params);}
-
-    //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
-    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
-
-    //! Insert a member into this ElementGroup. This creates an ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
-    //! @param[in] member The element to become a member of this ElementGroup.
-    //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
-    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnDbStatus InsertMember(DgnElementCR member) const;
-
-    //! Deletes the ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
-    //! @param[in] member The element to remove from this ElementGroup.
-    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteMember(DgnElementCR member) const;
-
-    //! Deletes all ElementGroupHasMembers ECRelationships from this ElementGroup
-    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteAllMembers() const;
-
-    //! Query for the set of members of this ElementGroup
-    //! @see QueryFromMember
-    DgnElementIdSet QueryMembers() const {return _QueryMembers();}
-
-    //! Query an ElementGroup from a member element.
-    //! @param[in] db the DgnDb to query
-    //! @param[in] groupClassId specify the type of ElementGroup to consider as a DgnElement could be in more than one ElementGroup.
-    //! @param[in] memberElementId the DgnElementId of the member element
-    //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
-    //! @see QueryMembers
-    DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
 //=======================================================================================
@@ -1826,7 +1809,7 @@ private:
     void AddToPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);

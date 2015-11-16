@@ -189,7 +189,7 @@ void ElementGeomAndPlacementTests::TestLoadElem(DgnElementId id, Placement3d con
     {
     auto el = m_db->Elements().Get<DgnElement3d>(id);
     ASSERT_TRUE(el.IsValid());
-    EXPECT_EQ(nullptr != placement, el->IsPlacementValid());
+    EXPECT_EQ(nullptr != placement, el->GetPlacement().IsValid());
     if (nullptr != placement)
         {
         EXPECT_TRUE(placement->IsValid());

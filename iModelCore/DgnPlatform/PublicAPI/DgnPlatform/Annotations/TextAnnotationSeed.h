@@ -78,101 +78,79 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationSeed : DictionaryElement
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationSeed, DictionaryElement);
-public:
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(TextAnnotationSeed::T_Super::CreateParams);
 
-        TextAnnotationSeedPropertyBag m_data;
-        Utf8String m_descr;
-
-        //! Constructor from base class. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
-
-        //! Constructor
-        //! @param[in]      db    DgnDb in which the style is to reside
-        //! @param[in]      name  The name of the style. Must be unique within the DgnDb
-        //! @param[in]      data  Style properties
-        //! @param[in]      descr Optional style description
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR name="", TextAnnotationSeedPropertyBagCR data=TextAnnotationSeedPropertyBag(), Utf8StringCR descr="");
-    };
 private:
     friend struct TextAnnotationSeedPersistence;
 
+    Utf8String m_description;
     TextAnnotationSeedPropertyBag m_data;
-    Utf8String m_descr;
 
-    void Reset();
-    void ResetProperties();
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    DGNPLATFORM_EXPORT static Code CreateCodeFromName(Utf8CP);
+
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
-    DGNPLATFORM_EXPORT virtual uint32_t _GetMemSize() const override;
-
+    virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
+    virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     virtual Code _GenerateDefaultCode() override { return Code(); }
+    virtual DgnDbStatus _SetCode(Code const&) override { return DgnDbStatus::BadArg; /* Restricted to an internal DgnAuthority; use GetName/SetName. */ }
+
 public:
-    explicit TextAnnotationSeed(DgnDbR db) : TextAnnotationSeed(CreateParams(db)) { }
-    explicit TextAnnotationSeed(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) { }
-
-    static TextAnnotationSeedPtr Create(DgnDbR project) { return new TextAnnotationSeed(project); }
-    TextAnnotationSeedPtr Clone() const { return MakeCopy<TextAnnotationSeed>(); }
-
-    DGNPLATFORM_EXPORT TextAnnotationSeedPtr CreateEffectiveStyle(TextAnnotationSeedPropertyBagCR overrides) const;
-
-    DgnDbR GetDbR() const { return GetDgnDb(); }
-    TextAnnotationSeedId GetSeedId() const { return TextAnnotationSeedId(GetElementId().GetValueUnchecked()); }
-    Utf8String GetName() const { return GetCode().GetValue(); }
-    Utf8StringCR GetDescription() const { return m_descr; }
-    void SetDescription(Utf8StringCR value) { m_descr = value; }
-    void SetName(Utf8StringCR value) { SetCode(CreateCodeForSeed(value)); }
-
-    DGNPLATFORM_EXPORT static Code CreateCodeForSeed(Utf8StringCR name);
-
-    DGNPLATFORM_EXPORT AnnotationFrameStyleId GetFrameStyleId() const;
-    DGNPLATFORM_EXPORT void SetFrameStyleId(AnnotationFrameStyleId);
-    DGNPLATFORM_EXPORT AnnotationLeaderStyleId GetLeaderStyleId() const;
-    DGNPLATFORM_EXPORT void SetLeaderStyleId(AnnotationLeaderStyleId);
-    DGNPLATFORM_EXPORT AnnotationTextStyleId GetTextStyleId() const;
-    DGNPLATFORM_EXPORT void SetTextStyleId(AnnotationTextStyleId);
-
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationSeed); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-    TextAnnotationSeedCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<TextAnnotationSeed>(*this, status); }
-    TextAnnotationSeedCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<TextAnnotationSeed>(*this, status); }
+    explicit TextAnnotationSeed(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), Code())) {}
+    explicit TextAnnotationSeed(CreateParams const& params) : T_Super(params) {}
+    static TextAnnotationSeedPtr Create(DgnDbR project) { return new TextAnnotationSeed(project); }
+    TextAnnotationSeedPtr CreateCopy() const { return MakeCopy<TextAnnotationSeed>(); }
 
-    DGNPLATFORM_EXPORT static TextAnnotationSeedId QuerySeedId(Code const& code, DgnDbR db);
-    static TextAnnotationSeedId QuerySeedId(Utf8StringCR styleName, DgnDbR db) { return QuerySeedId(CreateCodeForSeed(styleName), db); }
-    static TextAnnotationSeedCPtr QuerySeed(TextAnnotationSeedId styleId, DgnDbR db) { return db.Elements().Get<TextAnnotationSeed>(styleId); }
-    static TextAnnotationSeedCPtr QuerySeed(Utf8StringCR styleName, DgnDbR db) { return QuerySeed(QuerySeedId(styleName, db), db); }
+    Utf8String GetName() const { return GetCode().GetValue(); }
+    void SetName(Utf8CP value) { T_Super::_SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    Utf8StringCR GetDescription() const { return m_description; }
+    void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
 
-    DGNPLATFORM_EXPORT static bool ExistsById(TextAnnotationSeedId id, DgnDbR db);
-    static bool ExistsByName(Utf8StringCR name, DgnDbR db) { return QuerySeedId(name, db).IsValid(); }
+    DGNPLATFORM_EXPORT DgnElementId GetFrameStyleId() const;
+    DGNPLATFORM_EXPORT void SetFrameStyleId(DgnElementId);
+    DGNPLATFORM_EXPORT DgnElementId GetLeaderStyleId() const;
+    DGNPLATFORM_EXPORT void SetLeaderStyleId(DgnElementId);
+    DGNPLATFORM_EXPORT DgnElementId GetTextStyleId() const;
+    DGNPLATFORM_EXPORT void SetTextStyleId(DgnElementId);
 
-    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db);
+    DGNPLATFORM_EXPORT TextAnnotationSeedPtr CreateEffectiveSeed(TextAnnotationSeedPropertyBagCR overrides) const;
 
+    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCodeFromName(name)); }
+    static TextAnnotationSeedCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
+    static TextAnnotationSeedCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotationSeed>(id); }
+    static TextAnnotationSeedPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotationSeed>(id); }
+    static TextAnnotationSeedPtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
+    TextAnnotationSeedCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotationSeed>(*this); }
+    TextAnnotationSeedCPtr Update() { return GetDgnDb().Elements().Update<TextAnnotationSeed>(*this); }
+
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     11/2014
+    //=======================================================================================
     struct Entry : ECSqlStatementEntry
-    {
+        {
+        DEFINE_T_SUPER(ECSqlStatementEntry);
         friend struct ECSqlStatementIterator<Entry>;
         friend struct TextAnnotationSeed;
-    private:
-        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
-    public:
-        TextAnnotationSeedId GetId() const { return m_statement->GetValueId<TextAnnotationSeedId>(0); }
-        Utf8CP GetName() const { return m_statement->GetValueText(1); }
-        Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
-    };
 
-    struct Iterator : ECSqlStatementIterator<Entry>
-    {
-    };
+        private:
+            Entry() : T_Super(nullptr) {}
+            Entry(BeSQLite::EC::ECSqlStatement* stmt) : T_Super(stmt) {}
 
-    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR db, bool ordered=false);
-    static Iterator MakeOrderedIterator(DgnDbR db) { return MakeIterator(db, true); }
+        public:
+            DgnElementId GetElementId() const { return m_statement->GetValueId<DgnElementId>(0); }
+            Utf8CP GetName() const { return m_statement->GetValueText(1); }
+            Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
+        };
+
+    typedef ECSqlStatementIterator<Entry> Iterator;
+
+    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
+    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
 };
 
 namespace dgn_ElementHandler
@@ -184,6 +162,7 @@ namespace dgn_ElementHandler
     struct TextAnnotationSeedHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationSeed, TextAnnotationSeed, TextAnnotationSeedHandler, Element, DGNPLATFORM_EXPORT);
+
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };

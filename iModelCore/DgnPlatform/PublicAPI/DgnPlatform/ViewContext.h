@@ -275,7 +275,7 @@ protected:
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
-    GeometricElementCP      m_currGeomElement;
+    DgnElementCPtr          m_currentElement;
     Render::GraphicPtr      m_currGraphic;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
@@ -293,7 +293,7 @@ protected:
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometrySourceCR);
     virtual Render::Graphic* _GetCachedGraphic(double pixelSize) {return nullptr;}
     virtual void _SaveGraphic() {}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
@@ -307,7 +307,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements(bool includeTransients);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
@@ -315,7 +315,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _PushClip(ClipVectorCR clip);
     DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin(DPoint3dCP origin);
     DGNPLATFORM_EXPORT virtual void _PopTransformClip();
-    DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual void _OnPreDrawTransient() {}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) = 0;
@@ -381,7 +381,7 @@ public:
 
 public:
     Render::GraphicPtr BeginGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _BeginGraphic(params);}
-    StatusInt VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
+    StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
     //@{
@@ -551,14 +551,14 @@ public:
     DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 
     //! Get the current Geometric element being visited by this ViewContext.
-    GeometricElementCP GetCurrentElement() const {return m_currGeomElement;}
+DGNPLATFORM_EXPORT GeometricElementCP GetCurrentElement() const;
 
     /** @cond BENTLEY_SDK_Scope1 */
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
 
     //! Set or clear the current persistent element.
-    void SetCurrentElement(GeometricElementCP element) {m_currGeomElement = element;}
+DGNPLATFORM_EXPORT void SetCurrentElement(GeometricElementCP);
     /** @endcond */
 
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
@@ -613,7 +613,7 @@ public:
 
     //! Check the current display style for a monochrome color override.
     //! @return       whether monochrome style is currently active.
-    DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometricElementCR);
+DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometrySourceCR);
 
     DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
 

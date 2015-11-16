@@ -109,10 +109,10 @@ static double getAdjustedViewZ (ViewContextR context, DPoint4dCR viewPt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority priority)
     {
-    GeometricElementCP element;
+    GeometrySourceCP source;
 
     // NOTE: Only reason to have ElemTopology for non-element hit is to allow locate/snap...
-    if (nullptr == (element = GetCurrentElement()) && nullptr == GetElemTopology())
+    if (nullptr == (source = GetCurrentElement()) && nullptr == GetElemTopology())
         return;
 
     DPoint3d    localPt;
@@ -176,7 +176,7 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtScreen) + GetCurrentDisplayParams().GetNetDisplayPriority());
     m_currGeomDetail.SetGeomStreamEntryId(GetGeomStreamEntryId());
 
-    RefCountedPtr<HitDetail> thisHit = new HitDetail(*GetViewport(), element, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
+    RefCountedPtr<HitDetail> thisHit = new HitDetail(*m_context->GetViewport(), element, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
 
     if (nullptr != GetElemTopology())
         thisHit->SetElemTopology(GetElemTopology()->_Clone());
@@ -1174,6 +1174,8 @@ void PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDept
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif
+void PickContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight)
+    m_output.ClipAndProcessSymbol(symbol, trans, clip, ignoreColor, ignoreWeight);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1199,7 +1201,7 @@ void PickContext::_OnPreDrawTransient()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_OutputElement(GeometricElementCR element)
+void PickContext::_OutputElement(GeometrySourceCR element)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
@@ -1406,9 +1408,14 @@ bool PickContext::PickElements(DgnViewportR vp, DPoint3dCR pickPointWorld, doubl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestHitStatus PickContext::TestHit(HitDetailCR hit, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
     {
-    GeometricElementCPtr element = hit.GetElement();
+    DgnElementCPtr element = hit.GetElement();
 
     if (!element.IsValid())
+        return TestHitStatus::NotOn;
+
+    GeometrySourceCP source = element->ToGeometrySource();
+
+    if (nullptr == source)
         return TestHitStatus::NotOn;
 
     InitNpcSubRect(pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
@@ -1420,7 +1427,7 @@ TestHitStatus PickContext::TestHit(HitDetailCR hit, DgnViewportR vp, DPoint3dCR 
     m_options.SetHitSource(HitDetailType::Hit <= hit.GetHitType() ? hit.GetLocateSource() : HitSource::None);
 
     InitSearch(pickPointWorld, pickApertureScreen, hitList);
-    VisitElement(*element);
+    VisitElement(*source);
     _Detach();
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

@@ -147,10 +147,10 @@ struct LineStyleProperty
 {
     struct Spec : DbPropSpec
         {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_LineStyle, setting) {}
+        Spec (Utf8CP name, DbPropTxnMode setting, Compress compress=Compress::Yes) : DbPropSpec (name, PROPERTY_APPNAME_LineStyle, setting, compress) {}
         };
 
-    struct ComponentProperty : Spec {ComponentProperty (Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
+    struct ComponentProperty : Spec {ComponentProperty (Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
 
     static ComponentProperty Compound()         {return ComponentProperty("CompoundV1");}
     static ComponentProperty LineCode()         {return ComponentProperty("LineCodeV1");}

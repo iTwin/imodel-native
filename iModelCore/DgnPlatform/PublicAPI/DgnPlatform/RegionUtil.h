@@ -127,7 +127,6 @@ private:
 
     protected:
 
-    GeometricElementCP  GetCurrentElement();
     bool                ComputePostFlattenTransform (CurveVectorCR region);
     void                ResetPostFlattenTransform ();
     virtual bool        _ClipPreservesRegions () const override {return false;} // Want fast open curve clip...
@@ -223,10 +222,10 @@ virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}
 virtual void            _DrawTextString (TextStringCR text) override;
 virtual ILineStyleCP    _GetCurrLineStyle (Render::LineStyleSymbP* symb) override {return nullptr;}
 
-BentleyStatus           PushBooleanCandidate (GeometricElementCR element, TransformCP trans);
+BentleyStatus           PushBooleanCandidate (GeometrySourceCR element, TransformCP trans);
 BentleyStatus           SetTargetModel (DgnModelR targetModel);
-BentleyStatus           VisitFloodCandidate (GeometricElementCR element, TransformCP trans);
-BentleyStatus           VisitBooleanCandidate (GeometricElementCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
+BentleyStatus           VisitFloodCandidate (GeometrySourceCR element, TransformCP trans);
+BentleyStatus           VisitBooleanCandidate (GeometrySourceCR element, TransformCP trans, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
 
 BentleyStatus           CreateRegionElement (DgnElementPtr& elm, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d);
 BentleyStatus           CreateRegionElements (DgnElementPtrVec& out, CurveVectorCR region, bvector<DgnElementId> const* regionRoots, bool is3d);

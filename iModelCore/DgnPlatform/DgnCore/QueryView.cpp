@@ -442,9 +442,9 @@ Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR)
         m_dgndb.Models().GetModel(id);
 
     return Utf8String("SELECT rTreeAccept(r.ElementId) FROM "
-           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e "
-           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId"
-           " AND InVirtualSet(@vSet,e.ModelId,e.CategoryId)");
+           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g "
+           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.ElementId=r.ElementId"
+           " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -538,7 +538,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             UpdateLogging::RecordAllowShowProgress();
             }
 
-        GeometricElementCP geom = results->m_elements[numDrawn]->ToGeometricElement();
+        GeometrySourceCP geom = results->m_elements[numDrawn]->ToGeometrySource();
 
         if (nullptr != geom)
             context.VisitElement(*geom);
@@ -614,7 +614,7 @@ void QueryViewController::_DrawView(ViewContextR context)
     if ((DrawPurpose::UpdateHealing == context.GetDrawPurpose() || 
          DrawPurpose::Update == context.GetDrawPurpose()) && (results->m_reachedMaxElements || results->m_eliminatedByLOD) && !m_noQuery)
         {
-        HighPriorityOperationBlock highPriority;  //  see comments in BeSQLite.h
+        wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
         DgnViewportP vp = context.GetViewport();
         DgnDbR project = m_queryModel.GetDgnDb();
         CachedStatementPtr rangeStmt;

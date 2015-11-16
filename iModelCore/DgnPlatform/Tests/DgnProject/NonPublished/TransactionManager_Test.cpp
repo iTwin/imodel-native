@@ -146,6 +146,10 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE( result == BE_SQLITE_OK);
 
+    TestDataManager::MustBeBriefcase(m_db, mode);
+    ASSERT_TRUE(m_db->IsBriefcase());
+    ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
+
     ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
@@ -210,7 +214,6 @@ TEST_F(TransactionManagerTests, CRUD)
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", Db::OpenMode::ReadWrite);
 
     m_db->SaveChanges();
-    m_db->Txns().EnableTracking(true);
     TxnMonitorVerifier monitor;
 
     //  -------------------------------------------------------------
@@ -569,7 +572,6 @@ TEST_F(TransactionManagerTests, UndoRedo)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
 
     TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "", 101.0);
 
@@ -664,7 +666,6 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
 
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
@@ -695,7 +696,6 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
 
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
@@ -731,7 +731,6 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
 
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
@@ -787,7 +786,6 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
 
     //Creates a model.
     auto seedModelId = m_defaultModelId;
@@ -841,7 +839,6 @@ TEST_F (TransactionManagerTests, ReverseToPos)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
     auto txn_id = txns.GetCurrentTxnId();
 
     //creates model
@@ -867,7 +864,6 @@ TEST_F (TransactionManagerTests, CancelToPos)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
 
     //creates model
     DgnModelId seedModelId = m_defaultModelId;
@@ -899,7 +895,6 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
-    txns.EnableTracking(true);
 
     //Inserts a  model
     DgnModelId seedModelId = m_defaultModelId;
@@ -957,7 +952,6 @@ struct DynamicTxnsTest : TransactionManagerTests
     void SetupProject(WCharCP testFileName)
         {
         T_Super::SetupProject(L"3dMetricGeneral.idgndb", testFileName, BeSQLite::Db::OpenMode::ReadWrite);
-        m_db->Txns().EnableTracking(true);
         }
 
     void InsertElement(bvector<DgnElementId>& ids, bool saveIfNotInDynamics=true)

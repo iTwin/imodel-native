@@ -17,7 +17,7 @@ public:
 * @bsimethod                                                    KyleDeeds  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 NotificationManagerTest()
-    : GenericDgnModelTestFixture (__FILE__, true)
+    : GenericDgnModelTestFixture (__FILE__, true, false)
     {}
 
 /*---------------------------------------------------------------------------------**//**

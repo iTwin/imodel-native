@@ -105,13 +105,13 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
 static void checkGroupHasOneMemberInModel(DgnModelR model)
 {
     BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ECClassId=? AND ModelId=?)");
-    stmt.BindInt64(1, model.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
+    stmt.BindId(1, model.GetDgnDb().Domains().GetClassId(TestGroupHandler::GetHandler()));
     stmt.BindId(2, model.GetModelId());
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    DgnElementId gid = stmt.GetValueId<DgnElementId>(0);
+    DgnElementId groupId = stmt.GetValueId<DgnElementId>(0);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
-    ElementGroupCPtr group = model.GetDgnDb().Elements().Get<ElementGroup>(gid);
+    TestGroupCPtr group = model.GetDgnDb().Elements().Get<TestGroup>(groupId);
     ASSERT_TRUE(group.IsValid());
 
     DgnElementIdSet members = group->QueryMembers();
@@ -165,7 +165,7 @@ static void openDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
     ASSERT_TRUE(db.IsValid()) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
     ASSERT_EQ(BE_SQLITE_OK, result);
-    db->Txns().EnableTracking(true);
+    TestDataManager::MustBeBriefcase(db, mode);
 }
 
 //---------------------------------------------------------------------------------------
@@ -210,8 +210,10 @@ static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMo
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportGroups)
 {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP();
+
+    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
 
     // ******************************
     //  Create model1
@@ -220,24 +222,17 @@ TEST_F(ImportTest, ImportGroups)
     ASSERT_TRUE(model1.IsValid());
     {
         // Put a group into moddel1
-        ElementGroupCPtr group;
-        {
-            DgnClassId gclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
-            DgnElementCPtr groupEl = ElementGroup::Create(ElementGroup::CreateParams(*db, model1->GetModelId(), gclassid))->Insert();
-            group = dynamic_cast<ElementGroupCP>(groupEl.get());
-            ASSERT_TRUE(group.IsValid());
-        }
+        TestGroupPtr group = TestGroup::Create(*db, model1->GetModelId(), DgnCategory::QueryHighestCategoryId(*db));
+        ASSERT_TRUE(group.IsValid());
+        ASSERT_TRUE(group->Insert().IsValid());
 
         //  Add a member
-        if (true)
-        {
-            DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
-            DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*db);
-            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()))->Insert();
-            //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
-            ASSERT_TRUE(member.IsValid());
-            ASSERT_EQ(DgnDbStatus::Success, group->InsertMember(*member));
-        }
+        DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+        DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*db);
+        PhysicalElementPtr member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()));
+        ASSERT_TRUE(member.IsValid());
+        ASSERT_TRUE(member->Insert().IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, group->AddMember(*member));
 
         checkGroupHasOneMemberInModel(*model1);
     }
@@ -286,23 +281,23 @@ TEST_F(ImportTest, ImportGroups)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static GeometricElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, Render::ElemDisplayParams* customParms)
+static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, ElemDisplayParams* customParms)
     {
     DgnCategoryId cat = DgnSubCategory::QueryCategoryId(subcat, db);
 
-    GeometricElementPtr gelem;
+    DgnElementPtr gelem;
     if (is3d)
         gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
     else
         gelem = DrawingElement::Create(DrawingElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(subcat);
     if (nullptr != customParms)
         builder->Append(*customParms);
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem))
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))
         return nullptr;
 
     return db.Elements().Insert(*gelem);
@@ -311,7 +306,7 @@ static GeometricElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static void getFirstElemDisplayParams(Render::ElemDisplayParams& ret, GeometricElementCR gel)
+static void getFirstElemDisplayParams(ElemDisplayParams& ret, DgnElementCR gel)
     {
     ElementGeometryCollection gcollection(gel);
     gcollection.begin(); // has the side-effect of setting up the current element display params on the collection
@@ -398,9 +393,9 @@ static bool areDisplayParamsEqual(Render::ElemDisplayParamsCR lhsUnresolved, Dgn
 // Check that imported element is equivalent to source element
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static void checkImportedElement(DgnElementCPtr destElem, GeometricElementCR sourceElem)
+static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceElem)
     {
-    GeometricElementCP gdestElem = destElem->ToGeometricElement();
+    GeometrySourceCP gdestElem = destElem->ToGeometrySource();
     ASSERT_TRUE(nullptr != gdestElem);
     DgnDbR destDb = destElem->GetDgnDb();
 
@@ -409,9 +404,9 @@ static void checkImportedElement(DgnElementCPtr destElem, GeometricElementCR sou
     DgnCategoryCPtr destCat = DgnCategory::QueryCategory(gdestElem->GetCategoryId(), destDb);
     ASSERT_TRUE(destCat.IsValid() );
     
-    ASSERT_NE(destCat->GetCategoryId() , sourceElem.GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
+    ASSERT_NE(destCat->GetCategoryId(), sourceElem.ToGeometrySource()->GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
 
-    DgnCategoryCPtr sourceCat = DgnCategory::QueryCategory(sourceElem.GetCategoryId(), sourceDb);
+    DgnCategoryCPtr sourceCat = DgnCategory::QueryCategory(sourceElem.ToGeometrySource()->GetCategoryId(), sourceDb);
 
     ASSERT_EQ( sourceCat->GetCode(), destCat->GetCode() );
 
@@ -419,7 +414,7 @@ static void checkImportedElement(DgnElementCPtr destElem, GeometricElementCR sou
     getFirstElemDisplayParams(sourceDisplayParams, sourceElem);
 
     Render::ElemDisplayParams destDisplayParams;
-    getFirstElemDisplayParams(destDisplayParams, *gdestElem);
+    getFirstElemDisplayParams(destDisplayParams, *destElem);
     
     DgnSubCategoryId destSubCategoryId = destDisplayParams.GetSubCategoryId();
     ASSERT_TRUE( destSubCategoryId.IsValid() );
@@ -441,7 +436,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     static Utf8CP s_catName="MyCat";
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP sourceDb = tdm.GetDgnProjectP();
 
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*sourceDb));
@@ -470,18 +465,18 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     ASSERT_TRUE( sourcemod.IsValid() );
 
     // Put elements in this category into the source model
-    GeometricElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, nullptr);   // 1 is based on default subcat
-    GeometricElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
+    DgnElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, nullptr);   // 1 is based on default subcat
+    DgnElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
     ElemDisplayParams customParams;
     customParams.SetCategoryId(sourceCategoryId);
     customParams.SetMaterial(createTexturedMaterial(*sourceDb, "Texture3", L"", RenderMaterialMap::Units::Relative));
-    GeometricElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
+    DgnElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
     sourceDb->SaveChanges();
 
     ElemDisplayParams sourceDisplayParams;
     getFirstElemDisplayParams(sourceDisplayParams, *sourceElem);
 
-    ASSERT_EQ( sourceCategoryId , sourceElem->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above
+    ASSERT_EQ( sourceCategoryId , sourceElem->ToGeometrySource3d()->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above
     ASSERT_EQ( sourceSubCategory1Id , sourceDisplayParams.GetSubCategoryId() ); // check that the source element's geometry really was assigned to the SubCategory that I specified above
 //*** Have to "cook" first    ASSERT_TRUE( sourceDisplayParams.GetLineColor() == sourceAppearanceRequested.GetColor() ); // check that the source element's geometry has the requested appearance
 //*** Have to "cook" first    ASSERT_TRUE( sourceDisplayParams.GetMaterial() == sourceAppearanceRequested.GetMaterial() ); // check that the source element's geometry has the requested appearance
@@ -543,7 +538,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithAuthorities)
 {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
     DgnDbP db = tdm.GetDgnProjectP();
 
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
@@ -685,9 +680,8 @@ TEST_F(ImportTest, ImportElementsWithItems)
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithDependencies)
 {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, true);
     DgnDbP db = tdm.GetDgnProjectP();
-    db->Txns().EnableTracking(true);
 
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
 

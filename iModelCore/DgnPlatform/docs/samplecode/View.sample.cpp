@@ -22,27 +22,23 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DgnModelId baseModelId, DgnCategoryIdSet categories, DRange3dCR viewExtents)
     {
-    DgnViews::View viewRow;
-    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalView));
-    viewRow.SetDgnViewType(classId, DgnViewType::Physical);
-    viewRow.SetDgnViewSource(DgnViewSource::Generated);
-    viewRow.SetName(name);
-    viewRow.SetBaseModelId(baseModelId);
+    CameraViewDefinition view(CameraViewDefinition::CreateParams(db, name, ViewDefinition::Data(baseModelId, DgnViewSource::Generated)));
+    view.Insert();
+    DgnViewId viewId = view.GetViewId();
+    if (viewId.IsValid())
+        {
+        PhysicalViewController viewController(db, viewId);
+        viewController.SetStandardViewRotation(StandardView::Iso);
+        viewController.LookAtVolume(viewExtents);
+        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
 
-    if (BE_SQLITE_OK != db.Views().Insert(viewRow))
-        return DgnViewId(); // error, return invalid DgnViewId
+        for (DgnCategoryId category : categories)
+            viewController.ChangeCategoryDisplay(category, true);
 
-    PhysicalViewController viewController(db, viewRow.GetId());
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.LookAtVolume(viewExtents);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+        if (BE_SQLITE_OK != viewController.Save())
+            viewId.Invalidate();
+        }
 
-    for (DgnCategoryId category : categories)
-        viewController.ChangeCategoryDisplay(category, true);
-
-    if (BE_SQLITE_OK != viewController.Save())
-        return DgnViewId(); // error, return invalid DgnViewId
-
-    return viewRow.GetId();
+    return viewId;
     }
 //__PUBLISH_EXTRACT_END__

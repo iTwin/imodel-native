@@ -106,7 +106,7 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR, double* zDepth);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNPLATFORM_EXPORT void ClipAndProcessSymbol(Render::IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
+    DGNPLATFORM_EXPORT void ClipAndProcessSymbol(IDisplaySymbolP, TransformCP, ClipPlaneSetP);
 #endif
     DGNPLATFORM_EXPORT BentleyStatus CurveVectorOutputProcessor(CurveVectorCR curves, bool filled);
 

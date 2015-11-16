@@ -50,78 +50,6 @@ static Utf8CP VIEWFLAG_renderMode                = "renderMode";
 static Utf8CP VIEWFLAG_ignoreLighting            = "ignoreLighting";
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewHandlerP ViewHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
-    {
-    // quick check for a handler already known
-    DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
-    if (nullptr != handler)
-        return handler->_ToViewHandler();
-
-    // not there, check via base classes
-    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(GetHandler()));
-    return handler ? handler->_ToViewHandler() : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr ViewHandler::_SupplyController(DgnDbR db, DgnViews::View const& view)
-    {
-    auto const& schemas = db.Schemas();
-    ECClassCP viewClass = schemas.GetECClass(view.GetClassId().GetValue());
-
-    if (nullptr==viewClass)
-        return nullptr;
-
-    if (viewClass->Is(schemas.GetECClass("dgn", "CameraView")))
-        return new QueryViewController(db, view.GetId());
-
-    if (viewClass->Is(schemas.GetECClass("dgn", "SheetView")))
-        return new SheetViewController(db, view.GetId());
-
-    if (viewClass->Is(schemas.GetECClass("dgn", "DrawingView")))
-        return new DrawingViewController(db, view.GetId());
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr DgnViews::LoadViewController(DgnViewId viewId, FillModels fillModels) const
-    {
-    DgnViews::View view = QueryView(viewId);
-    if (!view.IsValid())
-        return nullptr;
-
-    // make sure the class derives from Model (has a handler)
-    ViewHandlerP handler = ViewHandler::FindHandler(m_dgndb, view.GetClassId());
-    if (nullptr == handler)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    // if there's an "override" extension on the view handler, see if it wants to supply the view
-    ViewHandlerOverride* ovr = ViewHandlerOverride::Cast(*handler);
-    ViewControllerPtr controller = ovr ? ovr->_SupplyController(m_dgndb, view) : nullptr;
-
-    if (!controller.IsValid())
-        controller = handler->_SupplyController(m_dgndb, view); // use handler
-
-    if (!controller.IsValid())
-        return nullptr;
-
-    controller->Load();
-    if (fillModels == FillModels::Yes)
-        controller->_FillModels();
-
-    return controller;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::FromBaseJson(JsonValueCR val)
@@ -311,7 +239,7 @@ void ViewController::_RestoreFromSettings(JsonValueCR settings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::Load()
     {
-    DgnViews::View entry = m_dgndb.Views().QueryView(m_viewId);
+    auto entry = ViewDefinition::QueryView(m_viewId, m_dgndb);
     if (!entry.IsValid())
         {
         BeAssert(false);
@@ -319,12 +247,12 @@ DbResult ViewController::Load()
         }
 
     m_viewedModels.clear();
-    m_baseModelId = m_targetModelId = entry.GetBaseModelId();
+    m_baseModelId = m_targetModelId = entry->GetBaseModelId();
     m_viewedModels.insert(m_baseModelId);
 
     Utf8String settingsStr;
     //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
-    DbResult  rc = GetDgnDb().Views().QueryProperty(settingsStr, GetViewId(), DgnViewProperty::Settings());
+    DbResult rc = entry->QuerySettings(settingsStr);
     if (BE_SQLITE_ROW != rc)
         return rc;
 
@@ -373,7 +301,7 @@ DbResult ViewController::Save()
     Json::Value settings;
     _SaveToSettings(settings);
 
-    return m_dgndb.Views().SavePropertyString(m_viewId, DgnViewProperty::Settings(), Json::FastWriter::ToString(settings));
+    return ViewDefinition::SaveSettings(Json::FastWriter::ToString(settings), m_viewId, m_dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -381,15 +309,18 @@ DbResult ViewController::Save()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::SaveAs(Utf8CP newName)
     {
-    DgnViews::View newRow(m_dgndb.Views().QueryView(m_viewId));
-    newRow.SetName(newName);
+    auto cpView = ViewDefinition::QueryView(m_viewId, m_dgndb);
+    auto newView = cpView.IsValid() ? cpView->MakeCopy<ViewDefinition>() : nullptr;
+    BeAssert(newView.IsValid());
+    if (newView.IsNull())
+        return BE_SQLITE_INTERNAL;
 
-    DbResult rc = m_dgndb.Views().Insert(newRow);
-    if (BE_SQLITE_OK != rc)
-        return rc;
+    newView->SetName(newName);
+    if (newView->Insert().IsNull())
+        return BE_SQLITE_INTERNAL;
 
-    m_viewId = newRow.GetId();
-    rc = Save();
+    m_viewId = newView->GetViewId();
+    auto rc = Save();
 
     if (BE_SQLITE_OK == rc)
         m_dgndb.SaveSettings();
@@ -420,7 +351,7 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
+void ViewController::_StrokeElement(ViewContextR context, GeometrySourceCR element)
     {
     element._Stroke(context);
     }
@@ -1000,7 +931,7 @@ void SectionDrawingViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
+void SectionDrawingViewController::_StrokeElement(ViewContextR context, GeometrySourceCR element)
     {
 #if defined(NEEDS_WORK_VIEW_CONTROLLER)
     if (context.GetViewport() != nullptr)
@@ -1883,9 +1814,10 @@ void ViewController::_DrawLocateCursor(DgnViewportR vp, DPoint3dCR pt, double ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) const
     {
-    GeometricElementCPtr element = hit.GetElement();
+    DgnElementCPtr   element = hit.GetElement();
+    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-    if (!element.IsValid())
+    if (nullptr == geom)
         {
         IElemTopologyCP elemTopo = hit.GetElemTopology();
         ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
@@ -1903,10 +1835,10 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
     ViewContext::ContextMark mark(&context);
 
     // Allow element sub-class involvement for flashing sub-entities...
-    if (element->_DrawHit(hit, context))
+    if (geom->DrawHit(hit, context))
         return SUCCESS;
 
-    return context.VisitElement(*element);
+    return context.VisitElement(*geom);
     }
 
 /*---------------------------------------------------------------------------------**//**

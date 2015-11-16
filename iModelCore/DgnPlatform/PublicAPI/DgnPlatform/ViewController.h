@@ -106,9 +106,7 @@ To create a subclass of ViewController, create a ViewHandler and implement _Supp
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
 protected:
-    friend struct  DgnViews;
     friend struct  ViewContext;
-    friend struct  GeometricElement;
     friend struct  CreateSceneContext;
     friend struct  DgnViewport;
     friend struct  ViewManager;
@@ -116,6 +114,7 @@ protected:
     friend struct  PhysicalRedlineViewController;
     friend struct  IACSManager;
     friend struct  ToolAdmin;
+    friend struct  ViewDefinition;
 
     DgnDbR         m_dgndb;
     ViewFlags      m_viewFlags;
@@ -226,7 +225,7 @@ protected:
 
     //! Stroke a single element through a ViewContext.
     //! An application can override _StrokeElement to change the symbology of elements.
-    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometrySourceCR);
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.
@@ -278,7 +277,7 @@ protected:
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViews::DgnViewPropertySpecCR) const;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViewProperty::Spec const&) const;
     DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
 
 public:
@@ -843,7 +842,7 @@ protected:
     DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
 
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometrySourceCR) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
@@ -930,7 +929,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewControl
 
 protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometrySourceCR) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
 
     mutable SectioningViewControllerPtr m_sectionView;  // transient
@@ -994,7 +993,7 @@ private:
     Pass m_passesToDraw;
 
     virtual void _DrawView(ViewContextR) override;
-    virtual void _StrokeElement(ViewContextR, GeometricElementCR) override;
+    virtual void _StrokeElement(ViewContextR, GeometrySourceCR) override;
     virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;
@@ -1053,42 +1052,6 @@ protected:
 public:
     //! Construct a new SheetViewController.
     SheetViewController(DgnDbR project, DgnViewId viewId) : ViewController2d(project, viewId) {}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/15
-//=======================================================================================
-struct ViewHandler : DgnDomain::Handler
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_View, ViewHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
-
-protected:
-    virtual ViewHandlerP _ToViewHandler() {return this;}
-
-public:
-    //! Find an ViewHandler for a subclass of dgn.View. This is just a shortcut for FindHandler with the base class
-    //! of "dgn.View".
-    DGNPLATFORM_EXPORT static ViewHandlerP FindHandler(DgnDb const& db, DgnClassId handlerId);
-
-    //! Create an instance of a ViewController for a DgnView, if appropriate.
-    //! @param[in] db The DgnDb for the view
-    //! @param[in] view The DgnViews::View.
-    //! @return an instance of a ViewController for the supplied DgnViews::View.
-    DGNPLATFORM_EXPORT virtual ViewControllerPtr _SupplyController(DgnDbR db, DgnViews::View const& view);
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct ViewHandlerOverride : DgnDomain::Handler::Extension
-{
-    HANDLER_EXTENSION_DECLARE_MEMBERS(ViewHandlerOverride, DGNPLATFORM_EXPORT)
-
-public:
-    //! @param[in] db The DgnDb for the view
-    //! @param[in] view The DgnViews::View.
-    //! @return an instance of a ViewController for the supplied DgnViews::View, or nullptr if the DgnViews::View is not of interest.
-    virtual ViewControllerPtr _SupplyController(DgnDbR db, DgnViews::View const& view) = 0;
 };
 
 END_BENTLEY_DGN_NAMESPACE

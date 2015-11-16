@@ -331,7 +331,7 @@ void LineStyleSymb::CheckContinuationData ()
         }
     }
 
-static bool s_allowLineStyles = bool(LINESTYLES_ENABLED); 
+static bool s_allowLineStyles = bool(LINESTYLES_ENABLED);
 /*---------------------------------------------------------------------------------**//**
 * see whether this element should be drawn with a custom linestyle.
 * @return the hardware linestyle to be used.
@@ -360,7 +360,7 @@ int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR co
 
     LineStyleParamsCP lStyleParams = styleInfo->GetStyleParams ();
     LsComponentCP    topComponent = nameRec->GetComponentCP (nullptr);
-    
+
     // Make this call before IsContinuous() to force the components to load.  Loading the components
     // will make some linestyles into "continuous" because early DWG styles did not set this bit correctly,
     // so there are a lot of unlabeled continuous styles out there.
@@ -370,7 +370,7 @@ int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR co
         return 0;
 
     LineStyleParams tmpLSParams;
-    
+
     if (lStyleParams)
         tmpLSParams = *lStyleParams;
     else
@@ -484,28 +484,11 @@ int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR co
     if (tmpLSParams.modifiers & STYLEMOD_EWIDTH)
         SetEndWidth (endWidth);
 
-    if (nameRec->IsSCScaleIndependent()) // linestyles that are independent of sharedcell's scale.
-        {
-        BeAssert(nameRec->IsSCScaleIndependent());
-#if defined(NEEDSWORK_LINESTYLES)  //  line styles in shared cells
-        Transform       localToFrustum;
-
-        // get the scale from the current localToFrustum to the current modelRef's scale, and back that out of the linestyle scale.
-        if (SUCCESS == context.GetCurrLocalToFrustumTrans (localToFrustum))
-            {
-            DVec3d  xCol;
-            localToFrustum.GetMatrixColumn (xCol, 0);
-
-            scale /= xCol.Magnitude ();
-            }
-#endif
-        }
-
     SetScale (scale);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    if (!context.Is3dView())
+    //  if (!context.Is3dView())
         m_texture = nameRec->GetTexture(context, *this, false, scale);
 #endif
 
@@ -563,6 +546,8 @@ void LineStyleSymb::ClearContinuationData ()
     }
 
 //---------------------------------------------------------------------------------------
+// When this is called both ElemDisplayParams and ElemMatSymb are fully determined.
+// It is called before the call to ActivateMatSymb.
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
 void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
@@ -570,6 +555,8 @@ void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
     LsDefinitionP lsDef = (LsDefinitionP)m_lStyle;
     BeAssert(nullptr != lsDef && dynamic_cast<LsDefinitionCP>(m_lStyle) == lsDef);
 
+    //  We know we have something that we want to be represented as a texture, but
+    //  there is a possibility it can't be.
     m_texture = lsDef->GetTexture(context, *this, force, m_scale);
     }
 
@@ -659,9 +646,7 @@ bool LineStyleParams::operator==(LineStyleParamsCR rhs) const
         rhs.startWidth != startWidth ||
         rhs.endWidth   != endWidth   ||
         rhs.distPhase  != distPhase  ||
-        rhs.fractPhase != fractPhase ||
-        rhs.lineMask   != lineMask   ||
-        rhs.mlineFlags != mlineFlags)
+        rhs.fractPhase != fractPhase)
         return false;
 
     if (!rhs.normal.IsEqual (normal))

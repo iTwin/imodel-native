@@ -57,7 +57,7 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-virtual void _OutputGraphics(ViewContextR context) override
+virtual void _OutputGraphics(ViewContext& context) override
     {
     m_stroker._Stroke(context);
     }
@@ -142,8 +142,14 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
 
     m_textureInitialized = false;
     m_texture = nullptr;
+    m_hasTextureWidth = false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+void LsDefinition::Destroy(LsDefinitionP def) { delete def; }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -156,7 +162,6 @@ LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefiniti
     m_location.SetLocation (project, compType, compId);
     SetHWStyle (compType, compId);
     m_componentLookupFailed = false;
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -165,6 +170,8 @@ LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefiniti
 LsDefinition::~LsDefinition()
     {
     SetName (NULL);
+    if (m_textureInitialized)
+        T_HOST.GetGraphicsAdmin()._DeleteTexture (m_textureHandle);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -186,17 +193,67 @@ Utf8String         LsDefinition::GetStyleName () const
     if (NULL == lsName)
         return Utf8String (L"");
 
-    Utf8String retval;
-    return Utf8String(retval);
+    return Utf8String(lsName);
     }
 
-//  Logic to make a line style behave as a raster line style.
+#define NUMBER_ITERATIONS_ComponentStroker   (1)
+#define MAX_XRANGE_RATIO (256 * NUMBER_ITERATIONS_ComponentStroker)
+
+//=======================================================================================
+//! Base class for StrokeComponentForRange and ComponentToTextureStroker
+// @bsiclass                                                    John.Gooding    10/2015
+//=======================================================================================
+struct ComponentStroker : Dgn::IStrokeForCache
+    {
+protected:
+    DgnDbR              m_dgndb;
+    LsComponentPtr      m_component;
+    DPoint3d            m_points[2];
+public:
+
 //---------------------------------------------------------------------------------------
-// This color may possibly come from the element, or it may come from the line style.
-// If it comes from the element, do we need a different map for every color?
-//
-// The texture may also have to reflect differences in line style overrides.
-//
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+ComponentStroker(DgnDbR dgndb, LsComponentR component, double scale) : m_dgndb(dgndb), m_component(&component)
+    {
+    double length = component._GetLength() * NUMBER_ITERATIONS_ComponentStroker;
+
+    if (length <  mgds_fc_epsilon)
+        {
+        //  Apparently nothing is length dependent.
+        length = component._GetMaxWidth(nullptr);
+        if (length <  mgds_fc_epsilon)
+            length = 1.0;
+        }
+
+    length *= scale;
+
+    m_points[0].Init(0, 0, 0);
+    m_points[1].Init(length, 0, 0);
+    }
+
+int32_t _GetQvIndex() const override {return 1;}
+QvElemP _GetQvElem(double pixelSize) const override {return nullptr;}
+void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
+DgnDbR _GetDgnDb() const override { return m_dgndb; }
+};
+
+//=======================================================================================
+//! Used to calculate the range of the line style.
+// @bsiclass                                                    John.Gooding    09/2015
+//=======================================================================================
+struct          StrokeComponentForRange : ComponentStroker
+{
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+StrokeComponentForRange(DgnDbR dgndb, LsComponentR component) : ComponentStroker(dgndb, component, 1.0)
+    {
+    //  It should have already created a copy of the components if that is necessary
+    BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
 /* static */  void CreateGeometryMapMaterial(ViewContextR context, Stroker& stroker, intptr_t textureId)
@@ -214,36 +271,29 @@ Utf8String         LsDefinition::GetStyleName () const
 struct ComponentToTextureStroker : Stroker
 {
 private:
-    ViewContextR        m_viewContext;
-    LsComponentPtr      m_component;
-    LineStyleSymbR      m_lineStyleSymb;
-    DPoint3d            m_points[2];
-    double              m_multiplier;
-    double              m_length;
+    double              m_scaleFactor;
     Transform           m_transformForTexture;
-    mutable bool        m_haveRange;
-    mutable DRange3d    m_range;
+    ColorDef            m_lineColor;
+    ColorDef            m_fillColor;
+    uint32_t            m_lineWeight;
 
 public:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), /*m_lsDef(lsDef),*/ m_haveRange(false)
+ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, ColorDef fillColor, uint32_t lineWeight, LsComponentR component) : 
+            ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor), m_lineColor(lineColor), m_fillColor(fillColor), m_lineWeight(lineWeight)
     {
-    LsComponentCP    topComponent = lsDef.GetComponentCP (nullptr);
-    BeAssert(topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::NotAllowed && topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::Unknown);
-    m_component = topComponent->_GetForTextureGeneration();
+    //  If a modified copy is required, the caller passed the copy. 
+    BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
 
-    m_length = m_component->_GetLength() * lineStyleSymb.GetScale();
-    if (m_length <  mgds_fc_epsilon)
-        m_length = 1.0;   //  Apparently nothing is length dependent.
-
-    //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
-    m_multiplier = 1024.0 * 1024 * 1024;
-    m_transformForTexture.InitFromScaleFactors(m_multiplier, m_multiplier, m_multiplier);
-    m_points[0].Init(0, 0, 0);
-    m_points[1].Init(m_length, 0, 0);
+    //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. Figure out why QV needs it
+    DVec3d normal;
+    normal.Init(0, 1, 0);
+    DPoint3d zero;
+    zero.Zero();
+    m_transformForTexture.InitFromMirrorPlane(zero, normal);
     }
 
 //---------------------------------------------------------------------------------------
@@ -251,33 +301,94 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 void _Stroke(ViewContextR context) const override
     {
-    if (!m_haveRange)
-        {
-        m_haveRange = true;  //  avoid infinite recursion
-        DRange3d range;
-        LineStyleRangeCollector::Process(range, *this);
-        m_range = range;
-        }
+    ElemMatSymb         elemMatSymb;
 
-    ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
-    ElemMatSymb         savedMatSymb (*context.GetElemMatSymb());
+    elemMatSymb.Init();
+    //  Generally the line style will be drawn with the color of the element. We accomplish that
+    //  by passing QV_GEOTEXTURE_DEFERCLRSEL to  _DefineQVGeometryMap.
+    //
+    //  A line style may specify that a symbol get its color from the symbol.  In a vector line style,
+    //  it is possible for different symbols to have different colors and for some symbols to be
+    //  drawn with the element color while others are drawn with the symbol color. For a texture
+    //  style the entire line style has to be drawn with the same color.
+    elemMatSymb.SetLineColor(m_lineColor);
+    elemMatSymb.SetFillColor(m_fillColor);
+    elemMatSymb.SetWidth(m_lineWeight);
 
-    //  Use the current symbology, activating it here.  We may also activate symbology when drawing 
-    //  symbols. 
+    LineStyleSymb   lineStyleSymb;
+    lineStyleSymb.Init(nullptr);
+    lineStyleSymb.SetScale(m_scaleFactor);
 
-    context.GetCurrentGraphicR().ActivateMatSymb(&savedMatSymb);
+    context.GetCurrentGraphicR().ActivateMatSymb(&elemMatSymb);
 
     context.PushTransform(m_transformForTexture);
-
-    m_component->_StrokeLineString(&context, &m_lineStyleSymb, m_points, 2, false);
-
+    m_component->_StrokeLineString(&context, &lineStyleSymb, m_points, 2, false);
     context.PopTransformClip();
-
-    context.GetCurrentDisplayParams() = savedParams;
-    *context.GetElemMatSymb() = savedMatSymb;
     }
-
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, double componentLength)
+    {
+    scaleFactor = 1;
+
+    //  Use the stroked range, accounting for any leading or trailing pad.
+    DRange2d range2d;
+    range2d.low.x = std::min(0.0, lsRange.low.x);
+    range2d.low.y = lsRange.low.y;
+    range2d.high.x = std::max(lsRange.high.x, componentLength);
+    range2d.high.y = lsRange.high.y;
+
+    double xRange = range2d.high.x - range2d.low.x;
+    BeAssert(xRange != 0.0);
+    if (xRange == 0.0)
+        return range2d;
+
+    if (xRange > range2d.high.y * MAX_XRANGE_RATIO)
+        range2d.high.y = 2 * xRange/MAX_XRANGE_RATIO;
+
+    if (xRange > -range2d.low.y * MAX_XRANGE_RATIO)
+        range2d.low.y = -2 * xRange/MAX_XRANGE_RATIO;
+
+    //  if xRange is too small  StrokeComponentForRange will fail when it creates the viewport because it will be smaller than the minimum.
+    if (xRange < 1)
+        {
+        scaleFactor = (uint32_t)ceil(1/xRange);
+        range2d.high.Scale(scaleFactor);
+        range2d.low.Scale(scaleFactor);
+        xRange = range2d.high.x - range2d.low.x;
+        }
+
+    //  Theoretically we could make the image smaller and save memory by just guaranteeing that
+    //  the size of the Y range is a multiple of 2 of the X range or vice versa.  However, I don't
+    //  think QV is detecting that correctly so for now I am just going for the same size.  Without
+    //  this change to the range QV scales the contents of the geometry map in one direction or the other.
+    double yVal = xRange/2.0;
+    bool changed = false;
+    while (yVal < range2d.high.y || -yVal > range2d.low.y)
+        {
+        changed = true;
+        yVal *= 2.0;
+        }
+
+    if (!changed)
+        {
+        while (yVal/2.0 >= range2d.high.y && -yVal/2.0 <= range2d.low.y)
+            {
+            yVal /= 2.0;
+            }
+        }
+
+    if (yVal < 2)
+        yVal = 2;
+
+    range2d.low.y = -yVal;
+    range2d.high.y = yVal;
+
+    return range2d;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
@@ -295,31 +406,58 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
     if (comp.IsNull())
         return 0;
 
-    ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *this);
-    
+    //  Get just the range of the components.  Don't let any scaling enter into this.
+    DRange3d  lsRange;
+    StrokeComponentForRange rangeStroker(viewContext.GetDgnDb(), *comp);
+    rangeStroker.ComputeRange(lsRange);
+
+    uint32_t  scaleFactor = 1;
+    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
+
+    SymbologyQueryResults  symbologyResults;
+    comp->_QuerySymbology(symbologyResults);
+    ColorDef lineColor, fillColor;
+    bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
+    if (!isColorBySymbol)
+        {
+        //  This should not matter because we pass false for isColorBySymbol causing DefineQVGeometryMap to use QV_GEOTEXTURE_DEFERCLRSEL
+        //  However, at the time this was tested it QV_GEOTEXTURE_DEFERCLRSEL did not provide the expected behavior.
+        lineColor = ColorDef::White();
+        fillColor = ColorDef::White();
+        }
+
+    uint32_t lineWeight;
+    bool isWeightBySymbol = symbologyResults.IsWeightBySymbol(lineWeight);
+    if (!isWeightBySymbol)
+        lineWeight = 0;
+
+    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, NULL, false, viewContext, false);
+    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, isColorBySymbol, viewContext, false);
 #endif
+    m_hasTextureWidth = true;
+    m_textureWidth = scaleFactor * (range2d.high.y - range2d.low.y);
     return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scale) 
     {
     if (!m_lsComp.IsValid())
         return nullptr;
 
     if (!m_textureInitialized)
         {
-        m_textureInitialized = true;
         if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
             {
             uint8_t const* image;
             Point2d     imageSize;
             uint32_t      flags = 0;
 
+            m_textureInitialized = true;
             if (SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
                 {
                 if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
@@ -343,22 +481,18 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
 #endif
                     }
                 }
+            m_hasTextureWidth = m_lsComp->_GetTextureWidth(m_textureWidth) == BSISUCCESS;
             }
-        else if (forceRaster)
+        else if (forceTexture)
             {
-            //  Convert this type to raster on the fly if possible
-#if TRYING_DIRECT_LINESTYLES
-            m_textureHandle = 0; 
-#else
+            m_textureInitialized = true;
+            //  Convert this type to texture on the fly if possible
             m_texture = GenerateTexture(viewContext, lineStyleSymb);
-#endif
             }
         }
 
-    double rasterWidth;
-
-    if (m_texture.IsValid()&& m_lsComp.IsValid() && SUCCESS == m_lsComp->_GetTextureWidth (rasterWidth))
-        lineStyleSymb.SetWidth (rasterWidth * scale);
+    if (0 != m_textureHandle && m_lsComp.IsValid() && m_hasTextureWidth)
+        lineStyleSymb.SetWidth (m_textureWidth * scale);
     
     return m_texture.get();
     }
@@ -426,6 +560,7 @@ void            LsIdNode::Clear ()
     {
     SetName (NULL);
     m_id      = 0;
+    delete m_nameRec;
     m_nameRec = NULL;
     }
 
@@ -471,6 +606,34 @@ LsCache::~LsCache ()
 DgnDbCR    LsCache::GetDgnDb () const
     {
     return m_dgnDb;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+LineStyleStatus DgnLineStyles::LoadStyle(LsDefinitionP&style, DgnStyleId styleId)
+    {
+    style = nullptr;
+    if (!styleId.IsValid())
+        return LINESTYLE_STATUS_BadArgument;
+
+    Statement stmt;
+    PrepareToQueryLineStyle(stmt, styleId);
+
+    DbResult    dbResult = stmt.Step();
+    if (dbResult != BE_SQLITE_ROW)
+        return LINESTYLE_STATUS_StyleNotFound;
+
+    Utf8String name(stmt.GetValueText(2));
+    Utf8String  data ((Utf8CP)stmt.GetValueBlob(4));
+
+    Json::Value  jsonObj (Json::objectValue);
+    if (!Json::Reader::Parse(data, jsonObj))
+        return LINESTYLE_STATUS_Error;
+
+    style = new LsDefinition (name.c_str(), m_dgndb, jsonObj, styleId);
+
+    return LINESTYLE_STATUS_Success;
     }
 
 /*----------------------------------------------------------------------------------*//**

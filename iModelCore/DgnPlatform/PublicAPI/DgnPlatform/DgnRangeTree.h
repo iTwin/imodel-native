@@ -34,7 +34,7 @@ struct DgnRangeTree
     {
         virtual ~Traverser() {}
         virtual bool  _CheckRangeTreeNode(DRange3dCR, bool is3d) const = 0;   // true == process node
-        virtual Match _VisitRangeTreeElem(GeometricElementCP, DRange3dCR) = 0;    // true == keep going, false == stop traversal
+        virtual Match _VisitRangeTreeElem(GeometrySourceCP, DRange3dCR) = 0;  // true == keep going, false == stop traversal
     };
 
     //=======================================================================================
@@ -51,9 +51,9 @@ struct DgnRangeTree
     struct Entry
     {
         DRange3d            m_range;
-        GeometricElementCP  m_elm;
-        Entry(DRange3dCR range, GeometricElementCR elm) : m_range(range), m_elm(&elm) {}
-        Entry() : m_elm(nullptr) {}
+        GeometrySourceCP    m_geom;
+        Entry(DRange3dCR range, GeometrySourceCR geom) : m_range(range), m_geom(&geom) {}
+        Entry() : m_geom(nullptr) {}
     };
 
     //=======================================================================================
@@ -159,7 +159,7 @@ public:
     bool Is3d() const {return m_is3d;}
     Match FindMatches(Traverser&);
     void AddElement(Entry const&);
-    void AddGeomElement(GeometricElementCR geom){AddElement(Entry(geom.CalculateRange3d(), geom));}
+    void AddGeomElement(GeometrySourceCR geom){AddElement(Entry(geom.CalculateRange3d(), geom));}
     StatusInt RemoveElement(Entry const&);
 };
 

@@ -174,7 +174,7 @@ DGNPLATFORM_EXPORT BentleyStatus Process (IGeomProvider&, DgnDbR);
 //__PUBLISH_SECTION_START__
 
 //! Visit the supplied element and accumulate the measure information.
-DGNPLATFORM_EXPORT BentleyStatus Process (GeometricElementCR);
+DGNPLATFORM_EXPORT BentleyStatus Process (GeometrySourceCR);
 
 //! Create new instance of a measure geometry collector.
 DGNPLATFORM_EXPORT static MeasureGeomCollectorPtr Create (OperationType opType);

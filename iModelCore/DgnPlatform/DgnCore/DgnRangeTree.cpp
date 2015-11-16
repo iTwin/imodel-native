@@ -900,7 +900,7 @@ bool DgnRangeTree::LeafNode::DropElementFromLeaf(Entry const& entry, DgnRangeTre
     {
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
-        if (curr->m_elm != entry.m_elm)
+        if (curr->m_geom != entry.m_geom)
             continue;
 
         if (curr+1 < m_endChild)
@@ -946,7 +946,7 @@ void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
 
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
-        currEntry->m_entry = (void*) curr->m_elm;
+        currEntry->m_entry = (void*) curr->m_geom;
         currEntry->m_range = curr->m_range;
         }
 
@@ -969,9 +969,9 @@ void DgnRangeTree::LeafNode::SplitLeafNode(DgnRangeTreeR root)
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddElementToLeaf(Entry(currEntry->m_range, *(GeometricElementCP)currEntry->m_entry), root);
+            newNode1->AddElementToLeaf(Entry(currEntry->m_range, *(GeometrySourceCP)currEntry->m_entry), root);
         else
-            newNode2->AddElementToLeaf(Entry(currEntry->m_range, *(GeometricElementCP)currEntry->m_entry), root);
+            newNode2->AddElementToLeaf(Entry(currEntry->m_range, *(GeometrySourceCP)currEntry->m_entry), root);
         }
 
     // if parent is nullptr, this node is currently the root of the tree (the only node in the tree). We need to allocate an InternalNode to
@@ -998,7 +998,7 @@ DgnRangeTree::Match DgnRangeTree::LeafNode::Traverse(DgnRangeTree::Traverser& tr
         {
         for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            DgnRangeTree::Match stat = traverser._VisitRangeTreeElem(curr->m_elm, curr->m_range);
+            DgnRangeTree::Match stat = traverser._VisitRangeTreeElem(curr->m_geom, curr->m_range);
             if (DgnRangeTree::Match::Ok != stat)
                 return  stat;
             }
@@ -1035,7 +1035,7 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
 
     for (auto const& element : dgnModel.GetElements())
         {
-        GeometricElementCP geom = element.second->ToGeometricElement();
+        GeometrySourceCP geom = element.second->ToGeometrySource();
         if (nullptr != geom)
             AddElement(Entry(geom->CalculateRange3d(), *geom));
         }
@@ -1889,7 +1889,7 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
     DgnElementCPtr el = pool.GetElement(elementId);
     if (el.IsValid())
         {
-        GeometricElementCP geomElem = el->ToGeometricElement();
+        GeometrySourceCP geomElem = el->ToGeometrySource();
         if (nullptr != geomElem)
             {
             m_drewElementThisPass = true;
@@ -2010,6 +2010,6 @@ IProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR con
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveViewFilter::~ProgressiveViewFilter()
     {
-    HighPriorityOperationBlock  _v_v;
+    wt_OperationForGraphics  _v_v;
     m_rangeStmt = nullptr;
     }

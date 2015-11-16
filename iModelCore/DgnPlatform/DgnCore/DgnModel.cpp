@@ -350,7 +350,7 @@ DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
 DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
     {
     auto status = T_Super::_OnInsertElement(el);
-    if (DgnDbStatus::Success == status && nullptr != el.ToGeometricElement())
+    if (DgnDbStatus::Success == status && el.IsGeometricElement())
         status = DgnDbStatus::WrongModel;
 
     return status;
@@ -541,7 +541,7 @@ void GeometricModel::AddToRangeIndex(DgnElementCR element)
     if (nullptr == m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element.ToGeometricElement();
+    GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != m_rangeIndex && nullptr != geom && geom->HasGeometry())
         m_rangeIndex->AddGeomElement(*geom);
     }
@@ -554,7 +554,7 @@ void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element.ToGeometricElement();
+    GeometrySourceCP geom = element.ToGeometrySource();
     if (nullptr != geom && geom->HasGeometry())
         m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->CalculateRange3d(), *geom));
     }
@@ -567,11 +567,14 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP origGeom = original.ToGeometricElement();
+    GeometrySourceCP origGeom = original.ToGeometrySource();
     if (nullptr == origGeom)
         return;
 
-    GeometricElementCP newGeom = (GeometricElementCP) &modified;
+    GeometrySourceCP newGeom = modified.ToGeometrySource();
+    if (nullptr == newGeom)
+        return;
+
     AxisAlignedBox3d origBox = origGeom->HasGeometry() ? origGeom->CalculateRange3d() : AxisAlignedBox3d();
     AxisAlignedBox3d newBox  = newGeom->HasGeometry() ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
 
@@ -772,9 +775,31 @@ DgnDbStatus DgnModel::_OnDelete()
             return stat;
         }
 
+    // delete all views which use this model as their base model
+    DgnDbStatus stat = DeleteAllViews();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
     BeAssert(GetRefCount() > 1);
     m_dgndb.Models().DropLoadedModel(*this);
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::DeleteAllViews()
+    {
+    DgnDbStatus status = DgnDbStatus::Success;
+    for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
+        {
+        auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
+        status = view.IsValid() ? view->Delete() : DgnDbStatus::ViewNotFound;
+        if (DgnDbStatus::Success != status)
+            break;
+        }
+
+    return status;
     }
 
 struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnDeleted(model);}};
@@ -1043,8 +1068,8 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5,CategoryId=6};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code,ParentId,CodeAuthorityId,CodeNameSpace,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     _SetFilled();
@@ -1067,7 +1092,6 @@ void DgnModel::_FillModel()
             DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code), stmt.GetValueText(Column::CodeNameSpace)), 
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)),
-            stmt.GetValueId<DgnCategoryId>(Column::CategoryId),
             true);
         }
 
@@ -1405,7 +1429,7 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
 
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers), "GroupId", "MemberId");
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupsMembers), "GroupId", "MemberId");
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "RootElementId", "DependentElementId", "ECClassId", {"Status", "Priority"});
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementUsesStyles), "ElementId", "StyleId");
 
@@ -1680,7 +1704,7 @@ static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters)
+PhysicalElementCPtr ComponentModel::GetSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool generateSolution)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -1720,6 +1744,12 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
         return existingTemplateItem;
         }
     
+    if (!generateSolution)
+        {
+        status = DgnDbStatus::NotFound;
+        return nullptr;
+        }
+
     if (DgnDbStatus::Success != (status = Solve(parameters)))
         return nullptr;
 
@@ -1756,7 +1786,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
     if (!iclass.IsValid())
         {
         BeAssert(false);
-        status = DgnDbStatus::BadSchema;
+        status = DgnDbStatus::MissingDomain;
         return nullptr;
         }
 
@@ -1774,7 +1804,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
     FillModel();
     for (auto const& mapEntry : *this)
         {
-        GeometricElementCP componentElement = mapEntry.second->ToGeometricElement();
+        GeometrySourceCP componentElement = mapEntry.second->ToGeometrySource();
         if (nullptr == componentElement)
             continue;
 

@@ -524,15 +524,15 @@ bool ViewContext::_ScanRangeFromPolyhedron()
 * @return true if the element is outside the range and should be ignored.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
+bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     {
-    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(element.CalculateRange3d(), element.Is3d());
+    return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(source.CalculateRange3d(), nullptr != source.ToGeometrySource3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputElement(GeometricElementCR element)
+void ViewContext::_OutputElement(GeometrySourceCR element)
     {
     m_currGeomElement = &element;
     m_currGraphic = nullptr;
@@ -611,7 +611,7 @@ void ViewContext::CookDisplayParams()
 
     //  NEEDSWORK_LINESTYLES
     //  If this is a 3d view and we have a line style then we want to convert the line style
-    //  to a texture line style.  We don't do it prior to this because the raster image
+    //  to a texture line style.  We don't do it prior to this because generating the geometry map
     //  may use the current symbology.  This seems like a horrible place to do this,
     //  so we need to come up with something better.
     LineStyleSymb & lsSym = m_elemMatSymb.GetLineStyleSymbR();
@@ -644,9 +644,9 @@ void ViewContext::ResetContextOverrides()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::ElementIsUndisplayed(GeometricElementCR element)
+bool ViewContext::ElementIsUndisplayed(GeometrySourceCR source)
     {
-    return (!_WantUndisplayed() && element.IsUndisplayed());
+    return (!_WantUndisplayed() && source.IsUndisplayed());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -694,12 +694,12 @@ void ViewContext::DrawBox(DPoint3dP box, bool is3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitElement(GeometricElementCR element)
+StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
     {
     if (_CheckStop())
         return ERROR;
 
-    if (ElementIsUndisplayed(element))
+    if (ElementIsUndisplayed(source))
         return SUCCESS;
 
     _OutputElement(element);
@@ -718,9 +718,10 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
                 break;
 
             DPoint3d  p[8];
-            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(element.CalculateRange3d()) : 
-                                   (element.Is3d() ? BoundingBox3d(element.ToElement3d()->GetPlacement().GetElementBox()) : BoundingBox3d(element.ToElement2d()->GetPlacement().GetElementBox())));
-            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform()));
+            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : (nullptr != source.ToGeometrySource3d() ? 
+                                    BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()) : 
+                                    BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox())));
+            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform());
 
             p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
             p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
@@ -737,7 +738,7 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
 #endif
 
             PushTransform(placementTrans);
-            DrawBox(p, element.Is3d());
+            DrawBox(p, nullptr != source.ToGeometrySource3d());
             PopTransformClip();
 
             ResetContextOverrides();
@@ -771,7 +772,7 @@ void ViewContext::_VisitTransientGraphics(bool isPreUpdate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCriteriaR sc)
     {
-    GeometricElementCP geomElement = element.ToGeometricElement();
+    GeometrySourceCP geomElement = element.ToGeometrySource();
     if (nullptr == geomElement)
         return SUCCESS;
     
