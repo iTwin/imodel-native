@@ -49,7 +49,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
     ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
     ASSERT_EQ( BE_SQLITE_OK , result );
-    db->Txns().EnableTracking(true);
+    TestDataManager::MustBeBriefcase(db, mode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -288,8 +288,8 @@ void ComponentModelPerfTest::Client_SolveAndCapture(PhysicalElementCPtr& catalog
         }
 
     DgnDbStatus status;
-    catalogItem = componentModel->CaptureSolution(&status, catalogModel, newParameterValues);
-    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::CaptureSolution failed with error %x", status);
+    catalogItem = componentModel->GetSolution(&status, catalogModel, newParameterValues);
+    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::GetSolution failed with error %x", status);
     }
 
 //---------------------------------------------------------------------------------------

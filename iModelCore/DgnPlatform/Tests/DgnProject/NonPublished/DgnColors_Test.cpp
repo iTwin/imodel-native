@@ -17,9 +17,9 @@ public:
     ScopedDgnHost  m_host;
     DgnDbPtr       m_project;
 
-    void SetupProject(WCharCP projFile, Db::OpenMode mode)
+    void SetupProject(WCharCP projFile, Db::OpenMode mode, bool needBriefcase = false)
     {
-        DgnDbTestDgnManager tdm(projFile, __FILE__, mode);
+        DgnDbTestDgnManager tdm(projFile, __FILE__, mode, needBriefcase);
         m_project = tdm.GetDgnProjectP();
         ASSERT_TRUE(m_project != NULL);
     }

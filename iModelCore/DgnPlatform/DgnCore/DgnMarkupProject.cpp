@@ -73,10 +73,10 @@ BentleyStatus DgnMarkupProject::QueryPropertyAsJson(JsonValueR json, DgnMarkupPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId DgnMarkupProject::GetFirstViewOf(DgnModelId mid)
     {
-    for (auto const& view : Views().MakeIterator())
+    for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
         if (view.GetBaseModelId() == mid)
-            return view.GetDgnViewId();
+            return view.GetId();
         }
     return DgnViewId();
     }
@@ -560,12 +560,15 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileName, CreateD
     //  Mark all pre-existing models and views as internal. They may be used
     //  as seeds, but they will never be used directly by the app or the user.
     //  ------------------------------------------------------------------
-    if (true)
+    for (auto const& entry : ViewDefinition::MakeIterator(*this))
         {
-        Statement stmt;
-        // *** NEEDS WORK: Missing WHERE Id=?   
-        stmt.Prepare(*this, "UPDATE " DGN_TABLE(DGN_CLASSNAME_View) " SET Source=4");  // DgnViewSource::Private
-        stmt.Step();
+        auto cpView = ViewDefinition::QueryView(entry.GetId(), *this);
+        auto pView = cpView.IsValid() ? cpView->MakeCopy<ViewDefinition>() : nullptr;
+        if (pView.IsValid())
+            {
+            pView->SetSource(DgnViewSource::Private);
+            pView->Update();
+            }
         }
 
     if (true)
@@ -709,7 +712,7 @@ DgnViewAssociationData::CheckResults RedlineModel::CheckAssociation(DgnDbR dgnPr
 
     DgnViewAssociationData::CheckResults viewResults(GetDgnMarkupProject()->CheckAssociation(dgnProject, assocData));
 
-    if (assocData.GetViewId().IsValid() && !dgnProject.Views().QueryView(assocData.GetViewId()).IsValid())
+    if (assocData.GetViewId().IsValid() && !ViewDefinition::QueryView(assocData.GetViewId(), dgnProject).IsValid())
         {
         viewResults.ViewNotFound = true;
         }
@@ -1056,7 +1059,7 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
     DgnModelId closestRedlineModelId;
     DPoint3d closestOrigin;
     double closestDistance = DBL_MAX;
-    for (auto const& view : Views().MakeIterator())
+    for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
         RedlineModelPtr rdlModel = Models().Get<RedlineModel>(view.GetBaseModelId());
         if (rdlModel.IsValid())
@@ -1542,8 +1545,8 @@ ViewController* RedlineViewController::Create(DgnDbR project, DgnViewId viewId)
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
     if (markupProject == NULL)
         return NULL;
-    auto rdlView = markupProject->Views().QueryView(viewId);
-    auto rdlModel = markupProject->OpenRedlineModel(rdlView.GetBaseModelId());
+    auto rdlView = ViewDefinition::QueryView(viewId, *markupProject);
+    auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView->GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
 
@@ -1562,18 +1565,16 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
         return NULL;
         }
 
-    DgnClassId classId(project->Schemas().GetECClassId("dgn","RedlineView"));
-    DgnViews::View view(DgnViewType::Sheet, classId, rdlModel.GetModelId(), rdlModel.GetCode().GetValue().c_str(), NULL, DgnViewSource::Generated);
+    RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str(),
+                ViewDefinition::Data(rdlModel.GetModelId(), DgnViewSource::Generated)));
+    if (!view.Insert().IsValid())
+        return nullptr;
 
-    auto result = rdlModel.GetDgnMarkupProject()->Views().Insert(view);
-    if (BE_SQLITE_OK != result)
-        return NULL;
-
-    auto controller = new RedlineViewController(rdlModel, view.GetId());
+    auto controller = new RedlineViewController(rdlModel, view.GetViewId());
 
     controller->m_enableViewManipulation = true; // *** TRICKY: Normally, RedlineViewController::SetDelta, Origin, Rotation are disabled (to prevent user from changing camera on sheet.)
 
-    auto templateSheet = project->Views().LoadViewController(templateView, DgnViews::FillModels::No);
+    auto templateSheet = ViewDefinition::LoadViewController(templateView, *project, ViewDefinition::FillModels::No);
     if (templateSheet.IsValid())
         {
         controller->SetBackgroundColor(templateSheet->GetBackgroundColor());
@@ -1768,8 +1769,8 @@ ViewControllerPtr PhysicalRedlineViewController::Create(DgnViewType viewType, Ut
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
     if (markupProject == NULL)
         return NULL;
-    auto rdlView = markupProject->Views().QueryView(viewId);
-    auto rdlModel = markupProject->OpenRedlineModel(rdlView.GetBaseModelId());
+    auto rdlView = ViewDefinition::QueryView(viewId, project);
+    auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView.GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
     return new PhysicalRedlineViewController(*rdlModel, subjectViewController);

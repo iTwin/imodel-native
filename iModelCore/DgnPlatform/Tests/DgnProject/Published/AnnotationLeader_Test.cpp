@@ -21,7 +21,7 @@ struct AnnotationLeaderTest : public AnnotationTestFixture
     // @bsimethod                                                   Umar.Hayat     07/15
     //---------------------------------------------------------------------------------------
 public: AnnotationLeaderTest() :
-    AnnotationTestFixture(__FILE__, false /*2D*/)
+    AnnotationTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
         {
         }
 
@@ -47,20 +47,20 @@ TEST_F(AnnotationLeaderTest, DefaultsAndAccessors)
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = createAnnotationLeaderStyle(project, "TestLeaderStyle");
-    AnnotationLeaderPtr leader = AnnotationLeader::Create(project,style->GetStyleId());
+    AnnotationLeaderPtr leader = AnnotationLeader::Create(project,style->GetElementId());
     ASSERT_TRUE(leader.IsValid());
 
     // Basics
     EXPECT_TRUE(&project == &leader->GetDbR());
-    EXPECT_TRUE(style->GetStyleId() == leader->GetStyleId());
+    EXPECT_TRUE(style->GetElementId() == leader->GetStyleId());
 
-    AnnotationLeaderPtr leader2 = AnnotationLeader::Create(project, style->GetStyleId());
+    AnnotationLeaderPtr leader2 = AnnotationLeader::Create(project, style->GetElementId());
     ASSERT_TRUE(leader2.IsValid());
 
     // Basics
     EXPECT_TRUE(&project == &leader->GetDbR());
-    leader->SetStyleId(style->GetStyleId(),SetAnnotationLeaderStyleOptions::Default);
-    EXPECT_TRUE(style->GetStyleId() == leader->GetStyleId());
+    leader->SetStyleId(style->GetElementId(),SetAnnotationLeaderStyleOptions::Default);
+    EXPECT_TRUE(style->GetElementId() == leader->GetStyleId());
     leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
     EXPECT_TRUE(AnnotationLeaderTargetAttachmentType::PhysicalPoint == leader->GetTargetAttachmentType());
     

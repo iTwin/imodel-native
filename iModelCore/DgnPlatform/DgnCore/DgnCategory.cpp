@@ -265,7 +265,7 @@ DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
 DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db)
     {
     CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " WHERE ElementId=?");
     stmt->BindId(1, elemId);
     return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }

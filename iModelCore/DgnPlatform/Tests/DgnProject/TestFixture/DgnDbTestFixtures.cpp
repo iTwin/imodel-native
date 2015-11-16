@@ -11,6 +11,7 @@
 //Macros to define members of DgnDomain and Handler
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
+HANDLER_DEFINE_MEMBERS(TestGroupHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 
 /*---------------------------------------------------------------------------------**//**
@@ -20,6 +21,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
+    RegisterHandler(TestGroupHandler::GetHandler());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -387,23 +389,27 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, D
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId categoryId)
+    {
+    DgnClassId classId = db.Domains().GetClassId(TestGroupHandler::GetHandler());
+    TestGroupPtr group = new TestGroup(CreateParams(db, modelId, classId, categoryId, Placement3d()));
+    BeAssert(group.IsValid());
+    return group;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbTestFixture::setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
     {
-    DgnViews::View view;
-
-    view.SetDgnViewType(DgnClassId(dgnDb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalView)), DgnViewType::Physical);
-    view.SetDgnViewSource(DgnViewSource::Generated);
-    view.SetName("TestView");
-    view.SetBaseModelId(model.GetModelId());
-
-    EXPECT_TRUE(BE_SQLITE_OK == dgnDb.Views().Insert(view));
-    EXPECT_TRUE(view.GetId().IsValid());
+    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
+    EXPECT_TRUE(view.Insert().IsValid());
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    PhysicalViewController viewController (dgnDb, view.GetId());
+    PhysicalViewController viewController (dgnDb, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);

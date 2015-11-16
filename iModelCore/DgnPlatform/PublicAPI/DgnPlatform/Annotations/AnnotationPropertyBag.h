@@ -55,8 +55,7 @@ public:
     DGNPLATFORM_EXPORT void ClearAllProperties();
     DGNPLATFORM_EXPORT size_t ComputePropertyCount() const;
     DGNPLATFORM_EXPORT void MergeWith(AnnotationPropertyBagCR);
-
-    uint32_t GetMemSize() const;
+    DGNPLATFORM_EXPORT uint32_t GetMemSize() const { return (uint32_t)(m_integerProperties.bytes_used() + m_realProperties.bytes_used()); }
 };
 
 //! @endGroup

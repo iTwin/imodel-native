@@ -471,56 +471,6 @@ void PerformanceElementTestFixture::CommitAndLogTiming (StopWatch& timer, Utf8CP
     LOGTODB (testcaseName, testName, timer.GetElapsedSeconds (), scenario, s_instanceCount);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiMethod                                      Muhammad Hassan                  10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementTestFixture::SetUpTestDgnDb (WCharCP destFileName, Utf8CP className)
-    {
-    BeFileName seedFilePath;
-    WString seedFileName;
-    bool createSeed = false;
-
-    WString wClassName;
-    wClassName.AssignUtf8 (className);
-    seedFileName.Sprintf (L"sqlVsecsqlPerformance_%ls_seed%d.idgndb", wClassName.c_str(), DateTime::GetCurrentTimeUtc ().GetDayOfYear ());
-
-    BeTest::GetHost ().GetOutputRoot (seedFilePath);
-    seedFilePath.AppendToPath (seedFileName.c_str ());
-    if (seedFilePath.DoesPathExist ())
-        {
-        }
-    else
-        createSeed = true;
-
-    if (createSeed)
-        {
-        SetupProject (L"3dMetricGeneral.idgndb", seedFileName.c_str (), BeSQLite::Db::OpenMode::ReadWrite);
-        ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext ();
-        BeFileName searchDir;
-        BeTest::GetHost ().GetDgnPlatformAssetsDirectory (searchDir);
-        searchDir.AppendToPath (L"ECSchemas").AppendToPath (L"Dgn");
-        schemaContext->AddSchemaPath (searchDir.GetName ());
-
-        ECN::ECSchemaPtr schema = nullptr;
-        ASSERT_EQ (ECN::SCHEMA_READ_STATUS_Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
-
-        _RegisterDomainAndImportSchema (schema);
-        ASSERT_TRUE (m_db->IsDbOpen ());
-        _CreateAndInsertElements (className);
-        }
-
-    BeFileName dgndbFilePath;
-    BeTest::GetHost ().GetOutputRoot (dgndbFilePath);
-    dgndbFilePath.AppendToPath (destFileName);
-
-    ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeCopyFile (seedFilePath, dgndbFilePath, false));
-
-    DbResult status;
-    m_db = DgnDb::OpenDgnDb (&status, dgndbFilePath, DgnDb::OpenParams (Db::OpenMode::ReadWrite));
-    EXPECT_EQ (DbResult::BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE (m_db.IsValid ());
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------

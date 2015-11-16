@@ -359,6 +359,10 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
         EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFile, __FILE__));
         auto db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         EXPECT_TRUE(db.IsValid());
+        if (!db.IsValid())
+            return nullptr;
+
+        TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite); // sets a fake briefcase id and reopens w/ txn manager support turned on
 
         m_modelId = DgnModel::DictionaryId();
         m_elemId = DgnCategory::QueryFirstCategoryId(*db);
@@ -476,6 +480,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
     DgnDbPtr m_db;
 
     SingleBriefcaseLocksTest() : m_bcId(1) { }
+    ~SingleBriefcaseLocksTest() {if (m_db.IsValid()) m_db->CloseDb();}
 
     DgnModelPtr CreateModel(Utf8CP name) { return T_Super::CreateModel(name, *m_db); }
 };
@@ -637,6 +642,14 @@ struct DoubleBriefcaseTest : LocksManagerTest
 
     DgnModelId m_modelIds[2];
     DgnElementId m_elemIds[4];
+
+    ~DoubleBriefcaseTest() 
+        {
+        if (m_dbA.IsValid())
+            m_dbA->SaveChanges();
+        if (m_dbB.IsValid())
+            m_dbB->SaveChanges();
+        }
 
     static WCharCP SeedFileName() { return L"ElementsSymbologyByLeveldgn.i.idgndb"; }
 
