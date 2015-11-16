@@ -101,7 +101,7 @@ public:
     //! Construct a new DgnMaterial with the specified parameters
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
-    DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the ID of this material.
+    DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the Id of this material.
     Utf8String GetPaletteName() const { return GetCode().GetNameSpace(); } //!< Returns the palette name
     Utf8String GetMaterialName() const { return GetCode().GetValue(); } //!< Returns the material name
 
