@@ -32,6 +32,9 @@ void ECDbTestFixture::SetUp()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
     {
+    if (m_ecdb.IsDbOpen())
+        m_ecdb.CloseDb();
+
     CreateECDb(m_ecdb, ecdbFileName);
     return GetECDb();
     }
@@ -41,6 +44,9 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
 //+---------------+---------------+---------------+---------------+---------------+------
 ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
+    if (m_ecdb.IsDbOpen())
+        m_ecdb.CloseDb();
+
     EXPECT_EQ(BE_SQLITE_OK, CreateECDb(m_ecdb, ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount));
     return GetECDb();
     }
@@ -50,6 +56,9 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFi
 //---------------+---------------+---------------+---------------+---------------+-------
 ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, bool importArbitraryNumberOfECInstances, ECDb::OpenParams openParams)
     {
+    if (m_ecdb.IsDbOpen())
+        m_ecdb.CloseDb();
+
     BeFileName fileName(schemaECXmlFileName);
     EXPECT_EQ(BE_SQLITE_OK, CreateECDb(m_ecdb, ecdbFileName, fileName, openParams, importArbitraryNumberOfECInstances ? 3 : 0));
     return GetECDb();
@@ -60,6 +69,9 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileNam
 //---------------+---------------+---------------+---------------+---------------+-------
 ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams) const
     {
+    if (m_ecdb.IsDbOpen())
+        m_ecdb.CloseDb();
+
     BeFileName ecdbPath;
 
     {
