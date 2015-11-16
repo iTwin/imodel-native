@@ -63,7 +63,6 @@ private:
     bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
 
     BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, Utf8CP customAttributeName);
-    static Utf8String ResolveTablePrefix (ECN::ECClassCR ecClass);
 
 protected:
     virtual BentleyStatus _InitializeFromSchema();

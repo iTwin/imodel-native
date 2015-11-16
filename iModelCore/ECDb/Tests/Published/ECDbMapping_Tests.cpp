@@ -483,7 +483,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "        <BaseClass>SubSub</BaseClass>"
             "        <ECProperty propertyName='P3' typeName='int' />"
             "    </ECClass>"
-            "</ECSchema>", false, "Option JoinedTableForSubclasses cannot be applied to subclass where base has SharedTable (applies to subclasses)."),
+            "</ECSchema>", true, "Option JoinedTableForSubclasses can be applied to subclass where base has SharedTable (applies to subclasses)."),
 
     SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
@@ -1443,11 +1443,11 @@ TEST_F (ECDbMappingTestFixture, SharedColumnsAcrossMultipleSchemaImports)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMappingTestFixture, JoinedTableForSubclassesOnHierarchyAccrossMultipleSchemas)
+TEST_F (ECDbMappingTestFixture, JoinedTableAcrossMultipleSchemaImports)
     {
     SchemaItem testItem (
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='ReferedSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='Base' isDomainClass='False'>"
         "        <ECCustomAttributes>"
@@ -1463,32 +1463,25 @@ TEST_F (ECDbMappingTestFixture, JoinedTableForSubclassesOnHierarchyAccrossMultip
         "    </ECClass>"
         "    <ECClass typeName='Sub1' isDomainClass='True'>"
         "         <BaseClass>Base</BaseClass>"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub2' isDomainClass='True'>"
-        "         <BaseClass>Sub1</BaseClass>"
         "        <ECProperty propertyName='P1' typeName='int' />"
-        "        <ECProperty propertyName='P2' typeName='int' />"
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option JoinedTableForSubclasses (applied to subclasses) is expected to succeed");
 
     SchemaItem secondTestItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='ReferedSchema' version='01.00' prefix='rs' />"
-        "    <ECClass typeName='Sub3' isDomainClass='True'>"
-        "         <BaseClass>rs:Sub2</BaseClass>"
-        "        <ECProperty propertyName='P3' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub4' isDomainClass='True'>"
-        "         <BaseClass>Sub3</BaseClass>"
-        "        <ECProperty propertyName='P4' typeName='int' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECSchemaReference name='ReferredSchema' version='01.00' prefix='rs' />"
+        "    <ECClass typeName='Sub2' isDomainClass='True'>"
+        "         <BaseClass>rs:Sub1</BaseClass>"
+        "        <ECProperty propertyName='P2' typeName='int' />"
         "    </ECClass>"
         "</ECSchema>", true, "Mapstrategy Option JoinedTableForSubclasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
 
     Utf8String ecdbFilePath;
         {
         ECDb testDb;
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "SharedColumnsForSubclasses.ecdb"));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "JoinedTableForSubclasses.ecdb"));
         bool asserted = false;
         AssertSchemaImport (asserted, testDb, testItem);
         ASSERT_FALSE (asserted);

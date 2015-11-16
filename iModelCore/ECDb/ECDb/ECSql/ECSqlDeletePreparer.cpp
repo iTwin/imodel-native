@@ -104,24 +104,43 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
     if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
         NativeSqlBuilder whereClause;
-        status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
-        if (!status.IsSuccess())
-            return status;
-
         //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
         auto const & currentClassMap = classNameExp.GetInfo().GetMap();
-        if (auto rootOfJoinedTable = currentClassMap.FindRootOfJoinedTable())
+        if (auto rootOfJoinedTable = currentClassMap.FindParentOfJoinedTable())
             {
+            auto propertyAccessed =  whereClauseExp->Find(Exp::Type::PropertyName, true);
+
             auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
             bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
             bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetTable()) != tableBeenAccessed.end());
-            if (referencedRootOfJoinedTable && !referencedJoinedTable)
+            bool hasOnlyECInstanceId = false;
+            if (propertyAccessed.size() == 1)
+                hasOnlyECInstanceId = strcmp(static_cast<PropertyNameExp const*>(propertyAccessed.front())->GetPropertyName(), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) == 0;
+
+            if (hasOnlyECInstanceId)
+                {
+                ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendOptions::SkipTableAliasWhenPreparingDeleteWhereClause, true);
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+                if (!status.IsSuccess())
+                    return status;
+
+                deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
+                }
+            else if (referencedRootOfJoinedTable && !referencedJoinedTable)
                 {
                 //do not modifiy where
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+                if (!status.IsSuccess())
+                    return status;
+
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
                 }
             else
                 {
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+                if (!status.IsSuccess())
+                    return status;
+
                 auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 NativeSqlBuilder snippet;
@@ -143,8 +162,14 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet.ImportParameters(whereClause);
                 }
             }
-        else
+        else 
+            {
+            status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+            if (!status.IsSuccess())
+                return status;
+
             deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
+            }
         }
 
 
@@ -156,7 +181,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
 
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
     ECDbSqlTable const* table = &classMap.GetTable();
-    if (auto rootOfJoinedTable = classMap.FindRootOfJoinedTable())
+    if (auto rootOfJoinedTable = classMap.FindParentOfJoinedTable())
         {
         table = &rootOfJoinedTable->GetTable();
         }

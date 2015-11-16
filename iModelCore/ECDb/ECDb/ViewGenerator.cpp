@@ -334,7 +334,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
     if (classIdColumn != nullptr)
         {
             auto tableP = &table;
-            if (auto rootOfJoinedTable = firstChildClassMap->FindRootOfJoinedTable())
+            if (auto rootOfJoinedTable = firstChildClassMap->FindParentOfJoinedTable())
                 {
                 tableP = &rootOfJoinedTable->GetTable();
                 }
