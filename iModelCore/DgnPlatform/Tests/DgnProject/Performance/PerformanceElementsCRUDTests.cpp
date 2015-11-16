@@ -1239,7 +1239,7 @@ void PerformanceElementsCRUDTestFixture::DgnApiSelectTime (Utf8CP className, int
     {
     WString wClassName;
     wClassName.AssignUtf8 (className);
-    WPrintfString dbName (L"DgnApiRead%ls_%d.idgndb", wClassName.c_str (), initialInstanceCount);
+    WPrintfString dbName (L"DgnApiSelect%ls_%d.idgndb", wClassName.c_str (), initialInstanceCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     DgnModelId id ((uint64_t)3);
@@ -1631,10 +1631,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsReadDgnApi)
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateSqlvsECSql)
     {
     int updateCount;
-    int initialInsertCount;
+    int initialInsertCount = s_initialInstanceCount;
     for (int i = 1; i <= varyInitialCount; i++)
         {
-        initialInsertCount = s_initialInstanceCount * 10;
+        initialInsertCount = initialInsertCount * 10;
         for (int j = 1; j <= varyInitialCount; j++)
             {
             updateCount = s_opCount*i;
@@ -1657,10 +1657,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateSqlvsECSql)
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateDgnApi)
     {
     int updateCount;
-    int initialInsertCount;
+    int initialInsertCount = s_initialInstanceCount;
     for (int i = 1; i <= varyInitialCount; i++)
         {
-        initialInsertCount = s_initialInstanceCount * 10;
+        initialInsertCount = initialInsertCount * 10;
         for (int j = 1; j <= varyInitialCount; j++)
             {
             updateCount = s_opCount*i;
@@ -1678,10 +1678,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateDgnApi)
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteSqlvsECSql)
     {
     int deleteCount;
-    int initialInsertCount;
+    int initialInsertCount = s_initialInstanceCount;
     for (int i = 1; i <= varyInitialCount; i++)
         {
-        initialInsertCount = s_initialInstanceCount * 10;
+        initialInsertCount = initialInsertCount * 10;
         for (int j = 1; j <= varyInitialCount; j++)
             {
             deleteCount = s_opCount*i;
@@ -1704,10 +1704,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteSqlvsECSql)
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteDgnApi)
     {
     int deleteCount;
-    int initialInsertCount;
+    int initialInsertCount = s_initialInstanceCount;
     for (int i = 1; i <= varyInitialCount; i++)
         {
-        initialInsertCount = s_initialInstanceCount * 10;
+        initialInsertCount = initialInsertCount * 10;
         for (int j = 1; j <= varyInitialCount; j++)
             {
             deleteCount = s_opCount*i;
