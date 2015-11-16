@@ -32,9 +32,14 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
         TestItem(SchemaItem const& testSchema, std::set<Utf8String> const& classesWithJoinedTable) : m_testSchema(testSchema), m_classesWithJoinedTable(classesWithJoinedTable) {}
         };
 
-    std::vector<TestItem> testItems
-        {
-        TestItem(SchemaItem("Join on C0",
+    std::set<Utf8String> just_C0, just_C1, both_C1_and_C2;
+    just_C0.insert("C0");
+    just_C1.insert("C1");
+    both_C1_and_C2.insert("C1");
+    both_C1_and_C2.insert("C2");
+
+    std::vector<TestItem> testItems;
+    testItems.push_back(TestItem(SchemaItem("Join on C0",
                                 "<?xml version='1.0' encoding='utf-8'?>"
                                 "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
                                 "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
@@ -75,9 +80,9 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
                                 "        <ECProperty propertyName='I' typeName='long'/>"
                                 "        <ECProperty propertyName='J' typeName='string'/>"
                                 "    </ECClass>"
-                                "</ECSchema>"), {"C0"}),
+                                "</ECSchema>"), just_C0));
 
-                      TestItem(SchemaItem("Join on C1",
+    testItems.push_back(TestItem(SchemaItem("Join on C1",
                                        "<?xml version='1.0' encoding='utf-8'?>"
                                        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
                                        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
@@ -124,9 +129,9 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
                                         "        <ECProperty propertyName='I' typeName='long'/>"
                                         "        <ECProperty propertyName='J' typeName='string'/>"
                                         "    </ECClass>"
-                                       "</ECSchema>"),  {"C1"}),
+                                       "</ECSchema>"),  just_C1));
 
-               TestItem( SchemaItem("Join on C1 and C2",
+    testItems.push_back(TestItem( SchemaItem("Join on C1 and C2",
                             "<?xml version='1.0' encoding='utf-8'?>"
                             "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
                             "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
@@ -180,8 +185,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
                             "        <ECProperty propertyName='I' typeName='long'/>"
                             "        <ECProperty propertyName='J' typeName='string'/>"
                             "    </ECClass>"
-                            "</ECSchema>"), {"C1", "C2"})
-        };
+                            "</ECSchema>"), both_C1_and_C2));
 
 
     for (TestItem const& testItem : testItems)
