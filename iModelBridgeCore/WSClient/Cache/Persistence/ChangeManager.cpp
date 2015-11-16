@@ -639,29 +639,26 @@ BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, Js
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds)
+BentleyStatus ChangeManager::CommitCreationChange(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId)
     {
-    for (auto& pair : newRemoteIds)
+    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
+    if (ecClass == nullptr)
         {
-        ECClassCP ecClass = m_dbAdapter->GetECClass(pair.first);
-        if (ecClass == nullptr)
+        return ERROR;
+        }
+
+    if (ecClass->GetRelationshipClassCP() == nullptr)
+        {
+        if (SUCCESS != CommitInstanceCreation(instanceKey, newRemoteId))
             {
             return ERROR;
             }
-
-        if (ecClass->GetRelationshipClassCP() == nullptr)
+        }
+    else
+        {
+        if (SUCCESS != CommitRelationshipCreation(instanceKey, newRemoteId))
             {
-            if (SUCCESS != CommitObjectCreation(pair.first, pair.second))
-                {
-                return ERROR;
-                }
-            }
-        else
-            {
-            if (SUCCESS != CommitRelationshipCreation(pair.first, pair.second))
-                {
-                return ERROR;
-                }
+            return ERROR;
             }
         }
 
@@ -671,7 +668,7 @@ BentleyStatus ChangeManager::CommitCreationChanges(const std::map<ECInstanceKey,
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitObjectCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId)
+BentleyStatus ChangeManager::CommitInstanceCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId)
     {
     if (newRemoteId.empty())
         {
@@ -714,16 +711,6 @@ BentleyStatus ChangeManager::CommitObjectCreation(ECInstanceKeyCR instanceKey, U
         return ERROR;
         }
 
-    FileInfo fileInfo = m_fileInfoManager->ReadInfo(info.GetObjectId());
-    if (fileInfo.GetChangeStatus() != ChangeStatus::NoChange)
-        {
-        fileInfo.ClearChangeInfo();
-        if (SUCCESS != m_fileInfoManager->SaveInfo(fileInfo))
-            {
-            return ERROR;
-            }
-        }
-
     return SUCCESS;
     }
 
@@ -761,7 +748,7 @@ BentleyStatus ChangeManager::CommitRelationshipCreation(ECInstanceKeyCR instance
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitObjectChanges(ECInstanceKeyCR instanceKey)
+BentleyStatus ChangeManager::CommitObjectChange(ECInstanceKeyCR instanceKey)
     {
     ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
 
@@ -775,7 +762,7 @@ BentleyStatus ChangeManager::CommitObjectChanges(ECInstanceKeyCR instanceKey)
         }
     else
         {
-        if (SUCCESS != CommitObjectChange(instanceKey))
+        if (SUCCESS != CommitInstanceChange(instanceKey))
             {
             return ERROR;
             }
@@ -787,7 +774,7 @@ BentleyStatus ChangeManager::CommitObjectChanges(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitObjectChange(ECInstanceKeyCR instanceKey)
+BentleyStatus ChangeManager::CommitInstanceChange(ECInstanceKeyCR instanceKey)
     {
     ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
     switch (info.GetChangeStatus())
@@ -844,7 +831,7 @@ BentleyStatus ChangeManager::CommitRelationshipChange(ECInstanceKeyCR instanceKe
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitFileChanges(ECInstanceKeyCR instanceKey)
+BentleyStatus ChangeManager::CommitFileChange(ECInstanceKeyCR instanceKey)
     {
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
     switch (info.GetChangeStatus())

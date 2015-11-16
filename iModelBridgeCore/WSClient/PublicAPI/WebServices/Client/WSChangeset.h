@@ -24,6 +24,12 @@ typedef std::shared_ptr<Json::Value> JsonValuePtr;
 struct WSChangeset
     {
     public:
+        enum Format
+            {
+            SingeInstance,
+            MultipleInstances
+            };
+
         enum ChangeState
             {
             Existing,
@@ -35,13 +41,27 @@ struct WSChangeset
         struct Instance;
         struct Relationship;
 
+        typedef std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)> IdHandler;
+
     private:
+        Format m_format;
         bvector<std::shared_ptr<Instance>> m_instances;
 
-    public:
-        WSCLIENT_EXPORT WSChangeset();
+    private:
+        void ToSingleInstanceRequestJson(JsonValueR json) const;
+        void ToMultipleInstancesRequestJson(JsonValueR json) const;
 
-        //! Add new instance
+        BentleyStatus ExtractNewIdsFromSingleInstanceResponse(RapidJsonValueCR response, const IdHandler& handler) const;
+        BentleyStatus ExtractNewIdsFromMultipleInstancesResponse(RapidJsonValueCR response, const IdHandler& handler) const;
+
+    public:
+        //! Create changeset. 
+        //! Specify Format::SingeInstance for one instance with related instances changeset format.
+        //! Specify Format::MultipleInstance for multiple instances with telated instances changeset format.
+        WSCLIENT_EXPORT WSChangeset(Format format = Format::MultipleInstances);
+
+        //! Add new instance. 
+        //! @return added instance. Will assert if adding second instance with Format::SingeInstance and return undefined result.
         WSCLIENT_EXPORT Instance& AddInstance(ObjectId instanceId, ChangeState state, JsonValuePtr properties);
 
         //! Find instance in changeset by its id. If multiple instnaces with same id exist, first one will be returned.
@@ -62,12 +82,11 @@ struct WSChangeset
         //! Serialize changeset to JSON string
         WSCLIENT_EXPORT Utf8String ToRequestString() const;
 
+        //! Serialize changeset to JSON
+        WSCLIENT_EXPORT void ToRequestJson(JsonValueR json) const;
+
         //! Extract ids for created instances from response JSON
-        WSCLIENT_EXPORT BentleyStatus ExtractNewIdsFromResponse
-            (
-            RapidJsonValueCR response,
-            const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
-            ) const;
+        WSCLIENT_EXPORT BentleyStatus ExtractNewIdsFromResponse(RapidJsonValueCR response, const IdHandler& handler) const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -89,11 +108,7 @@ struct WSChangeset::Instance
         size_t CalculateSize() const;
         void ToJson(JsonValueR instanceJsonOut) const;
 
-        BentleyStatus ExtractNewIdsFromInstanceAfterChange
-            (
-            RapidJsonValueCR instanceAfterChange,
-            const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
-            ) const;
+        BentleyStatus ExtractNewIdsFromInstanceAfterChange(RapidJsonValueCR instanceAfterChange, const IdHandler& handler) const;
 
         static void FillBase(JsonValueR instanceJsonOut, ObjectIdCR id, ChangeState state, JsonValuePtr properties);
         static size_t CalculateBaseSize(ObjectIdCR id, ChangeState state, JsonValuePtr properties, size_t& propertiesSizeInOut);
@@ -105,16 +120,17 @@ struct WSChangeset::Instance
 
     public:
         //! Add related instance
+        //! @return added related instance
         WSCLIENT_EXPORT Instance& AddRelatedInstance
             (
-            ObjectId relId,
-            ChangeState relState,
-            ECRelatedInstanceDirection relDirection,
-            ObjectId instanceId,
-            ChangeState state,
-            JsonValuePtr properties
-            );
-        //! Find related instance. Returns null if no matches found
+                ObjectId relId,
+                ChangeState relState,
+                ECRelatedInstanceDirection relDirection,
+                ObjectId instanceId,
+                ChangeState state,
+                JsonValuePtr properties
+                );
+            //! Find related instance. Returns null if no matches found
         WSCLIENT_EXPORT Instance* FindRelatedInstance(ObjectIdCR id) const;
         //! Remove related instance. Returns false if nothing to remove
         WSCLIENT_EXPORT bool RemoveRelatedInstance(Instance& instance);

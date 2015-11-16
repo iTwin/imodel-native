@@ -38,40 +38,54 @@ struct UrlProvider
                 bset<UrlDescriptor*>* m_registry;
 
             public:
-                // Constructur for internal use
+                //! Constructur for internal use
                 UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, bset<UrlDescriptor*>* registry);
                 ~UrlDescriptor();
 
+                //! Get URL name used to identify it
                 Utf8StringCR GetName() const;
 
-                //! Retrieve cached or server configured URL depending on UrlProvider configuration
+                //! Retrieve cached, server configured or default URL if no connection exists.
                 WSCLIENT_EXPORT Utf8String Get() const;
             };
 
+        WSCLIENT_EXPORT static int64_t DefaultTimeout;
+
     private:
         static bool s_isInitialized;
-
+        static UrlProvider::Environment s_env;
+        static int64_t s_cacheTimeoutMs;
         static ILocalState* s_localState;
         static IBuddiClientPtr s_buddi;
         static IHttpHandlerPtr s_customHandler;
 
     private:
         static Utf8String GetBuddiUrl(Utf8StringCR urlName);
-        static Utf8String GetUrl(Utf8CP urlName, const Utf8String* defaultUrls);
+        static Utf8String GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls);
 
     public:
-        WSCLIENT_EXPORT static void Initialize(Environment env,
-                                               ILocalState* customlocalState = nullptr,
-                                               IBuddiClientPtr customBuddi = nullptr,
-                                               IHttpHandlerPtr customHandler = nullptr);
+        //! Initialize UrlProvider for current session.
+        //! @param env - environment to get URLs for. Changing environment will clear URL cache
+        //! @param cacheTimeoutMs - maximum time URL is cached in milliseconds. Defaults to 24 hours.
+        //! @param customLocalState - custom local state for caching URLs
+        //! @param customBuddi - custom buddi client for requesting URLs
+        WSCLIENT_EXPORT static void Initialize(
+            Environment env,
+            int64_t cacheTimeoutMs = DefaultTimeout,
+            ILocalState* customlocalState = nullptr,
+            IBuddiClientPtr customBuddi = nullptr,
+            IHttpHandlerPtr customHandler = nullptr
+            );
 
         //! Should be used with all requests to provided URLs!
         //! Returns handler that will configure requests depending on environment.
         //! Will setup certificate validation appropriately.
         WSCLIENT_EXPORT static IHttpHandlerPtr GetSecurityConfigurator(IHttpHandlerPtr customHandler = nullptr);
 
+        //! Clear local URL cache
         WSCLIENT_EXPORT static void CleanUpUrlCache();
 
+        //! Available URLs
         struct Urls
             {
             WSCLIENT_EXPORT static const UrlDescriptor ConnectEula;

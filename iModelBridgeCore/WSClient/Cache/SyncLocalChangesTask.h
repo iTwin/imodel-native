@@ -19,8 +19,10 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+typedef std::shared_ptr<WSChangeset> WSChangesetPtr;
+
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                              Benediktas.Lipnickas   10/2013
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SyncLocalChangesTask : public CachingTaskBase
     {
@@ -63,10 +65,9 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void ReportFinalProgress() const;
         ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
 
-        BentleyStatus BuildChangeset
+        WSChangesetPtr BuildChangeset
             (
             IDataSourceCache& cache,
-            WSChangeset& changeset,
             bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
             bvector<CacheChangeGroup*>& changesetChangeGroupsOut
             );
@@ -76,7 +77,8 @@ struct SyncLocalChangesTask : public CachingTaskBase
             IDataSourceCache& cache,
             WSChangeset& changeset,
             CacheChangeGroupCR changeGroup,
-            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
+            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
+            bool ensureChangedInstanceInRoot
             );
 
         BentleyStatus BuildSyncJson(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
