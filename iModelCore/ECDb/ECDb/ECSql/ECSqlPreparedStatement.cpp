@@ -431,15 +431,19 @@ DbResult ECSqlUpdatePreparedStatement::Step()
         if (BE_SQLITE_OK != status)
             return status;
 
-        if (auto baseStmt = GetBaseECSqlStatement())
-            {
-            auto r = baseStmt->Step();
-            if (r != DbResult::BE_SQLITE_DONE)
-                return r;
-            }
-
         if (!IsNothingToUpdate())
-            return DoStep();
+            {
+            status = DoStep();
+            if (auto baseStmt = GetBaseECSqlStatement())
+                {
+                auto baseStatus = baseStmt->Step();
+                BeAssert(baseStatus == status && "base and child status must return same status");
+                if (baseStatus == status)
+                    return baseStatus;
+                }
+
+            return status;
+            }
         }
 
     return BE_SQLITE_DONE;

@@ -412,7 +412,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     {
     const auto currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
     auto const& classMap = exp.GetInfo().GetMap();
-    if (ctx.IsPrimaryStatement())
+    if (ctx.IsPrimaryStatement() && !ctx.IsParentOfJoinTable() /*Disable abstract class test for joinedTable*/)
         {
         auto policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp.IsPolymorphic()));
         if (!policy.IsSupported())
@@ -448,7 +448,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         {
         if (classMap.IsJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
             {
-            auto rootMap = classMap.FindRootOfJoinedTable();
+            auto rootMap = classMap.FindParentOfJoinedTable();
             BeAssert(rootMap != nullptr);
             table = &rootMap->GetTable();
             }

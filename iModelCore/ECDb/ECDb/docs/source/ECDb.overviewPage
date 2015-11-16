@@ -275,7 +275,7 @@
             This can only be applied to @b SharedTable.
             - @c SharedColumnsForSubclasses : Like @em SharedColumns, except that the ECProperties of the class holding the ClassMap
             custom attribute do not share columns.
-            - @c DisableSharedColumns: This option disables the column sharing for the class, if
+            - @c DisableSharedColumns: This option disables the column sharing for the class and all its subclasses, if
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c JoinedTableForSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
             to the table of the root class. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.

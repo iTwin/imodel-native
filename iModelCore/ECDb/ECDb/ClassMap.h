@@ -149,9 +149,18 @@ public:
 
     bool IsJoinedTable() const;
     bool IsParentOfJoinedTable() const;
-    IClassMap const* FindRootOfJoinedTable() const;
+    IClassMap const* FindParentOfJoinedTable() const;
     const std::set<ECDbSqlTable const*> GetJoinedTables() const;
-
+    ECDbSqlTable& GetRootTable() const
+        {
+        if (IsJoinedTable())
+            {
+            auto root = FindParentOfJoinedTable();
+            BeAssert(root != nullptr && "This should never be null");
+            return root->GetTable();           
+            }
+        return GetTable();
+        }
     PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
@@ -187,9 +196,11 @@ public:
 
     Utf8String ToString () const;
 
-    static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
-    static bool IsAbstractECClass (ECN::ECClassCR ecClass);
-    static bool IsAnyClass (ECN::ECClassCR ecClass);
+    static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
+    static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
+    static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR);
+    static bool IsAbstractECClass (ECN::ECClassCR);
+    static bool IsAnyClass (ECN::ECClassCR);
     };
 
 //======================================================================================

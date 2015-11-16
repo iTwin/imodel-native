@@ -380,7 +380,7 @@ public:
     //! Gets the ECDb handle which was used to prepare this statement.
     //! @remarks Only call this for a prepared statement!
     //! @return ECDb handle used to prepare this statement or nullptr if statement is not prepared.
-    ECDbCP GetECDb() const;
+    ECDB_EXPORT ECDbCP GetECDb() const;
 #endif
     };
 

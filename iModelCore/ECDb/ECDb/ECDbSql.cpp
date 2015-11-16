@@ -934,9 +934,13 @@ BentleyStatus ECDbSqlForeignKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targ
 
     auto source = GetSourceTable ().FindColumnCP (sourceColumn);
     auto target = GetTargetTable ().FindColumnCP (targetColumn);
-    BeAssert (source != nullptr && target != nullptr);
+
     if (source == nullptr || target == nullptr)
+        {
+        BeAssert(source != nullptr && "Failed to resolve sourceColumn in sourceTable while creating foreignKey constraint");
+        BeAssert(target != nullptr && "Failed to resolve targetColumn in targetTable while creating foreignKey constraint");
         return BentleyStatus::ERROR;
+        }
 
     if (source->GetPersistenceType () == PersistenceType::Virtual)
         {

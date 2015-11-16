@@ -38,7 +38,6 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
         BeAssert (false && "Feature of nested class map not implemented");
         return nullptr;
         }
-
     auto& classMapInfo = *classMaps->front();
     auto baseClassMapInfo = classMapInfo.GetBaseClassMap();
     auto baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass (baseClassMapInfo->GetClassId());
