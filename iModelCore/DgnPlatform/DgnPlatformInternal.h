@@ -75,6 +75,7 @@
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/RenderMaterial.h>
 #include <DgnPlatform/DgnLight.h>
+#include <DgnPlatform/DgnView.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>

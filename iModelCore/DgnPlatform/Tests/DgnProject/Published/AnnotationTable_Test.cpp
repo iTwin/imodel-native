@@ -169,7 +169,7 @@ private:
 
     DgnModelId              m_modelId;
     DgnCategoryId           m_categoryId;
-    AnnotationTextStyleId   m_textStyleId;
+    DgnElementId   m_textStyleId;
 
 public:
 AnnotationTableTest() : GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
@@ -195,7 +195,7 @@ void SetUp () override
     textStyle->SetFontId(GetDgnProjectP()->Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     textStyle->Insert();
 
-    m_textStyleId = textStyle->GetStyleId();
+    m_textStyleId = textStyle->GetElementId();
     ASSERT_TRUE(m_textStyleId.IsValid());
 
     // Create a physical model
@@ -209,7 +209,7 @@ void SetUp () override
 DgnDbR                  GetDgnDb()              { return *GetDgnProjectP(); }
 DgnModelId              GetModelId()            { return m_modelId; }
 DgnCategoryId           GetCategoryId()         { return m_categoryId; }
-AnnotationTextStyleId   GetTextStyleId()        { return m_textStyleId; }
+DgnElementId   GetTextStyleId()        { return m_textStyleId; }
 Utf8CP                  GetTextStyleName()      { return "TextStyleForTable"; }
 double                  GetTextStyleHeight()    { return 0.25; }
 
@@ -497,7 +497,7 @@ struct AnnotationTableTestAction
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    05/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool    _CreateTable (AnnotationTableElementPtr&, DgnDbR, DgnModelId, DgnCategoryId, AnnotationTextStyleId) { return false; }
+    virtual bool    _CreateTable (AnnotationTableElementPtr&, DgnDbR, DgnModelId, DgnCategoryId, DgnElementId) { return false; }
     virtual void    _PreAction (AnnotationTableElementR) {}
     virtual void    _DoAction (AnnotationTableElementR) = 0;
     virtual void    _VerifyAction (AnnotationTableElementCR) const = 0;
@@ -894,7 +894,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _DoAction (AnnotationTableElementR table) override
         {
-        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, m_applyString.c_str());
 
         AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
@@ -969,7 +969,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _PreAction (AnnotationTableElementR table) override
         {
-        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, "abcdefghi");
 
         AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
@@ -981,7 +981,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _DoAction (AnnotationTableElementR table) override
         {
-        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, m_applyString.c_str());
 
         AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
@@ -1055,7 +1055,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _PreAction (AnnotationTableElementR table) override
         {
-        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, "abcdefghi");
 
         AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
@@ -1067,7 +1067,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _DoAction (AnnotationTableElementR table) override
         {
-        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        DgnElementId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
         AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId);
 
         // textBlock is empty
@@ -1203,7 +1203,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 3;
         uint32_t          numCols  = 3;
@@ -1405,7 +1405,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    03/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 4;
         uint32_t          numCols  = 4;
@@ -1772,7 +1772,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 4;
         uint32_t          numCols  = 4;
@@ -1988,7 +1988,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    04/14
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, AnnotationTextStyleId tsid) override
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId tsid) override
         {
         uint32_t          numRows  = 4;
         uint32_t          numCols  = 4;

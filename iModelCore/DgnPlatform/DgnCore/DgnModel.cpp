@@ -790,9 +790,31 @@ DgnDbStatus DgnModel::_OnDelete()
             return stat;
         }
 
+    // delete all views which use this model as their base model
+    DgnDbStatus stat = DeleteAllViews();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
     BeAssert(GetRefCount() > 1);
     m_dgndb.Models().DropLoadedModel(*this);
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::DeleteAllViews()
+    {
+    DgnDbStatus status = DgnDbStatus::Success;
+    for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
+        {
+        auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
+        status = view.IsValid() ? view->Delete() : DgnDbStatus::ViewNotFound;
+        if (DgnDbStatus::Success != status)
+            break;
+        }
+
+    return status;
     }
 
 struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnDeleted(model);}};

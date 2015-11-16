@@ -116,16 +116,16 @@ ViewController::ToDrawingViewController.
 
 <h3>Inserting a new view in the database</h3>
 
-To create a new view, you must insert a view in the Views table and store type-specific settings for it. To define and store
+To create a new view, you must insert a ViewDefinition element and store type-specific settings for it. To define and store
 type-specific view data, you must create and save an instance of a subclass of ViewController.
 
 <h3>Loading data for an existing view from the database</h3>
 
 To read the settings stored in the database for a particular view, you must create an instance of the ViewController sub-class
 that corresponds to the view and then load it. The simplest way to create the correct type of controller for a view is to call
-the DgnViews::LoadViewController method, like this:
+the ViewDefinition::LoadViewController method, like this:
 @verbatim
-    auto viewController = project.Views().LoadViewController (project, viewId);
+    auto viewController = ViewDefinition::LoadViewController(viewId, project);
     if (!viewController.IsValid())
         return BSIERROR;
 
@@ -146,7 +146,6 @@ To create a subclass of ViewController, create a ViewHandler and implement _Supp
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
 protected:
-    friend struct  DgnViews;
     friend struct  ViewContext;
     friend struct  DisplayHandler;
     friend struct  UpdateContext;
@@ -157,6 +156,7 @@ protected:
     friend struct  PhysicalRedlineViewController;
     friend struct  IACSManager;
     friend struct  ToolAdmin;
+    friend struct  ViewDefinition;
 
     DgnDbR         m_dgndb;
     ViewFlags      m_viewFlags;
@@ -324,7 +324,7 @@ protected:
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViews::DgnViewPropertySpecCR) const;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViewProperty::Spec const&) const;
     DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
 
 public:
@@ -1109,42 +1109,6 @@ protected:
 public:
     //! Construct a new SheetViewController.
     SheetViewController(DgnDbR project, DgnViewId viewId) : ViewController2d(project, viewId) {}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   03/15
-//=======================================================================================
-struct ViewHandler : DgnDomain::Handler
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_View, ViewHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
-
-protected:
-    virtual ViewHandlerP _ToViewHandler() {return this;}
-
-public:
-    //! Find an ViewHandler for a subclass of dgn.View. This is just a shortcut for FindHandler with the base class
-    //! of "dgn.View".
-    DGNPLATFORM_EXPORT static ViewHandlerP FindHandler(DgnDb const& db, DgnClassId handlerId);
-
-    //! Create an instance of a ViewController for a DgnView, if appropriate.
-    //! @param[in] db The DgnDb for the view
-    //! @param[in] view The DgnViews::View.
-    //! @return an instance of a ViewController for the supplied DgnViews::View.
-    DGNPLATFORM_EXPORT virtual ViewControllerPtr _SupplyController(DgnDbR db, DgnViews::View const& view);
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct ViewHandlerOverride : DgnDomain::Handler::Extension
-{
-    HANDLER_EXTENSION_DECLARE_MEMBERS(ViewHandlerOverride, DGNPLATFORM_EXPORT)
-
-public:
-    //! @param[in] db The DgnDb for the view
-    //! @param[in] view The DgnViews::View.
-    //! @return an instance of a ViewController for the supplied DgnViews::View, or nullptr if the DgnViews::View is not of interest.
-    virtual ViewControllerPtr _SupplyController(DgnDbR db, DgnViews::View const& view) = 0;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
