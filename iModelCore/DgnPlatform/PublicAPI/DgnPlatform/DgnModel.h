@@ -517,9 +517,14 @@ public:
 
     //! Delete this model from the DgnDb
     //! @note All elements from this model are deleted as well. This method will fail on the first element that cannot be successfully deleted.
+    //! @note All views which use this model as their base model are deleted as well. The method will fail on the first such view that cannot be successfully deleted.
     //! @return DgnDbStatus::Success if this model was successfully deleted, error otherwise. Note that if this method returns an error, it is possible
     //! that some elements may have been deleted. Therefore, you should always call DgnDb::AbandonChanges after a failure to avoid partial deletions.
     DGNPLATFORM_EXPORT DgnDbStatus Delete();
+
+    //! Deletes all ViewDefinitions which use this model as their base model
+    //! @return Success if all views were successfully deleted, or an error code.
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteAllViews();
 
     //! Update the Properties of this model in the DgnDb
     //! @return DgnDbStatus::Success if the properties of this model were successfully updated, error otherwise.

@@ -429,7 +429,7 @@ struct DgnProjectPackageTest : public testing::Test
                 properties.elmCount += (int) model->GetElements().size();
                 properties.modelCount++;
                 }
-            properties.viewCount = project->Views().MakeIterator().QueryCount();
+            properties.viewCount = ViewDefinition::QueryCount(*project);
             properties.categoryCount = DgnCategory::QueryCount(*project);
 #ifdef STYLE_REWRITE_06
             DgnStyles& styleTable = project->Styles();

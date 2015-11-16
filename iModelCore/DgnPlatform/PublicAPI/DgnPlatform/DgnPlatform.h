@@ -228,6 +228,10 @@ DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
 DGNPLATFORM_TYPEDEFS (RenderMaterial)
 DGNPLATFORM_TYPEDEFS (RenderMaterialMap)
+DGNPLATFORM_TYPEDEFS (ViewDefinition)
+DGNPLATFORM_TYPEDEFS (PhysicalViewDefinition)
+DGNPLATFORM_TYPEDEFS (DrawingViewDefinition)
+DGNPLATFORM_TYPEDEFS (SheetViewDefinition)
 DGNPLATFORM_TYPEDEFS (ImageBuffer)
 
 /** @endcond */
@@ -261,6 +265,10 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnAuthority)
 DGNPLATFORM_REF_COUNTED_PTR (RenderMaterial)
 DGNPLATFORM_REF_COUNTED_PTR (RenderMaterialMap)
 DGNPLATFORM_REF_COUNTED_PTR (ImageBuffer)
+DGNPLATFORM_REF_COUNTED_PTR (ViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR (PhysicalViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR (DrawingViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR (SheetViewDefinition)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
@@ -299,18 +307,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
 BEBRIEFCASEBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
-BEBRIEFCASEBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
 BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
-BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationTextStyleId, DgnElementId) //!< An element Id that refers to an AnnotationTextStyle. @ingroup Annotations
-BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationFrameStyleId, DgnElementId) //!< An element Id that refers to an AnnotationFrameStyle. @ingroup Annotations
-BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationLeaderStyleId, DgnElementId) //!< An element Id that refers to an AnnotationLeaderStyle. @ingroup Annotations
-BEBRIEFCASEBASED_ID_SUBCLASS(TextAnnotationSeedId, DgnElementId) //!< An element Id that refers to an TextAnnotationSeed. @ingroup Annotations
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)

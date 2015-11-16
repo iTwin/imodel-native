@@ -1057,13 +1057,13 @@ private:
     int         GetInteger  (PropIndex) const;
     int         GetUInteger (PropIndex) const;
     double      GetDouble   (PropIndex) const;
-    AnnotationTextStyleId  GetStyleId (PropIndex) const;
+    DgnElementId  GetStyleId (PropIndex) const;
 
     void    SetInteger  (int, PropIndex);
     void    SetUInteger (int, PropIndex);
     void    SetBoolean  (bool, PropIndex);
     void    SetDouble   (double, PropIndex);
-    void    SetStyleId (AnnotationTextStyleId, PropIndex);
+    void    SetStyleId (DgnElementId, PropIndex);
 
 //__PUBLISH_SECTION_START__
 protected:
@@ -1189,7 +1189,7 @@ public:
     bvector<AnnotationTableColumn> const&   GetColumnVector() const     { return m_columns; }
     bvector<AnnotationTableAspectDescr>&    GetAspectsPendingDelete()   { return m_aspectsPendingDelete; }
     AnnotationTextStyleCP                   GetTextStyle (AnnotationTableRegion) const;
-    void                                    SetTextStyleIdDirect (AnnotationTextStyleId val, AnnotationTableRegion region);
+    void                                    SetTextStyleIdDirect (DgnElementId val, AnnotationTableRegion region);
     void                                    DeleteAspect (AnnotationTableAspectCR);
     void                                    ConsiderRegionForAlternateMinimumSize (double& min, AnnotationTableRegion region, bool isHeight) const;
 
@@ -1281,9 +1281,9 @@ DGNPLATFORM_EXPORT  UInt32                          GetDefaultLineWeight()      
 #endif
 DGNPLATFORM_EXPORT  TableCellAlignment              GetDefaultCellAlignment()               const;  //!<    Get the default alignment which will be used by cells that don't have a specific alignment set.
 DGNPLATFORM_EXPORT  TableCellOrientation            GetDefaultCellOrientation()             const;  //!<    Get the default orientation which will be used by cells that don't have a specific orientation set.
-DGNPLATFORM_EXPORT  AnnotationTextStyleId           GetTextStyleId (AnnotationTableRegion)  const;  //!<    Get the default text style which will be used to create text for empty cells.
+DGNPLATFORM_EXPORT  DgnElementId           GetTextStyleId (AnnotationTableRegion)  const;  //!<    Get the default text style which will be used to create text for empty cells.
 
-DGNPLATFORM_EXPORT void        SetTextStyleId           (AnnotationTextStyleId, AnnotationTableRegion); //!<    Change the default text style which will be used to create text for empty cells.
+DGNPLATFORM_EXPORT void        SetTextStyleId           (DgnElementId, AnnotationTableRegion); //!<    Change the default text style which will be used to create text for empty cells.
 DGNPLATFORM_EXPORT void        SetBreakType             (TableBreakType);                           //!<    Change the break type of this table.
 DGNPLATFORM_EXPORT void        SetBreakPosition         (TableBreakPosition);                       //!<    Change the break position for this table.
 DGNPLATFORM_EXPORT void        SetBreakLength           (double);                                   //!<    Change the break length in UORs for this table.  Any cells that don't fit within this length will flow into a new subtable.
@@ -1371,7 +1371,7 @@ DGNPLATFORM_EXPORT  void                            SetHeight (double val);
 //! @param textStyleId      IN  The default TextStyle.
 //! @param backupTextHeight IN  Used when textStyleId refers to a style with zero text height.
 //! @param params           IN  General element parameters
-DGNPLATFORM_EXPORT  static  AnnotationTableElementPtr            Create(uint32_t rowCount, uint32_t columnCount, AnnotationTextStyleId textStyleId, double backupTextHeight, CreateParams const& params);
+DGNPLATFORM_EXPORT  static  AnnotationTableElementPtr            Create(uint32_t rowCount, uint32_t columnCount, DgnElementId textStyleId, double backupTextHeight, CreateParams const& params);
 
 
 };

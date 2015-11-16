@@ -28,7 +28,7 @@ AnnotationLeader::AnnotationLeader(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderPtr AnnotationLeader::Create(DgnDbR project, AnnotationLeaderStyleId styleID)
+AnnotationLeaderPtr AnnotationLeader::Create(DgnDbR project, DgnElementId styleID)
     {
     auto leader = AnnotationLeader::Create(project);
     leader->SetStyleId(styleID, SetAnnotationLeaderStyleOptions::Direct);
@@ -68,7 +68,7 @@ void AnnotationLeader::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-void AnnotationLeader::SetStyleId(AnnotationLeaderStyleId value, SetAnnotationLeaderStyleOptions options)
+void AnnotationLeader::SetStyleId(DgnElementId value, SetAnnotationLeaderStyleOptions options)
     {
     m_styleID = value;
 
@@ -171,7 +171,7 @@ BentleyStatus AnnotationLeaderPersistence::DecodeFromFlatBuf(AnnotationLeaderR l
         return ERROR;
 
     PRECONDITION(fbLeader.has_styleId(), ERROR);
-    leader.SetStyleId(AnnotationLeaderStyleId((uint64_t)fbLeader.styleId()), SetAnnotationLeaderStyleOptions::Direct);
+    leader.SetStyleId(DgnElementId((uint64_t)fbLeader.styleId()), SetAnnotationLeaderStyleOptions::Direct);
     
     if (fbLeader.has_styleOverrides())
         AnnotationLeaderStylePersistence::DecodeFromFlatBuf(leader.m_styleOverrides, *fbLeader.styleOverrides());
