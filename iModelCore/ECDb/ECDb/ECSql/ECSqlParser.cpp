@@ -525,6 +525,7 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
     return SUCCESS;
     }
 
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -732,13 +733,16 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
         }
 
     OSQLParseNode* functionNameNode = parseNode->getChild (0);
-    Utf8CP knownFunctionName = functionNameNode->getTokenValue ().c_str ();
-    if (Utf8String::IsNullOrEmpty (knownFunctionName))
+    Utf8StringCR knownFunctionName = functionNameNode->getTokenValue ();
+    if (knownFunctionName.empty())
         {
         const auto tokenId = functionNameNode->getTokenID ();
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function with token ID %d not yet supported.", tokenId);
         return ERROR;
         }
+
+    if (GetPointCoordinateFunctionExp::IsPointCoordinateFunction(knownFunctionName))
+        return parse_getpointcoordinate_fct_spec(ctx, *parseNode, knownFunctionName);
 
     unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp> (new FunctionCallExp (knownFunctionName));
     //parse function args. (if child parse node count is < 4, function doesn't have args)
@@ -767,6 +771,36 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    01/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<ValueExp> ECSqlParser::parse_getpointcoordinate_fct_spec(ECSqlParseContext& ctx, connectivity::OSQLParseNode const& parseNode, Utf8StringCR functionName)
+    {
+    if (parseNode.count() != 4)
+        {
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Function %s requires exactly one argument.", functionName.c_str());
+        return nullptr;
+        }
+
+    OSQLParseNode* argumentsNode = parseNode.getChild(2);
+    if (SQL_ISRULE(argumentsNode, function_args_commalist))
+        {
+        if (argumentsNode->count() != 1)
+            {
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Function %s requires exactly one argument.", functionName.c_str());
+            return nullptr;
+            }
+
+        argumentsNode = argumentsNode->getChild(0);
+        }
+
+    unique_ptr<ValueExp> argExp = parse_functionarg(ctx, *argumentsNode);
+    if (argExp == nullptr)
+        return nullptr;
+
+    return unique_ptr<ValueExp>(new GetPointCoordinateFunctionExp(functionName, std::move(argExp)));
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    03/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
  BentleyStatus ECSqlParser::parse_and_add_functionarg(FunctionCallExp& functionCallExp, connectivity::OSQLParseNode const* argNode) const
@@ -778,6 +812,14 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
 
     functionCallExp.AddArgument(move(argument_expr));
     return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+unique_ptr<ValueExp> ECSqlParser::parse_functionarg(ECSqlParseContext& ctx, connectivity::OSQLParseNode const& argNode)
+    {
+    return parse_result(ctx, &argNode);
     }
 
 //-----------------------------------------------------------------------------------------

@@ -40,21 +40,19 @@ void RenderPropertyMap (NativeSqlBuilder::List& snippets, PropertyMapCR property
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const* exp)
+ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const* exp)
     {
-    BeAssert (exp != nullptr);
-    if (exp->IsPropertyRef ())
-        {
-        return PrepareInSubqueryRef (nativeSqlSnippets, ctx, *exp);
-        }
+    BeAssert(exp != nullptr);
+    if (exp->IsPropertyRef())
+        return PrepareInSubqueryRef(nativeSqlSnippets, ctx, *exp);
 
-    auto const& propMap = exp->GetPropertyMap ();
-    auto const& currentScope = ctx.GetCurrentScope ();
+    PropertyMap const& propMap = exp->GetPropertyMap();
+    ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
+    if (!NeedsPreparation(currentScope, propMap))
+        return ECSqlStatus::Success;
 
-    if (!NeedsPreparation (currentScope, propMap))
-            return ECSqlStatus::Success;
 
-    const auto currentScopeECSqlType = currentScope.GetECSqlType ();
+    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //in SQLite table aliases are only allowed for SELECT statements
     Utf8CP classIdentifier = nullptr; 
     if (currentScopeECSqlType == ECSqlType::Select)
