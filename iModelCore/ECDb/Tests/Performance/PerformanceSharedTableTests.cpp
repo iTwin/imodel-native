@@ -25,10 +25,6 @@ struct PerformanceSharedTableTests: ECDbTestFixture
         static const int s_opCount = 500000;
 
 
-        static int DetermineECInstanceIdIncrement()
-            {
-            return s_initialInstanceCount / s_opCount;
-            }
         static Utf8String GenerateTestValue()
             {
             Utf8String val; val.Sprintf("%d", DateTime::GetCurrentTimeUtc().GetDayOfYear()); return val;
@@ -186,7 +182,6 @@ TEST_F(PerformanceSharedTableTests, Insert)
     ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
 
     ECSqlStatement booInsert;
-    const int instanceIdIncrement = DetermineECInstanceIdIncrement();
     ASSERT_EQ(booInsert.Prepare(ecdb, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
     StopWatch timer(true);
 
