@@ -312,11 +312,9 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     DgnViewId defaultViewID;
     if (BE_SQLITE_ROW != sourceProject->QueryProperty(&defaultViewID, (uint32_t)sizeof(defaultViewID), DgnViewProperty::DefaultView()))
         {
-        Statement firstViewStatement;
-        firstViewStatement.Prepare(*sourceProject, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_View) " LIMIT 1");
-
-        if (BE_SQLITE_ROW == firstViewStatement.Step())
-            defaultViewID = firstViewStatement.GetValueId<DgnViewId>(0);
+        auto iter = ViewDefinition::MakeIterator(*sourceProject);
+        if (iter.begin() != iter.end())
+            defaultViewID = (*iter.begin()).GetId();
         }
 
     if (defaultViewID.IsValid())  //  This should be valid unless the project has no views

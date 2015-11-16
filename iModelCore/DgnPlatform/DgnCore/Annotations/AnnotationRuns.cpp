@@ -35,7 +35,7 @@ void AnnotationRunBase::CopyFrom(AnnotationRunBaseCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-void AnnotationRunBase::SetStyleId(AnnotationTextStyleId value, SetAnnotationTextStyleOptions options)
+void AnnotationRunBase::SetStyleId(DgnElementId value, SetAnnotationTextStyleOptions options)
     {
     m_styleID = value;
 
@@ -59,7 +59,7 @@ AnnotationTextRun::AnnotationTextRun(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project, AnnotationTextStyleId styleID)
+AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project, DgnElementId styleID)
     {
     auto run = AnnotationTextRun::Create(project);
     run->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -70,7 +70,7 @@ AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project, AnnotationTextSty
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project, AnnotationTextStyleId styleID, Utf8CP content)
+AnnotationTextRunPtr AnnotationTextRun::Create(DgnDbR project, DgnElementId styleID, Utf8CP content)
     {
     auto run = AnnotationTextRun::Create(project, styleID);
     run->SetContent(content);
@@ -102,7 +102,7 @@ AnnotationFractionRun::AnnotationFractionRun(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project, AnnotationTextStyleId styleID)
+AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project, DgnElementId styleID)
     {
     auto run = AnnotationFractionRun::Create(project);
     run->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -113,7 +113,7 @@ AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project, Annotatio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project, AnnotationTextStyleId styleID, Utf8CP numerator, Utf8CP denominator)
+AnnotationFractionRunPtr AnnotationFractionRun::Create(DgnDbR project, DgnElementId styleID, Utf8CP numerator, Utf8CP denominator)
     {
     auto run = AnnotationFractionRun::Create(project, styleID);
     run->SetDenominatorContent(denominator);
@@ -145,7 +145,7 @@ AnnotationLineBreakRun::AnnotationLineBreakRun(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLineBreakRunPtr AnnotationLineBreakRun::Create(DgnDbR project, AnnotationTextStyleId styleID)
+AnnotationLineBreakRunPtr AnnotationLineBreakRun::Create(DgnDbR project, DgnElementId styleID)
     {
     auto run = AnnotationLineBreakRun::Create(project);
     run->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);

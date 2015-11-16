@@ -2044,11 +2044,10 @@ struct DrawState
 Transform           m_geomToElem;
 ViewContextR        m_context;
 ViewFlagsCR         m_flags;
-bool                m_symbologyInitialized;
 bool                m_symbologyChanged;
 bool                m_geomToElemPushed;
 
-DrawState(ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags(flags) {m_symbologyInitialized = false; m_symbologyChanged = false; m_geomToElemPushed = false;}
+DrawState(ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags(flags) {m_symbologyChanged = false; m_geomToElemPushed = false;}
 ~DrawState() {End();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -2089,7 +2088,7 @@ void InitDisplayParams(DgnCategoryId category)
     dispParams = ElemDisplayParams();
     dispParams.SetCategoryId(category);
 
-    m_symbologyInitialized = m_symbologyChanged = true;
+    m_symbologyChanged = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2098,17 +2097,13 @@ void InitDisplayParams(DgnCategoryId category)
 void SetElemDisplayParams(DgnSubCategoryId subCategory)
     {
     ElemDisplayParamsR  dispParams = m_context.GetCurrentDisplayParams();
-
-    if (m_symbologyInitialized && subCategory == dispParams.GetSubCategoryId())
-        return;
-
-    DgnCategoryId  category = dispParams.GetCategoryId(); // Preserve current category...
+    DgnCategoryId       category = dispParams.GetCategoryId(); // Preserve current category...
 
     dispParams = ElemDisplayParams();
     dispParams.SetCategoryId(category);
     dispParams.SetSubCategoryId(subCategory);
 
-    m_symbologyInitialized = m_symbologyChanged = true;
+    m_symbologyChanged = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2413,24 +2408,147 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
             case ElementGeomIO::OpCode::BasicSymbology:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology\n").c_str());
+
+                if (!output._WantVerbose())
+                    break;
+
+                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+
+                if (ppfb->useColor())
+                    {
+                    ColorDef color(ppfb->color());
+
+                    output._DoOutputLine(Utf8PrintfString("  Color: [Red:%d Green:%d Blue:%d Alpha:%d] - Transparency: %lf\n", color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha(), ppfb->transparency()).c_str());
+                    }
+                else
+                    {
+                    output._DoOutputLine(Utf8PrintfString("  Color: by Subcategory - Transparency: %lf\n", ppfb->transparency()).c_str());
+                    }
+
+                if (ppfb->useWeight())
+                    output._DoOutputLine(Utf8PrintfString("  Weight: %d\n", ppfb->weight()).c_str());
+                else
+                    output._DoOutputLine(Utf8PrintfString("  Weight: by Subcategory\n").c_str());
+
+                int32_t          displayPriority = ppfb->displayPriority();
+                DgnGeometryClass geomClass = (DgnGeometryClass) ppfb->geomClass();
+                Utf8String       classStr;
+
+                switch (geomClass)
+                    {
+                    case DgnGeometryClass::Primary:
+                        classStr.append("Primary");
+                        break;
+                    case DgnGeometryClass::Construction:
+                        classStr.append("Construction");
+                        break;
+                    case DgnGeometryClass::Dimension:
+                        classStr.append("Dimension");
+                        break;
+                    case DgnGeometryClass::Pattern:
+                        classStr.append("Pattern");
+                        break;
+                    }
+
+                output._DoOutputLine(Utf8PrintfString("  Geometry Class: %s - Display Priority: %d\n", classStr.c_str(), displayPriority).c_str());
                 break;
                 }
 
             case ElementGeomIO::OpCode::PointPrimitive:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive\n").c_str());
+
+                if (!output._WantVerbose())
+                    break;
+
+                int         nPts;
+                int8_t      boundary;
+                DPoint3dCP  pts;
+            
+                if (!reader.Get(egOp, pts, nPts, boundary))
+                    break;
+
+                Utf8String  boundaryStr;
+
+                switch (boundary)
+                    {
+                    case FB::BoundaryType_None:
+                        boundaryStr.append("None (Points)");
+                        break;
+                    case FB::BoundaryType_Open:
+                        boundaryStr.append("Open");
+                        break;
+                    case FB::BoundaryType_Closed:
+                        boundaryStr.append("Closed");
+                        break;
+                    }
+
+                output._DoOutputLine(Utf8PrintfString("  Point Count: %d - Boundary Type: %s\n", nPts, boundaryStr.c_str()).c_str());
                 break;
                 }
 
             case ElementGeomIO::OpCode::PointPrimitive2d:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive2d\n").c_str());
+
+                if (!output._WantVerbose())
+                    break;
+
+                int         nPts;
+                int8_t      boundary;
+                DPoint2dCP  pts;
+            
+                if (!reader.Get(egOp, pts, nPts, boundary))
+                    break;
+
+                Utf8String  boundaryStr;
+
+                switch (boundary)
+                    {
+                    case FB::BoundaryType_None:
+                        boundaryStr.append("None (Points)");
+                        break;
+                    case FB::BoundaryType_Open:
+                        boundaryStr.append("Open");
+                        break;
+                    case FB::BoundaryType_Closed:
+                        boundaryStr.append("Closed");
+                        break;
+                    }
+
+                output._DoOutputLine(Utf8PrintfString("  Point Count: %d - Boundary Type: %s\n", nPts, boundaryStr.c_str()).c_str());
                 break;
                 }
 
             case ElementGeomIO::OpCode::ArcPrimitive:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::ArcPrimitive\n").c_str());
+
+                if (!output._WantVerbose())
+                    break;
+
+                int8_t      boundary;
+                DEllipse3d  arc;
+            
+                if (!reader.Get(egOp, arc, boundary))
+                    break;
+
+                Utf8String  boundaryStr;
+
+                switch (boundary)
+                    {
+                    case FB::BoundaryType_None:
+                        boundaryStr.append("None");
+                        break;
+                    case FB::BoundaryType_Open:
+                        boundaryStr.append("Open");
+                        break;
+                    case FB::BoundaryType_Closed:
+                        boundaryStr.append("Closed");
+                        break;
+                    }
+
+                output._DoOutputLine(Utf8PrintfString("  Start: %f - Sweep: %lf - Boundary Type: %s\n", arc.start, arc.sweep, boundaryStr.c_str()).c_str());
                 break;
                 }
 
@@ -2503,6 +2621,53 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
             case ElementGeomIO::OpCode::AreaFill:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::AreaFill\n").c_str());
+
+                if (!output._WantVerbose())
+                    break;
+
+                auto ppfb = flatbuffers::GetRoot<FB::AreaFill>(egOp.m_data);
+
+                FillDisplay fillDisplay = (FillDisplay) ppfb->fill();
+
+                if (FillDisplay::Never == fillDisplay)
+                    break;
+
+                GradientMode  mode = (GradientMode) ppfb->mode();
+                Utf8String    fillStr;
+
+                switch (fillDisplay)
+                    {
+                    case FillDisplay::ByView:
+                        fillStr.append("by View");
+                        break;
+                    case FillDisplay::Always:
+                        fillStr.append("Always");
+                        break;
+                    case FillDisplay::Blanking:
+                        fillStr.append("Blanking");
+                        break;
+                    }
+
+                if (GradientMode::None != mode)
+                    {
+                    output._DoOutputLine(Utf8PrintfString("  Gradient: %s - Transparency: %lf\n", fillStr.c_str(), ppfb->transparency()).c_str());
+                    break;
+                    }
+
+                if (ppfb->useColor())
+                    {
+                    ColorDef color(ppfb->color());
+
+                    output._DoOutputLine(Utf8PrintfString("  Fill: %s - Color: [Red:%d Green:%d Blue:%d Alpha:%d] - Transparency: %lf\n", fillStr.c_str(), color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha(), ppfb->transparency()).c_str());
+                    }
+                else if (ppfb->isBgColor())
+                    {
+                    output._DoOutputLine(Utf8PrintfString("  Fill: %s - Color: View Background\n", fillStr.c_str()).c_str());
+                    }
+                else
+                    {
+                    output._DoOutputLine(Utf8PrintfString("  Fill: %s - Color: by Subcategory - Transparency: %lf\n", fillStr.c_str(), ppfb->transparency()).c_str());
+                    }
                 break;
                 }
 
@@ -3605,6 +3770,14 @@ bool ElementGeometryBuilder::Append(ElemDisplayParamsCR elParams)
 
     if (m_elParams == elParams)
         return true;
+
+    if (m_prevSubCategory.IsValid() && (elParams.GetSubCategoryId() == m_elParams.GetSubCategoryId()) &&
+        ((elParams.IsLineColorFromSubCategoryAppearance() && !m_elParams.IsLineColorFromSubCategoryAppearance()) ||
+         (elParams.IsWeightFromSubCategoryAppearance() && !m_elParams.IsWeightFromSubCategoryAppearance()) ||
+         (elParams.IsLineStyleFromSubCategoryAppearance() && !m_elParams.IsLineStyleFromSubCategoryAppearance()) ||
+         (elParams.IsMaterialFromSubCategoryAppearance() && !m_elParams.IsMaterialFromSubCategoryAppearance()) ||
+         (elParams.IsFillColorFromSubCategoryAppearance() && !m_elParams.IsFillColorFromSubCategoryAppearance())))
+        m_prevSubCategory.Invalidate(); // Ensure that a symbology reset to sub-category appearance is recorded...
 
     m_elParams = elParams;
     m_appearanceChanged = true; // Defer append until we actually have some geometry...
