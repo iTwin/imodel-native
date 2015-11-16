@@ -51,7 +51,8 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
 
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (ecClass->GetIsCustomAttributeClass() ||
+        if (!ecClass->GetIsDomainClass() ||
+            ecClass->GetIsCustomAttributeClass() ||
             ecClass->GetIsStruct() ||
             ecClass->GetRelationshipClassCP() != nullptr)
             {
@@ -68,7 +69,8 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
 
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (ecClass->GetIsCustomAttributeClass() ||
+        if (!ecClass->GetIsDomainClass() ||
+            ecClass->GetIsCustomAttributeClass() ||
             ecClass->GetIsStruct() ||
             ecClass->GetRelationshipClassCP() == nullptr)
             {
