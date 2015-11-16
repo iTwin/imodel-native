@@ -516,6 +516,276 @@ TEST_F(ECDbSchemaRules, Relationship)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, RelationshipCardinality)
+    {
+            {
+            //(1,1):(1,1)
+            ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                "    <Source cardinality='(1,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target cardinality='(1,1)' polymorphic='True'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>"));
+            ASSERT_TRUE(ecdb.IsDbOpen());
+            ECInstanceKey a1Key, a2Key;
+            ECInstanceKey b1Key, b2Key;
+
+            ECSqlStatement aStmt;
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+
+            ECSqlStatement bStmt;
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(ECInstanceId) VALUES (NULL)"));
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key)) << "[(1,1):(1,1)]> Min of (1,1) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
+            aStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "[(1,1):(1,1)]> Min of (1,1) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
+            bStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
+            aStmt.Reset();
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
+            bStmt.Reset();
+
+            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            ECSqlStatement relStmt;
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,1)]> Max of (1,1) cardinality constraint is expected to be enforced";
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,1)]> Max of (1,1) cardinality constraint is expected to be enforced";
+            }
+
+            {
+            //(1,1):(1,N)
+            ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                "    <Source cardinality='(1,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target cardinality='(1,N)' polymorphic='True'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>"));
+            ASSERT_TRUE(ecdb.IsDbOpen());
+            ECInstanceKey a1Key, a2Key;
+            ECInstanceKey b1Key, b2Key;
+
+            ECSqlStatement aStmt;
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+
+            ECSqlStatement bStmt;
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(ECInstanceId) VALUES (NULL)"));
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key)) << "[(1,1):(1,N)]> Min of (1,1) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
+            aStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "[(1,1):(1,N)]> Min of (1,N) cardinality constraint is not enforced yet. (1,1) is interpreted as (0,1)";
+            bStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
+            aStmt.Reset();
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
+            bStmt.Reset();
+
+            //Test that child can have one parent at most
+            ECSqlStatement relStmt;
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,N)]> Max of (1,1) cardinality constraint is expected to be enforced";
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step()) << "[(1,1):(1,N)]> (1,N) cardinality is not expected to be violated by a second child" << relStmt.GetNativeSql() << " Error:" << ecdb.GetLastError().c_str();
+            }
+
+            {
+            //(0,1):(0,1)
+            ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>"));
+            ASSERT_TRUE(ecdb.IsDbOpen());
+            ECInstanceKey a1Key, a2Key;
+            ECInstanceKey b1Key, b2Key;
+
+            ECSqlStatement aStmt;
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+
+            ECSqlStatement bStmt;
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(ECInstanceId) VALUES (NULL)"));
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key)) << "[(0,1):(0,1)]> Child without parent is allowed to exist";
+            aStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "[(0,1):(0,1)]> Child without parent is allowed to exist";
+            bStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
+            aStmt.Reset();
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
+            bStmt.Reset();
+
+            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            ECSqlStatement relStmt;
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) cardinality constraint is expected to be enforced";
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) cardinality constraint is expected to be enforced";
+            }
+
+            {
+            //(0,1):(0,N)
+            ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>"));
+            ASSERT_TRUE(ecdb.IsDbOpen());
+            ECInstanceKey a1Key, a2Key;
+            ECInstanceKey b1Key, b2Key;
+
+            ECSqlStatement aStmt;
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+
+            ECSqlStatement bStmt;
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(ECInstanceId) VALUES (NULL)"));
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key)) << "[(0,1):(0,N)]> Child without parent is allowed to exist";
+            aStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "[(0,1):(0,N)]> Child without parent is allowed to exist";
+            bStmt.Reset();
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
+            aStmt.Reset();
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
+            bStmt.Reset();
+
+            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            ECSqlStatement relStmt;
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,N)]> Max of (0,1) cardinality constraint is expected to be enforced";
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step()) << "[(0,1):(0,N)]> More than one child can exist";
+            }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
