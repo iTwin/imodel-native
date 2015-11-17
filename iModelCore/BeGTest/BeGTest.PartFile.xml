@@ -169,6 +169,8 @@
         <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+        <ProductDirectory Name="MobileDgnSampleCode" Deliver="false"/>
+        <ProductDirectory Name="MobileDgnSampleCode" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 
     <!-- *********************************************************************************************** -->
