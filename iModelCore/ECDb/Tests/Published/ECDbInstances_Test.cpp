@@ -1377,13 +1377,14 @@ void ValidateSpatialInstance(ECDbR db, ECInstanceKey spatialInstanceKey, JsonVal
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Ramanujam.Raman                   10/15
 //+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP_MERGE
 TEST(ECDbInstances, CommonGeometryJsonSerialization)
     {
     ECDbTestProject saveTestProject;
     saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn_Yes));
     ASSERT_EQ(BE_SQLITE_OK, stat);
 
     BeFileName pathname;
@@ -1413,5 +1414,6 @@ TEST(ECDbInstances, CommonGeometryJsonSerialization)
     ValidateSpatialInstance(db, rapidJsonInstanceKey, expectedJsonCppValue);
     ValidateSpatialInstance(db, jsonCppInstanceKey, expectedJsonCppValue);
     }
+#endif
 
 END_ECDBUNITTESTS_NAMESPACE

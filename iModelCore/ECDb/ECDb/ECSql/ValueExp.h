@@ -214,8 +214,10 @@ public:
 
     Coordinate GetCoordinate() const { return m_coordinate; }
     ValueExp const& GetArgument() const { return *GetChild<ValueExp>(m_argIndex); }
+#ifdef WIP_MERGE
     virtual Utf8String ToECSql() const override;
-
+#endif
+    
     static bool IsPointCoordinateFunction(Utf8StringCR functionName);
     };
 

@@ -1983,13 +1983,19 @@ ECSqlTestDataset ECSqlSelectTestDataset::OrderByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 10);
 
     ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY GetX(P3D) DESC";
+#ifdef WIP_MERGE
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 10);
+#endif
 
     ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY GetZ(P3D) ASC";
+#ifdef WIP_MERGE
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 10);
+#endif
 
     ecsql = "SELECT I, S FROM ecsql.PSA ORDER BY GetZ(P2D)";
+#ifdef WIP_MERGE
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+#endif
 
     //constant value exp as order by -> no-op
     ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY 1";
@@ -2361,13 +2367,19 @@ ECSqlTestDataset ECSqlSelectTestDataset::PointTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
     ecsql = "SELECT GetX(P2D), GetY(P2D) FROM ecsql.PSA";
+#ifdef WIP_MERGE
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
+#endif
 
     ecsql = "SELECT GetX(P3D), GetY(P3D), GetZ(P3D) FROM ecsql.PSA";
+#ifdef WIP_MERGE
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
+#endif
 
     ecsql = "SELECT GetZ(P2D) FROM ecsql.PSA";
+#ifdef WIP_MERGE
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+#endif
 
     return dataset;
     }

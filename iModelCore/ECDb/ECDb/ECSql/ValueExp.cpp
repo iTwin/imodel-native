@@ -381,8 +381,10 @@ Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlPa
     const size_t argCount = GetChildrenCount();
     if (argCount != 1)
         {
+#ifdef WIP_MERGE
         ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with a single arguments.",
                      ToECSql().c_str());
+#endif
         return FinalizeParseStatus::Error;
         }
 
@@ -391,15 +393,19 @@ Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlPa
     ECSqlTypeInfo const& argTypeInfo = argExp->GetTypeInfo();
     if (!argTypeInfo.IsPoint() || argExp->GetType() == Exp::Type::Parameter)
         {
+#ifdef WIP_MERGE
         ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with Point2D or Point3D arguments.",
                      ToECSql().c_str());
+#endif
         return FinalizeParseStatus::Error;
         }
 
     if (m_coordinate == Coordinate::Z && argTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_Point3D)
         {
+#ifdef WIP_MERGE
         ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with Point3D arguments.",
                      ToECSql().c_str());
+#endif
         return FinalizeParseStatus::Error;
         }
 
@@ -410,12 +416,14 @@ Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlPa
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP_MERGE
 Utf8String GetPointCoordinateFunctionExp::ToECSql() const
     {
     Utf8String ecsql;
     ecsql.Sprintf(GETPOINTCOORDINATEFUNCTION_NAMEROOT "%s(%s)", CoordinateToString(m_coordinate), GetArgument().ToECSql().c_str());
     return ecsql;
     }
+#endif
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2015

@@ -741,10 +741,12 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
         return ERROR;
         }
 
+#ifdef WIP_MERGE
     if (GetPointCoordinateFunctionExp::IsPointCoordinateFunction(knownFunctionName))
         return parse_getpointcoordinate_fct_spec(ctx, *parseNode, knownFunctionName);
+#endif
 
-    unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp> (new FunctionCallExp (knownFunctionName));
+    unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp> (new FunctionCallExp (knownFunctionName.c_str()));
     //parse function args. (if child parse node count is < 4, function doesn't have args)
     if (parseNode->count() == 4)
         {
@@ -777,7 +779,9 @@ std::unique_ptr<ValueExp> ECSqlParser::parse_getpointcoordinate_fct_spec(ECSqlPa
     {
     if (parseNode.count() != 4)
         {
+#ifdef WIP_MERGE
         ctx.SetError(ECSqlStatus::InvalidECSql, "Function %s requires exactly one argument.", functionName.c_str());
+#endif
         return nullptr;
         }
 
@@ -786,7 +790,9 @@ std::unique_ptr<ValueExp> ECSqlParser::parse_getpointcoordinate_fct_spec(ECSqlPa
         {
         if (argumentsNode->count() != 1)
             {
+#ifdef WIP_MERGE
             ctx.SetError(ECSqlStatus::InvalidECSql, "Function %s requires exactly one argument.", functionName.c_str());
+#endif
             return nullptr;
             }
 
@@ -797,7 +803,11 @@ std::unique_ptr<ValueExp> ECSqlParser::parse_getpointcoordinate_fct_spec(ECSqlPa
     if (argExp == nullptr)
         return nullptr;
 
+#ifdef WIP_MERGE
     return unique_ptr<ValueExp>(new GetPointCoordinateFunctionExp(functionName, std::move(argExp)));
+#else
+    return nullptr;
+#endif
     }
 
 //-----------------------------------------------------------------------------------------
@@ -819,7 +829,11 @@ std::unique_ptr<ValueExp> ECSqlParser::parse_getpointcoordinate_fct_spec(ECSqlPa
 //+---------------+---------------+---------------+---------------+---------------+--------
 unique_ptr<ValueExp> ECSqlParser::parse_functionarg(ECSqlParseContext& ctx, connectivity::OSQLParseNode const& argNode)
     {
+#ifdef WIP_MERGE
     return parse_result(ctx, &argNode);
+#else
+    return nullptr;
+#endif
     }
 
 //-----------------------------------------------------------------------------------------
