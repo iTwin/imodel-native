@@ -60,10 +60,8 @@ struct ChangeManager : public IChangeManager
         InstanceRevisionPtr ReadObjectRevision(ECInstanceKeyCR instanceKey);
         InstanceRevisionPtr ReadRelationshipRevision(ECInstanceKeyCR instanceKey);
         static void SetupRevisionChanges(const struct ChangeInfo& info, Revision& revisionInOut);
-        BentleyStatus CommitInstanceCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
-        BentleyStatus CommitRelationshipCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
-        BentleyStatus CommitInstanceChange(ECInstanceKeyCR instanceKey);
-        BentleyStatus CommitRelationshipChange(ECInstanceKeyCR instanceKey);
+        BentleyStatus CommitInstanceChange(InstanceRevisionCR revision);
+        BentleyStatus CommitRelationshipChange(InstanceRevisionCR revision);
 
         Utf8String CreateRemoteId();
 
