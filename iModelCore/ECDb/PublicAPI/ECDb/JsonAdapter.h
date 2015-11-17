@@ -207,6 +207,7 @@ private:
     bool JsonFromPoint2D (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromPoint3D (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
     bool JsonFromString (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
+    bool JsonFromCG(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
 
     bool FormattedJsonFromECValue (JsonValueR jsonValue, ECN::ECValueCR ecValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
 

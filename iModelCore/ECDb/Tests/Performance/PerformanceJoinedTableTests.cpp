@@ -186,6 +186,7 @@ TEST_F(PerformanceJoinedTableTests, Insert)
     ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
 
     ECSqlStatement booInsert;
+    // NOT USED: const int instanceIdIncrement = DetermineECInstanceIdIncrement();
     ASSERT_EQ(booInsert.Prepare(ecdb, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
     StopWatch timer(true);
 

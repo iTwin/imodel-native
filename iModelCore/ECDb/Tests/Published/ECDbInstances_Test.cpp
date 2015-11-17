@@ -1325,4 +1325,95 @@ TEST_F(ECDbInstances, UpdateRelationshipProperty)
     ASSERT_STREQ(expectedLabel.c_str(), actualLabel.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValidateCGPoint(JsonValueCR expectedValue, JsonValueCR actualValue)
+    {
+    ASSERT_TRUE(!expectedValue.isNull());
+
+    for (int ii = 0; ii < 3; ii++)
+        {
+        double expectedCoord = expectedValue[ii].asDouble();
+        double actualCoord = actualValue[ii].asDouble();
+        ASSERT_EQ(expectedCoord, actualCoord);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValidateCGPointArray(JsonValueCR expectedValue, JsonValueCR actualValue)
+    {
+    ASSERT_TRUE(!expectedValue.isNull());
+    ASSERT_TRUE(expectedValue.isArray());
+    ASSERT_TRUE(expectedValue.size() == actualValue.size());
+
+    for (int ii = 0; ii < (int) expectedValue.size(); ii++)
+        ValidateCGPoint(expectedValue[ii], actualValue[ii]);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValidateSpatialInstance(ECDbR db, ECInstanceKey spatialInstanceKey, JsonValueCR expectedJsonValue)
+    {
+    JsonReader reader(db, spatialInstanceKey.GetECClassId());
+    Json::Value actualJsonValue;
+    BentleyStatus status = reader.ReadInstance(actualJsonValue, spatialInstanceKey.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    ASSERT_EQ(SUCCESS, status);
+
+    //Utf8String expectedStrValue = Json::StyledWriter().write(expectedJsonValue);
+    //Utf8String actualStrValue = Json::StyledWriter().write(actualJsonValue);
+    //ASSERT_STREQ(expectedStrValue.c_str(), actualStrValue.c_str());
+
+    ValidateCGPoint(expectedJsonValue["Center"]["Coordinate"]["xyz"], actualJsonValue["Center"]["Coordinate"]["xyz"]);
+    ValidateCGPoint(expectedJsonValue["LLP"]["Coordinate"]["xyz"], actualJsonValue["LLP"]["Coordinate"]["xyz"]);
+    ValidateCGPoint(expectedJsonValue["URP"]["Coordinate"]["xyz"], actualJsonValue["URP"]["Coordinate"]["xyz"]);
+
+    ValidateCGPointArray(expectedJsonValue["Location"]["Polygon"]["Point"], actualJsonValue["Location"]["Polygon"]["Point"]);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP_MERGE
+TEST(ECDbInstances, CommonGeometryJsonSerialization)
+    {
+    ECDbTestProject saveTestProject;
+    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+
+    ECDb db;
+    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn_Yes));
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+
+    BeFileName pathname;
+    BeTest::GetHost().GetDocumentsRoot(pathname);
+    pathname.AppendToPath(L"DgnDb");
+    pathname.AppendToPath(L"CommonGeometry.json");
+
+    rapidjson::Document expectedRapidJsonValue;
+    ReadJsonInputFromFile(expectedRapidJsonValue, pathname);
+
+    Json::Value expectedJsonCppValue;
+    ReadJsonInputFromFile(expectedJsonCppValue, pathname);
+
+    ECClassCP spatialClass = db.GetEC().GetClassLocater().LocateClass(L"StartupCompany", L"SpatialLocation");
+    ASSERT_NE(nullptr, spatialClass);
+
+    // Insert using RapidJson API
+    JsonInserter inserter(db, *spatialClass);
+    ECInstanceKey rapidJsonInstanceKey;
+    ASSERT_EQ(SUCCESS, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
+
+    // Insert using JsonCpp API
+    ECInstanceKey jsonCppInstanceKey;
+    ASSERT_EQ(SUCCESS, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
+
+    // Validate
+    ValidateSpatialInstance(db, rapidJsonInstanceKey, expectedJsonCppValue);
+    ValidateSpatialInstance(db, jsonCppInstanceKey, expectedJsonCppValue);
+    }
+#endif
+
 END_ECDBUNITTESTS_NAMESPACE
