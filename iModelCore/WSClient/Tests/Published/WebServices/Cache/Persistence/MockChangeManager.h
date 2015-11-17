@@ -66,9 +66,9 @@ struct MockChangeManager : public IChangeManager
         MOCK_METHOD1 (GetObjectSyncStatus,
             SyncStatus (ECInstanceKeyCR instance));
         MOCK_METHOD1 (ReadInstanceRevision,
-            InstanceRevisionPtr(ECInstanceKeyCR));
+            std::shared_ptr<InstanceRevision>(ECInstanceKeyCR));
         MOCK_METHOD1 (ReadFileRevision,
-            FileRevisionPtr(ECInstanceKeyCR));
+            std::shared_ptr<FileRevision>(ECInstanceKeyCR));
         MOCK_METHOD2 (ReadModifiedProperties,
             BentleyStatus (ECInstanceKeyCR instance, JsonValueR propertiesOut));
         MOCK_METHOD1 (CommitInstanceRevision,
