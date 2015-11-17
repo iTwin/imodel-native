@@ -24,14 +24,11 @@
 #define LC_MAX_STROKES                 32          /* Max strokes in line code    */
 
 #define LSATTR_UNITMASK                     0x00000003
-//  #define LSATTR_UNITMASTER                   0x00000000   no longer used in DgnDb
-#define LSATTR_UNITUOR                      0x00000001   /* Unit def in world coords     */
 #define LSATTR_UNITDEV                      0x00000002   /* Unit def in device coords    */
 #define LSATTR_UNITMETERS                   0x00000003   // Line style units are meters, introduced in DgnDb
 #define LSATTR_NOSNAP                       0x00000004   /* Only snap to the center line */
 #define LSATTR_CONTINUOUS                   0x00000008   /* Continuous lines             */
 #define LSATTR_NORANGE                      0x00000010   /* Dont use lstyle for range    */
-#define LSATTR_SHAREDCELL_SCALE_INDEPENDENT 0x00000020   /* Make the line scale independent of scale of shared cells */
 #define LSATTR_NOWIDTH                      0x00000040   /* Lines with no width - speeds locate.  This is set on read.*/
 #define LSATTR_PHYSICAL                     0x00000080   /* Line styles are physical and should be scaled as such.  This only applies to styles in dgnlibs, not resources. */
 
