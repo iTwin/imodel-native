@@ -141,12 +141,17 @@ WorkerThreadPtr cacheAccessThread
 
     return cacheAccessThread->ExecuteAsync([=]
         {
+        LOG.infov(L"CachingDataSource::OpenOrCreate() using environment:\n%ls\n%ls",
+            cacheEnvironment.persistentFileCacheDir.c_str(),
+            cacheEnvironment.temporaryFileCacheDir.c_str());
+
         ECDb::CreateParams params;
         params.SetStartDefaultTxn(DefaultTxn_No); // Allow concurrent multiple connection access
 
         std::unique_ptr<DataSourceCache> cache(new DataSourceCache());
         if (cacheFilePath.DoesPathExist())
             {
+            LOG.infov(L"Found existing cache at %ls", cacheFilePath.c_str());
             if (SUCCESS != cache->Open(cacheFilePath, cacheEnvironment, params))
                 {
                 openResult->SetError(Status::InternalCacheError);
@@ -155,6 +160,7 @@ WorkerThreadPtr cacheAccessThread
             }
         else
             {
+            LOG.infov(L"Creating new cache at %ls", cacheFilePath.c_str());
             if (SUCCESS != cache->Create(cacheFilePath, cacheEnvironment, params))
                 {
                 openResult->SetError(Status::InternalCacheError);
@@ -206,7 +212,8 @@ WorkerThreadPtr cacheAccessThread
         ->Then<OpenResult>([=]
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms", openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms", 
+                openResult->IsSuccess() ? "succeeded" : "failed", end - start);
 
             return *openResult;
             });

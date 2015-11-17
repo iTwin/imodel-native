@@ -16,6 +16,7 @@
 #include "../Core/CacheSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
 #include "../../Util/JsonUtil.h"
+#include "../../Logging.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -61,6 +62,7 @@ ICancellationTokenPtr cancellationToken
         {
         if (SUCCESS != CacheInstance(instance, rootPath, cachedInstancesInOut, partialCachingState, updateCachingState, nullptr, cancellationToken))
             {
+            LOG.errorv("Failed to cache instance %s", instance.GetObjectId().ToString().c_str());
             return ERROR;
             }
         }
@@ -280,6 +282,7 @@ BentleyStatus InstanceCacheHelper::CacheInstance(ObjectInfoR infoInOut, RapidJso
 
     if (SUCCESS != status)
         {
+        LOG.errorv("Failed to cache instance %s", infoInOut.GetObjectId().ToString().c_str());
         return ERROR;
         }
 
@@ -376,6 +379,7 @@ BentleyStatus InstanceCacheHelper::UpdateExistingInstanceData(ObjectInfoCR info,
     ECClassCP ecClass = m_dbAdapter.GetECClass(info.GetCachedInstanceKey());
     if (SUCCESS != SaveExistingInstance(info, *ecClass, properties))
         {
+        LOG.errorv("Failed to update instance %s", info.GetObjectId().ToString().c_str());
         return ERROR;
         }
 
