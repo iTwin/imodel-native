@@ -146,6 +146,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
     {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
+#ifdef WIP_MERGE
         if (IsTaskCanceled()) return;
         auto txn = m_ds->StartCacheTransaction();
 
@@ -215,6 +216,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
 
             txn.Commit();
             });
+#endif
         });
     }
 
@@ -289,6 +291,9 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
             return;
             }
 
+#ifndef WIP_MERGE
+        return;
+#else
         auto changeset = BuildSingleInstanceChangeset(txn.GetCache(), *changeGroup);
         if (nullptr == changeset)
             {
@@ -387,6 +392,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
 
             txn.Commit();
             });
+#endif
         });
     }
 
