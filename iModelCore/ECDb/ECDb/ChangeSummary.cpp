@@ -322,7 +322,8 @@ int64_t SqlChange::GetValueInt64(int columnIndex) const
 //---------------------------------------------------------------------------------------
 ECInstanceId SqlChange::GetValueId(int columnIndex) const
     {
-    return ECInstanceId(GetValueInt64(columnIndex));
+    int64_t val = GetValueInt64(columnIndex);
+    return val > 0 ? ECInstanceId(val) : ECInstanceId();
     }
 
 //---------------------------------------------------------------------------------------
