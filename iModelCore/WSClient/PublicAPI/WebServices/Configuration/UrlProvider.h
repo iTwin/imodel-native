@@ -67,8 +67,9 @@ struct UrlProvider
         //! Initialize UrlProvider for current session.
         //! @param env - environment to get URLs for. Changing environment will clear URL cache
         //! @param cacheTimeoutMs - maximum time URL is cached in milliseconds. Defaults to 24 hours.
-        //! @param customLocalState - custom local state for caching URLs
+        //! @param customlocalState - custom local state for caching URLs
         //! @param customBuddi - custom buddi client for requesting URLs
+        //! @param customHandler - custom handler
         WSCLIENT_EXPORT static void Initialize(
             Environment env,
             int64_t cacheTimeoutMs = DefaultTimeout,
