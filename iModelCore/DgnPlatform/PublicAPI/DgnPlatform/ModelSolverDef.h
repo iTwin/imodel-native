@@ -77,6 +77,8 @@ struct ModelSolverDef
         DGNPLATFORM_EXPORT explicit ParameterSet(Json::Value const&);
         explicit ParameterSet(bvector<Parameter> const& p) : m_parameters(p) {;}
 
+        ParameterSet& operator=(ParameterSet const& rhs) {if (&rhs != this) m_parameters = rhs.m_parameters; return *this;}
+
         DGNPLATFORM_EXPORT Json::Value ToJson() const;
 
         //! Get a parameter by name

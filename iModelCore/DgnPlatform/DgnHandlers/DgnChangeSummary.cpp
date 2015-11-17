@@ -206,20 +206,20 @@ BentleyStatus DgnChangeSummary::GetElementsWithAspectUpdates(DgnElementIdSet& el
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementIds)
     {
-    // GeometricElement -> ElementOwnsGeom -> ElementGeom
-    BentleyStatus status = GetElementsWithAspectUpdates(elementIds, "dgn.GeometricElement", "dgn.ElementOwnsGeom", "dgn.ElementGeom");
+    // Element -> ElementOwnsGeom -> ElementGeom
+    BentleyStatus status = GetElementsWithAspectUpdates(elementIds, "dgn.Element", "dgn.ElementOwnsGeom", "dgn.ElementGeom");
     BeAssert(status == SUCCESS);
 
     // ElementGeomUsesParts
     ECInstanceIdSet changedGeomUsesPartEnds;
     FindChangedRelationshipEndIds(changedGeomUsesPartEnds, "dgn", "ElementGeomUsesParts", ECRelationshipEnd_Source);
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE InVirtualSet(?, elg.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE InVirtualSet(?, elg.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, changedGeomUsesPartEnds);
 
     // GeomPart
     ECInstanceIdSet updatedGeomParts;
     FindUpdatedInstanceIds(updatedGeomParts, "dgn", "GeomPart");
-    ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
+    ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, updatedGeomParts);
     }
 
