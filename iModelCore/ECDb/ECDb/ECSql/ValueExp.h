@@ -183,6 +183,45 @@ public:
     };
 
 //=======================================================================================
+//! @bsiclass                                                Krischan.Eberle      11/2015
+//+===============+===============+===============+===============+===============+======
+struct GetPointCoordinateFunctionExp : ValueExp
+    {
+    DEFINE_EXPR_TYPE(GetPointCoordinateFunction)
+
+enum class Coordinate
+    {
+    X,
+    Y,
+    Z
+    };
+
+private:
+    static const size_t s_functionNameRootLength;
+
+    Coordinate m_coordinate;
+    size_t m_argIndex;
+
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual Utf8String _ToString() const override;
+
+    static Coordinate CoordinateFromFunctionName(Utf8StringCR functionName);
+    static Utf8CP CoordinateToString(Coordinate);
+
+public:
+    GetPointCoordinateFunctionExp(Utf8StringCR functionName, std::unique_ptr<ValueExp> pointArgumentExp);
+    ~GetPointCoordinateFunctionExp() {}
+
+    Coordinate GetCoordinate() const { return m_coordinate; }
+    ValueExp const& GetArgument() const { return *GetChild<ValueExp>(m_argIndex); }
+#ifdef WIP_MERGE
+    virtual Utf8String ToECSql() const override;
+#endif
+    
+    static bool IsPointCoordinateFunction(Utf8StringCR functionName);
+    };
+
+//=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
 struct FunctionCallExp : ValueExp

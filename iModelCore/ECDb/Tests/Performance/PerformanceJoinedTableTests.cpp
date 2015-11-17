@@ -24,11 +24,6 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
         static const int s_initialInstanceCount = 1000000;
         static const int s_opCount = 500000;
 
-
-        static int DetermineECInstanceIdIncrement()
-            {
-            return s_initialInstanceCount / s_opCount;
-            }
         static Utf8String GenerateTestValue()
             {
             Utf8String val; val.Sprintf("%d", DateTime::GetCurrentTimeUtc().GetDayOfYear()); return val;

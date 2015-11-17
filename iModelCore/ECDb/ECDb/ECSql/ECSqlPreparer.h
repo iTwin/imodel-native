@@ -58,7 +58,8 @@ public:
     static ECSqlStatus PrepareFromExp (ECSqlPrepareContext& ctx, FromExp const* exp);
     static ECSqlStatus PrepareFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const* exp);
     static ECSqlStatus PrepareECClassIdFunctionExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdFunctionExp const* exp);
-    static ECSqlStatus PrepareGroupByExp (ECSqlPrepareContext& ctx, GroupByExp const* exp);
+    static ECSqlStatus PrepareGetPointCoordinateFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, GetPointCoordinateFunctionExp const* exp);
+    static ECSqlStatus PrepareGroupByExp(ECSqlPrepareContext& ctx, GroupByExp const* exp);
     static ECSqlStatus PrepareHavingExp (ECSqlPrepareContext& ctx, HavingExp const* exp);
     static ECSqlStatus PrepareLikeRhsValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LikeRhsValueExp const* exp);
     static ECSqlStatus PrepareLimitOffsetExp (ECSqlPrepareContext& ctx, LimitOffsetExp const*);

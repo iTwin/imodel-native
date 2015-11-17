@@ -367,7 +367,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             //this can only happen in a specific case with inserting an end table relationship, as there inserting really
             //means to update a row in the end table.
             GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship (%s). Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.", GetECSql());
-            return BE_SQLITE_ERROR;
+            return BE_SQLITE_CONSTRAINT_UNIQUE;
             }
 
         instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
