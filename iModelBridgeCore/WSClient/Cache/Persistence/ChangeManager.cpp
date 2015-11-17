@@ -730,40 +730,58 @@ BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, Js
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitInstanceRevision(InstanceRevisionCR revision)
     {
-    ECInstanceKey instanceKey = revision.GetInstanceKey();
-
-    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
+    ECClassCP ecClass = m_dbAdapter->GetECClass(revision.GetInstanceKey());
     if (nullptr == ecClass)
         {
         return ERROR;
         }
 
-    if (IChangeManager::ChangeStatus::Created == revision.GetChangeStatus())
+    if (nullptr != ecClass->GetRelationshipClassCP())
         {
-        if (nullptr != ecClass->GetRelationshipClassCP())
-            return CommitRelationshipCreation(instanceKey, revision.GetObjectId().remoteId);
-        else
-            return CommitInstanceCreation(instanceKey, revision.GetObjectId().remoteId);
+        return CommitRelationshipChange(revision);
         }
     else
         {
-        if (nullptr != ecClass->GetRelationshipClassCP())
-            return CommitRelationshipChange(instanceKey);
-        else
-            return CommitInstanceChange(instanceKey);
+        return CommitInstanceChange(revision);
         }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitInstanceCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId)
+BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
     {
-    ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
-    if (info.GetChangeStatus() != ChangeStatus::Created)
+    ObjectInfo info = m_objectInfoManager->ReadInfo(revision.GetInstanceKey());
+    if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
+        BeAssert(false && "Nothing to commit");
         return ERROR;
         }
+
+    if (info.GetChangeStatus() == ChangeStatus::Deleted)
+        {
+        return m_hierarchyManager->DeleteInstance(info.GetInfoKey());
+        }
+
+    if (info.GetChangeStatus() == ChangeStatus::Modified)
+        {
+        info.ClearChangeInfo();
+        if (SUCCESS != m_objectInfoManager->UpdateInfo(info) ||
+            SUCCESS != m_changeInfoManager->DeleteBackupInstance(info.GetInfoKey()))
+            {
+            return ERROR;
+            }
+        return SUCCESS;
+        }
+
+    if (info.GetChangeStatus() != ChangeStatus::Created)
+        {
+        BeAssert(false && "Change status is unsupported for commit");
+        return ERROR;
+        }
+
+    ECInstanceKey instanceKey = revision.GetInstanceKey();
+    Utf8String newRemoteId = revision.GetObjectId().remoteId;
 
     if (newRemoteId.empty() || newRemoteId == info.GetObjectId().remoteId)
         {
@@ -796,25 +814,33 @@ BentleyStatus ChangeManager::CommitInstanceCreation(ECInstanceKeyCR instanceKey,
     info.SetRemoteId(newRemoteId);
     info.ClearChangeInfo();
 
-    if (SUCCESS != m_objectInfoManager->UpdateInfo(info))
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return m_objectInfoManager->UpdateInfo(info);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitRelationshipCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId)
+BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revision)
     {
-    RelationshipInfo info = m_relationshipInfoManager->FindInfo(instanceKey);
-    if (info.GetChangeStatus() != ChangeStatus::Created)
+    RelationshipInfo info = m_relationshipInfoManager->FindInfo(revision.GetInstanceKey());
+    if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
+        BeAssert(false && "Nothing to commit");
         return ERROR;
         }
 
+    if (info.GetChangeStatus() == ChangeStatus::Deleted)
+        {
+        return m_hierarchyManager->DeleteInstance(info.GetInfoKey());
+        }
+
+    if (info.GetChangeStatus() != ChangeStatus::Created)
+        {
+        BeAssert(false && "Change status is unsupported for commit");
+        return ERROR;
+        }
+
+    Utf8String newRemoteId = revision.GetObjectId().remoteId;
     if (newRemoteId.empty())
         {
         if (SUCCESS != m_hierarchyManager->DeleteRelationship(info.GetRelationshipKey()))
@@ -827,69 +853,7 @@ BentleyStatus ChangeManager::CommitRelationshipCreation(ECInstanceKeyCR instance
     info.SetRemoteId(newRemoteId);
     info.ClearChangeInfo();
 
-    if (SUCCESS != m_relationshipInfoManager->SaveInfo(info))
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitInstanceChange(ECInstanceKeyCR instanceKey)
-    {
-    ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
-    switch (info.GetChangeStatus())
-        {
-        case ChangeStatus::Modified:
-            info.ClearChangeInfo();
-            if (SUCCESS != m_objectInfoManager->UpdateInfo(info) ||
-                SUCCESS != m_changeInfoManager->DeleteBackupInstance(info.GetInfoKey()))
-                {
-                return ERROR;
-                }
-            break;
-        case ChangeStatus::Deleted:
-            if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetInfoKey()))
-                {
-                return ERROR;
-                }
-            break;
-        case ChangeStatus::NoChange:
-        case ChangeStatus::Created:
-        default:
-            BeAssert(false && "Change status is unsupported for commit");
-            return ERROR;
-            break;
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ChangeManager::CommitRelationshipChange(ECInstanceKeyCR instanceKey)
-    {
-    RelationshipInfo info = m_relationshipInfoManager->FindInfo(instanceKey);
-    switch (info.GetChangeStatus())
-        {
-        case ChangeStatus::Deleted:
-            if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetInfoKey()))
-                {
-                return ERROR;
-                }
-            break;
-        case ChangeStatus::Modified:
-        case ChangeStatus::NoChange:
-        case ChangeStatus::Created:
-        default:
-            BeAssert(false && "Change status is unsupported for commit");
-            return ERROR;
-            break;
-        }
-    return SUCCESS;
+    return m_relationshipInfoManager->SaveInfo(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -897,27 +861,27 @@ BentleyStatus ChangeManager::CommitRelationshipChange(ECInstanceKeyCR instanceKe
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
     {
-    FileInfo info = m_fileInfoManager->ReadInfo(revision.GetInstanceKey());
-    switch (info.GetChangeStatus())
+    FileInfo info = m_fileInfoManager->ReadInfo(revision.GetInstanceKey());    
+    if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
-        case ChangeStatus::Modified:
-            info.ClearChangeInfo();
-            if (SUCCESS != m_fileInfoManager->SaveInfo(info))
-                {
-                return ERROR;
-                }
-            if (SUCCESS != m_fileManager->SetFileCacheLocation(info.GetInstanceKey(), FileCache::Temporary))
-                {
-                return ERROR;
-                }
-            break;
-        case ChangeStatus::NoChange:
-        case ChangeStatus::Created:
-        case ChangeStatus::Deleted:
-        default:
-            BeAssert(false && "Change status is unsupported for commit");
-            return ERROR;
-            break;
+        BeAssert(false && "Nothing to commit");
+        return ERROR;
+        }
+
+    if (info.GetChangeStatus() != ChangeStatus::Modified)
+        {
+        BeAssert(false && "Change status is unsupported for commit");
+        return ERROR;
+        }
+
+    info.ClearChangeInfo();
+    if (SUCCESS != m_fileInfoManager->SaveInfo(info))
+        {
+        return ERROR;
+        }
+    if (SUCCESS != m_fileManager->SetFileCacheLocation(info.GetInstanceKey(), FileCache::Temporary))
+        {
+        return ERROR;
         }
 
     return SUCCESS;
