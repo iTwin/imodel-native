@@ -2042,6 +2042,25 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedInstanceLabel_ReturnsC
     EXPECT_EQ(expected, modifiedProperties);
     }
 
+TEST_F(ChangeManagerTests, ReadModifiedProperties_CachedNewInstanceAfterModification_ReturnsChangesBetweenLatestAndLocalVersions)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"}, {"TestProperty2", "OldB"}, {"TestProperty3", "OldC"}});
+    auto properties = ToJson(R"({"TestProperty":"OldA", "TestProperty2":"NewB", "TestProperty3":"OtherC"})");
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewA"}, {"TestProperty2", "NewB"}, {"TestProperty3", "NewC"}});
+    ASSERT_EQ(SUCCESS, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    // Act
+    Json::Value modifiedProperties;
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));
+    // Assert
+    auto expected = ToJson(R"({"TestProperty3":"OtherC"})");
+    EXPECT_EQ(expected, modifiedProperties);
+    }
+
 TEST_F(ChangeManagerTests, ReadModifiedProperties_NotExistingInstance_ReturnsError)
     {
     auto cache = GetTestCache();

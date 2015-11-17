@@ -369,7 +369,7 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, Utf
             return "UPDATE ONLY " ECSql_InstanceBackup " SET [" CLASS_InstanceBackup_PROPERTY_Instance "] = ? WHERE ECInstanceId = ? ";
             });
         statement->BindText(1, serializedInstance, IECSqlBinder::MakeCopy::No);
-        statement->BindId(1, backupId);
+        statement->BindId(2, backupId);
         if (statement->Step() != ECSqlStepStatus::Done)
             {
             return ERROR;
