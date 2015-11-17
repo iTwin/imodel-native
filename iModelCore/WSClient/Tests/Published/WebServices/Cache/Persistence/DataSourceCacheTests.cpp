@@ -1573,6 +1573,42 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithChangedRelationship_Remo
     EXPECT_FALSE(VerifyHasRelationship(cache, testRelClass, {"TestSchema.TestClass", "B"}, {"TestSchema.TestClass", "C"}));
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_MultipleClassRelationshipsAndNewResultHasNewIntermixedRelationships_LeavesOldRelationshipsAndAddsNew_REGRESSION)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+
+    auto testRelClass1 = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
+    auto testRelClass2 = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass2");
+    ASSERT_LT(testRelClass1->GetId(), testRelClass2->GetId()); // Ensure that ids are as expected for regression
+
+    {
+    StubInstances instances;
+    auto instance = instances.Add({"TestSchema.TestClass", "A"});
+    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
+    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    }
+
+    {
+    StubInstances instances;
+    auto instance = instances.Add({"TestSchema.TestClass", "A"});
+    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
+    instance.AddRelated({"TestSchema.TestRelationshipClass", "A1"}, {"TestSchema.TestClass", "1"});
+    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
+    instance.AddRelated({"TestSchema.TestRelationshipClass", "A2"}, {"TestSchema.TestClass", "2"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    }
+
+    EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass2, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass2, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "C"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass1, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "1"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass1, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "2"}));
+    }
+
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelationships_RemovesOldInstances)
     {
     shared_ptr<DataSourceCache> cache = GetTestCache();

@@ -112,6 +112,13 @@ WSObjectsResponse StubWSObjectsResponseNotModified()
     return WSObjectsResponse(reader, body, HttpStatus::NotModified, "");
     }
 
+WSObjectsResponse StubWSObjectsResponseV2(Utf8StringCR jsonBody, Utf8StringCR eTag)
+    {
+    auto body = HttpStringBody::Create(jsonBody);
+    auto reader = WSObjectsReaderV2::Create();
+    return WSObjectsResponse(reader, body, HttpStatus::OK, eTag);
+    }
+
 WSObjectsResult StubWSObjectsResultNotModified()
     {
     return WSObjectsResult::Success(StubWSObjectsResponseNotModified());
