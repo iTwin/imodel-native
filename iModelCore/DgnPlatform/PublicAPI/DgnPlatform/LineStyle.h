@@ -1250,7 +1250,7 @@ private:
 
     LsSymbolReferenceP              GetSymbolReferenceP     (T_SymbolsCollectionConstIter iter) const;
     LsPointComponent    (LsLocationCP pLocation);
-    LsPointComponent    (LsPointComponentCR source);
+    LsPointComponent    (LsPointComponentCR source, bool removeSymbrefOnVertex);
 
 protected:
     ~LsPointComponent   ();
