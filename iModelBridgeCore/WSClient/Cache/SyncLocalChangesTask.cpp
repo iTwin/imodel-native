@@ -146,6 +146,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
     {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
+#ifdef WIP_MERGE
         if (IsTaskCanceled()) return;
         auto txn = m_ds->StartCacheTransaction();
 
@@ -187,11 +188,14 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                 };
 
             auto txn = m_ds->StartCacheTransaction();
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(createdInstanceIds))
+            for (auto& pair : createdInstanceIds)
                 {
-                SetError();
-                return;
-                };
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChange(pair.first, pair.second))
+                    {
+                    SetError();
+                    return;
+                    };
+                }
 
             for (auto& pair : *changesetIdMap)
                 {
@@ -200,7 +204,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                     {
                     continue;
                     }
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(changedInstanceKey))
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChange(changedInstanceKey))
                     {
                     SetError();
                     return;
@@ -212,6 +216,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
 
             txn.Commit();
             });
+#endif
         });
     }
 
@@ -286,12 +291,18 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
             return;
             }
 
-        Json::Value creationJson;
-        if (SUCCESS != BuildSyncJson(txn.GetCache(), *changeGroup, creationJson))
+#ifndef WIP_MERGE
+        return;
+#else
+        auto changeset = BuildSingleInstanceChangeset(txn.GetCache(), *changeGroup);
+        if (nullptr == changeset)
             {
             SetError(CachingDataSource::Status::InternalCacheError);
             return;
             }
+
+        Json::Value creationJson;
+        changeset->ToRequestJson(creationJson);
 
         ResponseGuardPtr guard = CreateResponseGuard(objectLabel, 0 != currentFileSize);
 
@@ -309,11 +320,22 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
 
             auto txn = m_ds->StartCacheTransaction();
 
-            std::map<ECInstanceKey, Utf8String> changedRemoteIds = ReadChangedRemoteIds(*changeGroup, objectsResult.GetValue());
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(changedRemoteIds))
+            for (auto& pair : ReadChangedRemoteIds(*changeGroup, objectsResult.GetValue()))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
-                return;
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChange(pair.first, pair.second))
+                    {
+                    SetError(CachingDataSource::Status::InternalCacheError);
+                    return;
+                    }
+                }
+
+            if (changeGroup->GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
+                {
+                if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChange(changeGroup->GetFileChange().GetInstanceKey()))
+                    {
+                    SetError(CachingDataSource::Status::InternalCacheError);
+                    return;
+                    }
                 }
 
             changeGroup->SetSynced(true);
@@ -370,6 +392,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
 
             txn.Commit();
             });
+#endif
         });
     }
 
@@ -423,7 +446,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(CacheChangeGroup
                 }
 
             auto txn = m_ds->StartCacheTransaction();
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChange(instanceKey))
                 {
                 SetError(CachingDataSource::Status::InternalCacheError);
                 return;
@@ -464,7 +487,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(CacheChangeGroupPt
 
             auto txn = m_ds->StartCacheTransaction();
             m_totalBytesUploaded += currentFileSize;
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChanges(instanceKey))
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChange(instanceKey))
                 {
                 SetError(CachingDataSource::Status::InternalCacheError);
                 return;
@@ -518,7 +541,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(CacheChangeGroupPtr 
                 }
 
             auto txn = m_ds->StartCacheTransaction();
-            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChange(instanceKey))
                 {
                 SetError(CachingDataSource::Status::InternalCacheError);
                 return;
@@ -531,14 +554,14 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(CacheChangeGroupPtr 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncLocalChangesTask::BuildChangeset
+WSChangesetPtr SyncLocalChangesTask::BuildChangeset
 (
 IDataSourceCache& cache,
-WSChangeset& changeset,
 bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
 bvector<CacheChangeGroup*>& changesetChangeGroupsOut
 )
     {
+    auto changeset = std::make_shared<WSChangeset>();
     for (auto i = m_changeGroupIndexToSyncNext; i < m_changeGroups.size(); ++i)
         {
         CacheChangeGroup& changeGroup = *m_changeGroups[i];
@@ -548,18 +571,18 @@ bvector<CacheChangeGroup*>& changesetChangeGroupsOut
             }
 
         bmap<ObjectId, ECInstanceKey> changeIds;
-        WSChangeset::Instance* newInstance = AddChangeToChangeset(cache, changeset, changeGroup, changeIds);
+        WSChangeset::Instance* newInstance = AddChangeToChangeset(cache, *changeset, changeGroup, changeIds, false);
         if (nullptr == newInstance)
             {
-            return ERROR;
+            return nullptr;
             }
 
         if (m_options.GetMaxChangesetSize() != 0 &&
-            m_options.GetMaxChangesetSize() < changeset.CalculateSize() ||
+            m_options.GetMaxChangesetSize() < changeset->CalculateSize() ||
             m_options.GetMaxChangesetInstanceCount() != 0 &&
-            m_options.GetMaxChangesetInstanceCount() < changeset.GetInstanceCount())
+            m_options.GetMaxChangesetInstanceCount() < changeset->GetInstanceCount())
             {
-            changeset.RemoveInstance(*newInstance);
+            changeset->RemoveInstance(*newInstance);
             break;
             }
 
@@ -571,10 +594,10 @@ bvector<CacheChangeGroup*>& changesetChangeGroupsOut
     if (changesetChangeGroupsOut.empty())
         {
         BeAssert(false && "Could not fit any changes into changeset. Check SyncOptions limitations");
-        return ERROR;
+        return nullptr;
         }
 
-    return SUCCESS;
+    return changeset;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -585,7 +608,8 @@ WSChangeset::Instance* SyncLocalChangesTask::AddChangeToChangeset
 IDataSourceCache& cache,
 WSChangeset& changeset,
 CacheChangeGroupCR changeGroup,
-bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
+bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
+bool ensureChangedInstanceInRoot
 )
     {
     if (IChangeManager::ChangeStatus::NoChange == changeGroup.GetRelationshipChange().GetChangeStatus())
@@ -630,12 +654,20 @@ bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
                 sourceState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
                 sourceProperties = ReadChangeProperties(cache, sourceState, change.GetSourceKey());
                 changesetIdMapOut[sourceId] = change.GetSourceKey();
+                if (ensureChangedInstanceInRoot && nullptr == source && nullptr == target)
+                    {
+                    source = &changeset.AddInstance(sourceId, sourceState, sourceProperties);
+                    }
                 }
             else
                 {
                 targetState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
                 targetProperties = ReadChangeProperties(cache, targetState, change.GetTargetKey());
                 changesetIdMapOut[targetId] = change.GetTargetKey();
+                if (ensureChangedInstanceInRoot && nullptr == source && nullptr == target)
+                    {
+                    target = &changeset.AddInstance(targetId, targetState, targetProperties);
+                    }
                 }
             }
 

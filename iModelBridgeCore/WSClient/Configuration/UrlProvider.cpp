@@ -6,25 +6,30 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
+#include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <DgnClientFx/Utils/Http/HttpConfigurationHandler.h>
 
 #define LOCAL_STATE_NAMESPACE   "UrlCache"
 #define LOCAL_STATE_ENVIRONMENT "Environment"
+#define RECORD_Url              "URL"
+#define RECORD_TimeCached       "TimeCached"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-bool UrlProvider::s_isInitialized = false;
-static UrlProvider::Environment s_env;
-IBuddiClientPtr UrlProvider::s_buddi;
-ILocalState* UrlProvider::s_localState = nullptr;
+int64_t                     UrlProvider::DefaultTimeout = 24 * 3600 * 1000;
+bool                        UrlProvider::s_isInitialized = false;
+UrlProvider::Environment    UrlProvider::s_env = UrlProvider::Environment::Release;
+int64_t                     UrlProvider::s_cacheTimeoutMs = 0;
+IBuddiClientPtr             UrlProvider::s_buddi;
+ILocalState*                UrlProvider::s_localState = nullptr;
 IHttpHandlerPtr UrlProvider::s_customHandler;
 
 // Region IDs from the buddi.bentley.com
 uint32_t s_regionsId[3] = {
     103,    // Region "Bentley Corporate Network - DEV"
     102,    // Region "Bentley Corporate Network - QA"
-    0       // No region - use BUDDI non-regional URLs
+    0       // No region for PROD - use BUDDI non-regional URLs
     };
 
 // Managed urls
@@ -73,7 +78,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     "Mobile.PunchListWsg",
     "https://dev-punchlist-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-punchlist-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
     );
@@ -121,12 +126,13 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
+void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, ILocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
     {
     s_localState = customLocalState ? customLocalState : &DgnClientFxCommon::LocalState();
     s_customHandler = customHandler;
     s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>(s_customHandler);
     s_env = env;
+    s_cacheTimeoutMs = cacheTimeoutMs;
     s_isInitialized = true;
 
     Json::Value jsonPreviousEnv = s_localState->GetValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
@@ -143,7 +149,7 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                Julija.Semenenko   06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::GetUrl(Utf8CP urlName, const Utf8String* defaultUrls)
+Utf8String UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls)
     {
     if (!s_isInitialized)
         {
@@ -151,19 +157,39 @@ Utf8String UrlProvider::GetUrl(Utf8CP urlName, const Utf8String* defaultUrls)
         return "";
         }
 
-    Json::Value jsonUrl = s_localState->GetValue(LOCAL_STATE_NAMESPACE, urlName);
+    Json::Value record = s_localState->GetValue(LOCAL_STATE_NAMESPACE, urlName.c_str());
 
-    Utf8String url = jsonUrl.asString();
-    if (!url.empty())
+    Utf8String cachedUrl;
+
+    if (!record.isNull() && record.isObject())
         {
-        return url;
+        cachedUrl = record[RECORD_Url].asString();
+        int64_t timeCached = BeJsonUtilities::Int64FromValue(record[RECORD_TimeCached]);
+        int64_t currentTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        if (!cachedUrl.empty() && ((currentTime - timeCached) < s_cacheTimeoutMs))
+            {
+            return cachedUrl;
+            }
+        }
+    else if (record.isString())
+        {
+        // Support old cached string
+        cachedUrl = record.asString();
         }
 
-    url = GetBuddiUrl(urlName);
-    if (!url.empty())
+    Utf8String buddiUrl = GetBuddiUrl(urlName);
+    if (!buddiUrl.empty())
         {
-        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName, url);
-        return url;
+        record = Json::objectValue;
+        record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        record[RECORD_Url] = buddiUrl;
+        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName.c_str(), record);
+        return buddiUrl;
+        }
+
+    if (!cachedUrl.empty())
+        {
+        return cachedUrl;
         }
 
     return defaultUrls[s_env];
@@ -249,5 +275,5 @@ Utf8StringCR UrlProvider::UrlDescriptor::GetName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::UrlDescriptor::Get() const
     {
-    return UrlProvider::GetUrl(m_name.c_str(), m_defaultUrls);
+    return UrlProvider::GetUrl(m_name, m_defaultUrls);
     }

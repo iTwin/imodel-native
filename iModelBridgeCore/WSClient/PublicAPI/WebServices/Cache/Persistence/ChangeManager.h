@@ -57,9 +57,9 @@ struct ChangeManager : public IChangeManager
             uint64_t optionalChangeNumber
             );
 
-        BentleyStatus CommitObjectCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
+        BentleyStatus CommitInstanceCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
         BentleyStatus CommitRelationshipCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
-        BentleyStatus CommitObjectChange(ECInstanceKeyCR instanceKey);
+        BentleyStatus CommitInstanceChange(ECInstanceKeyCR instanceKey);
         BentleyStatus CommitRelationshipChange(ECInstanceKeyCR instanceKey);
 
         Utf8String CreateRemoteId();
@@ -129,9 +129,9 @@ struct ChangeManager : public IChangeManager
 
         // -- Commiting changes --
 
-        WSCACHE_EXPORT BentleyStatus CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds) override;
-        WSCACHE_EXPORT BentleyStatus CommitObjectChanges(ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT BentleyStatus CommitFileChanges(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT BentleyStatus CommitCreationChange(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId) override;
+        WSCACHE_EXPORT BentleyStatus CommitObjectChange(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT BentleyStatus CommitFileChange(ECInstanceKeyCR instanceKey) override;
 
         WSCACHE_EXPORT BentleyStatus UpdateCreatedInstance
             (
