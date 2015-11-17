@@ -350,6 +350,154 @@ void ECClassIdFunctionExp::_DoToECSql (Utf8StringR ecsql) const
     ecsql.append (NAME).append ("()");
     }
 
+//****************************** GetPointCoordinateFunctionExp *****************************************
+
+#define GETPOINTCOORDINATEFUNCTION_NAMEROOT "Get"
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+const size_t GetPointCoordinateFunctionExp::s_functionNameRootLength = strlen(GETPOINTCOORDINATEFUNCTION_NAMEROOT);
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+GetPointCoordinateFunctionExp::GetPointCoordinateFunctionExp(Utf8StringCR functionName, std::unique_ptr<ValueExp> pointArgumentExp) 
+    : ValueExp(), m_coordinate(CoordinateFromFunctionName(functionName))
+    {
+    m_argIndex = AddChild(std::move(pointArgumentExp));
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        return FinalizeParseStatus::NotCompleted;
+
+    const size_t argCount = GetChildrenCount();
+    if (argCount != 1)
+        {
+#ifdef WIP_MERGE
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with a single arguments.",
+                     ToECSql().c_str());
+#endif
+        return FinalizeParseStatus::Error;
+        }
+
+    //now verify that args are all primitive and handle parameter args
+    ValueExp* argExp = GetChildP<ValueExp>(0);
+    ECSqlTypeInfo const& argTypeInfo = argExp->GetTypeInfo();
+    if (!argTypeInfo.IsPoint() || argExp->GetType() == Exp::Type::Parameter)
+        {
+#ifdef WIP_MERGE
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with Point2D or Point3D arguments.",
+                     ToECSql().c_str());
+#endif
+        return FinalizeParseStatus::Error;
+        }
+
+    if (m_coordinate == Coordinate::Z && argTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_Point3D)
+        {
+#ifdef WIP_MERGE
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with Point3D arguments.",
+                     ToECSql().c_str());
+#endif
+        return FinalizeParseStatus::Error;
+        }
+
+    SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+    return FinalizeParseStatus::Completed;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP_MERGE
+Utf8String GetPointCoordinateFunctionExp::ToECSql() const
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf(GETPOINTCOORDINATEFUNCTION_NAMEROOT "%s(%s)", CoordinateToString(m_coordinate), GetArgument().ToECSql().c_str());
+    return ecsql;
+    }
+#endif
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool GetPointCoordinateFunctionExp::IsPointCoordinateFunction(Utf8StringCR functionName)
+    {
+    if (BeStringUtilities::Strnicmp(GETPOINTCOORDINATEFUNCTION_NAMEROOT, functionName.c_str(), s_functionNameRootLength) != 0 ||
+        (s_functionNameRootLength + 1) != functionName.size())
+        return false;
+
+    Utf8Char const& lastChar = functionName[s_functionNameRootLength];
+    return lastChar == 'X' || lastChar == 'Y' || lastChar == 'Z' || lastChar == 'x' || lastChar == 'y' || lastChar == 'z';
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String GetPointCoordinateFunctionExp::_ToString() const
+    {
+    Utf8String str;
+    str.Sprintf("GetPointCoordinateFunction [Coordinate: %s]", CoordinateToString(m_coordinate));
+    return str;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+GetPointCoordinateFunctionExp::Coordinate GetPointCoordinateFunctionExp::CoordinateFromFunctionName(Utf8StringCR functionName)
+    {
+    BeAssert(IsPointCoordinateFunction(functionName));
+    Utf8Char const& lastChar = functionName[functionName.size() - 1];
+    switch (lastChar)
+        {
+            case 'X':
+            case 'x':
+                return Coordinate::X;
+
+            case 'Y':
+            case 'y':
+                return Coordinate::Y;
+
+            case 'Z':
+            case 'z':
+                return Coordinate::Z;
+
+            default:
+                BeAssert(false);
+                return Coordinate::X;
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP GetPointCoordinateFunctionExp::CoordinateToString(Coordinate coordinate)
+    {
+    switch (coordinate)
+        {
+            case Coordinate::X:
+                return "X";
+            case Coordinate::Y:
+                return "Y";
+            case Coordinate::Z:
+                return "Z";
+
+            default:
+                BeAssert(false);
+                return nullptr;
+        }
+    }
+
 //****************************** FunctionCallExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
