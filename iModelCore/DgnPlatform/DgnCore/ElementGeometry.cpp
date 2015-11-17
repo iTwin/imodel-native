@@ -3197,7 +3197,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_Stroke(ViewContextR context) const
+void GeometrySource::_Stroke(ViewContextR context) const
     {
     ElementGeomIO::Collection(GetGeomStream().GetData(), GetGeomStream().GetSize()).Draw(context, GetCategoryId(), context.GetViewFlags());
     }
@@ -3238,7 +3238,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
             return false;
         }
 
-    context.SetCurrentElement(this);
+    context.SetCurrentGeomSource(this);
 
     // Get the ElemDisplayParams for this hit from the GeomStream...
     ElementGeometryCollection collection(*this);
@@ -3285,8 +3285,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
         break;
         }
 
-    context.SetCurrentElement(nullptr);
-
+    context.SetCurrentGeomSource(nullptr);
     return true;
     }
 

@@ -43,7 +43,7 @@ void Render::Scene::_Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Graphic* CreateSceneContext::_GetCachedGraphic(double pixelSize) 
     {
-    return m_currGeomElement->Graphics().Find(*GetViewport(), pixelSize);
+    return m_currentGeomSource->Graphics().Find(*GetViewport(), pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,13 +55,13 @@ void CreateSceneContext::_SaveGraphic()
         return;
 
     m_currGraphic->FinishDrawing(); // save the graphic on the element, even if this fails so we don't attempt to stroke it again.
-    m_currGeomElement->Graphics().Save(*m_currGraphic);
+    m_currentGeomSource->Graphics().Save(*m_currGraphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateSceneContext::_OutputElement(GeometricElementCR element)
+void CreateSceneContext::_OutputElement(GeometrySourceCR element)
     {
     T_Super::_OutputElement(element);
     if (m_currGraphic.IsValid())

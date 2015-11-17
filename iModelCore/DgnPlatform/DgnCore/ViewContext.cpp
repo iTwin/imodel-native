@@ -292,12 +292,7 @@ void ViewContext::_Detach()
     m_isAttached = false;
 
     m_transformClipStack.PopAll(*this);
-    m_currGeomElement = nullptr;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (m_currGraphic.IsValid())
-        m_currGraphic->ActivateOverrideMatSymb(nullptr);     // clear any overrides
-#endif
+    m_currentGeomSource = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,17 +527,15 @@ bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputElement(GeometrySourceCR element)
+void ViewContext::_OutputElement(GeometrySourceCR source)
     {
-    m_currGeomElement = &element;
+    m_currentGeomSource = &source;
     m_currGraphic = nullptr;
 
-    if (!element.HasGeometry())
+    if (!source.HasGeometry())
         return;
 
-    DgnElement3dCP el3d = element.ToElement3d();
-    Transform placementTrans = el3d ? el3d->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform();
-
+    Transform placementTrans = source.GetPlacementTransform();
     DPoint3d origin;
     placementTrans.GetTranslation(origin);
 
@@ -554,7 +547,7 @@ void ViewContext::_OutputElement(GeometrySourceCR element)
         return;
 
     m_currGraphic = _BeginGraphic(Graphic::CreateParams(&vp, placementTrans, pixelSize));
-    vp.GetViewControllerR()._StrokeElement(*this, element);
+    vp.GetViewControllerR()._StrokeGeometry(*this, source);
     _SaveGraphic();
     }
 
@@ -644,7 +637,7 @@ void ViewContext::ResetContextOverrides()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::ElementIsUndisplayed(GeometrySourceCR source)
+bool ViewContext::IsUndisplayed(GeometrySourceCR source)
     {
     return (!_WantUndisplayed() && source.IsUndisplayed());
     }
@@ -699,10 +692,10 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
     if (_CheckStop())
         return ERROR;
 
-    if (ElementIsUndisplayed(source))
+    if (IsUndisplayed(source))
         return SUCCESS;
 
-    _OutputElement(element);
+    _OutputElement(source);
 
     // Output element or local range for debugging if requested...
     switch (GetDrawPurpose())
@@ -746,7 +739,7 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
             }
         }
 
-    m_currGeomElement = nullptr;
+    m_currentGeomSource = nullptr;
     return SUCCESS;
     }
 

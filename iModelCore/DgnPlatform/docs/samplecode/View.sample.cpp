@@ -8,6 +8,7 @@
 //__PUBLISH_EXTRACT_START__ View_Includes.sampleCode
 // Primary header file for the DgnPlatform API 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnView.h>
 
 // helper macro for using the BeSQLite namespace
 USING_NAMESPACE_BENTLEY_SQLITE

@@ -313,69 +313,65 @@ bool PatternParams::IsEqual(PatternParamsCR params, PatternParamsCompareFlags co
 struct PatternBoundaryCollector : IElementGraphicsProcessor
 {
 private:
-
-Stroker&    m_stroker;
-CurveVectorPtr      m_boundary;
-ViewContextP        m_context;
-Transform           m_currentTransform;
+    GeometrySourceCR    m_stroker;
+    CurveVectorPtr      m_boundary;
+    ViewContextP        m_context;
+    Transform           m_currentTransform;
 
 protected:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Brien.Bastings  11/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    explicit PatternBoundaryCollector(GeometrySourceCR stroker) : m_stroker(stroker) {}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-explicit PatternBoundaryCollector(Stroker& stroker) : m_stroker(stroker) {}
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Brien.Bastings  11/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
+    virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
+    virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
+    virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
+    virtual void _OutputGraphics(ViewContextR context) override {m_stroker.Stroke(context);}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
-virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
-virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
-virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
-virtual void _OutputGraphics(ViewContextR context) override {m_stroker._Stroke(context);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) override
-    {
-    if (!curves.IsAnyRegionType() || m_boundary.IsValid())
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Brien.Bastings  11/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) override
         {
-        BeAssert(false); // A valid boundary must be a closed, parity, or union region...
+        if (!curves.IsAnyRegionType() || m_boundary.IsValid())
+            {
+            BeAssert(false); // A valid boundary must be a closed, parity, or union region...
+
+            return SUCCESS;
+            }
+
+        m_boundary = curves.Clone();
+
+        if (NULL != m_context->GetCurrLocalToWorldTransformCP ())
+            m_boundary->TransformInPlace(*m_context->GetCurrLocalToWorldTransformCP ());
 
         return SUCCESS;
         }
 
-    m_boundary = curves.Clone();
-
-    if (NULL != m_context->GetCurrLocalToWorldTransformCP ())
-        m_boundary->TransformInPlace(*m_context->GetCurrLocalToWorldTransformCP ());
-
-    return SUCCESS;
-    }
-
 public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Brien.Bastings  11/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    CurveVectorPtr GetBoundary() {return m_boundary;}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr GetBoundary() {return m_boundary;}
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Brien.Bastings  11/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static CurveVectorPtr Process(GeometrySourceCR stroker)
+        {
+        PatternBoundaryCollector  processor(stroker);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(Stroker& stroker)
-    {
-    PatternBoundaryCollector  processor(stroker);
+    #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
+    #endif
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
-#endif
-
-    return processor.GetBoundary();
-    }
-
+        return processor.GetBoundary();
+        }
 }; // PatternBoundaryCollector
 
 /*=================================================================================**//**
@@ -409,7 +405,7 @@ GraphicPtr ViewContext::ClipStencil::GetQvElem(ViewContextR context)
 CurveVectorPtr ViewContext::ClipStencil::GetCurveVector()
     {
     if (m_curveVector.IsNull())
-        m_curveVector = PatternBoundaryCollector::Process(m_stroker);
+        m_curveVector = PatternBoundaryCollector::Process(m_geomSource);
 
     return m_curveVector;
     }
@@ -1645,7 +1641,7 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
 
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())
-        return boundary.GetStroker()._Stroke(*this);
+        return boundary.GetGeomSource().Stroke(*this);
 
     IPickGeom*  pickGeom = GetIPickGeom();
     GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail() : NULL;

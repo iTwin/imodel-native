@@ -244,16 +244,16 @@ public:
     struct  ClipStencil
         {
     private:
-        Render::Stroker& m_stroker;
+        GeometrySourceCR    m_geomSource;
         Render::GraphicPtr  m_tmpQvElem;
         CurveVectorPtr      m_curveVector;
 
     public:
         DGNPLATFORM_EXPORT Render::GraphicPtr GetQvElem(ViewContextR);
         DGNPLATFORM_EXPORT CurveVectorPtr GetCurveVector();
-        Render::Stroker& GetStroker() {return m_stroker;}
+        GeometrySourceCR GetGeomSource() {return m_geomSource;}
 
-        DGNPLATFORM_EXPORT explicit ClipStencil(Render::Stroker& stroker);
+        DGNPLATFORM_EXPORT explicit ClipStencil(GeometrySourceCR);
         DGNPLATFORM_EXPORT ~ClipStencil();
         };
 
@@ -275,7 +275,7 @@ protected:
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
-    DgnElementCPtr          m_currentElement;
+    GeometrySourceCP        m_currentGeomSource;
     Render::GraphicPtr      m_currGraphic;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
@@ -349,6 +349,7 @@ public:
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
     DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
+    bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
     StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
     void Detach() {_Detach();}
@@ -550,17 +551,11 @@ public:
     //! Get the DgnDb for this ViewContext.
     DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 
-    //! Get the current Geometric element being visited by this ViewContext.
-DGNPLATFORM_EXPORT GeometricElementCP GetCurrentElement() const;
-
-    /** @cond BENTLEY_SDK_Scope1 */
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
 
-    //! Set or clear the current persistent element.
-DGNPLATFORM_EXPORT void SetCurrentElement(GeometricElementCP);
-    /** @endcond */
-
+    void SetCurrentGeomSource(GeometrySourceCP source) {m_currentGeomSource = source;}
+    
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
     //! @return the DrawPurpose specified in the call to DrawContext#Attach (drawcontext.h)
     DrawPurpose GetDrawPurpose() const {return m_purpose;}
@@ -610,12 +605,6 @@ DGNPLATFORM_EXPORT void SetCurrentElement(GeometricElementCP);
 
     //! Sets the current level of detail.
     void SetCurrentLevelOfDetail(double levelOfDetail) {m_levelOfDetail = levelOfDetail;}
-
-    //! Check the current display style for a monochrome color override.
-    //! @return       whether monochrome style is currently active.
-DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometrySourceCR);
-
-    DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
 
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
@@ -713,7 +702,7 @@ struct CreateSceneContext : ViewContext
     DEFINE_T_SUPER(ViewContext);
 private:
     Render::Scene& m_scene;
-    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometrySourceCR) override;
     DGNPLATFORM_EXPORT virtual Render::Graphic* _GetCachedGraphic(double pixelSize) override;
     DGNPLATFORM_EXPORT virtual void _SaveGraphic() override;
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_scene.GetRenderTarget().CreateGraphic(params);}

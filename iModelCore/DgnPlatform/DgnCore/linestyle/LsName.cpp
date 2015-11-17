@@ -16,18 +16,17 @@ static DgnHost::Key s_systemLsFileInfoKey;
 struct LineStyleRangeCollector : IElementGraphicsProcessor
 {
 private:
-
-Stroker const&      m_stroker;
-DRange3d            m_range;
-ViewContextP        m_context;
-Transform           m_currentTransform;
+    GeometrySourceCR    m_stroker;
+    DRange3d            m_range;
+    ViewContextP        m_context;
+    Transform           m_currentTransform;
 
 protected:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(Stroker const& stroker) : m_stroker(stroker) 
+explicit LineStyleRangeCollector(GeometrySourceCR stroker) : m_stroker(stroker) 
     {
     m_range.Init();
     m_currentTransform.InitIdentity();
@@ -59,7 +58,7 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 //---------------------------------------------------------------------------------------
 virtual void _OutputGraphics(ViewContext& context) override
     {
-    m_stroker._Stroke(context);
+    m_stroker.Stroke(context);
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,7 +74,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, Stroker const& stroker)
+static void Process(DRange3dR range, GeometrySourceCR stroker)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleRangeCollector  processor(stroker);
@@ -170,8 +169,6 @@ LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefiniti
 LsDefinition::~LsDefinition()
     {
     SetName (NULL);
-    if (m_textureInitialized)
-        T_HOST.GetGraphicsAdmin()._DeleteTexture (m_textureHandle);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -199,6 +196,7 @@ Utf8String         LsDefinition::GetStyleName () const
 #define NUMBER_ITERATIONS_ComponentStroker   (1)
 #define MAX_XRANGE_RATIO (256 * NUMBER_ITERATIONS_ComponentStroker)
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 //! Base class for StrokeComponentForRange and ComponentToTextureStroker
 // @bsiclass                                                    John.Gooding    10/2015
@@ -389,12 +387,14 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 
     return range2d;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
 Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
     m_lsComp->_StartTextureGeneration();
@@ -433,11 +433,10 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
 
     ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, isColorBySymbol, viewContext, false);
-#endif
     m_hasTextureWidth = true;
     m_textureWidth = scaleFactor * (range2d.high.y - range2d.low.y);
+#endif
     return nullptr;
     }
 
@@ -491,7 +490,7 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
             }
         }
 
-    if (0 != m_textureHandle && m_lsComp.IsValid() && m_hasTextureWidth)
+    if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
         lineStyleSymb.SetWidth (m_textureWidth * scale);
     
     return m_texture.get();

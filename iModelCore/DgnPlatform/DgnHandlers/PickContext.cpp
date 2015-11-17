@@ -109,10 +109,8 @@ static double getAdjustedViewZ (ViewContextR context, DPoint4dCR viewPt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority priority)
     {
-    GeometrySourceCP source;
-
     // NOTE: Only reason to have ElemTopology for non-element hit is to allow locate/snap...
-    if (nullptr == (source = GetCurrentElement()) && nullptr == GetElemTopology())
+    if (nullptr == m_currentGeomSource && nullptr == GetElemTopology())
         return;
 
     DPoint3d    localPt;
@@ -176,7 +174,7 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtScreen) + GetCurrentDisplayParams().GetNetDisplayPriority());
     m_currGeomDetail.SetGeomStreamEntryId(GetGeomStreamEntryId());
 
-    RefCountedPtr<HitDetail> thisHit = new HitDetail(*m_context->GetViewport(), element, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
+    RefCountedPtr<HitDetail> thisHit = new HitDetail(*GetViewport(), m_currentGeomSource, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
 
     if (nullptr != GetElemTopology())
         thisHit->SetElemTopology(GetElemTopology()->_Clone());
@@ -1174,8 +1172,6 @@ void PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDept
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif
-void PickContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight)
-    m_output.ClipAndProcessSymbol(symbol, trans, clip, ignoreColor, ignoreWeight);
     }
 
 /*---------------------------------------------------------------------------------**//**

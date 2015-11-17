@@ -24,22 +24,12 @@ struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
 
 //=======================================================================================
-//! "Stroking" is the process of turning Geometry into Graphics
-// @bsiclass
-//=======================================================================================
-struct Stroker
-{
-    //! Stroke this object for the supplied context 
-    virtual void _Stroke(ViewContextR context) const = 0;
-};
-
-//=======================================================================================
+// Cached set of Render::Graphics for a GeometrySource
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct GraphicSet
 {
     mutable bvector<Render::GraphicPtr> m_graphics;
-
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Save(Render::Graphic&);
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
@@ -52,8 +42,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_ElementHandler {struct Element; struct Physical; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
-
-DEFINE_REF_COUNTED_PTR(ElementGeometry)
 
 //=======================================================================================
 //! Holds ID remapping tables
@@ -1283,65 +1271,54 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource
 {
-//__PUBLISH_SECTION_END__
     friend struct ElementGeometryBuilder;
 
-//__PUBLISH_SECTION_START__
 protected:
-
-virtual DgnDbR _GetSourceDgnDb() const = 0;
-virtual DgnElementCP _ToElement() const = 0;
-virtual GeometrySource2dCP _ToGeometrySource2d() const = 0; // Either this method or _ToGeometrySource3d must return non-null.
-virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
-
-virtual DgnCategoryId _GetCategoryId() const = 0;
-virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
-virtual GeomStreamCR _GetGeomStream() const = 0;
-virtual bool _HasGeometry() const {return _GetGeomStream().HasGeometry();}
-virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
-
-DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
-DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
-DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
-DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
-
-GeomStreamR GetGeomStreamR() {return const_cast<GeomStreamR>(_GetGeomStream());} // Only ElementGeometryBuilder should have write access to the GeomStream...
+    virtual Render::GraphicSet& _Graphics() const = 0;
+    virtual DgnDbR _GetSourceDgnDb() const = 0;
+    virtual DgnElementCP _ToElement() const = 0;
+    virtual GeometrySource2dCP _ToGeometrySource2d() const = 0; // Either this method or _ToGeometrySource3d must return non-null.
+    virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
+    virtual DgnCategoryId _GetCategoryId() const = 0;
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
+    virtual GeomStreamCR _GetGeomStream() const = 0;
+    virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
+    DGNPLATFORM_EXPORT virtual void _Stroke(ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
+    DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
+    GeomStreamR GetGeomStreamR() {return const_cast<GeomStreamR>(_GetGeomStream());} // Only ElementGeometryBuilder should have write access to the GeomStream...
 
 public:
+    bool HasGeometry() const {return _GetGeomStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
+    DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
+    DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
+    DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
+    GeometrySource2dCP ToGeometrySource2d() const {return _ToGeometrySource2d();}
+    GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(_ToGeometrySource2d());}
+    GeometrySource3dCP ToGeometrySource3d() const {return _ToGeometrySource3d();}
+    GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
+    DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
+    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
+    GeomStreamCR GetGeomStream() const {return _GetGeomStream();}
+    AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
+    DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
-DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
-DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
-DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
+    // NOT_NOW_GEOMETRY_SOURCE - Make hilite/undisplayed virtual so transients can use them...
+    bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;}
+    DgnElement::Hilited IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
+    bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
 
-GeometrySource2dCP ToGeometrySource2d() const {return _ToGeometrySource2d();}
-GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(_ToGeometrySource2d());}
+    DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const;
+    DGNPLATFORM_EXPORT void SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
+    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
 
-GeometrySource3dCP ToGeometrySource3d() const {return _ToGeometrySource3d();}
-GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
-
-DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
-DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
-
-GeomStreamCR GetGeomStream() const {return _GetGeomStream();}
-bool HasGeometry() const {return _HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
-AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
-DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
-
-// NOT_NOW_GEOMETRY_SOURCE - Make hilite/undisplayed virtual so transients can use them...
-bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;}
-DgnElement::Hilited IsHilited() const {if (nullptr == ToElement()) return DgnElement::Hilited::None; return (DgnElement::Hilited) ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
-bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;}
-
-DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const;
-DGNPLATFORM_EXPORT void SetHilited(DgnElement::Hilited newState) const; //!< Change the current Hilited state of this element
-DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
-
-void Draw(ViewContextR context) const {_Draw(context);}
-bool DrawHit(HitDetailCR hit, ViewContextR context) const {return _DrawHit(hit, context);}
-void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
-SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
-
-}; // GeometrySource
+    Render::GraphicSet& Graphics() const {return _Graphics();}
+    void Stroke(ViewContextR context) const {_Stroke(context);}
+    bool DrawHit(HitDetailCR hit, ViewContextR context) const {return _DrawHit(hit, context);}
+    void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
+    SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
+};
 
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  11/15
@@ -1349,20 +1326,16 @@ SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
-
-virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
-virtual Placement3dCR _GetPlacement() const = 0;
-virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
-
-DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
-DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
+    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    virtual Placement3dCR _GetPlacement() const = 0;
+    virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
+    DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
 
 public:
-
-Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
-DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placement);} //!< Change the Placement3d for this element
-
-}; // GeometrySource3d
+    Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
+    DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placement);} //!< Change the Placement3d for this element
+};
 
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  11/15
@@ -1370,20 +1343,16 @@ DgnDbStatus SetPlacement(Placement3dCR placement) {return _SetPlacement(placemen
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
-
-virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
-virtual Placement2dCR _GetPlacement() const = 0;
-virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
-
-DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
-DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
+    virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
+    virtual Placement2dCR _GetPlacement() const = 0;
+    virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
+    DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
 
 public:
-
-Placement2dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement2d of this element
-DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
-
-}; // GeometrySource2d
+    Placement2dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement2d of this element
+    DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
+};
 
 //=======================================================================================
 //! A 3-dimensional geometric element.
@@ -1396,42 +1365,37 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : DgnElement, GeometrySource3d
 
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
+        DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
+        DgnCategoryId m_categoryId;
+        Placement3dCR m_placement;
 
-    DgnCategoryId m_categoryId;
-    Placement3dCR m_placement;
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+            T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
-
-    explicit CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId(), Placement3dCR placement = Placement3d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
-    CreateParams(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
+        explicit CreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
+        CreateParams(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
     };
 
 protected:
-
-    DgnCategoryId m_categoryId;
     mutable Render::GraphicSet m_graphics;
+    DgnCategoryId   m_categoryId;
     GeomStream      m_geom;
     Placement3d     m_placement;
 
+    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-
     virtual DgnCategoryId _GetCategoryId() const final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId);
     virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
-
     virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override final;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
-
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
-
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
@@ -1441,8 +1405,7 @@ protected:
 
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
-
-}; // DgnElement3d
+};
 
 //=======================================================================================
 //! A 2-dimensional geometric element.
@@ -1455,51 +1418,47 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
 
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
+        DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
+        DgnCategoryId m_categoryId;
+        Placement2dCR m_placement;
 
-    DgnCategoryId m_categoryId;
-    Placement2dCR m_placement;
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+            T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
-
-    explicit CreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
-    CreateParams(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+        explicit CreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
+        CreateParams(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     };
 
 protected:
-
+    mutable Render::GraphicSet m_graphics;
     DgnCategoryId   m_categoryId;
     GeomStream      m_geom;
     Placement2d     m_placement;
 
+    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
     virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
-
     virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override final;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
-
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
-
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT void _OnReversedUpdate(DgnElementCR changed) const override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
     explicit DgnElement2d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
-
-}; // DgnElement2d
+};
 
 //=======================================================================================
 //! A DgnElement3d that exists in the physical coordinate space of a DgnDb.

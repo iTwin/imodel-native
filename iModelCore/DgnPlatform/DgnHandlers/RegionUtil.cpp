@@ -1071,8 +1071,7 @@ BentleyStatus   RegionGraphicsContext::PushBooleanCandidate(GeometrySourceCR ele
     if (trans)
         _PushTransform(*trans);
 
-    m_currGeomElement = &element; // Push path entry since we aren't calling _VisitElement...
-
+    m_currentGeomSource = &element; // Push path entry since we aren't calling _VisitElement...
     return SUCCESS;
     }
 

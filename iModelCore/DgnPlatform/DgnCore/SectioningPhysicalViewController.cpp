@@ -209,16 +209,16 @@ void SectioningViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_StrokeElement(ViewContextR context, GeometrySourceCR element)
+void SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
     {
     if (m_pass == ClipVolumePass::InsideForward)
         {
-        T_Super::_StrokeElement(context, element);
+        T_Super::_StrokeGeometry(context, element);
         return;
         }
 
     SetOverrideMatSymb(context);
-    element._Stroke(context);
+    element.Stroke(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

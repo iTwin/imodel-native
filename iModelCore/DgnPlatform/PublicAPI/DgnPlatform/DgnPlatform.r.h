@@ -634,11 +634,9 @@ enum class SnapMode
     Multi1                  = 1 << 14,
     Multi2                  = 1 << 15,      // For compilation with VS2010, we can't use the | construct. Put back when we compile everything with VS2012 or later.
     MultiSnaps              = (Multi1 | Multi2 | Multi3),
-//__PUBLISH_SECTION_END__
     AllOrdinary             = (Nearest | NearestKeypoint | MidPoint | Center | Origin | Bisector | Intersection | MultiSnaps),
     AllConstraint           = (Tangency | TangentPoint | Perpendicular | PerpendicularPoint | Parallel | PointOn),
     IntersectionCandidate   = (Intersection | Nearest),
-//__PUBLISH_SECTION_START__
     };
 
 ENUM_IS_FLAGS (SnapMode)

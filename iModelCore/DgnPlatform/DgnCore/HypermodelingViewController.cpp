@@ -312,14 +312,14 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::_StrokeElement(ViewContextR context, GeometrySourceCR element)
+void HypermodelingViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
     {
 #if defined (NEEDS_WORK_DGNITEM)
     if (m_pass != PASS_None && !ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler (elIter.GetHandler()))
 /*<==*/ return;
 #endif
 
-    T_Super::_StrokeElement(context, element);
+    T_Super::_StrokeGeometry(context, element);
     }
 
 /*---------------------------------------------------------------------------------**//**
