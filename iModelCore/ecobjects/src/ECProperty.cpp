@@ -53,6 +53,18 @@ ECPropertyCP ECProperty::GetBaseProperty () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetBaseProperty (ECPropertyCP baseProperty)
     {
+    if (nullptr != baseProperty)
+        {
+        // Silly property overriding is silly but we support it.
+        // We can end up here if Child derives from Parent which derives from Grandparent and all 3 have a property called "X"
+        // And then we remove Parent as a base class of Child, which invokes child.OnBasePropertyRemoved, which wants to set the base property
+        // to the base property of Parent.X (=Grandparent.X), which is invalid since there is no longer an inheritance relationship between
+        // Child and Grandparent.
+        // (Presumably this is useful to someone and not totally confusing?)
+        if (!GetClass().Is(&baseProperty->GetClass()))
+            return ECOBJECTS_STATUS_BaseClassUnacceptable;
+        }
+
     m_baseProperty = baseProperty;
     SetCachedTypeAdapter (NULL);
     return ECObjectsStatus::Success;
