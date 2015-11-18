@@ -130,11 +130,13 @@ private:
     BentleyStatus parse_ecclassid_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_ecsqloption(std::unique_ptr<OptionExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_factor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_functionarg(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus parse_fold(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
+    BentleyStatus parse_getpointcoordinate_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
     BentleyStatus parse_general_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_group_by_clause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 

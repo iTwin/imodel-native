@@ -7,8 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <GeomSerialization/GeomLibsSerialization.h>
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,6 +82,20 @@ StatusInt ECJsonCppUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, con
             // TODO: Do Base64 conversions of binary/text here!!!
             break;
         case PRIMITIVETYPE_IGeometry:
+            {
+            if (!EXPECTED_CONDITION(jsonValueType == Json::objectValue))
+                return ERROR;
+
+            if (jsonValue.isNull())
+                return SUCCESS;
+
+            bvector<IGeometryPtr> geometry;
+            if (!BentleyGeometryJson::TryJsonValueToGeometry(jsonValue, geometry))
+                return ERROR;
+
+            BeAssert(geometry.size() == 1);
+            return ecValue.SetIGeometry(*(geometry[0]));
+            }
         default:
             status = ERROR;
         }
@@ -310,8 +327,28 @@ StatusInt ECRapidJsonUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, R
 
             return ecValue.SetBoolean (jsonValue.GetBool());
 
-        case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_IGeometry:
+            {
+            if (!jsonValue.IsObject())
+                return ERROR;
+
+            if (jsonValue.IsNull())
+                return SUCCESS;
+
+            rapidjson::StringBuffer stringBuffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(stringBuffer);
+            jsonValue.Accept(writer);
+
+            Utf8String jsonStr = stringBuffer.GetString();
+
+            bvector<IGeometryPtr> geometry;
+            if (!BentleyGeometryJson::TryJsonStringToGeometry(jsonStr, geometry))
+                return ERROR;
+
+            BeAssert(geometry.size() == 1);
+            return ecValue.SetIGeometry(*(geometry[0]));
+            }
+        case PRIMITIVETYPE_Binary:
         default:
             return ERROR;
         }

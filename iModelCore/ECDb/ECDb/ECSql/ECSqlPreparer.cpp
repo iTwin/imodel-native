@@ -807,6 +807,55 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
 
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, GetPointCoordinateFunctionExp const* exp)
+    {
+    NativeSqlBuilder::List pointSqlSnippets;
+    ValueExp const& argExp = exp->GetArgument();
+    if (!argExp.GetTypeInfo().IsPoint())
+        {
+        BeAssert(argExp.GetTypeInfo().IsPoint() && "Invalid syntax for GetX/GetY/GetZ should have been caught by parser already.");
+        return ECSqlStatus::InvalidECSql;   
+        }
+
+    ECSqlStatus stat = PrepareValueExp(pointSqlSnippets, ctx, &argExp);
+    if (ECSqlStatus::Success != stat)
+        return stat;
+
+    size_t snippetIndex;
+    switch (exp->GetCoordinate ())
+        { 
+            case GetPointCoordinateFunctionExp::Coordinate::X:
+                snippetIndex = 0;
+                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_x]"));
+                break;
+            case GetPointCoordinateFunctionExp::Coordinate::Y:
+                snippetIndex = 1;
+                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_y]"));
+                break;
+            case GetPointCoordinateFunctionExp::Coordinate::Z:
+                snippetIndex = 2;
+                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_z]"));
+                break;
+
+            default:
+                BeAssert(false);
+                return ECSqlStatus::InvalidECSql;
+        }
+
+    if (pointSqlSnippets.size() < (snippetIndex + 1))
+        {
+        BeAssert(false && "Point SQL snippet count is less than the GetPointCoordinate function expects. Invalid syntax for GetX / GetY / GetZ should have been caught by parser already.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    nativeSqlSnippets.push_back(pointSqlSnippets[snippetIndex]);
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -1633,6 +1682,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSql
             return PrepareLiteralValueExp (nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (exp));
         case Exp::Type::ECClassIdFunction:
             return PrepareECClassIdFunctionExp (nativeSqlSnippets, ctx, static_cast<ECClassIdFunctionExp const*> (exp));
+        case Exp::Type::GetPointCoordinateFunction:
+            return PrepareGetPointCoordinateFunctionExp(nativeSqlSnippets, ctx, static_cast<GetPointCoordinateFunctionExp const*> (exp));
         case Exp::Type::LikeRhsValue:
             return PrepareLikeRhsValueExp (nativeSqlSnippets, ctx, static_cast<LikeRhsValueExp const*> (exp));
         case Exp::Type::Parameter:

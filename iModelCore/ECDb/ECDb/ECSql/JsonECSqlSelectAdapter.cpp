@@ -7,8 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <GeomSerialization/GeomLibsSerialization.h>
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -598,6 +601,21 @@ bool JsonECSqlSelectAdapter::JsonFromBinary(JsonValueR jsonValue, IECSqlValue co
     ecValue.SetBinary(data, (size_t) size, false);
     return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     // TODO: Raw binary values needs to be Base64 encoded here
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool JsonECSqlSelectAdapter::JsonFromCG (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
+    {
+    IGeometryPtr geometry = ecsqlValue.GetGeometry();
+    POSTCONDITION(geometry.IsValid() && "Could not read Common Geometry", false);
+
+    bool preferNativeDgnTypes = false;
+    bool bStatus = BentleyGeometryJson::TryGeometryToJsonValue(jsonValue, *geometry, preferNativeDgnTypes);
+    POSTCONDITION(bStatus && "Could not convert Common Geometry to JSON", false);
+
+    return true;
     }
     
 /*---------------------------------------------------------------------------------**//**

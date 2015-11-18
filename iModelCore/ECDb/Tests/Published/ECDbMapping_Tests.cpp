@@ -74,13 +74,28 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "        <ECCustomAttributes>"
                  "            <ClassMap xmlns='ECDbMap.01.00'>"
                  "                <MapStrategy>"
-                 "                   <Options>JoinedTableForSubclasses</Options>"
+                 "                   <Options>JoinedTablePerDirectSubclass</Options>"
                  "                </MapStrategy>"
                  "            </ClassMap>"
                  "        </ECCustomAttributes>"
                  "        <ECProperty propertyName='Price' typeName='double' />"
                  "    </ECClass>"
-                 "</ECSchema>", false, "Option JoinedTableForSubclasses cannot be used without a strategy"),
+                 "</ECSchema>", false, "Option JoinedTablePerDirectSubclass cannot be used without a strategy"),
+
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "    <ECClass typeName='ClassA' isDomainClass='True'>"
+                   "        <ECCustomAttributes>"
+                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                   "                <MapStrategy>"
+                   "                   <Options>SingleJoinedTableForSubclasses</Options>"
+                   "                </MapStrategy>"
+                   "            </ClassMap>"
+                   "        </ECCustomAttributes>"
+                   "        <ECProperty propertyName='Price' typeName='double' />"
+                   "    </ECClass>"
+                   "</ECSchema>", false, "Option SingleJoinedTableForSubclasses cannot be used without a strategy"),
 
         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -91,13 +106,13 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "                <MapStrategy>"
                  "                   <Strategy>SharedTable</Strategy>"
                  "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                 "                   <Options>JoinedTableForSubclasses</Options>"
+                 "                   <Options>JoinedTablePerDirectSubclass</Options>"
                  "                </MapStrategy>"
                  "            </ClassMap>"
                  "        </ECCustomAttributes>"
                  "        <ECProperty propertyName='Price' typeName='double' />"
                  "    </ECClass>"
-                 "</ECSchema>", true, "Option JoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses)"),
+                 "</ECSchema>", true, "Option JoinedTablePerDirectSubclass is expected to work with strategy SharedTable (applied to subclasses)"),
 
         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -108,13 +123,13 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                    "                <MapStrategy>"
                    "                   <Strategy>SharedTable</Strategy>"
                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                   "                   <Options>JoinedTableForSubclasses, SharedColumnsForSubclasses</Options>"
+                   "                   <Options>SingleJoinedTableForSubclasses</Options>"
                    "                </MapStrategy>"
                    "            </ClassMap>"
                    "        </ECCustomAttributes>"
                    "        <ECProperty propertyName='Price' typeName='double' />"
                    "    </ECClass>"
-                   "</ECSchema>", true, "Combination of options JoinedTableForSubclasses and SharedColumnsForSubclasses is expected to work with strategy SharedTable (applied to subclasses)"),
+                   "</ECSchema>", true, "Option SingleJoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses)"),
 
         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -125,13 +140,47 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                    "                <MapStrategy>"
                    "                   <Strategy>SharedTable</Strategy>"
                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                   "                   <Options>JoinedTableForSubclasses, SharedColumns</Options>"
+                   "                   <Options>JoinedTablePerDirectSubclass, SingleJoinedTableForSubclasses</Options>"
                    "                </MapStrategy>"
                    "            </ClassMap>"
                    "        </ECCustomAttributes>"
                    "        <ECProperty propertyName='Price' typeName='double' />"
                    "    </ECClass>"
-                   "</ECSchema>", true, "Combination of options JoinedTableForSubclasses and SharedColumns is expected to work with strategy SharedTable (applied to subclasses)"),
+                   "</ECSchema>", false, "Options JoinedTablePerDirectSubclass and SingleJoinedTableForSubclasses cannot be combined together"),
+
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "    <ECClass typeName='ClassA' isDomainClass='True'>"
+                   "        <ECCustomAttributes>"
+                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                   "                <MapStrategy>"
+                   "                   <Strategy>SharedTable</Strategy>"
+                   "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "                   <Options>JoinedTablePerDirectSubclass, SharedColumnsForSubclasses</Options>"
+                   "                </MapStrategy>"
+                   "            </ClassMap>"
+                   "        </ECCustomAttributes>"
+                   "        <ECProperty propertyName='Price' typeName='double' />"
+                   "    </ECClass>"
+                   "</ECSchema>", true, "Combination of options JoinedTablePerDirectSubclass and SharedColumnsForSubclasses is expected to work with strategy SharedTable (applied to subclasses)"),
+
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "    <ECClass typeName='ClassA' isDomainClass='True'>"
+                   "        <ECCustomAttributes>"
+                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                   "                <MapStrategy>"
+                   "                   <Strategy>SharedTable</Strategy>"
+                   "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "                   <Options>JoinedTablePerDirectSubclass, SharedColumns</Options>"
+                   "                </MapStrategy>"
+                   "            </ClassMap>"
+                   "        </ECCustomAttributes>"
+                   "        <ECProperty propertyName='Price' typeName='double' />"
+                   "    </ECClass>"
+                   "</ECSchema>", true, "Combination of options JoinedTablePerDirectSubclass and SharedColumns is expected to work with strategy SharedTable (applied to subclasses)"),
 
         SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -142,13 +191,87 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "                <MapStrategy>"
                  "                   <Strategy>SharedTable</Strategy>"
                  "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                 "                   <Options>SharedColumnsForSubclasses, JoinedTableForSubclasses</Options>"
+                 "                   <Options>SharedColumnsForSubclasses, JoinedTablePerDirectSubclass</Options>"
                  "                </MapStrategy>"
                  "            </ClassMap>"
                  "        </ECCustomAttributes>"
                  "        <ECProperty propertyName='Price' typeName='double' />"
                  "    </ECClass>"
-                 "</ECSchema>", true, "Combination of options SharedColumnsForSubclasses and JoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses) and with SharedColumnsForSubclasses"),
+                 "</ECSchema>", true, "Combination of options SharedColumnsForSubclasses and JoinedTablePerDirectSubclass is expected to work with strategy SharedTable (applied to subclasses) and with SharedColumnsForSubclasses"),
+
+        SchemaItem({"<?xml version='1.0' encoding='utf-8'?>"
+                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "    <ECClass typeName='ClassA' isDomainClass='True'>"
+                   "        <ECCustomAttributes>"
+                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                   "                <MapStrategy>"
+                   "                   <Strategy>SharedTable</Strategy>"
+                   "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "                   <Options>JoinedTablePerDirectSubclass</Options>"
+                   "                </MapStrategy>"
+                   "            </ClassMap>"
+                   "        </ECCustomAttributes>"
+                   "        <ECProperty propertyName='Price' typeName='double' />"
+                   "    </ECClass>"
+                   "    <ECClass typeName='ClassB' isDomainClass='True'>"
+                   "        <BaseClass>ClassA</BaseClass>"
+                   "        <ECProperty propertyName='Cost' typeName='double' />"
+                   "    </ECClass>"
+                   "</ECSchema>",
+                   "<?xml version='1.0' encoding='utf-8'?>"
+                   "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+                   "    <ECClass typeName='ClassC' isDomainClass='True'>"
+                   "        <ECCustomAttributes>"
+                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                   "                <MapStrategy>"
+                   "                   <Options>JoinedTablePerDirectSubclass</Options>"
+                   "                </MapStrategy>"
+                   "            </ClassMap>"
+                   "        </ECCustomAttributes>"
+                   "        <BaseClass>ts:ClassB</BaseClass>"
+                   "        <ECProperty propertyName='Name' typeName='string' />"
+                   "    </ECClass>"
+                   "</ECSchema>"}, false, "JoinedTablePerDirectSubclass cannot be applied if it was already specified higher up in the hierarchy"),
+
+    SchemaItem({"<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECClass typeName='ClassA' isDomainClass='True'>"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.01.00'>"
+                "                <MapStrategy>"
+                "                   <Strategy>SharedTable</Strategy>"
+                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                "                   <Options>JoinedTablePerDirectSubclass</Options>"
+                "                </MapStrategy>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName='Price' typeName='double' />"
+                "    </ECClass>"
+                "    <ECClass typeName='ClassB' isDomainClass='True'>"
+                "        <BaseClass>ClassA</BaseClass>"
+                "        <ECProperty propertyName='Cost' typeName='double' />"
+                "    </ECClass>"
+                "</ECSchema>",
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+                "    <ECClass typeName='ClassC' isDomainClass='True'>"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.01.00'>"
+                "                <MapStrategy>"
+                "                   <Options>SingleJoinedTableForSubclasses</Options>"
+                "                </MapStrategy>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "        <BaseClass>ts:ClassB</BaseClass>"
+                "        <ECProperty propertyName='Name' typeName='string' />"
+                "    </ECClass>"
+                "</ECSchema>"}, false, "SingleJoinedTableForSubclasses cannot be applied if it was already specified higher up in the hierarchy"),
 
     SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -159,13 +282,13 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "                <MapStrategy>"
                 "                   <Strategy>SharedTable</Strategy>"
                 "                   <AppliesToSubclasses>False</AppliesToSubclasses>"
-                "                   <Options>JoinedTableForSubclasses</Options>"
+                "                   <Options>JoinedTablePerDirectSubclass</Options>"
                 "                </MapStrategy>"
                 "            </ClassMap>"
                 "        </ECCustomAttributes>"
                 "        <ECProperty propertyName='Price' typeName='double' />"
                 "    </ECClass>"
-                "</ECSchema>", false, "Option JoinedTableForSubclasses can only be used with strategy SharedTable (applied to subclasses)"),
+                "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable (applied to subclasses)"),
 
     SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -175,13 +298,13 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "            <ClassMap xmlns='ECDbMap.01.00'>"
                 "                <MapStrategy>"
                 "                   <Strategy>OwnTable</Strategy>"
-                "                   <Options>JoinedTableForSubclasses</Options>"
+                "                   <Options>JoinedTablePerDirectSubclass</Options>"
                 "                </MapStrategy>"
                 "            </ClassMap>"
                 "        </ECCustomAttributes>"
                 "        <ECProperty propertyName='Price' typeName='double' />"
                 "    </ECClass>"
-                "</ECSchema>", false, "Option JoinedTableForSubclasses can only be used with strategy SharedTable (applied to subclasses)"),
+                "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable (applied to subclasses)"),
 
     SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -206,13 +329,13 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "            <ClassMap xmlns='ECDbMap.01.00'>"
                 "                <MapStrategy>"
                 "                   <Strategy>ExistingTable</Strategy>"
-                "                   <Options>JoinedTableForSubclasses</Options>"
+                "                   <Options>JoinedTablePerDirectSubclass</Options>"
                 "                </MapStrategy>"
                 "            </ClassMap>"
                 "        </ECCustomAttributes>"
                 "        <ECProperty propertyName='Price' typeName='double' />"
                 "    </ECClass>"
-                "</ECSchema>", false, "Option JoinedTableForSubclasses can only be used with strategy SharedTable (applied to subclasses)"),
+                "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable (applied to subclasses)"),
 
     SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -472,7 +595,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "        <ECCustomAttributes>"
             "            <ClassMap xmlns='ECDbMap.01.00'>"
             "                <MapStrategy>"
-            "                <Options>JoinedTableForSubclasses</Options>"
+            "                <Options>JoinedTablePerDirectSubclass</Options>"
             "                </MapStrategy>"
             "            </ClassMap>"
             "        </ECCustomAttributes>"
@@ -483,7 +606,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "        <BaseClass>SubSub</BaseClass>"
             "        <ECProperty propertyName='P3' typeName='int' />"
             "    </ECClass>"
-            "</ECSchema>", true, "Option JoinedTableForSubclasses can be applied to subclass where base has SharedTable (applies to subclasses)."),
+            "</ECSchema>", true, "Option JoinedTablePerDirectSubclass can be applied to subclass where base has SharedTable (applies to subclasses)."),
 
     SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
@@ -1441,80 +1564,6 @@ TEST_F (ECDbMappingTestFixture, SharedColumnsAcrossMultipleSchemaImports)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMappingTestFixture, JoinedTableAcrossMultipleSchemaImports)
-    {
-    SchemaItem testItem (
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECClass typeName='Base' isDomainClass='False'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                  <Strategy>SharedTable</Strategy>"
-        "                  <Options>JoinedTableForSubclasses</Options>"
-        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P0' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub1' isDomainClass='True'>"
-        "         <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='P1' typeName='int' />"
-        "    </ECClass>"
-        "</ECSchema>", true, "Mapstrategy Option JoinedTableForSubclasses (applied to subclasses) is expected to succeed");
-
-    SchemaItem secondTestItem (
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECSchemaReference name='ReferredSchema' version='01.00' prefix='rs' />"
-        "    <ECClass typeName='Sub2' isDomainClass='True'>"
-        "         <BaseClass>rs:Sub1</BaseClass>"
-        "        <ECProperty propertyName='P2' typeName='int' />"
-        "    </ECClass>"
-        "</ECSchema>", true, "Mapstrategy Option JoinedTableForSubclasses (applied to subclasses) is expected to be honored from base Class of Refered schema");
-
-    Utf8String ecdbFilePath;
-        {
-        ECDb testDb;
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, ECDbTestFixture::CreateECDb (testDb, "JoinedTableForSubclasses.ecdb"));
-        bool asserted = false;
-        AssertSchemaImport (asserted, testDb, testItem);
-        ASSERT_FALSE (asserted);
-        testDb.SaveChanges ();
-        ecdbFilePath = testDb.GetDbFileName ();
-        }
-
-        ECDb testDb;
-        ASSERT_EQ (BE_SQLITE_OK, testDb.OpenBeSQLiteDb (ecdbFilePath.c_str (), ECDb::OpenParams (Db::OpenMode::ReadWrite)));
-
-        bool asserted = false;
-        AssertSchemaImport (asserted, testDb, secondTestItem);
-        ASSERT_FALSE (asserted);
-        //verify tables
-        std::vector<Utf8String> tableNames;
-            {
-            Statement stmt;
-            ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (testDb, "SELECT name FROM sqlite_master WHERE name Like 'rs_%' and type='table'"));
-            while (BE_SQLITE_ROW == stmt.Step ())
-                {
-                tableNames.push_back (stmt.GetValueText (0));
-                }
-            }
-            ASSERT_EQ (2, tableNames.size ());
-
-            auto it = std::find (tableNames.begin (), tableNames.end (), "rs_Base");
-            ASSERT_TRUE (it != tableNames.end ()) << "Table ts_Base is expected to exist";
-
-            it = std::find (tableNames.begin (), tableNames.end (), "rs_Base_Joined");
-            ASSERT_TRUE (it != tableNames.end ()) << "Table ts_Base_Joined is expected to exist";
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
@@ -2178,168 +2227,6 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disa
         actualColumnNames.append(statement.GetColumnName(i));
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubclasses)
-    {
-    SchemaItem testItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECClass typeName='Base' isDomainClass='True'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                  <Strategy>SharedTable</Strategy>"
-        "                  <Options>JoinedTableForSubclasses</Options>"
-        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P0' typeName='string' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub1' isDomainClass='True'>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='P1' typeName='double' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub2' isDomainClass='True'>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='P2' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub11' isDomainClass='True'>"
-        "        <BaseClass>Sub1</BaseClass>"
-        "        <ECProperty propertyName='P11' typeName='double' />"
-        "    </ECClass>"
-        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "joinedtableforsubclasses.ecdb");
-    ASSERT_FALSE(asserted);
-
-    //verify tables
-    std::vector<Utf8String> tableNames;
-    {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT name FROM sqlite_master WHERE name Like 'ts_%' and type='table'"));
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        tableNames.push_back(stmt.GetValueText(0));
-        }
-    }
-    ASSERT_EQ(2, tableNames.size());
-
-    auto it = std::find(tableNames.begin(), tableNames.end(), "ts_Base");
-    ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base is expected to exist";
-
-    it = std::find(tableNames.begin(), tableNames.end(), "ts_Base_Joined");
-    ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base_Joined is expected to exist";
-
-    //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
-    std::map<ECClassId, PersistedMapStrategy> expectedResults {
-            {ecdb.Schemas().GetECClassId("TestSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::ParentOfJoinedTable, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)}
-        };
-
-    for (std::pair<ECClassId, PersistedMapStrategy> const& kvPair : expectedResults)
-        {
-        ECClassId classId = kvPair.first;
-        PersistedMapStrategy expectedMapStrategy = kvPair.second;
-        PersistedMapStrategy actualMapStrategy;
-
-        ASSERT_TRUE(TryGetPersistedMapStrategy(actualMapStrategy, ecdb, classId));
-        ASSERT_EQ(expectedMapStrategy.m_strategy, actualMapStrategy.m_strategy);
-        ASSERT_EQ(expectedMapStrategy.m_options, actualMapStrategy.m_options);
-        ASSERT_EQ(expectedMapStrategy.m_appliesToSubclasses, actualMapStrategy.m_appliesToSubclasses);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableAndSharedColumnsForSubclasses)
-    {
-    SchemaItem testItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECClass typeName='Base' isDomainClass='True'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                  <Strategy>SharedTable</Strategy>"
-        "                  <Options>JoinedTableForSubclasses, SharedColumnsForSubclasses</Options>"
-        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P0' typeName='string' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub1' isDomainClass='True'>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='P1' typeName='double' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub2' isDomainClass='True'>"
-        "        <BaseClass>Base</BaseClass>"
-        "        <ECProperty propertyName='P2' typeName='int' />"
-        "    </ECClass>"
-        "    <ECClass typeName='Sub11' isDomainClass='True'>"
-        "        <BaseClass>Sub1</BaseClass>"
-        "        <ECProperty propertyName='P11' typeName='double' />"
-        "    </ECClass>"
-        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "joinedtableforsubclasses.ecdb");
-    ASSERT_FALSE(asserted);
-
-    //verify tables
-    std::vector<Utf8String> tableNames;
-    {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT name FROM sqlite_master WHERE name Like 'ts_%' and type='table'"));
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        tableNames.push_back(stmt.GetValueText(0));
-        }
-    }
-    ASSERT_EQ(2, tableNames.size());
-
-    auto it = std::find(tableNames.begin(), tableNames.end(), "ts_Base");
-    ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base is expected to exist";
-
-    it = std::find(tableNames.begin(), tableNames.end(), "ts_Base_Joined");
-    ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base_Joined is expected to exist";
-
-    //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
-    const PersistedMapStrategy::Options sharedColumnsAndJoinedTableOption = (PersistedMapStrategy::Options) (((int) PersistedMapStrategy::Options::JoinedTable) | ((int) PersistedMapStrategy::Options::SharedColumns));
-    std::map<ECClassId, PersistedMapStrategy> expectedResults {
-            {ecdb.Schemas().GetECClassId("TestSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::ParentOfJoinedTable, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, sharedColumnsAndJoinedTableOption, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, sharedColumnsAndJoinedTableOption, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, sharedColumnsAndJoinedTableOption, true)}
-        };
-
-    //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
-    for (std::pair<ECClassId, PersistedMapStrategy> const& kvPair : expectedResults)
-        {
-        ECClassId classId = kvPair.first;
-        PersistedMapStrategy expectedMapStrategy = kvPair.second;
-        PersistedMapStrategy actualMapStrategy;
-
-        ASSERT_TRUE(TryGetPersistedMapStrategy(actualMapStrategy, ecdb, classId));
-        ASSERT_EQ(expectedMapStrategy.m_strategy, actualMapStrategy.m_strategy);
-        ASSERT_EQ(expectedMapStrategy.m_options, actualMapStrategy.m_options);
-        ASSERT_EQ(expectedMapStrategy.m_appliesToSubclasses, actualMapStrategy.m_appliesToSubclasses);
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -3008,7 +2895,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "            <ClassMap xmlns='ECDbMap.01.00'>"
             "                <MapStrategy>"
             "                   <Strategy>SharedTable</Strategy>"
-            "                   <Options>JoinedTableForSubclasses</Options>"
+            "                   <Options>JoinedTablePerDirectSubclass</Options>"
             "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
             "                 </MapStrategy>"
             "            </ClassMap>"

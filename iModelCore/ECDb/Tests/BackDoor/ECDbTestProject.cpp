@@ -70,6 +70,27 @@ bool ECDbTestProject::IsInitialized () {return s_isInitialized; }
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8CP ECDbTestProject::GetECDbPath () const { return GetECDbCR ().GetDbFileName (); }
 
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                11/2012
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult    ECDbTestProject::ReOpen(BeSQLite::EC::ECDb::OpenParams openParams)
+    {
+    BeAssert(m_ecdb != nullptr);
+    if (m_ecdb == nullptr)
+        return DbResult::BE_SQLITE_ERROR;
+
+    Utf8String file = GetECDbPath();
+    m_inserterCache.clear();
+    if (m_ecdb->IsDbOpen())
+        {
+        m_ecdb->CloseDb();
+        }
+
+    delete m_ecdb;
+    m_ecdb = nullptr;
+    m_ecdb = new ECDb;
+    return Open(file.c_str(), openParams);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
