@@ -24,6 +24,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Published\Utils\MockTests.h" />
     <ClInclude Include="Published\Utils\MockHttpHandler.h" />
     <ClInclude Include="Published\Utils\StubInstances.h" />
     <ClInclude Include="Published\Utils\ValuePrinter.h" />
@@ -159,6 +160,7 @@
     <ClCompile Include="Published\ApplicationTests.cpp" />
     <ClCompile Include="Published\BackstageTests.cpp" />
     <ClCompile Include="Published\Utils\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Published\Utils\MockTests.cpp" />
     <ClCompile Include="Published\Utils\MockHttpHandler.cpp" />
     <ClCompile Include="Published\Utils\StubInstances.cpp" />
     <ClCompile Include="Published\Utils\ValuePrinter.cpp" />
