@@ -18,18 +18,6 @@ struct SchemaXmlReader
 private:
     BeXmlDomR               m_xmlDom;
     ECSchemaReadContextR    m_schemaContext;
-    int                     m_ecSchemaMajorVersion;
-    int                     m_ecSchemaMinorVersion;
-
-    bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
-
-protected:
-    SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
-
-    typedef bvector<bpair<ECClassP, BeXmlNodeP> >  ClassDeserializationVector;
-    SchemaReadStatus                    ReadClassStubsFromXml2 (ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
-    SchemaReadStatus                    ReadClassStubsFromXml3 (ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
-    SchemaReadStatus                    ReadClassContentsFromXml (ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes);
 
 public:
     SchemaXmlReader(ECSchemaReadContextR context, BeXmlDomR xmlDom);
@@ -52,6 +40,8 @@ struct SchemaXmlWriter
         BeXmlWriterR m_xmlWriter;
         ECSchemaCR m_ecSchema;
         ECSchemaWriteContext m_context;
+        int m_ecXmlVersionMajor;
+        int m_ecXmlVersionMinor;
 
     protected:
         SchemaWriteStatus                   WriteSchemaReferences ();
@@ -60,7 +50,7 @@ struct SchemaXmlWriter
         SchemaWriteStatus                   WritePropertyDependencies (ECClassCR ecClass);
 
     public:
-        SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema);
+        SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0);
         virtual SchemaWriteStatus Serialize();
     };
 

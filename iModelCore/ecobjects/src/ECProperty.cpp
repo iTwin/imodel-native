@@ -311,7 +311,7 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT);
     }
@@ -374,14 +374,6 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     else if (ECObjectsStatus::ParseError == this->SetTypeName (value.c_str()))
         LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
     return SchemaReadStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus PrimitiveECProperty::_WriteXml (BeXmlWriterR xmlWriter)
-    {
-    return T_Super::_WriteXml (xmlWriter, EC_PROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -577,7 +569,7 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter)
+SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT);
     }
@@ -733,7 +725,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter)
+SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     bmap<Utf8CP, CharCP> additionalAttributes;
     char    valueString[128];
@@ -750,10 +742,16 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter)
         additionalAttributes[MAX_OCCURS_ATTRIBUTE] = "unbounded";
         }
 
+    Utf8CP elementName = EC_ARRAYPROPERTY_ELEMENT;
     if (m_arrayKind == ARRAYKIND_Struct)
-        additionalAttributes[IS_STRUCT_ATTRIBUTE] = "true";
+        {
+        if (2 == ecXmlVersionMajor)
+            additionalAttributes[IS_STRUCT_ATTRIBUTE] = "true";
+        else
+            elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
+        }
 
-    SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, EC_ARRAYPROPERTY_ELEMENT, &additionalAttributes);
+    SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
         return status;
         

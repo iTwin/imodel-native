@@ -1268,7 +1268,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
     {            
 	bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
     // Get the BaseClass child nodes.
@@ -1291,26 +1291,38 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
             {
             ECPropertyP ecProperty;
-            Utf8String boolStr;
-            bool isStruct = false;
-            if (BEXML_Success == childNode->GetAttributeStringValue(boolStr, IS_STRUCT_ATTRIBUTE))
-                ECXml::ParseBooleanString(isStruct, boolStr.c_str());
-            else
+            if (2 == ecXmlVersionMajor)
                 {
-                Utf8String typeName;
-                if (BEXML_Success == childNode->GetAttributeStringValue(typeName, TYPE_NAME_ATTRIBUTE))
+                Utf8String boolStr;
+                bool isStruct = false;
+                if (BEXML_Success == childNode->GetAttributeStringValue(boolStr, IS_STRUCT_ATTRIBUTE))
+                    ECXml::ParseBooleanString(isStruct, boolStr.c_str());
+                else
                     {
-                    ECStructClassCP structClass;
-                    ECObjectsStatus status = ResolveStructType(structClass, typeName, *this);
-                    if (ECObjectsStatus::Success == status && NULL != structClass)
-                        isStruct = true;
+                    Utf8String typeName;
+                    if (BEXML_Success == childNode->GetAttributeStringValue(typeName, TYPE_NAME_ATTRIBUTE))
+                        {
+                        ECStructClassCP structClass;
+                        ECObjectsStatus status = ResolveStructType(structClass, typeName, *this);
+                        if (ECObjectsStatus::Success == status && NULL != structClass)
+                            isStruct = true;
+                        }
                     }
+                if (isStruct)
+                    ecProperty = new StructArrayECProperty(*this);
+                else
+                    ecProperty = new ArrayECProperty(*this);
                 }
-            if (isStruct)
-                ecProperty = new StructArrayECProperty(*this);
-            else
-                ecProperty = new ArrayECProperty(*this);
+                else 
+                    ecProperty = new ArrayECProperty(*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
+            if (SchemaReadStatus::Success != status)
+                return status;
+            }
+        else if (0 == strcmp(childNodeName, EC_STRUCTARRAYPROPERTY_ELEMENT)) // technically, this only happens in EC3.0 and higher, but no harm in checking 2.0 schemas
+            {
+            ECPropertyP ecProperty = new StructArrayECProperty(*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             }
@@ -1396,7 +1408,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
+SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -1407,9 +1419,15 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
-    xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, IsStructClass());
-    xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, this->GetClassModifier() == ECClassModifier::Abstract);
-    xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass());
+    if (2 == ecXmlVersionMajor)
+        {
+        xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, IsStructClass());
+        xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass());
+        xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, this->GetClassModifier() != ECClassModifier::Abstract);
+        }
+    else
+        xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
+
     if (nullptr != additionalAttributes)
         {
         for (bmap<Utf8CP, Utf8CP>::iterator iter = additionalAttributes->begin(); iter != additionalAttributes->end(); ++iter)
@@ -1426,7 +1444,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName
             
     for (ECPropertyP prop: GetProperties(false))
         {
-        prop->_WriteXml (xmlWriter);
+        prop->_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
         }
     if (doElementEnd)
         xmlWriter.WriteElementEnd();
@@ -1436,9 +1454,9 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter) const
+SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
     {
-    return _WriteXml (xmlWriter, EC_CLASS_ELEMENT, nullptr, true);
+    return _WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_CLASS_ELEMENT, nullptr, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1596,10 +1614,65 @@ ECEntityClass::ECEntityClass(ECSchemaCR schema) : ECClass(schema)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+    {
+    if (2 == ecXmlVersionMajor)
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
+
+    else
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_ENTITYCLASS_ELEMENT, nullptr, true);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECCustomAttributeClass::ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema)
     {
+    m_containerType = static_cast<CustomAttributeContainerType>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+    {
+    if (2 == ecXmlVersionMajor)
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
+
+    else
+        {
+        bmap<Utf8CP, Utf8CP> additionalAttributes;
+        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = ECXml::ContainerTypeToString(m_containerType).c_str();
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(BeXmlNodeR classNode)
+    {
+    SchemaReadStatus status;
+    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes(classNode)))
+        return status;
+
+    Utf8String appliesTo;
+    if (BEXML_Success == classNode.GetAttributeStringValue(appliesTo, CUSTOM_ATTRIBUTE_APPLIES_TO))
+        ECXml::ParseContainerString(this->m_containerType, appliesTo);
+    else
+        m_containerType = CustomAttributeContainerType::Any;
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+CustomAttributeContainerType ECCustomAttributeClass::GetContainerType() const
+    {
+    return m_containerType;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1610,36 +1683,15 @@ ECStructClass::ECStructClass(ECSchemaCR schema) : ECClass(schema)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
+// @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void ECStructClass::SetContainerType(StructContainerType containerType)
+SchemaWriteStatus ECStructClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
     {
-    m_containerType = containerType;
-    }
+    if (2 == ecXmlVersionMajor)
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-StructContainerType ECStructClass::GetContainerType()
-    {
-    return m_containerType;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECStructClass::_ReadXmlAttributes(BeXmlNodeR classNode)
-    {
-    SchemaReadStatus status;
-    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes (classNode)))
-        return status;
-        
-    Utf8String     typeString;
-    if (BEXML_Success == classNode.GetAttributeStringValue (typeString, STRUCT_APPLIES_TO))
-        {
-        ECXml::ParseContainerString(m_containerType, typeString);
-        }
-    return status;
+    else
+        return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_STRUCTCLASS_ELEMENT, nullptr, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2426,13 +2478,13 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter) const
+SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
     {
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
     additionalAttributes[STRENGTH_ATTRIBUTE] = ECXml::StrengthToString(m_strength);
     additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
-    if (SchemaWriteStatus::Success != (status = T_Super::_WriteXml (xmlWriter, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
+    if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
         return status;
         
     // verify that this really is the current relationship class element // CGM 07/15 - Can't do this with an XmlWriter
@@ -2469,9 +2521,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         return status;
 

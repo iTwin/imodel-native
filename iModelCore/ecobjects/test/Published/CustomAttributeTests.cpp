@@ -577,4 +577,88 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CustomAttributeTest, ContainerTypes)
+    {
+    CustomAttributeContainerType schema = CustomAttributeContainerType::Schema;
+    CustomAttributeContainerType entityAndSchema = CustomAttributeContainerType::Schema | CustomAttributeContainerType::EntityClass;
+
+    ASSERT_TRUE(CustomAttributeContainerType::Schema == (schema & CustomAttributeContainerType::Schema));
+    ASSERT_TRUE(CustomAttributeContainerType::Schema != (schema & CustomAttributeContainerType::EntityClass));
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (entityAndSchema & CustomAttributeContainerType::EntityClass));
+
+    int schemaAsInt = static_cast<int>(schema);
+    ASSERT_TRUE(CustomAttributeContainerType::Schema == (static_cast<CustomAttributeContainerType>(schemaAsInt) & CustomAttributeContainerType::Schema));
+
+    int entityAndSchemaAsInt = static_cast<int>(entityAndSchema);
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (static_cast<CustomAttributeContainerType>(entityAndSchemaAsInt) & CustomAttributeContainerType::EntityClass));
+
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (CustomAttributeContainerType::EntityClass & CustomAttributeContainerType::Any));
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (CustomAttributeContainerType::EntityClass & CustomAttributeContainerType::AnyClass));
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass != (CustomAttributeContainerType::EntityClass & CustomAttributeContainerType::AnyProperty));
+    }
+
+bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContainerType myType)
+    {
+    if (compareType == (compareType & myType))
+        return true;
+    return false;
+    }
+
+TEST_F(CustomAttributeTest, ContainerTypeSerialization)
+    {
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributeClass typeName=\"AppliesToSchema\" appliesTo=\"Schema\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToAnyClass\" appliesTo=\"AnyClass\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToAny\" appliesTo=\"Any\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToSchemaAndEntity\" appliesTo=\"Schema,EntityClass\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToSchemaEntityClassPrimitiveProperty\" appliesTo=\"Schema,EntityClass,PrimitiveProperty\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToGarbage\" appliesTo=\"Bad\" />"
+        "</ECSchema>";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    ECCustomAttributeClassCP appliesToSchema = schema->GetClassCP("AppliesToSchema")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToAnyClass = schema->GetClassCP("AppliesToAnyClass")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToAny = schema->GetClassCP("AppliesToAny")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToSchemaAndEntity = schema->GetClassCP("AppliesToSchemaAndEntity")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToSchemaEntityClassPrimitiveProperty = schema->GetClassCP("AppliesToSchemaEntityClassPrimitiveProperty")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToGarbage = schema->GetClassCP("AppliesToGarbage")->GetCustomAttributeClassCP();
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchema->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Any, appliesToSchema->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchema->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAnyClass->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAnyClass->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAnyClass->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Schema, appliesToAnyClass->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Any, appliesToAny->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAny->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAny->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAny->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaAndEntity->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaAndEntity->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaAndEntity->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::PrimitiveProperty, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Any, appliesToGarbage->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Schema, appliesToGarbage->GetContainerType()));
+
+    Utf8String serializedStr;
+    SchemaWriteStatus status2 = schema->WriteToXmlString(serializedStr, 3, 0);
+    EXPECT_EQ(SchemaWriteStatus::Success, status2);
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

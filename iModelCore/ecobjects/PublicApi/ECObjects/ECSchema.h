@@ -605,7 +605,7 @@ protected:
     ECObjectsStatus                     SetName (Utf8StringCR name);
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter);
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr);
 
     virtual bool                        _IsPrimitive () const { return false; }
@@ -757,7 +757,6 @@ private:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
     virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
@@ -792,7 +791,7 @@ private:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsStruct () const override { return true;}
     virtual StructECPropertyCP          _GetAsStructPropertyCP() const override { return this; }
     virtual StructECPropertyP           _GetAsStructPropertyP()        override { return this; }
@@ -837,7 +836,7 @@ protected:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter) override;
+    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
@@ -1001,7 +1000,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECClass /*abstract*/ : IECCustomAttributeContaine
 /*__PUBLISH_SECTION_END__*/
 
 friend struct ECSchema;
-friend struct SchemaXmlReader;
+friend struct SchemaXmlReaderImpl;
+friend struct SchemaXmlReader2;
+friend struct SchemaXmlReader3;
 friend struct SchemaXmlWriter;
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
@@ -1069,14 +1070,15 @@ protected:
     //! the schema itself otherwise the method may fail because such dependencies can not be located.
     //! @param[in]  classNode       The XML DOM node to read
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
+    //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
     //! @return   Status code
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context);
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor);
 
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
 
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) const;
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual ECClassType                  _GetClassType() const { return ECClassType::Entity;} // default type
     virtual bool                         _IsEntityClass() const { return false; }
@@ -1319,9 +1321,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ECEntityClass : ECClass
 {
 DEFINE_T_SUPER(ECClass)
 
-/*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
-friend struct SchemaXmlReader;
+friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
@@ -1333,12 +1334,11 @@ protected:
     ECEntityClass (ECSchemaCR schema);
     virtual ~ECEntityClass () {}
 
+    virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
     virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
     virtual ECEntityClassP _GetEntityClassP() override { return this; }
     virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
-    virtual bool _IsEntityClass() const override { return true; }
-//__PUBLISH_SECTION_START__
-public:
+    bool _IsEntityClass() const override { return true; }
 
 };
 
@@ -1350,12 +1350,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ECCustomAttributeClass : public ECClass
 {
 DEFINE_T_SUPER(ECClass)
 
-/*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
-friend struct SchemaXmlReader;
+friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
+    CustomAttributeContainerType m_containerType;
+
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
@@ -1363,11 +1364,15 @@ private:
     virtual ~ECCustomAttributeClass () {}
 
 protected:
-    virtual ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
-    virtual bool _IsCustomAttributeClass() const override { return true; }
-    virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
-    virtual ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
-    
+    SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
+    ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
+    bool _IsCustomAttributeClass() const override { return true; }
+    ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
+    ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
+
+public:
+    ECOBJECTS_EXPORT CustomAttributeContainerType GetContainerType() const;
 };
 
 //---------------------------------------------------------------------------------------
@@ -1378,13 +1383,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ECStructClass : public ECClass
 {
 DEFINE_T_SUPER(ECClass)
 
-/*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
-friend struct SchemaXmlReader;
+friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
-    StructContainerType m_containerType;
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
@@ -1393,20 +1396,11 @@ private:
 
 
 protected:
+    SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
     virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
     virtual bool _IsStructClass() const override { return true; }
     virtual ECStructClassCP _GetStructClassCP() const override { return this;}
     virtual ECStructClassP _GetStructClassP() override { return this; }
-
-    virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-
-//__PUBLISH_SECTION_START__
-public:
-    //! Sets what type of container can hold this struct: EntityClass or a CustomAttributeClass
-    ECOBJECTS_EXPORT void SetContainerType(StructContainerType type);
-
-    //! Gets what type of container can hold this struct: EntityClass or a CustomAttributeClass
-    ECOBJECTS_EXPORT StructContainerType GetContainerType();
 
 };
 
@@ -1682,7 +1676,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECEntityClass
 DEFINE_T_SUPER(ECEntityClass)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
-friend struct SchemaXmlReader;
+friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
@@ -1701,10 +1695,10 @@ private:
     ECObjectsStatus                     SetStrengthDirection (Utf8CP direction);
 
 protected:
-    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) const override;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context) override;
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor) override;
     virtual bool                        _IsRelationshipClass() const override { return true;}
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
@@ -2235,6 +2229,7 @@ private:
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
 friend struct SchemaXmlReader;
+friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
@@ -2471,9 +2466,11 @@ public:
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
+    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (Utf8StringR ecSchemaXml, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0) const;
 
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to

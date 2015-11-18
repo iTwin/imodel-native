@@ -224,35 +224,83 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
+// @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void ECXml::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
+Utf8CP ECXml::ModifierToString(ECClassModifier modifier)
     {
-    if (0 == modifierString.CompareToI("Abstract"))
-        modifier = ECClassModifier::Abstract;
-    else if (0 == modifierString.CompareToI("Sealed"))
-        modifier = ECClassModifier::Sealed;
-    else
-        {
-        if (0 != modifierString.CompareToI("None"))
-            LOG.warningv("Invalid value for Modifier attribute: %s.  Defaulting to NONE", modifierString.c_str());
-        modifier = ECClassModifier::None;
-        }
+    if (ECClassModifier::Abstract == modifier)
+        return ECXML_MODIFIER_ABSTRACT;
+    if (ECClassModifier::Sealed == modifier)
+        return ECXML_MODIFIER_SEALED;
+    return ECXML_MODIFIER_NONE;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void ECXml::ParseContainerString(StructContainerType& containerType, Utf8StringCR typeString)
+void ECXml::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
     {
-    if (0 == typeString.CompareToI("CustomAttribute"))
-        containerType = StructContainerType::CustomAttributeClass;
+    if (0 == modifierString.CompareToI(ECXML_MODIFIER_ABSTRACT))
+        modifier = ECClassModifier::Abstract;
+    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_SEALED))
+        modifier = ECClassModifier::Sealed;
     else
         {
-        if (0 != typeString.CompareToI("Entity"))
-            LOG.warningv("Invalid value for appliesTo attribute: %s.  Defaulting to Entity", typeString.c_str());
-        containerType = StructContainerType::EntityClass;
+        if (0 != modifierString.CompareToI(ECXML_MODIFIER_NONE))
+            LOG.warningv("Invalid value for Modifier attribute: %s.  Defaulting to NONE", modifierString.c_str());
+        modifier = ECClassModifier::None;
         }
+    }
+
+void SetOrAppendValue(Utf8StringR str, Utf8CP val)
+    {
+    if (Utf8String::IsNullOrEmpty(str.c_str()))
+        str = val;
+    else
+        {
+        str.append(", ");
+        str.append(val);
+        }
+    }
+
+bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContainerType& myType)
+    {
+    if (compareType == (compareType & myType))
+        return true;
+    return false;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerType)
+    {
+    Utf8String str;
+    if (TestValue(CustomAttributeContainerType::Schema, containerType))
+        SetOrAppendValue(str, "Schema");
+    if (TestValue(CustomAttributeContainerType::EntityClass, containerType))
+        SetOrAppendValue(str, "EntityClass");
+    if (TestValue(CustomAttributeContainerType::CustomAttributeClass, containerType))
+        SetOrAppendValue(str, "CustomAttributeClass");
+    if (TestValue(CustomAttributeContainerType::StructClass, containerType))
+        SetOrAppendValue(str, "StructClass");
+    if (TestValue(CustomAttributeContainerType::RelationshipClass, containerType))
+        SetOrAppendValue(str, "RelationshipClass");
+    if (TestValue(CustomAttributeContainerType::AnyClass, containerType))
+        SetOrAppendValue(str, "AnyClass");
+    if (TestValue(CustomAttributeContainerType::PrimitiveProperty, containerType))
+        SetOrAppendValue(str, "PrimitiveProperty");
+    if (TestValue(CustomAttributeContainerType::StructProperty, containerType))
+        SetOrAppendValue(str, "StructProperty");
+    if (TestValue(CustomAttributeContainerType::ArrayProperty, containerType))
+        SetOrAppendValue(str, "ArrayProperty");
+    if (TestValue(CustomAttributeContainerType::StructArrayProperty, containerType))
+        SetOrAppendValue(str, "StructArrayProperty");
+    if (TestValue(CustomAttributeContainerType::AnyProperty, containerType))
+        SetOrAppendValue(str, "AnyProperty");
+    if (TestValue(CustomAttributeContainerType::Any, containerType))
+        str = "Any";
+
+    return std::move(str);
     }
 
 //---------------------------------------------------------------------------------------
@@ -260,30 +308,43 @@ void ECXml::ParseContainerString(StructContainerType& containerType, Utf8StringC
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
     {
-    if (0 == typeString.CompareToI("ECSchema"))
-        containerType = CustomAttributeContainerType::Schema;
-    else if (0 == typeString.CompareToI("ECEntityClass"))
-        containerType = CustomAttributeContainerType::Entity;
-    else if (0 == typeString.CompareToI("ECCustomAttributeClass"))
-        containerType = CustomAttributeContainerType::CustomAttribute;
-    else if (0 == typeString.CompareToI("ECStructClass"))
-        containerType = CustomAttributeContainerType::Struct;
-    else if (0 == typeString.CompareToI("ECRelationshipClass"))
-        containerType = CustomAttributeContainerType::Relationship;
-    else if (0 == typeString.CompareToI("ECEnumeration"))
-        containerType = CustomAttributeContainerType::Enumeration;
-    else if (0 == typeString.CompareToI("ECProperty"))
-        containerType = CustomAttributeContainerType::Property;
-    else if (0 == typeString.CompareToI("ECStructProperty"))
-        containerType = CustomAttributeContainerType::StructProperty;
-    else if (0 == typeString.CompareToI("ECArrayProperty"))
-        containerType = CustomAttributeContainerType::ArrayProperty;
-    else if (0 == typeString.CompareToI("ECStructArrayProperty"))
-        containerType = CustomAttributeContainerType::StructArrayProperty;
-    else
+    bvector<Utf8String> typeTokens;
+    BeStringUtilities::Split(typeString.c_str(), ",;|", typeTokens);
+
+    for (Utf8StringCR typeToken : typeTokens)
         {
-        LOG.warningv("Unknown custom attribute container type: %s", typeString);
-        return ECObjectsStatus::ParseError;
+        if (typeToken.empty())
+            continue;
+
+        if (typeToken.EqualsI("Schema"))
+            containerType = containerType | CustomAttributeContainerType::Schema;
+        else if (typeToken.EqualsI("EntityClass"))
+            containerType = containerType | CustomAttributeContainerType::EntityClass;
+        else if (typeToken.EqualsI("CustomAttributeClass"))
+            containerType = containerType | CustomAttributeContainerType::CustomAttributeClass;
+        else if (typeToken.EqualsI("StructClass"))
+            containerType = containerType | CustomAttributeContainerType::StructClass;
+        else if (typeToken.EqualsI("RelationshipClass"))
+            containerType = containerType | CustomAttributeContainerType::RelationshipClass;
+        else if (typeToken.EqualsI("AnyClass"))
+            containerType = containerType | CustomAttributeContainerType::AnyClass;
+        else if (typeToken.EqualsI("PrimitiveProperty"))
+            containerType = containerType | CustomAttributeContainerType::PrimitiveProperty;
+        else if (typeToken.EqualsI("StructProperty"))
+            containerType = containerType | CustomAttributeContainerType::StructProperty;
+        else if (typeToken.EqualsI("ArrayProperty"))
+            containerType = containerType | CustomAttributeContainerType::ArrayProperty;
+        else if (typeToken.EqualsI("StructArrayProperty"))
+            containerType = containerType | CustomAttributeContainerType::StructArrayProperty;
+        else if (typeToken.EqualsI("AnyProperty"))
+            containerType = containerType | CustomAttributeContainerType::AnyProperty;
+        else if (typeToken.EqualsI("Any"))
+            containerType = CustomAttributeContainerType::Any;
+        else
+            {
+            LOG.errorv("'%s' is not a valid CustomAttributeContainerType value.", typeToken.c_str());
+            return ECObjectsStatus::ParseError;
+            }
         }
     return ECObjectsStatus::Success;
     }

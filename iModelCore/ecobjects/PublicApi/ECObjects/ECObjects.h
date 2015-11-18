@@ -436,28 +436,24 @@ enum class ECClassModifier
     Sealed
     };
 
-//! Used to define what type of ECClass this struct can be contained in
-enum class StructContainerType
-    {
-    EntityClass,
-    CustomAttributeClass
-    };
-
 //! Used to define what type of IECCustomAttributeContainer this CustomAttribute can be applied to
 enum class CustomAttributeContainerType
     {
-    Schema,
-    Entity,
-    CustomAttribute,
-    Struct,
-    Relationship,
-    Enumeration,
-    Property,
-    StructProperty,
-    ArrayProperty,
-    StructArrayProperty
+    Schema                  = (0x0001 << 0),
+    EntityClass             = (0x0001 << 1),
+    CustomAttributeClass    = (0x0001 << 2),
+    StructClass             = (0x0001 << 3),
+    RelationshipClass       = (0x0001 << 4),
+    AnyClass                = EntityClass | CustomAttributeClass | StructClass | RelationshipClass,
+    PrimitiveProperty       = (0x0001 << 5),
+    StructProperty          = (0x0001 << 6),
+    ArrayProperty           = (0x0001 << 7),
+    StructArrayProperty     = (0x0001 << 8),
+    AnyProperty             = PrimitiveProperty | StructProperty | ArrayProperty | StructArrayProperty,
+    Any                     = Schema | AnyClass | AnyProperty 
     };
 
+ENUM_IS_FLAGS(CustomAttributeContainerType)
 /** @endGroup */
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -24,6 +24,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     EC_PROPERTY_ELEMENT                 "ECProperty"
 #define     EC_ARRAYPROPERTY_ELEMENT            "ECArrayProperty"
 #define     EC_STRUCTPROPERTY_ELEMENT           "ECStructProperty"
+#define     EC_STRUCTARRAYPROPERTY_ELEMENT      "ECStructArrayProperty"
 #define     EC_RELATIONSHIP_CLASS_ELEMENT       "ECRelationshipClass"
 #define     EC_SOURCECONSTRAINT_ELEMENT         "Source"
 #define     EC_TARGETCONSTRAINT_ELEMENT         "Target"
@@ -38,7 +39,6 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     IS_STRUCT_ATTRIBUTE                 "isStruct"
 #define     IS_CUSTOMATTRIBUTE_ATTRIBUTE        "isCustomAttributeClass"
 #define     MODIFIER_ATTRIBUTE                  "modifier"
-#define     STRUCT_APPLIES_TO                   "appliesTo"
 #define     CUSTOM_ATTRIBUTE_APPLIES_TO         "appliesTo"
 #define     MIN_OCCURS_ATTRIBUTE                "minOccurs"
 #define     MAX_OCCURS_ATTRIBUTE                "maxOccurs"
@@ -95,6 +95,10 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define ECXML_DIRECTION_FORWARD           "forward"
 #define ECXML_DIRECTION_BACKWARD          "backward"
 
+static Utf8CP ECXML_MODIFIER_NONE =       "None";
+static Utf8CP ECXML_MODIFIER_ABSTRACT =   "Abstract";
+static Utf8CP ECXML_MODIFIER_SEALED =     "Sealed";
+
 #define READ_OPTIONAL_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName)) &&   \
         (ECObjectsStatus::Success != _setInPointer->Set##_setInPropertyName (value.c_str()))) \
@@ -138,9 +142,10 @@ public:
     static Utf8CP DirectionToString (ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
     static ECObjectsStatus ParseCardinalityString (uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString);
+    static Utf8CP ModifierToString(ECClassModifier modifier);
     static void ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString);
+    static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     static ECObjectsStatus ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString);
-    static void ParseContainerString(StructContainerType& containerType, Utf8StringCR typeString);
     static void FormatXml(BeXmlDomR xmlDom);
 };
 

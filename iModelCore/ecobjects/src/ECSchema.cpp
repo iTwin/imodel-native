@@ -1930,7 +1930,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml) const
+SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml, int ecXmlVersionMajor, int ecXmlVersionMinor) const
     {
     ecSchemaXml.clear();
 
@@ -1938,7 +1938,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml) const
     xmlWriter->SetIndentation(4);
 
     SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this);
+    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersionMajor, ecXmlVersionMinor);
     if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
         return status;
 
