@@ -147,6 +147,7 @@
     <ClInclude Include="Published\Utils\WebServicesTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
+    <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">

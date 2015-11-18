@@ -1804,6 +1804,104 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucce
     ASSERT_TRUE(result.GetValue().empty());
     }
 
+TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported)
+    {
+    auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
+    BeCriticalSection c;
+    auto ds1 = CreateMockedCachingDataSource(nullptr, cache1);
+    auto ds2 = CreateMockedCachingDataSource(nullptr, cache2);
+
+    EXPECT_CALL(cache1->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+    EXPECT_CALL(cache2->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+
+    EXPECT_CALL(*cache1, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"samePath")));
+    EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"samePath")));
+
+    AsyncTestCheckpoint check1;
+    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
+        {
+        check1.CheckinAndWait();
+        return SUCCESS;
+        }));
+    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillByDefault(Return(SUCCESS));
+
+    auto t1 = ds1->SyncLocalChanges(nullptr, nullptr);
+    check1.WaitUntilReached();
+    auto r2 = ds2->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    check1.Continue();
+    auto r1 = t1->GetResult();
+
+    ASSERT_TRUE(r1.IsSuccess());
+    ASSERT_FALSE(r2.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::Status::FunctionalityNotSupported, r2.GetError().GetStatus());
+    EXPECT_NE("", r2.GetError().GetMessage());
+    }
+
+TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds)
+    {
+    auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
+
+    auto ds1 = CreateMockedCachingDataSource(nullptr, cache1);
+    auto ds2 = CreateMockedCachingDataSource(nullptr, cache2);
+
+    EXPECT_CALL(cache1->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+    EXPECT_CALL(cache2->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+
+    EXPECT_CALL(*cache1, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"someFilePath")));
+    EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"otherFilePath")));
+
+    AsyncTestCheckpoint check1;
+    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
+        {
+        check1.CheckinAndWait();
+        return SUCCESS;
+        }));
+    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillByDefault(Return(SUCCESS));
+
+    auto t1 = ds1->SyncLocalChanges(nullptr, nullptr);
+    check1.WaitUntilReached();
+    auto r2 = ds2->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    check1.Continue();
+    auto r1 = t1->GetResult();
+
+    ASSERT_TRUE(r1.IsSuccess());
+    ASSERT_TRUE(r2.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds)
+    {
+    auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
+
+    auto ds1 = CreateMockedCachingDataSource(nullptr, cache1);
+    auto ds2 = CreateMockedCachingDataSource(nullptr, cache2);
+
+    EXPECT_CALL(cache1->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+    EXPECT_CALL(cache2->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+
+    EXPECT_CALL(*cache1, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L":memory:")));
+    EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L":memory:")));
+
+    AsyncTestCheckpoint check1;
+    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
+        {
+        check1.CheckinAndWait();
+        return SUCCESS;
+        }));
+    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillByDefault(Return(SUCCESS));
+
+    auto t1 = ds1->SyncLocalChanges(nullptr, nullptr);
+    check1.WaitUntilReached();
+    auto r2 = ds2->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    check1.Continue();
+    auto r1 = t1->GetResult();
+
+    ASSERT_TRUE(r1.IsSuccess());
+    ASSERT_TRUE(r2.IsSuccess());
+    }
+
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlagAndResetsItAfterSuccessfulSync)
     {
     // Arrange
