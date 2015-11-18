@@ -300,7 +300,7 @@ void ECClass::OnBaseClassPropertyRemoved (ECPropertyCR baseProperty)
     auto found = std::find_if (m_propertyList.begin(), m_propertyList.end(), [&baseProperty](ECPropertyCP arg) { return arg->GetBaseProperty() == &baseProperty; });
     if (m_propertyList.end() != found)
         {
-        if (ECOBJECTS_STATUS_Success != (*found)->SetBaseProperty (baseProperty.GetBaseProperty()))
+        if (ECObjectsStatus::Success != (*found)->SetBaseProperty (baseProperty.GetBaseProperty()))
             (*found)->SetBaseProperty(nullptr); // see comments in SetBaseProperty()
         }
     else

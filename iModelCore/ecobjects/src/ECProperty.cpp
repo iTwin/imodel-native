@@ -62,7 +62,7 @@ ECObjectsStatus ECProperty::SetBaseProperty (ECPropertyCP baseProperty)
         // Child and Grandparent.
         // (Presumably this is useful to someone and not totally confusing?)
         if (!GetClass().Is(&baseProperty->GetClass()))
-            return ECOBJECTS_STATUS_BaseClassUnacceptable;
+            return ECObjectsStatus::BaseClassUnacceptable;
         }
 
     m_baseProperty = baseProperty;
