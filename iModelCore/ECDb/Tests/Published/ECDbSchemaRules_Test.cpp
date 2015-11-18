@@ -836,7 +836,8 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a3Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a1Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, a1Key.GetECClassId()));
-            //THIS SHOULD ACTUALLY FAIL, but we cannot enforce that in ECDb
+            //THIS SHOULD ACTUALLY FAIL, but we cannot enforce that in ECDb, because the unique index is only on the FK column,
+            //but it would have to be on FK and PK at the same time.
             ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
             relStmt.Reset();
             relStmt.ClearBindings();
