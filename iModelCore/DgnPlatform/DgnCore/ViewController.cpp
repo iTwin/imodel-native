@@ -310,13 +310,14 @@ DbResult ViewController::Save()
 DbResult ViewController::SaveAs(Utf8CP newName)
     {
     auto cpView = ViewDefinition::QueryView(m_viewId, m_dgndb);
-    auto newView = cpView.IsValid() ? cpView->MakeCopy<ViewDefinition>() : nullptr;
-    BeAssert(newView.IsValid());
-    if (newView.IsNull())
+    BeAssert(cpView.IsValid());
+    if (cpView.IsNull())
         return BE_SQLITE_INTERNAL;
 
-    newView->SetName(newName);
-    if (newView->Insert().IsNull())
+    DgnElement::CreateParams params(cpView->GetDgnDb(), cpView->GetModelId(), cpView->GetElementClassId(), ViewDefinition::CreateCode(newName), DgnElementId());
+    ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(cpView->Clone(nullptr, &params).get());
+    BeAssert(newView.IsValid());
+    if (newView.IsNull() || newView->Insert().IsNull())
         return BE_SQLITE_INTERNAL;
 
     m_viewId = newView->GetViewId();

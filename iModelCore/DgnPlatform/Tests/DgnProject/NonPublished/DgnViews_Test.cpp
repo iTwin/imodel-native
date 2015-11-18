@@ -66,7 +66,7 @@ struct DgnViewElemTest : DgnViewsTest
 
     template<typename T> ViewDefinitionCPtr AddView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
-        T::CreateParams params(*project, name, ViewDefinition::Data(baseModelId, source, descr));
+        typename T::CreateParams params(*project, name, ViewDefinition::Data(baseModelId, source, descr));
         T view(params);
         auto cpView = view.Insert();
         EXPECT_TRUE(cpView.IsValid());

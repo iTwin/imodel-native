@@ -98,8 +98,8 @@ TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
     ASSERT_TRUE(style.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &style->GetDbR());
-    EXPECT_TRUE(!style->GetStyleId().IsValid()); // Cannot call SetId directly from published API.
+    EXPECT_TRUE(&project == &style->GetDgnDb());
+    EXPECT_TRUE(!style->GetElementId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
@@ -130,12 +130,12 @@ TEST_F(AnnotationFrameStyleTest, DeepCopy)
     DECLARE_AND_SET_DATA_1(style);
 
     //.............................................................................................
-    AnnotationFrameStylePtr clonedStyle = style->Clone();
+    AnnotationFrameStylePtr clonedStyle = style->CreateCopy();
     ASSERT_TRUE(clonedStyle.IsValid());
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
-    EXPECT_TRUE(&project == &clonedStyle->GetDbR());
-    EXPECT_TRUE(style->GetStyleId() == clonedStyle->GetStyleId());
+    EXPECT_TRUE(&project == &clonedStyle->GetDgnDb());
+    EXPECT_TRUE(style->GetElementId() == clonedStyle->GetElementId());
     VERIFY_DATA_1(clonedStyle);
     }
 
@@ -159,32 +159,32 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
-    ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
     EXPECT_EQ(1, AnnotationFrameStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(AnnotationFrameStyle::ExistsById(testStyle->GetStyleId(), project));
-    EXPECT_TRUE(AnnotationFrameStyle::ExistsByName(name, project));
+    EXPECT_TRUE(AnnotationFrameStyle::Get(project, testStyle->GetElementId()).IsValid());
+    EXPECT_TRUE(AnnotationFrameStyle::Get(project, name.c_str()).IsValid());
 
-    AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::QueryStyle(testStyle->GetStyleId(), project);
+    AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::Get(project, testStyle->GetElementId());
     ASSERT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = AnnotationFrameStyle::QueryStyle(name, project);
+    fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
     // Update
-    AnnotationFrameStylePtr mutatedStyle = fileStyle->Clone();
+    AnnotationFrameStylePtr mutatedStyle = fileStyle->CreateCopy();
     ASSERT_TRUE(mutatedStyle.IsValid());
 
     name = "DifferentName"; mutatedStyle->SetName(name.c_str());
@@ -198,11 +198,11 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 
     EXPECT_EQ(1, AnnotationFrameStyle::QueryCount(project));
 
-    fileStyle = AnnotationFrameStyle::QueryStyle(name, project);
+    fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+    EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -212,9 +212,9 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     for (auto const& style : iter1)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-        ASSERT_TRUE(style.GetId().IsValid());
+        ASSERT_TRUE(style.GetElementId().IsValid());
         
-        AnnotationFrameStyleCPtr iterStyle = AnnotationFrameStyle::QueryStyle(style.GetId(), project);
+        AnnotationFrameStyleCPtr iterStyle = AnnotationFrameStyle::Get(project, style.GetElementId());
         ASSERT_TRUE(iterStyle.IsValid());
 
         EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -224,15 +224,15 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 
     EXPECT_TRUE(1 == numStyles);
 
-    auto iter2 = AnnotationFrameStyle::MakeOrderedIterator(project);
+    auto iter2 = AnnotationFrameStyle::MakeIterator(project);
     numStyles = 0;
 
     for (auto const& style : iter2)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-        ASSERT_TRUE(style.GetId().IsValid());
+        ASSERT_TRUE(style.GetElementId().IsValid());
 
-        AnnotationFrameStyleCPtr iterStyle = AnnotationFrameStyle::QueryStyle(style.GetId(), project);
+        AnnotationFrameStyleCPtr iterStyle = AnnotationFrameStyle::Get(project, style.GetElementId());
         ASSERT_TRUE(iterStyle.IsValid());
 
         EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -244,9 +244,9 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Delete
-    auto styleToDelete = AnnotationFrameStyle::QueryStyle(mutatedStyle->GetStyleId(), project);
+    auto styleToDelete = AnnotationFrameStyle::Get(project, mutatedStyle->GetElementId());
     ASSERT_TRUE(styleToDelete.IsValid());
-    EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
+    EXPECT_EQ(DgnDbStatus::DeletionProhibited, project.Elements().Delete(*styleToDelete));
     }
 //---------------------------------------------------------------------------------------
 // Verifies persistence in the style table.
@@ -269,44 +269,43 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Shoudl not exist before insert
-        // Cannot pass an invalid ID to ExistsById... ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().ExistsById(testStyle->GetId()));
-        ASSERT_FALSE(AnnotationFrameStyle::ExistsByName(testStyle->GetName(), project));
+        // Cannot pass an invalid ID to ExistsById... ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().ExistsById(testStyle->GetElementId()));
+        ASSERT_FALSE(AnnotationFrameStyle::Get(project, testStyle->GetName().c_str()).IsValid());
 
         ASSERT_TRUE(testStyle->Insert().IsValid());
-        ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+        ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
         //.............................................................................................
         // Insert Redundant style
-        AnnotationFrameStylePtr secondTestStyle = testStyle->Clone();
+        AnnotationFrameStylePtr secondTestStyle = testStyle->CreateCopy();
         EXPECT_EQ(1, AnnotationFrameStyle::QueryCount(project));
 
         //.............................................................................................
         // Query
-        EXPECT_TRUE(AnnotationFrameStyle::ExistsById(testStyle->GetStyleId(), project));
-        EXPECT_TRUE(AnnotationFrameStyle::ExistsByName(name, project));
+        EXPECT_TRUE(AnnotationFrameStyle::Get(project, testStyle->GetElementId()).IsValid());
+        EXPECT_TRUE(AnnotationFrameStyle::Get(project, name.c_str()).IsValid());
 
-        AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::QueryStyle(testStyle->GetStyleId(), project);
+        AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::Get(project, testStyle->GetElementId());
         ASSERT_TRUE(fileStyle.IsValid());
 
-        EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+        EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+        EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
-        fileStyle = AnnotationFrameStyle::QueryStyle(name, project);
+        fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
         EXPECT_TRUE(fileStyle.IsValid());
 
-        EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+        EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+        EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
-
 
         //.............................................................................................
         // Query Invalid
-        EXPECT_FALSE(AnnotationFrameStyle::ExistsByName("InvalidName", project));
+        EXPECT_FALSE(AnnotationFrameStyle::Get(project, "InvalidName").IsValid());
 
         //.............................................................................................
         // Update
-        AnnotationFrameStylePtr mutatedStyle = fileStyle->Clone();
+        AnnotationFrameStylePtr mutatedStyle = fileStyle->CreateCopy();
         ASSERT_TRUE(mutatedStyle.IsValid());
 
         name = "DifferentName"; mutatedStyle->SetName(name.c_str());
@@ -320,16 +319,16 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         EXPECT_EQ(1, AnnotationFrameStyle::QueryCount(project));
 
-        fileStyle = AnnotationFrameStyle::QueryStyle(name, project);
+        fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
         EXPECT_TRUE(fileStyle.IsValid());
 
-        EXPECT_TRUE(&project == &fileStyle->GetDbR());
-        EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
+        EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+        EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
         //.............................................................................................
         // Update
-        AnnotationFrameStylePtr secondMutatedStyle = fileStyle->Clone();
+        AnnotationFrameStylePtr secondMutatedStyle = fileStyle->CreateCopy();
         secondMutatedStyle->SetName("DifferentName");
 
         //.............................................................................................
@@ -339,9 +338,9 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
         for (auto const& style : iter1)
         {
             EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-            ASSERT_TRUE(style.GetId().IsValid());
+            ASSERT_TRUE(style.GetElementId().IsValid());
 
-            auto iterStyle = AnnotationFrameStyle::QueryStyle(style.GetId(), project);
+            auto iterStyle = AnnotationFrameStyle::Get(project, style.GetElementId());
             ASSERT_TRUE(iterStyle.IsValid());
 
             EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -351,15 +350,15 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         EXPECT_TRUE(1 == numStyles);
 
-        auto iter2 = AnnotationFrameStyle::MakeOrderedIterator(project);
+        auto iter2 = AnnotationFrameStyle::MakeIterator(project);
         numStyles = 0;
 
         for (auto const& style : iter2)
         {
             EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-            ASSERT_TRUE(style.GetId().IsValid());
+            ASSERT_TRUE(style.GetElementId().IsValid());
 
-            auto iterStyle = AnnotationFrameStyle::QueryStyle(style.GetId(), project);
+            auto iterStyle = AnnotationFrameStyle::Get(project, style.GetElementId());
             ASSERT_TRUE(iterStyle.IsValid());
 
             EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -372,7 +371,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Delete
-        auto styleToDelete = AnnotationFrameStyle::QueryStyle(mutatedStyle->GetStyleId(), project);
+        auto styleToDelete = AnnotationFrameStyle::Get(project, mutatedStyle->GetElementId());
         ASSERT_TRUE(styleToDelete.IsValid());
-        EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
+        EXPECT_EQ(DgnDbStatus::DeletionProhibited, project.Elements().Delete(*styleToDelete));
     }
