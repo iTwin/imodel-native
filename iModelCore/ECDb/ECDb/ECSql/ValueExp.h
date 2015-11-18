@@ -203,6 +203,7 @@ private:
     size_t m_argIndex;
 
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
 
     static Coordinate CoordinateFromFunctionName(Utf8StringCR functionName);
@@ -214,10 +215,6 @@ public:
 
     Coordinate GetCoordinate() const { return m_coordinate; }
     ValueExp const& GetArgument() const { return *GetChild<ValueExp>(m_argIndex); }
-#ifdef WIP_MERGE
-    virtual Utf8String ToECSql() const override;
-#endif
-    
     static bool IsPointCoordinateFunction(Utf8StringCR functionName);
     };
 

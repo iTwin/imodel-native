@@ -1276,7 +1276,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry";
-    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //group by column not in select clause is supported (although against standard)
     ecsql = "SELECT count(*) FROM ecsql.PSA GROUP BY S";
@@ -1308,19 +1308,25 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
     
     ecsql = "SELECT P2D, count(*) FROM ecsql.PSA GROUP BY P2D";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT P3D, count(*) FROM ecsql.PSA GROUP BY P3D";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT PStructProp, count(*) FROM ecsql.PSA GROUP BY PStructProp";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT Bi_Array, count(*) FROM ecsql.PSA GROUP BY Bi_Array";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT PStruct_Array, count(*) FROM ecsql.PSA GROUP BY PStruct_Array";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY I HAVING Geometry IS NOT NULL";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING PStructProp IS NOT NULL";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING Length(S) > 1";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
@@ -1983,19 +1989,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::OrderByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 10);
 
     ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY GetX(P3D) DESC";
-#ifdef WIP_MERGE
-    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 10);
-#endif
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 10);
 
     ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY GetZ(P3D) ASC";
-#ifdef WIP_MERGE
-    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 10);
-#endif
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 10);
 
     ecsql = "SELECT I, S FROM ecsql.PSA ORDER BY GetZ(P2D)";
-#ifdef WIP_MERGE
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-#endif
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //constant value exp as order by -> no-op
     ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY 1";
@@ -2367,19 +2367,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::PointTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
     ecsql = "SELECT GetX(P2D), GetY(P2D) FROM ecsql.PSA";
-#ifdef WIP_MERGE
-    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
-#endif
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
     ecsql = "SELECT GetX(P3D), GetY(P3D), GetZ(P3D) FROM ecsql.PSA";
-#ifdef WIP_MERGE
-    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
-#endif
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT GetZ(P2D) FROM ecsql.PSA";
-#ifdef WIP_MERGE
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
-#endif
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
     return dataset;
     }
