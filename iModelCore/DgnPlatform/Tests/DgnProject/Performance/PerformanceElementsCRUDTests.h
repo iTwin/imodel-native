@@ -223,76 +223,78 @@ struct PerformanceElementTestDomain : DgnDomain
 struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
     {
     private:
-        static const int64_t s_firstInstanceId = INT64_C (6);
-        static Utf8CP const s_testSchemaXml;
-
-        void CreateElements (int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues);
-        void SetUpTestDgnDb (WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
-
-        //Generate Sql CRUD Statements.
-        void GetInsertSql (Utf8CP className, Utf8StringR insertSql, DgnClassId classId);
-        void GetSelectSql (Utf8CP className, Utf8StringR selectSql);
-        void GetUpdateSql (Utf8CP className, Utf8StringR updateSql);
-        void GetDeleteSql (Utf8StringR deleteSql);
-
-        //Generate ECSql CRUD Statements. 
-        void GetInsertECSql (Utf8CP className, Utf8StringR insertECSql);
-        void GetSelectECSql (Utf8CP className, Utf8StringR selectECSql);
-        void GetUpdateECSql (Utf8CP className, Utf8StringR updateECSql);
-        void GetDeleteECSql (Utf8CP className, Utf8StringR deleteECSql);
-
-        //Methods to Bind Business Property Values for Sql Statements
-        DgnDbStatus BindElement1PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        DgnDbStatus BindElement2PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        DgnDbStatus BindElement3PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        DgnDbStatus BindElement4PropertyParams (BeSQLite::Statement& stmt, bool updateParams);
-        void BindParams (DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className);
-        void BindUpdateParams (BeSQLite::Statement& stmt, Utf8CP className);
-
-        //ECsql Overloads to Bind business Property values
-        DgnDbStatus BindElement1PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        DgnDbStatus BindElement2PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        DgnDbStatus BindElement3PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        DgnDbStatus BindElement4PropertyParams (ECSqlStatement& stmt, bool updateParams);
-        void BindParams (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
-        void BindUpdateParams (ECSqlStatement& stmt, Utf8CP className);
-
-        //Methods to verify Business Property Values returned by Sql Statements. 
-        DgnDbStatus ExtractElement1SelectParams (BeSQLite::Statement& stmt);
-        DgnDbStatus ExtractElement2SelectParams (BeSQLite::Statement& stmt);
-        DgnDbStatus ExtractElement3SelectParams (BeSQLite::Statement& stmt);
-        DgnDbStatus ExtractElement4SelectParams (BeSQLite::Statement& stmt);
-        void ExtractSelectParams (BeSQLite::Statement& stmt, Utf8CP className);
-
-        //OverLoaded Methods to Verify Business property Values returned by ECSql Statements. 
-        DgnDbStatus ExtractElement1SelectParams (ECSqlStatement& stmt);
-        DgnDbStatus ExtractElement2SelectParams (ECSqlStatement& stmt);
-        DgnDbStatus ExtractElement3SelectParams (ECSqlStatement& stmt);
-        DgnDbStatus ExtractElement4SelectParams (ECSqlStatement& stmt);
-        void ExtractSelectParams (ECSqlStatement& stmt, Utf8CP className);
-
-    protected:
         static const int s_initialInstanceCount = 1000000;
         static const int s_opCount = 50000;
+        static const int64_t s_firstElementId = INT64_C(6);
+        static Utf8CP const s_testSchemaXml;
 
-        void DgnApiIsertTime (int instanceCount, Utf8CP className, int initialInstanceCount);
-        void DgnApiSelectTime (Utf8CP className, int initialInstanceCount);
-        void DgnApiUpdateTime (int instanceCount, Utf8CP className, int initialInstanceCount);
-        void DgnApiDeleteTime (int instanceCount, Utf8CP className, int initialInstanceCount);
+        void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
 
-        void ECSqlInsertTime (int instanceCount, Utf8CP className, int initialInstanceCount);
-        void ECSqlSelectTime (Utf8CP className, int initialInstanceCount);
-        void ECSqlUpdateTime (int instanceCount, Utf8CP className, int initialInstanceCount);
-        void ECSqlDeleteTime (int instanceCount, Utf8CP className, int initialInstanceCount);
+        void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const;
 
-        void SqlInsertTime (int instanceCount, Utf8CP className, int initialInstanceCount);
-        void SqlSelectTime (Utf8CP className, int initialInstanceCount);
-        void SqlUpdateTime (int instanceCount, Utf8CP className, int initialInstanceCount);
-        void SqlDeleteTime (int instanceCount, Utf8CP className, int initialInstanceCount);
+        static int DetermineElementIdIncrement() { return (s_initialInstanceCount - s_firstElementId) / s_opCount; }
 
-    public:
-        PerformanceElementsCRUDTestFixture ()
+        //Generate Sql CRUD Statements.
+        void GetInsertSql(Utf8CP className, Utf8StringR insertSql, DgnClassId classId) const;
+        void GetSelectSql(Utf8CP className, Utf8StringR selectSql) const;
+        void GetUpdateSql(Utf8CP className, Utf8StringR updateSql) const;
+        void GetDeleteSql(Utf8StringR deleteSql) const;
+
+        //Generate ECSql CRUD Statements. 
+        void GetInsertECSql(Utf8CP className, Utf8StringR insertECSql) const;
+        void GetSelectECSql(Utf8CP className, Utf8StringR selectECSql) const;
+        void GetUpdateECSql(Utf8CP className, Utf8StringR updateECSql) const;
+        void GetDeleteECSql(Utf8CP className, Utf8StringR deleteECSql) const;
+
+        //Methods to Bind Business Property Values for Sql Statements
+        static DgnDbStatus BindElement1PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        static DgnDbStatus BindElement2PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        static DgnDbStatus BindElement3PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        static DgnDbStatus BindElement4PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
+        static void BindParams(DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className);
+        static void BindUpdateParams(BeSQLite::Statement& stmt, Utf8CP className);
+
+        //ECsql Overloads to Bind business Property values
+        static DgnDbStatus BindElement1PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        static DgnDbStatus BindElement2PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        static DgnDbStatus BindElement3PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        static DgnDbStatus BindElement4PropertyParams(ECSqlStatement& stmt, bool updateParams);
+        static void BindParams(DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
+        static void BindUpdateParams(ECSqlStatement& stmt, Utf8CP className);
+
+        //Methods to verify Business Property Values returned by Sql Statements. 
+        static DgnDbStatus ExtractElement1SelectParams(BeSQLite::Statement& stmt);
+        static DgnDbStatus ExtractElement2SelectParams(BeSQLite::Statement& stmt);
+        static DgnDbStatus ExtractElement3SelectParams(BeSQLite::Statement& stmt);
+        static DgnDbStatus ExtractElement4SelectParams(BeSQLite::Statement& stmt);
+        static void ExtractSelectParams(BeSQLite::Statement& stmt, Utf8CP className);
+
+        //OverLoaded Methods to Verify Business property Values returned by ECSql Statements. 
+        static DgnDbStatus ExtractElement1SelectParams(ECSqlStatement& stmt);
+        static DgnDbStatus ExtractElement2SelectParams(ECSqlStatement& stmt);
+        static DgnDbStatus ExtractElement3SelectParams(ECSqlStatement& stmt);
+        static DgnDbStatus ExtractElement4SelectParams(ECSqlStatement& stmt);
+        static void ExtractSelectParams(ECSqlStatement& stmt, Utf8CP className);
+
+    protected:
+        void ElementApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ElementApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ElementApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ElementApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+
+        void ECSqlInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ECSqlSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ECSqlUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ECSqlDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+
+        void SqlInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void SqlSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void SqlUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void SqlDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+
+        PerformanceElementsCRUDTestFixture() : DgnDbTestFixture()
             {
-            DgnDomains::RegisterDomain (PerformanceElementTestDomain::GetDomain ());
+            DgnDomains::RegisterDomain(PerformanceElementTestDomain::GetDomain());
             }
+
     };
