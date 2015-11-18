@@ -1300,14 +1300,13 @@ void PerformanceElementsCRUDTestFixture::ElementApiSelectTime(Utf8CP className, 
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     const int elementIdIncrement = DetermineElementIdIncrement();
+    StopWatch timer (true);
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(s_firstElementId + i*elementIdIncrement);
         DgnElementCPtr element = m_db->Elements().GetElement(id);
         ASSERT_TRUE(element != nullptr);
         }
-
-    StopWatch timer (true);
     timer.Stop ();
     LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Element API Read '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
     }
