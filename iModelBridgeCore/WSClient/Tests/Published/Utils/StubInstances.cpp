@@ -145,6 +145,18 @@ Utf8String StubInstances::ToChangesetResponseJson() const
     return dataJson.toStyledString();
     }
 
+WSCreateObjectResult StubInstances::ToWSCreateObjectResult() const
+    {
+    if (m_instances.empty())
+        {
+        EXPECT_TRUE(false);
+        return WSCreateObjectResult();
+        }
+    Json::Value dataJson;
+    dataJson["changedInstance"]["instanceAfterChange"] = ConvertStubInstanceToJson(m_instances.front());
+    return WSCreateObjectResult::Success(dataJson);
+    }
+
 StubInstances::StubRelationshipInstances::StubRelationshipInstances(bvector<std::shared_ptr<StubRelationshipInstance>>& relationships) :
 m_relationshipInstances(relationships)
     {}

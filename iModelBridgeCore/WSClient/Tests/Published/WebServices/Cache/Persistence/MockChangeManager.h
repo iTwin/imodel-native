@@ -12,10 +12,9 @@
 
 #ifdef USE_GTEST
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-using namespace ::testing;
 
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                                     Vincas.Razma    11/2014
+* @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct MockChangeManager> MockChangeManagerPtr;
 struct MockChangeManager : public IChangeManager
@@ -66,14 +65,16 @@ struct MockChangeManager : public IChangeManager
             ChangeStatus (ECInstanceKeyCR instance));
         MOCK_METHOD1 (GetObjectSyncStatus,
             SyncStatus (ECInstanceKeyCR instance));
+        MOCK_METHOD1 (ReadInstanceRevision,
+            std::shared_ptr<InstanceRevision>(ECInstanceKeyCR));
+        MOCK_METHOD1 (ReadFileRevision,
+            std::shared_ptr<FileRevision>(ECInstanceKeyCR));
         MOCK_METHOD2 (ReadModifiedProperties,
             BentleyStatus (ECInstanceKeyCR instance, JsonValueR propertiesOut));
-        MOCK_METHOD2 (CommitCreationChange,
-            BentleyStatus (ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId));
-        MOCK_METHOD1 (CommitObjectChange,
-            BentleyStatus (ECInstanceKeyCR instanceKey));
-        MOCK_METHOD1 (CommitFileChange,
-            BentleyStatus (ECInstanceKeyCR instanceKey));
+        MOCK_METHOD1 (CommitInstanceRevision,
+            BentleyStatus (InstanceRevisionCR));
+        MOCK_METHOD1 (CommitFileRevision,
+            BentleyStatus (FileRevisionCR));
         MOCK_METHOD3 (UpdateCreatedInstance, 
             BentleyStatus (ObjectIdCR instanceId, WSObjectsResponseCR instanceResponse, bmap<ECInstanceKey, ECInstanceKey>&));
     };

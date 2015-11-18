@@ -29,6 +29,8 @@ struct JsonUtil
         static void ToJsonValue(RapidJsonValueCR source, JsonValueR target);
 
         static void DeepCopy(RapidJsonValueCR source, RapidJsonDocumentR target);
+
+        static Utf8String ToStyledString(RapidJsonValueCR value);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
