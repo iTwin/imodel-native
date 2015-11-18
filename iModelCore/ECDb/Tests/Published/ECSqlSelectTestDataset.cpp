@@ -1276,7 +1276,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry";
-    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //group by column not in select clause is supported (although against standard)
     ecsql = "SELECT count(*) FROM ecsql.PSA GROUP BY S";
@@ -1308,19 +1308,25 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
     
     ecsql = "SELECT P2D, count(*) FROM ecsql.PSA GROUP BY P2D";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT P3D, count(*) FROM ecsql.PSA GROUP BY P3D";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT PStructProp, count(*) FROM ecsql.PSA GROUP BY PStructProp";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT Bi_Array, count(*) FROM ecsql.PSA GROUP BY Bi_Array";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT PStruct_Array, count(*) FROM ecsql.PSA GROUP BY PStruct_Array";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY I HAVING Geometry IS NOT NULL";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
+
+    ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING PStructProp IS NOT NULL";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
 
     ecsql = "SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING Length(S) > 1";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 1);
