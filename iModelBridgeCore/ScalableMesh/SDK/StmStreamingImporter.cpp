@@ -149,6 +149,7 @@ private:
     HPU::Array<DPoint3d>            m_ptArray;
     bvector<DPoint3d>               m_points;
     int                             m_nextIndex;
+    bool                            m_anyMorePoints;
 
     // Dimension groups definition
     enum
@@ -176,6 +177,9 @@ private:
         m_ptArray.Clear();        
         m_pointPacket.SetSize(0);
 
+        if (!m_anyMorePoints)
+            return;
+
         if (m_nextIndex == -1)
             {        
             if (m_points.size() > 0)
@@ -189,7 +193,7 @@ private:
             }
 
         if (m_points.size() > 0)
-            {            
+            {                    
             size_t sizeToCopy = min(m_points.size() - m_nextIndex,  m_pointPacket.GetCapacity());
             m_ptArray.Append(&m_points[m_nextIndex], &m_points[m_nextIndex] + sizeToCopy);
             m_pointPacket.SetSize(m_ptArray.GetSize());
@@ -205,6 +209,7 @@ private:
             }
         else
             {
+            m_anyMorePoints = false;
             s_dataPipe.FinishProcessingPoints();            
             }
         }
@@ -215,7 +220,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool                    _Next                              () override
         {        
-        return m_points.size() > 0;        
+        return m_anyMorePoints;        
         }
 public:
     /*---------------------------------------------------------------------------------**//**
@@ -225,6 +230,7 @@ public:
     explicit                        StmStreamingPointExtractor             ()         
         {
         m_nextIndex = -1;
+        m_anyMorePoints = true;
         }
     };
 
@@ -290,8 +296,9 @@ private:
     PODPacketProxy<IDTMFile::FeatureHeader>
                                     m_headerPacket;
     PODPacketProxy<DPoint3d>        m_pointPacket;
-
-    IDTMFeatureArray<DPoint3d>      m_featureArray;
+    IDTMFeatureArray<DPoint3d>      m_featureArray;    
+    bvector<DPoint3d>               m_points;
+    DTMFeatureType                  m_featureType;
 
     /*---------------------------------------------------------------------------------**//**
     * @description  
@@ -311,10 +318,49 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                              () override
         {
+#if 0
         m_featureArray.Clear();
 
         m_headerPacket.SetSize(0);
         m_pointPacket.SetSize(0);
+        m_points.clear()
+
+        s_dataPipe.ReadFeature(m_points, m_featureType);
+
+        /*
+        if (m_nextIndex == -1)
+            {        
+            if (m_points.size() > 0)
+                {
+                s_dataPipe.FinishProcessingPoints();
+                m_points.clear();
+                }
+            
+            s_dataPipe.ReadPoints(m_points);
+            m_nextIndex = 0;
+            }
+            */
+
+        if (m_points.size() > 0)
+            {            
+            size_t sizeToCopy = min(m_points.size() - m_nextIndex,  m_pointPacket.GetCapacity());
+            m_ptArray.Append(&m_points[m_nextIndex], &m_points[m_nextIndex] + sizeToCopy);
+            m_pointPacket.SetSize(m_ptArray.GetSize());
+
+            m_nextIndex += (int)sizeToCopy;
+
+            assert(m_nextIndex <= m_points.size());
+
+            if (m_nextIndex == m_points.size())
+                {
+                m_nextIndex = -1;
+                }
+            }
+        else
+            {
+            s_dataPipe.FinishProcessingPoints();            
+            }
+#endif
         return;
 
 /*        

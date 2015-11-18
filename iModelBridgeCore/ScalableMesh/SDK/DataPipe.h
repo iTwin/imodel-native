@@ -30,13 +30,41 @@ using namespace Bentley::Bstdcxx;
             std::condition_variable m_consume;
             std::condition_variable m_produce;
             std::mutex              m_availableDataMutex; 
-            std::atomic<bool>       m_consumeDone;                        
+            std::atomic<bool>       m_consumeDone;   
+            std::atomic<bool>       m_finishWritingPoints;   
+
                                     
         public : 
 
             DataPipe()
                 {
-                m_consumeDone = true;                
+                m_consumeDone = true;   
+                m_finishWritingPoints = false;
+                }
+
+            bool WriteFeature(const DPoint3d* featurePoints, size_t nbOfFeaturesPoints, DTMFeatureType featureType)
+                {
+                std::unique_lock<std::mutex> lck(m_availableDataMutex);                   
+                m_points = featurePoints;
+                m_nbOfPoints = nbOfFeaturesPoints;
+                m_featureType = featureType;
+                m_consumeDone = false;                
+                m_consume.notify_one();              
+                while (!m_consumeDone) m_produce.wait(lck);   
+
+                return true;
+                }
+
+             void ReadFeature(bvector<DPoint3d>& points, DTMFeatureType& featureType)
+                {                 
+                std::unique_lock<std::mutex> lck(m_availableDataMutex); 
+                while (m_consumeDone && !m_finishWritingPoints) m_consume.wait(lck);                                
+                points.resize(m_nbOfPoints);
+                if (points.size() > 0)
+                    {
+                    memcpy(&points[0], m_points, sizeof(DPoint3d) * points.size());                                           
+                    featureType = m_featureType;
+                    }                           
                 }
 
             void WritePoints(const DPoint3d* points,
@@ -51,9 +79,9 @@ using namespace Bentley::Bstdcxx;
                 }
 
             void ReadPoints(bvector<DPoint3d>& points)
-                { 
+                {               
                 std::unique_lock<std::mutex> lck(m_availableDataMutex); 
-                while (m_consumeDone) m_consume.wait(lck);                                
+                while (m_consumeDone && !m_finishWritingPoints) m_consume.wait(lck);                                
                 points.resize(m_nbOfPoints);
                 if (points.size() > 0)
                     {
@@ -66,4 +94,11 @@ using namespace Bentley::Bstdcxx;
                 m_consumeDone = true;
                 m_produce.notify_one();              
                 }
+            
+            void FinishWritingPoints()
+                {
+                WritePoints(0, 0);
+                m_finishWritingPoints = true;                
+                }
+                
         };

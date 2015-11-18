@@ -131,9 +131,10 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
 	}
 #endif
 
-    bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
+        
+    int WritePointsCallback(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg)
         {   
-        TransmittedPointsHeader pointHeader((unsigned int)nbOfPoints, arePoints3d);
+        TransmittedPointsHeader pointHeader((unsigned int)numPoints, false);
                 
         DWORD  numBytesWritten;        
         WriteFile(s_pipe,
@@ -145,7 +146,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
 
         WriteFile(s_pipe,
                   points,
-                  (DWORD)(sizeof(DPoint3d) * nbOfPoints),
+                  (DWORD)(sizeof(DPoint3d) * numPoints),
                   &numBytesWritten,
                   NULL 
                   );
@@ -165,10 +166,11 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         short        m_featureType;
         unsigned int m_nbOfFeaturePoints;        
         };
+    
 
-    bool WriteFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoints, DTMFeatureType featureType, bool isFeature3d)
+    int WriteFeatureCallback(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg)
         {        
-        TransmittedFeatureHeader featureHeader((unsigned int)nbOfFeaturesPoints, (short)featureType, isFeature3d);
+        TransmittedFeatureHeader featureHeader((unsigned int)numPoints, (short)dtmFeatureType, false);
 
         DWORD numBytesWritten;        
         WriteFile(s_pipe,
@@ -179,8 +181,8 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
                   );
         
         WriteFile(s_pipe,
-                  featurePoints,
-                  (DWORD)(sizeof(DPoint3d) * nbOfFeaturesPoints),
+                  points,
+                  (DWORD)(sizeof(DPoint3d) * numPoints),
                   &numBytesWritten,
                   NULL 
                   );
@@ -194,6 +196,11 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return true;
         }
 
+    bool StreamFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoints, DTMFeatureType featureType, bool isFeature3d)
+        {                        
+        s_dataPipe.WriteFeature(featurePoints, nbOfFeaturesPoints, featureType);
+        return true;
+        }
     
     void ImportThread(DgnPlatformLib::Host* hostToAdopt, Bentley::ScalableMesh::IScalableMeshSourceImporterPtr& importerPtr)
         {    
@@ -201,64 +208,9 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
 
         importerPtr->Import();
 
-        s_dataPipe.WritePoints(0, 0);
+        s_dataPipe.FinishWritingPoints();
         }
 
-    BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pTestNode)
-        {
-               
-//NEEDS_WORK_MST Remove
-        BeXmlStatus status;
-
-       // s_pPointResultFile = fopen("D:\\MyDoc\\CC - Iteration 6\\YIIDataset\\saltLakeWithCC.xyz", "w+");                
-
-        Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
-        s_pipe = m_pipe;
-        importerPtr->SetFeatureCallback(WriteFeatureCallback);
-        importerPtr->SetPointsCallback(StreamPointsCallback);
-
-        if (importerPtr == 0)
-            {
-            printf("ERROR : cannot create importer\r\n");
-            return ERROR;
-            }
-        else
-            {
-            WString gcsKeyName;
-
-            status = pTestNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
-
-            if (status == BEXML_Success)
-                {
-                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
-                StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
-                assert(status == SUCCESS);
-                }
-        
-            if (ParseSourceSubNodes(importerPtr->EditSources(), pTestNode) == true)
-                {
-                std::thread workingThread;
-
-                workingThread = std::thread(&ImportThread, DgnPlatformLib::QueryHost(), importerPtr);                
-
-                IMrDTMCreatorPtr mrdtmCreatorPtr(IMrDTMCreator::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm"));
-
-                Bentley::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\dummy.stmstream",
-                                                                           Bentley::MrDTM::DTM_SOURCE_DATA_DTM));
-
-                mrdtmCreatorPtr->EditSources().Add(stmSourcePtr);
-
-                mrdtmCreatorPtr->Create();
-                
-                if (workingThread.joinable())
-                    workingThread.join();
-                }
-            }
-
-        //fclose(s_pPointResultFile);
-
-        return SUCCESS;
-        }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 11/2015
@@ -298,19 +250,22 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
     if (fixResPointQueryPtr != 0)
         {        
         // Find the last res that have the less than 200000 points
-        IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
+        Bentley::MrDTM::IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(Bentley::MrDTM::IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
     
         int  res = 0;
         bool found = false;
-        DTMPtr singleResolutionViewDtmPtr = 0;                             
+        DTMPtr singleResolutionViewDtmPtr = 0;                         
+        Bentley::MrDTM::IMrDTMQueryParametersPtr mrdtmQueryParamPtr;
 
         for (res=0; res<mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT); res++) 
             {                
             mrDtmFixResqueryParamsPtr->SetResolutionIndex(res);  
             mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
-
+            
+            mrdtmQueryParamPtr = mrDtmFixResqueryParamsPtr.get();
+                
             singleResolutionViewDtmPtr = 0;                             
-            if (fixResPointQueryPtr->Query(singleResolutionViewDtmPtr, 0, 0, (IMrDTMQueryParametersPtr&)mrDtmFixResqueryParamsPtr) != IMrDTMQuery::S_SUCCESS)
+            if (fixResPointQueryPtr->Query(singleResolutionViewDtmPtr, 0, 0, mrdtmQueryParamPtr) != IMrDTMQuery::S_SUCCESS)
                 return ERROR;
         
             if (singleResolutionViewDtmPtr->GetPointCount() < 200000)
@@ -333,8 +288,10 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
         IMrDTMFullResolutionQueryParamsPtr mrDtmFullResQueryParam(IMrDTMFullResolutionQueryParams::CreateParams());
         mrDtmFullResQueryParam->SetTriangulationState(false);                
         mrDtmFullResQueryParam->SetReturnAllPtsForLowestLevel(false);
-        
-        if (fullResQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), (IMrDTMQueryParametersPtr&)mrDtmFullResQueryParam) != IMrDTMQuery::S_SUCCESS)     
+                
+        mrdtmQueryParamPtr = mrDtmFullResQueryParam.get();
+
+        if (fullResQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), mrdtmQueryParamPtr) != IMrDTMQuery::S_SUCCESS)     
             return ERROR;
                      
         *nbPointsForPointFeatures = (unsigned int)dtmPtr->GetPointCount() * (int)pow(4.0, mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT) - res - 1);
@@ -434,8 +391,12 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
             }        
         
         mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
+
+        IMrDTMQueryParametersPtr queryParameterPtr;
+
+        queryParameterPtr = mrDtmFixResqueryParamsPtr;
                     
-        status = fixResPointQueryPtr->Query(singleResolutionViewDtmPtr, 0, 0, (IMrDTMQueryParametersPtr&)mrDtmFixResqueryParamsPtr);
+        status = fixResPointQueryPtr->Query(singleResolutionViewDtmPtr, 0, 0, queryParameterPtr);
 
         assert(singleResolutionViewDtmPtr != 0);
 
@@ -462,7 +423,9 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
             nbPointsBefore = 0;
             }                        
         
-        if ((status = fullResQueryPtr->Query(dtmPtr, regionPts, (int)nbPts, (IMrDTMQueryParametersPtr&)mrDtmFullResQueryParam)) != SUCCESS)                         
+        queryParameterPtr = mrDtmFullResQueryParam;
+
+        if ((status = fullResQueryPtr->Query(dtmPtr, regionPts, (int)nbPts, queryParameterPtr)) != SUCCESS)                         
             {            
             return status;                  
             }
@@ -482,6 +445,7 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
             
     return SUCCESS;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 11/2015
@@ -523,8 +487,8 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         }    
 #endif
 
-    unsigned int approximateNbPointsForPointFeatures;
-    unsigned int approximateNbPointsForLinearFeatures;          
+    unsigned int approximateNbPointsForPointFeatures = 0;
+    unsigned int approximateNbPointsForLinearFeatures = 0;          
 
     StatusInt status = GetApproximationNbPtsNeedToExtract(mrdtmPtr,                                                                                                      
                                                           regionPoints,                          
@@ -598,6 +562,161 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
     singleResolutionDtm = dtmPtr->GetBcDTM();
     return SUCCESS;
     }      
+
+    BentleyStatus ChooseCorrectSubResolution(RefCountedPtr<BcDTM>& singleResolutionDtm)
+        {
+        IMrDTMPtr mrDtmPtr(IMrDTM::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm", true, true));
+
+        if (mrDtmPtr == 0)
+            return ERROR;
+
+       
+        DRange3d range;
+        std::vector<DPoint3d> regionPoints(8);
+
+        mrDtmPtr->GetRange(range);
+        range.Get8Corners(&regionPoints[0]);
+
+        regionPoints.resize(4);
+
+        size_t maxNbPointsToImport = 50000;
+                
+        int statusInt = QueryStmFromBestResolution(singleResolutionDtm, mrDtmPtr, regionPoints, maxNbPointsToImport);
+
+        assert(statusInt == SUCCESS);
+
+        __int64 pointCount = mrDtmPtr->GetPointCount();
+
+        pointCount = pointCount;
+
+        mrDtmPtr = 0;
+        statusInt = _wremove(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm");
+        assert(statusInt == 0);
+                       
+        if (statusInt != SUCCESS || singleResolutionDtm == 0)
+            return ERROR;
+
+        return SUCCESS;
+        }
+
+    #define MAX_SPOTS 100000
+
+    BentleyStatus StreamDataToApplication(RefCountedPtr<BcDTM>& singleResolutionDtm)
+        {        
+        DTMStatusInt status = singleResolutionDtm->BrowseFeatures(DTMFeatureType::Spots,
+                                                                  MAX_SPOTS,
+                                                                  0,
+                                                                  WritePointsCallback);
+
+        if (status != SUCCESS)
+            return ERROR;
+
+        //Linear features currently supported by the importer
+        static const DTMFeatureType featureTypes[] =
+            {
+            DTMFeatureType::Breakline,
+            // Removed as it was automatically transformed to DTMFeatureType::TinHull when tin was triangulated. Tin types couldn't be added to
+            // not triangulated dtm.
+            //DTMFeatureType::Hull,
+            DTMFeatureType::ContourLine,
+            DTMFeatureType::Void,
+            DTMFeatureType::BreakVoid,
+            DTMFeatureType::Island,
+            DTMFeatureType::Hole,
+            DTMFeatureType::Polygon,
+            DTMFeatureType::ZeroSlopePolygon,
+            DTMFeatureType::SoftBreakline,
+            // Removed as it was not supported for now and was causing a memory leak.
+            //DTMFeatureType::GraphicBreak
+            };
+
+          
+        for (auto& featureType : featureTypes)
+            {
+            DTMStatusInt status = singleResolutionDtm->BrowseFeatures(DTMFeatureType::Spots,
+                                                                      (long)featureType,
+                                                                      0,
+                                                                      WriteFeatureCallback);
+
+            if (status != SUCCESS)
+                return ERROR;
+            }
+                    
+        return SUCCESS;
+        }
+
+    BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pTestNode)
+        {
+               
+//NEEDS_WORK_MST Remove
+        BeXmlStatus status;
+
+       // s_pPointResultFile = fopen("D:\\MyDoc\\CC - Iteration 6\\YIIDataset\\saltLakeWithCC.xyz", "w+");                
+
+        Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
+        s_pipe = m_pipe;
+        importerPtr->SetFeatureCallback(StreamFeatureCallback);
+        importerPtr->SetPointsCallback(StreamPointsCallback);
+
+        if (importerPtr == 0)
+            {
+            printf("ERROR : cannot create importer\r\n");
+            return ERROR;
+            }
+        else
+            {
+            WString gcsKeyName;
+
+            status = pTestNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+
+            if (status == BEXML_Success)
+                {
+                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
+                assert(status == SUCCESS);
+                }
+        
+            if (ParseSourceSubNodes(importerPtr->EditSources(), pTestNode) == true)
+                {
+                std::thread workingThread;
+
+                workingThread = std::thread(&ImportThread, DgnPlatformLib::QueryHost(), importerPtr);         
+                
+                IMrDTMCreatorPtr mrdtmCreatorPtr(IMrDTMCreator::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm"));
+
+                Bentley::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\dummy.stmstream",
+                                                                           Bentley::MrDTM::DTM_SOURCE_DATA_DTM));
+
+                mrdtmCreatorPtr->EditSources().Add(stmSourcePtr);
+
+                StatusInt status = mrdtmCreatorPtr->Create();
+
+                if (status != SUCCESS)
+                    return ERROR;
+                
+                if (workingThread.joinable())
+                    workingThread.join();
+
+                mrdtmCreatorPtr = 0;
+
+                RefCountedPtr<BcDTM> singleResolutionDtm;
+
+                status = ChooseCorrectSubResolution(singleResolutionDtm);
+
+                if (status != SUCCESS)
+                    return ERROR;
+
+                status = StreamDataToApplication(singleResolutionDtm);
+
+                if (status != SUCCESS)
+                    return ERROR;
+                }
+            }        
+
+        return SUCCESS;
+        }
+
+
 
 #if 0 
     //NEEDS_WORK_MST To Remove
