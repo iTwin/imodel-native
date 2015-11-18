@@ -68,7 +68,7 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
                     "                <MapStrategy>"
                     "                    <Strategy>SharedTable</Strategy>"
                     "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
-                    "                    <Options>JoinedTableForSubclasses</Options>"
+                    "                    <Options>JoinedTablePerDirectSubclass</Options>"
                     "                </MapStrategy>"
                     "            </ClassMap>"
                     "        </ECCustomAttributes>"
@@ -213,7 +213,7 @@ TEST_F(PerformanceJoinedTableTests, Insert)
         ASSERT_EQ(booInsert.ClearBindings(), ECSqlStatus::Success);
         }
     timer.Stop();
-    LogTiming(timer, "ECSQL INSERT (JOINEDTABLE) ", s_opCount);
+    LogTiming(timer, "ECSQL INSERT (JoinedTablePerDirectSubclass) ", s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -251,7 +251,7 @@ TEST_F(PerformanceJoinedTableTests, Update)
         }
 
     timer.Stop();
-    LogTiming(timer, "ECSQL UPDATE (JOINEDTABLE) ", s_opCount);
+    LogTiming(timer, "ECSQL UPDATE (JoinedTablePerDirectSubclass) ", s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -293,7 +293,7 @@ TEST_F(PerformanceJoinedTableTests, Select)
         }
 
     timer.Stop();
-    LogTiming(timer, "ECSQL SELECT (JOINEDTABLE) ", s_opCount);
+    LogTiming(timer, "ECSQL SELECT (JoinedTablePerDirectSubclass) ", s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -320,8 +320,7 @@ TEST_F(PerformanceJoinedTableTests, Delete)
         }
 
     timer.Stop();
-    LogTiming(timer, "ECSQL DELETE (JOINEDTABLE) ", s_opCount);
-
+    LogTiming(timer, "ECSQL DELETE (JoinedTablePerDirectSubclass) ", s_opCount);
     }
 
 
