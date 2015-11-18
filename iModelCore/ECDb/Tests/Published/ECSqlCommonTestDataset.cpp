@@ -369,9 +369,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
         ecsql.Sprintf("%s WHERE GetZ(P2D) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
         
         ecsql.Sprintf("%s WHERE GetX(P3D) >= -11.111", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
@@ -385,46 +383,26 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
         ecsql.Sprintf("%s WHERE GetX(P2D) >= GetX(P3D) AND GetY(P2D) >= GetY(P3D)", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        {
         ecsql.Sprintf("%s WHERE GetX(?) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
-        }
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
-        {
         ecsql.Sprintf("%s WHERE GetY(?) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
-        }
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
-        {
         ecsql.Sprintf("%s WHERE GetZ(?) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
-        }
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE GetX(NULL) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE GetX(Bi) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE GetX(D) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE GetX(S) >= -11.111", pClassECSqlStub.c_str());
-#ifdef WIP_MERGE
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
-#endif
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
         }
 
     return dataset;

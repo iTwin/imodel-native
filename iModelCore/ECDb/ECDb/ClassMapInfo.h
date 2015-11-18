@@ -64,6 +64,8 @@ private:
 
     BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, Utf8CP customAttributeName);
 
+    BentleyStatus DetermineJoinedTableName(ECN::ECClassCR rootClassOfJoinedTable);
+
 protected:
     virtual BentleyStatus _InitializeFromSchema();
     virtual MapStatus _EvaluateMapStrategy();

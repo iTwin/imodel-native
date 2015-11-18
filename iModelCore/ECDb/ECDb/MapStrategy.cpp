@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2015
@@ -25,23 +26,23 @@ BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Options options, bo
 //+---------------+---------------+---------------+---------------+---------------+------
 bool UserECDbMapStrategy::IsValid() const
     {
+    Options invalidOptions1 = Options::SharedColumns | Options::SharedColumnsForSubclasses;
+    Options invalidOptions2 = Options::SharedColumns | Options::DisableSharedColumns;
+    Options invalidOptions3 = Options::SharedColumnsForSubclasses | Options::DisableSharedColumns;
+    Options invalidOptions4 = Options::JoinedTablePerDirectSubclass | Options::SingleJoinedTableForSubclasses;
+
     switch (m_strategy)
         {
             case Strategy::None:
             {
-            Options invalidOptions1 = Enum::Or(Options::SharedColumns, Options::SharedColumnsForSubclasses);
-            Options invalidOptions2 = Enum::Or(Options::SharedColumns, Options::DisableSharedColumns);
-            Options invalidOptions3 = Enum::Or(Options::SharedColumnsForSubclasses, Options::DisableSharedColumns);
-            return !m_appliesToSubclasses && !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3);
+            return !m_appliesToSubclasses && !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3) && !Enum::Contains(m_options, invalidOptions4);
             }
             case Strategy::SharedTable:
             {
             if (!m_appliesToSubclasses)
                 return m_options == Options::None || m_options == Options::SharedColumns;
 
-            Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTableForSubclasses);
-            Options validOptions2 = Enum::Or(Options::SharedColumnsForSubclasses, Options::JoinedTableForSubclasses);
-            return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
+            return !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3) && !Enum::Contains(m_options, invalidOptions4);
             }
 
             case Strategy::ExistingTable:
@@ -113,14 +114,16 @@ BentleyStatus UserECDbMapStrategy::TryParse(Options& mapStrategyOptions, Utf8CP 
         if (optionToken.empty())
             continue;
 
-        if (optionToken.EqualsI("SharedColumns"))
+        if (optionToken.EqualsI(USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNS))
             mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::SharedColumns);
-        else if (optionToken.EqualsI("SharedColumnsForSubclasses"))
+        else if (optionToken.EqualsI(USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES))
             mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::SharedColumnsForSubclasses);
-        else if (optionToken.EqualsI("DisableSharedColumns"))
+        else if (optionToken.EqualsI(USERMAPSTRATEGY_OPTIONS_DISABLESHAREDCOLUMNS))
             mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::DisableSharedColumns);
-        else if (optionToken.EqualsI("JoinedTableForSubclasses"))
-            mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::JoinedTableForSubclasses);
+        else if (optionToken.EqualsI(USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS))
+            mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::JoinedTablePerDirectSubclass);
+        else if (optionToken.EqualsI(USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES))
+            mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::SingleJoinedTableForSubclasses);
         else
             {
             LOG.errorv("'%s' is not a valid MapStrategy option value.", optionToken.c_str());
@@ -168,33 +171,47 @@ Utf8String UserECDbMapStrategy::ToString() const
     if (m_appliesToSubclasses)
         str.append(" (applies to subclasses)");
 
-    switch (m_options)
-        {
-            case Options::None:
-                break;
-
-            case Options::SharedColumns:
-                str.append("Option: SharedColumns");
-                break;
-
-            case Options::SharedColumnsForSubclasses:
-                str.append("Option: SharedColumnsForSubclasses");
-                break;
-
-            case Options::DisableSharedColumns:
-                str.append("Option: DisableSharedColumns");
-                break;
-
-            case Options::JoinedTableForSubclasses:
-                str.append("Option: JoinedTableForSubclasses");
-                break;
-
-            default:
-                BeAssert(false);
-                break;
-        }
+    if (m_options != Options::None)
+        str.append("Options: ").append(ToString(m_options));
 
     return std::move(str);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle              11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String UserECDbMapStrategy::ToString(Options options)
+    {
+    Utf8String str;
+    if (options == UserECDbMapStrategy::Options::None)
+        return str;
+
+    bvector<Utf8CP> tokens;
+    if (Enum::Contains(options, Options::SharedColumns))
+        tokens.push_back(USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNS);
+
+    if (Enum::Contains(options, Options::SharedColumnsForSubclasses))
+        tokens.push_back(USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES);
+
+    if (Enum::Contains(options, Options::DisableSharedColumns))
+        tokens.push_back(USERMAPSTRATEGY_OPTIONS_DISABLESHAREDCOLUMNS);
+
+    if (Enum::Contains(options, Options::JoinedTablePerDirectSubclass))
+        tokens.push_back(USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS);
+
+    if (Enum::Contains(options, Options::SingleJoinedTableForSubclasses))
+        tokens.push_back(USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES);
+
+    bool isFirstItem = true;
+    for (Utf8CP token : tokens)
+        {
+        if (isFirstItem)
+            str.append(",");
+
+        str.append(token);
+        }
+
+    return str;
     }
 
 //---------------------------------------------------------------------------------
@@ -231,7 +248,7 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
     if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::SharedColumns))
         m_options = Enum::Or(m_options, Options::SharedColumns);
     
-    if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTableForSubclasses))
+    if (Enum::Intersects(userOptions, Enum::Or(UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass, UserECDbMapStrategy::Options::SingleJoinedTableForSubclasses)))
         m_options = Enum::Or(m_options, Options::ParentOfJoinedTable);
 
     if (!IsValid())
@@ -325,18 +342,35 @@ Utf8String ECDbMapStrategy::ToString() const
     if (m_appliesToSubclasses)
         str.append(" (applies to subclasses)");
 
-    switch (m_options)
+    if (m_options != Options::None)
         {
-            case Options::None:
-                break;
+        str.append("Option: ");
 
-            case Options::SharedColumns:
-                str.append("Option: SharedColumns");
-                break;
+        bool needsComma = false;
+        if (Enum::Contains(m_options, Options::SharedColumns))
+            {
+            str.append(" SharedColumns");
+            needsComma = true;
+            }
 
-            default:
-                BeAssert(false);
-                break;
+        if (Enum::Contains(m_options, Options::JoinedTable))
+            {
+            if (needsComma)
+                str.append(",");
+
+            str.append(" JoinedTable");
+            needsComma = true;
+            }
+
+        if (Enum::Contains(m_options, Options::ParentOfJoinedTable))
+            {
+            if (needsComma)
+                str.append(",");
+
+            str.append(" ParentOfJoinedTable");
+            needsComma = true;
+            }
+
         }
 
     return std::move(str);
