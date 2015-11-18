@@ -232,7 +232,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
 
         void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const;
 
-        static int DetermineElementIdIncrement() { return (s_initialInstanceCount - s_firstElementId) / s_opCount; }
+        static int DetermineElementIdIncrement() { return s_initialInstanceCount / s_opCount; }
 
         //Generate Sql CRUD Statements.
         void GetInsertSql(Utf8CP className, Utf8StringR insertSql, DgnClassId classId) const;
