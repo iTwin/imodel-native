@@ -159,6 +159,7 @@ DgnDbStatus PerformanceElement1::BindParams (BeSQLite::EC::ECSqlStatement& state
         (ECSqlStatus::Success != statement.BindInt64 (statement.GetParameterIndex ("Prop1_2"), m_prop1_2)) ||
         (ECSqlStatus::Success != statement.BindDouble (statement.GetParameterIndex ("Prop1_3"), m_prop1_3)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -170,6 +171,7 @@ DgnDbStatus PerformanceElement1::_BindInsertParams (BeSQLite::EC::ECSqlStatement
     DgnDbStatus stat = BindParams (statement);
     if (DgnDbStatus::Success != stat)
         return stat;
+
     return T_Super::_BindInsertParams (statement);
     }
 
@@ -178,10 +180,6 @@ DgnDbStatus PerformanceElement1::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PerformanceElement1::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    //printf ("\n string Value :%s \n", stmt.GetValueText (params.GetSelectIndex ("Prop1_1")));
-    //printf ("\n intValue: %d \n", stmt.GetValueInt64 (params.GetSelectIndex ("Prop1_2")));
-    //printf ("\n doubleValue: %f \n", stmt.GetValueDouble (params.GetSelectIndex ("Prop1_3")));
-
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop1_1")), "Element1 - InitValue"));
     EXPECT_EQ (10000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop1_2")));
     EXPECT_EQ (-3.1415, stmt.GetValueDouble (params.GetSelectIndex ("Prop1_3")));
@@ -201,6 +199,7 @@ DgnDbStatus PerformanceElement1::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
     m_prop1_1 = "Element1 - UpdatedValue";
     m_prop1_2 = 20000000LL;
     m_prop1_3 = -6.283;
+
     return BindParams (statement);
     }
 
@@ -250,6 +249,7 @@ DgnDbStatus PerformanceElement2::BindParams (BeSQLite::EC::ECSqlStatement& state
         (ECSqlStatus::Success != statement.BindInt64 (statement.GetParameterIndex ("Prop2_2"), m_prop2_2)) ||
         (ECSqlStatus::Success != statement.BindDouble (statement.GetParameterIndex ("Prop2_3"), m_prop2_3)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -261,6 +261,7 @@ DgnDbStatus PerformanceElement2::_BindInsertParams (BeSQLite::EC::ECSqlStatement
     DgnDbStatus stat = BindParams (statement);
     if (DgnDbStatus::Success != stat)
         return stat;
+
     return T_Super::_BindInsertParams (statement);
     }
 
@@ -289,6 +290,7 @@ DgnDbStatus PerformanceElement2::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
     m_prop2_1 = "Element2 - UpdatedValue";
     m_prop2_2 = 40000000LL;
     m_prop2_3 = 5.43656;
+
     return BindParams (statement);
     }
 
@@ -338,6 +340,7 @@ DgnDbStatus PerformanceElement3::BindParams (BeSQLite::EC::ECSqlStatement& state
         (ECSqlStatus::Success != statement.BindInt64 (statement.GetParameterIndex ("Prop3_2"), m_prop3_2)) ||
         (ECSqlStatus::Success != statement.BindDouble (statement.GetParameterIndex ("Prop3_3"), m_prop3_3)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -349,6 +352,7 @@ DgnDbStatus PerformanceElement3::_BindInsertParams (BeSQLite::EC::ECSqlStatement
     DgnDbStatus stat = BindParams (statement);
     if (DgnDbStatus::Success != stat)
         return stat;
+
     return T_Super::_BindInsertParams (statement);
     }
 
@@ -377,6 +381,7 @@ DgnDbStatus PerformanceElement3::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
     m_prop3_1 = "Element3 - UpdatedValue";
     m_prop3_2 = 60000000LL;
     m_prop3_3 = 2.828242;
+
     return BindParams (statement);
     }
 
@@ -426,6 +431,7 @@ DgnDbStatus PerformanceElement4::BindParams (BeSQLite::EC::ECSqlStatement& state
         (ECSqlStatus::Success != statement.BindInt64 (statement.GetParameterIndex ("Prop4_2"), m_prop4_2)) ||
         (ECSqlStatus::Success != statement.BindDouble (statement.GetParameterIndex ("Prop4_3"), m_prop4_3)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -437,6 +443,7 @@ DgnDbStatus PerformanceElement4::_BindInsertParams (BeSQLite::EC::ECSqlStatement
     DgnDbStatus stat = BindParams (statement);
     if (DgnDbStatus::Success != stat)
         return stat;
+
     return T_Super::_BindInsertParams (statement);
     }
 
@@ -465,6 +472,7 @@ DgnDbStatus PerformanceElement4::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
     m_prop4_1 = "Element4 - UpdatedValue";
     m_prop4_2 = 80000000LL;
     m_prop4_3 = 3.23606797748;
+
     return BindParams (statement);
     }
 
@@ -572,6 +580,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement1PropertyParams (BeSQ
         (DbResult::BE_SQLITE_OK != stmt.BindInt64 (stmt.GetParameterIndex (":Prop1_2"), intVal)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindDouble (stmt.GetParameterIndex (":Prop1_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -593,11 +602,13 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement2PropertyParams (BeSQ
         {
         stringVal.append ("InitValue");
         }
+
     if ((DgnDbStatus::Success != BindElement1PropertyParams (stmt, updateParams)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindText (stmt.GetParameterIndex (":Prop2_1"), stringVal.c_str (), BeSQLite::Statement::MakeCopy::No)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindInt64 (stmt.GetParameterIndex (":Prop2_2"), intVal)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindDouble (stmt.GetParameterIndex (":Prop2_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -619,11 +630,13 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement3PropertyParams (BeSQ
         {
         stringVal.append ("InitValue");
         }
+
     if ((DgnDbStatus::Success != BindElement2PropertyParams (stmt, updateParams)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindText (stmt.GetParameterIndex (":Prop3_1"), stringVal.c_str (), BeSQLite::Statement::MakeCopy::No)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindInt64 (stmt.GetParameterIndex (":Prop3_2"), intVal)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindDouble (stmt.GetParameterIndex (":Prop3_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -645,11 +658,13 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (BeSQ
         {
         stringVal.append ("InitValue");
         }
+
     if ((DgnDbStatus::Success != BindElement3PropertyParams (stmt, updateParams)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindText (stmt.GetParameterIndex (":Prop4_1"), stringVal.c_str (), BeSQLite::Statement::MakeCopy::No)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindInt64 (stmt.GetParameterIndex (":Prop4_2"), intVal)) ||
         (DbResult::BE_SQLITE_OK != stmt.BindDouble (stmt.GetParameterIndex (":Prop4_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -725,6 +740,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement1PropertyParams (ECSq
     Utf8String stringVal = "Element1 - ";
     int64_t intVal = 10000000LL;
     double doubleVal = -3.1416;
+
     if (updateParams)
         {
         stringVal.append ("UpdatedValue");
@@ -740,6 +756,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement1PropertyParams (ECSq
         (ECSqlStatus::Success != statement.BindInt64 (statement.GetParameterIndex ("Prop1_2"), intVal)) ||
         (ECSqlStatus::Success != statement.BindDouble (statement.GetParameterIndex ("Prop1_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -751,6 +768,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement2PropertyParams (ECSq
     Utf8String stringVal = "Element2 - ";
     int64_t intVal = 20000000LL;
     double doubleVal = 2.71828;
+
     if (updateParams)
         {
         stringVal.append ("UpdatedValue");
@@ -761,11 +779,13 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement2PropertyParams (ECSq
         {
         stringVal.append ("InitValue");
         }
+
     if ((DgnDbStatus::Success != BindElement1PropertyParams (stmt, updateParams)) ||
         (ECSqlStatus::Success != stmt.BindText (stmt.GetParameterIndex ("Prop2_1"), stringVal.c_str (), IECSqlBinder::MakeCopy::No)) ||
         (ECSqlStatus::Success != stmt.BindInt64 (stmt.GetParameterIndex ("Prop2_2"), intVal)) ||
         (ECSqlStatus::Success != stmt.BindDouble (stmt.GetParameterIndex ("Prop2_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -777,6 +797,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement3PropertyParams (ECSq
     Utf8String stringVal = "Element3 - ";
     int64_t intVal = 30000000LL;
     double doubleVal = 1.414121;
+
     if (updateParams)
         {
         stringVal.append ("UpdatedValue");
@@ -787,11 +808,13 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement3PropertyParams (ECSq
         {
         stringVal.append ("InitValue");
         }
+
     if ((DgnDbStatus::Success != BindElement2PropertyParams (stmt, updateParams)) ||
         (ECSqlStatus::Success != stmt.BindText (stmt.GetParameterIndex ("Prop3_1"), stringVal.c_str (), IECSqlBinder::MakeCopy::No)) ||
         (ECSqlStatus::Success != stmt.BindInt64 (stmt.GetParameterIndex ("Prop3_2"), intVal)) ||
         (ECSqlStatus::Success != stmt.BindDouble (stmt.GetParameterIndex ("Prop3_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -803,6 +826,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (ECSq
     Utf8String stringVal = "Element4 - ";
     int64_t intVal = 40000000LL;
     double doubleVal = 1.61803398874;
+
     if (updateParams)
         {
         stringVal.append ("UpdatedValue");
@@ -813,11 +837,13 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (ECSq
         {
         stringVal.append ("InitValue");
         }
+
     if ((DgnDbStatus::Success != BindElement3PropertyParams (stmt, updateParams)) ||
         (ECSqlStatus::Success != stmt.BindText (stmt.GetParameterIndex ("Prop4_1"), stringVal.c_str (), IECSqlBinder::MakeCopy::No)) ||
         (ECSqlStatus::Success != stmt.BindInt64 (stmt.GetParameterIndex ("Prop4_2"), intVal)) ||
         (ECSqlStatus::Success != stmt.BindDouble (stmt.GetParameterIndex ("Prop4_3"), doubleVal)))
         return DgnDbStatus::BadArg;
+
     return DgnDbStatus::Success;
     }
 
@@ -894,6 +920,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (BeS
         (stmt.GetValueInt64 (7) != 10000000) ||
         (stmt.GetValueDouble (8) != -3.1415))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -907,6 +934,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (BeS
         (stmt.GetValueInt64 (10) != 20000000) ||
         (stmt.GetValueDouble (11) != 2.71828))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -920,6 +948,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (BeS
         (stmt.GetValueInt64 (13) != 30000000) ||
         (stmt.GetValueDouble (14) != 1.414121))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -933,6 +962,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (BeS
         (stmt.GetValueInt64 (16) != 40000000) ||
         (stmt.GetValueDouble (17) != 1.61803398874))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -969,6 +999,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECS
         (stmt.GetValueInt64 (7) != 10000000) ||
         (stmt.GetValueDouble (8) != -3.1415))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -982,6 +1013,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECS
         (stmt.GetValueInt64 (10) != 20000000) ||
         (stmt.GetValueDouble (11) != 2.71828))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -995,6 +1027,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECS
         (stmt.GetValueInt64 (13) != 30000000) ||
         (stmt.GetValueDouble (14) != 1.414121))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -1008,6 +1041,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (ECS
         (stmt.GetValueInt64 (16) != 40000000) ||
         (stmt.GetValueDouble (17) != 1.61803398874))
         return DgnDbStatus::ReadError;
+
     return DgnDbStatus::Success;
     }
 
@@ -1544,27 +1578,23 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime (int instanceCount, Utf8C
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceElementsCRUDTestFixture, ElementsInsertSqlvsECSql)
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsInsertSql)
     {
-    int insertCount;
-    int initialInsertCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        initialInsertCount = initialInsertCount * 10;
-        for (int j = 1; j <= varyInitialCount; j++)
-            {
-            insertCount = s_opCount*i;
-            SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            SqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
+    SqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    SqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    SqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    SqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
+    }
 
-            ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            ECSqlInsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
-            }
-        }
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsInsertECSql)
+    {
+    ECSqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    ECSqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    ECSqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    ECSqlInsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1572,41 +1602,32 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsInsertSqlvsECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsInsertDgnApi)
     {
-    int insertCount;
-    int initialInsertCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        initialInsertCount = initialInsertCount * 10;
-        for (int j = 1; j <= varyInitialCount; j++)
-            {
-            insertCount = s_opCount*i;
-            DgnApiIsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            DgnApiIsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            DgnApiIsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            DgnApiIsertTime (insertCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
-            }
-        }
+    DgnApiIsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    DgnApiIsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    DgnApiIsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    DgnApiIsertTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceElementsCRUDTestFixture, ElementsReadSqlvsECSql)
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsReadSql)
     {
-    int selectCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        selectCount = selectCount * 10;
-        SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, selectCount);
-        SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, selectCount);
-        SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, selectCount);
-        SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, selectCount);
+    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
+    }
 
-        ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, selectCount);
-        ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, selectCount);
-        ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, selectCount);
-        ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, selectCount);
-        }
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsReadECSql)
+    {
+    ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    ECSqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1614,41 +1635,32 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsReadSqlvsECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsReadDgnApi)
     {
-    int selectCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        selectCount = selectCount * 10;
-        DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, selectCount);
-        DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, selectCount);
-        DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, selectCount);
-        DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, selectCount);
-        }
+    DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    DgnApiSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateSqlvsECSql)
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateSql)
     {
-    int updateCount;
-    int initialInsertCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        initialInsertCount = initialInsertCount * 10;
-        for (int j = 1; j <= varyInitialCount; j++)
-            {
-            updateCount = s_opCount*i;
-            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            SqlUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
+    SqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    SqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    SqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    SqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
+    }
 
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
-            }
-        }
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateECSql)
+    {
+    ECSqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    ECSqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    ECSqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    ECSqlUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1656,46 +1668,32 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateSqlvsECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsUpdateDgnApi)
     {
-    int updateCount;
-    int initialInsertCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        initialInsertCount = initialInsertCount * 10;
-        for (int j = 1; j <= varyInitialCount; j++)
-            {
-            updateCount = s_opCount*i;
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            DgnApiUpdateTime (updateCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
-            }
-        }
+    DgnApiUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    DgnApiUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    DgnApiUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    DgnApiUpdateTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteSqlvsECSql)
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteSql)
     {
-    int deleteCount;
-    int initialInsertCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        initialInsertCount = initialInsertCount * 10;
-        for (int j = 1; j <= varyInitialCount; j++)
-            {
-            deleteCount = s_opCount*i;
-            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            SqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
+    SqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    SqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    SqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    SqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
+    }
 
-            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            ECSqlDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
-            }
-        }
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteECSql)
+    {
+    ECSqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    ECSqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    ECSqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    ECSqlDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1703,18 +1701,8 @@ TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteSqlvsECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, ElementsDeleteDgnApi)
     {
-    int deleteCount;
-    int initialInsertCount = s_initialInstanceCount;
-    for (int i = 1; i <= varyInitialCount; i++)
-        {
-        initialInsertCount = initialInsertCount * 10;
-        for (int j = 1; j <= varyInitialCount; j++)
-            {
-            deleteCount = s_opCount*i;
-            DgnApiDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initialInsertCount);
-            DgnApiDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initialInsertCount);
-            DgnApiDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initialInsertCount);
-            DgnApiDeleteTime (deleteCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initialInsertCount);
-            }
-        }
+    DgnApiDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, s_initialInstanceCount);
+    DgnApiDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT2_CLASS, s_initialInstanceCount);
+    DgnApiDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT3_CLASS, s_initialInstanceCount);
+    DgnApiDeleteTime (s_opCount, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, s_initialInstanceCount);
     }
