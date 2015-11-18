@@ -1417,7 +1417,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, int i
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSQL SELECT '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), initialInstanceCount);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSQL SELECT '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
     }
 
 //---------------------------------------------------------------------------------------
