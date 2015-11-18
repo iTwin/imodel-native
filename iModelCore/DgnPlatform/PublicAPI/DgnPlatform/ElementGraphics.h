@@ -60,7 +60,7 @@ virtual bool        _ExpandLineStyles(ILineStyleCP lsStyle) const {return false;
 virtual bool        _WantClipping() const {return true;}
 
 //! Process surfaces and solids not handled directly or are clipped through _ProcessFaceta.
-//! @param[in] isPolyface facets are from a call to DrawPolyface, ex. mesh element.
+//! @param[in] isPolyface facets are from a call to AddPolyface, ex. mesh element.
 //! @return true to output facets for surface and solid geometry. If returning false,
 //! edge and face isoline curves will be output through _ProcessCurveVector.
 //! @remarks When both _ProcessAsFacets and _ProcessAsBody return true, _ProcessAsBody has precedence.

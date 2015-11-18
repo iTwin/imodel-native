@@ -744,7 +744,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurveVector(CurveVectorCR curves
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
+void            RegionGraphicsDrawGeom::_AddTextString(TextStringCR text, double* zDepth)
     {
     if (!m_interiorText)
         return;
@@ -1041,13 +1041,13 @@ void            RegionGraphicsContext::_SetupOutputs()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            RegionGraphicsContext::_DrawTextString(TextStringCR text)
+void            RegionGraphicsContext::_AddTextString(TextStringCR text)
     {
     // Don't draw background shape and other adornments...
     text.GetGlyphSymbology(GetCurrentDisplayParams());
     CookDisplayParams();
 
-    GetCurrentGraphicR().DrawTextString(text, NULL);
+    GetCurrentGraphicR().AddTextString(text, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**

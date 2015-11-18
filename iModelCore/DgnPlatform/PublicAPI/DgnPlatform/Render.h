@@ -758,32 +758,32 @@ protected:
 
     virtual StatusInt _FinishDrawing() {return SUCCESS;}
     virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) = 0;
-    virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
-    virtual void _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
-    virtual void _DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
-    virtual void _DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
-    virtual void _DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) = 0;
-    virtual void _DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) = 0;
-    virtual void _DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) = 0;
-    virtual void _DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) = 0;
-    virtual void _DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) = 0;
-    virtual void _DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) = 0;
-    virtual void _DrawBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
-    virtual void _DrawBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) = 0;
-    virtual void _DrawCurveVector(CurveVectorCR curves, bool isFilled) = 0;
-    virtual void _DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) = 0;
-    virtual void _DrawSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
-    virtual void _DrawBSplineSurface(MSBsplineSurfaceCR surface) = 0;
-    virtual void _DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
-    virtual StatusInt _DrawBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
-    virtual void _DrawTextString(TextStringCR text, double* zDepth = nullptr) = 0;
-    virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
+    virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
+    virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
+    virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
+    virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
+    virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) = 0;
+    virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) = 0;
+    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) = 0;
+    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) = 0;
+    virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) = 0;
+    virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) = 0;
+    virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
+    virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) = 0;
+    virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) = 0;
+    virtual void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) = 0;
+    virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
+    virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
+    virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
+    virtual StatusInt _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
+    virtual void _AddTextString(TextStringCR text, double* zDepth = nullptr) = 0;
+    virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
     virtual bool _IsQuickVision() const {return false;}
     virtual bool _IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return true;}
-    virtual void _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
-    virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
-    virtual void _DrawDgnOle(DgnOleDraw*) = 0;
-    virtual void _DrawPointCloud(PointCloudDraw* drawParams) = 0;
+    virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
+    virtual void _AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
+    virtual void _AddDgnOle(DgnOleDraw*) = 0;
+    virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
     virtual ~Graphic() {}
 
 public:
@@ -802,7 +802,7 @@ public:
     //! @param[in]          points      Array of vertices in the line string.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawLineString3d(numPoints, points, range);}
+    void AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) {_AddLineString(numPoints, points, range);}
 
     //! Draw a 2D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -810,14 +810,14 @@ public:
     //! @param[in]          zDepth      Z depth value in local coordinates.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawLineString2d(numPoints, points, zDepth, range);}
+    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_AddLineString2d(numPoints, points, zDepth, range);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawPointString3d(numPoints, points, range);}
+    void AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) {_AddPointString(numPoints, points, range);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -825,7 +825,7 @@ public:
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawPointString2d(numPoints, points, zDepth, range);}
+    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_AddPointString2d(numPoints, points, zDepth, range);}
 
     //! Draw a closed 3D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -834,7 +834,7 @@ public:
     //! @param[in]          filled      If true, the shape will be drawn filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) {_DrawShape3d(numPoints, points, filled, range);}
+    void AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) {_AddShape(numPoints, points, filled, range);}
 
     //! Draw a 2D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -844,7 +844,7 @@ public:
     //! @param[in]          filled      If true, the shape will be drawn filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) {_DrawShape2d(numPoints, points, filled, zDepth, range);}
+    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) {_AddShape2d(numPoints, points, filled, zDepth, range);}
 
     //! Draw a 3D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
@@ -852,7 +852,7 @@ public:
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
     //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) {_DrawArc3d(ellipse, isEllipse, filled, range);}
+    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) {_AddArc(ellipse, isEllipse, filled, range);}
 
     //! Draw a 2D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
@@ -861,41 +861,41 @@ public:
     //! @param[in]          zDepth      Z depth value
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
     //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    void DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) {_DrawArc2d(ellipse, isEllipse, filled, zDepth, range);}
+    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) {_AddArc2d(ellipse, isEllipse, filled, zDepth, range);}
 
     //! Draw a BSpline curve.
-    void DrawBSplineCurve(MSBsplineCurveCR curve, bool filled) {_DrawBSplineCurve(curve, filled);}
+    void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {_AddBSplineCurve(curve, filled);}
 
     //! Draw a BSpline curve as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void DrawBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {_DrawBSplineCurve2d(curve, filled, zDepth);}
+    void AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {_AddBSplineCurve2d(curve, filled, zDepth);}
 
     //! Draw a curve vector.
-    void DrawCurveVector(CurveVectorCR curves, bool isFilled) {_DrawCurveVector(curves, isFilled);}
+    void AddCurveVector(CurveVectorCR curves, bool isFilled) {_AddCurveVector(curves, isFilled);}
 
     //! Draw a curve vector as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_DrawCurveVector2d(curves, isFilled, zDepth);}
+    void AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_AddCurveVector2d(curves, isFilled, zDepth);}
 
     //! Draw a light-weight surface or solid primitive.
     //! @remarks Solid primitives can be capped or uncapped, they include cones, torus, box, spheres, and sweeps.
-    void DrawSolidPrimitive(ISolidPrimitiveCR primitive) {_DrawSolidPrimitive(primitive);}
+    void AddSolidPrimitive(ISolidPrimitiveCR primitive) {_AddSolidPrimitive(primitive);}
 
     //! Draw a BSpline surface.
-    void DrawBSplineSurface(MSBsplineSurfaceCR surface) {_DrawBSplineSurface(surface);}
+    void AddBSplineSurface(MSBsplineSurfaceCR surface) {_AddBSplineSurface(surface);}
 
     //! @note Caller is expected to define texture id for illuminated meshed, SetTextureId.
     //! @remarks Wireframe fill display supported for non-illuminated meshes.
-    void DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) {_DrawPolyface(meshData, filled);}
+    void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
     //! @note Only implemented for ICachedDraw due to potentially expensive/time consuming solids kernel calls.
-    StatusInt DrawBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {return _DrawBody(entity, pixelSize);}
+    StatusInt AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {return _AddBody(entity, pixelSize);}
 
     //! Draw a series of Glyphs
     //! @param[in]          text        Text drawing parameters
     //! @param[in]          zDepth      Priority value in 2d or nullptr
-    void DrawTextString(TextStringCR text, double* zDepth = nullptr) {_DrawTextString(text, zDepth);}
+    void AddTextString(TextStringCR text, double* zDepth = nullptr) {_AddTextString(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
@@ -903,7 +903,7 @@ public:
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) {_DrawTriStrip3d(numPoints, points, usageFlags, range);}
+    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) {_AddTriStrip(numPoints, points, usageFlags, range);}
 
     //! Draw a filled triangle strip from 2D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
@@ -912,25 +912,25 @@ public:
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
-    void DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_DrawTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
+    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
 
     //! @private
     // Published to expose access for performance reasons for Bryan Oswalt's augmented reality prototyping.
-    void DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_DrawMosaic(numX, numY, tileIds, verts);}
+    void AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_AddMosaic(numX, numY, tileIds, verts);}
 
     // Helper Methods to draw simple SolidPrimitives.
-    void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { DrawSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
-    void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {DrawSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
+    void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
+    void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
 
-    void DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_DrawRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
-    void DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_DrawRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
+    void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
+    void AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster3d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
 
     //! Draw a 3D point cloud.
     //! @param[in]      drawParams      Object containing draw parameters.
-    void DrawPointCloud(PointCloudDraw* drawParams) {_DrawPointCloud(drawParams);}
+    void AddPointCloud(PointCloudDraw* drawParams) {_AddPointCloud(drawParams);}
 
     //! Draw OLE object.
-    void DrawDgnOle(DgnOleDraw* ole) {_DrawDgnOle(ole);}
+    void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
     bool IsQuickVision() const {return _IsQuickVision();}
 };

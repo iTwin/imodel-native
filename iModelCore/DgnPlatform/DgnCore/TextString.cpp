@@ -411,7 +411,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
 
     context.PushTransform(ComputeTransform());
     context.CookDisplayParams();
-    output.DrawLineString3d(2, pts, NULL);
+    output.AddLineString(2, pts, NULL);
     context.PopTransformClip();
     }
 

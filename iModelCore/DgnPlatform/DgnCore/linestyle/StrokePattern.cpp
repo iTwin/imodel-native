@@ -1696,7 +1696,7 @@ static void outputCapArc (Graphic* output, DPoint3dCP pt1, DPoint3dCP pt2, DPoin
     DEllipse3d  ellipse;
 
     ellipse.InitFromDGNFields3d (origin, xDir, yDir, radius, radius, 0.0, msGeomConst_pi);
-    output->DrawArc3d (ellipse, false, doFill, NULL);
+    output->AddArc (ellipse, false, doFill, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1714,8 +1714,8 @@ static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double con
     if (capMode == CAP_Open)
         {
         createPolygon (outsidePts, nPts, pts, widths, joints, widthMode);
-        output->DrawLineString3d (nPts, outsidePts, NULL);
-        output->DrawLineString3d (nPts, outsidePts+nPts, NULL);
+        output->AddLineString (nPts, outsidePts, NULL);
+        output->AddLineString (nPts, outsidePts+nPts, NULL);
         }
     else
         {
@@ -1724,7 +1724,7 @@ static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double con
         if (polyLengthNotDiscernible)
             {
             createPolygon (outsidePts, nPts, pts, widths, joints, widthMode);
-            output->DrawLineString3d (2, outsidePts+1, NULL);
+            output->AddLineString (2, outsidePts+1, NULL);
 
             if (capMode > 2)
                 {
@@ -1736,7 +1736,7 @@ static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double con
         else
             {
             createTristrip (outsidePts, nPts, pts, widths, joints, widthMode);
-            output->DrawTriStrip3d (nPts*2, outsidePts, 1,NULL);
+            output->AddTriStrip (nPts*2, outsidePts, 1,NULL);
 
             if (capMode > 2)
                 {
@@ -1829,9 +1829,9 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         // NEEDSWORK: According to Karin, it would be much more efficient to pass all the points in the centerline as a single array.  
         //    Need to restructure Centerline to do store them separately.
         if (1 == nPts || (2 == nPts && points->IsEqual (points[1])))
-            output.DrawPointString3d (1, points, NULL);
+            output.AddPointString (1, points, NULL);
         else
-            output.DrawLineString3d (nPts, points, NULL);
+            output.AddLineString (nPts, points, NULL);
         return;
         }
 

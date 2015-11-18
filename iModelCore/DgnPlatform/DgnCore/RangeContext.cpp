@@ -703,7 +703,7 @@ StatusInt RangeGraphic::_ProcessSolidPrimitive(ISolidPrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void RangeGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
     UpdateRange(numPoints, points);
     }
@@ -711,7 +711,7 @@ void RangeGraphic::_DrawPointString2d(int numPoints, DPoint2dCP points, double z
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RangeGraphic::_DrawBody(ISolidKernelEntityCR entity, double)
+StatusInt RangeGraphic::_AddBody(ISolidKernelEntityCR entity, double)
     {
     DRange3d    range;
 
@@ -731,7 +731,7 @@ StatusInt RangeGraphic::_DrawBody(ISolidKernelEntityCR entity, double)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void RangeGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
     UpdateRange(numPoints, points);
     }
@@ -739,7 +739,7 @@ void RangeGraphic::_DrawLineString2d(int numPoints, DPoint2dCP points, double zD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
+void RangeGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
     {
     UpdateRange(numPoints, points);
     }
@@ -747,7 +747,7 @@ void RangeGraphic::_DrawShape2d(int numPoints, DPoint2dCP points, bool filled, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range)
+void RangeGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range)
     {
     UpdateRange(&ellipse);
     }
@@ -756,7 +756,7 @@ void RangeGraphic::_DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY,
+void RangeGraphic::_AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY,
                               int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
     {
     UpdateRange(4, points);
@@ -766,7 +766,7 @@ void RangeGraphic::_DrawRaster2d(DPoint2d const points[4], int pitch, int numTex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_DrawTextString(TextStringCR text, double* zDepth)
+void RangeGraphic::_AddTextString(TextStringCR text, double* zDepth)
     {
     if (text.GetText().empty())
         return;
@@ -783,7 +783,7 @@ void RangeGraphic::_DrawTextString(TextStringCR text, double* zDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     07/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_DrawPolyface(PolyfaceQueryCR meshData, bool filled)
+void RangeGraphic::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
     {
     size_t numPoint = meshData.GetPointCount();
 
@@ -922,7 +922,7 @@ StatusInt _VisitElement(GeometrySourceCR source) override
     // NOTE: Can just draw bounding box instead of drawing element geometry...
     DPoint3d corners[8];
     range.Get8Corners(corners);
-    GetIDrawGeom().DrawPointString3d(8, corners, nullptr);
+    GetIDrawGeom().AddPointString(8, corners, nullptr);
 #endif
 
     return SUCCESS;

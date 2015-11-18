@@ -140,7 +140,7 @@ private:
     virtual StatusInt   _ProcessBody (ISolidKernelEntityCR entity) override {return SUCCESS;}
     virtual StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
 
-    virtual void        _DrawTextString (TextStringCR text, double* zDepth) override;
+    virtual void        _AddTextString (TextStringCR text, double* zDepth) override;
 
 public:
 
@@ -219,7 +219,7 @@ FloodSeed               m_dynamicFaceSeed;
 DgnModelP GetViewTarget () {return m_targetModel;}
 
 virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}
-virtual void            _DrawTextString (TextStringCR text) override;
+virtual void            _AddTextString (TextStringCR text) override;
 virtual ILineStyleCP    _GetCurrLineStyle (Render::LineStyleSymbP* symb) override {return nullptr;}
 
 BentleyStatus           PushBooleanCandidate (GeometrySourceCR element, TransformCP trans);

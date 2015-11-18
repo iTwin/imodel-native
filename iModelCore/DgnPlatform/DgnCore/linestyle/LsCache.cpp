@@ -536,7 +536,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
         context->GetIDrawGeom ().ActivateOverrideMatSymb (ovrMatSymb);
         }
 
-    context->GetIDrawGeom ().DrawLineString3d (nPoints, inPoints, NULL); // Draw the linestring
+    context->GetIDrawGeom ().AddLineString (nPoints, inPoints, NULL); // Draw the linestring
 
     // Restore ElemMatSymb to previous state, ElemDisplayParams will be restored in ElemDisplayParamsStateSaver destructor...
     context->GetIDrawGeom ().ActivateMatSymb (&saveMatSymb);

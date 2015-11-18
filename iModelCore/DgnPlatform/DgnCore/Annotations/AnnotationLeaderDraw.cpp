@@ -214,7 +214,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         if (effectiveLineGeometry.IsValid())
             {
             setStrokeSymbology(context, leaderStyle->GetLineColorType(), leaderStyle->GetLineColorValue(), leaderStyle->GetLineWeight());
-            output.DrawCurveVector(*effectiveLineGeometry, false);
+            output.AddCurveVector(*effectiveLineGeometry, false);
             }
         }
     
@@ -227,12 +227,12 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry.GetBoundaryType())
             {
             setStrokeSymbology(context, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), leaderStyle->GetTerminatorWeight());
-            output.DrawCurveVector(terminatorGeometry, false);
+            output.AddCurveVector(terminatorGeometry, false);
             }
         else
             {
             setFillSymbology(context, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), 0.0);
-            output.DrawCurveVector(terminatorGeometry, true);
+            output.AddCurveVector(terminatorGeometry, true);
             }
         
         context.PopTransformClip(); // terminator transform

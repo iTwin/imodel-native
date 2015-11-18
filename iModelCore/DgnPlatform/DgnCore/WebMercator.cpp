@@ -658,7 +658,7 @@ void WebMercatorTileDisplayHelper::DrawTile (ViewContextR context, WebMercatorTi
         DrawTileAsBox (context, tileid, z, false);
     #endif
 
-    context.GetCurrentGraphicR().DrawMosaic (1,1, &textureId, uvPts);
+    context.GetCurrentGraphicR().AddMosaic (1,1, &textureId, uvPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -720,16 +720,16 @@ void WebMercatorTileDisplayHelper::DrawTileAsBox (ViewContextR context, WebMerca
     box[2] = uvPts[3];
     box[3] = uvPts[2];
     box[4] = box[0];
-    context.GetIDrawGeom().DrawShape3d (_countof(box), box, filled, NULL);
+    context.GetIDrawGeom().AddShape (_countof(box), box, filled, NULL);
 
     //DPoint3d diagonal[2];
     //diagonal[0] = uvPts[2];
     //diagonal[1] = uvPts[1];
-    //context.GetIDrawGeom().DrawLineString3d (2, diagonal, NULL);
+    //context.GetIDrawGeom().AddLineString (2, diagonal, NULL);
     //
     //diagonal[0] = uvPts[0];
     //diagonal[1] = uvPts[3];
-    //context.GetIDrawGeom().DrawLineString3d (2, diagonal, NULL);
+    //context.GetIDrawGeom().AddLineString (2, diagonal, NULL);
     }
 #endif
 
@@ -756,18 +756,18 @@ static void drawPoint (ViewContextR context, DPoint3dCR pt, bool drawCrossHair=f
     DEllipse3d circle;
     auto z = DVec3d::From (0,0,1);
     circle.InitFromCenterNormalRadius (pt, z, 5*pixels);
-    context.GetIDrawGeom().DrawArc3d (circle, true, true, NULL);
+    context.GetIDrawGeom().AddArc (circle, true, true, NULL);
 
     if (drawCrossHair)
         {
         DPoint3d pts[2];
         pts[0].SumOf (pt, DVec3d::From(0,-100*pixels,0));
         pts[1].SumOf (pt, DVec3d::From(0, 100*pixels,0));
-        context.GetIDrawGeom().DrawLineString3d (2, pts, NULL);
+        context.GetIDrawGeom().AddLineString (2, pts, NULL);
 
         pts[0].SumOf (pt, DVec3d::From(-100*pixels,0,0));
         pts[1].SumOf (pt, DVec3d::From(100*pixels,0,0));
-        context.GetIDrawGeom().DrawLineString3d (2, pts, NULL);
+        context.GetIDrawGeom().AddLineString (2, pts, NULL);
         }
     }
 #endif
@@ -795,7 +795,7 @@ static void drawText (ViewContextR context, DPoint3dCR ptUl, Utf8StringCR string
 
         textString->SetOriginFromUserOrigin (pt);
 
-        context.GetIDrawGeom().DrawTextString (*textString);
+        context.GetIDrawGeom().AddTextString (*textString);
 
         pt.y -= 17*pixels;
         }

@@ -305,7 +305,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledArc3d(DEllipse3dCR, bool isEllipse, DPoint3dCP range);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
-    DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR);
+    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
@@ -687,7 +687,7 @@ public:
     DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
 
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
-    void DrawTextString(TextStringCR textString) {_DrawTextString(textString);}
+    void AddTextString(TextStringCR textString) {_AddTextString(textString);}
 
     bool CheckStop() {return _CheckStop();}
 }; // ViewContext

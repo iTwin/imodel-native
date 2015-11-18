@@ -187,20 +187,20 @@ void            GPArray::Draw (IDrawGeomR drawGeom, bool closed, bool filled) co
                 CurveVector* childCurves = const_cast <CurveVector*> (curve->GetChildCurveVectorCP ());
 
                 childCurves->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Open);
-                drawGeom.DrawCurveVector (*childCurves, false);
+                drawGeom.AddCurveVector (*childCurves, false);
                 }
             }
         else
             {
             curves->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Open);
-            drawGeom.DrawCurveVector (*curves, false);
+            drawGeom.AddCurveVector (*curves, false);
             }
 
         return;
         }
 
     BeAssert (closed == curves->IsAnyRegionType () && L"Malformed GPA - Open/Closed is determined by presence of major breaks.");
-    drawGeom.DrawCurveVector (*curves, filled);
+    drawGeom.AddCurveVector (*curves, filled);
     }
 #endif
 

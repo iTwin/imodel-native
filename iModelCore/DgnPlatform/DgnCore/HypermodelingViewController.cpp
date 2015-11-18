@@ -215,7 +215,7 @@ void HypermodelingViewController::DrawFakeSheetBorder (ViewContextR context, Dra
     range.Get4Corners (box);
     std::swap (box[2], box[3]);
     //SetOverrideMatSymb (context);
-    context.GetCurrentGraphicR().DrawShape2d (_countof(box), box, /*filled*/true, 0, &range.low);
+    context.GetCurrentGraphicR().AddShape2d (_countof(box), box, /*filled*/true, 0, &range.low);
     }
 
 //---------------------------------------------------------------------------------------
