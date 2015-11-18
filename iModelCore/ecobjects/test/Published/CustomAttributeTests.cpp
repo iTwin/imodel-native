@@ -383,9 +383,8 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
 
-    ECClassP refClass;
-    refSchema->CreateClass(refClass, "RefClass");
-    refClass->SetIsCustomAttributeClass(true);
+    ECCustomAttributeClassP refClass;
+    refSchema->CreateCustomAttributeClass(refClass, "RefClass");
 
     ECClassP containerClass = schema->GetClassP ("TestClass");
     ASSERT_TRUE (NULL != containerClass);
@@ -410,20 +409,18 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
     ECSchemaP schema;    
 
     //ECObjectsStatus structStatus;
-    ECClassP struct1;
-    ECClassP struct2;
-    ECClassP customAttributeClass;
-    ECClassP testClass;
+    ECStructClassP struct1;
+    ECStructClassP struct2;
+    ECCustomAttributeClassP customAttributeClass;
+    ECEntityClassP testClass;
 
     ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
     ASSERT_TRUE(schema!=NULL);
 
-    schema->CreateClass(struct1,"Struct1");
+    schema->CreateStructClass(struct1,"Struct1");
     ASSERT_TRUE(struct1!=NULL);
-    schema->CreateClass(struct2,"Struct2");
+    schema->CreateStructClass(struct2,"Struct2");
     ASSERT_TRUE(struct2!=NULL);
-    struct1->SetIsStruct(true);
-    struct2->SetIsStruct(true);
 
     StructECPropertyP P1;
     StructECPropertyP P2;
@@ -435,9 +432,8 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
 
     StructECPropertyP PropertyOfCustomAttribute;
 
-    schema->CreateClass(customAttributeClass,"MyCustomAttribute");
+    schema->CreateCustomAttributeClass(customAttributeClass,"MyCustomAttribute");
     ASSERT_TRUE(customAttributeClass!=NULL);
-    customAttributeClass->SetIsCustomAttributeClass(true);
 
 
     customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, "PropertyOfCustomAttribute",*struct1);
@@ -446,7 +442,7 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
     IECInstancePtr instance = GetInstanceForClass("MyCustomAttribute", *schema);
     ASSERT_TRUE(instance.get()!=NULL);
 
-    schema->CreateClass(testClass,"TestClass");
+    schema->CreateEntityClass(testClass,"TestClass");
     ASSERT_TRUE(testClass!=NULL);
 
     ECClassP tempClass = schema->GetClassP("TestClass");
