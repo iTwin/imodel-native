@@ -142,6 +142,12 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ecsql.Sprintf ("%s WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
+        ecsql.Sprintf("%s WHERE 8 %% 3 = 2", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE 8 %% 2 = 0", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
         ecsql.Sprintf("%s WHERE (I&1)=1 AND ~(I|2=I)", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
 
@@ -158,6 +164,12 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
 
         ecsql.Sprintf("%s WHERE (4|1)&1 = 1", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 4^1 = 0", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 5^4 = 4", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
 
         //unary predicates
