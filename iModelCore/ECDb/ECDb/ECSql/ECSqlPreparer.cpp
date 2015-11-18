@@ -829,15 +829,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuil
         { 
             case GetPointCoordinateFunctionExp::Coordinate::X:
                 snippetIndex = 0;
-                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith(".x]"));
+                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_x]"));
                 break;
             case GetPointCoordinateFunctionExp::Coordinate::Y:
                 snippetIndex = 1;
-                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith(".y]"));
+                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_y]"));
                 break;
             case GetPointCoordinateFunctionExp::Coordinate::Z:
                 snippetIndex = 2;
-                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith(".z]"));
+                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_z]"));
                 break;
 
             default:
