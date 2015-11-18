@@ -20,6 +20,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
+typedef std::shared_ptr<Json::Value> JsonValuePtr;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -45,6 +47,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         struct ObjectChange;
         struct RelationshipChange;
 
+        struct Revision;
+        struct InstanceRevision;
+        struct FileRevision;
+
         typedef Changes& ChangesR;
         typedef const Changes& ChangesCR;
         typedef FileChange& FileChangeR;
@@ -53,6 +59,13 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         typedef const ObjectChange& ObjectChangeCR;
         typedef RelationshipChange& RelationshipChangeR;
         typedef const RelationshipChange& RelationshipChangeCR;
+
+        typedef InstanceRevision& InstanceRevisionR;
+        typedef const InstanceRevision& InstanceRevisionCR;
+        typedef std::shared_ptr<InstanceRevision> InstanceRevisionPtr;
+        typedef FileRevision& FileRevisionR;
+        typedef const FileRevision& FileRevisionCR;
+        typedef std::shared_ptr<FileRevision> FileRevisionPtr;
 
     public:
         virtual ~IChangeManager()
@@ -132,19 +145,21 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
 
         // -- Getting changed data --
 
+        //! Get object or relationship revision for sync and commit. Will not return null.
+        virtual InstanceRevisionPtr ReadInstanceRevision(ECInstanceKeyCR instanceKey) = 0;
+        //! Get file revision for sync and commit. Will not return null.
+        virtual FileRevisionPtr ReadFileRevision(ECInstanceKeyCR instanceKey) = 0;
+
         //! Get instance properties that were modified
         virtual BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut) = 0;
 
         // -- Commiting changes --
 
-        //! Commit change for created object or relationship
-        virtual BentleyStatus CommitCreationChange(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId) = 0;
+        //! Commit revision for object or relationship in local cache.
+        virtual BentleyStatus CommitInstanceRevision(InstanceRevisionCR revision) = 0;
 
-        //! Commit change for object in local cache.
-        virtual BentleyStatus CommitObjectChange(ECInstanceKeyCR instanceKey) = 0;
-
-        //! Commit change for object file content in local cache.
-        virtual BentleyStatus CommitFileChange(ECInstanceKeyCR instanceKey) = 0;
+        //! Commit revision for file in local cache.
+        virtual BentleyStatus CommitFileRevision(FileRevisionCR revision) = 0;
 
         //! Update created instance with new properties and update class if changed. Returns same or new class instance key.
         virtual BentleyStatus UpdateCreatedInstance(
@@ -246,6 +261,111 @@ struct IChangeManager::Changes
         WSCACHE_EXPORT const bset<ObjectChange, Compare>&       GetObjectChanges() const;
         WSCACHE_EXPORT const bset<RelationshipChange, Compare>& GetRelationshipChanges() const;
         WSCACHE_EXPORT const bset<FileChange, Compare>&         GetFileChanges() const;
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++--------------------------------------------------------------------------------------*/
+struct IChangeManager::Revision
+    {
+    protected:
+        ECInstanceKey m_instanceKey;
+        ObjectId m_objectId;
+        ChangeStatus m_changeStatus = ChangeStatus::NoChange;
+        SyncStatus m_syncStatus = SyncStatus::NotReady;
+        uint64_t m_changeNumber = 0;
+
+    public:
+        ECInstanceKeyCR GetInstanceKey() const
+            {
+            return m_instanceKey;
+            }
+        void SetInstanceKey(ECInstanceKey value)
+            {
+            m_instanceKey = value;
+            }
+        ObjectIdCR GetObjectId() const
+            {
+            return m_objectId;
+            }
+        void SetObjectId(ObjectId value)
+            {
+            m_objectId = value;
+            }
+        void SetRemoteId(Utf8String remoteId)
+            {
+            m_objectId.remoteId = remoteId;
+            }
+        ChangeStatus GetChangeStatus() const
+            {
+            return m_changeStatus;
+            }
+        void SetChangeStatus(ChangeStatus value)
+            {
+            m_changeStatus = value;
+            }
+        SyncStatus GetSyncStatus() const
+            {
+            return m_syncStatus;
+            }
+        void SetSyncStatus(SyncStatus value)
+            {
+            m_syncStatus = value;
+            }
+        uint64_t GetChangeNumber() const
+            {
+            return m_changeNumber;
+            }
+        void SetChangeNumber(uint64_t value)
+            {
+            m_changeNumber = value;
+            }
+        bool IsValid() const
+            {
+            return m_instanceKey.IsValid() && m_changeStatus != ChangeStatus::NoChange;
+            }
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++--------------------------------------------------------------------------------------*/
+struct IChangeManager::InstanceRevision : public IChangeManager::Revision
+    {
+    protected:
+        JsonValuePtr m_changedProperties; // TODO: JsonValueCPtr
+
+    public:
+        //! Get changed instance properties
+        JsonValuePtr GetChangedProperties() const
+            {
+            return m_changedProperties;
+            }
+        //! Set changed instance properties
+        void SetChangedProperties(JsonValuePtr value)
+            {
+            m_changedProperties = value;
+            }
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++--------------------------------------------------------------------------------------*/
+struct IChangeManager::FileRevision : public IChangeManager::Revision
+    {
+    protected:
+        BeFileName m_filePath;
+
+    public:
+        //! Get modified file path
+        BeFileNameCR GetFilePath() const
+            {
+            return m_filePath;
+            }
+        //! Set modified file path
+        void SetFilePath(BeFileName value)
+            {
+            m_filePath = value;
+            };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

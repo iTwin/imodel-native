@@ -146,6 +146,7 @@
     <ClInclude Include="Published\Utils\WSClientBaseTest.h" />
     <ClInclude Include="Published\Utils\WebServicesTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
+    <ClInclude Include="Published\Utils\MockTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -308,6 +309,7 @@
     <ClCompile Include="Published\Utils\WSClientBaseTest.cpp" />
     <ClCompile Include="Published\Utils\WebServicesTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
+    <ClCompile Include="Published\Utils\MockTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />
