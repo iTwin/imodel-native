@@ -72,7 +72,7 @@ BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath)
     BeFileNameStatus status = BeFileName::BeMoveFile(backupPath, originalPath);
     if (BeFileNameStatus::Success != status)
         {
-        LOG.fatal("Could not restore old file from backup");
+        LOG.error("Could not restore old file from backup");
         BeAssert(false);
         return ERROR;
         }
@@ -95,7 +95,7 @@ BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR 
         LOG.warning("Found old backup cached file. Removing it");
         if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(backupForRollbackFile))
             {
-            LOG.error("Could not delete existing backup cached file");
+            LOG.errorv(L"Could not delete existing backup cached file: %ls", backupForRollbackFile.c_str());
             BeAssert(false);
             return ERROR;
             }
@@ -106,7 +106,8 @@ BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR 
         BeFileNameStatus status = BeFileName::BeMoveFile(fileToRollback, backupForRollbackFile);
         if (BeFileNameStatus::Success != status)
             {
-            BeAssert(false && "<Error> Could not create backup for existing file");
+            LOG.errorv(L"Could not create backup for existing file: %ls", fileToRollback.c_str());
+            BeAssert(false);
             return ERROR;
             }
         }
@@ -120,7 +121,8 @@ BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR 
                 {
                 RollbackFile(backupForRollbackFile, fileToRollback);
                 }
-            BeAssert(false && "<Error> Could not delete existing file");
+            LOG.errorv(L"Could not delete existing file: %ls", moveToFile.c_str());
+            BeAssert(false);
             return ERROR;
             }
         }
@@ -141,7 +143,8 @@ BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR 
             {
             RollbackFile(backupForRollbackFile, fileToRollback);
             }
-        BeAssert(false && "<Error> Failed to cache file");
+        LOG.errorv(L"Failed to cache file from: %ls to: %ls", moveFromFile.c_str(), moveToFile.c_str());
+        BeAssert(false);
         return ERROR;
         }
 
@@ -151,7 +154,8 @@ BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR 
         BeFileNameStatus status = BeFileName::BeDeleteFile(backupForRollbackFile);
         if (BeFileNameStatus::Success != status)
             {
-            BeAssert(false && "<Error> Could not remove file backup");
+            LOG.errorv(L"Could not remove file backup: %ls", backupForRollbackFile.c_str());
+            BeAssert(false);
             return ERROR;
             }
         }
@@ -262,6 +266,8 @@ DateTimeCR cacheDateUtc,
 bool copyFile
 )
     {
+    LOG.infov(L"Caching file: %ls", suppliedFileAbsolutePath.c_str());
+
     if (!instance.IsValid())
         {
         return ERROR;
@@ -269,7 +275,8 @@ bool copyFile
     if ((FileCache::Persistent == cacheLocation || FileCache::ExistingOrPersistent == cacheLocation) && m_environment.persistentFileCacheDir.empty() ||
         (FileCache::Temporary == cacheLocation || FileCache::ExistingOrTemporary == cacheLocation) && m_environment.temporaryFileCacheDir.empty())
         {
-        BeAssert(false && "No dir to cache");
+        LOG.error("Invalid environment");
+        BeAssert(false);
         return ERROR;
         }
 
@@ -334,7 +341,8 @@ bool copyFile
         {
         if (SUCCESS != m_fileInfoManager->RemoveContainingFolder(previouslyCachedFileAbsolutePath))
             {
-            BeAssert(false && "Cannot remove old containing folder");
+            LOG.errorv(L"Cannot remove old containing folder: %ls", previouslyCachedFileAbsolutePath.c_str());
+            BeAssert(false);
             return ERROR;
             }
         }

@@ -112,6 +112,13 @@ WSObjectsResponse StubWSObjectsResponseNotModified()
     return WSObjectsResponse(reader, body, HttpStatus::NotModified, "");
     }
 
+WSObjectsResponse StubWSObjectsResponseV2(Utf8StringCR jsonBody, Utf8StringCR eTag)
+    {
+    auto body = HttpStringBody::Create(jsonBody);
+    auto reader = WSObjectsReaderV2::Create();
+    return WSObjectsResponse(reader, body, HttpStatus::OK, eTag);
+    }
+
 WSObjectsResult StubWSObjectsResultNotModified()
     {
     return WSObjectsResult::Success(StubWSObjectsResponseNotModified());
@@ -186,36 +193,16 @@ WSCreateObjectResult StubWSCreateObjectResult()
 
 WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId)
     {
-    Json::Value responseJson;
-    JsonValueR instanceJson = responseJson["changedInstance"]["instanceAfterChange"];
-
-    instanceJson["schemaName"] = objectId.schemaName;
-    instanceJson["className"] = objectId.className;
-    instanceJson["instanceId"] = objectId.remoteId;
-
-    return WSCreateObjectResult::Success(WSCreateObjectResponse(responseJson));
+    StubInstances instances;
+    instances.Add(objectId);
+    return instances.ToWSCreateObjectResult();
     }
 
 WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR relationshipId, ObjectIdCR targetId)
     {
-    Json::Value responseJson;
-    JsonValueR instanceJson = responseJson["changedInstance"]["instanceAfterChange"];
-
-    instanceJson["schemaName"] = sourceId.schemaName;
-    instanceJson["className"] = sourceId.className;
-    instanceJson["instanceId"] = sourceId.remoteId;
-
-    instanceJson["relationshipInstances"][0]["schemaName"] = relationshipId.schemaName;
-    instanceJson["relationshipInstances"][0]["className"] = relationshipId.className;
-    instanceJson["relationshipInstances"][0]["instanceId"] = relationshipId.remoteId;
-
-    instanceJson["relationshipInstances"][0]["direction"] = "forward";
-
-    instanceJson["relationshipInstances"][0]["relatedInstance"]["schemaName"] = targetId.schemaName;
-    instanceJson["relationshipInstances"][0]["relatedInstance"]["className"] = targetId.className;
-    instanceJson["relationshipInstances"][0]["relatedInstance"]["instanceId"] = targetId.remoteId;
-
-    return WSCreateObjectResult::Success(WSCreateObjectResponse(responseJson));
+    StubInstances instances;
+    instances.Add(sourceId).AddRelated(relationshipId, targetId);
+    return instances.ToWSCreateObjectResult();
     }
 
 CacheEnvironment StubCacheEnvironemnt()

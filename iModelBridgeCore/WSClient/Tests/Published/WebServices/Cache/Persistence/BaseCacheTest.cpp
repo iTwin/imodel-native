@@ -20,9 +20,18 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
             <ECClass typeName="TestClass" >
                 <ECProperty propertyName="TestProperty" typeName="string" />
                 <ECProperty propertyName="TestProperty2" typeName="string" />
+                <ECProperty propertyName="TestProperty3" typeName="string" />
             </ECClass>
             <ECClass typeName="TestClass2" >
                 <ECProperty propertyName="TestProperty" typeName="string" />
+            </ECClass>
+            <ECClass typeName="TestClassWithStruct" >
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECStructProperty propertyName="TestStructProperty" typeName="TestStructClass" />
+            </ECClass>
+            <ECClass typeName="TestStructClass" isStruct="True" isDomainClass="False">
+                <ECProperty propertyName="TestStringProperty" typeName="string" />
+                <ECArrayProperty propertyName="TestArrayProperty" typeName="string"  minOccurs="0" maxOccurs="unbounded" />
             </ECClass>
             <ECClass typeName="TestDerivedClass" >
                 <BaseClass>TestClass</BaseClass>
@@ -95,6 +104,14 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                 </ECCustomAttributes>
             </ECClass>
             <ECRelationshipClass typeName="TestRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                <Source cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="TestRelationshipClass2" isDomainClass="True" strength="referencing" strengthDirection="forward">
                 <Source cardinality="(0,N)" polymorphic="True">
                     <Class class="TestClass" />
                 </Source>
