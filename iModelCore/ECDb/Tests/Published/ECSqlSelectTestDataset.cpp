@@ -2367,7 +2367,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::PointTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT GetZ(P2D) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
     return dataset;
     }
