@@ -11,7 +11,6 @@
 #include <WebServices/Cache/Transactions/BeSQLiteDbTransactionHandler.h>
 #include <MobileDgn/Utils/Threading/WorkerThread.h>
 #include "../CachingTestsHelper.h"
-#include "../../../../../../MobileDgn/Tests/Published/Utils/Threading/ThreadingTestsHelper.h"
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
