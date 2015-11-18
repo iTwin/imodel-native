@@ -1845,6 +1845,58 @@ ChangeSummary::Instance ChangeSummary::InstanceIterator::Entry::GetInstance() co
     return instance;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ChangeSummary::InstanceIterator::MakeSelectStatement(Utf8CP columns) const
+    {
+    return m_options.ToSelectStatement(columns, m_changeSummary);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ChangeSummary::InstanceIterator::Options::ToSelectStatement(Utf8CP columns, ChangeSummaryCR summary) const
+    {
+    if (IsEmpty())
+        {
+        Utf8String sql("SELECT ");
+        sql.append(columns);
+        sql.append(" FROM ");
+        sql.append(summary.GetInstancesTableName());
+
+        return sql;
+        }
+
+    Utf8String sql(
+            " WITH RECURSIVE"
+            "    DerivedClasses(ClassId) AS ("
+            "        VALUES(:baseClassId)"
+            "        UNION "
+            "        SELECT ec_BaseClass.ClassId FROM ec_BaseClass, DerivedClasses WHERE ec_BaseClass.BaseClassId=DerivedClasses.ClassId"
+            "        )"
+            " SELECT ClassId,InstanceId,DbOpcode,Indirect,TableName"
+            " FROM ");
+    sql.append(summary.GetInstancesTableName());
+    sql.append(" WHERE ClassId IN DerivedClasses");
+    if (QueryDbOpcode::All != m_opcodes)
+        {
+        sql.append(" AND ");
+        sql.append(summary.ConstructWhereInClause(m_opcodes));
+        }
+
+    return sql;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeSummary::InstanceIterator::Options::Bind(Statement& stmt) const
+    {
+    if (!IsEmpty())
+        stmt.BindInt64(stmt.GetParameterIndex(":baseClassId"), (int64_t)m_classId);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
@@ -1852,11 +1904,10 @@ ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator:
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String tableName = m_changeSummary.GetInstancesTableName();
-        Utf8PrintfString sql("SELECT ClassId,InstanceId,DbOpcode,Indirect,TableName FROM %s", tableName.c_str());
-        Utf8String sqlString = MakeSqlString(sql.c_str());
+        Utf8String sqlString = MakeSqlString(MakeSelectStatement("ClassId,InstanceId,DbOpcode,Indirect,TableName").c_str());
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
+        m_options.Bind(*m_stmt);
         }
     else
         {
@@ -1871,13 +1922,13 @@ ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator:
 //---------------------------------------------------------------------------------------
 int ChangeSummary::InstanceIterator::QueryCount() const
     {
-    Utf8String tableName = m_changeSummary.GetInstancesTableName();
-    Utf8PrintfString sql("SELECT COUNT(*) FROM %s", tableName.c_str());
-    Utf8String sqlString = MakeSqlString(sql.c_str());
+    Utf8String sqlString = MakeSqlString(MakeSelectStatement("count(*)").c_str());
 
     CachedStatementPtr stmt;
     m_db->GetCachedStatement(stmt, sqlString.c_str());
     BeAssert(stmt.IsValid());
+
+    m_options.Bind(*stmt);
 
     return ((BE_SQLITE_ROW != stmt->Step()) ? 0 : stmt->GetValueInt(0));
     }
@@ -1928,22 +1979,22 @@ int ChangeSummary::ValueIterator::QueryCount() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     08/2015
 //---------------------------------------------------------------------------------------
-Utf8String ChangeSummary::ConstructWhereInClause(int queryDbOpcodes) const
+Utf8String ChangeSummary::ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const
     {
     Utf8String whereInStr;
-    if (queryDbOpcodes & QueryDbOpcode::Insert)
+    if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Insert))
         {
         Utf8PrintfString addStr("%d", (int) DbOpcode::Insert);
         whereInStr.append(addStr);
         }
-    if (queryDbOpcodes & QueryDbOpcode::Update)
+    if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Update))
         {
         if (!whereInStr.empty())
             whereInStr.append(",");
         Utf8PrintfString addStr("%d", (int) DbOpcode::Update);
         whereInStr.append(addStr);
         }
-    if (queryDbOpcodes & QueryDbOpcode::Delete)
+    if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Delete))
         {
         if (!whereInStr.empty())
             whereInStr.append(",");
@@ -1959,7 +2010,7 @@ Utf8String ChangeSummary::ConstructWhereInClause(int queryDbOpcodes) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     08/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic /*= true*/, int queryDbOpcodes /*= QueryDbOpcode::All*/) const
+void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic /*= true*/, QueryDbOpcode queryDbOpcodes /*= QueryDbOpcode::All*/) const
     {
     if (!IsValid())
         {
@@ -1967,60 +2018,11 @@ void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& ch
         return;
         }
 
-    Utf8String sql, whereClause;
-    Utf8String instancesTableName = GetInstancesTableName();
-    if (isPolymorphic)
+    InstanceIterator::Options options(classId, isPolymorphic, queryDbOpcodes);
+    for (auto& entry : MakeInstanceIterator(options))
         {
-        sql = Utf8PrintfString(
-            " WITH RECURSIVE"
-            "    DerivedClasses(ClassId) AS ("
-            "        VALUES(:baseClassId)"
-            "        UNION "
-            "        SELECT ec_BaseClass.ClassId FROM ec_BaseClass, DerivedClasses WHERE ec_BaseClass.BaseClassId=DerivedClasses.ClassId"
-            "        )"
-            " SELECT ClassId,InstanceId,DbOpcode,Indirect,TableName"
-            " FROM %s", instancesTableName.c_str());
-        whereClause = " WHERE ClassId IN DerivedClasses";
+        changes[entry.GetInstanceId()] = entry.GetInstance();
         }
-    else
-        {
-        sql = Utf8PrintfString("SELECT ClassId,InstanceId,DbOpcode,Indirect,TableName FROM %s", instancesTableName.c_str());
-        }
-
-    if (queryDbOpcodes != QueryDbOpcode::All)
-        {
-        Utf8String whereInClause = ConstructWhereInClause(queryDbOpcodes);
-        
-        if (whereClause.empty())
-            whereClause.append(" WHERE ");
-        else
-            whereClause.append(" AND ");
-
-        whereClause.append(whereInClause);
-        }
-
-    sql.append(whereClause);
-
-    CachedStatementPtr stmt;
-    m_ecdb.GetCachedStatement(stmt, sql.c_str());
-    BeAssert(stmt.IsValid());
-
-    int baseClassIdx = stmt->GetParameterIndex(":baseClassId");
-    stmt->BindInt64(baseClassIdx, (int64_t) classId);
-
-    DbResult result;
-    while ((result = stmt->Step()) == BE_SQLITE_ROW)
-        {
-        ECClassId classId = (ECClassId) stmt->GetValueInt64(0);
-        ECInstanceId instanceId = stmt->GetValueId<ECInstanceId>(1);
-        DbOpcode dbOpcode = (DbOpcode) stmt->GetValueInt(2);
-        int indirect = stmt->GetValueInt(3);
-        Utf8String tableName = stmt->GetValueText(4);
-
-        ChangeSummary::Instance instance(*this, classId, instanceId, dbOpcode, indirect, tableName);
-        changes[instanceId] = instance;
-        }
-    BeAssert(result == BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------
