@@ -817,11 +817,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuil
     if (!argExp.GetTypeInfo().IsPoint())
         {
         BeAssert(argExp.GetTypeInfo().IsPoint() && "Invalid syntax for GetX/GetY/GetZ should have been caught by parser already.");
-#ifdef WIP_MERGE
-        return ECSqlStatus::ProgrammerError;
-#else
-        return ECSqlStatus::Error;   
-#endif
+        return ECSqlStatus::InvalidECSql;   
         }
 
     ECSqlStatus stat = PrepareValueExp(pointSqlSnippets, ctx, &argExp);
@@ -846,21 +842,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuil
 
             default:
                 BeAssert(false);
-#ifdef WIP_MERGE
-                return ECSqlStatus::ProgrammerError;
-#else
-                return ECSqlStatus::Error;
-#endif
+                return ECSqlStatus::InvalidECSql;
         }
 
     if (pointSqlSnippets.size() < (snippetIndex + 1))
         {
         BeAssert(false && "Point SQL snippet count is less than the GetPointCoordinate function expects. Invalid syntax for GetX / GetY / GetZ should have been caught by parser already.");
-#ifdef WIP_MERGE
-        return ECSqlStatus::ProgrammerError;
-#else
-        return ECSqlStatus::Error;   
-#endif
+        return ECSqlStatus::InvalidECSql;
         }
 
     nativeSqlSnippets.push_back(pointSqlSnippets[snippetIndex]);
