@@ -144,7 +144,7 @@ Utf8String ObjectInfo::GetObjectCacheTag() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ObjectIdCR ObjectInfo::GetObjectId() const
     {
-    if (m_objectIdMutable.IsEmpty())
+    if (m_objectIdMutable.IsEmpty() && nullptr != m_instanceClass)
         {
         m_objectIdMutable.schemaName = Utf8String(m_instanceClass->GetSchema().GetName());
         m_objectIdMutable.className = Utf8String(m_instanceClass->GetName());

@@ -66,14 +66,15 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
         // if we have a valid token build a display name for the user from the claims in the token
         SamlToken sToken(token);
 
-        Utf8String displayUserName = "";
+        Utf8String displayUserName;
         bmap<Utf8String, Utf8String> attributes;
-        BentleyStatus attributeStatus = sToken.GetAttributes(attributes);
-        if (SUCCESS == attributeStatus)
+        if (SUCCESS == sToken.GetAttributes(attributes))
             {
             Utf8String givenName = attributes["givenname"];
             Utf8String surName = attributes["surname"];
             displayUserName = givenName + " " + surName;
+
+            MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, attributes["name"]);
             }
         MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str());
         MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERID, attributes["userid"].c_str());
@@ -85,6 +86,48 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
     csSetup[CS_MESSAGE_FIELD_token] = token;
 
     MobileDgnUi::SendMessageToWorkThreadInternal (CS_MESSAGE_SetCredentials, std::move (csSetup));
+    }
+
+void WebServices::ConnectImsSetup(JsonValueCR messageDataObj)
+    {
+    Credentials cred;
+    Utf8String token;
+
+    if (!GetToken(messageDataObj, token))
+        {
+        MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
+        ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
+        return;
+        }
+
+    MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, true);
+
+    SamlToken sToken(token);
+    Utf8String displayUserName;
+    bmap<Utf8String, Utf8String> attributes;
+    if (SUCCESS == sToken.GetAttributes(attributes))
+        {
+        Utf8String givenName = attributes["givenname"];
+        Utf8String surName = attributes["surname"];
+        displayUserName = givenName + " " + surName;
+
+        MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, attributes["name"]);
+        cred = Credentials(attributes["name"], "password");
+        ConnectAuthenticationPersistence::GetShared()->SetCredentials(cred);
+        }
+
+    MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str());
+    MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERID, attributes["userid"].c_str());
+
+    MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.Setup_Succeeded"));
+
+    // TODO: review if safe to remove
+    Json::Value csSetup;
+    csSetup[CS_MESSAGE_FIELD_username] = cred.GetUsername();
+    csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword();
+    csSetup[CS_MESSAGE_FIELD_token] = token;
+
+    MobileDgnUi::SendMessageToWorkThread(CS_MESSAGE_SetCredentials, std::move(csSetup));
     }
 
 bool GetCredentials(JsonValueCR messageDataObj, CredentialsR cred)

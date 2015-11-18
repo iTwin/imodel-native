@@ -46,15 +46,22 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
 
     if (ShouldSkipSchemaClasses(schema))
         {
-        return message;
+        return nullptr;
         }
 
+    bool foundInstances = false;
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (!ecClass->IsEntityClass())
+        if (!ecClass->IsEntityClass() || ECClassModifier::Abstract == ecClass->GetClassModifier())
             continue;
 
         int instanceCount = m_dbAdapter.CountClassInstances(ecClass);
+        if (0 == instanceCount)
+            {
+            continue;
+            }
+
+        foundInstances = true;
 
         Utf8String classDebug;
         classDebug.Sprintf("\tObjects:%-3d - class: \"%s\" ", instanceCount, Utf8String(ecClass->GetName()).c_str());
@@ -64,16 +71,28 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
 
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (!ecClass->IsRelationshipClass())
+        if (!ecClass->IsRelationshipClass() || ECClassModifier::Abstract == ecClass->GetClassModifier())
             continue;
 
         int instanceCount = m_dbAdapter.CountClassInstances(ecClass);
+        if (0 == instanceCount)
+            {
+            continue;
+            }
+
+        foundInstances = true;
 
         Utf8String relationshipDebug;
         relationshipDebug.Sprintf("\tRelationships:%-3d - class: \"%s\"", instanceCount, Utf8String(ecClass->GetName()).c_str());
 
         message += relationshipDebug + "\n";
         }
+
+    if (!foundInstances)
+        {
+        return nullptr;
+        }
+
     message += "\n";
     return message;
     }
@@ -98,9 +117,13 @@ void ECDbDebugInfoHolder::Log(Utf8StringCR context)
     Utf8PrintfString message("\n%s (%s)\n", m_message.c_str(), context.c_str());
     for (ECSchemaCP schema : m_schemas)
         {
-        message += m_info.GetDataDebugInfo(schema);
+        auto schemaMessage = m_info.GetDataDebugInfo(schema);
+        if (!schemaMessage.empty())
+            {
+            message += schemaMessage;
+            }
         }
-    LOG.debug(message);
+    LOG.trace(message);
     }
 
 /*--------------------------------------------------------------------------------------+

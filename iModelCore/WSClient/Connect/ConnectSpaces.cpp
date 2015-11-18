@@ -13,6 +13,7 @@
 #include <MobileDgn/Utils/Threading/WorkerThreadPool.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_MOBILEDGN
@@ -125,7 +126,7 @@ HttpRequest ConnectSpaces::CreateGetRequest(Utf8StringCR url, bool acceptJson, b
     HttpRequest request = m_client.CreateGetRequest(url);
 
     if (includeToken)
-        {
+        {// TODO: clean this - it's always overridden
         request.GetHeaders().SetAuthorization(m_token.ToAuthorizationString());
         }
 
@@ -228,7 +229,10 @@ BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction 
 void ConnectSpaces::ResetEula(bool getNewToken)
     {
     Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, ResetEulaAction, m_eulaToken, eulaUrl.c_str()))
+
+    m_eulaToken = *ConnectAuthenticationPersistence::GetShared()->GetToken();
+
+    if (m_eulaToken.IsEmpty())
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -289,7 +293,9 @@ void ConnectSpaces::ResetEula(bool getNewToken)
 void ConnectSpaces::CheckEula(bool getNewToken)
     {
     Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, eulaUrl.c_str()))
+    m_eulaToken = *ConnectAuthenticationPersistence::GetShared()->GetToken();
+
+    if (m_eulaToken.IsEmpty())
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -388,7 +394,10 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
     {
     Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, eulaUrl.c_str()))
+
+    m_eulaToken = *ConnectAuthenticationPersistence::GetShared()->GetToken();
+
+    if (m_eulaToken.IsEmpty())
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return false;
@@ -460,7 +469,9 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
 void ConnectSpaces::AcceptEula(bool getNewToken)
     {
     Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, AcceptEulaAction, m_eulaToken, eulaUrl.c_str()))
+    m_eulaToken = *ConnectAuthenticationPersistence::GetShared()->GetToken();
+
+    if (m_eulaToken.IsEmpty())
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
