@@ -783,6 +783,64 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step()) << "[(0,1):(0,N)]> More than one child can exist";
             }
+
+        //** Unenforced cardinality for self-joins
+            {
+            ECDbR ecdb = SetupECDb("relcardinality_selfjoins.ecdb", SchemaItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>"));
+            ASSERT_TRUE(ecdb.IsDbOpen());
+            ECInstanceKey a1Key, a2Key, a3Key;
+
+            ECSqlStatement aStmt;
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key));
+            aStmt.Reset();
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
+            aStmt.Reset();
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a3Key));
+            aStmt.Reset();
+
+            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            ECSqlStatement relStmt;
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a2Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, a2Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a3Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, a3Key.GetECClassId()));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step());
+            relStmt.Reset();
+            relStmt.ClearBindings();
+
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a3Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a3Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a1Key.GetECInstanceId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, a1Key.GetECClassId()));
+            //THIS SHOULD ACTUALLY FAIL, but we cannot enforce that in ECDb
+            ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
+            relStmt.Reset();
+            relStmt.ClearBindings();
+            }
     }
 
 //---------------------------------------------------------------------------------------
