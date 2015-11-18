@@ -27,6 +27,9 @@ typedef std::shared_ptr<WSChangeset> WSChangesetPtr;
 struct SyncLocalChangesTask : public CachingTaskBase
     {
     private:
+        typedef bmap<ObjectId, IChangeManager::InstanceRevisionPtr> RevisionMap;
+
+    private:
         WSInfo m_serverInfo;
         SyncOptions m_options;
 
@@ -47,13 +50,12 @@ struct SyncLocalChangesTask : public CachingTaskBase
         virtual void _OnError(CachingDataSource::ErrorCR error);
         void OnSyncDone();
 
-        void SyncNextCacheChangeGroup();
+        void SyncNext();
 
         bool CanSyncChangeset(CacheChangeGroupCR changeGroup) const;
-
         AsyncTaskPtr<void> SyncNextChangeset();
 
-        AsyncTaskPtr<void> SyncCacheChangeGroup(CacheChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncChangeGroup(CacheChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncCreation(CacheChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncObjectModification(CacheChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncFileModification(CacheChangeGroupPtr changeGroup);
@@ -68,44 +70,31 @@ struct SyncLocalChangesTask : public CachingTaskBase
         WSChangesetPtr BuildChangeset
             (
             IDataSourceCache& cache,
-            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
+            RevisionMap& revisionsOut,
             bvector<CacheChangeGroup*>& changesetChangeGroupsOut
             );
-
+        WSChangesetPtr BuildSingleInstanceChangeset
+            (
+            IDataSourceCache& cache,
+            CacheChangeGroupCR changeGroup,
+            RevisionMap& revisionsOut
+            );
         WSChangeset::Instance* AddChangeToChangeset
             (
             IDataSourceCache& cache,
             WSChangeset& changeset,
             CacheChangeGroupCR changeGroup,
-            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
+            RevisionMap& revisionsOut,
             bool ensureChangedInstanceInRoot
             );
-
-        BentleyStatus BuildSyncJson(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
-        BentleyStatus BuildSyncJsonForObjectCreation(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
-        BentleyStatus BuildSyncJsonForRelationshipCreation(IDataSourceCache& cache, ChangeManager::RelationshipChangeCR relationshipChange, JsonValueR syncJsonOut) const;
-
-        std::map<ECInstanceKey, Utf8String> ReadChangedRemoteIds(CacheChangeGroupCR changeGroup, WSCreateObjectResponseCR response) const;
-
-        JsonValuePtr ReadChangeProperties(IDataSourceCache& cache, WSChangeset::ChangeState state, ECInstanceKeyCR instance) const;
-        BentleyStatus ReadObjectProperties(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
-        BentleyStatus ReadObjectPropertiesForUpdate(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
-        BentleyStatus ReadObjectPropertiesForCreation(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
-
-        void RemoveCacheSpecificProperties(JsonValueR propertiesJson) const;
-        void RemoveReadOnlyProperties(JsonValueR propertiesJson, ECClassCR ecClass) const;
-        void RemoveCalculatedProperties(JsonValueR propertiesJson, ECClassCR ecClass) const;
 
         void SetExistingInstanceInfoToJson(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR json) const;
         void SetChangedInstanceClassInfoToJson(IDataSourceCache& cache, IChangeManager::ObjectChangeCR change, JsonValueR json) const;
         Utf8String GetChangeStateStr(IChangeManager::ChangeStatus changeStatus) const;
-        WSChangeset::ChangeState ToWSChangesetChangeState(IChangeManager::ChangeStatus status)const;
+        WSChangeset::ChangeState ToWSChangesetChangeState(IChangeManager::ChangeStatus status) const;
 
         void RegisterFailedSync(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel);
-        void SetUpdatedInstanceKeyInCacheChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
-
-        static void RemoveEmptyMembersRecursively(JsonValueR jsonObject);
-        static void RemoveEmptyMembersRecursively(JsonValueR childJson, Utf8StringCR childMemberNameInParent, JsonValueR parentJson);
+        void SetUpdatedInstanceKeyInChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
 
     public:
         SyncLocalChangesTask

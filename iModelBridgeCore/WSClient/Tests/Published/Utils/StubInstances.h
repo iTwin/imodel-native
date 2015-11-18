@@ -52,6 +52,8 @@ struct StubInstances
         Utf8String ToJsonWebApiV2() const;
         //! Create server changeset response body JSON string
         Utf8String ToChangesetResponseJson() const;
+        //! Create server object creation result
+        WSCreateObjectResult ToWSCreateObjectResult() const;
     };
 
 struct StubInstances::StubRelationshipInstances
