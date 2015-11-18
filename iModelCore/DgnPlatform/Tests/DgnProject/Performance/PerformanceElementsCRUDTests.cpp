@@ -1408,7 +1408,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, int i
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, selectECSql.c_str ()));
     //printf ("\n Native Sql %s : %s \n", className, stmt.GetNativeSql());
-    for (int i = 0; i < initialInstanceCount; i++)
+    for (int i = 0; i < opCount; i++)
         {
         const ECInstanceId id(s_firstElementId + i*elementIdIncrement);
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (1, id));
