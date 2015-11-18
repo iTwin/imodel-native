@@ -174,7 +174,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                              () override
         {
-        m_ptArray.Clear();        
+        m_ptArray.Clear();      
         m_pointPacket.SetSize(0);
 
         if (!m_anyMorePoints)
@@ -184,7 +184,7 @@ private:
             {        
             if (m_points.size() > 0)
                 {
-                s_dataPipe.FinishProcessingPoints();
+                s_dataPipe.FinishProcessingData();
                 m_points.clear();
                 }
             
@@ -210,7 +210,7 @@ private:
         else
             {
             m_anyMorePoints = false;
-            s_dataPipe.FinishProcessingPoints();            
+            s_dataPipe.FinishProcessingData();            
             }
         }
 
@@ -299,6 +299,7 @@ private:
     IDTMFeatureArray<DPoint3d>      m_featureArray;    
     bvector<DPoint3d>               m_points;
     DTMFeatureType                  m_featureType;
+    bool                            m_hasAnyNewFeature;
 
     /*---------------------------------------------------------------------------------**//**
     * @description  
@@ -318,49 +319,30 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                              () override
         {
-#if 0
         m_featureArray.Clear();
 
         m_headerPacket.SetSize(0);
         m_pointPacket.SetSize(0);
-        m_points.clear()
+        m_points.clear();
 
         s_dataPipe.ReadFeature(m_points, m_featureType);
 
-        /*
-        if (m_nextIndex == -1)
-            {        
-            if (m_points.size() > 0)
-                {
-                s_dataPipe.FinishProcessingPoints();
-                m_points.clear();
-                }
-            
-            s_dataPipe.ReadPoints(m_points);
-            m_nextIndex = 0;
-            }
-            */
-
         if (m_points.size() > 0)
-            {            
-            size_t sizeToCopy = min(m_points.size() - m_nextIndex,  m_pointPacket.GetCapacity());
-            m_ptArray.Append(&m_points[m_nextIndex], &m_points[m_nextIndex] + sizeToCopy);
-            m_pointPacket.SetSize(m_ptArray.GetSize());
+            {
+            m_featureArray.Append((IDTMFile::FeatureType)m_featureType,
+                                  &m_points[0],
+                                  &m_points[0] + m_points.size());
 
-            m_nextIndex += (int)sizeToCopy;
-
-            assert(m_nextIndex <= m_points.size());
-
-            if (m_nextIndex == m_points.size())
-                {
-                m_nextIndex = -1;
-                }
+            m_headerPacket.SetSize(m_featureArray.GetHeaders().GetSize());
+            m_pointPacket.SetSize(m_featureArray.GetPoints().GetSize());            
             }
         else
             {
-            s_dataPipe.FinishProcessingPoints();            
+            m_hasAnyNewFeature = false;
             }
-#endif
+
+        s_dataPipe.FinishProcessingData();
+
         return;
 
 /*        
@@ -386,7 +368,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool                    _Next                              () override
         {
-        return false;         
+        return m_hasAnyNewFeature;         
         }
 
 public:
@@ -396,6 +378,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     explicit                        StmStreamingLinearExtractor ()                                 
         {
+        m_hasAnyNewFeature = true;
         }
     };
 

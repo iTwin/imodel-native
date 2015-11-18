@@ -196,8 +196,19 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return true;
         }
 
+    static bool s_finishWritingPointDone = false;
+
     bool StreamFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoints, DTMFeatureType featureType, bool isFeature3d)
         {                        
+        static bool s_firstCall = true;
+
+        if (s_firstCall)
+            {
+            s_dataPipe.FinishWritingPoints();
+            s_firstCall = false;
+            s_finishWritingPointDone = true;
+            }
+
         s_dataPipe.WriteFeature(featurePoints, nbOfFeaturesPoints, featureType);
         return true;
         }
@@ -208,7 +219,12 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
 
         importerPtr->Import();
 
-        s_dataPipe.FinishWritingPoints();
+        if (!s_finishWritingPointDone)
+            {
+            s_dataPipe.FinishWritingPoints();
+            }
+
+        s_dataPipe.FinishWritingFeatures();
         }
 
 
@@ -220,8 +236,9 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
                                              unsigned int*                nbPointsForPointFeatures, 
                                              unsigned int*                nbPointsForLinearFeatures)
     {
-    DTMPtr         dtmPtr = 0;       
-    IMrDTMQueryPtr fullResLinearQueryPtr;
+    DTMPtr                   dtmPtr = 0;       
+    IMrDTMQueryPtr           fullResLinearQueryPtr;
+    IMrDTMQueryParametersPtr mrdtmQueryParamPtr;
 
     //Query the linears 
     
@@ -234,8 +251,10 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
         mrDtmFullResLinearParametersPtr->SetTriangulationState(false);                
         mrDtmFullResLinearParametersPtr->SetUseDecimation(false);             
         mrDtmFullResLinearParametersPtr->SetCutLinears(false);
+
+        mrdtmQueryParamPtr = mrDtmFullResLinearParametersPtr;
         
-        if (fullResLinearQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), (IMrDTMQueryParametersPtr&)mrDtmFullResLinearParametersPtr) != IMrDTMQuery::S_SUCCESS)
+        if (fullResLinearQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), mrdtmQueryParamPtr) != IMrDTMQuery::S_SUCCESS)
             return ERROR;           
                                                                     
         *nbPointsForLinearFeatures = (unsigned int)dtmPtr->GetPointCount();
@@ -255,8 +274,7 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
         int  res = 0;
         bool found = false;
         DTMPtr singleResolutionViewDtmPtr = 0;                         
-        Bentley::MrDTM::IMrDTMQueryParametersPtr mrdtmQueryParamPtr;
-
+        
         for (res=0; res<mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT); res++) 
             {                
             mrDtmFixResqueryParamsPtr->SetResolutionIndex(res);  
@@ -311,8 +329,9 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
                                  double          decimationFactorForPointFeatures, 
                                  unsigned int    maximumNbLinearFeaturePoints)
     {                                            
-    StatusInt            status;
-    IMrDTMQueryPtr fullResLinearQueryPtr;
+    StatusInt                status;
+    IMrDTMQueryPtr           fullResLinearQueryPtr;
+    IMrDTMQueryParametersPtr queryParameterPtr;
      
     //Query the linears     
     fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_LINEAR);
@@ -348,7 +367,9 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
             nbPointsBefore = 0;
             }                        
 
-        if ((status = fullResLinearQueryPtr->Query(dtmPtr, regionPts, (int)nbPts, (IMrDTMQueryParametersPtr&)mrDtmFullResLinearParametersPtr)) != SUCCESS)      
+        queryParameterPtr = mrDtmFullResLinearParametersPtr;
+
+        if ((status = fullResLinearQueryPtr->Query(dtmPtr, regionPts, (int)nbPts, queryParameterPtr)) != SUCCESS)      
             {                        
             return status;           
             }
@@ -391,9 +412,7 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
             }        
         
         mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
-
-        IMrDTMQueryParametersPtr queryParameterPtr;
-
+        
         queryParameterPtr = mrDtmFixResqueryParamsPtr;
                     
         status = fixResPointQueryPtr->Query(singleResolutionViewDtmPtr, 0, 0, queryParameterPtr);
@@ -572,12 +591,29 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
 
        
         DRange3d range;
-        std::vector<DPoint3d> regionPoints(8);
+        std::vector<DPoint3d> regionPoints(5);
 
         mrDtmPtr->GetRange(range);
-        range.Get8Corners(&regionPoints[0]);
+        
+        regionPoints[0].x = range.low.x;
+        regionPoints[0].y = range.low.y;
+        regionPoints[0].z = range.low.z;
 
-        regionPoints.resize(4);
+        regionPoints[1].x = range.high.x;
+        regionPoints[1].y = range.low.y;
+        regionPoints[1].z = range.low.z;
+
+        regionPoints[2].x = range.high.x;
+        regionPoints[2].y = range.high.y;
+        regionPoints[2].z = range.low.z;
+
+        regionPoints[3].x = range.low.x;
+        regionPoints[3].y = range.high.y;
+        regionPoints[3].z = range.low.z;
+
+        regionPoints[4].x = range.low.x;
+        regionPoints[4].y = range.low.y;
+        regionPoints[4].z = range.low.z;
 
         size_t maxNbPointsToImport = 50000;
                 
