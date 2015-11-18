@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "JsonUtil.h"
+#include <rapidjson/prettywriter.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace rapidjson;
@@ -83,4 +84,15 @@ void JsonUtil::DeepCopy(RapidJsonValueCR source, RapidJsonDocumentR target)
 
     target.Parse<0>(sourceStr);
     BeAssert(!target.HasParseError());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String JsonUtil::ToStyledString(RapidJsonValueCR value)
+    {
+    rapidjson::GenericStringBuffer<UTF8<>> buffer;
+    rapidjson::PrettyWriter<rapidjson::GenericStringBuffer<UTF8<>>> writer(buffer);
+    value.Accept(writer);
+    return buffer.GetString();
     }
