@@ -170,7 +170,7 @@ public:
             Insert(lockableObject, level);
         }
 
-    bool Empty() const { return m_locks.empty(); } //!< Determine if this request contains no locks
+    bool IsEmpty() const { return m_locks.empty(); } //!< Determine if this request contains no locks
     size_t Size() const { return m_locks.size(); } //!< Returns the number of locks in this request
     void Clear() { m_locks.clear(); } //!< Removes all locks from this request
 
@@ -195,6 +195,12 @@ public:
     //! Removes the lock with the specified ID, if it exists.
     //! @param[in]      id 
     DGNPLATFORM_EXPORT void Remove(LockableId id);
+
+    //! Populate a LockRequest object from the set of changes in a DgnDb, containing all locks required for the actual changes made.
+    DGNPLATFORM_EXPORT DgnDbStatus FromChangeSet(DgnDbR db);
+
+    //! Remove any locks from this request which are also present (at any lock level) in the supplied request, returning the number of locks removed.
+    DGNPLATFORM_EXPORT size_t Subtract(LockRequestCR request);
 };
 
 //=======================================================================================
@@ -226,7 +232,7 @@ protected:
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
 
-    DGNPLATFORM_EXPORT virtual LockStatus _LockElement(DgnElementCR el, LockLevel level);
+    DGNPLATFORM_EXPORT virtual LockStatus _LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId);
     DGNPLATFORM_EXPORT virtual LockStatus _LockModel(DgnModelCR model, LockLevel level);
 
     DGNPLATFORM_EXPORT BeFileName GetLockTableFileName() const;
@@ -260,7 +266,7 @@ public:
     void OnElementInserted(DgnElementId id); //<! Invoked when a new element is inserted into the DgnDb
     void OnModelInserted(DgnModelId id); //<! Invoked when a new model is inserted into the DgnDb
 
-    LockStatus LockElement(DgnElementCR el, LockLevel level); //!< Used internally to lock an element for direct changes.
+    LockStatus LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId=DgnModelId()); //!< Used internally to lock an element for direct changes.
     LockStatus LockModel(DgnModelCR model, LockLevel level); //!< Used internally to lock a model for direct changes.
     LockStatus LockDb(LockLevel level); //!< Used internally to lock the DgnDb
 //__PUBLISH_SECTION_END__

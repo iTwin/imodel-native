@@ -197,7 +197,7 @@ DgnAuthorityPtr DgnAuthorities::LoadAuthority(DgnAuthorityId id, DgnDbStatus* ou
         return nullptr;
         }
 
-    DgnAuthority::CreateParams params(m_dgndb, classId, name.c_str(), nullptr, id);
+    DgnAuthority::CreateParams params(m_dgndb, classId, name.c_str(), id);
     DgnAuthorityPtr auth = handler->Create(params);
     if (auth.IsNull())
         {
@@ -252,7 +252,7 @@ DgnAuthorityCPtr DgnAuthorities::GetAuthority(Utf8CP name)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::DgnAuthority(CreateParams const& params)
-    : m_dgndb(params.m_dgndb), m_authorityId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_uri(params.m_uri)
+    : m_dgndb(params.m_dgndb), m_authorityId(params.m_id), m_classId(params.m_classId), m_name(params.m_name)
     {
     //
     }
@@ -262,7 +262,7 @@ DgnAuthority::DgnAuthority(CreateParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnAuthority::_ToPropertiesJson(JsonValueR json) const
     {
-    json["uri"] = m_uri;
+    // no base properties (used to have URI)
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -270,7 +270,7 @@ void DgnAuthority::_ToPropertiesJson(JsonValueR json) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnAuthority::_FromPropertiesJson(JsonValueCR json)
     {
-    m_uri = BeJsonUtilities::CStringFromStringValue(json["uri"], "");
+    // no base properties (used to have URI)
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,8 +281,6 @@ void DgnAuthority::ReadProperties(Utf8StringCR jsonStr)
     Json::Value props(Json::objectValue);
     if (Json::Reader::Parse(jsonStr, props))
         _FromPropertiesJson(props);
-    else
-        BeAssert(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,10 +316,10 @@ AuthorityHandlerR DgnAuthority::GetAuthorityHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<NamespaceAuthority> NamespaceAuthority::CreateNamespaceAuthority(Utf8CP authorityName, DgnDbR dgndb, Utf8CP uri)
+RefCountedPtr<NamespaceAuthority> NamespaceAuthority::CreateNamespaceAuthority(Utf8CP authorityName, DgnDbR dgndb)
     {
     auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
-    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName, uri);
+    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName);
     return static_cast<NamespaceAuthority*>(hdlr.Create(params).get());
     }
 
@@ -398,8 +396,7 @@ DgnAuthority::Code SystemAuthority::CreateCode(BuiltinId which, Utf8StringCR val
 DbResult DgnDb::CreateAuthorities()
     {
     Json::Value authorityProps(Json::objectValue);
-    authorityProps["uri"] = "";
-    Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
+    Utf8String authorityJson; // no base properties...
 
     Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (?,?,?,?)");
     statement.BindText(4, authorityJson, Statement::MakeCopy::No);

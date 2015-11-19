@@ -38,21 +38,20 @@ protected:
         return *m_db;
         }
 
-    void Compare(DgnAuthorityId id, Utf8CP name, Utf8StringCR uri)
+    void Compare(DgnAuthorityId id, Utf8CP name)
         {
         DgnAuthorityCPtr auth = GetDb().Authorities().GetAuthority(id);
         ASSERT_TRUE(auth.IsValid());
         EXPECT_EQ(auth->GetName(), name);
-        EXPECT_STR_EQ(auth->GetUri(), uri);
 
         DgnAuthorityId authId = GetDb().Authorities().QueryAuthorityId(name);
         EXPECT_TRUE(authId.IsValid());
         EXPECT_EQ(authId, id);
         }
 
-    DgnAuthorityPtr Create(Utf8CP name, Utf8CP uri = nullptr, bool insert = true)
+    DgnAuthorityPtr Create(Utf8CP name, bool insert = true)
         {
-        DgnAuthorityPtr auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDb(), uri);
+        DgnAuthorityPtr auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDb());
         if (insert)
             {
             EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
@@ -73,14 +72,14 @@ TEST_F (DgnAuthoritiesTest, Authorities)
 
     // Create some new authorities
     auto auth1Id = Create("Auth1")->GetAuthorityId();
-    auto auth2Id = Create("Auth2", "auth2:uri")->GetAuthorityId();
+    auto auth2Id = Create("Auth2")->GetAuthorityId();
 
     // Test persistent
-    Compare(auth1Id, "Auth1", nullptr);
-    Compare(auth2Id, "Auth2", "auth2:uri");
+    Compare(auth1Id, "Auth1");
+    Compare(auth2Id, "Auth2");
 
     // Names must be unique
-    auto badAuth = Create("Auth1", "This is a duplicate name", false);
+    auto badAuth = Create("Auth1", false);
     EXPECT_EQ(DgnDbStatus::DuplicateName, badAuth->Insert());
     EXPECT_FALSE(badAuth->GetAuthorityId().IsValid());
     }

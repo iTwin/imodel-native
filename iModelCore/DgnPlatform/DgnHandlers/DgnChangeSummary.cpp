@@ -124,6 +124,41 @@ void DgnChangeSummary::GetChangedElements(DgnElementIdSet& elementIds, ChangeSum
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnChangeSummary::ElementIterator::ElementIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
+    : m_impl(summary, Impl::Options(summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), true, opcodes))
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DgnChangeSummary::ElementIterator::Entry::GetModelId(bool old) const
+    {
+    auto instance = m_impl.GetInstance();
+    DgnModelId modelId;
+    if (instance.ContainsValue("ModelId"))
+        {
+        DbDupValue value = (old ? instance.GetOldValue("ModelId") : instance.GetNewValue("ModelId"));
+        if (value.IsValid())
+            modelId = value.GetValueId<DgnModelId>();
+        }
+    else if (DbOpcode::Delete != GetDbOpcode())
+        {
+        static const Utf8CP s_selectModelId { "SELECT ModelId FROM" DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ElementId=?" };
+        DgnDbR dgndb = static_cast<DgnChangeSummary const&>(m_impl.GetChangeSummary()).GetDgnDb();
+        CachedStatementPtr stmt = dgndb.Elements().GetStatement(s_selectModelId);
+        stmt->BindId(1, instance.GetInstanceId());
+        if (BE_SQLITE_ROW == stmt->Step())
+            modelId = stmt->GetValueId<DgnModelId>(0);
+        }
+
+    return modelId;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    09/2015
 //---------------------------------------------------------------------------------------
