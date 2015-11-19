@@ -1,8 +1,15 @@
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
 {
+    /*** BEGIN_FORWARD_DECLARATIONS ***/
+    class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
+    class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
+    /*** END_FORWARD_DECLARATIONS ***/
+
+    type DPoint3dP = cxx_pointer<DPoint3d>;
+    type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
 
     //! Logging serverity level.
-    //enum LoggingSeverity { }
+    enum LoggingSeverity { }
 
     //! Access to the message log
     class Logging implements BeJsProjection_SuppressConstructor {
@@ -10,18 +17,18 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         //! Set the severity level for the specified category
         //! @param catagory     The logging category
         //! @param severity     The minimum severity to display. Note that messages will not be logged if their severity is below this level.
-        //static SetSeverity(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): void;
+        static SetSeverity(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): void;
 
         //! Test if the specified severity level is enabled for the specified category
         //! @param category     The logging category
         //! @param severity     The severity to test
-        //static IsSeverityEnabled(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): cxx_bool;
+        static IsSeverityEnabled(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): cxx_bool;
 
         //! Send a message to the log
         //! @param catagory     The logging category
         //! @param severity     The severity of the message. Note that the message will not be logged if \a severity is below the severity level set by calling SetSeverity
         //! @param message      The message to log
-        //static Message(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>, message: Bentley_Utf8String): void;
+        static Message(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>, message: Bentley_Utf8String): void;
     }
 
     //! Script Management Utilities

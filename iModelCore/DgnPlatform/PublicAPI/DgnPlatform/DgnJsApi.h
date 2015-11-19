@@ -44,8 +44,7 @@ struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
 //
 // @bsiclass                                                    Sam.Wilson      10/15
 //=======================================================================================
-BEJAVASCRIPT_EXPORT_CLASS
-(Bentley.Dgn)
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
 enum class LoggingSeverity : uint32_t
     {
     // *** WARNING: Keep this consistent with DgnPlatformLib::ScriptAdmin::LoggingSeverity
