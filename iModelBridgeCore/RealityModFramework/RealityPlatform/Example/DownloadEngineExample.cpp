@@ -26,7 +26,10 @@ static int callback_progress_func (int index,void *pClient, size_t ByteCurrent,s
 
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
 
+#if (_MSC_VER <= 1800)  //VS2013 and less
     printf("* ProgressInfo: (%d) %ls -- %lu of %lu\n", index, pEntry->filename.c_str(), ByteCurrent, ByteTotal);
+#else
+#endif
 
     return ret;   // # 0 --> will abort the transfer.
     }
@@ -34,8 +37,10 @@ static int callback_progress_func (int index,void *pClient, size_t ByteCurrent,s
 static void callback_status_func (int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
+#if (_MSC_VER <= 1800)  //VS2013 and less
     printf("****** Status: (%d) ErrCode: %d - fromCache(%d) - (%s) <%ls>\n", index, ErrorCode, pEntry->fromCache, pMsg, pEntry->filename.c_str());
-
+#else
+#endif
     if (ErrorCode == 0)
         {
         WString out(L"k:\\tmp\\data\\unzip\\");
