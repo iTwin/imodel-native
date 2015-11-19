@@ -73,6 +73,7 @@
     
     
     <Part Name="Reality-Examples">
+        <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />

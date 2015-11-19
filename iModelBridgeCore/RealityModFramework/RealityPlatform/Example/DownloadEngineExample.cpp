@@ -29,6 +29,7 @@ static int callback_progress_func (int index,void *pClient, size_t ByteCurrent,s
 #if (_MSC_VER <= 1800)  //VS2013 and less
     printf("* ProgressInfo: (%d) %ls -- %lu of %lu\n", index, pEntry->filename.c_str(), ByteCurrent, ByteTotal);
 #else
+    printf("* ProgressInfo: (%d) %ls -- %zu of %zu\n", index, pEntry->filename.c_str(), ByteCurrent, ByteTotal);
 #endif
 
     return ret;   // # 0 --> will abort the transfer.
@@ -40,6 +41,7 @@ static void callback_status_func (int index, void *pClient, int ErrorCode, const
 #if (_MSC_VER <= 1800)  //VS2013 and less
     printf("****** Status: (%d) ErrCode: %d - fromCache(%d) - (%s) <%ls>\n", index, ErrorCode, pEntry->fromCache, pMsg, pEntry->filename.c_str());
 #else
+    printf("****** Status: (%d) ErrCode: %d - fromCache(%d) - (%s) <%ls>\n", index, ErrorCode, pEntry->fromCache, pMsg, pEntry->filename.c_str());
 #endif
     if (ErrorCode == 0)
         {
@@ -90,7 +92,11 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     for (size_t i = 0; i < urlOSMLink.size(); ++i)
     {
         wchar_t filename[1024];
+#if (_MSC_VER <= 1800)  //VS2013 and less
         swprintf (filename, 1024, L"k:\\tmp\\data\\OsmFile_%2lu.osm", i);
+#else
+        swprintf(filename, 1024, L"k:\\tmp\\data\\OsmFile_%2zu.osm", i);
+#endif
 
         urlList.push_back(std::make_pair(urlOSMLink[i], WString (filename)));
     }
