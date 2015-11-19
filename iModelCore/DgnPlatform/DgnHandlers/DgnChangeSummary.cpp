@@ -148,7 +148,7 @@ DgnModelId DgnChangeSummary::ElementIterator::Entry::GetModelId(bool old) const
         }
     else if (DbOpcode::Delete != GetDbOpcode())
         {
-        static const Utf8CP s_selectModelId { "SELECT ModelId FROM" DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ElementId=?" };
+        static const Utf8CP s_selectModelId { "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?" };
         DgnDbR dgndb = static_cast<DgnChangeSummary const&>(m_impl.GetChangeSummary()).GetDgnDb();
         CachedStatementPtr stmt = dgndb.Elements().GetStatement(s_selectModelId);
         stmt->BindId(1, instance.GetInstanceId());

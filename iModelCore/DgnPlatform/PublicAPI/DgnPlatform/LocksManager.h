@@ -197,7 +197,7 @@ public:
     DGNPLATFORM_EXPORT void Remove(LockableId id);
 
     //! Populate a LockRequest object from the set of changes in a DgnDb, containing all locks required for the actual changes made.
-    DGNPLATFORM_EXPORT DgnDbStatus FromChangeSet(DgnDbR db, TxnManager::TxnId startTxnId /* NEEDSWORK: Move to DgnRevision API */);
+    DGNPLATFORM_EXPORT DgnDbStatus FromChangeSet(DgnDbR db);
 
     //! Remove any locks from this request which are also present (at any lock level) in the supplied request, returning the number of locks removed.
     DGNPLATFORM_EXPORT size_t Subtract(LockRequestCR request);

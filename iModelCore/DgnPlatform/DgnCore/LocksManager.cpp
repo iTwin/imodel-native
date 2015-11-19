@@ -132,12 +132,16 @@ size_t LockRequest::Subtract(LockRequestCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LockRequest::FromChangeSet(DgnDbR db, TxnManager::TxnId startTxnId)
+DgnDbStatus LockRequest::FromChangeSet(DgnDbR db)
     {
     Clear();
 
     // NEEDSWORK: We want this to execute a ChangeSet associated with a DgnRevision.
     // For now, just generating ChangeSet for current txns.
+    if (BE_SQLITE_OK != db.SaveChanges())
+        return DgnDbStatus::WriteError;
+
+    auto startTxnId = db.Txns().GetSessionStartId();
 
     DgnChangeSummary summary(db);
     DgnDbStatus status = db.Txns().GetChangeSummary(summary, startTxnId);
