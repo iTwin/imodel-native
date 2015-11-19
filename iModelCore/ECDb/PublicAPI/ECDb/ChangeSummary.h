@@ -185,6 +185,8 @@ struct ChangeSummary : NonCopyableClass
                 ECDB_EXPORT Instance GetInstance() const;
 
                 Entry const& operator*() const { return *this; }
+
+                ChangeSummaryCR GetChangeSummary() const { return m_changeSummary; } //!< @private
             };
 
         typedef Entry const_iterator;
