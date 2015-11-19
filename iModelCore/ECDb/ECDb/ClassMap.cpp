@@ -737,11 +737,12 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 ECDbSqlTable const& table = column->GetTable();
                 if (!involvedTables.empty() && involvedTables.find(&table) == involvedTables.end())
                     {
-                    if (Enum::Intersects(GetMapStrategy().GetOptions(), Enum::Or(ECDbMapStrategy::Options::JoinedTable, ECDbMapStrategy::Options::ParentOfJoinedTable)))
+                    if (Enum::Intersects(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
                         {
                         issues.Report(ECDbIssueSeverity::Error,
                                       "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
-                                      "The properties that make up the index are mapped to different tables because the MapStrategy option 'JoinedTableForSubclasses' is applied to this class hierarchy.",
+                                      "The properties that make up the index are mapped to different tables because the MapStrategy option '" USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS 
+                                      "' or '" USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES "'  is applied to this class hierarchy.",
                                       i, GetClass().GetFullName());
                         }
                     else

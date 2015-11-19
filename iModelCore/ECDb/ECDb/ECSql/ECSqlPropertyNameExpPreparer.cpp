@@ -54,7 +54,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //in SQLite table aliases are only allowed for SELECT statements
-    Utf8CP classIdentifier = nullptr; 
+    Utf8CP classIdentifier = nullptr;
     if (currentScopeECSqlType == ECSqlType::Select)
         classIdentifier = exp->GetClassRefExp()->GetId().c_str();
     else if (currentScopeECSqlType == ECSqlType::Delete)
@@ -63,8 +63,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             classIdentifier = exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName().c_str();
         }
 
-    auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType, exp->HasParentheses ());
-    nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
+    NativeSqlBuilder::List propNameNativeSqlSnippets = exp->GetPropertyMap().ToNativeSql(classIdentifier, currentScopeECSqlType, exp->HasParentheses());
+    nativeSqlSnippets.insert(nativeSqlSnippets.end(), propNameNativeSqlSnippets.begin(), propNameNativeSqlSnippets.end());
 
     return ECSqlStatus::Success;
     }
