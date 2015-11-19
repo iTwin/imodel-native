@@ -532,14 +532,24 @@ void    Debug ()
     {
     size_t memoryUsage = GetMemoryUsage(), textureMemoryUsage = GetTextureMemoryUsage(), nodeCount = GetNodeCount();
 
+#if (_MSC_VER <= 1800)  //VS2013 and less
     printf ("Node Count: %ld, Memory Usage: %lf, Texture Memory: %lf \n",  nodeCount, (double) memoryUsage / (double) ONE_GB, (double) textureMemoryUsage / (double) ONE_GB);
     printf ("Memory/Node: %lf Texture/Node: %lf, Mesh Count: %ld, Max Depth: %d\n", (double) memoryUsage / (double) (nodeCount * 1024), (double) textureMemoryUsage / (double) (nodeCount * 1024), GetMeshCount(), GetMaxDepth());
     printf ("Resolution Ratio: %lf\n", MRMeshUtil::CalculateResolutionRatio());
+#else
+    printf("Node Count: %zu, Memory Usage: %lf, Texture Memory: %lf \n", nodeCount, (double)memoryUsage / (double)ONE_GB, (double)textureMemoryUsage / (double)ONE_GB);
+    printf("Memory/Node: %lf Texture/Node: %lf, Mesh Count: %zu, Max Depth: %zu\n", (double)memoryUsage / (double)(nodeCount * 1024), (double)textureMemoryUsage / (double)(nodeCount * 1024), GetMeshCount(), GetMaxDepth());
+    printf("Resolution Ratio: %lf\n", MRMeshUtil::CalculateResolutionRatio());
+#endif
 
     size_t      load, total, available;
 
     MRMeshUtil::GetMemoryStatistics (load, total, available);
+#if (_MSC_VER <= 1800)  //VS2013 and less
     printf ("Memory Load: %ld, Total Memory: %lf, Available Memory: %lf\n", load, (double) total/(double) ONE_GB, (double) available/(double) ONE_GB);
+#else
+    printf("Memory Load: %zu, Total Memory: %lf, Available Memory: %lf\n", load, (double)total / (double)ONE_GB, (double)available / (double)ONE_GB);
+#endif
     }
 
 
