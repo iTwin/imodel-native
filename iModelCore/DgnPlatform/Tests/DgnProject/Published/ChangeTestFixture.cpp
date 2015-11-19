@@ -96,7 +96,7 @@ void ChangeTestFixture::CreateDefaultView()
     ASSERT_TRUE(m_testModel.IsValid());
 
     CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(m_testModel->GetModelId(), DgnViewSource::Generated)));
-    BeAssert(viewRow.Insert().IsValid());
+    ASSERT_TRUE(viewRow.Insert().IsValid());
 
     PhysicalViewController viewController(*m_testDb, viewRow.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
@@ -113,7 +113,7 @@ void ChangeTestFixture::CreateDefaultView()
         }
 
     auto result = viewController.Save();
-    BeAssert(BE_SQLITE_OK == result);
+    ASSERT_TRUE(BE_SQLITE_OK == result);
     UNUSED_VARIABLE(result);
 
     DgnViewId viewId = viewRow.GetViewId();
@@ -131,12 +131,12 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     m_testDb->Units().SaveProjectExtents(physicalExtents);
 
     PhysicalViewDefinitionCPtr view = dynamic_cast<PhysicalViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
-    BeAssert(view.IsValid());
+    ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
     viewController->LookAtVolume(physicalExtents);
     DbResult result = viewController->Save();
-    BeAssert(result == BE_SQLITE_OK);
+    ASSERT_TRUE(result == BE_SQLITE_OK);
 
     m_testDb->SaveSettings();
     }
