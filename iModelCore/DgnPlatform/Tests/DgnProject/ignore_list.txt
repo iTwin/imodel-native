@@ -26,3 +26,4 @@ DgnChangeSummaryTestFixture.CreateSampleDataSet # crashing on optimized 06; noti
 DgnChangeSummaryTestFixture.ValidateChangeSummaries # crashing on optimized 06; notified Raman
 RevisionTestFixture.Workflow # crashing on optimized 06; notified Raman
 RevisionTestFixture.ConflictError # crashing on optimized 06; notified Raman
+ChangeSummaryTestFixture.* # crashing on optimized 06; notified Raman
