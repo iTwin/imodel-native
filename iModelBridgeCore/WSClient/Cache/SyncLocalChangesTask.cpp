@@ -162,7 +162,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
         auto revisions = std::make_shared<RevisionMap>();
         auto changesetChangeGroups = std::make_shared<bvector<ChangeGroup*>>();
         auto changeset = BuildChangeset(txn.GetCache(), *revisions, *changesetChangeGroups);
-        if (nullptr == changeset)
+        if (nullptr == changeset || changeset->IsEmpty())
             {
             SetError();
             return;
@@ -564,6 +564,8 @@ bvector<ChangeGroup*>& changesetChangeGroupsOut
 )
     {
     auto changeset = std::make_shared<WSChangeset>();
+
+    bool changesetClipped = false;
     for (auto i = m_changeGroupIndexToSyncNext; i < m_changeGroups.size(); ++i)
         {
         ChangeGroup& changeGroup = *m_changeGroups[i];
@@ -585,6 +587,7 @@ bvector<ChangeGroup*>& changesetChangeGroupsOut
             m_options.GetMaxChangesetInstanceCount() < changeset->GetInstanceCount())
             {
             changeset->RemoveInstance(*newInstance);
+            changesetClipped = true;
             break;
             }
 
@@ -593,7 +596,7 @@ bvector<ChangeGroup*>& changesetChangeGroupsOut
         m_changeGroupIndexToSyncNext += 1;
         }
 
-    if (changesetChangeGroupsOut.empty())
+    if (changeset->IsEmpty() && changesetClipped)
         {
         BeAssert(false && "Could not fit any changes into changeset. Check SyncOptions limitations");
         return nullptr;
