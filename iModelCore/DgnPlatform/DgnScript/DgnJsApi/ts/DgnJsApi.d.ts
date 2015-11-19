@@ -1,15 +1,8 @@
-declare module BentleyApi.Dgn {
-
-    /*** BEGIN_FORWARD_DECLARATIONS ***/
-    class JsDPoint3d { }
-    class JsYawPitchRollAngles { }
-    /*** END_FORWARD_DECLARATIONS ***/
-
-    type JsDPoint3dP = cxx_pointer<JsDPoint3d>;
-    type JsYawPitchRollAnglesP = cxx_pointer<JsYawPitchRollAngles>;
+declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
+{
 
     //! Logging serverity level.
-    enum LoggingSeverity { }
+    //enum LoggingSeverity { }
 
     //! Access to the message log
     class Logging implements BeJsProjection_SuppressConstructor {
@@ -17,18 +10,18 @@ declare module BentleyApi.Dgn {
         //! Set the severity level for the specified category
         //! @param catagory     The logging category
         //! @param severity     The minimum severity to display. Note that messages will not be logged if their severity is below this level.
-        static SetSeverity(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): void;
+        //static SetSeverity(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): void;
 
         //! Test if the specified severity level is enabled for the specified category
         //! @param category     The logging category
         //! @param severity     The severity to test
-        static IsSeverityEnabled(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): cxx_bool;
+        //static IsSeverityEnabled(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): cxx_bool;
 
         //! Send a message to the log
         //! @param catagory     The logging category
         //! @param severity     The severity of the message. Note that the message will not be logged if \a severity is below the severity level set by calling SetSeverity
         //! @param message      The message to log
-        static Message(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>, message: Bentley_Utf8String): void;
+        //static Message(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>, message: Bentley_Utf8String): void;
     }
 
     //! Script Management Utilities
@@ -44,32 +37,35 @@ declare module BentleyApi.Dgn {
     }
 
     //! A wrapper for BentleyApi::Dgn::DgnElement.
-    class JsDgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
         GetElementId(): Bentley_Utf8String;
         Insert(): cxx_int32_t;
         Update(): cxx_int32_t;
-        SetParent(parent: cxx_pointer<JsDgnElement>): void;
+        SetParent(parent: cxx_pointer<DgnElement>): void;
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type JsDgnElementP = cxx_pointer<JsDgnElement>;
+    type DgnElementP = cxx_pointer<DgnElement>;
 
     //! A wrapper for BentleyApi::Dgn::DgnModel. There is no constructor. The native caller must supply one.
-    class JsDgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnModel ***/ 
         GetModelId(): Bentley_Utf8String;
-        CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): JsDgnElementP;
+        CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): DgnElementP;
         DeleteAllElements(): void;
         OnDispose(): void;
         Dispose(): void;
     }
 
     //! A wrapper for BentleyApi::Dgn::ElementGeometryBuilder. There is no constructor. The user must call the Create method to create a new one.
-    class JsElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        constructor(el: JsDgnElementP, o: JsDPoint3dP, angles: JsYawPitchRollAnglesP);
+    class ElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 
+        constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
         AppendSphere(radius: cxx_double): void;
-        SetGeomStreamAndPlacement(element: JsDgnElementP): cxx_double;
+        SetGeomStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;
     }
