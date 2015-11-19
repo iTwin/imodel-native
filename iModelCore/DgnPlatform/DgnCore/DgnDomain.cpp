@@ -666,18 +666,19 @@ DgnDbStatus dgn_ElementHandler::Element::_VerifySchema(DgnDomains& domains)
             "    (make sure you have a DGNELEMENT_DECLARE_MEMBERS macro in your DgnElement class).\n",
             typeid(*this).name(), GetClassName().c_str(),
             typeid(*thisEl).name(), thisEl->_GetECClassName());
+        
         printf("%s", msg.c_str());
-
         BeAssert(false);
         }
 
     if (0 != strcmp(thisEl->_GetSuperECClassName(), handlerSuperClass->GetClassName().c_str()))
         {
-        printf("HANDLER SUPERCLASS ERROR: Handler [%s] says its superclass ECClass is '%s', \n"
+        Utf8PrintfString msg("HANDLER SUPERCLASS ERROR: Handler [%s] says its superclass ECClass is '%s', \n"
                "    but its DgnElement class [%s] says its ECClass superclass is '%s'\n", 
                 typeid(*this).name(), handlerSuperClass->GetClassName().c_str(), 
                 typeid(*thisEl).name(), thisEl->_GetSuperECClassName());
-
+        
+        printf("%s", msg.c_str());
         BeAssert(false);
         }
 
