@@ -26,7 +26,7 @@
 
     @section ECDbCodeSampleCreateECDb Create an empty ECDb file
 
-    Before creating an @ref ECDbFile "ECDb file", the assets like standard ECSchemas that come with the %MobileDgn SDK
+    Before creating an @ref ECDbFile "ECDb file", the assets like standard ECSchemas that come with the %DgnClientFx SDK
     need to be deployed to an appropriate location on the target machine.
     Then ECDb needs to be initialized (once per process)
     as shown in the sample code, passing the app's assets folder.
@@ -367,7 +367,7 @@
     An basic example of an ECSchema can be found here: <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>.
 
     ### 2) Create an %ECDb file
-    At first, the assets like standard ECSchemas that come with the %MobileDgn SDK need to be deployed to
+    At first, the assets like standard ECSchemas that come with the %DgnClientFx SDK need to be deployed to
     an appropriate location on the target machine. Then ECDb needs to be initialized (once per process)
     by a call to BentleyApi::BeSQLite::EC::ECDb::Initialize, passing the app's assets folder.
 
