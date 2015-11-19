@@ -298,6 +298,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                             <string>Code</string>
                         </Properties>
                     </DbIndex>
+                    <DbIndex>
+                        <!-- Index on ParentId needed for Delete -->
+                        <Name>idx_dgn_Element_ParentId</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>ParentId</string>
+                        </Properties>
+                    </DbIndex>
                 </Indexes>
             </ClassMap>
             <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -709,6 +717,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                             <!-- Only one ExternalKey per Authority per Element -->
                             <string>ElementId</string>
                             <string>AuthorityId</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <!-- Index for looking up Element by ExternalKey -->
+                        <!-- WIP: IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>AuthorityId</string>
+                            <string>ExternalKey</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>
