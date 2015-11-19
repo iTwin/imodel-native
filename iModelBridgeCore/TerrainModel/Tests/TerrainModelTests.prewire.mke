@@ -1,11 +1,13 @@
 #--------------------------------------------------------------------------------------
 #      $Source: Tests/TerrainModelTests.prewire.mke $
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
-baseDir          = $(_MakeFilePath)
-PolicyFile= $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-
 %include  mdl.mki
+
+baseDir          = $(_MakeFilePath)
+
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
+
 #----------------------------------------------------------------------
 #       Define outputs
 #----------------------------------------------------------------------

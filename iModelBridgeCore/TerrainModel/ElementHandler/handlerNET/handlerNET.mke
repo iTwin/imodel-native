@@ -1,31 +1,18 @@
 #--------------------------------------------------------------------------------------
 #      $Source: ElementHandler/handlerNET/handlerNET.mke $
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-baseDir          = $(_MakeFilePath)
-PolicyFile       = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
-SolutionPolicyMki=$(baseDir)handlerNET.mki
-
 %include  mdl.mki
 
-
-%ifdef CREATE_STATIC_LIBRARIES
-%error can't be build as a static library
-%endif
-
-#GeneratedCppDir         = $(baseDir)GeneratedCpp/
-#GeneratedApiDir         = $(baseDir)GeneratedApi/
-#ManagedCommonDir        = $(baseDir)Common/
+baseDir             = $(_MakeFilePath)
+CompileOptionsMki   = $(baseDir)handlerNET.mki
+%include $(CompileOptionsMki)
 
 #----------------------------------------------------------------------
 #       Define outputs
 #----------------------------------------------------------------------
-o = $(BentleyTerrainModelNetObj)
-
-appName               = Bentley.TerrainModelNET.Element
+o               = $(BentleyTerrainModelNetObj)
+appName         = Bentley.TerrainModelNET.Element
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
@@ -40,8 +27,6 @@ always:
 
 #....................................................................................................................................................
 CCompDebugOptions = $(CCompDebugOffSwitch)
-
-#$(o)FxCopSuppressions$(oext) : $(baseDir)FxCopSuppressions.cpp
 
 CCompDebugOptions =% $[CCompDebugDefault]
 
@@ -78,7 +63,7 @@ $(PCHHeaderObject)
 #....................................................................................................................................................
 %include MultiCppCompileRule.mki
 
-$(o)DTMElement$(oext)		: $(basedir)DTMElement.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMElement$(oext)   : $(basedir)DTMElement.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -127,9 +112,6 @@ ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
 ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
 ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
-
-#FxCopCustomDictionaryFile=$(baseDir)fxcopDictionary.xml
-#SuppressCodeAnalysis=1
 
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
 DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/

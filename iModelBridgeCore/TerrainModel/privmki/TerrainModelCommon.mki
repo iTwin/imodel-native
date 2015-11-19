@@ -1,0 +1,50 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: privmki/TerrainModelCommon.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+##  Define source and output directories
+%include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
+%include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
+
+BuildContext    = $(OutBuildContexts)TerrainModel/
+o               = !Must be defined by individual mke files!
+
+always:
+    ~@mkdir $(DLM_CONTEXT_LOCATION)
+    ~@mkdir $(terrainModelBuildDir_)
+
+%if defined (SPLITSYM) && !defined (NO_SPLITSYM)
+    ASSEMBLY_SYMB_DIR = $(symbolsDllDir)
+    DLM_SYMB_DEST   = $(symbolsDllDir)
+    EXE_SYMB_DEST   = $(symbolsExeDir)
+%endif
+
+#
+# This activates the use of bsitools\winnt\AddDelayLoad.exe in linktool.mki and dlmlink.mki
+#
+DelayLoadByDefault = 1
+
+#----------------------------------------------------------
+#       Override location for "prg.h"
+#----------------------------------------------------------
+%if defined (BSI_PRG_H_DIR)
+    dirToSearch     = $(BSI_PRG_H_DIR)
+    %include cincapnd.mki
+%endif
+
+%search $(SrcTerrainModel)privmki
+%search $(OutTerrainModel)build/gensrc
+
+# Define these to handle multi-platform.
+TerrainModelCoreLib          = $(libprefix)TerrainModelCore$(libext)
+
+
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE            =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE        =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)

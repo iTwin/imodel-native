@@ -2,21 +2,19 @@
 #
 #  $Source: Tests/TerrainModelTests/BuildTerrainModelTests.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-
-TestDir=$(BuildContext)SubParts/UnitTests/source/
-
 %include  mdl.mki
 
-TEST_LOCATION = $(TestDir)Published/
-name = TerrainModelTest_Published
-#UsingPublished = 1
+baseDir         = $(_MakeFilePath)
+TestDir         = $(BuildContext)SubParts/UnitTests/source/
 
-o = $(terrainModelBuildDir_)/test/Published/
+TEST_LOCATION   = $(TestDir)Published/
+name            = TerrainModelTest_Published
+o               = $(terrainModelBuildDir_)/test/Published/
+
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
 
 %if defined (BUILD_USING_VS2012)
     # Required for GTest

@@ -181,26 +181,26 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
 </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
 xcopy /S /Y /r $(SrcRoot)TerrainModel\Core\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\TerrainModel\Core
 xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCore.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
 xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCore.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
@@ -209,13 +209,13 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCor
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>set DEBUG=
 set NDEBUG=1
-python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core
+python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 Core
 </NMakeBuildCommandLine>
     <NMakeOutput>
     </NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 CoreDll</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 Core -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 CoreDll</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>

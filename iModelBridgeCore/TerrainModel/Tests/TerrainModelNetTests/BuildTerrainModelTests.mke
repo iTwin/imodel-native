@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: Tests/TerrainModelNetTests/BuildTerrainModelTests.mke $
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # to run test:
@@ -9,20 +9,18 @@
 #   ..\product\federationplatformtests> nunit-console.exe Bentley.DgnECPersistenceTest.dll
 #   ..\product\federationplatformtests> nunit-gui.exe Bentley.DgnECPersistenceTest.dll
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-baseDir          = $(_MakeFilePath)
-#SolutionPolicyMki=$(SrcRoot)BentleyGeometryNet\src\Bentley.Geometry.Net\BentleyGeometryNet.mki
-
-# This format was used instead of $(BaseDir)AssertBentleyGeometryNetPolicy.mki
-# because PreCompileHeader.mki writes the PolicyFile name to the
-# generated MKI file using the syntax PolicyFile=$[PolicyFile]
-PolicyFile= $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-
-nunitDir=$(BuildContext)SubParts/nunit_2.5.10/
 %include  mdl.mki
+
+
+baseDir     = $(_MakeFilePath)
+o           = $(terrainModelBuildDir_)TerrainModelNETTests/
+nunitDir    = $(BuildContext)SubParts/nunit_2.5.10/
+
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
+
 #----------------------------------------------------------------------
 #       Define outputs
 #----------------------------------------------------------------------
-o = $(terrainModelBuildDir_)TerrainModelNETTests/
 
 ASSEMBLY_NAME               = Bentley.TerrainModelNet.Tests
 
@@ -70,8 +68,6 @@ ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 %ifndef ASSEMBLY_TITLE
   ASSEMBLY_TITLE  =% $(programName)
 %endif
-
-
 
 
 ASSEMBLY_DLL            = 1

@@ -2,31 +2,23 @@
 #
 #     $Source: ElementHandler/ElementTemplate/ElementTemplate.mke $
 #
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
-
 %include mdl.mki
+baseDir         = $(_MakeFilePath)
+
 %include $(SharedMki)stdversion.mki
 
-#MSB-ASSEMBLY_KEYFILE_DEFAULT = $(ASSEMBLY_KEYFILE_DEFAULT)
-
-#$(baseGeometryIncludes);$(baseGeometryExtrasIncludes)
-
-baseDir = $(_MakeFilePath)
 appName = Bentley.TerrainModel.ElementTemplate
-
-o = $(terrainModelBuildDir_)ElementTemplate/
+o       = $(terrainModelBuildDir_)ElementTemplate/
 
 MSB-OutputPath=$(o)
 MSB-IntermediateOutputPath=$(o)
 MSB-BaseIntermediateOutputPath=$(o)
 
 buildSolution:
-	~@mkdir $(o)
+    ~@mkdir $(o)
     |[== Building Bentley.DTM.ElementTemplate.csproj ==]
     ~task msbuild $(CommonMSBuildOpts) -i:Projects=$(baseDir)ElementTemplate.csproj \
         -p:ContextSubPartsAssembliesDir=$(ContextSubPartsAssembliesDir) \
@@ -35,7 +27,7 @@ buildSolution:
 "$(ContextDeliveryDir)$(appName).dll" : "$(o)$(appName).dll"
     $(LinkFirstDepToFirstTarget)
 
-#python $(srcRoot)bsicommon\build\CreateSymLinks.py $(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\TerrainModel\Delivery\$(TargetFileName)=$(TargetPath)
+#python $(SrcRoot)bsicommon\build\CreateSymLinks.py $(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\TerrainModel\Delivery\$(TargetFileName)=$(TargetPath)
 
 #----------------------------------------------------------------------
 # Expose our transkit directory for the transkit to see

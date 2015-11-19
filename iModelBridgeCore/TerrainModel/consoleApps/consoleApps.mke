@@ -6,18 +6,14 @@
 #       $Date: 2012/11/29 20:02:46 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
 consoleAppUnicode=1
 #NDEBUG=1
+%include  mdl.mki
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-#SolutionPolicyMki=$(baseDir)TerrainModelCore.mki
-
-%include  mdl.mki
 
 appName     = bctin
 

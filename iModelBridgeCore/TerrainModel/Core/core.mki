@@ -16,7 +16,7 @@ OPTIMIZE_FOR_SPEED=1
 MultiCompileIntermediatePdbFile=$(terrainModelCoreObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
-dirToSearch     = $(BuildContextPublicApiDir)
+dirToSearch     = $(BuildContext)PublicAPI/
 %include cincapnd.mki
 
 dirToSearch     = $(TerrainModelCoreDir)CPPWrappers
