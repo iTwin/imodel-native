@@ -296,5 +296,4 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
             {
             DgnDomains::RegisterDomain(PerformanceElementTestDomain::GetDomain());
             }
-
     };
