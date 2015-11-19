@@ -118,9 +118,6 @@ private:
     Utf8String      m_nameSpace;
 
     friend struct DgnAuthority;
-    friend struct DgnElements;
-    friend struct DgnModel;
-    friend struct DgnModels;
     friend struct SystemAuthority;
 
     AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
@@ -145,6 +142,8 @@ public:
     //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
     DgnAuthorityId GetAuthority() const {return m_authority;}
     void RelocateToDestinationDb(DgnImportContext&);
+
+    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace); //!< @private DO NOT EXPORT
 };
 
 //=======================================================================================

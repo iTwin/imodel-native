@@ -84,3 +84,4 @@ TEST_F (DgnAuthoritiesTest, Authorities)
     EXPECT_FALSE(badAuth->GetAuthorityId().IsValid());
     }
 
+

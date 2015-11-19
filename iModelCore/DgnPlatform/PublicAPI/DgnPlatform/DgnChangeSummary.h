@@ -39,7 +39,8 @@ public:
         private:
             Impl m_impl;
 
-            DGNPLATFORM_EXPORT DgnModelId GetModelId(bool old) const;
+            DGNPLATFORM_EXPORT DgnModelId GetModelId(bool before) const;
+            DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode(bool before) const;
         public:
             //! Constructor
             explicit Entry(Impl const& impl) : m_impl (impl) { }
@@ -51,6 +52,9 @@ public:
             DgnElementId GetElementId() const { return DgnElementId(GetImpl().GetInstanceId().GetValue()); }
             DgnModelId GetOriginalModelId() const { return GetModelId(true); } //!< Get the original model ID before the change (for deletes and updates)
             DgnModelId GetCurrentModelId() const { return GetModelId(false); } //!< Get the current model ID after the change (for inserts and updates)
+
+            AuthorityIssuedCode GetOriginalCode() const { return GetCode(true); } //!< Get the original code before the change (for deletes, and updates in which the code was modified)
+            AuthorityIssuedCode GetCurrentCode() const { return GetCode(false); } //!< Get the current code after the change (for inserts, and updates in which the code was modified)
 
             Entry& operator++() { ++m_impl; return *this; } //!< Increment
             Entry const& operator*() const { return *this; } //!< Dereference

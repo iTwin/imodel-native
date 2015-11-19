@@ -159,6 +159,57 @@ DgnModelId DgnChangeSummary::ElementIterator::Entry::GetModelId(bool old) const
     return modelId;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AuthorityIssuedCode DgnChangeSummary::ElementIterator::Entry::GetCode(bool old) const
+    {
+    AuthorityIssuedCode code;
+    auto op = GetDbOpcode();
+    if ((old && DbOpcode::Insert == op) || (!old && DbOpcode::Delete == op))
+        return code;
+
+    AuthorityIssuedCode currentCode;
+    DgnDbR db = static_cast<DgnChangeSummary const&>(m_impl.GetChangeSummary()).GetDgnDb();
+    if (DbOpcode::Insert == op || DbOpcode::Update == op)
+        {
+        auto elem = db.Elements().GetElement(GetElementId());
+        BeAssert(elem.IsValid());
+        if (elem.IsValid())
+            currentCode = elem->GetCode();
+
+        if (!old)
+            return currentCode;
+        }
+
+    auto instance = m_impl.GetInstance();
+    DbDupValue oldAuthId = instance.GetOldValue("CodeAuthorityId"),
+               oldNamespace = instance.GetOldValue("CodeNameSpace"),
+               oldValue = instance.GetOldValue("Code");
+
+    if (DbOpcode::Delete == op)
+        {
+        if (oldAuthId.IsValid() && oldNamespace.IsValid() && oldValue.IsValid())
+            code.From(oldAuthId.GetValueId<DgnAuthorityId>(), oldValue.GetValueText(), oldNamespace.GetValueText());
+        }
+    else
+        {
+        if (oldAuthId.IsValid() || oldNamespace.IsValid() || oldValue.IsValid())
+            {
+            DgnAuthorityId authId = oldAuthId.IsValid() ? oldAuthId.GetValueId<DgnAuthorityId>() : currentCode.GetAuthority();
+            Utf8String nameSpace = oldNamespace.IsValid() ? oldNamespace.GetValueText() : currentCode.GetNameSpace();
+            Utf8String value = oldValue.IsValid() ? oldValue.GetValueText() : currentCode.GetValue();
+            code.From(authId, value, nameSpace);
+            }
+        else
+            {
+            code = currentCode;
+            }
+        }
+
+    return code;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    09/2015
 //---------------------------------------------------------------------------------------

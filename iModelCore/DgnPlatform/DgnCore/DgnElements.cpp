@@ -1104,7 +1104,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnElement::Code code(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt->GetValueText(Column::Code), stmt->GetValueText(Column::CodeNameSpace));
+    DgnElement::Code code;
+    code.From(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt->GetValueText(Column::Code), stmt->GetValueText(Column::CodeNameSpace));
 
     return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 

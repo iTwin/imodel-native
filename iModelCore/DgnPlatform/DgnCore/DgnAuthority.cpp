@@ -571,7 +571,10 @@ DgnAuthority::Code TextAnnotationSeed::CreateCodeFromName(Utf8CP nameCP)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::Code DgnModel::CreateModelCode(Utf8StringCR modelName)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::Model, modelName);
+    Utf8String trimmed(modelName);
+    trimmed.Trim();
+
+    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -589,5 +592,15 @@ DgnAuthority::Code DgnAuthority::CreateDefaultCode()
     {
     // The default code is not unique and has no special meaning.
     return SystemAuthority::CreateCode(SystemAuthority::Local, "");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnAuthority::Code::From(DgnAuthorityId id, Utf8StringCR value, Utf8StringCR nameSpace)
+    {
+    m_authority = id;
+    m_value = value;
+    m_nameSpace = nameSpace;
     }
 
