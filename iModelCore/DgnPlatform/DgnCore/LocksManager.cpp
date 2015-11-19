@@ -132,13 +132,18 @@ size_t LockRequest::Subtract(LockRequestCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LockRequest::FromChangeSet(DgnDbR db)
+DgnDbStatus LockRequest::FromChangeSet(DgnDbR db, TxnManager::TxnId startTxnId)
     {
-#ifdef NEED_CHANGESTREAM_FROM_DGN_REVISION
     Clear();
 
+    // NEEDSWORK: We want this to execute a ChangeSet associated with a DgnRevision.
+    // For now, just generating ChangeSet for current txns.
+
     DgnChangeSummary summary(db);
-    DgnDbStatus status = db.Txns().GetChangeSummary(summary, umm we need first txn id, which requires session id, uh?);
+    DgnDbStatus status = db.Txns().GetChangeSummary(summary, startTxnId);
+    if (DgnDbStatus::Success != status)
+        return status;
+
     for (auto const& entry : summary.MakeElementIterator())
         {
         if (entry.IsIndirectChange())
@@ -177,9 +182,8 @@ DgnDbStatus LockRequest::FromChangeSet(DgnDbR db)
     // Anything changed at all?
     if (!IsEmpty())
         Insert(db, LockLevel::Shared);
-#else
-    return DgnDbStatus::SQLiteError;
-#endif
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

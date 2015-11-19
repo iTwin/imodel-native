@@ -900,69 +900,76 @@ TEST_F(DoubleBriefcaseTest, Dynamics)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ChangeSummaryLocksTest : SingleBriefcaseLocksTest
+{
+    DgnDbStatus GetLocksFromChangeSet(LockRequestR req)
+        {
+        return req.FromChangeSet(*m_db, m_db->Txns().GetSessionStartId());
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
 * Test functions which query the set of locks which are required by the changes actually
 * made in the briefcase. (Excluding locks obtained but not actually used).
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef NEED_CHANGESTREAM_FROM_DGN_REVISION
 TEST_F(SingleBriefcaseLocksTest, UsedLocks)
     {
-        {
-        m_db = SetupDb(L"UsedLocks.dgndb", m_bcId);
+    m_db = SetupDb(L"UsedLocks.dgndb", m_bcId);
 
-        DgnDbR db = *m_db;
-        DgnModelR model = *db.Models().GetModel(m_modelId);
-        DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+    DgnDbR db = *m_db;
+    DgnModelR model = *db.Models().GetModel(m_modelId);
+    DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
 
-        LockRequest req;
-        req.FromChangeSet(db);
-        EXPECT_TRUE(req.IsEmpty());
+    LockRequest req;
+    EXPECT_EQ(DgnDbStatus::Success, GetLocksFromChangeSet(req));
+    EXPECT_TRUE(req.IsEmpty());
 
-        // Modify an elem (it's a DgnCategory...)
-        DgnElement::Code originalCode = cpEl->GetCode();
-        auto pEl = cpEl->CopyForEdit();
-        DgnElement::Code newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
-        EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
-        cpEl = pEl->Update();
-        ASSERT_TRUE(cpEl.IsValid());
+    // Modify an elem (it's a DgnCategory...)
+    DgnElement::Code originalCode = cpEl->GetCode();
+    auto pEl = cpEl->CopyForEdit();
+    DgnElement::Code newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+    EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
+    cpEl = pEl->Update();
+    ASSERT_TRUE(cpEl.IsValid());
 
-        req.FromChangeSet(db);
-        EXPECT_FALSE(req.IsEmpty());
-        EXPECT_EQ(3, req.Size());
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(model)));
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*pEl)));
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+    EXPECT_EQ(DgnDbStatus::Success, GetLocksFromChangeSet(req));
+    EXPECT_FALSE(req.IsEmpty());
+    EXPECT_EQ(3, req.Size());
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(model)));
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*pEl)));
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
 
-        // Reverse the change
-        pEl = cpEl->CopyForEdit();
-        EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(originalCode));
-        cpEl = pEl->Update();
-        ASSERT_TRUE(cpEl.IsValid());
+    // Reverse the change
+    pEl = cpEl->CopyForEdit();
+    EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(originalCode));
+    cpEl = pEl->Update();
+    ASSERT_TRUE(cpEl.IsValid());
 
-        req.FromChangeSet(db);
-        EXPECT_TRUE(req.IsEmpty());
+    EXPECT_EQ(DgnDbStatus::Success, GetLocksFromChangeSet(req));
+    EXPECT_TRUE(req.IsEmpty());
 
-        // Create a new model
-        DgnModelPtr newModel = CreateModel("NewModel");
-        DgnElementCPtr newElem = CreateElement(*newModel);
+    // Create a new model
+    DgnModelPtr newModel = CreateModel("NewModel");
+    DgnElementCPtr newElem = CreateElement(*newModel);
 
-        req.FromChangeSet(db);
-        EXPECT_EQ(3, req.Size());
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+    EXPECT_EQ(DgnDbStatus::Success, GetLocksFromChangeSet(req));
+    EXPECT_EQ(3, req.Size());
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
 
-        // Delete the new element
-        EXPECT_EQ(DgnDbStatus::Success, newElem->Delete());
-        req.FromChangeSet(db);
-        EXPECT_EQ(2, req.Size());
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+    // Delete the new element
+    EXPECT_EQ(DgnDbStatus::Success, newElem->Delete());
+    EXPECT_EQ(DgnDbStatus::Success, GetLocksFromChangeSet(req));
+    EXPECT_EQ(2, req.Size());
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
 
-        // Delete the new model
-        EXPECT_EQ(DgnDbStatus::Success, newModel->Delete());
-        EXPECT_TRUE(req.IsEmpty());
-        }
+    // Delete the new model
+    EXPECT_EQ(DgnDbStatus::Success, newModel->Delete());
+    EXPECT_TRUE(req.IsEmpty());
     }
-#endif
 
