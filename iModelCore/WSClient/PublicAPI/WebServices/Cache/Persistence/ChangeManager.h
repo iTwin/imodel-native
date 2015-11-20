@@ -45,7 +45,7 @@ struct ChangeManager : public IChangeManager
         RootManager*                m_rootManager;
         bool                        m_isSyncActive;
 
-        static Utf8CP NewObjectIdPrefix;
+        static Utf8CP LocalInstanceIdPrefix;
 
     private:
         ECInstanceKey CreateRelationship

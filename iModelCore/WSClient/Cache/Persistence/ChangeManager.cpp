@@ -26,7 +26,7 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-Utf8CP ChangeManager::NewObjectIdPrefix = "NewObject";
+Utf8CP ChangeManager::LocalInstanceIdPrefix = "LocalInstance-";
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -62,7 +62,7 @@ m_isSyncActive(false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ChangeManager::CreateRemoteId()
     {
-    return NewObjectIdPrefix + BeGuid().ToString();
+    return LocalInstanceIdPrefix + BeGuid().ToString();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -843,7 +843,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         }
     else if (info.GetChangeStatus() == ChangeStatus::Created)
         {
-        // Read current instance
+        // Instance was modified before commiting creation revision
         Json::Value instanceJsonValue;
         if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
             {
