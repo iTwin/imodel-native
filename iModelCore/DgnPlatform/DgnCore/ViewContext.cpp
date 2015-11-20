@@ -172,7 +172,7 @@ void ViewContext::_PushClip(ClipVectorCR clip)
     m_transformClipStack.PushClip(clip);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    for (ClipPrimitivePtr const& primitive: clip)
+    for (ClipPrimitivePtr const& primitive : clip)
         {
         GetCurrentGraphicR()._PushTransClip(nullptr, primitive->GetClipPlanes());
         m_transformClipStack.IncrementPushedToDrawGeom();

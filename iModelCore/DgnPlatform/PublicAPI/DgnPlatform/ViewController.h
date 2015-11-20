@@ -106,15 +106,14 @@ To create a subclass of ViewController, create a ViewHandler and implement _Supp
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
 protected:
-    friend struct  ViewContext;
-    friend struct  CreateSceneContext;
-    friend struct  DgnViewport;
-    friend struct  ViewManager;
-    friend struct  IndexedViewport;
-    friend struct  PhysicalRedlineViewController;
-    friend struct  IACSManager;
-    friend struct  ToolAdmin;
-    friend struct  ViewDefinition;
+    friend struct ViewContext;
+    friend struct DgnViewport;
+    friend struct IndexedViewport;
+    friend struct ViewManager;
+    friend struct PhysicalRedlineViewController;
+    friend struct IACSManager;
+    friend struct ToolAdmin;
+    friend struct ViewDefinition;
 
     DgnDbR         m_dgndb;
     ViewFlags      m_viewFlags;
@@ -129,8 +128,6 @@ protected:
     bool           m_defaultDeviceOrientationValid;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
-
-public:
 
 protected:
     DGNPLATFORM_EXPORT ViewController(DgnDbR, DgnViewId viewId);
@@ -185,13 +182,13 @@ protected:
     //! disabled and therefore always appear on top of elements in the view. Note that graphics drawn from this method are always drawn in a
     //! shaded render mode with a constant level of lighting, regardless of the view flags and lighting of the viewport.
     //! @param[in] viewport The DgnViewport into which the decorations should be drawn.
-    virtual bool _DrawOverlayDecorations(IndexedViewportR viewport) {return false;}
+    virtual bool _DrawOverlayDecorations(DgnViewportR viewport) {return false;}
 
     //! Decorators are not stored in the backing store and must therefore be drawn every frame. This method is called with the z-buffer enabled,
     //! so it can be used to draw decorators that are inter-mixed with elements in the view. Note that graphics drawn from this method use the
     //! active view flags and lighting for the viewport.
     //! @param[in] viewport The DgnViewport into which the decorations should be drawn.
-    virtual bool _DrawZBufferedDecorations(IndexedViewportR viewport) {return false;}
+    virtual bool _DrawZBufferedDecorations(DgnViewportR viewport) {return false;}
 
     //! Background graphics are drawn whenever a view is "updated". Background graphics are drawn with the z-buffer turned off, so they will always
     //! appear "behind" any other graphics that are drawn to the view.
@@ -224,7 +221,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
 
     //! Stroke a single element through a ViewContext.
-    //! An application can override _StrokeElement to change the symbology of elements.
+    //! An application can override _StrokeGeometry to change the symbology of elements.
     DGNPLATFORM_EXPORT virtual void _StrokeGeometry(ViewContextR, GeometrySourceCR);
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
@@ -325,6 +322,8 @@ public:
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
     void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
+    void OnFullUpdate(DgnViewportR vp, ViewContextR context) {_OnFullUpdate(vp,context);}
+    void OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info) {_OnDynamicUpdate(vp, context, info);}
 
 public:
     DgnClassId GetClassId() const {return m_classId;}

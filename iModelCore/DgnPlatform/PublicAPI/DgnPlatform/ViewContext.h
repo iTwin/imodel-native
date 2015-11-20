@@ -50,13 +50,13 @@ enum
 struct  ClipVolumeOverrides
 {
     struct
-        {
+    {
         unsigned    m_display:1;        //!< If true, the clip volume area displays.
         unsigned    m_disableLocate:1;  //!< If true, the elements in the clip volume area cannot be located.
         unsigned    m_disableSnap:1;    //!< If true, the elements in the clip volume area cannot be snaped.
         unsigned    m_reflected:1;      //!< If true, the clip volume area is reflected.
         unsigned    m_unused:28;
-        } m_flags;
+    } m_flags;
 
     int32_t    m_styleIndex;       //!< Display style of the clip volume area. -1 to match that view.
 
@@ -157,76 +157,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, ICheckStop, IRang
 
 public:
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    enum RasterPlane
-    {
-        RasterPlane_Background = (1<<0),
-        RasterPlane_Design     = (1<<1),
-        RasterPlane_Foreground = (1<<2),
-        RasterPlane_Any        = (RasterPlane_Background | RasterPlane_Design | RasterPlane_Foreground),
-    };
-
-    //=======================================================================================
-    // @bsiclass                                                     Stephane.Poulin    11/11
-    //=======================================================================================
-    struct RasterDisplayParams
-        {
-        private:
-            int8_t        m_contrast;                        // -128...+127, 0 -> no contrast.
-            int8_t        m_brightness;                      // -128...+127, 0 -> no brightness.
-            bool          m_greyScale;                       // Output raster in greyscale.
-            bool          m_applyBinaryWhiteOnWhiteReversal; // Apply color inversion logic on monochrome. (Prevent to display/print a white foreground on a white media)
-            bool          m_enableGrid;                      // Superimpose a grid over the raster.
-            ColorDef      m_backgroundColor;                 // Background color for binary image.
-            ColorDef      m_foregroundColor;                 // Foreground color for binary image.
-            double        m_quality;
-            uint32_t      m_flags;
-
-        public:
-            enum RasterDisplayParamsFlags
-                {
-                RASTER_PARAM_None                            = 0,
-                RASTER_PARAM_Contrast                        = (1<<0),
-                RASTER_PARAM_Brightness                      = (1<<1),
-                RASTER_PARAM_GreyScale                       = (1<<2),
-                RASTER_PARAM_BackgroundColor                 = (1<<3),
-                RASTER_PARAM_ForegroundColor                 = (1<<4),
-                RASTER_PARAM_Quality                         = (1<<5),
-                RASTER_PARAM_ApplyBinaryWhiteOnWhiteReversal = (1<<6),
-                RASTER_PARAM_EnableGrid                      = (1<<7)
-                };
-
-            DGNPLATFORM_EXPORT RasterDisplayParams();
-            DGNPLATFORM_EXPORT bool operator==(RasterDisplayParams const& rhs) const;
-            DGNPLATFORM_EXPORT bool operator!=(RasterDisplayParams const& rhs) const;
-
-            uint32_t GetFlags() const {return m_flags;}
-            int8_t GetContrast() const {return m_contrast;}
-            int8_t GetBrightness() const {return m_brightness;}
-            bool GetGreyscale() const {return m_greyScale;}
-            bool GetApplyBinaryWhiteOnWhiteReversal() const {return m_applyBinaryWhiteOnWhiteReversal;}
-            bool GetEnableGrid() const {return m_enableGrid;}
-            ColorDefCR GetBackgroundColor() const {return m_backgroundColor;}
-            ColorDefCR GetForegroundColor() const {return m_foregroundColor;}
-            double GetQualityFactor() const {return m_quality;}
-
-            void SetFlags(uint32_t flags) {m_flags = flags;}
-            DGNPLATFORM_EXPORT void SetContrast(int8_t value);
-            DGNPLATFORM_EXPORT void SetBrightness(int8_t value);
-            DGNPLATFORM_EXPORT void SetGreyscale(bool value);
-            DGNPLATFORM_EXPORT void SetApplyBinaryWhiteOnWhiteReversal(bool value);
-            DGNPLATFORM_EXPORT void SetEnableGrid(bool value);
-            DGNPLATFORM_EXPORT void SetBackgroundColor(ColorDef value);
-            DGNPLATFORM_EXPORT void SetForegroundColor(ColorDef value);
-            DGNPLATFORM_EXPORT void SetQualityFactor(double factor);
-        };
-#endif
-
     //=======================================================================================
     // @bsiclass                                                     KeithBentley    04/01
     //=======================================================================================
     struct ContextMark
-        {
+    {
         ViewContextP m_context;
         size_t       m_transClipMark;
 
@@ -236,13 +171,13 @@ public:
         DGNPLATFORM_EXPORT void Pop();
         DGNPLATFORM_EXPORT void SetNow();
         void Init(ViewContextP context) {m_transClipMark = 0; m_context = context;}
-        };
+    };
 
     //=======================================================================================
     // @bsiclass                                                     Brien.Bastings  11/07
     //=======================================================================================
     struct  ClipStencil
-        {
+    {
     private:
         GeometrySourceCR    m_geomSource;
         Render::GraphicPtr  m_tmpQvElem;
@@ -255,7 +190,7 @@ public:
 
         DGNPLATFORM_EXPORT explicit ClipStencil(GeometrySourceCR);
         DGNPLATFORM_EXPORT ~ClipStencil();
-        };
+    };
 
 protected:
     DgnDbP                  m_dgnDb;
@@ -702,13 +637,14 @@ struct CreateSceneContext : ViewContext
     DEFINE_T_SUPER(ViewContext);
 private:
     Render::Scene& m_scene;
-    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometrySourceCR) override;
-    DGNPLATFORM_EXPORT virtual Render::Graphic* _GetCachedGraphic(double pixelSize) override;
-    DGNPLATFORM_EXPORT virtual void _SaveGraphic() override;
+    virtual void _OutputElement(GeometrySourceCR) override;
+    virtual Render::Graphic* _GetCachedGraphic(double pixelSize) override;
+    virtual void _SaveGraphic() override;
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_scene.GetRenderTarget().CreateGraphic(params);}
+    virtual StatusInt _InitContextForView();
 
 public:
     CreateSceneContext(Render::Scene& scene) : m_scene(scene) {}
-    DGNPLATFORM_EXPORT bool CreateScene(DgnViewportR);
+    bool CreateScene(DgnViewportR);
 };
 END_BENTLEY_DGN_NAMESPACE

@@ -193,9 +193,9 @@ public:
     DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
     DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
     
-    DGNVIEW_EXPORT void DrawInView(IndexedViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInAllViews(IndexedViewSetR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void Hilite(IndexedViewSetR, bool onOff) const;
+    DGNVIEW_EXPORT void DrawInView(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
+    DGNVIEW_EXPORT void DrawInAllViews(ViewSetR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
+    DGNVIEW_EXPORT void Hilite(ViewSetR, bool onOff) const;
 
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;

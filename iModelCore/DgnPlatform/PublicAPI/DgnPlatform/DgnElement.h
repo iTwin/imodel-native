@@ -19,7 +19,6 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include "MemoryManager.h"
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
-
 struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
 
@@ -35,7 +34,6 @@ struct GraphicSet
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void Clear();
 };
-
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -60,6 +58,7 @@ protected:
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
+
 public:
     DgnRemapTables& Get(DgnDbR);
     DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
@@ -76,10 +75,8 @@ public:
     DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
     DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
-
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
-
     DgnClassId Find(DgnClassId sourceId) const {return Find<DgnClassId>(m_classId, sourceId);}
     DgnClassId Add(DgnClassId sourceId, DgnClassId targetId) {return m_classId[sourceId] = targetId;}
 };
@@ -95,7 +92,6 @@ protected:
 public:
     //! Construct a DgnCloneContext object.
     DGNPLATFORM_EXPORT DgnCloneContext();
-
     //! Look up a copy of an element
     DgnElementId FindElementId(DgnElementId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of an element
@@ -192,12 +188,12 @@ struct ECSqlClassParams
 public:
     enum class StatementType
     {
-        Select          = 1 << 0, //!< Property should be included in SELECT statements from DgnElement::_LoadFromDb()
-        Insert          = 1 << 1, //!< Property should be included in INSERT statements from DgnElement::_InsertInDb()
-        Update          = 1 << 2, //!< Property should be included in UPDATE statements from DgnElement::_UpdateInDb()
-        ReadOnly        = Select | Insert, //!< Property cannot be modified via UPDATE statement
-        All             = Select | Insert | Update, //!< Property should be included in all ECSql statements
-        InsertUpdate    = Insert | Update, //!< Property should not be included in SELECT statements
+        Select       = 1 << 0, //!< Property should be included in SELECT statements from DgnElement::_LoadFromDb()
+        Insert       = 1 << 1, //!< Property should be included in INSERT statements from DgnElement::_InsertInDb()
+        Update       = 1 << 2, //!< Property should be included in UPDATE statements from DgnElement::_UpdateInDb()
+        ReadOnly     = Select | Insert, //!< Property cannot be modified via UPDATE statement
+        All          = Select | Insert | Update, //!< Property should be included in all ECSql statements
+        InsertUpdate = Insert | Update, //!< Property should not be included in SELECT statements
     };
 
     struct Entry
@@ -222,10 +218,9 @@ public:
     //! @param[in]      parameterName The name of the parameter
     //! @return The index of the corresponding column in the query results, or -1 if no such column exists
     DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
-//__PUBLISH_SECTION_END__
-    Entries const& GetEntries() const { return m_entries; }
+
+    Entries const& GetEntries() const {return m_entries;}
     void RemoveAllButSelect();
-//__PUBLISH_SECTION_START__
 };
 
 ENUM_IS_FLAGS(ECSqlClassParams::StatementType);
@@ -684,11 +679,7 @@ public:
     {
     private:
         Utf8String m_label;
-
-        explicit LabelAspect(Utf8CP label)
-            {
-            m_label.AssignOrClear(label);
-            }
+        explicit LabelAspect(Utf8CP label){m_label.AssignOrClear(label);}
 
     protected:
         DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
@@ -708,11 +699,7 @@ public:
     {
     private:
         Utf8String m_description;
-
-        explicit DescriptionAspect(Utf8CP description)
-            {
-            m_description.AssignOrClear(description);
-            }
+        explicit DescriptionAspect(Utf8CP description){m_description.AssignOrClear(description);}
 
     protected:
         DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
@@ -758,8 +745,8 @@ protected:
     virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
-    void InvalidateElementId() { m_elementId = DgnElementId(); } //!< @private
-    void InvalidateCode() { m_code = Code(); } //!< @private
+    void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
+    void InvalidateCode() {m_code = Code();} //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -774,7 +761,7 @@ protected:
     //! @note If you override this method, you @em must first call T_Super::_ExtractSelectParams, forwarding its status.
     //! You should then extract your subclass properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) {return DgnDbStatus::Success;}
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -803,7 +790,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
     //! Called after a DgnElement was successfully imported into the database.
-    virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const { }
+    virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const {}
     
     //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
     //! @note If you override this method, you @em must call T_Super::_OnReversedDelete.
@@ -902,13 +889,13 @@ protected:
     //! @param[in] child The original element which is being imported
     //! @param[in] destModel The model into which the child is being imported
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
-    virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const {return DgnDbStatus::Success;}
 
     //! Called after an element, with this element as its parent, was successfully imported
     //! @param[in] original The original element which was cloned for import, which is @em not necessarily a child of this element.
     //! @param[in] imported The clone which was imported, which is a child of this element.
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
-    virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const { }
+    virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const {}
 
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
     //! each element, so it is not necessary for the value to be 100% accurate.
@@ -1668,17 +1655,17 @@ public:
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId=DgnElementId());
 
         //! Constructor from base class. Primarily for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
 
         //! Constructs parameters for a dictionary element with the specified values. Chiefly for internal use.
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, code, id, parent) { }
+            : T_Super(db, modelId, classId, code, id, parent) {}
     };
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    virtual DictionaryElementCP _ToDictionaryElement() const override { return this; }
+    virtual DictionaryElementCP _ToDictionaryElement() const override {return this;}
 
-    explicit DictionaryElement(CreateParams const& params) : T_Super(params) { }
+    explicit DictionaryElement(CreateParams const& params) : T_Super(params) {}
 };
 
 struct ECSqlClassInfo;
@@ -1728,7 +1715,7 @@ private:
         BeSQLite::EC::CachedECSqlStatementPtr m_statement;
         ECSqlClassParams const& m_params;
 
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParams const& params) : m_statement(stmt), m_params(params) { }
+        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParams const& params) : m_statement(stmt), m_params(params) {}
     };
 
     struct HandlerStatementCache
@@ -1739,7 +1726,7 @@ private:
             ElementHandlerP m_handler;
             BeSQLite::EC::CachedECSqlStatementPtr m_select;
 
-            explicit Entry(ElementHandlerP handler=nullptr) : m_handler(handler) { }
+            explicit Entry(ElementHandlerP handler=nullptr) : m_handler(handler) {}
         };
 
         typedef bvector<Entry> Entries;
@@ -1783,7 +1770,7 @@ private:
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
 
-    virtual int64_t _CalculateBytesConsumed() const override { return GetTotalAllocated(); }
+    virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual int64_t _Purge(int64_t memTarget) override;
 
 public:

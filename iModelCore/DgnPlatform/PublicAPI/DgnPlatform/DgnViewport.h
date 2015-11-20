@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
-#include "render.h"
 #include "ColorUtil.h"
 #include "ViewController.h"
 #include <BeSQLite/RTreeMatch.h>
@@ -308,7 +307,7 @@ struct FullUpdateInfo
     {
 private:
 //__PUBLISH_SECTION_END__
-    friend struct IndexedViewSet;
+    friend struct ViewSet;
     friend struct UpdateContext;
 //__PUBLISH_SECTION_START__
     StopEvents          m_stopEvents;
@@ -384,6 +383,29 @@ public:
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+enum class UpdateAbort : int
+    {
+    None          = 0,
+    BadView       = 1,
+    Motion        = 2,
+    MotionStopped = 3,
+    Keystroke     = 4,
+    MouseWheel    = 6,
+    Timeout       = 7,
+    Button        = 8,
+    Paint         = 9,
+    Focus         = 10,
+    ModifierKey   = 11,
+    Gesture       = 12,
+    Command       = 13,
+    Sensor        = 14,
+    Unknown       = 15
+    };
+
 //=======================================================================================
 /**
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
@@ -402,22 +424,29 @@ public:
 //! @nosubgrouping
 //  @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
 public:
     friend struct ViewManager;
     friend struct UpdateContext;
 
 protected:
+    typedef std::deque<Utf8String> ViewStateStack;
+
     bool            m_needsRefresh;           // screen needs to be redrawn from backing store at next opportunity
     bool            m_zClipAdjusted;          // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView;               // view is of a 3d model
-    bool            m_isSheetView;            // view is sheet
     bool            m_isCameraOn;             // view is 3d and the camera is turned on.
     bool            m_deviceAssigned;         // whether the RenderDevice was assigned for RenderTarget
     bool            m_targetParamsSet;
     bool            m_invertY;
     bool            m_frustumValid;
+    bool            m_needSynchWithViewController;
+    bool            m_targetCenterValid;
+    bool            m_viewingToolActive;    // don't heal while this is true.
+    bool            m_undoActive;
+    bool            m_initializedBackingStore;
+    int             m_maxUndoSteps = 20;
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
     DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
@@ -433,15 +462,19 @@ protected:
     ToolGraphicsHandler* m_toolGraphicsHandler;
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
+    DPoint3d        m_viewCmdTargetCenter;
+    Utf8String      m_currentBaseline;
+    ViewStateStack  m_forwardStack;
+    ViewStateStack  m_backStack;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
 
-    virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const = 0;
-    virtual bool _IsSheetView() const {return m_isSheetView;}
+    DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
     virtual bool _IsGridOn() const {return m_rootViewFlags.grid;}
+    virtual bool _IsVisible() const {return true;}
     virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
-    virtual void _CallDecorators(bool& stopFlag) {}
+    DGNPLATFORM_EXPORT virtual void _CallDecorators(bool& stopFlag);
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
     virtual Render::AntiAliasPref _WantAntiAliasLines() const {return Render::AntiAliasPref::Detect;}
@@ -463,22 +496,20 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
     virtual Render::RenderDevice* _GetRenderDevice() const = 0;
-    virtual uintptr_t _GetBackDropTextureId() {return 0;}
     DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
-    virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
+    virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
 
 public:
     DGNPLATFORM_EXPORT DgnViewport();
     virtual ~DgnViewport() {DestroyViewport();}
 
-    BSIRectCP GetShadowDirtyRect();
-    void SetShadowDirtyRect(BSIRectCP rect);
+    void Resized() {m_deviceAssigned = false;}
     bool CheckNeedsRefresh() const {return m_needsRefresh;}
     bool ShadowCastingLightsExist() const;
+    bool IsVisible() {return _IsVisible();}
     ViewFlagsP GetViewFlagsP () {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
-    uintptr_t GetBackDropTextureId() {return _GetBackDropTextureId();}
     Render::RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
@@ -494,8 +525,6 @@ public:
     IProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
     DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
-    void SynchShadowList();
-    void UpdateShadowList(Render::DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
@@ -514,12 +543,42 @@ public:
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
     DGNPLATFORM_EXPORT void SetNeedsHeal();
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
-    DGNPLATFORM_EXPORT StatusInt RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag);
+    StatusInt RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return SUCCESS;}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
+    DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
-    DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
+    void SetViewCmdTargetCenter(DPoint3dCP newCenter);
+    DPoint3dCP GetViewCmdTargetCenter() {return m_targetCenterValid ? &m_viewCmdTargetCenter : nullptr;}
+    DGNVIEW_EXPORT void PointToGrid(DPoint3dR pointActive);
+    void DrawGrid();
+    DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
+    DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
+    DGNVIEW_EXPORT bool HandlePaintMsg(BSIRect const& dirtyRect);
+    DGNVIEW_EXPORT void ForceHeal();
+    StatusInt HealViewport(uint32_t const* endTime);
+    void ForceHealUntil(uint32_t endTime);
+    void ForceHealRange(DRange3dCR range);
+    bool GetNeedsHeal() {return true;}
+    DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
+    DGNVIEW_EXPORT void SuspendForBackground();
+    DGNVIEW_EXPORT void ResumeFromBackground();
+    DGNVIEW_EXPORT bool IsSuspended() const;
+    //  SetViewingToolActive to true if the tool uses viewing dynamics.  Set
+    //  it false if the tool draws decorations.  Setting it true blocks healing. If a tool
+    //  needs to draw decorations then it relies on the backing store being valid since
+    //  DgnView can't draw decorations without a valid backing store. THe easiest way to
+    //  accomplish that is to allow healing.
+    void SetViewingToolActive(bool val) {m_viewingToolActive = val;}
+    bool GetViewingToolActive() const {return m_viewingToolActive;}
+    void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; CheckForChanges();}
+    bool IsUndoActive() {return m_undoActive;}
+    void ClearUndo();
+    void ApplyViewState(Utf8StringCR val, int animationTime);
+    DGNVIEW_EXPORT void ApplyNext(int animationTime);
+    DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
+    DGNPLATFORM_EXPORT void CheckForChanges();
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
@@ -754,11 +813,6 @@ public:
 
     Render::TargetP GetRenderTarget() const {return m_renderTarget.get();}
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Render::ViewDrawP GetIViewDraw() {return _GetIViewDraw();}
-    Render::OutputP GetIViewOutput() {return _GetIViewOutput();}
-#endif
-
     //! Get the ViewController associated with this DgnViewport.
     ViewControllerCR GetViewController() const {return *m_viewController;}
 
@@ -842,9 +896,10 @@ public:
     Utf8StringCR GetTitle() {return m_viewTitle;}
     void SetTitle(Utf8CP title) {m_viewTitle = title;}
 
-    //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
-    //__PUBLISH_SECTION_START__
+
+    DGNPLATFORM_EXPORT UpdateAbort UpdateViewDynamic(DynamicUpdateInfo& info);
+    DGNPLATFORM_EXPORT bool UpdateView(FullUpdateInfo& info);
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter();}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
@@ -869,14 +924,42 @@ protected:
         return rect;
         }
 
-    virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) override { return ERROR; }
     virtual void _SetFrustumFromRootCorners(DPoint3dCP worldBox, double compressFraction) override {}
     virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:
     NonVisibleViewport(ViewControllerR viewController) {m_viewController = &viewController; SetupFromViewController();}
 };
+END_BENTLEY_DGN_NAMESPACE
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+BEGIN_BENTLEY_RENDER_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                                      KeithBentley    10/02
+//=======================================================================================
+struct Viewport : DgnViewport
+{
+    DEFINE_T_SUPER(DgnViewport)
+
+protected:
+    DGNVIEW_EXPORT virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) override;
+    DGNVIEW_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const override;
+    virtual Render::RenderWindow* _GetRenderWindow() const = 0;
+    virtual bool _IsVisible() const {return true;}
+    virtual void _Initialize(ViewControllerR viewController) {}
+
+public:
+    DGNVIEW_EXPORT void Resized();
+    Render::RenderWindow* GetRenderWindow() const {return _GetRenderWindow();}
+    DGNVIEW_EXPORT static void AddMosaic(Render::Graphic* qvElem, int numX, int numY, uintptr_t* tileIds, DPoint3d const* verts);
+    DGNVIEW_EXPORT bool UpdateView(struct FullUpdateInfo& info);
+    DGNVIEW_EXPORT UpdateAbort UpdateViewDynamic(DynamicUpdateInfo& info);
+    bool IsVisible() {return _IsVisible();}
+};
+
+END_BENTLEY_RENDER_NAMESPACE
+#endif
 
 /** @endGroup */
 
-END_BENTLEY_DGN_NAMESPACE

@@ -43,10 +43,15 @@ DgnViewport::DgnViewport()
     m_needsRefresh      = false;
     m_zClipAdjusted     = false;
     m_is3dView          = false;
-    m_isSheetView       = false;
     m_invertY           = true;
     m_frustumValid      = false;
     m_toolGraphicsHandler = nullptr;
+    m_maxUndoSteps      = 0;
+    m_undoActive        = false;
+    m_needSynchWithViewController = true;
+    m_targetCenterValid = false;
+    m_viewingToolActive = false;
+    m_initializedBackingStore = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -424,16 +429,6 @@ void DgnViewport::_SetFrustumFromRootCorners(DPoint3dCP rootBox, double compress
         frustum[3].z = GetMaxDisplayPriority();
         frustum[0].z = frustum[1].z = frustum[2].z = -frustum[3].z;
         }
-    else if (_IsSheetView())
-        {
-        // for 3d sheets expand the range if necessary make sure the z range includes all possible display priority values
-        double displayPriority = GetMaxDisplayPriority();
-        if (frustum[3].z < displayPriority)
-            frustum[3].z = displayPriority;
-
-        if (frustum[0].z > -displayPriority)
-            frustum[0].z = frustum[1].z = frustum[2].z = -displayPriority;
-        }
 
     if (m_renderTarget.IsValid())
         m_renderTarget->DefineFrustum(*frustum, compressionFraction, !use3d);
@@ -469,6 +464,84 @@ static void validateCamera(CameraViewControllerR controller)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* The front/back clipping planes may need to be adjusted to fit around the actual range of the elements in the model.
+* @bsimethod                                                    KeithBentley    11/02
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR viewController) const
+    {
+    if (!m_is3dView)
+        return;
+
+    m_rotMatrix.Multiply(origin);   // put origin into view orientation
+
+    Transform viewTransform;
+    viewTransform.InitFrom(m_rotMatrix);
+
+    DRange3d extents = viewController.GetViewedExtents();
+    if (!extents.IsEmpty())
+        viewTransform.Multiply(extents, extents);
+    else
+        {
+        extents.low = origin;
+        extents.high.SumOf(origin,delta);
+        }
+
+    // calculate the distance from the current origin to the back plane along the eye vector
+    double dist = (origin.z - extents.low.z);
+
+    // if the distance is negative, the unadjusted backplane is further away from the eye than the back of the model.
+    // In that case, we want to bring the backplane in as close as possible to the model to give the best resolution for the z buffer.
+    // If the distance is positive, some of the model is clipped by the current frustum. Does he want that - check "noBackClip" flag.
+    if (viewController.GetViewFlags().noBackClip)
+        {
+        origin.z -= dist;
+        delta.z  += dist;
+        }
+
+    // get distance from (potentially moved) origin to front plane.
+    double newDeltaZ = std::max(extents.high.z - origin.z, 100. * DgnUnits::OneMillimeter());
+    if (viewController.GetViewFlags().noFrontClip)
+        {
+        delta.z = newDeltaZ;
+        }
+
+    DVec3d  zVec;
+    m_rotMatrix.GetRow(zVec, 2);
+
+    double maxDepth = PhysicalViewController::CalculateMaxDepth(delta, zVec);
+    double minDepth = std::max(std::max(delta.x, delta.y),(DgnUnits::OneMillimeter() * 150.)); // About 6 inches...
+
+    if (minDepth > maxDepth)
+        minDepth = maxDepth;
+
+    if (minDepth > delta.z)     // expand depth to extents
+        {
+        double diff = (minDepth - delta.z) / 2.0;
+        if (viewController.GetViewFlags().noBackClip)
+            {
+            origin.z -= diff;
+            delta.z  += diff;
+            }
+
+        if (viewController.GetViewFlags().noFrontClip)
+            {
+            delta.z += diff;
+            }
+        }
+
+    // we can't allow the z dimension to be too large relative to x/y. Otherwise the transform math fails due to precision errors.
+    if (delta.z > maxDepth)
+        {
+        double diff = (maxDepth - delta.z) / 2.0;
+
+        origin.z -= diff;
+        delta.z  = maxDepth;
+        }
+
+    m_rotMatrix.MultiplyTranspose(origin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * set up this viewport from the given viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -487,7 +560,6 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_rootViewFlags = viewController->GetViewFlags();
     m_is3dView      = false;
     m_isCameraOn    = false;
-    m_isSheetView   = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
     m_viewDelta     = m_viewDeltaUnexpanded = delta;
     m_zClipAdjusted = false;
@@ -552,10 +624,6 @@ ViewportStatus DgnViewport::_SetupFromViewController()
         {
         AlignWithRootZ();
 
-        SheetViewControllerP sheetView = dynamic_cast<SheetViewControllerP> (viewController);
-        if (nullptr != sheetView)
-            m_isSheetView = true;
-
         delta.z  =  200. * DgnUnits::OneMillimeter();
         origin.z = -100. * DgnUnits::OneMillimeter();
         }
@@ -578,6 +646,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_rootToView.InitProduct(npcToView, m_rootToNpc);
 
     _SetFrustumFromRootCorners(rootBox, compressionFraction);
+    m_needSynchWithViewController = false;
 
     m_frustumValid = true;
 
@@ -1180,7 +1249,10 @@ void DgnViewport::_SynchWithViewController(bool saveInUndo)
     _SetupFromViewController();
 
     if (saveInUndo)
+        {
+        CheckForChanges();
         _SynchViewTitle();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1358,24 +1430,128 @@ void DgnViewport::ScheduleProgressiveDisplay(IProgressiveDisplay& pd)
     // *** TBD: Sort in priority order
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
+* @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Renderer& DgnViewport::_GetRenderer() const 
+void DgnViewport::CheckForChanges()
     {
-    static Renderer s_defaultRender;
-    return s_defaultRender;
+    if (!m_undoActive)
+        return;
+
+    Json::Value json;
+    m_viewController->SaveToSettings(json);
+    Utf8String curr = Json::FastWriter::ToString(json);
+
+    if (m_currentBaseline.empty())
+        {
+        m_currentBaseline = curr;
+        return;
+        }
+
+    if (curr.Equals(m_currentBaseline))
+        return; // nothing changed
+
+    if (m_backStack.size() >= m_maxUndoSteps)
+        m_backStack.pop_front();
+
+    m_backStack.push_back(m_currentBaseline);
+    m_forwardStack.clear();
+
+    // now update our baseline to match the current settings.
+    m_currentBaseline = curr;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/08
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnViewport::UpdateView(FullUpdateInfo& info)
+    {
+    if (!IsActive() || !IsVisible())
+        return false;
+
+    ClearProgressiveDisplay();
+
+    CreateSceneContext sceneContext(*m_renderTarget->_GetMainScene());
+
+    GetViewControllerR().OnFullUpdate(*this, sceneContext);
+    sceneContext.CreateScene(*this);
+
+    InitViewSettings(true);
+    m_renderTarget->_GetMainScene()->Render(); // TEMPORARY - should be on other thread
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/08
++---------------+---------------+---------------+---------------+---------------+------*/
+UpdateAbort DgnViewport::UpdateViewDynamic(DynamicUpdateInfo& info)
+    {
+    ClearProgressiveDisplay();
+
+    // Let BeSQLite detect operations that may block on a range tree query.
+    BeSQLite::wt_GraphicsAndQuerySequencerDiagnosticsEnabler highPriorityRequired;
+
+    if (!IsActive())
+        return UpdateAbort::BadView;
+
+    CreateSceneContext sceneContext(*m_renderTarget->_GetMainScene());
+    GetViewControllerR().OnDynamicUpdate(*this, sceneContext, info);
+    sceneContext.CreateScene(*this);
+
+    InitViewSettings(true);
+    m_renderTarget->_GetMainScene()->Render(); // TEMPORARY - should be on other thread
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    UpdateContext context;
+    return context._DoDynamicUpdate(*this, info);
+#endif
+    return UpdateAbort::None;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/02
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::_CallDecorators(bool& stopFlag)
+    {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    BSIRect rect = GetViewRect();
+    m_output->BeginDecorating(&rect);
+
+    // first let the viewController decorate with the z-buffer on
+    stopFlag = m_viewController->_DrawZBufferedDecorations(*this);
+
+    if (!stopFlag)
+        stopFlag = t_viewHost->GetViewManager().CallElementDecorators(this);
+
+    m_output->BeginOverlayMode();
+
+    DrawGrid();
+
+    // first let the viewController decorate itself
+    stopFlag = m_viewController->_DrawOverlayDecorations(*this);
+
+    if (!stopFlag)
+        stopFlag = t_viewHost->GetViewManager().CallDecorators(this);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::ChangeViewController(ViewControllerR viewController)
+    {
+    // save undo state.
+    bool undoActive = IsUndoActive();
+
+    // first discard the current ViewController.
+    _Destroy();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    _Initialize(viewController);
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RenderManager::AddTask(Task& task)
-    {
-    BeMutexHolder lock(m_cv.GetMutex());
-    m_tasks.push_back(&task);
-
-    m_cv.notify_all();
+    // set undo state for this viewport
+    SetUndoActive(undoActive);
+    SetupFromViewController();
     }
+
