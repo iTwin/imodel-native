@@ -88,6 +88,35 @@ public:
 };
 
 //=======================================================================================
+//! Streams the contents of multiple files containing serialized change streams
+// @bsiclass                                                 Ramanujam.Raman   10/15
+//=======================================================================================
+struct ChangeStreamFileReader : BeSQLite::ChangeStream
+{
+private:
+    bvector<BeFileName> m_pathnames;
+
+    BeFile m_currentFile;
+    int m_currentFileIndex = -1;
+    uint64_t m_currentTotalBytes = 0;
+    uint64_t m_currentByteIndex = 0;
+
+    BentleyStatus CloseCurrentFile();
+    BentleyStatus OpenNextFile(bool& completedAllFiles);
+    BentleyStatus ReadNextPage(void *pData, int *pnData);
+
+    bool IsCurrentFileComplete() const;
+    BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
+    void _Reset() override;
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
+
+public:
+    ChangeStreamFileReader(bvector<BeFileName> pathnames) : m_pathnames(pathnames) {}
+    ChangeStreamFileReader(BeFileNameCR pathname) { m_pathnames.push_back(pathname); }
+    ~ChangeStreamFileReader() {}
+};
+
+//=======================================================================================
 //! Utility to download and upload revisions of changes to/from the DgnDb. 
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
