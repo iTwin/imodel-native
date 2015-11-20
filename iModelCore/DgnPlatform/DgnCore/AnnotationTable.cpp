@@ -10,7 +10,6 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define PARAM_ECInstanceId                      "ECInstanceId"
 #define PARAM_ElementId                         "ElementId"
-#define PARAM_AspectId                          "ECInstanceId"      // NEEDSWORK: Is this needed?
 
 #define HEADER_PARAM_RowCount                   "RowCount"
 #define HEADER_PARAM_ColumnCount                "ColumnCount"
@@ -49,6 +48,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define HEADER_PARAM_FooterRowTextHeight        "FooterRowTextHeight"
 #define HEADER_PARAM_HeaderColumnTextHeight     "HeaderColumnTextHeight"
 #define HEADER_PARAM_FooterColumnTextHeight     "FooterColumnTextHeight"
+#define HEADER_PARAM_TextSymbologyKey           "TextSymbKey"
 
 #define ROW_PARAM_Index                         "RowIndex"
 #define ROW_PARAM_HeightLock                    "HeightLock"
@@ -75,12 +75,138 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define MERGEENTRY_PARAM_RowSpan                "RowSpan"
 #define MERGEENTRY_PARAM_ColumnSpan             "ColumnSpan"
 
+#define SYMBOLOGYENTRY_PARAM_Key                "SymbologyKey"
+#define SYMBOLOGYENTRY_PARAM_Visible            "Visible"
+#define SYMBOLOGYENTRY_PARAM_Color              "Color"
+#define SYMBOLOGYENTRY_PARAM_Weight             "Weight"
+#define SYMBOLOGYENTRY_PARAM_LineStyleId        "LineStyleId"
+#define SYMBOLOGYENTRY_PARAM_LineStyleScale     "LineStyleScale"
+#define SYMBOLOGYENTRY_PARAM_FillColor          "FillColor"
+
+#define EDGERUN_PARAM_HostType                  "HostType"
+#define EDGERUN_PARAM_Host                      "Host"
+#define EDGERUN_PARAM_Start                     "Start"
+#define EDGERUN_PARAM_Span                      "Span"
+#define EDGERUN_PARAM_SymbologyKey              "SymbologyKey"
+
 static const double s_doubleTol = 1.e-8;
 
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(AnnotationTableHandler)
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+/* ctor */  AnnotationTableSymbologyValues::AnnotationTableSymbologyValues ()
+    : 
+    m_lineVisibleFlag(false),
+    m_colorFlag (false),
+    m_weightFlag(false),
+    m_styleFlag (false),
+    m_fillVisibleFlag(false),
+    m_fillColorFlag(false)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableSymbologyValues::Clear ()
+    {
+    m_lineVisibleFlag   = false;
+    m_colorFlag         = false;
+    m_weightFlag        = false;
+    m_styleFlag         = false;
+    m_fillVisibleFlag   = false;
+    m_fillColorFlag     = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableSymbologyValues::SetLineVisible (bool     val)                { m_lineVisibleFlag = true;  m_lineVisibleVal = val; }
+void    AnnotationTableSymbologyValues::SetLineColor   (ColorDef val)                { m_colorFlag       = true;  m_colorVal       = val; SetLineVisible (true); }
+void    AnnotationTableSymbologyValues::SetLineWeight  (uint32_t val)                { m_weightFlag      = true;  m_weightVal      = val; SetLineVisible (true); }
+void    AnnotationTableSymbologyValues::SetLineStyle   (DgnStyleId id, double scale) { m_styleFlag       = true;  m_styleIdVal     = id; m_styleScaleVal = scale; SetLineVisible (true); }
+
+void    AnnotationTableSymbologyValues::SetFillVisible (bool     val)   { m_fillVisibleFlag = true;  m_fillVisibleVal = val; }
+void    AnnotationTableSymbologyValues::SetFillColor   (ColorDef val)   { m_fillColorFlag   = true;  m_fillColorVal   = val; SetFillVisible (true); }
+
+bool    AnnotationTableSymbologyValues::HasLineVisible () const       { return m_lineVisibleFlag;  }
+bool    AnnotationTableSymbologyValues::HasLineColor   () const       { return m_colorFlag;        }
+bool    AnnotationTableSymbologyValues::HasLineStyle   () const       { return m_styleFlag;        }
+bool    AnnotationTableSymbologyValues::HasLineWeight  () const       { return m_weightFlag;       }
+bool    AnnotationTableSymbologyValues::HasFillVisible () const       { return m_fillVisibleFlag;  }
+bool    AnnotationTableSymbologyValues::HasFillColor   () const       { return m_fillColorFlag;    }
+
+bool       AnnotationTableSymbologyValues::GetLineVisible ()    const { return m_lineVisibleVal;   }
+ColorDef   AnnotationTableSymbologyValues::GetLineColor   ()    const { return m_colorVal;         }
+uint32_t   AnnotationTableSymbologyValues::GetLineWeight  ()    const { return m_weightVal;        }
+DgnStyleId AnnotationTableSymbologyValues::GetLineStyleId ()    const { return m_styleIdVal;       }
+double     AnnotationTableSymbologyValues::GetLineStyleScale () const { return m_styleScaleVal;    }
+bool       AnnotationTableSymbologyValues::GetFillVisible ()    const { return m_fillVisibleVal;   }
+ColorDef   AnnotationTableSymbologyValues::GetFillColor   ()    const { return m_fillColorVal;     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  AnnotationTableSymbologyValues::IsEquivalent   (AnnotationTableSymbologyValuesCR other) const
+    {
+    // If both lines invisible don't check the rest of the line props
+    bool bothInvisible = HasLineVisible() && ! GetLineVisible() && other.HasLineVisible() && ! other.GetLineVisible();
+
+    if ( ! bothInvisible)
+        {
+        if (HasLineVisible() != other.HasLineVisible())
+            return false;
+
+        if (HasLineVisible() && GetLineVisible() != other.GetLineVisible())
+            return false;
+
+        if (HasLineColor() != other.HasLineColor())
+            return false;
+
+        if (HasLineColor() && GetLineColor() != other.GetLineColor())
+            return false;
+
+        if (HasLineWeight() != other.HasLineWeight())
+            return false;
+
+        if (HasLineWeight() && GetLineWeight() != other.GetLineWeight())
+            return false;
+
+        if (HasLineStyle() != other.HasLineStyle())
+            return false;
+
+        if (HasLineStyle() && GetLineStyleId() != other.GetLineStyleId())
+            return false;
+
+        if (HasLineStyle() && GetLineStyleScale() != other.GetLineStyleScale())
+            return false;
+        }
+
+    // If both lines have invisible fill don't check the rest of the fill props
+    bool bothInvisibleFill = HasFillVisible() && ! GetFillVisible() && other.HasFillVisible() && ! other.GetFillVisible();
+
+    if ( ! bothInvisibleFill)
+        {
+        if (HasFillVisible() != other.HasFillVisible())
+            return false;
+
+        if (HasFillVisible() && GetFillVisible() != other.GetFillVisible())
+            return false;
+
+        if (HasFillColor() != other.HasFillColor())
+            return false;
+
+        if (HasFillColor() && GetFillColor() != other.GetFillColor())
+            return false;
+        }
+
+    return true;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/13
@@ -183,8 +309,8 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
     if ( ! isUniqueAspect)
         {
         ecSql.append(" AND ");
-        ecSql.append("[").append(PARAM_AspectId).append("]");
-        ecSql.append("=:").append(PARAM_AspectId);
+        ecSql.append("[").append(PARAM_ECInstanceId).append("]");
+        ecSql.append("=:").append(PARAM_ECInstanceId);
         }
 
     return ecSql;
@@ -195,11 +321,9 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
 //---------------------------------------------------------------------------------------
 static Utf8String buildECSqlDeleteString (Utf8CP schemaName, Utf8CP className, bool isUniqueAspect)
     {
-    Utf8CP  idPropertyName = isUniqueAspect ? PARAM_ECInstanceId : PARAM_AspectId;
-
     Utf8PrintfString ecSql("DELETE FROM %s.%s WHERE ", schemaName, className);
-    ecSql.append("[").append(idPropertyName).append("]");
-    ecSql.append("=:").append(idPropertyName);
+    ecSql.append("[").append(PARAM_ECInstanceId).append("]");
+    ecSql.append("=:").append(PARAM_ECInstanceId);
 
     return ecSql;
     }
@@ -215,7 +339,7 @@ static Utf8String buildECSqlSelectString (Utf8CP schemaName, Utf8CP className, b
     if ( ! isUniqueAspect)
         {
         // Always select aspectId first
-        ecSql.append("i.[").append(PARAM_AspectId).append("]");
+        ecSql.append("i.[").append(PARAM_ECInstanceId).append("]");
         first = false;
         }
 
@@ -244,6 +368,8 @@ static Utf8String convertToComponents (Utf8CP aspectIndexProp)
     {
     // NEEDSWORK: this is working around the fact that ECSql does not support structs in
     //            GROUP BY clauses.  Seems to me that it should.
+    //
+    //            GROUP BY now supports structs... try removing this asap
     Utf8String  inStr (aspectIndexProp);
 
     if ( ! inStr.Equals ("CellIndex") &&  ! inStr.Equals ("RootCell"))
@@ -274,7 +400,7 @@ static Utf8String buildECSqlSelectDupeString (Utf8CP schemaName, Utf8CP classNam
     //      HAVING 
     //          COUNT(*) > 1
     Utf8String sqlString ("SELECT ");
-    sqlString.append (PARAM_AspectId).append (", ");
+    sqlString.append (PARAM_ECInstanceId).append (", ");
     sqlString.append (propsString);
     sqlString.append (", COUNT(*)").append (" FROM ");
     sqlString.append (schemaName).append (".").append(className).append(" ");
@@ -299,10 +425,10 @@ AspectTypeData const&   AnnotationTableAspect::GetAspectTypeData(AnnotationTable
         PropertyNames colNames =     AnnotationTableColumn::GetPropertyNames();
         PropertyNames cellNames =    AnnotationTableCell::GetPropertyNames();
         PropertyNames mergeNames =   MergeEntry::GetPropertyNames();
+        PropertyNames symbNames =    SymbologyEntry::GetPropertyNames();
+        PropertyNames edgeRunNames = AnnotationTableEdgeRun::GetPropertyNames();
 // NEEDSWORK
 //        PropertyNames fillNames =    AnnotationTableFill::GetPropertyNames();
-//        PropertyNames symbNames =    AnnotationTableSymbology::GetPropertyNames();
-//        PropertyNames edgeRunNames = AnnotationTableEdgeRun::GetPropertyNames();
 
         s_typeData = 
             {
@@ -311,10 +437,8 @@ AspectTypeData const&   AnnotationTableAspect::GetAspectTypeData(AnnotationTable
             { AspectTypeData (AnnotationTableAspectType::Column,    colNames,      false, DGN_CLASSNAME_AnnotationTableColumn)     },
             { AspectTypeData (AnnotationTableAspectType::Cell,      cellNames,     false, DGN_CLASSNAME_AnnotationTableCell)       },
             { AspectTypeData (AnnotationTableAspectType::Merge,     mergeNames,    false, DGN_CLASSNAME_AnnotationTableMerge)      },
-// NEEDSWORK
-//            { AspectTypeData (AnnotationTableAspectType::Fill,      fillNames,     false, DGN_CLASSNAME_AnnotationTableFill)       },
-//            { AspectTypeData (AnnotationTableAspectType::Symbology, symbNames,     false, DGN_CLASSNAME_AnnotationTableSymbology)  },
-//            { AspectTypeData (AnnotationTableAspectType::EdgeRun,   edgeRunNames,  false, DGN_CLASSNAME_AnnotationTableEdgeRun)    },
+            { AspectTypeData (AnnotationTableAspectType::Symbology, symbNames,     false, DGN_CLASSNAME_AnnotationTableSymbology)  },
+            { AspectTypeData (AnnotationTableAspectType::EdgeRun,   edgeRunNames,  false, DGN_CLASSNAME_AnnotationTableEdgeRun)    },
             };
         }
 
@@ -324,22 +448,33 @@ AspectTypeData const&   AnnotationTableAspect::GetAspectTypeData(AnnotationTable
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/ AnnotationTableAspect::AnnotationTableAspect (AnnotationTableAspectCR rhs)
+/*ctor*/ AnnotationTableAspect::AnnotationTableAspect (AnnotationTableAspectCR rhs, bool isNew)
     :
-    m_table (rhs.m_table)
+    m_table (rhs.m_table),
+    m_hasChanges (false)
     {
-    CopyDataFrom (rhs);
+    CopyDataFrom (rhs, isNew);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AnnotationTableAspect::CopyDataFrom (AnnotationTableAspectCR rhs)
+AnnotationTableAspectR AnnotationTableAspect::operator= (AnnotationTableAspectCR rhs)
     {
+    CopyDataFrom (rhs, false);
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void AnnotationTableAspect::CopyDataFrom (AnnotationTableAspectCR rhs, bool isNew)
+    {
+    if (isNew)
+        return;
+
     m_aspectId   = rhs.m_aspectId;
     m_hasChanges = rhs.m_hasChanges;
-
-    _CopyDataFrom (rhs);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,7 +585,7 @@ void    AnnotationTableAspect::BindProperties (ECSqlStatement& statement, bool i
     statement.BindId (statement.GetParameterIndex(elemIdProp), GetTable().GetElementId());
 
     if (isUpdate && ! _IsUniqueAspect() && EXPECTED_CONDITION (m_aspectId.IsValid()))
-        statement.BindInt64  (statement.GetParameterIndex(PARAM_AspectId), m_aspectId.GetValue());
+        statement.BindInt64  (statement.GetParameterIndex(PARAM_ECInstanceId), m_aspectId.GetValue());
 
     _BindProperties (statement);
     }
@@ -525,7 +660,7 @@ BentleyStatus AnnotationTableAspect::DeleteAspectFromDb (AnnotationTableAspectTy
     if (!statement.IsValid())
         return ERROR;
 
-    statement->BindInt64 (statement->GetParameterIndex(PARAM_AspectId), aspectId);
+    statement->BindInt64 (statement->GetParameterIndex(PARAM_ECInstanceId), aspectId);
 
     if (UNEXPECTED_CONDITION (BE_SQLITE_DONE != statement->Step()))
         return ERROR;
@@ -639,7 +774,7 @@ void    AnnotationTableCellIndex::BindCellIndex(ECSqlStatement& statement, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/  AnnotationTableRow::AnnotationTableRow (AnnotationTableRowCR rhs) : AnnotationTableAspect (rhs)
+/*ctor*/  AnnotationTableRow::AnnotationTableRow (AnnotationTableRowCR rhs) : AnnotationTableAspect (rhs, false)
     {
     CopyDataFrom (rhs);
     }
@@ -649,6 +784,7 @@ void    AnnotationTableCellIndex::BindCellIndex(ECSqlStatement& statement, Utf8C
 +---------------+---------------+---------------+---------------+---------------+------*/
 AnnotationTableRowR AnnotationTableRow::operator= (AnnotationTableRowCR rhs)
     {
+    AnnotationTableAspect::operator= (rhs);
     CopyDataFrom (rhs);
 
     return *this;
@@ -657,14 +793,14 @@ AnnotationTableRowR AnnotationTableRow::operator= (AnnotationTableRowCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AnnotationTableRow::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+void    AnnotationTableRow::CopyDataFrom (AnnotationTableRowCR rhs)
     {
-    AnnotationTableRowCR   rhs = static_cast <AnnotationTableRowCR> (rhsAspect);
-
     m_index             = rhs.m_index;
     m_heightLock        = rhs.m_heightLock;
     m_height            = rhs.m_height;
     m_cells             = rhs.m_cells;
+    m_edgeRuns          = rhs.m_edgeRuns;
+    m_fillRuns          = rhs.m_fillRuns;
     }
 
 //---------------------------------------------------------------------------------------
@@ -674,9 +810,9 @@ PropertyNames   AnnotationTableRow::GetPropertyNames()
     {
     PropertyNames propNames =
         {
-        { (int) AnnotationTableRow::PropIndex::RowIndex,   ROW_PARAM_Index       },
-        { (int) AnnotationTableRow::PropIndex::HeightLock, ROW_PARAM_HeightLock  },
-        { (int) AnnotationTableRow::PropIndex::Height,     ROW_PARAM_Height      },
+        { (int) PropIndex::RowIndex,   ROW_PARAM_Index       },
+        { (int) PropIndex::HeightLock, ROW_PARAM_HeightLock  },
+        { (int) PropIndex::Height,     ROW_PARAM_Height      },
         };
 
     return propNames;
@@ -700,7 +836,7 @@ void AnnotationTableRow::_FlushChangesToProperties()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-bool    AnnotationTableRow::_ShouldBePersisted() const
+bool    AnnotationTableRow::_ShouldBePersisted (AnnotationTableSerializer&) const
     {
     if (m_height.IsValid())         return true;
     if (m_heightLock.IsValid())     return true;
@@ -740,10 +876,8 @@ void  AnnotationTableRow::_AssignValue (int index, IECSqlValue const& value)
 void    AnnotationTableRow::InitializeInternalCollections()
     {
     PRECONDITION(m_cells.empty(),);
-#if defined (NEEDSWORK)
     PRECONDITION(m_edgeRuns.empty(),);
     PRECONDITION(m_fillRuns.empty(),);
-#endif
 
     // Cells
     for (uint32_t colIndex = 0; colIndex < GetTable().GetColumnCount(); colIndex++)
@@ -752,17 +886,15 @@ void    AnnotationTableRow::InitializeInternalCollections()
         m_cells.push_back (cell);
         }
 
-#if defined (NEEDSWORK)
     // EdgeRuns
-    TextTableEdgeRun edgeRun;
-    edgeRun.Initialize (*m_table, EdgeRunHostType::Row, m_index);
+    AnnotationTableEdgeRun edgeRun (GetTable());
+    edgeRun.Initialize (EdgeRunHostType::Row, m_index);
     m_edgeRuns.push_back (edgeRun);
 
     // FillRuns
-    TextTableFillRun fillRun;
-    fillRun.Initialize (*m_table, m_index);
+    AnnotationTableFillRun fillRun;
+    fillRun.Initialize (GetTable(), m_index);
     m_fillRuns.push_back (fillRun);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -777,11 +909,9 @@ void    AnnotationTableRow::SetIndex (uint32_t val)
     for (AnnotationTableCell& cell: m_cells)
         cell.SetIndex (AnnotationTableCellIndex (m_index, cell.GetIndex().col));
 
-#if defined (NEEDSWORK)
     // Adjust all the edge runs owned by this row
-    for (TextTableEdgeRun& edgeRun: m_edgeRuns)
+    for (AnnotationTableEdgeRun& edgeRun: m_edgeRuns)
         edgeRun.SetHostIndex (m_index);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,6 +945,20 @@ bvector<AnnotationTableCellP>     AnnotationTableRow::FindCells() const
         }
 
     return cells;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeRunsR    AnnotationTableRow::GetEdgeRuns (bool top)
+    {
+    if (0 == m_index && top)
+        return GetTable().GetTopEdgeRuns();
+
+    if (top)
+        return GetTable().GetRow (m_index - 1)->GetEdgeRuns();
+
+    return GetEdgeRuns();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1097,6 +1241,53 @@ void AnnotationTableRow::SetHeightFromContents ()
 TableHeaderFooterType   AnnotationTableRow::GetHeaderFooterType () const
     {
     return GetTable().GetRowHeaderFooterType (GetIndex());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeRunsP AnnotationTableElement::GetEdgeRuns (EdgeRunHostType hostType, uint32_t hostIndex)
+    {
+    switch (hostType)
+        {
+        case EdgeRunHostType::Top:
+            {
+            return &GetTopEdgeRuns();
+            }
+        case EdgeRunHostType::Left:
+            {
+            return &GetLeftEdgeRuns();
+            }
+        case EdgeRunHostType::Column:
+            {
+            AnnotationTableColumnP    column = GetColumn (hostIndex);
+
+            if (UNEXPECTED_CONDITION (NULL == column))
+                return NULL;
+
+            return &column->GetEdgeRuns();
+            }
+        case EdgeRunHostType::Row:
+            {
+            AnnotationTableRowP    row = GetRow (hostIndex);
+
+            if (UNEXPECTED_CONDITION (NULL == row))
+                return NULL;
+
+            return &row->GetEdgeRuns();
+            }
+        }
+
+    BeAssert (false);
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeRunsCP    AnnotationTableElement::GetEdgeRuns (EdgeRunHostType hostType, uint32_t hostIndex) const
+    {
+    return (const_cast <AnnotationTableElementP> (this))->GetEdgeRuns (hostType, hostIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1564,13 +1755,9 @@ double          TextBlockHolder::ComputeDescenderAdjustment (AnnotationTextBlock
         {
         AnnotationTextStyleCPtr textStyle   = run->GetSeedRun().CreateEffectiveStyle ();
         double                  fontSize    = textStyle->GetHeight();
-#if defined (NEEDSWORK)
-        DgnFontCP               font        = dgnDb.Fonts().FindFontById(fontId);
-        DgnFontId               fontId      = textStyle->GetFontId();
-        double                  height      = fontSize * font.GetDescenderRatio();
-#else
-        double                  height      = fontSize * 0.3;
-#endif
+        DgnFontStyle            fontStyle   = DgnFont::FontStyleFromBoldItalic(textStyle->IsBold(), textStyle->IsItalic());
+        DgnFontCR               font        = textStyle->ResolveFont();
+        double                  height      = fontSize * font.GetDescenderRatio(fontStyle);
 
         if (descenderHeight < height)
             descenderHeight = height;
@@ -1633,7 +1820,7 @@ void            TextBlockHolder::GetPaddedSizeAlignedWithTextBlock (double& widt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/  AnnotationTableCell::AnnotationTableCell (AnnotationTableCellCR rhs) : AnnotationTableAspect (rhs), m_rawTextBlock (nullptr)
+/*ctor*/  AnnotationTableCell::AnnotationTableCell (AnnotationTableCellCR rhs) : AnnotationTableAspect (rhs, false), m_rawTextBlock (nullptr)
     {
     CopyDataFrom (rhs);
     }
@@ -1643,6 +1830,7 @@ void            TextBlockHolder::GetPaddedSizeAlignedWithTextBlock (double& widt
 +---------------+---------------+---------------+---------------+---------------+------*/
 AnnotationTableCellR AnnotationTableCell::operator= (AnnotationTableCellCR rhs)
     {
+    AnnotationTableAspect::operator= (rhs);
     CopyDataFrom (rhs);
 
     return *this;
@@ -1688,10 +1876,8 @@ void    AnnotationTableCell::AssignBinaryTextBlock (void const* data, size_t num
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AnnotationTableCell::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+void    AnnotationTableCell::CopyDataFrom (AnnotationTableCellCR rhs)
     {
-    AnnotationTableCellCR   rhs = static_cast <AnnotationTableCellCR> (rhsAspect);
-
     m_index             = rhs.m_index;
 
     AssignBinaryTextBlock (m_rawTextBlock, m_rawTextBlockBytes);
@@ -1717,15 +1903,15 @@ PropertyNames   AnnotationTableCell::GetPropertyNames()
     {
     PropertyNames propNames =
         {
-        { (int) AnnotationTableCell::PropIndex::CellIndex,      CELL_PARAM_Index         },
-        { (int) AnnotationTableCell::PropIndex::TextBlock,      CELL_PARAM_TextBlock     },
-        { (int) AnnotationTableCell::PropIndex::FillKey,        CELL_PARAM_FillKey       },
-        { (int) AnnotationTableCell::PropIndex::Alignment,      CELL_PARAM_Alignment     },
-        { (int) AnnotationTableCell::PropIndex::Orientation,    CELL_PARAM_Orientation   },
-        { (int) AnnotationTableCell::PropIndex::MarginTop,      CELL_PARAM_MarginTop     },
-        { (int) AnnotationTableCell::PropIndex::MarginBottom,   CELL_PARAM_MarginBottom  },
-        { (int) AnnotationTableCell::PropIndex::MarginLeft,     CELL_PARAM_MarginLeft    },
-        { (int) AnnotationTableCell::PropIndex::MarginRight,    CELL_PARAM_MarginRight   },
+        { (int) PropIndex::CellIndex,      CELL_PARAM_Index         },
+        { (int) PropIndex::TextBlock,      CELL_PARAM_TextBlock     },
+        { (int) PropIndex::FillKey,        CELL_PARAM_FillKey       },
+        { (int) PropIndex::Alignment,      CELL_PARAM_Alignment     },
+        { (int) PropIndex::Orientation,    CELL_PARAM_Orientation   },
+        { (int) PropIndex::MarginTop,      CELL_PARAM_MarginTop     },
+        { (int) PropIndex::MarginBottom,   CELL_PARAM_MarginBottom  },
+        { (int) PropIndex::MarginLeft,     CELL_PARAM_MarginLeft    },
+        { (int) PropIndex::MarginRight,    CELL_PARAM_MarginRight   },
         };
 
     return propNames;
@@ -1769,7 +1955,7 @@ void AnnotationTableCell::_FlushChangesToProperties()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   10/2015
 //---------------------------------------------------------------------------------------
-bool    AnnotationTableCell::_ShouldBePersisted() const
+bool    AnnotationTableCell::_ShouldBePersisted (AnnotationTableSerializer&) const
     {
     if (nullptr == m_contentHolder)
         return false;
@@ -1784,6 +1970,15 @@ bool    AnnotationTableCell::_ShouldBePersisted() const
     if (m_marginRight.IsValid())    return true;
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::_DiscloseSymbologyKeys (bset<uint32_t>& keys)
+    {
+    if (m_fillKey.IsValid())
+        keys.insert (m_fillKey.GetValue());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2588,40 +2783,40 @@ void    AnnotationTableCell::ClearContents ()
     {
     SetTextString (L"");
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   AnnotationTableCell::SetFillKey (UInt32 fillKey)   {                 m_instanceHolder.SetInteger (TEXTTABLE_CELL_PROP_FillKey, fillKey); }
-void   AnnotationTableCell::ClearFillKey ()               {                 m_instanceHolder.SetToNull  (TEXTTABLE_CELL_PROP_FillKey); }
+void   AnnotationTableCell::SetFillKey (uint32_t fillKey)   { m_fillKey.SetValue (fillKey); SetHasChanges(); }
+void   AnnotationTableCell::ClearFillKey ()                 { m_fillKey.Clear();            SetHasChanges(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   AnnotationTableCell::ApplyToFillRuns ()
     {
-    TextTableRowP   row             = m_table->GetRow (m_index.row);
-    FillRunsR       fillRuns        = row->GetFillRuns();
-    UInt32          verticalSpan    = GetRowSpan();
-    ECValue         val             = m_instanceHolder.GetValue (TEXTTABLE_CELL_PROP_FillKey);
+    AnnotationTableRowP row             = GetTable().GetRow (m_index.row);
+    FillRunsR           fillRuns        = row->GetFillRuns();
+    uint32_t            verticalSpan    = GetRowSpan();
 
-    if ( ! val.IsNull() && 0 == (UInt32) val.GetInteger())
+    if (m_fillKey.IsValid() && 0 == m_fillKey.GetValue())
         {
         fillRuns.CreateGap (NULL, m_index.col, GetColumnSpan());
         }
     else
         {
-        UInt32  runKey = val.IsNull() ? 0 : (UInt32) val.GetInteger();
+        uint32_t  runKey = m_fillKey.IsNull() ? 0 : m_fillKey.GetValue();
 
         fillRuns.ApplyRun (runKey, verticalSpan, m_index.col, GetColumnSpan());
-        fillRuns.MergeRedundantRuns (m_table);
+        fillRuns.MergeRedundantRuns (&GetTable());
         }
 
-    for (UInt32 iRow = 1; iRow < verticalSpan; iRow++)
+    for (uint32_t iRow = 1; iRow < verticalSpan; iRow++)
         {
-        UInt32          rowIndex        = m_index.row + iRow;
-        TextTableRowP   spannedRow      = m_table->GetRow (rowIndex);
-        FillRunsR       spannedFillRuns = spannedRow->GetFillRuns();
+        uint32_t                rowIndex        = m_index.row + iRow;
+        AnnotationTableRowP     spannedRow      = GetTable().GetRow (rowIndex);
+        FillRunsR               spannedFillRuns = spannedRow->GetFillRuns();
 
         spannedFillRuns.CreateGap (NULL, m_index.col, GetColumnSpan());
         }
@@ -2630,7 +2825,7 @@ void   AnnotationTableCell::ApplyToFillRuns ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   AnnotationTableCell::SetFillSymbology (TableSymbologyValuesCR symb)
+void   AnnotationTableCell::SetFillSymbology (AnnotationTableSymbologyValuesCR symb)
     {
     if ( ! symb.HasFillVisible())
         {
@@ -2646,10 +2841,10 @@ void   AnnotationTableCell::SetFillSymbology (TableSymbologyValuesCR symb)
         if (UNEXPECTED_CONDITION ( ! symb.HasFillColor()))
             return;
 
-        FillEntry      newFill;
-        newFill.SetFillColor (symb.GetFillColor());
+        SymbologyEntry      newSymbology (GetTable(), 0);
+        newSymbology.SetFillColor (symb.GetFillColor());
 
-        UInt32 newKey = m_table->GetFillDictionary().FindOrAddFill (newFill);
+        uint32_t newKey = GetTable().GetSymbologyDictionary().FindOrAddSymbology (newSymbology);
 
         SetFillKey (newKey);
         }
@@ -2657,7 +2852,6 @@ void   AnnotationTableCell::SetFillSymbology (TableSymbologyValuesCR symb)
     ApplyToFillRuns();
     }
 
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2791,18 +2985,60 @@ void            AnnotationTableCell::SetAsMergedCellInterior (bool isMerged)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::GetFillSymbology (AnnotationTableSymbologyValuesR symb) const
+    {
+    uint32_t fillKey = 0;
+
+    if (m_fillKey.IsValid())
+        fillKey = m_fillKey.GetValue();
+
+    if (0 == fillKey)
+        {
+        symb.SetFillVisible (false);
+        return;
+        }
+
+    SymbologyDictionary const&   dictionary  = GetTable().GetSymbologyDictionary();
+    SymbologyEntryCP             entry       = dictionary.GetSymbology (fillKey);
+
+    if (UNEXPECTED_CONDITION (nullptr == entry))
+        {
+        symb.SetFillVisible (false);
+        return;
+        }
+
+    symb.SetFillVisible (true);
+    symb.SetFillColor (entry->GetFillColor());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableCell::GetEdgeSymbology (bvector<AnnotationTableSymbologyValues>& symb, TableCellListEdges edges) const
+    {
+    bvector<AnnotationTableCellIndex> indices;
+    indices.push_back (m_index);
+    GetTable().GetEdgeSymbology (symb, edges, indices);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 /*ctor*/  AnnotationTableColumn::AnnotationTableColumn (AnnotationTableElementR table, int index)
     :
     AnnotationTableAspect (table), m_index (index)
     {
+    AnnotationTableEdgeRun edgeRun (table);
+    edgeRun.Initialize (EdgeRunHostType::Column, index);
+    m_edgeRuns.push_back (edgeRun);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/  AnnotationTableColumn::AnnotationTableColumn (AnnotationTableColumnCR rhs) : AnnotationTableAspect (rhs)
+/*ctor*/  AnnotationTableColumn::AnnotationTableColumn (AnnotationTableColumnCR rhs) : AnnotationTableAspect (rhs, false)
     {
     CopyDataFrom (rhs);
     }
@@ -2812,6 +3048,7 @@ void            AnnotationTableCell::SetAsMergedCellInterior (bool isMerged)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AnnotationTableColumnR AnnotationTableColumn::operator= (AnnotationTableColumnCR rhs)
     {
+    AnnotationTableAspect::operator= (rhs);
     CopyDataFrom (rhs);
 
     return *this;
@@ -2820,13 +3057,12 @@ AnnotationTableColumnR AnnotationTableColumn::operator= (AnnotationTableColumnCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AnnotationTableColumn::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+void    AnnotationTableColumn::CopyDataFrom (AnnotationTableColumnCR rhs)
     {
-    AnnotationTableColumnCR   rhs = static_cast <AnnotationTableColumnCR> (rhsAspect);
-
     m_index             = rhs.m_index;
     m_widthLock         = rhs.m_widthLock;
     m_width             = rhs.m_width;
+    m_edgeRuns          = rhs.m_edgeRuns;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2836,9 +3072,9 @@ PropertyNames   AnnotationTableColumn::GetPropertyNames()
     {
     PropertyNames names =
         {
-        { (int) AnnotationTableColumn::PropIndex::ColumnIndex,  COLUMN_PARAM_Index      },
-        { (int) AnnotationTableColumn::PropIndex::WidthLock,    COLUMN_PARAM_WidthLock  },
-        { (int) AnnotationTableColumn::PropIndex::Width,        COLUMN_PARAM_Width      },
+        { (int) PropIndex::ColumnIndex,  COLUMN_PARAM_Index      },
+        { (int) PropIndex::WidthLock,    COLUMN_PARAM_WidthLock  },
+        { (int) PropIndex::Width,        COLUMN_PARAM_Width      },
         };
 
     return names;
@@ -2862,7 +3098,7 @@ void AnnotationTableColumn::_FlushChangesToProperties()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-bool    AnnotationTableColumn::_ShouldBePersisted() const
+bool    AnnotationTableColumn::_ShouldBePersisted (AnnotationTableSerializer&) const
     {
     if (m_width.IsValid())         return true;
     if (m_widthLock.IsValid())     return true;
@@ -2904,11 +3140,9 @@ void    AnnotationTableColumn::SetIndex (uint32_t val)
     m_index = val;
     SetHasChanges();
 
-#if defined (NEEDSWORK)
     // Adjust all the edge runs owned by this column
-    for (TextTableEdgeRun& edgeRun: m_edgeRuns)
+    for (AnnotationTableEdgeRun& edgeRun: m_edgeRuns)
         edgeRun.SetHostIndex (m_index);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2942,6 +3176,20 @@ bvector<AnnotationTableCellP>     AnnotationTableColumn::FindCells() const
         }
 
     return cells;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeRunsR    AnnotationTableColumn::GetEdgeRuns (bool left)
+    {
+    if (0 == m_index && left)
+        return GetTable().GetLeftEdgeRuns();
+
+    if (left)
+        return GetTable().GetColumn (m_index - 1)->GetEdgeRuns();
+
+    return GetEdgeRuns();
     }
 
 //---------------------------------------------------------------------------------------
@@ -3158,7 +3406,7 @@ void AnnotationTableColumn::SetWidthFromContents ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/  MergeEntry::MergeEntry (MergeEntryCR rhs) : AnnotationTableAspect (rhs)
+/*ctor*/  MergeEntry::MergeEntry (MergeEntryCR rhs) : AnnotationTableAspect (rhs, false)
     {
     CopyDataFrom (rhs);
     }
@@ -3168,6 +3416,7 @@ void AnnotationTableColumn::SetWidthFromContents ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MergeEntryR MergeEntry::operator= (MergeEntryCR rhs)
     {
+    AnnotationTableAspect::operator= (rhs);
     CopyDataFrom (rhs);
 
     return *this;
@@ -3176,10 +3425,8 @@ MergeEntryR MergeEntry::operator= (MergeEntryCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MergeEntry::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+void    MergeEntry::CopyDataFrom (MergeEntryCR rhs)
     {
-    MergeEntryCR   rhs = static_cast <MergeEntryCR> (rhsAspect);
-
     m_rootCell      = rhs.m_rootCell;
     m_rowSpan       = rhs.m_rowSpan;
     m_columnSpan    = rhs.m_columnSpan;
@@ -3192,9 +3439,9 @@ PropertyNames   MergeEntry::GetPropertyNames()
     {
     PropertyNames names =
         {
-        { (int) MergeEntry::PropIndex::RootCell,        MERGEENTRY_PARAM_RootCell       },
-        { (int) MergeEntry::PropIndex::RowSpan,         MERGEENTRY_PARAM_RowSpan        },
-        { (int) MergeEntry::PropIndex::ColumnSpan,      MERGEENTRY_PARAM_ColumnSpan     },
+        { (int) PropIndex::RootCell,        MERGEENTRY_PARAM_RootCell       },
+        { (int) PropIndex::RowSpan,         MERGEENTRY_PARAM_RowSpan        },
+        { (int) PropIndex::ColumnSpan,      MERGEENTRY_PARAM_ColumnSpan     },
         };
 
     return names;
@@ -3203,7 +3450,7 @@ PropertyNames   MergeEntry::GetPropertyNames()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   10/2015
 //---------------------------------------------------------------------------------------
-bool    MergeEntry::_ShouldBePersisted() const
+bool    MergeEntry::_ShouldBePersisted (AnnotationTableSerializer&) const
     {
     if (m_rowSpan.IsValid())        return true;
     if (m_columnSpan.IsValid())     return true;
@@ -3350,6 +3597,1364 @@ void    MergeDictionary::AdjustMergesAfterIndex (uint32_t index, bool isRow, boo
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  SymbologyEntry::SymbologyEntry (AnnotationTableElementR table, uint32_t key)
+    :
+    AnnotationTableAspect (table), m_key (key)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  SymbologyEntry::SymbologyEntry (SymbologyEntryCR rhs) : AnnotationTableAspect (rhs, false)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  SymbologyEntry::SymbologyEntry (SymbologyEntryCR rhs, bool isNew) : AnnotationTableAspect (rhs, isNew)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbologyEntryR SymbologyEntry::operator= (SymbologyEntryCR rhs)
+    {
+    AnnotationTableAspect::operator= (rhs);
+    CopyDataFrom (rhs);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    SymbologyEntry::CopyDataFrom (SymbologyEntryCR rhs)
+    {
+    m_key             = rhs.m_key;
+    m_visible         = rhs.m_visible;
+    m_color           = rhs.m_color;
+    m_weight          = rhs.m_weight;
+    m_lineStyleId     = rhs.m_lineStyleId;
+    m_lineStyleScale  = rhs.m_lineStyleScale;
+    m_fillColor       = rhs.m_fillColor;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+PropertyNames   SymbologyEntry::GetPropertyNames()
+    {
+    PropertyNames names =
+        {
+        { (int) PropIndex::Key,             SYMBOLOGYENTRY_PARAM_Key            },
+        { (int) PropIndex::Visible,         SYMBOLOGYENTRY_PARAM_Visible        },
+        { (int) PropIndex::Color,           SYMBOLOGYENTRY_PARAM_Color          },
+        { (int) PropIndex::Weight,          SYMBOLOGYENTRY_PARAM_Weight         },
+        { (int) PropIndex::LineStyleId,     SYMBOLOGYENTRY_PARAM_LineStyleId    },
+        { (int) PropIndex::LineStyleScale,  SYMBOLOGYENTRY_PARAM_LineStyleScale },
+        { (int) PropIndex::FillColor,       SYMBOLOGYENTRY_PARAM_FillColor      },
+        };
+
+    return names;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+bool    SymbologyEntry::_ShouldBePersisted (AnnotationTableSerializer&) const
+    {
+    if (0 == m_key)
+        return true;    // Every table needs at least one entry.
+
+    if (m_visible.IsValid())            return true;
+    if (m_color.IsValid())              return true;
+    if (m_weight.IsValid())             return true;
+    if (m_lineStyleId.IsValid())        return true;
+    //if (m_lineStyleScale.IsValid())   return true;  Don't test.  If id is null don't want scale.
+    if (m_fillColor.IsValid())          return true;
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+void    SymbologyEntry::_BindProperties(ECSqlStatement& statement)
+    {
+    statement.BindInt (statement.GetParameterIndex(SYMBOLOGYENTRY_PARAM_Key), m_key);
+
+    BindBool    (statement, SYMBOLOGYENTRY_PARAM_Visible,        m_visible);
+    BindUInt    (statement, SYMBOLOGYENTRY_PARAM_Color,          m_color);
+    BindUInt    (statement, SYMBOLOGYENTRY_PARAM_Weight,         m_weight);
+    BindInt64   (statement, SYMBOLOGYENTRY_PARAM_LineStyleId,    m_lineStyleId);
+    BindDouble  (statement, SYMBOLOGYENTRY_PARAM_LineStyleScale, m_lineStyleScale);
+    BindUInt    (statement, SYMBOLOGYENTRY_PARAM_FillColor,      m_fillColor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+void  SymbologyEntry::_AssignValue (int index, IECSqlValue const& value)
+    {
+    PropIndex propIndex = static_cast <PropIndex> (index);
+
+    switch (propIndex)
+        {
+        case PropIndex::Visible:        m_visible.SetValue          (value.GetBoolean());   break;
+        case PropIndex::Color:          m_color.SetValue            (value.GetInt());       break;
+        case PropIndex::Weight:         m_weight.SetValue           (value.GetInt());       break;
+        case PropIndex::LineStyleId:    m_lineStyleId.SetValue      (value.GetInt64());     break;
+        case PropIndex::LineStyleScale: m_lineStyleScale.SetValue   (value.GetDouble());    break;
+        case PropIndex::FillColor:      m_fillColor.SetValue        (value.GetInt());       break;
+        default:                        BeAssert (false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        SymbologyEntry::GetKey () const       { return m_key; }
+void            SymbologyEntry::SetKey (uint32_t val) { m_key = val; SetHasChanges(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SymbologyEntry::HasVisible()        const { return      m_visible.IsValid();         }
+bool            SymbologyEntry::HasColor()          const { return      m_color.IsValid();           }
+bool            SymbologyEntry::HasWeight()         const { return      m_weight.IsValid();          }
+bool            SymbologyEntry::HasLineStyle()      const { return      m_lineStyleId.IsValid();     }
+bool            SymbologyEntry::GetVisible()        const { return      HasVisible() ? m_visible.GetValue() : true; }
+ColorDef        SymbologyEntry::GetColor()          const { return      ColorDef(m_color.GetValue());}
+uint32_t        SymbologyEntry::GetWeight()         const { return      m_weight.GetValue();         }
+DgnStyleId      SymbologyEntry::GetLineStyleId()    const { return      DgnStyleId(m_lineStyleId.GetValue());    }
+double          SymbologyEntry::GetLineStyleScale() const { return      m_lineStyleScale.GetValue(); }
+ColorDef        SymbologyEntry::GetFillColor()      const { return      ColorDef(m_fillColor.GetValue());   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            SymbologyEntry::ClearVisible   ()                             { m_visible.Clear();                                              SetHasChanges(); }
+void            SymbologyEntry::ClearColor     ()                             { m_color.Clear();                                                SetHasChanges(); }
+void            SymbologyEntry::ClearWeight    ()                             { m_weight.Clear();                                               SetHasChanges(); }
+void            SymbologyEntry::ClearLineStyle ()                             { m_lineStyleId.Clear(); m_lineStyleScale.Clear();                SetHasChanges(); }
+void            SymbologyEntry::ClearFillColor ()                             { m_fillColor.Clear();                                            SetHasChanges(); }
+void            SymbologyEntry::SetVisible     (bool     val)                 { m_visible.SetValue (val);                                       SetHasChanges(); }
+void            SymbologyEntry::SetColor       (ColorDef val)                 { m_color.SetValue (val.GetValue());                              SetHasChanges(); }
+void            SymbologyEntry::SetWeight      (uint32_t val)                 { m_weight.SetValue (val);                                        SetHasChanges(); }
+void            SymbologyEntry::SetLineStyle   (DgnStyleId id, double scale)  { m_lineStyleId.SetValue (id.GetValue()); m_lineStyleScale.SetValue (scale); SetHasChanges(); }
+void            SymbologyEntry::SetFillColor   (ColorDef val)                 { m_fillColor.SetValue (val.GetValue());                          SetHasChanges(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     SymbologyEntry::IsEquivalent (SymbologyEntryCR other) const
+    {
+    // If both invisible don't check the rest.
+    if ( ! GetVisible() && ! other.GetVisible())
+        return true;
+
+    if (GetVisible() != other.GetVisible())
+        return false;
+
+    if (GetColor() != other.GetColor())
+        return false;
+
+    if (GetWeight() != other.GetWeight())
+        return false;
+
+    if (GetLineStyleId() != other.GetLineStyleId())
+        return false;
+
+    if (GetLineStyleScale() != other.GetLineStyleScale())
+        return false;
+
+    if (GetFillColor() != other.GetFillColor())
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t          SymbologyDictionary::FindOrAddSymbology (SymbologyEntryR entry)
+    {
+    uint32_t      lowestKey = 0;
+
+    for (SymbologyMap::value_type const& mapEntry: *this)
+        {
+        if (lowestKey == mapEntry.first)
+            lowestKey++;
+
+        SymbologyEntryCR    currSymb = mapEntry.second;
+
+        if (currSymb.IsEquivalent (entry))
+            return mapEntry.first;
+        }
+
+    // If we get here we need to add it as new entry
+    entry.SetKey (lowestKey);
+    AddSymbology (entry);
+
+    return lowestKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SymbologyDictionary::AddSymbology (SymbologyEntryCR symbology)
+    {
+    bpair <SymbologyMap::iterator, bool> retVal;
+
+    retVal = insert (SymbologyMap::value_type (symbology.GetKey(), symbology));
+
+    return retVal.second ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbologyDictionary::SymbologyDictionary () {}
+
+// NEEDSWORK: remove?
+//SymbologyDictionary::SymbologyDictionary (bool addDefaultSymb)
+//    {
+//    if ( ! addDefaultSymb)
+//        return;
+//
+//    SymbologyEntry symbology(0);
+//    symbology.SetColor (0);
+//    symbology.SetLineStyle (0);
+//    symbology.SetWeight (0);
+//
+//    AddSymbology (symbology);
+//    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbologyEntryP    SymbologyDictionary::GetSymbology (uint32_t key)
+    {
+    SymbologyMap::iterator entry = find (key);
+
+    if (end() == entry)
+        return NULL;
+
+    return &entry->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbologyEntryCP    SymbologyDictionary::GetSymbology (uint32_t key) const
+    {
+    return (const_cast <SymbologyDictionary*> (this))->GetSymbology (key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  AnnotationTableEdgeRun::AnnotationTableEdgeRun (AnnotationTableElementR table) : AnnotationTableAspect (table) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  AnnotationTableEdgeRun::AnnotationTableEdgeRun (AnnotationTableEdgeRunCR rhs) : AnnotationTableAspect (rhs, false)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+/*ctor*/  AnnotationTableEdgeRun::AnnotationTableEdgeRun (AnnotationTableEdgeRunCR rhs, bool isNew) : AnnotationTableAspect (rhs, isNew)
+    {
+    CopyDataFrom (rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableEdgeRunR AnnotationTableEdgeRun::operator= (AnnotationTableEdgeRunCR rhs)
+    {
+    AnnotationTableAspect::operator= (rhs);
+    CopyDataFrom (rhs);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableEdgeRun::CopyDataFrom (AnnotationTableEdgeRunCR rhs)
+    {
+    m_hostType          = rhs.m_hostType;
+    m_host              = rhs.m_host;
+    m_start             = rhs.m_start;
+    m_span              = rhs.m_span;
+    m_symbologyKey      = rhs.m_symbologyKey;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+PropertyNames   AnnotationTableEdgeRun::GetPropertyNames()
+    {
+    PropertyNames names =
+        {
+        { (int) PropIndex::HostType,      EDGERUN_PARAM_HostType         },
+        { (int) PropIndex::Host,          EDGERUN_PARAM_Host             },
+        { (int) PropIndex::Start,         EDGERUN_PARAM_Start            },
+        { (int) PropIndex::Span,          EDGERUN_PARAM_Span             },
+        { (int) PropIndex::SymbologyKey,  EDGERUN_PARAM_SymbologyKey     },
+        };
+
+    return names;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+bool    AnnotationTableEdgeRun::_ShouldBePersisted (AnnotationTableSerializer& serializer) const
+    {
+    // If the run uses a non-default symbology we need to store that.
+    if (0 != GetSymbologyKey())
+        return true;
+
+    // If the run represents a span that is not 'natural' we need to store that.
+    AnnotationTableElementR table      = serializer.GetElement();
+    EdgeRunsP               edgeRuns   = GetHostEdgeRuns (table);
+    uint32_t                startIndex = GetStartIndex ();
+
+    if (UNEXPECTED_CONDITION (NULL == edgeRuns))
+        return true;
+
+    if (0 != startIndex && !edgeRuns->IsGapEnd (startIndex))
+        return true;
+
+    uint32_t    endIndex = GetEndIndex ();
+    uint32_t    maxIndex = GetHostMaxIndex (table);
+
+    if (maxIndex != endIndex && !edgeRuns->IsGapStart (endIndex, maxIndex))
+        return true;
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+void    AnnotationTableEdgeRun::_BindProperties(ECSqlStatement& statement)
+    {
+    statement.BindInt (statement.GetParameterIndex(EDGERUN_PARAM_HostType),     (uint32_t)  m_hostType    );
+    statement.BindInt (statement.GetParameterIndex(EDGERUN_PARAM_Host),                     m_host        );
+    statement.BindInt (statement.GetParameterIndex(EDGERUN_PARAM_Start),                    m_start       );
+    statement.BindInt (statement.GetParameterIndex(EDGERUN_PARAM_Span),                     m_span        );
+    statement.BindInt (statement.GetParameterIndex(EDGERUN_PARAM_SymbologyKey),             m_symbologyKey);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+void  AnnotationTableEdgeRun::_AssignValue (int index, IECSqlValue const& value)
+    {
+    PropIndex propIndex = static_cast <PropIndex> (index);
+
+    switch (propIndex)
+        {
+        case PropIndex::Host:          m_host         = value.GetInt();    break;
+        case PropIndex::Start:         m_start        = value.GetInt();    break;
+        case PropIndex::Span:          m_span         = value.GetInt();    break;
+        case PropIndex::SymbologyKey:  m_symbologyKey = value.GetInt();    break;
+        default:                       BeAssert (false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableEdgeRun::_DiscloseSymbologyKeys (bset<uint32_t>& keys)
+    {
+    keys.insert (GetSymbologyKey());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      AnnotationTableEdgeRun::ToString() const
+    {
+    Utf8String     outStr, hostStr;
+
+    switch (GetHostType())
+        {
+        case EdgeRunHostType::Top:      hostStr = "Top";                               break;
+        case EdgeRunHostType::Row:      hostStr.Sprintf ("Row:%d", GetHostIndex());    break;
+        case EdgeRunHostType::Left:     hostStr = "Left";                              break;
+        case EdgeRunHostType::Column:   hostStr.Sprintf ("Col:%d", GetHostIndex());    break;
+        }
+
+    outStr.Sprintf ("Host %ls, Range (%d - %d), key %d, instance=%ls", hostStr.c_str(), GetStartIndex(), GetEndIndex(), GetSymbologyKey());
+
+    return outStr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableEdgeRun::Initialize (EdgeRunHostType hostType, uint32_t hostIndex)
+    {
+    SetHostType (hostType);
+    SetSymbologyKey (0);
+
+    if (EdgeRunHostType::Column == hostType || EdgeRunHostType::Row == hostType)
+        SetHostIndex (hostIndex);
+
+    bool isHorizontal = (EdgeRunHostType::Top == hostType || EdgeRunHostType::Row == hostType);
+
+    SetStartIndex (0);
+    SetSpan (isHorizontal ? GetTable().GetColumnCount() : GetTable().GetRowCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        AnnotationTableEdgeRun::GetHostMaxIndex (AnnotationTableElementCR table) const
+    {
+    switch (GetHostType())
+        {
+        case EdgeRunHostType::Top:
+        case EdgeRunHostType::Row:
+            {
+            return table.GetColumnCount();
+            }
+        case EdgeRunHostType::Left:
+        case EdgeRunHostType::Column:
+            {
+            return table.GetRowCount();
+            }
+        }
+
+    BeAssert(false);
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeRunsP       AnnotationTableEdgeRun::GetHostEdgeRuns (AnnotationTableElementR table) const
+    {
+    EdgeRunHostType hostType    = GetHostType();
+    uint32_t        hostIndex   = GetHostIndex();
+
+    return  table.GetEdgeRuns (hostType, hostIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableEdgeRun::CanMergeWith (AnnotationTableEdgeRunCR other) const
+    {
+    return (GetSymbologyKey() == other.GetSymbologyKey());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableEdgeRun::OnRemoved (AnnotationTableElementR table)
+    {
+    table.DeleteAspect (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        AnnotationTableEdgeRun::GetEndIndex () const
+    {
+    return GetStartIndex() + GetSpan();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+/* ctor */      AnnotationTableFillRun::AnnotationTableFillRun ()   { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+/* ctor */      AnnotationTableFillRun::AnnotationTableFillRun (AnnotationTableFillRunCR other, bool unused)  { From (other); }
+void            AnnotationTableFillRun::Initialize (AnnotationTableFillRunCR other, bool)          { From (other); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableFillRunR   AnnotationTableFillRun::operator= (AnnotationTableFillRunCR other)
+    {
+    From (other);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableFillRun::From (AnnotationTableFillRunCR other)
+    {
+    m_hostIndex     = other.m_hostIndex;
+    m_startIndex    = other.m_startIndex;
+    m_span          = other.m_span;
+    m_fillKey       = other.m_fillKey;
+    m_verticalSpan  = other.m_verticalSpan;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableFillRun::Initialize (AnnotationTableElementCR table, uint32_t hostIndex)
+    {
+    m_hostIndex     = hostIndex;
+    m_startIndex    = 0;
+    m_span          = table.GetColumnCount();
+    m_fillKey       = 0;
+    m_verticalSpan  = 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableFillRun::CanMergeWith (AnnotationTableFillRunCR other) const
+    {
+    if (m_fillKey != other.m_fillKey)
+        return false;
+
+    if (m_verticalSpan != other.m_verticalSpan)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t          AnnotationTableFillRun::GetEndIndex () const
+    {
+    return GetStartIndex() + GetSpan();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        AnnotationTableFillRun::GetHostIndex    ()        const { return m_hostIndex; }
+uint32_t        AnnotationTableFillRun::GetStartIndex   ()        const { return m_startIndex; }
+uint32_t        AnnotationTableFillRun::GetSpan         ()        const { return m_span; }
+uint32_t        AnnotationTableFillRun::GetFillKey      ()        const { return m_fillKey; }
+uint32_t        AnnotationTableFillRun::GetVerticalSpan ()        const { return m_verticalSpan; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableFillRun::SetHostIndex    (uint32_t     val)  { m_hostIndex    = val; }
+void            AnnotationTableFillRun::SetStartIndex   (uint32_t     val)  { m_startIndex   = val; }
+void            AnnotationTableFillRun::SetSpan         (uint32_t     val)  { m_span         = val; }
+void            AnnotationTableFillRun::SetFillKey      (uint32_t     val)  { m_fillKey      = val; }
+void            AnnotationTableFillRun::SetVerticalSpan (uint32_t     val)  { m_verticalSpan = val; }
+
+/*---------------------------------------------------------------------------------**//**
+* This templated function is used to share logic used to modify both EdgeRuns and FillRuns.
+*
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T_RunType, typename T_InitializerType>
+static void     insertSpan (bvector<T_RunType>& runVector, uint32_t insertIndex, uint32_t insertSpan, T_InitializerType const& initializer)
+    {
+    bvector<T_RunType>::iterator    iter = runVector.begin();
+    bvector<T_RunType>::iterator    seedRun = iter;
+    bool                            expandRun = false;
+
+    // Find the enclosing run (if any)
+    while (iter < runVector.end())
+        {
+        if ((*iter).GetStartIndex() >= insertIndex)
+            break;          // we passed it
+
+        if ((*iter).GetEndIndex() < insertIndex)
+            {
+            seedRun = iter;
+            ++iter;
+            continue;       // not there yet
+            }
+
+        expandRun = true;   // found it
+        break;
+        }
+
+    if (expandRun)
+        {
+        uint32_t  runSpan = (*iter).GetSpan();
+
+        (*iter).SetSpan (runSpan + insertSpan);
+        }
+    else
+        {
+        T_RunType newRun = initializer.CreateNewRun (seedRun);
+
+        newRun.SetStartIndex    (insertIndex);
+        newRun.SetSpan          (insertSpan);
+        iter = runVector.insert (iter, newRun);
+        }
+
+    ++iter;
+
+    // After the insertion or expansion just push all the runs to the right
+    while (iter < runVector.end())
+        {
+        uint32_t  runStartIndex = (*iter).GetStartIndex();
+
+        (*iter).SetStartIndex (runStartIndex + insertSpan);
+
+        ++iter;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This templated function is used to share logic used to modify both EdgeRuns and FillRuns.
+*
+* @bsimethod                                                    JoshSchifter    09/14
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T_RunType>
+static typename bvector<T_RunType>::iterator    fillGap (bvector<T_RunType>& runVector, uint32_t insertIndex, uint32_t insertSpan)
+    {
+    bvector<T_RunType>::iterator    iter = runVector.begin();
+    bvector<T_RunType>::iterator    seedRun = iter;
+    bool                            expandRun = false;
+
+    // Iterate to the run just after the gap
+    while (iter < runVector.end())
+        {
+        if ((*iter).GetStartIndex() > insertIndex)
+            break;          // we found a run to the right of the gap, good
+
+        if ((*iter).GetEndIndex() <= insertIndex)
+            {
+            seedRun = iter;
+            ++iter;
+            continue;       // not there yet, keep looking
+            }
+
+        // The insertIndex is within a run.  It's supposed to be in a gap!
+        expandRun = true;
+        break;
+        }
+
+    if ( ! expandRun)
+        {
+        // The usual case.  Add a new run previous to the iter.  In the gap.
+
+        // If there is a next run, make sure we don't overlap it
+        if (iter != runVector.end() && (*iter).GetStartIndex() < insertIndex + insertSpan)
+            {
+            // This is not supposed to happen, we are supposed to be filling a gap.
+            BeAssert(false);
+            insertSpan = (*iter).GetStartIndex() - insertIndex;
+            }
+
+        // For the seed run, any run from the same vector will do since all the callers should
+        // fix up the symbology key based on better context.  So, we could just use runVector.begin()
+        // here and it shouldn't make any difference.  Instead, I'm using a run that is closer to the
+        // new one.  If the callers don't do their job right this is more likely to be correct.
+        T_RunType newRun (*seedRun);
+        newRun.SetStartIndex    (insertIndex);
+        newRun.SetSpan          (insertSpan);
+
+        return runVector.insert (iter, newRun);
+        }
+
+    // Something went wrong.  Expand the current run to enclose the requested span.
+    BeAssert(false);
+
+    uint32_t  runStart = (*iter).GetStartIndex();
+    uint32_t  runEnd   = (*iter).GetEndIndex();
+
+    if (runEnd >= insertIndex + insertSpan)
+        {
+        // nothing to do, the run already encloses the requested span.
+        }
+    else
+        {
+        bvector<T_RunType>::iterator    lookAheadIter = iter;
+        ++lookAheadIter;
+
+            // If there is a next run, don't overlap it
+        if (lookAheadIter != runVector.end() && (*lookAheadIter).GetStartIndex() < insertIndex + insertSpan)
+            insertSpan = (*lookAheadIter).GetStartIndex() - insertIndex;
+
+        uint32_t  newSpan = insertSpan - (insertIndex - runStart);
+        (*iter).SetSpan (newSpan);
+        }
+
+    return iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This templated function is used to share logic used to modify both EdgeRuns and FillRuns.
+*
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T_RunType>
+static void     mergeRedundantRuns (bvector<T_RunType>& runVector, AnnotationTableElementP table)
+    {
+    if (runVector.empty())
+        return;
+
+    bvector<T_RunType>::iterator    iter = runVector.begin();
+
+    while (true)
+        {
+        bvector<T_RunType>::iterator    nextIter = iter;
+        ++nextIter;
+
+        if (runVector.end() == nextIter)
+            break;
+
+        T_RunType&   thisRun = *iter;
+        T_RunType&   nextRun = *nextIter;
+
+        // If there is a gap between the runs they cannot be merged.
+        if (thisRun.GetEndIndex() != nextRun.GetStartIndex())
+            {
+            ++iter;
+            continue;
+            }
+
+        // If they don't have the same symbology they cannot be merged
+        if ( ! thisRun.CanMergeWith (nextRun))
+            {
+            ++iter;
+            continue;
+            }
+
+        // Consume the combined range into thisRun and delete nextRun
+        thisRun.SetSpan (thisRun.GetSpan() + nextRun.GetSpan());
+
+        if (NULL != table)
+            nextRun.OnRemoved (*table);
+
+        runVector.erase (nextIter);
+
+        // Do NOT advance the iterator we want to consider thisRun again
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This templated function is used to share logic used to modify both EdgeRuns and FillRuns.
+*
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T_RunType, typename T_RunModifier>
+static typename bvector<T_RunType>::iterator    modifySpan (bvector<T_RunType>* removedRuns, bvector<T_RunType>& runVector, uint32_t modStartIndex, uint32_t modSpan, T_RunModifier& modifier)
+    {
+    /*----------------------------------------------------------------------------
+      Splits any edges at the specified span start / end.  Call the modifier
+      for each edge within the specified span.
+    ----------------------------------------------------------------------------*/
+    uint32_t                        modEndIndex = modStartIndex + modSpan;
+    bvector<T_RunType>::iterator    iter = runVector.begin();
+
+    while (iter < runVector.end())
+        {
+        uint32_t  runStartIndex = (*iter).GetStartIndex();
+        uint32_t  runEndIndex   = (*iter).GetEndIndex();
+
+        if (runStartIndex >= modEndIndex)
+            {
+            // mod     ooo
+            // mod     oooo
+            // run     ----|xxxxx|----
+            // result  ----|xxxxx|-----     No change and stop
+            break;
+            }
+
+        if (runEndIndex <= modStartIndex)
+            {
+            // mod                 ooo
+            // mod                oooo
+            // run     ----|xxxxx|----
+            // result  ----|xxxxx|----      No change and continue
+            ++iter;
+            continue;
+            }
+
+        if (runStartIndex >= modStartIndex &&
+            runEndIndex   <= modEndIndex)
+            {
+            // mod         oooooooooo
+            // mod         ooooooo
+            // mod       ooooooooo
+            // mod       ooooooooooo
+            // run     ----|xxxxx|----
+            // result  ----ooooooo----      The whole run is consumed and continue
+
+            if (modifier.CreateGap())
+                {
+                if (removedRuns)
+                    removedRuns->push_back (*iter);
+
+                iter = runVector.erase (iter);
+                continue;
+                }
+
+            modifier.ModifyRun (*iter);
+            ++iter;
+            continue;
+            }
+
+        if (runStartIndex >= modStartIndex &&
+            runEndIndex   >  modEndIndex)
+            {
+            // mod        ooooo
+            // mod         oooo
+            // run     ----|xxxxx|----
+            // result  ----oooo|x|----      Push the run to the right and stop
+            if ( ! modifier.CreateGap())
+                {
+                T_RunType newRun (*iter);
+                newRun.SetStartIndex    (runStartIndex);
+                newRun.SetSpan          (modEndIndex - runStartIndex);
+                iter = runVector.insert (iter, newRun);
+                modifier.ModifyRun (*iter);
+                ++iter;
+                }
+
+            (*iter).SetStartIndex (modEndIndex);
+            (*iter).SetSpan (runEndIndex - modEndIndex);
+
+            break;
+            }
+
+        if (runStartIndex <  modStartIndex &&
+            runEndIndex   <= modEndIndex)
+            {
+            // mod            oooo
+            // mod            ooooo
+            // run     ----|xxxxx|----
+            // result  ----|x|oooo----      Push the run to the left and continue
+            (*iter).SetSpan (modStartIndex - runStartIndex);
+
+            if ( ! modifier.CreateGap())
+                {
+                T_RunType newRun (*iter, true);
+                newRun.SetStartIndex    (modStartIndex);
+                newRun.SetSpan          (runEndIndex - modStartIndex);
+                iter = runVector.insert (++iter, newRun);
+                modifier.ModifyRun (*iter);
+                }
+
+            ++iter;
+            continue;
+            }
+
+        if (runStartIndex < modStartIndex &&
+            runEndIndex   > modEndIndex)
+            {
+            // mod            o
+            // run     ----|xxxxx|----
+            // result  ----|x|o|x|----      Split the run in three and stop
+
+            (*iter).SetSpan (modStartIndex - runStartIndex);
+
+            bvector<T_RunType>::iterator    preSplitIter = iter;
+
+            if ( ! modifier.CreateGap())
+                {
+                T_RunType newRun (*iter);
+                newRun.SetStartIndex    (modStartIndex);
+                newRun.SetSpan          (modEndIndex - modStartIndex);
+                iter = runVector.insert (++iter, newRun);
+                modifier.ModifyRun (*iter);
+                }
+
+            // This edge will occur after the modified span.
+            T_RunType postSplitRun (*preSplitIter);
+            postSplitRun.SetStartIndex    (modEndIndex);
+            postSplitRun.SetSpan          (runEndIndex - modEndIndex);
+            iter = runVector.insert (++iter, postSplitRun);
+
+            break;
+            }
+
+        BeAssert (false);
+        break;
+        }
+
+    return iter;
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+template <typename T_RunType>
+struct RunGapCreator
+{
+bool  CreateGap () { return true; }
+void  ModifyRun (T_RunType& run) {}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct FillRunSymbologyModifier
+{
+private:
+    uint32_t                m_fillKey;
+    uint32_t                m_verticalSpan;
+
+public:
+/* ctor */  FillRunSymbologyModifier (uint32_t fillKey, uint32_t verticalSpan)
+    :
+    m_fillKey (fillKey),
+    m_verticalSpan (verticalSpan)
+    {
+    };
+
+    bool  CreateGap () { return false; }
+
+    void  ModifyRun (AnnotationTableFillRunR fillRun)
+        {
+        uint32_t          oldKey = fillRun.GetFillKey();
+        uint32_t          oldVerticalSpan = fillRun.GetVerticalSpan();
+
+        if (oldKey == m_fillKey && oldVerticalSpan == m_verticalSpan)
+            return;
+
+        fillRun.SetFillKey (m_fillKey);
+        fillRun.SetVerticalSpan (m_verticalSpan);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            FillRuns::MergeRedundantRuns (AnnotationTableElementP table)
+    {
+    mergeRedundantRuns (*this, table);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            FillRuns::ApplyRun (uint32_t fillKey, uint32_t verticalSpan, uint32_t startIndex, uint32_t span)
+    {
+    FillRunSymbologyModifier modifier (fillKey, verticalSpan);
+
+    modifySpan ((FillRuns*) NULL, *this, startIndex, span, modifier);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+FillRuns::iterator    FillRuns::CreateGap (FillRunsP removedRuns, uint32_t gapStartIndex, uint32_t gapSpan)
+    {
+    /*----------------------------------------------------------------------------
+      Opens a non-adressed gap in a list of edge runs.
+      Returns an iterator at the position before the gap suitable for insertion.
+    ----------------------------------------------------------------------------*/
+    RunGapCreator <AnnotationTableFillRun>  gapCreator;
+
+    return modifySpan (removedRuns, *this, gapStartIndex, gapSpan, gapCreator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            FillRuns::InsertSpan (uint32_t startIndex, uint32_t span, IFillRunInitializer const& initializer)
+    {
+    insertSpan (*this, startIndex, span, initializer);
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct FillRunInitializer : IFillRunInitializer
+    {
+    uint32_t                    m_hostIndex;
+
+    FillRunInitializer (uint32_t i) : m_hostIndex(i) { }
+
+    virtual AnnotationTableFillRun CreateNewRun (AnnotationTableFillRunCP seedRun) const override
+        {
+        AnnotationTableFillRun newRun;
+
+        if (nullptr != seedRun)
+            {
+            newRun = *seedRun;
+            return newRun;
+            }
+
+        newRun.SetHostIndex (m_hostIndex);
+        newRun.SetFillKey (0);
+
+        return newRun;
+        }
+    };
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct EdgeRunSymbologyModifier
+{
+private:
+    SymbologyDictionary&                m_symbologyDictionary;
+    AnnotationTableSymbologyValuesCR    m_symbology;
+
+public:
+/* ctor */  EdgeRunSymbologyModifier (AnnotationTableSymbologyValuesCR symb, SymbologyDictionary& dict)
+    :
+    m_symbology (symb),
+    m_symbologyDictionary (dict)
+    {};
+
+    bool  CreateGap () { return false; }
+
+    void  ModifyRun (AnnotationTableEdgeRunR edgeRun)
+        {
+        uint32_t            oldKey = edgeRun.GetSymbologyKey();
+        SymbologyEntryP     fromDictionary = m_symbologyDictionary.GetSymbology(oldKey);
+
+        if (UNEXPECTED_CONDITION (NULL == fromDictionary))
+            return;
+
+        bool needToChange = false;
+
+        if ( ! needToChange && m_symbology.HasLineVisible())  needToChange |= (fromDictionary->GetVisible()        != m_symbology.GetLineVisible());
+        if ( ! needToChange && m_symbology.HasLineColor())    needToChange |= (fromDictionary->GetColor()          != m_symbology.GetLineColor());
+        if ( ! needToChange && m_symbology.HasLineStyle())    needToChange |= (fromDictionary->GetLineStyleId()    != m_symbology.GetLineStyleId());
+        if ( ! needToChange && m_symbology.HasLineStyle())    needToChange |= (fromDictionary->GetLineStyleScale() != m_symbology.GetLineStyleScale());
+        if ( ! needToChange && m_symbology.HasLineWeight())   needToChange |= (fromDictionary->GetWeight()         != m_symbology.GetLineWeight());
+
+        if ( ! needToChange)
+            return;
+
+        SymbologyEntry      newSymbology (*fromDictionary, true);
+
+        if (m_symbology.HasLineVisible())   newSymbology.SetVisible   (m_symbology.GetLineVisible());
+        if (m_symbology.HasLineColor())     newSymbology.SetColor     (m_symbology.GetLineColor());
+        if (m_symbology.HasLineStyle())     newSymbology.SetLineStyle (m_symbology.GetLineStyleId(), m_symbology.GetLineStyleScale());
+        if (m_symbology.HasLineWeight())    newSymbology.SetWeight    (m_symbology.GetLineWeight());
+
+        uint32_t newKey = m_symbologyDictionary.FindOrAddSymbology (newSymbology);
+
+        edgeRun.SetSymbologyKey (newKey);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      EdgeRuns::ToString() const
+    {
+    uint32_t    count = 0;
+    Utf8String  outStr;
+
+    outStr.append ("   Run Collection:\n");
+
+    for (AnnotationTableEdgeRunCR edgeRun: *this)
+        {
+        Utf8String runStr;
+
+        runStr.Sprintf ("      %d) %ls\n", count++, edgeRun.ToString().c_str());
+
+        outStr.append (runStr);
+        }
+
+    return outStr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    EdgeRuns::IsGapEnd (uint32_t index) const
+    {
+    if (0 == index)
+        return false;
+
+    const_iterator  iter = begin();
+    uint32_t        previousRunEnd = 0;
+
+    while (iter < end())
+        {
+        AnnotationTableEdgeRunCR  edgeRun = *iter;
+        uint32_t                  startIndex = edgeRun.GetStartIndex();
+
+        if (startIndex > index)
+            return false;
+
+        if (startIndex == index)
+            return startIndex > previousRunEnd;
+
+        previousRunEnd = edgeRun.GetEndIndex();
+        ++iter;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    EdgeRuns::IsGapStart (uint32_t index, uint32_t maxIndex) const
+    {
+    const_iterator  iter = begin();
+    bool            onRunEnd = false;
+    uint32_t        endIndex = 0;
+
+    while (iter < end())
+        {
+        AnnotationTableEdgeRunCR  edgeRun = *iter;
+
+        if (onRunEnd)           // return true if this run is a gap
+            return (edgeRun.GetStartIndex() > index);
+
+        endIndex = edgeRun.GetEndIndex();
+
+        if (endIndex > index)
+            return false;       // we passed it
+
+        if (endIndex < index)
+            {
+            ++iter;
+            continue;           // not there yet
+            }
+
+        if (endIndex == index)
+            {
+            onRunEnd = true;
+            ++iter;
+            continue;           // check if the next run is a gap
+            }
+        }
+
+    return maxIndex != endIndex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableEdgeRunCP  EdgeRuns::GetSpanningRun (uint32_t index) const
+    {
+    for (AnnotationTableEdgeRunCR edgeRun : *this)
+        {
+        if (edgeRun.GetStartIndex() > index)
+            break;      // passed it
+
+        if (edgeRun.GetEndIndex() <= index)
+            continue;   // not there yet
+
+        return &edgeRun;
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            EdgeRuns::MergeRedundantRuns (AnnotationTableElementP table)
+    {
+    mergeRedundantRuns (*this, table);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeRuns::iterator    EdgeRuns::CreateGap (EdgeRunsP removedRuns, uint32_t gapStartIndex, uint32_t gapSpan)
+    {
+    /*----------------------------------------------------------------------------
+      Opens a non-adressed gap in a list of edge runs.
+      Returns an iterator at the position before the gap suitable for insertion.
+    ----------------------------------------------------------------------------*/
+    RunGapCreator <AnnotationTableEdgeRun>  gapCreator;
+
+    return modifySpan (removedRuns, *this, gapStartIndex, gapSpan, gapCreator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    EdgeRuns::CloseSpan (EdgeRunsP removedRuns, uint32_t startIndex, uint32_t span)
+    {
+    EdgeRuns::iterator  iter = CreateGap (removedRuns, startIndex, span);
+
+    while (iter < end())
+        {
+        uint32_t oldStartIndex = (*iter).GetStartIndex();
+
+        (*iter).SetStartIndex (oldStartIndex - span);
+
+        ++iter;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    EdgeRuns::DeleteSpan (AnnotationTableElementR table, uint32_t startIndex, uint32_t span)
+    {
+    EdgeRuns    removedRuns;
+
+    CloseSpan (&removedRuns, startIndex, span);
+
+    for (AnnotationTableEdgeRunR edgeRun: removedRuns)
+        table.DeleteAspect (edgeRun);
+
+    MergeRedundantRuns (&table);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    EdgeRuns::InsertSpan (uint32_t startIndex, uint32_t span, IEdgeRunInitializer const& initializer)
+    {
+    insertSpan (*this, startIndex, span, initializer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    EdgeRuns::FillGap (uint32_t startIndex, uint32_t span)
+    {
+    if (UNEXPECTED_CONDITION (this->empty()))
+        return;
+
+    fillGap (*this, startIndex, span);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            EdgeRuns::Insert (AnnotationTableEdgeRunCR newEdgeRun)
+    {
+    iterator iter = CreateGap (NULL, newEdgeRun.GetStartIndex(), newEdgeRun.GetSpan());
+    insert (iter, newEdgeRun);
+
+    // This method is called during deserialization so there shouldn't be any redundant runs
+    //MergeRedundantRuns();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            EdgeRuns::SetSymbology (AnnotationTableSymbologyValuesCR symb, uint32_t applyStartIndex, uint32_t span, SymbologyDictionary& dictionary)
+    {
+    EdgeRunSymbologyModifier modifier (symb, dictionary);
+
+    modifySpan ((EdgeRuns*) nullptr, *this, applyStartIndex, span, modifier);
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct EdgeRunInitializer : IEdgeRunInitializer
+    {
+    AnnotationTableElementR m_table;
+    EdgeRunHostType         m_hostType;
+    uint32_t                m_hostIndex;
+
+    EdgeRunInitializer (AnnotationTableElementR e, EdgeRunHostType t)             : m_table(e), m_hostType(t), m_hostIndex(0) { BeAssert (EdgeRunHostType::Left == m_hostType || EdgeRunHostType::Top == m_hostType); }
+    EdgeRunInitializer (AnnotationTableElementR e, EdgeRunHostType t, uint32_t i) : m_table(e), m_hostType(t), m_hostIndex(i) { BeAssert (EdgeRunHostType::Row == m_hostType  || EdgeRunHostType::Column == m_hostType); }
+
+    virtual AnnotationTableEdgeRun CreateNewRun (AnnotationTableEdgeRun const* seedRun) const override
+        {
+        AnnotationTableEdgeRun newRun(m_table);
+
+        if (nullptr != seedRun)
+            {
+            newRun = *seedRun;
+            return newRun;
+            }
+
+        newRun.SetHostType  (m_hostType);
+        newRun.SetHostIndex (m_hostIndex);
+        newRun.SetSymbologyKey (0);
+
+        return newRun;
+        }
+    };
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct EdgeRunApplySeedModifier
+{
+private:
+    uint32_t  m_key;
+
+public:
+    /* ctor */  EdgeRunApplySeedModifier (uint32_t key) : m_key(key) {}
+
+    bool  CreateGap () { return false; }
+    void  ModifyRun (AnnotationTableEdgeRunR edgeRun) { edgeRun.SetSymbologyKey (m_key); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            EdgeRuns::ApplySeed (EdgeRunsCR seedRuns)
+    {
+    // Copy all the symbology keys from a seedRuns onto 'this'.
+
+    // This is not efficient since it restarts at the beginning of 'this' vector for
+    // every member of seedRuns vector.  Hopefully it won't matter because a) the
+    // vectors will tend to be small and b) adding new rows/cols is rare.
+    uint32_t  lastRunEnd = 0;
+
+    for (AnnotationTableEdgeRunCR seedRun : seedRuns)
+        {
+        uint32_t seedStart = seedRun.GetStartIndex();
+        uint32_t seedSpan  = seedRun.GetSpan();
+
+        if (seedStart > lastRunEnd)
+            CreateGap (NULL, lastRunEnd, seedStart - lastRunEnd);
+
+        EdgeRunApplySeedModifier modifier (seedRun.GetSymbologyKey());
+        modifySpan ((EdgeRuns*) nullptr, *this, seedStart, seedSpan, modifier);
+
+        lastRunEnd = seedStart + seedSpan;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            EdgeRuns::ApplySeedAtIndex (uint32_t newRunIndex, uint32_t newRunSpan, uint32_t seedRunIndex)
+    {
+    // Copy symbology key from edge run at seedRunIndex onto newRunIndex with span of newRunSpan.
+    AnnotationTableEdgeRunCP seedRun = this->GetSpanningRun (seedRunIndex);
+
+    if (nullptr == seedRun)
+        return;
+
+    EdgeRunApplySeedModifier modifier (seedRun->GetSymbologyKey());
+    modifySpan ((EdgeRuns*) nullptr, *this, newRunIndex, newRunSpan, modifier);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            EdgeRuns::ApplySeedKeyAtIndex (uint32_t newRunIndex, uint32_t newRunSpan, uint32_t symbologyKey)
+    {
+    // This is a dangerous method.  Bad things will happen if symbologyKey is not already in the dictionary.
+
+    EdgeRunApplySeedModifier modifier (symbologyKey);
+    modifySpan ((EdgeRuns*) nullptr, *this, newRunIndex, newRunSpan, modifier);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
@@ -3357,43 +4962,44 @@ PropertyNames   TableHeaderAspect::GetPropertyNames()
     {
     PropertyNames propNames =
         {
-        { (int) TableHeaderAspect::PropIndex::RowCount,                HEADER_PARAM_RowCount                  },
-        { (int) TableHeaderAspect::PropIndex::ColumnCount,             HEADER_PARAM_ColumnCount               },
-        { (int) TableHeaderAspect::PropIndex::TextStyleId,             HEADER_PARAM_TextStyleId               },
-        { (int) TableHeaderAspect::PropIndex::TitleRowCount,           HEADER_PARAM_TitleRowCount             }, 
-        { (int) TableHeaderAspect::PropIndex::HeaderRowCount,          HEADER_PARAM_HeaderRowCount            }, 
-        { (int) TableHeaderAspect::PropIndex::FooterRowCount,          HEADER_PARAM_FooterRowCount            }, 
-        { (int) TableHeaderAspect::PropIndex::HeaderColumnCount,       HEADER_PARAM_HeaderColumnCount         }, 
-        { (int) TableHeaderAspect::PropIndex::FooterColumnCount,       HEADER_PARAM_FooterColumnCount         }, 
-        { (int) TableHeaderAspect::PropIndex::BreakType,               HEADER_PARAM_BreakType                 }, 
-        { (int) TableHeaderAspect::PropIndex::BreakPosition,           HEADER_PARAM_BreakPosition             }, 
-        { (int) TableHeaderAspect::PropIndex::BreakLength,             HEADER_PARAM_BreakLength               }, 
-        { (int) TableHeaderAspect::PropIndex::BreakGap,                HEADER_PARAM_BreakGap                  }, 
-        { (int) TableHeaderAspect::PropIndex::RepeatHeaders,           HEADER_PARAM_RepeatHeaders             }, 
-        { (int) TableHeaderAspect::PropIndex::RepeatFooters,           HEADER_PARAM_RepeatFooters             }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultColumnWidth,      HEADER_PARAM_DefaultColumnWidth        }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultRowHeight,        HEADER_PARAM_DefaultRowHeight          }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultMarginTop,        HEADER_PARAM_DefaultMarginTop          }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultMarginBottom,     HEADER_PARAM_DefaultMarginBottom       }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultMarginLeft,       HEADER_PARAM_DefaultMarginLeft         }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultMarginRight,      HEADER_PARAM_DefaultMarginRight        }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultCellAlignment,    HEADER_PARAM_DefaultCellAlignment      }, 
-        { (int) TableHeaderAspect::PropIndex::DefaultCellOrientation,  HEADER_PARAM_DefaultCellOrientation    }, 
-        { (int) TableHeaderAspect::PropIndex::FillSymbologyKeyOddRow,  HEADER_PARAM_FillSymbologyKeyOddRow    }, 
-        { (int) TableHeaderAspect::PropIndex::FillSymbologyKeyEvenRow, HEADER_PARAM_FillSymbologyKeyEvenRow   }, 
-        { (int) TableHeaderAspect::PropIndex::TitleRowTextStyle,       HEADER_PARAM_TitleRowTextStyle         }, 
-        { (int) TableHeaderAspect::PropIndex::HeaderRowTextStyle,      HEADER_PARAM_HeaderRowTextStyle        }, 
-        { (int) TableHeaderAspect::PropIndex::FooterRowTextStyle,      HEADER_PARAM_FooterRowTextStyle        }, 
-        { (int) TableHeaderAspect::PropIndex::HeaderColumnTextStyle,   HEADER_PARAM_HeaderColumnTextStyle     }, 
-        { (int) TableHeaderAspect::PropIndex::FooterColumnTextStyle,   HEADER_PARAM_FooterColumnTextStyle     }, 
-        { (int) TableHeaderAspect::PropIndex::BackupTextHeight,        HEADER_PARAM_BackupTextHeight          }, 
-        { (int) TableHeaderAspect::PropIndex::DataSourceProviderId,    HEADER_PARAM_DataSourceProviderId      }, 
-        { (int) TableHeaderAspect::PropIndex::BodyTextHeight,          HEADER_PARAM_BodyTextHeight            }, 
-        { (int) TableHeaderAspect::PropIndex::TitleRowTextHeight,      HEADER_PARAM_TitleRowTextHeight        }, 
-        { (int) TableHeaderAspect::PropIndex::HeaderRowTextHeight,     HEADER_PARAM_HeaderRowTextHeight       }, 
-        { (int) TableHeaderAspect::PropIndex::FooterRowTextHeight,     HEADER_PARAM_FooterRowTextHeight       }, 
-        { (int) TableHeaderAspect::PropIndex::HeaderColumnTextHeight,  HEADER_PARAM_HeaderColumnTextHeight    }, 
-        { (int) TableHeaderAspect::PropIndex::FooterColumnTextHeight,  HEADER_PARAM_FooterColumnTextHeight    }, 
+        { (int) PropIndex::RowCount,                HEADER_PARAM_RowCount                  },
+        { (int) PropIndex::ColumnCount,             HEADER_PARAM_ColumnCount               },
+        { (int) PropIndex::TextStyleId,             HEADER_PARAM_TextStyleId               },
+        { (int) PropIndex::TitleRowCount,           HEADER_PARAM_TitleRowCount             }, 
+        { (int) PropIndex::HeaderRowCount,          HEADER_PARAM_HeaderRowCount            }, 
+        { (int) PropIndex::FooterRowCount,          HEADER_PARAM_FooterRowCount            }, 
+        { (int) PropIndex::HeaderColumnCount,       HEADER_PARAM_HeaderColumnCount         }, 
+        { (int) PropIndex::FooterColumnCount,       HEADER_PARAM_FooterColumnCount         }, 
+        { (int) PropIndex::BreakType,               HEADER_PARAM_BreakType                 }, 
+        { (int) PropIndex::BreakPosition,           HEADER_PARAM_BreakPosition             }, 
+        { (int) PropIndex::BreakLength,             HEADER_PARAM_BreakLength               }, 
+        { (int) PropIndex::BreakGap,                HEADER_PARAM_BreakGap                  }, 
+        { (int) PropIndex::RepeatHeaders,           HEADER_PARAM_RepeatHeaders             }, 
+        { (int) PropIndex::RepeatFooters,           HEADER_PARAM_RepeatFooters             }, 
+        { (int) PropIndex::DefaultColumnWidth,      HEADER_PARAM_DefaultColumnWidth        }, 
+        { (int) PropIndex::DefaultRowHeight,        HEADER_PARAM_DefaultRowHeight          }, 
+        { (int) PropIndex::DefaultMarginTop,        HEADER_PARAM_DefaultMarginTop          }, 
+        { (int) PropIndex::DefaultMarginBottom,     HEADER_PARAM_DefaultMarginBottom       }, 
+        { (int) PropIndex::DefaultMarginLeft,       HEADER_PARAM_DefaultMarginLeft         }, 
+        { (int) PropIndex::DefaultMarginRight,      HEADER_PARAM_DefaultMarginRight        }, 
+        { (int) PropIndex::DefaultCellAlignment,    HEADER_PARAM_DefaultCellAlignment      }, 
+        { (int) PropIndex::DefaultCellOrientation,  HEADER_PARAM_DefaultCellOrientation    }, 
+        { (int) PropIndex::FillSymbologyKeyOddRow,  HEADER_PARAM_FillSymbologyKeyOddRow    }, 
+        { (int) PropIndex::FillSymbologyKeyEvenRow, HEADER_PARAM_FillSymbologyKeyEvenRow   }, 
+        { (int) PropIndex::TitleRowTextStyle,       HEADER_PARAM_TitleRowTextStyle         }, 
+        { (int) PropIndex::HeaderRowTextStyle,      HEADER_PARAM_HeaderRowTextStyle        }, 
+        { (int) PropIndex::FooterRowTextStyle,      HEADER_PARAM_FooterRowTextStyle        }, 
+        { (int) PropIndex::HeaderColumnTextStyle,   HEADER_PARAM_HeaderColumnTextStyle     }, 
+        { (int) PropIndex::FooterColumnTextStyle,   HEADER_PARAM_FooterColumnTextStyle     }, 
+        { (int) PropIndex::BackupTextHeight,        HEADER_PARAM_BackupTextHeight          }, 
+        { (int) PropIndex::DataSourceProviderId,    HEADER_PARAM_DataSourceProviderId      }, 
+        { (int) PropIndex::BodyTextHeight,          HEADER_PARAM_BodyTextHeight            }, 
+        { (int) PropIndex::TitleRowTextHeight,      HEADER_PARAM_TitleRowTextHeight        }, 
+        { (int) PropIndex::HeaderRowTextHeight,     HEADER_PARAM_HeaderRowTextHeight       }, 
+        { (int) PropIndex::FooterRowTextHeight,     HEADER_PARAM_FooterRowTextHeight       }, 
+        { (int) PropIndex::HeaderColumnTextHeight,  HEADER_PARAM_HeaderColumnTextHeight    }, 
+        { (int) PropIndex::FooterColumnTextHeight,  HEADER_PARAM_FooterColumnTextHeight    }, 
+        { (int) PropIndex::DefaultTextSymbKey,      HEADER_PARAM_TextSymbologyKey          }, 
         };
 
     return propNames;
@@ -3408,43 +5014,44 @@ void  TableHeaderAspect::_AssignValue (int index, IECSqlValue const& value)
 
     switch (propIndex)
         {
-        case    PropIndex::RowCount:                    m_rowCount.SetValue (value.GetInt());           break;
-        case    PropIndex::ColumnCount:                 m_columnCount.SetValue (value.GetInt());        break;
-        case    PropIndex::TextStyleId:                 m_textStyleId.SetValue (value.GetInt64());      break;
-        case    PropIndex::TitleRowCount:               m_titleRowCount           = value.GetInt();        break;
-        case    PropIndex::HeaderRowCount:              m_headerRowCount          = value.GetInt();        break;
-        case    PropIndex::FooterRowCount:              m_footerRowCount          = value.GetInt();        break;
-        case    PropIndex::HeaderColumnCount:           m_headerColumnCount       = value.GetInt();        break;
-        case    PropIndex::FooterColumnCount:           m_footerColumnCount       = value.GetInt();        break;
-        case    PropIndex::BreakType:                   m_breakType               = value.GetInt();        break;
-        case    PropIndex::BreakPosition:               m_breakPosition           = value.GetInt();        break;
-        case    PropIndex::BreakLength:                 m_breakLength.SetValue (value.GetDouble());     break;
-        case    PropIndex::BreakGap:                    m_breakGap.SetValue (value.GetDouble());     break;
-        case    PropIndex::RepeatHeaders:               m_repeatHeaders.SetValue (value.GetBoolean());    break;
-        case    PropIndex::RepeatFooters:               m_repeatFooters.SetValue (value.GetBoolean());    break;
-        case    PropIndex::DefaultColumnWidth:          m_defaultColumnWidth.SetValue (value.GetDouble()); break;
-        case    PropIndex::DefaultRowHeight:            m_defaultRowHeight.SetValue (value.GetDouble());   break;
-        case    PropIndex::DefaultMarginTop:            m_defaultMarginTop.SetValue (value.GetDouble());        break;
-        case    PropIndex::DefaultMarginBottom:         m_defaultMarginBottom.SetValue (value.GetDouble());        break;
-        case    PropIndex::DefaultMarginLeft:           m_defaultMarginLeft.SetValue (value.GetDouble());        break;
-        case    PropIndex::DefaultMarginRight:          m_defaultMarginRight.SetValue (value.GetDouble());        break;
-        case    PropIndex::DefaultCellAlignment:        m_defaultCellAlignment    = value.GetInt();        break;
-        case    PropIndex::DefaultCellOrientation:      m_defaultCellOrientation    = value.GetInt();        break;
-        case    PropIndex::FillSymbologyKeyOddRow:      m_fillSymbologyKeyOddRow  = value.GetInt();        break;
-        case    PropIndex::FillSymbologyKeyEvenRow:     m_fillSymbologyKeyEvenRow = value.GetInt();        break;
-        case    PropIndex::TitleRowTextStyle:           m_titleRowTextStyle.SetValue (value.GetInt64());        break;
-        case    PropIndex::HeaderRowTextStyle:          m_headerRowTextStyle.SetValue (value.GetInt64());        break;
-        case    PropIndex::FooterRowTextStyle:          m_footerRowTextStyle.SetValue (value.GetInt64());        break;
-        case    PropIndex::HeaderColumnTextStyle:       m_headerColumnTextStyle.SetValue (value.GetInt64());        break;
-        case    PropIndex::FooterColumnTextStyle:       m_footerColumnTextStyle.SetValue (value.GetInt64());        break;
-        case    PropIndex::BackupTextHeight:            m_backupTextHeight        = value.GetInt();        break;
-        case    PropIndex::DataSourceProviderId:        m_dataSourceProviderId    = value.GetInt();        break;
-        case    PropIndex::BodyTextHeight:              m_bodyTextHeight.SetValue (value.GetDouble());        break;
-        case    PropIndex::TitleRowTextHeight:          m_titleRowTextHeight.SetValue (value.GetDouble());        break;
-        case    PropIndex::HeaderRowTextHeight:         m_headerRowTextHeight.SetValue (value.GetDouble());        break;
-        case    PropIndex::FooterRowTextHeight:         m_footerRowTextHeight.SetValue (value.GetDouble());        break;
-        case    PropIndex::HeaderColumnTextHeight:      m_headerColumnTextHeight.SetValue (value.GetDouble());        break;
-        case    PropIndex::FooterColumnTextHeight:      m_footerColumnTextHeight.SetValue (value.GetDouble());        break;
+        case    PropIndex::RowCount:                    m_rowCount.SetValue (value.GetInt());               break;
+        case    PropIndex::ColumnCount:                 m_columnCount.SetValue (value.GetInt());            break;
+        case    PropIndex::TextStyleId:                 m_textStyleId.SetValue (value.GetInt64());          break;
+        case    PropIndex::TitleRowCount:               m_titleRowCount           = value.GetInt();     break;
+        case    PropIndex::HeaderRowCount:              m_headerRowCount          = value.GetInt();     break;
+        case    PropIndex::FooterRowCount:              m_footerRowCount          = value.GetInt();     break;
+        case    PropIndex::HeaderColumnCount:           m_headerColumnCount       = value.GetInt();     break;
+        case    PropIndex::FooterColumnCount:           m_footerColumnCount       = value.GetInt();     break;
+        case    PropIndex::BreakType:                   m_breakType               = value.GetInt();     break;
+        case    PropIndex::BreakPosition:               m_breakPosition           = value.GetInt();     break;
+        case    PropIndex::BreakLength:                 m_breakLength.SetValue (value.GetDouble());         break;
+        case    PropIndex::BreakGap:                    m_breakGap.SetValue (value.GetDouble());            break;
+        case    PropIndex::RepeatHeaders:               m_repeatHeaders.SetValue (value.GetBoolean());      break;
+        case    PropIndex::RepeatFooters:               m_repeatFooters.SetValue (value.GetBoolean());      break;
+        case    PropIndex::DefaultColumnWidth:          m_defaultColumnWidth.SetValue (value.GetDouble());  break;
+        case    PropIndex::DefaultRowHeight:            m_defaultRowHeight.SetValue (value.GetDouble());    break;
+        case    PropIndex::DefaultMarginTop:            m_defaultMarginTop.SetValue (value.GetDouble());    break;
+        case    PropIndex::DefaultMarginBottom:         m_defaultMarginBottom.SetValue (value.GetDouble()); break;
+        case    PropIndex::DefaultMarginLeft:           m_defaultMarginLeft.SetValue (value.GetDouble());   break;
+        case    PropIndex::DefaultMarginRight:          m_defaultMarginRight.SetValue (value.GetDouble());  break;
+        case    PropIndex::DefaultCellAlignment:        m_defaultCellAlignment = value.GetInt();        break;
+        case    PropIndex::DefaultCellOrientation:      m_defaultCellOrientation = value.GetInt();      break;
+        case    PropIndex::FillSymbologyKeyOddRow:      m_fillSymbologyKeyOddRow = value.GetInt();      break;
+        case    PropIndex::FillSymbologyKeyEvenRow:     m_fillSymbologyKeyEvenRow = value.GetInt();     break;
+        case    PropIndex::TitleRowTextStyle:           m_titleRowTextStyle.SetValue (value.GetInt64());    break;
+        case    PropIndex::HeaderRowTextStyle:          m_headerRowTextStyle.SetValue (value.GetInt64());   break;
+        case    PropIndex::FooterRowTextStyle:          m_footerRowTextStyle.SetValue (value.GetInt64());   break;
+        case    PropIndex::HeaderColumnTextStyle:       m_headerColumnTextStyle.SetValue (value.GetInt64());break;
+        case    PropIndex::FooterColumnTextStyle:       m_footerColumnTextStyle.SetValue (value.GetInt64());break;
+        case    PropIndex::BackupTextHeight:            m_backupTextHeight        = value.GetInt();     break;
+        case    PropIndex::DataSourceProviderId:        m_dataSourceProviderId    = value.GetInt();     break;
+        case    PropIndex::BodyTextHeight:              m_bodyTextHeight.SetValue (value.GetDouble());           break;
+        case    PropIndex::TitleRowTextHeight:          m_titleRowTextHeight.SetValue (value.GetDouble());       break;
+        case    PropIndex::HeaderRowTextHeight:         m_headerRowTextHeight.SetValue (value.GetDouble());      break;
+        case    PropIndex::FooterRowTextHeight:         m_footerRowTextHeight.SetValue (value.GetDouble());      break;
+        case    PropIndex::HeaderColumnTextHeight:      m_headerColumnTextHeight.SetValue (value.GetDouble());   break;
+        case    PropIndex::FooterColumnTextHeight:      m_footerColumnTextHeight.SetValue (value.GetDouble());   break;
+        case    PropIndex::DefaultTextSymbKey:          m_defaultTextSymbKey.SetValue (value.GetInt());          break;
         default:                                        BeAssert (false);
         }
     }
@@ -3498,15 +5105,14 @@ void    TableHeaderAspect::Invalidate()
     m_footerRowTextHeight.Clear();
     m_headerColumnTextHeight.Clear();
     m_footerColumnTextHeight.Clear();
+    m_defaultTextSymbKey.Clear();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   08/2015
 //---------------------------------------------------------------------------------------
-void    TableHeaderAspect::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
+void    TableHeaderAspect::CopyDataFrom (TableHeaderAspect const& rhs)
     {
-    TableHeaderAspect const&   rhs = static_cast <TableHeaderAspect const&> (rhsAspect);
-
     m_rowCount                  = rhs.m_rowCount;
     m_columnCount               = rhs.m_columnCount;
     m_textStyleId               = rhs.m_textStyleId;
@@ -3543,6 +5149,7 @@ void    TableHeaderAspect::_CopyDataFrom (AnnotationTableAspectCR rhsAspect)
     m_footerRowTextHeight       = rhs.m_footerRowTextHeight;
     m_headerColumnTextHeight    = rhs.m_headerColumnTextHeight;
     m_footerColumnTextHeight    = rhs.m_footerColumnTextHeight;
+    m_defaultTextSymbKey        = rhs.m_defaultTextSymbKey;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3587,6 +5194,46 @@ void    TableHeaderAspect::_BindProperties(ECSqlStatement& statement)
     BindDouble  (statement, HEADER_PARAM_FooterRowTextHeight,        m_footerRowTextHeight);
     BindDouble  (statement, HEADER_PARAM_HeaderColumnTextHeight,     m_headerColumnTextHeight);
     BindDouble  (statement, HEADER_PARAM_FooterColumnTextHeight,     m_footerColumnTextHeight);
+    BindUInt    (statement, HEADER_PARAM_TextSymbologyKey,           m_defaultTextSymbKey);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    JoshSchifter    11/15
+//---------------------------------------------------------------------------------------
+void         TableHeaderAspect::_DiscloseSymbologyKeys (bset<uint32_t>& keys)
+    {
+    keys.insert (0);
+    keys.insert (GetTable().GetDefaultTextSymbology());
+    keys.insert (GetTable().GetFillSymbologyForOddRow());
+    keys.insert (GetTable().GetFillSymbologyForEvenRow());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            TableHeaderAspect::_FlushChangesToProperties ()
+    {
+    if (0 == GetTable().GetFillSymbologyForOddRow())
+        m_fillSymbologyKeyOddRow.Clear();
+
+    if (0 == GetTable().GetFillSymbologyForEvenRow())
+        m_fillSymbologyKeyEvenRow.Clear();
+
+    if (0 == GetTable().GetDefaultTextSymbology())
+        m_defaultTextSymbKey.Clear();
+
+#if defined (NEEDSWORK)
+    if (TableBreakType::None == GetBreakType())
+        {
+        m_instanceHolder.SetToNull (TEXTTABLE_TABLE_PROP_BreakLength);
+        m_instanceHolder.SetToNull (TEXTTABLE_TABLE_PROP_BreakGap);
+        }
+    else
+        {
+        if (DoubleOps::WithinTolerance (GetDefaultBreakGap(), GetBreakGap(), s_doubleTol))
+            m_instanceHolder.SetToNull (TEXTTABLE_TABLE_PROP_BreakGap);
+        }
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -3629,6 +5276,7 @@ int         TableHeaderAspect::GetUInteger (PropIndex propIndex) const
         case PropIndex::DefaultCellOrientation:    { intValue = &m_defaultCellOrientation;  break; }
         case PropIndex::FillSymbologyKeyOddRow:    { intValue = &m_fillSymbologyKeyOddRow;  break; }
         case PropIndex::FillSymbologyKeyEvenRow:   { intValue = &m_fillSymbologyKeyEvenRow; break; }
+        case PropIndex::DefaultTextSymbKey:        { intValue = &m_defaultTextSymbKey;      break; }
         }
 
     if (EXPECTED_CONDITION (nullptr != intValue))
@@ -3711,8 +5359,6 @@ void        TableHeaderAspect::SetInteger (int v, PropIndex propIndex)
         case PropIndex::BreakPosition:             { break; }
         case PropIndex::DefaultCellAlignment:      { break; }
         case PropIndex::DefaultCellOrientation:    { break; }
-        case PropIndex::FillSymbologyKeyOddRow:    { break; }
-        case PropIndex::FillSymbologyKeyEvenRow:   { break; }
         case PropIndex::TitleRowTextStyle:         { break; }
         case PropIndex::HeaderRowTextStyle:        { break; }
         case PropIndex::FooterRowTextStyle:        { break; }
@@ -3738,8 +5384,11 @@ void        TableHeaderAspect::SetUInteger (int v, PropIndex propIndex)
 
     switch (propIndex)
         {
-        case PropIndex::RowCount:                  { value = &m_rowCount;      break; }
-        case PropIndex::ColumnCount:               { value = &m_columnCount;   break; }
+        case PropIndex::RowCount:                  { value = &m_rowCount;                   break; }
+        case PropIndex::ColumnCount:               { value = &m_columnCount;                break; }
+        case PropIndex::FillSymbologyKeyOddRow:    { value = &m_fillSymbologyKeyOddRow;     break; }
+        case PropIndex::FillSymbologyKeyEvenRow:   { value = &m_fillSymbologyKeyEvenRow;    break; }
+        case PropIndex::DefaultTextSymbKey:        { value = &m_defaultTextSymbKey;         break; }
         default: { BeAssert (false); return; }
         }
 
@@ -3939,6 +5588,9 @@ double                  AnnotationTableElement::GetDefaultRowHeight ()          
 double                  AnnotationTableElement::GetDefaultColumnWidth ()        const     { return m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultColumnWidth); }
 TableCellOrientation    AnnotationTableElement::GetDefaultCellOrientation ()    const     { return static_cast<TableCellOrientation> (m_tableHeader.GetUInteger  (TableHeaderAspect::PropIndex::DefaultCellOrientation)); }
 TableCellAlignment      AnnotationTableElement::GetDefaultCellAlignment ()      const     { return static_cast<TableCellAlignment> (m_tableHeader.GetUInteger  (TableHeaderAspect::PropIndex::DefaultCellAlignment)); }
+uint32_t                AnnotationTableElement::GetFillSymbologyForOddRow()     const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FillSymbologyKeyOddRow); }
+uint32_t                AnnotationTableElement::GetFillSymbologyForEvenRow()    const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FillSymbologyKeyEvenRow); }
+uint32_t                AnnotationTableElement::GetDefaultTextSymbology()       const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::DefaultTextSymbKey); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   10/2015
@@ -3953,6 +5605,145 @@ TableCellMarginValues      AnnotationTableElement::GetDefaultMargins () const
     margins.m_right  = m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultMarginRight);
 
     return margins;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef        AnnotationTableElement::GetDefaultLineColor() const
+    {
+    SymbologyEntryCP symbology = m_symbologyDictionary.GetSymbology(0);
+
+    if (UNEXPECTED_CONDITION (NULL == symbology))
+        return ColorDef::White();
+
+    return symbology->GetColor();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        AnnotationTableElement::GetDefaultLineWeight() const
+    {
+    SymbologyEntryCP symbology = m_symbologyDictionary.GetSymbology(0);
+
+    if (UNEXPECTED_CONDITION (NULL == symbology))
+        return 0;
+
+    return symbology->GetWeight();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnStyleId      AnnotationTableElement::GetDefaultLineStyleId() const
+    {
+    SymbologyEntryCP symbology = m_symbologyDictionary.GetSymbology(0);
+
+    if (UNEXPECTED_CONDITION (NULL == symbology))
+        return DgnStyleId();
+
+    return symbology->GetLineStyleId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double          AnnotationTableElement::GetDefaultLineStyleScale() const
+    {
+    SymbologyEntryCP symbology = m_symbologyDictionary.GetSymbology(0);
+
+    if (UNEXPECTED_CONDITION (NULL == symbology))
+        return 0;
+
+    return symbology->GetLineStyleScale();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::GetDefaultFill (AnnotationTableSymbologyValuesR symb, TableRows rows) const
+    {
+    symb.Clear();
+
+    uint32_t  fillKey = 0;
+
+    switch (rows)
+        {
+        default:
+        case TableRows::Odd:    fillKey  = GetFillSymbologyForOddRow();     break;
+        case TableRows::Even:   fillKey  = GetFillSymbologyForEvenRow();    break;
+        }
+
+    if (0 == fillKey)
+        {
+        symb.SetFillVisible (false);
+        return;
+        }
+
+    SymbologyDictionary const&  dictionary  = GetSymbologyDictionary();
+    SymbologyEntryCP            entry        = dictionary.GetSymbology (fillKey);
+
+    symb.SetFillVisible (true);
+    symb.SetFillColor (entry->GetFillColor());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableElement::HasDefaultTextWeight () const
+    {
+    uint32_t    symbKey   = GetDefaultTextSymbology();
+
+    if (0 == symbKey)
+        return false;
+
+    SymbologyEntryCP entry = m_symbologyDictionary.GetSymbology(symbKey);
+    return entry->HasWeight();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            AnnotationTableElement::HasDefaultTextColor () const
+    {
+    uint32_t    symbKey   = GetDefaultTextSymbology();
+
+    if (0 == symbKey)
+        return false;
+
+    SymbologyEntryCP entry = m_symbologyDictionary.GetSymbology(symbKey);
+    return entry->HasColor();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t        AnnotationTableElement::GetDefaultTextWeight () const
+    {
+    uint32_t         symbKey = GetDefaultTextSymbology();
+    SymbologyEntryCP entry   = m_symbologyDictionary.GetSymbology(symbKey);
+
+    // Might not be a text symb stored but there should at least be a key==0 stored.
+    if (UNEXPECTED_CONDITION (nullptr == entry))
+        return 0;
+
+    return entry->GetWeight();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef        AnnotationTableElement::GetDefaultTextColor () const
+    {
+    uint32_t         symbKey = GetDefaultTextSymbology();
+    SymbologyEntryCP entry   = m_symbologyDictionary.GetSymbology(symbKey);
+
+    // Might not be a text symb stored but there should at least be a key==0 stored.
+    if (UNEXPECTED_CONDITION (nullptr == entry))
+        return ColorDef::White();
+
+    return entry->GetColor();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4078,6 +5869,7 @@ void AnnotationTableElement::SetDefaultCellAlignment    (TableCellAlignment   v)
 void AnnotationTableElement::SetDefaultCellOrientation  (TableCellOrientation v)    { m_tableHeader.SetUInteger ((uint32_t) v, TableHeaderAspect::PropIndex::DefaultCellOrientation); }
 void AnnotationTableElement::SetFillSymbologyForOddRow  (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::FillSymbologyKeyOddRow); }
 void AnnotationTableElement::SetFillSymbologyForEvenRow (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::FillSymbologyKeyEvenRow); }
+void AnnotationTableElement::SetDefaultTextSymbology    (uint32_t             v)    { m_tableHeader.SetUInteger (           v, TableHeaderAspect::PropIndex::DefaultTextSymbKey); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/15
@@ -4422,6 +6214,153 @@ void            AnnotationTableElement::SetDefaultMargins (TableCellMarginValues
     m_tableHeader.SetDouble (margins.m_right,  TableHeaderAspect::PropIndex::DefaultMarginRight);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::SetDefaultLineColor (ColorDef val)
+    {
+    SymbologyEntryP symbology = m_symbologyDictionary.GetSymbology(0);
+
+    if (UNEXPECTED_CONDITION (NULL == symbology))
+        return;
+
+    symbology->SetColor (val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::SetDefaultLineWeight (uint32_t val)
+    {
+    SymbologyEntryP symbology = m_symbologyDictionary.GetSymbology(0);
+
+    if (UNEXPECTED_CONDITION (NULL == symbology))
+        return;
+
+    symbology->SetWeight (val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::SetDefaultLineStyle (DgnStyleId id, double scale)
+    {
+    SymbologyEntryP symbology = m_symbologyDictionary.GetSymbology(0);
+
+    if (UNEXPECTED_CONDITION (NULL == symbology))
+        return;
+
+    symbology->SetLineStyle (id, scale);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::SetDefaultFill (AnnotationTableSymbologyValuesCR val, TableRows rows)
+    {
+    bool    wantOdd  = false;
+    bool    wantEven = false;
+
+    switch (rows)
+        {
+        case TableRows::Odd:    wantOdd  = true;            break;
+        case TableRows::Even:   wantEven = true;            break;
+        default:                wantOdd = wantEven = true;  break;
+        }
+
+    uint32_t  newKey = 0;
+
+    if (val.HasFillColor())
+        {
+        SymbologyEntry   newSymbology (*this, 0);
+        newSymbology.SetFillColor (val.GetFillColor());
+
+        newKey = m_symbologyDictionary.FindOrAddSymbology (newSymbology);
+        }
+
+    if (wantOdd)
+        SetFillSymbologyForOddRow (newKey);
+
+    if (wantEven)
+        SetFillSymbologyForEvenRow (newKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::ChangeDefaultTextSymbology (TextSymb textSymb, TextSymbAction action, uint32_t value)
+    {
+    uint32_t    oldKey = GetDefaultTextSymbology();
+
+    if (0 == oldKey)
+        {
+        if (TextSymbAction::Clear == action)
+            return;
+
+        SymbologyEntry newSymbology(*this, 0);
+        newSymbology.SetVisible(true);
+
+        if (TextSymb::Color == textSymb)
+            newSymbology.SetColor(ColorDef(value));
+        else
+            newSymbology.SetWeight(value);
+
+        uint32_t newKey = m_symbologyDictionary.FindOrAddSymbology (newSymbology);
+        SetDefaultTextSymbology (newKey);
+        return;
+        }
+
+    SymbologyEntryCP fromDictionary = m_symbologyDictionary.GetSymbology(oldKey);
+
+    if (UNEXPECTED_CONDITION (NULL == fromDictionary))
+        return;
+
+    bool        isStored = false;
+    uint32_t    storedValue = 0;
+
+    if (TextSymb::Color == textSymb)
+        {
+        isStored    = fromDictionary->HasColor();
+        storedValue = fromDictionary->GetColor().GetValue();
+        }
+    else
+        {
+        isStored = fromDictionary->HasWeight();
+        storedValue = fromDictionary->GetWeight();
+        }
+
+    bool needToChange = false;
+
+    if (TextSymbAction::Store == action)
+        needToChange = (isStored == false) || storedValue != value;
+    else
+        needToChange = (isStored == true);
+
+    if ( ! needToChange)
+        return;
+
+    SymbologyEntry  newSymbology (*fromDictionary, true);
+
+    if (TextSymbAction::Clear == action)
+        (TextSymb::Color == textSymb) ? newSymbology.ClearColor() : newSymbology.ClearWeight();
+    else
+        (TextSymb::Color == textSymb) ? newSymbology.SetColor(ColorDef(value)) : newSymbology.SetWeight(value);
+
+    uint32_t newKey = 0;
+    if (newSymbology.HasColor() || newSymbology.HasWeight())
+        newKey = m_symbologyDictionary.FindOrAddSymbology (newSymbology);
+
+    SetDefaultTextSymbology (newKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableElement::SetDefaultTextColor (ColorDef value)  { ChangeDefaultTextSymbology (TextSymb::Color,  TextSymbAction::Store, value.GetValue()); }
+void            AnnotationTableElement::SetDefaultTextWeight (uint32_t value) { ChangeDefaultTextSymbology (TextSymb::Weight, TextSymbAction::Store, value); }
+void            AnnotationTableElement::ClearDefaultTextColor ()              { ChangeDefaultTextSymbology (TextSymb::Color,  TextSymbAction::Clear, 0); }
+void            AnnotationTableElement::ClearDefaultTextWeight ()             { ChangeDefaultTextSymbology (TextSymb::Weight, TextSymbAction::Clear, 0); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
@@ -4474,6 +6413,14 @@ void    AnnotationTableElement::Initialize (bool isNewTable)
         m_rows[rowIndex].InitializeInternalCollections();
         }
 
+    AnnotationTableEdgeRun topEdgeRun (*this);
+    topEdgeRun.Initialize (EdgeRunHostType::Top, true);
+    m_topEdgeRuns.push_back (topEdgeRun);
+
+    AnnotationTableEdgeRun leftEdgeRun (*this);
+    leftEdgeRun.Initialize (EdgeRunHostType::Left, false);
+    m_leftEdgeRuns.push_back (leftEdgeRun);
+
     if (isNewTable)
         {
         AnnotationTextStyleCP  textStyle =  GetTextStyle (AnnotationTableRegion::Body);
@@ -4495,15 +6442,9 @@ void    AnnotationTableElement::Initialize (bool isNewTable)
         SetDefaultRowHeight (textHeight + margins.m_bottom + margins.m_top);
         SetDefaultColumnWidth (10 * textWidth + margins.m_left + margins.m_right);
 
-#if defined (NEEDSWORK)
-        SymbologyEntry symbology(0);
-        symbology.SetVisible (true);
-        symbology.SetColor (0);
-        symbology.SetLineStyle (0);
-        symbology.SetWeight (0);
-
+        SymbologyEntry symbology(*this, 0);
+        symbology.SetKey (0);   // needed to set the HasChanges flag
         m_symbologyDictionary.AddSymbology (symbology);
-#endif
         }
     }
 
@@ -4713,7 +6654,6 @@ BentleyStatus   AnnotationTableElement::DeleteRow (uint32_t rowIndex)
         cellsWithHeightChanges.push_back (newRoot);
         }
 
-#if defined (NEEDSWORK)
     // Delete the vertical edgeRuns that span the row.
     GetLeftEdgeRuns().DeleteSpan (*this, rowIndex, 1);
 
@@ -4722,8 +6662,8 @@ BentleyStatus   AnnotationTableElement::DeleteRow (uint32_t rowIndex)
 
     // Delete horizontal edge runs owned by the row.
     for (AnnotationTableEdgeRunR edgeRun : oldRow->GetEdgeRuns())
-        edgeRun.DeleteAspect(*this);
-#endif
+        DeleteAspect(edgeRun);
+
     // Not safe to use this anymore
     oldRow = NULL;
 
@@ -4734,10 +6674,8 @@ BentleyStatus   AnnotationTableElement::DeleteRow (uint32_t rowIndex)
     for (AnnotationTableCellR cell: erasePos->GetCellVectorR())
         DeleteAspect (cell);
 
-#if defined (NEEDSWORK)
-    for (AnnotationTableEdgeRunR run: erasePos->GetEdgeRuns())
-        DeleteAspect (run.GetInstanceHolderR());
-#endif
+    for (AnnotationTableEdgeRunR edgeRun: erasePos->GetEdgeRuns())
+        DeleteAspect (edgeRun);
 
     // fixup the affected objects
     m_rows.erase (erasePos);
@@ -4792,13 +6730,12 @@ BentleyStatus   AnnotationTableElement::InsertRow (uint32_t indexOfSeedRow, Tabl
             }
         }
 
-#if defined (NEEDSWORK)
     // Expand the vertical edgeRuns that span the row.
-    GetLeftEdgeRuns().InsertSpan (indexOfNewRow, 1, EdgeRunInitializer(EdgeRunHostType::Left));
+    GetLeftEdgeRuns().InsertSpan (indexOfNewRow, 1, EdgeRunInitializer (*this, EdgeRunHostType::Left));
 
     for (AnnotationTableColumnR column: m_columns)
-        column.GetEdgeRuns().InsertSpan (indexOfNewRow, 1, EdgeRunInitializer(EdgeRunHostType::Column, column.GetIndex()));
-#endif
+        column.GetEdgeRuns().InsertSpan (indexOfNewRow, 1, EdgeRunInitializer (*this, EdgeRunHostType::Column, column.GetIndex()));
+
     // Insert the Row and create its vector of cells
     AnnotationTableRow newRow (*this, indexOfNewRow);
 
@@ -4838,11 +6775,9 @@ void        AnnotationTableElement::CopyPropsForNewCell (AnnotationTableCellR ne
     newCell.SetOrientation (seedCell.GetOrientation());
     newCell.SetMargins     (seedCell.GetMargins());
 
-#if defined (NEEDSWORK)
-    TableSymbologyValuesPtr symb = TableSymbologyValues::Create();
-    seedCell.GetFillSymbology (*symb);
-    newCell.SetFillSymbology (*symb);
-#endif
+    AnnotationTableSymbologyValues symb;
+    seedCell.GetFillSymbology (symb);
+    newCell.SetFillSymbology (symb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4884,7 +6819,6 @@ void        AnnotationTableElement::CopyPropsForNewRow (uint32_t indexOfNewRow, 
         CopyPropsForNewCell (*newCell, *seedCell);
         }
 
-#if defined (NEEDSWORK)
     // For the new horizontal edges, copy symbology from the seed
     EdgeRunsR   newEdges  = newRow->GetEdgeRuns (false);    // new edge is always the bottom
     EdgeRunsCR  seedEdges = newRow->GetEdgeRuns (true);     // seed edge is always the top
@@ -4899,7 +6833,6 @@ void        AnnotationTableElement::CopyPropsForNewRow (uint32_t indexOfNewRow, 
         column.GetEdgeRuns().ApplySeedAtIndex (indexOfNewRow, 1, indexOfSeedRow);
         column.GetEdgeRuns().MergeRedundantRuns (this);
         }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4982,7 +6915,6 @@ BentleyStatus   AnnotationTableElement::DeleteColumn (uint32_t colIndex)
                                                         // be the index for newRoot.
         }
 
-#if defined (NEEDSWORK)
     // Delete the horizontal edgeRuns that span the column.
     GetTopEdgeRuns().DeleteSpan (*this, colIndex, 1);
 
@@ -4991,8 +6923,7 @@ BentleyStatus   AnnotationTableElement::DeleteColumn (uint32_t colIndex)
 
     // Delete vertical edge runs owned by the column
     for (AnnotationTableEdgeRunR edgeRun : oldColumn->GetEdgeRuns())
-        edgeRun.DeleteInstance(*this);
-#endif
+        this->DeleteAspect (edgeRun);
 
     // Not safe to use this anymore
     oldColumn = NULL;
@@ -5075,16 +7006,15 @@ BentleyStatus   AnnotationTableElement::InsertColumn (uint32_t indexOfSeedColumn
             }
         }
 
-#if defined (NEEDSWORK)
     // Expand the horizontal edgeRuns and fillRuns that span the column.
-    GetTopEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer(EdgeRunHostType::Top));
+    GetTopEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer(*this, EdgeRunHostType::Top));
 
     for (AnnotationTableRowR row: m_rows)
         {
-        row.GetEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer(EdgeRunHostType::Row, row.GetIndex()));
-        row.GetFillRuns().InsertSpan (indexOfNewColumn, 1, FillRunInitializer(row.GetIndex()));
+        row.GetEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer (*this, EdgeRunHostType::Row, row.GetIndex()));
+        row.GetFillRuns().InsertSpan (indexOfNewColumn, 1, FillRunInitializer (row.GetIndex()));
         }
-#endif
+
     // Insert the new column
     AnnotationTableColumn newColumn (*this, indexOfNewColumn);
 
@@ -5127,10 +7057,8 @@ BentleyStatus   AnnotationTableElement::InsertColumn (uint32_t indexOfSeedColumn
     for (AnnotationTableCellP const& cell : cellsWithWidthChanges)
         cell->WidthChanged();
 
-#if defined (NEEDSWORK)
     for (AnnotationTableCellP const& cell : GetColumn(indexOfNewColumn)->FindCells())
         cell->ApplyToFillRuns();
-#endif
 
     AnnotationTableColumnP   postSeedColumn = GetColumn (indexOfSeedColumn);
 
@@ -5179,7 +7107,6 @@ void        AnnotationTableElement::CopyPropsForNewColumn (uint32_t indexOfNewCo
         CopyPropsForNewCell (*newCell, *seedCell);
         }
 
-#if defined (NEEDSWORK)
     // For the new vertical edges, copy symbology from the seed
     EdgeRunsR   newEdges  = newColumn->GetEdgeRuns (false);    // new edge is always the right
     EdgeRunsCR  seedEdges = newColumn->GetEdgeRuns (true);     // seed edge is always the left
@@ -5194,7 +7121,6 @@ void        AnnotationTableElement::CopyPropsForNewColumn (uint32_t indexOfNewCo
         row.GetEdgeRuns().ApplySeedAtIndex (indexOfNewColumn, 1, indexOfSeedColumn);
         row.GetEdgeRuns().MergeRedundantRuns (this);
         }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5320,7 +7246,6 @@ void            AnnotationTableElement::MarkAsMergedCellInteriors (AnnotationTab
             }
         }
 
-#if defined (NEEDSWORK)
     EdgeRuns    removedRuns;
 
     for (uint32_t iRow = rootIndex.row; iRow < rootIndex.row + rowSpan - 1; iRow++)
@@ -5338,9 +7263,8 @@ void            AnnotationTableElement::MarkAsMergedCellInteriors (AnnotationTab
     if ( ! loading)
         {
         for (AnnotationTableEdgeRunR edgeRun: removedRuns)
-            DeleteInstance (edgeRun.GetInstanceHolderR());
+            DeleteAspect (edgeRun);
         }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5379,15 +7303,556 @@ BentleyStatus   AnnotationTableElement::MergeCells (AnnotationTableCellIndexCR r
 
     MarkAsMergedCellInteriors (rootIndex, numRows, numCols, false);
 
-#if defined (NEEDSWORK)
     // Will set the verticalSpan in the main row, and open gaps on subsequent rows.
     rootCell->ApplyToFillRuns();
-#endif
 
     if (1 < numCols)
         rootCell->WidthChanged();
 
     return SUCCESS;
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct CellEdgeAccessor
+    {
+protected:
+    enum    TableCellEdgeId
+        {
+        EDGEID_Top      = 0,
+        EDGEID_Right    = 1,
+        EDGEID_Bottom   = 2,
+        EDGEID_Left     = 3,
+        };
+
+    /*=================================================================================**//**
+    +===============+===============+===============+===============+===============+======*/
+    struct  Entry
+        {
+        AnnotationTableCellIndex  m_cellIndex;
+        bool                      m_edgeExists[4];
+        bool                      m_edgeProcessed[4];
+
+        /* ctor */  Entry (AnnotationTableCellIndex index, bool hasTop, bool hasRight, bool hasBot, bool hasLeft);
+        };
+
+    /*=================================================================================**//**
+    +===============+===============+===============+===============+===============+======*/
+    struct  DoEdgeStatus
+        {
+        BentleyStatus   m_status;   // edge was successfully processed can skip mated edge if any
+        bool            m_continue; // false to stop processing
+
+        DoEdgeStatus (BentleyStatus s, bool c) : m_status(s), m_continue(c) {}
+        };
+
+    AnnotationTableElementCR    m_table;
+    bvector<Entry>              m_entries;
+
+    /* ctor */      CellEdgeAccessor (AnnotationTableElementCR table) : m_table (table) {}
+
+private:
+    TableCellEdgeId GetOpposingEdgeId (TableCellEdgeId);
+    Entry*          FindEntry (AnnotationTableCellIndexCR index);
+    Entry*          FindAdjacentEntry (TableCellEdgeId edgeId, AnnotationTableCellIndexCR index);
+    bool            DoEdge (Entry* matedEntry, TableCellEdgeId primaryEdge, Entry& entry);
+    bool            NeedToDoEdge (Entry*& matedEntry, TableCellEdgeId primaryEdge, TableCellListEdges edgesToProcess, Entry& entry);
+    bool            ProcessOneEdge (TableCellEdgeId primaryEdge, TableCellListEdges edgesToProcess, Entry& entry);
+
+protected:
+    bool            IsHorizontal (TableCellEdgeId);
+    EdgeRunsCP      FindEdgeRun (uint32_t& startIndex, TableCellEdgeId, AnnotationTableCellIndexCR);
+
+    virtual DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) = 0;
+
+public:
+    void            AddCell (AnnotationTableCellIndexCR cellIndex);
+    void            ProcessCells (TableCellListEdges edgesToProcess);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+/* ctor */ CellEdgeAccessor::Entry::Entry (AnnotationTableCellIndex index, bool hasTop, bool hasRight, bool hasBot, bool hasLeft)
+    {
+    m_cellIndex                 = index;
+    m_edgeExists[EDGEID_Top]    = hasTop;
+    m_edgeExists[EDGEID_Right]  = hasRight;
+    m_edgeExists[EDGEID_Bottom] = hasBot;
+    m_edgeExists[EDGEID_Left]   = hasLeft;
+
+    m_edgeProcessed[EDGEID_Top]    = false;
+    m_edgeProcessed[EDGEID_Right]  = false;
+    m_edgeProcessed[EDGEID_Bottom] = false;
+    m_edgeProcessed[EDGEID_Left]   = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+EdgeRunsCP      CellEdgeAccessor::FindEdgeRun (uint32_t& startIndex, TableCellEdgeId edgeId, AnnotationTableCellIndexCR cellIndex)
+    {
+    EdgeRunHostType hostType;
+    uint32_t          hostIndex;
+
+    switch (edgeId)
+        {
+        case EDGEID_Top:
+            {
+            hostType   = 0 != cellIndex.row ? EdgeRunHostType::Row : EdgeRunHostType::Top;
+            hostIndex  = cellIndex.row - 1;
+            startIndex = cellIndex.col;
+            break;
+            }
+        case EDGEID_Bottom:
+            {
+            hostType   = EdgeRunHostType::Row;
+            hostIndex  = cellIndex.row;
+            startIndex = cellIndex.col;
+            break;
+            }
+        case EDGEID_Left:
+            {
+            hostType   = 0 != cellIndex.col ? EdgeRunHostType::Column : EdgeRunHostType::Left;
+            hostIndex  = cellIndex.col - 1;
+            startIndex = cellIndex.row;
+            break;
+            }
+        case EDGEID_Right:
+            {
+            hostType   = EdgeRunHostType::Column;
+            hostIndex  = cellIndex.col;
+            startIndex = cellIndex.row;
+            break;
+            }
+        default:
+            {
+            BeAssert(false);
+            return NULL;
+            }
+        }
+
+    return m_table.GetEdgeRuns (hostType, hostIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    CellEdgeAccessor::IsHorizontal (TableCellEdgeId primaryEdgeId)
+    {
+    switch (primaryEdgeId)
+        {
+        default:                BeAssert(false);        //FALLTHRU
+        case EDGEID_Top:        return true;
+        case EDGEID_Right:      return false;
+        case EDGEID_Bottom:     return true;
+        case EDGEID_Left:       return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+CellEdgeAccessor::TableCellEdgeId  CellEdgeAccessor::GetOpposingEdgeId (TableCellEdgeId primaryEdgeId)
+    {
+    switch (primaryEdgeId)
+        {
+        default:                BeAssert(false);        //FALLTHRU
+        case EDGEID_Top:        return EDGEID_Bottom;
+        case EDGEID_Right:      return EDGEID_Left;
+        case EDGEID_Bottom:     return EDGEID_Top;
+        case EDGEID_Left:       return EDGEID_Right;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    CellEdgeAccessor::AddCell (AnnotationTableCellIndexCR cellIndex)
+    {
+    AnnotationTableCellCP  cell    = m_table.GetCell (cellIndex, true);
+
+    if (UNEXPECTED_CONDITION (NULL == cell))
+        return;
+
+    uint32_t          rowSpan = cell->GetRowSpan();
+    uint32_t          colSpan = cell->GetColumnSpan();
+
+    for (uint32_t iRow = 0; iRow < rowSpan; iRow++)
+        {
+        for (uint32_t iCol = 0; iCol < colSpan; iCol++)
+            {
+            bool            hasTop   = 0           == iRow;
+            bool            hasBot   = rowSpan - 1 == iRow;
+            bool            hasLeft  = 0           == iCol;
+            bool            hasRight = colSpan - 1 == iCol;
+
+            if ( ! hasTop && ! hasRight && ! hasBot && ! hasLeft)
+                continue;
+
+            AnnotationTableCellIndex  index (cellIndex.row + iRow, cellIndex.col + iCol);
+            Entry           entry (index, hasTop, hasRight, hasBot, hasLeft);
+
+            m_entries.push_back (entry);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+CellEdgeAccessor::Entry* CellEdgeAccessor::FindEntry (AnnotationTableCellIndexCR index)
+    {
+    struct FindHostPredicate
+        {
+        AnnotationTableCellIndexCR  m_index;
+
+        FindHostPredicate (AnnotationTableCellIndexCR m_index) : m_index (m_index) {}
+        bool operator () (Entry const& entry) { return entry.m_cellIndex == m_index; }
+        };
+
+    FindHostPredicate   predicate (index);
+    bvector<Entry>::iterator foundIter = std::find_if (m_entries.begin (), m_entries.end (), predicate);
+
+    if (foundIter == m_entries.end())
+        return NULL;
+
+    return foundIter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+CellEdgeAccessor::Entry* CellEdgeAccessor::FindAdjacentEntry (TableCellEdgeId primaryEdge, AnnotationTableCellIndexCR index)
+    {
+    AnnotationTableCellIndex adjacentIndex = index;
+
+    if (0 == index.row && EDGEID_Top == primaryEdge)
+        return NULL;
+
+    if (0 == index.col && EDGEID_Left == primaryEdge)
+        return NULL;
+
+    switch (primaryEdge)
+        {
+        case EDGEID_Top:        adjacentIndex.row -= 1;     break;
+        case EDGEID_Bottom:     adjacentIndex.row += 1;     break;
+        case EDGEID_Left:       adjacentIndex.col -= 1;     break;
+        case EDGEID_Right:      adjacentIndex.col += 1;     break;
+        default:                BeAssert (false);           return NULL;
+        }
+
+    return FindEntry (adjacentIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    CellEdgeAccessor::NeedToDoEdge (Entry*& matedEntry, TableCellEdgeId primaryEdge, TableCellListEdges edgesToProcess, Entry& entry)
+    {
+    matedEntry = NULL;
+
+    if ( ! entry.m_edgeExists[primaryEdge])
+        return false;
+
+    if (entry.m_edgeProcessed[primaryEdge])
+        return false;
+
+    switch (edgesToProcess)
+        {
+        case TableCellListEdges::Top:
+            {
+            return EDGEID_Top == primaryEdge;
+            }
+        case TableCellListEdges::Right:
+            {
+            return EDGEID_Right == primaryEdge;
+            }
+        case TableCellListEdges::Bottom:
+            {
+            return EDGEID_Bottom == primaryEdge;
+            }
+        case TableCellListEdges::Left:
+            {
+            return EDGEID_Left == primaryEdge;
+            }
+        case TableCellListEdges::All:
+            {
+            matedEntry = FindAdjacentEntry (primaryEdge, entry.m_cellIndex);
+            return true;
+            }
+        case TableCellListEdges::Interior:
+        case TableCellListEdges::InteriorHorizontal:
+        case TableCellListEdges::InteriorVertical:
+        case TableCellListEdges::Exterior:
+            {
+            matedEntry = FindAdjacentEntry (primaryEdge, entry.m_cellIndex);
+
+            if (TableCellListEdges::Exterior == edgesToProcess)
+                return NULL == matedEntry;
+
+            // No adjacent entry, this is an exterior edge. Skip it.
+            if (NULL == matedEntry)
+                return false;
+
+            // Its an interior, but we already processed it. Skip it.
+            TableCellEdgeId  opposingEdge = GetOpposingEdgeId (primaryEdge);
+
+            if (matedEntry->m_edgeProcessed[opposingEdge])
+                return false;
+
+            if (TableCellListEdges::InteriorHorizontal == edgesToProcess &&  ! IsHorizontal (primaryEdge))
+                return false;
+
+            if (TableCellListEdges::InteriorVertical == edgesToProcess &&  IsHorizontal (primaryEdge))
+                return false;
+
+            return true;
+            }
+        }
+
+    BeAssert (false);
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    CellEdgeAccessor::DoEdge (Entry* matedEntry, TableCellEdgeId primaryEdge, Entry& entry)
+    {
+    DoEdgeStatus status = _DoEdge (primaryEdge, entry);
+
+    if (SUCCESS != status.m_status)
+        return status.m_continue;
+
+    if (matedEntry)
+        {
+        TableCellEdgeId  opposingEdge = GetOpposingEdgeId (primaryEdge);
+        matedEntry->m_edgeProcessed[opposingEdge] = true;
+        }
+
+    return status.m_continue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    CellEdgeAccessor::ProcessOneEdge (TableCellEdgeId primaryEdge, TableCellListEdges edgesToProcess, Entry& entry)
+    {
+    Entry*  matedEntry   = NULL;
+
+    if ( ! NeedToDoEdge (matedEntry, primaryEdge, edgesToProcess, entry))
+        return true;
+
+    return DoEdge (matedEntry, primaryEdge, entry);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    CellEdgeAccessor::ProcessCells (TableCellListEdges edgesToProcess)
+    {
+    for (Entry& entry : m_entries)
+        {
+        if ( ! ProcessOneEdge (EDGEID_Top, edgesToProcess, entry))
+            break;
+
+        if ( ! ProcessOneEdge (EDGEID_Right, edgesToProcess, entry))
+            break;
+
+        if ( ! ProcessOneEdge (EDGEID_Bottom, edgesToProcess, entry))
+            break;
+
+        if ( ! ProcessOneEdge (EDGEID_Left, edgesToProcess, entry))
+            break;
+        }
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct InteriorEdgeFinder : CellEdgeAccessor
+    {
+private:
+    bool    m_foundHorizontal;
+    bool    m_foundVertical;
+
+    virtual DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
+
+public:
+    bool            FoundHorizontal  () { return m_foundHorizontal; }
+    bool            FoundVertical    () { return m_foundVertical;   }
+
+    /* ctor */      InteriorEdgeFinder (AnnotationTableElementCR table) : CellEdgeAccessor (table), m_foundHorizontal(false), m_foundVertical(false) {}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+CellEdgeAccessor::DoEdgeStatus  InteriorEdgeFinder::_DoEdge (TableCellEdgeId primaryEdge, Entry& entry)
+    {
+    if (IsHorizontal (primaryEdge))
+        m_foundHorizontal = true;
+    else
+        m_foundVertical = true;
+
+    bool canStop = m_foundHorizontal && m_foundVertical;
+
+    return DoEdgeStatus (SUCCESS, ! canStop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void   AnnotationTableElement::HasInteriorEdges (bool* hasAny, bool* hasHorizontal, bool* hasVertical, bvector<AnnotationTableCellIndex> const& cells) const
+    {
+    InteriorEdgeFinder finder (*this);
+
+    for (AnnotationTableCellIndexCR index : cells)
+        finder.AddCell (index);
+
+    finder.ProcessCells(TableCellListEdges::Interior);
+
+    if (NULL != hasAny)
+        *hasAny = finder.FoundHorizontal() || finder.FoundVertical();
+
+    if (NULL != hasHorizontal)
+        *hasHorizontal = finder.FoundHorizontal();
+
+    if (NULL != hasVertical)
+        *hasVertical = finder.FoundVertical();
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct CellEdgeSymbologyGetter : CellEdgeAccessor
+    {
+private:
+    bset<uint32_t>    m_keys;
+
+    virtual DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
+
+public:
+    /* ctor */      CellEdgeSymbologyGetter (AnnotationTableElementCR table) : CellEdgeAccessor (table) {}
+
+    void            GetSymbologies (bvector<AnnotationTableSymbologyValues>&) const;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+CellEdgeAccessor::DoEdgeStatus  CellEdgeSymbologyGetter::_DoEdge (TableCellEdgeId primaryEdge, Entry& entry)
+    {
+    uint32_t        startIndex;
+    EdgeRunsCP      edgeRuns = FindEdgeRun (startIndex, primaryEdge, entry.m_cellIndex);
+
+    if (UNEXPECTED_CONDITION (NULL == edgeRuns))
+        return DoEdgeStatus (ERROR, true);
+
+    AnnotationTableEdgeRunCP  edgeRun = edgeRuns->GetSpanningRun (startIndex);
+
+    if (UNEXPECTED_CONDITION (NULL == edgeRun))
+        return DoEdgeStatus (ERROR, true);
+
+    uint32_t  key = edgeRun->GetSymbologyKey ();
+    m_keys.insert (key);
+
+    return DoEdgeStatus (SUCCESS, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void    CellEdgeSymbologyGetter::GetSymbologies (bvector<AnnotationTableSymbologyValues>& symbs) const
+    {
+    SymbologyDictionary const&  dictionary = m_table.GetSymbologyDictionary();
+
+    for (uint32_t key : m_keys)
+        {
+        SymbologyEntryCP entry = dictionary.GetSymbology (key);
+
+        if (UNEXPECTED_CONDITION (NULL == entry))
+            continue;
+
+        AnnotationTableSymbologyValues values;
+
+        if (entry->GetVisible())
+            {
+            values.SetLineColor  (ColorDef(entry->GetColor()));
+            values.SetLineWeight (entry->GetWeight());
+            values.SetLineStyle  (DgnStyleId(entry->GetLineStyleId()), entry->GetLineStyleScale());
+            }
+        else
+            {
+            values.SetLineVisible (false);
+            }
+
+        symbs.push_back (values);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void   AnnotationTableElement::GetEdgeSymbology (bvector<AnnotationTableSymbologyValues>& symb, TableCellListEdges edges, bvector<AnnotationTableCellIndex> const& cells) const
+    {
+    CellEdgeSymbologyGetter getter (*this);
+
+    for (AnnotationTableCellIndexCR index : cells)
+        getter.AddCell (index);
+
+    getter.ProcessCells(edges);
+
+    getter.GetSymbologies (symb);
+    }
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct CellEdgeSymbologySetter : CellEdgeAccessor
+    {
+private:
+    AnnotationTableSymbologyValuesCR      m_symbology;
+
+    virtual DoEdgeStatus    _DoEdge (TableCellEdgeId primaryEdge, Entry& entry) override;
+
+public:
+    /* ctor */      CellEdgeSymbologySetter (AnnotationTableElementR table, AnnotationTableSymbologyValuesCR symb) : CellEdgeAccessor (table), m_symbology(symb) {}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+CellEdgeAccessor::DoEdgeStatus  CellEdgeSymbologySetter::_DoEdge (TableCellEdgeId primaryEdge, Entry& entry)
+    {
+    uint32_t        startIndex;
+    EdgeRunsCP      edgeRuns = FindEdgeRun (startIndex, primaryEdge, entry.m_cellIndex);
+
+    if (UNEXPECTED_CONDITION (NULL == edgeRuns))
+        return DoEdgeStatus (ERROR, true);
+
+    EdgeRunsR               nonConstEdgeRuns = const_cast <EdgeRunsR> (*edgeRuns);
+    AnnotationTableElementR nonConstTable    = const_cast <AnnotationTableElementR> (m_table);
+
+    nonConstEdgeRuns.SetSymbology (m_symbology, startIndex, 1, nonConstTable.GetSymbologyDictionary());
+    nonConstEdgeRuns.MergeRedundantRuns(&nonConstTable);
+
+    return DoEdgeStatus (SUCCESS, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void   AnnotationTableElement::SetEdgeSymbology (AnnotationTableSymbologyValuesCR symb, TableCellListEdges edges, bvector<AnnotationTableCellIndex> const& cells)
+    {
+    CellEdgeSymbologySetter setter (*this, symb);
+
+    for (AnnotationTableCellIndexCR index : cells)
+        setter.AddCell (index);
+
+    setter.ProcessCells(edges);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5461,16 +7926,24 @@ double  AnnotationTableElement::GetHeight () const
 BentleyStatus AnnotationTableSerializer::SerializeAspectChanges (AnnotationTableAspectR aspect)
     {
     if ( ! aspect.HasChanges())
+        {
+        aspect._DiscloseSymbologyKeys (m_usedSymbologyKeys);
         return SUCCESS;
+        }
 
     aspect._FlushChangesToProperties();
 
     bool    aspectIsMandatory = aspect._IsRequiredOnElement ();
-    bool    shouldBePersisted = aspectIsMandatory || aspect._ShouldBePersisted ();
+    bool    shouldBePersisted = aspectIsMandatory || aspect._ShouldBePersisted (*this);
 
     // if all the properties are default we don't need the aspect anymore
     if ( ! shouldBePersisted)
+        {
+        if ( ! aspect.HasValidAspectId())
+            return SUCCESS;
+
         return aspect.DeleteFromDb();
+        }
 
     BentleyStatus status;
 
@@ -5479,10 +7952,25 @@ BentleyStatus AnnotationTableSerializer::SerializeAspectChanges (AnnotationTable
     else
         status = aspect.InsertInDb();
 
+    aspect._DiscloseSymbologyKeys (m_usedSymbologyKeys);
+
     if (SUCCESS != status)
         return ERROR;
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool   AnnotationTableSerializer::SerializeEdgeRuns (EdgeRunsR edgeRuns)
+    {
+    bool bFailed = false;
+
+    for (AnnotationTableEdgeRunR edgeRun: edgeRuns)
+        bFailed |= (SUCCESS != SerializeAspectChanges (edgeRun));
+
+    return bFailed;
     }
 
 //---------------------------------------------------------------------------------------
@@ -5497,12 +7985,19 @@ DgnDbStatus AnnotationTableSerializer::SerializeTableToDb()
     -------------------------------------------------------------------------*/
     bFailed |= (SUCCESS != SerializeAspectChanges (m_table.GetHeaderAspect()));
 
+    // EdgeRuns associated with the m_table
+    bFailed |= SerializeEdgeRuns (m_table.GetTopEdgeRuns());
+    bFailed |= SerializeEdgeRuns (m_table.GetLeftEdgeRuns());
+
     /*-------------------------------------------------------------------------
         Column data
     -------------------------------------------------------------------------*/
     for (AnnotationTableColumnR column: m_table.GetColumnVectorR())
         {
         bFailed |= (SUCCESS != SerializeAspectChanges (column));
+
+        // EdgeRuns associated with this column
+        bFailed |= SerializeEdgeRuns (column.GetEdgeRuns());
         }
 
     /*-------------------------------------------------------------------------
@@ -5517,10 +8012,13 @@ DgnDbStatus AnnotationTableSerializer::SerializeTableToDb()
         -------------------------------------------------------------------------*/
         for (AnnotationTableCellR cell: row.GetCellVectorR())
             bFailed |= (SUCCESS != SerializeAspectChanges (cell));
+
+        // EdgeRuns associated with this row
+        bFailed |=SerializeEdgeRuns (row.GetEdgeRuns());
         }
 
     /*-------------------------------------------------------------------------
-        Merge dictionary instances
+        Merge dictionary
     -------------------------------------------------------------------------*/
     MergeDictionary&    mergeDict = m_table.GetMergeDictionary();
     MergeMap::iterator  mergeMapIter = mergeDict.begin();
@@ -5538,6 +8036,28 @@ DgnDbStatus AnnotationTableSerializer::SerializeTableToDb()
 
         bFailed |= (SUCCESS != SerializeAspectChanges (merge));
         ++mergeMapIter;
+        }
+
+    /*-------------------------------------------------------------------------
+        Symbology dictionary
+    -------------------------------------------------------------------------*/
+    SymbologyDictionary&    symbologyDict = m_table.GetSymbologyDictionary();
+    SymbologyMap::iterator  symbologyMapIter = symbologyDict.begin();
+
+    while (symbologyMapIter != symbologyDict.end())
+        {
+        uint32_t                    key       = symbologyMapIter->first;
+        SymbologyEntryR             symbology = symbologyMapIter->second;
+
+        if (m_usedSymbologyKeys.end() == m_usedSymbologyKeys.find (key))
+            {
+            m_table.DeleteAspect (symbology);
+            symbologyMapIter = symbologyDict.erase (symbologyMapIter);
+            continue;
+            }
+
+        bFailed |= (SUCCESS != SerializeAspectChanges (symbology));
+        ++symbologyMapIter;
         }
 
     /*-------------------------------------------------------------------------
@@ -5621,6 +8141,23 @@ DgnDbStatus AnnotationTableElement::_LoadFromDb()
     Initialize (false);
 
     /*-------------------------------------------------------------------------
+        Symbology data - need the SymbologyDictionary before deserializing edge runs.
+    -------------------------------------------------------------------------*/
+    statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::Symbology, *this);
+    if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
+        return DgnDbStatus::ReadError;
+
+    while (DbResult::BE_SQLITE_ROW == statement->Step())
+        {
+        int key = statement->GetValue(1).GetInt();
+
+        SymbologyEntry  newSymbology (*this, key);
+        newSymbology.AssignProperties (*statement);
+
+        EXPECTED_CONDITION (SUCCESS == GetSymbologyDictionary().AddSymbology (newSymbology));
+        }
+
+    /*-------------------------------------------------------------------------
         Row data
     -------------------------------------------------------------------------*/
     statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::Row, *this);
@@ -5629,7 +8166,7 @@ DgnDbStatus AnnotationTableElement::_LoadFromDb()
 
     while (DbResult::BE_SQLITE_ROW == statement->Step())
         {
-        int rowIndex = statement->GetValue(1).GetInt();
+        uint32_t rowIndex = statement->GetValue(1).GetInt();
 
         AnnotationTableRowP row = GetRow (rowIndex);
         row->AssignProperties (*statement);
@@ -5644,10 +8181,35 @@ DgnDbStatus AnnotationTableElement::_LoadFromDb()
 
     while (DbResult::BE_SQLITE_ROW == statement->Step())
         {
-        int columnIndex = statement->GetValue(1).GetInt();
+        uint32_t columnIndex = statement->GetValue(1).GetInt();
 
         AnnotationTableColumnP column = GetColumn (columnIndex);
         column->AssignProperties (*statement);
+        }
+
+    /*-------------------------------------------------------------------------
+        EdgeRun instances
+    -------------------------------------------------------------------------*/
+    statement = AnnotationTableAspect::GetPreparedSelectStatement (AnnotationTableAspectType::EdgeRun, *this);
+    if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
+        return DgnDbStatus::ReadError;
+
+    while (DbResult::BE_SQLITE_ROW == statement->Step())
+        {
+        EdgeRunHostType hostType  = (EdgeRunHostType) statement->GetValue(1).GetInt();
+        uint32_t        hostIndex = statement->GetValue(2).GetInt();;
+
+        AnnotationTableEdgeRun  newEdgeRun (*this);
+        newEdgeRun.SetHostType (hostType);
+        newEdgeRun.SetHostIndex (hostIndex);
+        newEdgeRun.AssignProperties (*statement);
+
+        EdgeRunsP   edgeRuns = newEdgeRun.GetHostEdgeRuns(*this);
+
+        if (UNEXPECTED_CONDITION (NULL == edgeRuns))
+            continue;
+
+        edgeRuns->Insert (newEdgeRun);
         }
 
     /*-------------------------------------------------------------------------
@@ -5700,19 +8262,12 @@ void AnnotationTableElement::LoadCells ()
         AnnotationTableCellIndex    cellIndex = AnnotationTableCellIndex::GetCellIndex (*statement, 1);
         AnnotationTableCellP        cell      = GetCell (cellIndex);
 
-#if defined (NEEDSWORK)
         if (UNEXPECTED_CONDITION (nullptr == cell || cell->IsMergedCellInterior()))
             continue;
-#else
-        if (UNEXPECTED_CONDITION (nullptr == cell))
-            continue;
-#endif
 
         cell->AssignProperties (*statement);
 
-#if defined (NEEDSWORK)
         cell->ApplyToFillRuns();
-#endif
         }
 
 #if defined (NEEDSWORK)
@@ -5744,7 +8299,7 @@ void AnnotationTableElement::_CopyFrom(DgnElementCR rhsElement)
 
     Clear();
 
-    m_tableHeader.CopyDataFrom (rhs->m_tableHeader);
+    m_tableHeader = rhs->m_tableHeader;
 
     Initialize (false);
 
@@ -5752,23 +8307,16 @@ void AnnotationTableElement::_CopyFrom(DgnElementCR rhsElement)
         m_textStyles[entry.first] = entry.second->Clone();
 
     for (AnnotationTableColumnCR rhsCol : rhs->m_columns)
-        m_columns[rhsCol.GetIndex()].CopyDataFrom (rhsCol);
+        m_columns[rhsCol.GetIndex()] = rhsCol;
 
     for (AnnotationTableRowCR rhsRow : rhs->m_rows)
-        m_rows[rhsRow.GetIndex()].CopyDataFrom (rhsRow);
+        m_rows[rhsRow.GetIndex()] = rhsRow;
 
-    MergeMap::iterator  mergeMapIter = rhs->m_mergeDictionary.begin();
+    m_topEdgeRuns  = rhs->m_topEdgeRuns;
+    m_leftEdgeRuns = rhs->m_leftEdgeRuns;
 
-    while (mergeMapIter != rhs->m_mergeDictionary.end())
-        {
-        MergeEntryR     rhsMerge = mergeMapIter->second;
-        MergeEntry      merge (*this, rhsMerge.GetRootIndex());
-
-        merge.CopyDataFrom (rhsMerge);
-
-        m_mergeDictionary.AddMerge (merge);
-        ++mergeMapIter;
-        }
+    m_symbologyDictionary = rhs->m_symbologyDictionary;
+    m_mergeDictionary = rhs->m_mergeDictionary;
     }
 
 //---------------------------------------------------------------------------------------
@@ -5787,7 +8335,7 @@ void AnnotationTableElement::UpdateGeometryRepresentation()
     if (! IsValid())
         return;
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngles());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngle());
 
     DPoint3d points[] =
         {

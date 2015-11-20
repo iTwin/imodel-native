@@ -39,6 +39,8 @@ static bvector<TestAnnotationTableAspectDescr> const& getAspectDescrs ()
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableColumn),   false   },
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableCell),     false   },
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableMerge),    false   },
+        { DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology),false   },
+        { DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),  false   },
         };
 
     return s_aspectDescrs;
@@ -59,7 +61,7 @@ public:
         AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableHeader), 1);
 
         // Every table at least one symbology aspect
-        //AddEntry (DGN_CLASSNAME_AnnotationTableSymbology, 1);
+        AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 1);
         }
 
     /* ctor */  ExpectedAspectCounts (uint32_t rowsExpected, uint32_t colsExpected, uint32_t cellsExpected, uint32_t mergesExpected)
@@ -172,7 +174,7 @@ private:
     AnnotationTextStyleId   m_textStyleId;
 
 public:
-AnnotationTableTest() : GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+AnnotationTableTest() : GenericDgnModelTestFixture (__FILE__, true /*2D*/)
     {
     }
 
@@ -198,8 +200,8 @@ void SetUp () override
     m_textStyleId = textStyle->GetStyleId();
     ASSERT_TRUE(m_textStyleId.IsValid());
 
-    // Create a physical model
-    DgnModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(*GetDgnProjectP(), DgnClassId(GetDgnProjectP()->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), DgnModel::CreateModelCode(m_modelName)));
+    // Create a 2d model
+    DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*GetDgnProjectP(), DgnClassId(GetDgnProjectP()->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), DgnModel::CreateModelCode(m_modelName)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     m_modelId = model->GetModelId();
@@ -593,6 +595,9 @@ public:
 
         AddTableToDb (*seedTable);
         seedTable = nullptr;
+
+//CloseTestFile();
+//ReopenTestFile();
 
         AnnotationTableElementPtr        applyActionTable;
 
@@ -2263,6 +2268,1197 @@ TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnJustAfter)
 TEST_F (AnnotationTableActionTest, InsertMergedCells_ColumnAfter)
     {
     InsertMergedCellsAction testAction (InsertMergedCellsAction::InsertTarget::ColumnAfter);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct EdgeColorSetter
+    {
+    AnnotationTableElementR         m_table;
+    uint32_t                        m_rowIndex;
+    AnnotationTableSymbologyValues  m_symb;
+
+    EdgeColorSetter (AnnotationTableElementR table, uint32_t rowIndex, ColorDef colorVal)
+        : m_table(table), m_rowIndex(rowIndex)
+        {
+        m_symb.SetLineColor(colorVal);
+        }
+
+    void SetColor (uint32_t colIndex, uint32_t numCells, bool top)
+        {
+        TableCellListEdges edges = top ? TableCellListEdges::Top : TableCellListEdges::Bottom;
+        bvector<AnnotationTableCellIndex> cells;
+
+        for (uint32_t iCol = 0; iCol < numCells; iCol++)
+            cells.push_back (AnnotationTableCellIndex (m_rowIndex, colIndex + iCol));
+
+        m_table.SetEdgeSymbology (m_symb, edges, cells);
+        }
+    };
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct SetEdgeColorAction : AnnotationTableTestAction
+{
+private:
+    ColorDef        m_colorVal;
+    uint32_t        m_rowIndex;
+    uint32_t        m_colStartIndex;
+    uint32_t        m_numCols;
+    bool            m_top;
+    uint32_t        m_expectedRunCount;
+
+public:
+    /* ctor */  SetEdgeColorAction (ColorDefCR color, uint32_t row, uint32_t colStart, uint32_t numCols, bool top) : m_colorVal (color), m_rowIndex (row), m_colStartIndex (colStart), m_numCols (numCols), m_top (top) {}
+
+    void    SetExpectedRunCount (uint32_t numRuns) { m_expectedRunCount = numRuns; }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, ColorDef::Yellow());
+
+        setter.SetColor (m_colStartIndex, m_numCols, m_top);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   m_expectedRunCount);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetEdgeColorAtStart)
+    {
+    ColorDef        colorVal = ColorDef::Green();
+    uint32_t        rowIndex = 0;
+    uint32_t        colStart = 0;
+    uint32_t        colSpan  = 1;
+    bool            isTop    = false;
+
+    SetEdgeColorAction   testAction (colorVal, rowIndex, colStart, colSpan, isTop);
+
+    // |oooo|----|----|
+    testAction.SetExpectedRunCount(2);
+
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_SetEdgeColorAtStart)
+    {
+    ColorDef        colorVal = ColorDef::Green();
+    uint32_t        rowIndex = 0;
+    uint32_t        colStart = 0;
+    uint32_t        colSpan  = 1;
+    bool            isTop    = false;
+
+    SetEdgeColorAction   testAction (colorVal, rowIndex, colStart, colSpan, isTop);
+
+    // |oooo|----|----|
+    testAction.SetExpectedRunCount(2);
+
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetEdgeColorInterior)
+    {
+    ColorDef        colorVal = ColorDef::Green();
+    uint32_t        rowIndex = 0;
+    uint32_t        colStart = 1;
+    uint32_t        colSpan  = 1;
+    bool            isTop    = false;
+
+    SetEdgeColorAction   testAction (colorVal, rowIndex, colStart, colSpan, isTop);
+
+    // |----|oooo|----|
+    testAction.SetExpectedRunCount(3);
+
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_SetEdgeColorInterior)
+    {
+    ColorDef        colorVal = ColorDef::Green();
+    uint32_t        rowIndex = 0;
+    uint32_t        colStart = 1;
+    uint32_t        colSpan  = 1;
+    bool            isTop    = false;
+
+    SetEdgeColorAction   testAction (colorVal, rowIndex, colStart, colSpan, isTop);
+
+    // |----|oooo|----|
+    testAction.SetExpectedRunCount(3);
+
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetEdgeColorAtEnd)
+    {
+    ColorDef        colorVal = ColorDef::Green();
+    uint32_t        rowIndex = 0;
+    uint32_t        colStart = 1;
+    uint32_t        colSpan  = 2;
+    bool            isTop    = false;
+
+    SetEdgeColorAction   testAction (colorVal, rowIndex, colStart, colSpan, isTop);
+
+    // |----|oooo|oooo|
+    testAction.SetExpectedRunCount(2);
+
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_SetEdgeColorAtEnd)
+    {
+    ColorDef        colorVal = ColorDef::Green();
+    uint32_t        rowIndex = 0;
+    uint32_t        colStart = 1;
+    uint32_t        colSpan  = 2;
+    bool            isTop    = false;
+
+    SetEdgeColorAction   testAction (colorVal, rowIndex, colStart, colSpan, isTop);
+
+    // |----|oooo|oooo|
+    testAction.SetExpectedRunCount(2);
+
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct MergeAdjacentEdgeRunsAction : AnnotationTableTestAction
+{
+private:
+    uint32_t      m_rowIndex;
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  MergeAdjacentEdgeRunsAction () : m_rowIndex(0), m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // |----|----|----|
+        setter.SetColor (0, 2, true);
+        // |oooo|oooo|----|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // |oooo|oooo|----|
+        setter.SetColor (2, 1, true);
+        // |oooo|oooo|oooo|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_MergeAdjacentEdgeRuns)
+    {
+    MergeAdjacentEdgeRunsAction   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_MergeAdjacentEdgeRuns)
+    {
+    MergeAdjacentEdgeRunsAction   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct MergeNonAdjacentEdgeRunsAction : AnnotationTableTestAction
+{
+private:
+    uint32_t      m_rowIndex;
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  MergeNonAdjacentEdgeRunsAction () : m_rowIndex(0), m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // |----|----|----|
+        setter.SetColor (0, 1, true);
+        setter.SetColor (2, 1, true);
+        // |oooo|----|oooo|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // |oooo|----|oooo|
+        setter.SetColor (1, 1, true);
+        // |oooo|oooo|oooo|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_MergeNonAdjacentEdgeRuns)
+    {
+    MergeNonAdjacentEdgeRunsAction   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_MergeNonAdjacentEdgeRuns)
+    {
+    MergeNonAdjacentEdgeRunsAction   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct DeleteColumnJoinsEdgeRunsAction : AnnotationTableTestAction
+{
+private:
+    uint32_t      m_rowIndex;
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  DeleteColumnJoinsEdgeRunsAction () : m_rowIndex(2), m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // |----|----|----|
+        setter.SetColor (0, 1, true);
+        setter.SetColor (2, 1, true);
+        // |oooo|----|oooo|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        // |oooo|----|oooo|
+        table.DeleteColumn (1);
+        // |oooo|oooo|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_DeleteColumnJoinsEdgeRuns)
+    {
+    DeleteColumnJoinsEdgeRunsAction   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_DeleteColumnJoinsEdgeRuns)
+    {
+    DeleteColumnJoinsEdgeRunsAction   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct DeleteColumnRemovesSymbologyEntryAction : AnnotationTableTestAction
+{
+private:
+    uint32_t      m_rowIndex;
+    uint32_t      m_colIndex;
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  DeleteColumnRemovesSymbologyEntryAction () : m_rowIndex(2), m_colIndex(1), m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // |----|----|----|
+        setter.SetColor (m_colIndex, 1, true);
+        // |----|oooo|----|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        // |----|oooo|----|
+        table.DeleteColumn (m_colIndex);
+        // |----|----|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ExpectedAspectCounts expectedCounts;
+        // empty - we added symbology and an edge run, but then deleted the colum which used them.
+
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_DeleteColumnRemovesSymbologyEntry)
+    {
+    DeleteColumnRemovesSymbologyEntryAction   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_DeleteColumnRemovesSymbologyEntry)
+    {
+    DeleteColumnRemovesSymbologyEntryAction   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct InsertColumnExtendsSymbologyAction : AnnotationTableTestAction
+{
+private:
+    uint32_t      m_rowIndex;
+    uint32_t      m_colIndex;
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  InsertColumnExtendsSymbologyAction () : m_rowIndex(2), m_colIndex(1), m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // |----|----|----|
+        setter.SetColor (m_colIndex, 1, true);
+        // |----|oooo|----|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        // |----|oooo|----|
+        table.InsertColumn (m_colIndex - 1, TableInsertDirection::After);
+        // |----|oooo|oooo|----|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   3);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_InsertColumnExtendsSymbology)
+    {
+    InsertColumnExtendsSymbologyAction   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_InsertColumnExtendsSymbology)
+    {
+    InsertColumnExtendsSymbologyAction   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct SetDefaultTextSymbology : AnnotationTableTestAction
+{
+private:
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  SetDefaultTextSymbology () : m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        table.SetDefaultTextColor (m_colorVal);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ColorDef  color = table.GetDefaultTextColor();
+        EXPECT_EQ (color, m_colorVal);
+
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetDefaultTextSymbology)
+    {
+    SetDefaultTextSymbology   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_SetDefaultTextSymbology)
+    {
+    SetDefaultTextSymbology   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct ClearDefaultTextSymbology : AnnotationTableTestAction
+{
+private:
+    ColorDef      m_tableColorVal;
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  ClearDefaultTextSymbology () : m_tableColorVal(0), m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        EXPECT_NE (m_tableColorVal, m_colorVal);
+
+        table.SetDefaultTextColor (m_colorVal);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        table.ClearDefaultTextColor ();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ColorDef  color = table.GetDefaultTextColor();
+        EXPECT_EQ (color, m_tableColorVal);
+
+        ExpectedAspectCounts expectedCounts;
+        // empty - we added default text symbology, but then cleared it.
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_ClearDefaultTextSymbology)
+    {
+    ClearDefaultTextSymbology   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_ClearDefaultTextSymbology)
+    {
+    ClearDefaultTextSymbology   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct DefaultTextSymbSharesEntryWithEdgeRunAction : AnnotationTableTestAction
+{
+private:
+    uint32_t      m_rowIndex;
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  DefaultTextSymbSharesEntryWithEdgeRunAction () : m_rowIndex(2), m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
+
+        // Adds one symbology entry (total of two).
+
+        // |----|----|----|
+        setter.SetColor (0, 1, true);
+        setter.SetColor (2, 1, true);
+        // |oooo|----|oooo|
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        // Should not add a new symbology entry
+
+        table.SetDefaultTextColor (m_colorVal);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        ColorDef  color = table.GetDefaultTextColor();
+        EXPECT_EQ (color, m_colorVal);
+
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   3);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_DefaultTextSymbSharesEntryWithEdgeRunAction)
+    {
+    DefaultTextSymbSharesEntryWithEdgeRunAction   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_DefaultTextSymbSharesEntryWithEdgeRunAction)
+    {
+    DefaultTextSymbSharesEntryWithEdgeRunAction   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct SetGetSymbologyAction : AnnotationTableTestAction
+{
+public:
+    enum class EdgeSymbologyId  { A, B, C, D, E };
+
+    struct SetInstruction
+        {
+        AnnotationTableSymbologyValues          m_symb;
+        TableCellListEdges                      m_edges;
+        bvector<AnnotationTableCellIndex>       m_cells;
+        };
+
+    struct GetInstruction
+        {
+        bvector<AnnotationTableSymbologyValues> m_expectedResults;
+        TableCellListEdges                      m_edges;
+        bvector<AnnotationTableCellIndex>       m_cells;
+        };
+
+private:
+    bvector<SetInstruction> const&      m_setInstructions;
+    bvector<GetInstruction> const&      m_getInstructions;
+
+public:
+    /* ctor */  SetGetSymbologyAction (bvector<SetInstruction> const& set, bvector<GetInstruction> const& get) : m_setInstructions (set), m_getInstructions (get) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    12/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        for (SetInstruction const& instruction : m_setInstructions)
+            table.SetEdgeSymbology (instruction.m_symb, instruction.m_edges, instruction.m_cells);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    12/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        for (GetInstruction const& instruction : m_getInstructions)
+            {
+            bvector<AnnotationTableSymbologyValues> const& expected = instruction.m_expectedResults;
+            bvector<AnnotationTableSymbologyValues>        actual;
+
+            table.GetEdgeSymbology (actual, instruction.m_edges, instruction.m_cells);
+
+            EXPECT_EQ (expected.size(), actual.size());
+
+            for (AnnotationTableSymbologyValues const& expectedValue : expected)
+                EXPECT_TRUE (SUCCESS == RemoveExpectedSymbology (expectedValue, actual));
+
+            EXPECT_EQ (0, actual.size());
+            }
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    12/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static bool ActualMatchedExpectedSymbology (AnnotationTableSymbologyValuesCR expected, AnnotationTableSymbologyValuesCR actual)
+        {
+        if (expected.HasLineVisible() && expected.GetLineVisible() != actual.GetLineVisible())
+            return false;
+
+        if (expected.HasLineWeight() && expected.GetLineWeight() != actual.GetLineWeight())
+            return false;
+
+        if (expected.HasLineColor() && expected.GetLineColor() != actual.GetLineColor())
+            return false;
+
+        if (expected.HasLineStyle() && expected.GetLineStyleId() != actual.GetLineStyleId())
+            return false;
+
+        if (expected.HasLineStyle() && expected.GetLineStyleScale() != actual.GetLineStyleScale())
+            return false;
+
+        return true;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    12/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static BentleyStatus RemoveExpectedSymbology (AnnotationTableSymbologyValuesCR expected, bvector<AnnotationTableSymbologyValues>& collection)
+        {
+        struct FindEquivalentPredicate
+            {
+            AnnotationTableSymbologyValuesCR  m_expected;
+
+            FindEquivalentPredicate (AnnotationTableSymbologyValuesCR item) : m_expected (item) {}
+            bool operator () (AnnotationTableSymbologyValues const& candidate)
+                {
+                return ActualMatchedExpectedSymbology (m_expected, candidate);
+                }
+            };
+
+        FindEquivalentPredicate   predicate (expected);
+        auto foundIter = std::find_if (collection.begin (), collection.end (), predicate);
+
+        if (foundIter == collection.end())
+            return ERROR;
+
+        collection.erase (foundIter);
+        return SUCCESS;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    12/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static AnnotationTableSymbologyValues CreateSymbValues (EdgeSymbologyId symbId)
+        {
+        // Each one should be a unique combination.
+        // These are for edges, so no fill color.
+        AnnotationTableSymbologyValues symb;
+
+        switch (symbId)
+            {
+            case EdgeSymbologyId::A:
+                symb.SetLineColor  (ColorDef::Green());
+                break;
+            case EdgeSymbologyId::B:
+                symb.SetLineColor  (ColorDef::Green());
+                symb.SetLineWeight (2);
+                break;
+            case EdgeSymbologyId::C:
+                symb.SetLineColor  (ColorDef::Yellow());
+                symb.SetLineStyle  (DgnStyleId(4ULL), 2.0);
+                symb.SetLineWeight (4);
+                break;
+            case EdgeSymbologyId::D:
+                symb.SetLineStyle  (DgnStyleId(6ULL), 6.0);
+                break;
+            case EdgeSymbologyId::E:
+                symb.SetLineWeight (8);
+                break;
+            }
+
+        return symb;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetGetSymbology_Simple)
+    {
+    bvector<SetGetSymbologyAction::SetInstruction>    setInstructions;
+    bvector<SetGetSymbologyAction::GetInstruction>    getInstructions;
+
+    //       0     1     2
+    //    |-----------------|
+    //  0 |     |     |     |
+    //    |-----+-----+-----|
+    //  1 |     |     |     |
+    //    |--a--+--a--+-----|
+    //  2 |     b     |     |
+    //    |-----+-----+-----|
+    //  3 |     c     |     |
+    //    |-----+-----+-----|
+    //  4 |     |     |     |
+    //    |-----|-----|-----|
+
+    auto    symbIdA = SetGetSymbologyAction::EdgeSymbologyId::A;
+    auto    symbIdB = SetGetSymbologyAction::EdgeSymbologyId::B;
+    auto    symbIdC = SetGetSymbologyAction::EdgeSymbologyId::C;
+
+    // Set symb A on two edges
+    {
+    SetGetSymbologyAction::SetInstruction  setInstruction;
+
+    setInstruction.m_symb  = SetGetSymbologyAction::CreateSymbValues(symbIdA);
+    setInstruction.m_edges = TableCellListEdges::Top;
+    setInstruction.m_cells.push_back (AnnotationTableCellIndex (2, 0));
+    setInstruction.m_cells.push_back (AnnotationTableCellIndex (2, 1));
+
+    setInstructions.push_back (setInstruction);
+    }
+
+    // Set symb B on one edge
+    {
+    SetGetSymbologyAction::SetInstruction  setInstruction;
+
+    setInstruction.m_symb  = SetGetSymbologyAction::CreateSymbValues(symbIdB);
+    setInstruction.m_edges = TableCellListEdges::Right;
+    setInstruction.m_cells.push_back (AnnotationTableCellIndex (2, 0));
+
+    setInstructions.push_back (setInstruction);
+    }
+
+    // Set symb C on one edge
+    {
+    SetGetSymbologyAction::SetInstruction  setInstruction;
+
+    setInstruction.m_symb  = SetGetSymbologyAction::CreateSymbValues(symbIdC);
+    setInstruction.m_edges = TableCellListEdges::Left;
+    setInstruction.m_cells.push_back (AnnotationTableCellIndex (3, 1));
+
+    setInstructions.push_back (setInstruction);
+    }
+
+    // Expect symb A
+    {
+    SetGetSymbologyAction::GetInstruction  getInstruction;
+
+    getInstruction.m_edges = TableCellListEdges::Bottom;
+    getInstruction.m_cells.push_back (AnnotationTableCellIndex (1, 0));
+    getInstruction.m_cells.push_back (AnnotationTableCellIndex (1, 1));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdA));
+
+    getInstructions.push_back (getInstruction);
+    }
+
+    // Expect symbs B and C
+    {
+    SetGetSymbologyAction::GetInstruction  getInstruction;
+
+    getInstruction.m_edges = TableCellListEdges::Right;
+    getInstruction.m_cells.push_back (AnnotationTableCellIndex (2, 0));
+    getInstruction.m_cells.push_back (AnnotationTableCellIndex (3, 0));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdB));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdC));
+
+    getInstructions.push_back (getInstruction);
+    }
+
+    SetGetSymbologyAction   testAction (setInstructions, getInstructions);
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetGetSymbology_OutsideInside)
+    {
+    bvector<SetGetSymbologyAction::SetInstruction>    setInstructions;
+    bvector<SetGetSymbologyAction::GetInstruction>    getInstructions;
+
+    //       0     1     2
+    //    |-----------------|
+    //  0 |     |     |     |
+    //    |-----+-----+-----|
+    //  1 |     |     |     |
+    //    |--a--+--a--+--a--|
+    //  2 a     c     c     a
+    //    |--b--+--b--+--a--|
+    //  3 a     c     a     |
+    //    |--b--+--b--+-----|
+    //  4 a     c     a     |
+    //    |--a--|--a--|-----|
+
+    auto    symbIdA = SetGetSymbologyAction::EdgeSymbologyId::A;
+    auto    symbIdB = SetGetSymbologyAction::EdgeSymbologyId::B;
+    auto    symbIdC = SetGetSymbologyAction::EdgeSymbologyId::C;
+
+    bvector<AnnotationTableCellIndex>  cells;
+    cells.push_back (AnnotationTableCellIndex (2, 0));
+    cells.push_back (AnnotationTableCellIndex (2, 1));
+    cells.push_back (AnnotationTableCellIndex (2, 2));
+    cells.push_back (AnnotationTableCellIndex (3, 0));
+    cells.push_back (AnnotationTableCellIndex (3, 1));
+    cells.push_back (AnnotationTableCellIndex (4, 0));
+    cells.push_back (AnnotationTableCellIndex (4, 1));
+
+    // Set symb A on outside edges
+    {
+    SetGetSymbologyAction::SetInstruction  setInstruction;
+
+    setInstruction.m_symb  = SetGetSymbologyAction::CreateSymbValues(symbIdA);
+    setInstruction.m_edges = TableCellListEdges::Exterior;
+    setInstruction.m_cells = cells;
+
+    setInstructions.push_back (setInstruction);
+    }
+
+    // Set symb B on horizontal inside edges
+    {
+    SetGetSymbologyAction::SetInstruction  setInstruction;
+
+    setInstruction.m_symb  = SetGetSymbologyAction::CreateSymbValues(symbIdB);
+    setInstruction.m_edges = TableCellListEdges::InteriorHorizontal;
+    setInstruction.m_cells = cells;
+
+    setInstructions.push_back (setInstruction);
+    }
+
+    // Set symb C on vertical inside edges
+    {
+    SetGetSymbologyAction::SetInstruction  setInstruction;
+
+    setInstruction.m_symb  = SetGetSymbologyAction::CreateSymbValues(symbIdC);
+    setInstruction.m_edges = TableCellListEdges::InteriorVertical;
+    setInstruction.m_cells = cells;
+
+    setInstructions.push_back (setInstruction);
+    }
+
+    // Expect symb A only outside edges
+    {
+    SetGetSymbologyAction::GetInstruction  getInstruction;
+
+    getInstruction.m_edges = TableCellListEdges::Exterior;
+    getInstruction.m_cells = cells;
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdA));
+
+    getInstructions.push_back (getInstruction);
+    }
+
+    // Expect symbs B and C on inside edges
+    {
+    SetGetSymbologyAction::GetInstruction  getInstruction;
+
+    getInstruction.m_edges = TableCellListEdges::Interior;
+    getInstruction.m_cells = cells;
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdB));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdC));
+
+    getInstructions.push_back (getInstruction);
+    }
+
+    // Expect symbs A, B and C on all edges
+    {
+    SetGetSymbologyAction::GetInstruction  getInstruction;
+
+    getInstruction.m_edges = TableCellListEdges::All;
+    getInstruction.m_cells = cells;
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdA));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdB));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdC));
+
+    getInstructions.push_back (getInstruction);
+    }
+
+    // Expect symbs A, B on bottom of second row
+    {
+    SetGetSymbologyAction::GetInstruction  getInstruction;
+
+    getInstruction.m_edges = TableCellListEdges::Bottom;
+    getInstruction.m_cells.push_back (AnnotationTableCellIndex (2, 0));
+    getInstruction.m_cells.push_back (AnnotationTableCellIndex (2, 1));
+    getInstruction.m_cells.push_back (AnnotationTableCellIndex (2, 2));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdA));
+    getInstruction.m_expectedResults.push_back (SetGetSymbologyAction::CreateSymbValues(symbIdB));
+
+    getInstructions.push_back (getInstruction);
+    }
+
+    SetGetSymbologyAction   testAction (setInstructions, getInstructions);
+    DoCreateTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct SetDefaultFill : AnnotationTableTestAction
+{
+private:
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  SetDefaultFill () : m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        AnnotationTableSymbologyValues symbology;
+
+        symbology.SetFillColor (m_colorVal);
+        table.SetDefaultFill (symbology, TableRows::Odd);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        AnnotationTableSymbologyValues  symb;
+
+        table.GetDefaultFill(symb, TableRows::Odd);
+        EXPECT_EQ (true, symb.HasFillColor());
+        EXPECT_EQ (m_colorVal, symb.GetFillColor());
+
+        table.GetDefaultFill(symb, TableRows::Even);
+        EXPECT_EQ (false, symb.HasFillColor());
+
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetDefaultFill)
+    {
+    SetDefaultFill   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_SetDefaultFill)
+    {
+    SetDefaultFill   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct ClearDefaultFill : AnnotationTableTestAction
+{
+private:
+    ColorDef      m_colorVal;
+
+public:
+    /* ctor */  ClearDefaultFill () : m_colorVal(ColorDef::Green()) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        AnnotationTableSymbologyValues symbology;
+
+        symbology.SetFillColor (m_colorVal);
+        table.SetDefaultFill (symbology, TableRows::Odd);
+        table.SetDefaultFill (symbology, TableRows::Even);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        AnnotationTableSymbologyValues symbology;
+
+        symbology.SetFillVisible (false);
+        table.SetDefaultFill (symbology, TableRows::Odd);
+        table.SetDefaultFill (symbology, TableRows::Even);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    11/15
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        AnnotationTableSymbologyValues  symb;
+
+        table.GetDefaultFill(symb, TableRows::Odd);
+        EXPECT_EQ (true,  symb.HasFillVisible());
+        EXPECT_EQ (false, symb.GetFillVisible());
+        EXPECT_EQ (false, symb.HasFillColor());
+
+        table.GetDefaultFill(symb, TableRows::Even);
+        EXPECT_EQ (true,  symb.HasFillVisible());
+        EXPECT_EQ (false, symb.GetFillVisible());
+        EXPECT_EQ (false, symb.HasFillColor());
+
+        ExpectedAspectCounts expectedCounts;
+        // empty - we added default fill, but then cleared it.
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_ClearDefaultFill)
+    {
+    ClearDefaultFill   testAction;
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_ClearDefaultFill)
+    {
+    ClearDefaultFill   testAction;
     DoModifyTableTest (testAction);
     }
 
