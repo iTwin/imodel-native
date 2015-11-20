@@ -211,7 +211,7 @@ private:
     bool ChangeAffectsProperty(PropertyMapCR propertyMap) const;
     int GetFirstColumnIndex(PropertyMapCP propertyMap) const;
 
-    BentleyStatus ExtractFromSqlChangeSet(ChangeSet& changeSet, ExtractOption extractOption);
+    BentleyStatus ExtractFromSqlChanges(Changes& sqlChanges, ExtractOption extractOption);
     BentleyStatus ExtractFromSqlChange(SqlChangeCR sqlChange, ExtractOption extractOption);
 
     void ExtractNonInlineStructInstance(IClassMapCR primaryClassMap, ECInstanceId instanceId);
@@ -236,7 +236,7 @@ public:
     ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTableR instancesTable, ValuesTableR valuesTable) : m_changeSummary(changeSummary), m_ecdb(m_changeSummary.GetDb()), m_instancesTable(instancesTable), m_valuesTable(valuesTable) {}
     ~ChangeExtractor() { FreeTableMap(); }
 
-    BentleyStatus ExtractFromSqlChangeSet(ChangeSet& changeSet);
+    BentleyStatus ExtractFromSqlChanges(Changes& changes);
 };
 
 
@@ -1055,23 +1055,22 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMapCP propertyMap) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::ExtractFromSqlChangeSet(ChangeSet& changeSet)
+BentleyStatus ChangeExtractor::ExtractFromSqlChanges(Changes& changes)
     {
     // Pass 1
-    BentleyStatus status = ExtractFromSqlChangeSet(changeSet, ExtractOption::InstancesOnly);
+    BentleyStatus status = ExtractFromSqlChanges(changes, ExtractOption::InstancesOnly);
     if (SUCCESS != status)
         return status;
 
     // Pass 2
-    return ExtractFromSqlChangeSet(changeSet, ExtractOption::RelationshipInstancesOnly);
+    return ExtractFromSqlChanges(changes, ExtractOption::RelationshipInstancesOnly);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::ExtractFromSqlChangeSet(ChangeSet& changeSet, ExtractOption extractOption)
+BentleyStatus ChangeExtractor::ExtractFromSqlChanges(Changes& changes, ExtractOption extractOption)
     {
-    Changes changes(changeSet);
     for (Changes::Change const& change : changes)
         {
         SqlChange sqlChange(change);
@@ -1648,10 +1647,23 @@ ChangeSummary::~ChangeSummary()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummary::FromSqlChangeSet(ChangeSet& changeSet)
+BentleyStatus ChangeSummary::FromChangeSet(ChangeSet& changeSet)
     {
     Initialize();
-    return m_changeExtractor->ExtractFromSqlChangeSet(changeSet);
+
+    Changes changes(changeSet);
+    return m_changeExtractor->ExtractFromSqlChanges(changes);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     07/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummary::FromChangeStream(BeSQLite::ChangeStream& changeStream)
+    {
+    Initialize();
+
+    Changes changes(changeStream);
+    return m_changeExtractor->ExtractFromSqlChanges(changes);
     }
 
 //---------------------------------------------------------------------------------------
