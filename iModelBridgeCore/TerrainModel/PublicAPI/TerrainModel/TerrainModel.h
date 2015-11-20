@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__BENTLEY_INTERNAL_ONLY__
 
 #if !defined(__midl) /* During a MIDL compile, there's nothing herein that we care about. */
 
