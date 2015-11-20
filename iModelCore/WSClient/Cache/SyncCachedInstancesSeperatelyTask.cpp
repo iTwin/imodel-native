@@ -66,7 +66,7 @@ void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
             {
             if (SUCCESS != txn.GetCache().UpdateInstance(objectId, result.GetValue()))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
+                SetError();
                 return;
                 }
             }
@@ -76,7 +76,7 @@ void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
             AddFailedObject(txn, objectId, result.GetError());
             if (CacheStatus::OK != txn.GetCache().RemoveInstance(objectId))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
+                SetError();
                 }
             }
         else
