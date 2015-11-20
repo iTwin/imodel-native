@@ -2537,7 +2537,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name);
 
     //! Creates a new ECEnumeration and adds it to the schema.
-    //! @param[out] ecClass If successful, will contain a new ECEntityClass object
+    //! @param[out] ecEnumeration If successful, will contain a new ECEnumeration object
     //! @param[in] name    Name of the enumeration to create
     //! @param[in] type    Type for the enumeration to create. Must be integer or string.
     //! @return A status code indicating whether or not the enumeration was successfully created and added to the schema
