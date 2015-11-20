@@ -157,7 +157,7 @@ AsyncTaskPtr<void> DownloadFilesTask::DownloadFile(DownloadFileProperties& file)
 
         if (SUCCESS != txn.GetCache().CacheFile(file.objectId, fileResult.GetValue(), m_fileCacheLocation))
             {
-            SetError(CachingDataSource::Status::InternalCacheError);
+            SetError();
             return;
             }
 

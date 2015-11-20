@@ -128,7 +128,7 @@ void CacheNavigationTask::MarkNotModifiedChildrenAsPartial()
     auto txn = m_ds->StartCacheTransaction();
     if (SUCCESS != txn.GetCache().MarkTemporaryInstancesAsPartial(m_partialDataNotModifiedParents))
         {
-        SetError(CachingDataSource::Status::InternalCacheError);
+        SetError();
         return;
         }
     txn.Commit();
@@ -324,7 +324,7 @@ AsyncTaskPtr<void> CacheNavigationTask::CacheChildrenRecursively(ObjectIdCR obje
     CacheStatus status = txn.GetCache().ReadResponseObjectIds(responseKey, *oldCachedChildren.get());
     if (CacheStatus::Error == status)
         {
-        SetError(CachingDataSource::Status::InternalCacheError);
+        SetError();
         return nullptr;
         }
 
@@ -379,7 +379,7 @@ bool retrievingFullData
             {
             if (CacheStatus::Error == txn.GetCache().RemoveInstance(parentId))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
+                SetError();
                 return;
                 }
             }
@@ -422,7 +422,7 @@ bool retrievingFullData
         bset<ObjectId> newCachedChildren;
         if (CacheStatus::Error == txn.GetCache().ReadResponseObjectIds(responseKey, newCachedChildren))
             {
-            SetError(CachingDataSource::Status::InternalCacheError);
+            SetError();
             }
 
         for (ObjectId newChildId : newCachedChildren)
