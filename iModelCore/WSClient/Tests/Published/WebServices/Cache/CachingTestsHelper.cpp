@@ -29,6 +29,18 @@ bool operator >= (const DateTime& lhs, const DateTime& rhs)
 bool VerifyHasRelationship
 (
 std::shared_ptr<DataSourceCache> cache,
+Utf8StringCR relClassKey,
+ObjectIdCR sourceId,
+ObjectIdCR targetId
+)
+    {
+    auto relClass = cache->GetAdapter().GetECRelationshipClass(relClassKey);
+    return VerifyHasRelationship(cache, relClass, sourceId, targetId);
+    }
+
+bool VerifyHasRelationship
+(
+std::shared_ptr<DataSourceCache> cache,
 ECRelationshipClassCP relClass,
 ObjectIdCR sourceId,
 ObjectIdCR targetId
@@ -334,6 +346,16 @@ ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR object
     return StubInstanceInCache(cache, objectId, propertiesMap);
     }
 
+CachedResponseKey StubInstancesInCache(IDataSourceCache& cache, StubInstances& instances, Utf8StringCR root, Utf8String responseName)
+    {
+    CachedResponseKey resultsKey(cache.FindOrCreateRoot(root), responseName);
+    if (SUCCESS != cache.CacheResponse(resultsKey, instances.ToWSObjectsResponse()))
+        {
+        EXPECT_TRUE(false);
+        }
+    return resultsKey;
+    }
+
 ECInstanceKey StubNonExistingInstanceKey(IDataSourceCache& cache, Utf8StringCR classKey, uint64_t instanceId)
     {
     auto ecClass = cache.GetAdapter().GetECClass(classKey);
@@ -341,6 +363,63 @@ ECInstanceKey StubNonExistingInstanceKey(IDataSourceCache& cache, Utf8StringCR c
     EXPECT_TRUE(nonExistingInstance.IsValid());
     EXPECT_FALSE(cache.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", instanceId)).IsValid());
     return nonExistingInstance;
+    }
+
+ECInstanceKey StubRelationshipInCache(IDataSourceCache& cache, ObjectIdCR relId, ObjectIdCR source, ObjectIdCR target)
+    {
+    StubInstances instances;
+    instances.Add(source).AddRelated(relId, target);
+    StubInstancesInCache(cache, instances);
+
+    auto relClass = cache.GetAdapter().GetECRelationshipClass(relId);
+    auto relationship = cache.FindRelationship(*relClass, source, target);
+
+    if (!relationship.IsValid())
+        {
+        EXPECT_TRUE(false);
+        }
+    return relationship;
+    }
+
+ECInstanceKey StubCreatedRelationshipInCache(IDataSourceCache& cache, Utf8StringCR relClassKey, ObjectIdCR source, ObjectIdCR target)
+    {
+    return StubCreatedRelationshipInCache(cache, IChangeManager::SyncStatus::Ready, relClassKey, source, target);
+    }
+
+ECInstanceKey StubCreatedRelationshipInCache
+(
+IDataSourceCache& cache,
+IChangeManager::SyncStatus status,
+Utf8StringCR relClassKey,
+ObjectIdCR source,
+ObjectIdCR target
+)
+    {
+    auto sourceKey = StubInstanceInCache(cache, source);
+    auto targetKey = StubInstanceInCache(cache, target);
+    auto testRelClass = cache.GetAdapter().GetECRelationshipClass(relClassKey);
+    auto relationship = cache.GetChangeManager().CreateRelationship(*testRelClass, sourceKey, targetKey, status);
+    if (!relationship.IsValid())
+        {
+        EXPECT_TRUE(false);
+        }
+    return relationship;
+    }
+
+ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, Utf8StringCR classKey)
+    {
+    return StubCreatedObjectInCache(cache, IChangeManager::SyncStatus::Ready, classKey);
+    }
+
+ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, IChangeManager::SyncStatus status, Utf8StringCR classKey)
+    {
+    auto testClass = cache.GetAdapter().GetECClass(classKey);
+    auto instance = cache.GetChangeManager().CreateObject(*testClass, Json::objectValue, status);
+    if (!instance.IsValid())
+        {
+        EXPECT_TRUE(false);
+        }
+    return instance;
     }
 
 CachedResponseKey StubCachedResponseKey(IDataSourceCache& cache, Utf8StringCR name)
