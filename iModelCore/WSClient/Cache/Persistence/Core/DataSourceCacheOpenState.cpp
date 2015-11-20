@@ -32,7 +32,7 @@ m_instanceHelper(m_dbAdapter, m_hierarchyManager, m_objectInfoManager, m_relatio
 m_rootManager(m_dbAdapter, m_statementCache, m_instanceHelper, m_hierarchyManager, m_objectInfoManager),
 m_cachedQueryManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_relationshipInfoManager, m_objectInfoManager),
 m_navigationBaseManager(m_dbAdapter, m_statementCache),
-m_changeInfoManager(m_dbAdapter, m_statementCache, m_objectInfoManager, m_relationshipInfoManager, m_fileInfoManager),
+m_changeInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_fileInfoManager),
 m_changeManager(m_dbAdapter, m_instanceHelper, m_hierarchyManager, m_cachedQueryManager, m_objectInfoManager, m_relationshipInfoManager,
 m_fileInfoManager, m_changeInfoManager, m_fileCacheManager, m_rootManager),
 m_fileCacheManager(m_dbAdapter, m_statementCache, environment, m_fileInfoManager),

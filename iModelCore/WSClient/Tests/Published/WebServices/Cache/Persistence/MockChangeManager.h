@@ -71,6 +71,8 @@ struct MockChangeManager : public IChangeManager
             std::shared_ptr<FileRevision>(ECInstanceKeyCR));
         MOCK_METHOD2 (ReadModifiedProperties,
             BentleyStatus (ECInstanceKeyCR instance, JsonValueR propertiesOut));
+        MOCK_METHOD0(CommitLocalDeletions,
+            BentleyStatus());
         MOCK_METHOD1 (CommitInstanceRevision,
             BentleyStatus (InstanceRevisionCR));
         MOCK_METHOD1 (CommitFileRevision,

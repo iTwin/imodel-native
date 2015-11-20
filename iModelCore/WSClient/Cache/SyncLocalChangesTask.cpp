@@ -44,50 +44,62 @@ void SyncLocalChangesTask::_OnExecute()
     {
     auto txn = m_ds->StartCacheTransaction();
 
-    m_serverInfo = m_ds->GetServerInfo(txn);
-
-    if (!txn.GetCache().GetChangeManager().HasChanges())
+    if (SUCCESS != txn.GetCache().GetChangeManager().CommitLocalDeletions() ||
+        SUCCESS != PrepareChangeGroups(txn.GetCache()))
         {
-        OnSyncDone();
+        SetError();
         return;
+        }
+
+    m_serverInfo = m_ds->GetServerInfo(txn);
+    txn.Commit();
+
+    SyncNext();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncLocalChangesTask::PrepareChangeGroups(IDataSourceCache& cache)
+    {
+    if (!cache.GetChangeManager().HasChanges())
+        {
+        return SUCCESS;
         }
 
     ChangeManager::Changes changesToSync;
     if (m_objectsToSyncPtr == nullptr)
         {
-        // sync all
-        //depricated.    SyncAll just has an array of a list of items we are going to sync.
-        if (SUCCESS != txn.GetCache().GetChangeManager().GetChanges(changesToSync, true))
+        // Sync all
+        if (SUCCESS != cache.GetChangeManager().GetChanges(changesToSync, true))
             {
-            SetError(CachingDataSource::Status::InternalCacheError);
-            return;
+            return ERROR;
             }
         }
     else
         {
-        // sync specific
+        // Sync specific
         for (auto instanceKey : *m_objectsToSyncPtr)
             {
-            txn.GetCache().GetChangeManager().GetChanges(instanceKey, changesToSync);
+            if (SUCCESS != cache.GetChangeManager().GetChanges(instanceKey, changesToSync))
+                {
+                return ERROR;
+                }
             }
         }
 
     m_changeGroups = ChangesGraph(changesToSync).BuildChangeGroups();
-    if (m_changeGroups.empty())
-        {
-        return;
-        }
 
     for (ChangeGroupPtr changeGroup : m_changeGroups)
         {
         if (IChangeManager::ChangeStatus::NoChange != changeGroup->GetFileChange().GetChangeStatus())
             {
-            BeFileName filePath = txn.GetCache().ReadFilePath(changeGroup->GetFileChange().GetInstanceKey());
+            BeFileName filePath = cache.ReadFilePath(changeGroup->GetFileChange().GetInstanceKey());
             m_totalBytesToUpload += FileUtil::GetFileSize(filePath);
             }
         }
 
-    SyncNext();
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+

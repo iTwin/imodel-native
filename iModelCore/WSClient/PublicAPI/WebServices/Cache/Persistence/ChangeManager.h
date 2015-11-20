@@ -57,6 +57,7 @@ struct ChangeManager : public IChangeManager
             uint64_t optionalChangeNumber
             );
 
+        BentleyStatus SetupNewRevision(struct ChangeInfo& info);
         InstanceRevisionPtr ReadObjectRevision(ECInstanceKeyCR instanceKey);
         InstanceRevisionPtr ReadRelationshipRevision(ECInstanceKeyCR instanceKey);
         static void SetupRevisionChanges(const struct ChangeInfo& info, Revision& revisionInOut);
@@ -143,6 +144,7 @@ struct ChangeManager : public IChangeManager
 
         // -- Commiting changes --
 
+        WSCACHE_EXPORT BentleyStatus CommitLocalDeletions() override;
         WSCACHE_EXPORT BentleyStatus CommitInstanceRevision(InstanceRevisionCR revision) override;
         WSCACHE_EXPORT BentleyStatus CommitFileRevision(FileRevisionCR revision) override;
 

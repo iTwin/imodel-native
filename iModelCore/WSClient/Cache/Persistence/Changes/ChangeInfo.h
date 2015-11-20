@@ -39,6 +39,12 @@ struct ChangeInfo
         uint64_t GetChangeNumber() const;
         void SetChangeNumber(uint64_t number);
 
+        uint64_t GetRevision() const;
+        void IncrementRevision();
+
+        bool IsLocal() const;
+        void SetIsLocal(bool value);
+
         void ClearChangeInfo();
 
         JsonValueCR GetJsonInfo() const;

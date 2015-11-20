@@ -28,6 +28,7 @@ struct ChangeInfoManager
     private:
         IECDbAdapter*                       m_dbAdapter;
         ECSqlStatementCache*                m_statementCache;
+        HierarchyManager*                   m_hierarchyManager;
         ObjectInfoManager*                  m_objectInfoManager;
         RelationshipInfoManager*            m_relationshipInfoManager;
         FileInfoManager*                    m_fileInfoManager;
@@ -48,6 +49,7 @@ struct ChangeInfoManager
             (
             ECDbAdapter& dbAdapter,
             ECSqlStatementCache& statementCache,
+            HierarchyManager& hierarchyManager,
             ObjectInfoManager& objectInfoManager,
             RelationshipInfoManager& relationshipInfoManager,
             FileInfoManager& fileInfoManager
@@ -68,6 +70,7 @@ struct ChangeInfoManager
         IChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey);
 
         BentleyStatus SetupChangeNumber(ChangeInfoR info);
+        BentleyStatus RemoveLocalDeletedInfos();
 
         BentleyStatus ReadBackupInstance(ECInstanceKeyCR infoKey, RapidJsonDocumentR instanceOut);
         BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, RapidJsonValueCR instance);

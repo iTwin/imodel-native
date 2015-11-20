@@ -16,6 +16,7 @@
 
 #ifdef USE_GTEST
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+using namespace ::testing;
 
 CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR rootName = "StubResponseKeyRoot", Utf8StringCR keyName = BeGuid().ToString())
     {
@@ -1794,6 +1795,41 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     EXPECT_EQ("A", result.GetValue().GetJson()["TestProperty"].asString());
     }
 
+TEST_F(CachingDataSourceTests, SyncLocalChanges_Default_CallsCommitLocalDeletionsBeforeGettingChanges)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto ds = CreateMockedCachingDataSource(client, cache);
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    InSequence callsInSequence;
+    EXPECT_CALL(cache->GetChangeManagerMock(), CommitLocalDeletions()).Times(1).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(cache->GetChangeManagerMock(), HasChanges()).Times(1).WillOnce(Return(true));
+    EXPECT_CALL(cache->GetChangeManagerMock(), GetChanges(An<IChangeManager::Changes&>(), _)).Times(1).WillOnce(Return(SUCCESS));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.GetValue().empty());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedDeletedObject_CommitsLocalChangeAndDoesNoRequests)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    auto txn = ds->StartCacheTransaction();
+    auto ecClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance = txn.GetCache().GetChangeManager().CreateObject(*ecClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(instance));
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, txn.GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+    txn.Commit();
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.GetValue().empty());
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+    }
+
 TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucceeds)
     {
     auto ds = GetTestDataSourceV1();
@@ -1819,12 +1855,12 @@ TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnecti
     EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"samePath")));
 
     AsyncTestCheckpoint check1;
-    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
+    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(An<IChangeManager::Changes&>(), _)).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
         {
         check1.CheckinAndWait();
         return SUCCESS;
         }));
-    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillByDefault(Return(SUCCESS));
+    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(An<IChangeManager::Changes&>(), _)).WillByDefault(Return(SUCCESS));
 
     auto t1 = ds1->SyncLocalChanges(nullptr, nullptr);
     check1.WaitUntilReached();
@@ -1853,12 +1889,12 @@ TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnecti
     EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"otherFilePath")));
 
     AsyncTestCheckpoint check1;
-    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
+    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(An<IChangeManager::Changes&>(), _)).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
         {
         check1.CheckinAndWait();
         return SUCCESS;
         }));
-    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillByDefault(Return(SUCCESS));
+    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(An<IChangeManager::Changes&>(), _)).WillByDefault(Return(SUCCESS));
 
     auto t1 = ds1->SyncLocalChanges(nullptr, nullptr);
     check1.WaitUntilReached();
@@ -1885,12 +1921,12 @@ TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnecti
     EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L":memory:")));
 
     AsyncTestCheckpoint check1;
-    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
+    EXPECT_CALL(cache1->GetChangeManagerMock(), GetChanges(An<IChangeManager::Changes&>(), _)).WillOnce(Invoke([&] (IChangeManager::Changes&, bool)
         {
         check1.CheckinAndWait();
         return SUCCESS;
         }));
-    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(_, An<bool>())).WillByDefault(Return(SUCCESS));
+    ON_CALL(cache2->GetChangeManagerMock(), GetChanges(An<IChangeManager::Changes&>(), _)).WillByDefault(Return(SUCCESS));
 
     auto t1 = ds1->SyncLocalChanges(nullptr, nullptr);
     check1.WaitUntilReached();
@@ -3430,7 +3466,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedObject_SendsDeleteObjectR
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedRelationship_SendsDeleteObjectRequestWithCorrectParametersAndCommits)

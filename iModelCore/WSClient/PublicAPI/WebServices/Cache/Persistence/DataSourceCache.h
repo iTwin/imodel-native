@@ -27,7 +27,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct DataSourceCache : public IDataSourceCache
     {
     public:
-        static const int CURRENT_CACHE_FORMAT_VERSION = 8;
+        static const int CURRENT_CACHE_FORMAT_VERSION = 9;
 
     private:
         ObservableECDb m_db;
