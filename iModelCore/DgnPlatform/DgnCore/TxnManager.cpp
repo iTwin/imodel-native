@@ -1019,7 +1019,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
         }
 
     changeSummary.Free();
-    BentleyStatus status = changeSummary.FromSqlChangeSet(mergedSqlChangeSet);
+    BentleyStatus status = changeSummary.FromChangeSet(mergedSqlChangeSet);
     BeAssert(status == SUCCESS);
     UNUSED_VARIABLE(status);
 
