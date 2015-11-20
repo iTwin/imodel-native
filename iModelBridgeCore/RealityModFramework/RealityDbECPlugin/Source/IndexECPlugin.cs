@@ -202,9 +202,9 @@ namespace Bentley.ECPluginExamples
             //foreach (SearchClass searchClass in query.SearchClasses)
             SearchClass searchClass = query.SearchClasses.First();
             {
-                //TODO : code a real procedure to fetch our connection string
-                    
-                    //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
+                Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
+                
+                //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
                 if ((querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage"))
                 {
                     IECInstance packageInstance = searchClass.Class.CreateInstance();
@@ -218,6 +218,7 @@ namespace Bentley.ECPluginExamples
                     
                     if (searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull)
                     {
+                        //Log.Logger.error(String.Format("Query {1} aborted. The class {0} cannot be queried.", searchClass.Class.Name, query.ID));
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                     }
                     
@@ -265,6 +266,7 @@ namespace Bentley.ECPluginExamples
                                 return instanceList;
                             default:
                                 //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                                //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
                                 throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
                         }
                     }
@@ -272,8 +274,13 @@ namespace Bentley.ECPluginExamples
                     {
                         //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
                         //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
-                        Log.Logger.error("The database server has encountered a problem.");
+                        //Log.Logger.error(String.Format("Query {0} aborted. The database server has encountered a problem.", query.ID));
                         throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}", query.ID, e.Message));
+                        throw;
                     }
 
 
@@ -396,53 +403,62 @@ namespace Bentley.ECPluginExamples
             WriteModifiers writeModifiers,
             IExtendedParameters extendedParameters)
         {
-            IECClass instanceClass = instance.ClassDefinition;
-
-            IECInstance fileHolderAttribute = instanceClass.GetCustomAttributes("FileHolder");
-
-            Log.Logger.trace("Retrieving instance " + instance.InstanceId + " of class " + instanceClass.Name);
-
-            if (fileHolderAttribute == null)
+            try
             {
-                Log.Logger.error("There is no file associate to instances of the class " + instanceClass.Name + ". Aborting retrieval operation.");
-                throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
+                IECClass instanceClass = instance.ClassDefinition;
+
+                IECInstance fileHolderAttribute = instanceClass.GetCustomAttributes("FileHolder");
+
+                Log.Logger.trace("Retrieving instance " + instance.InstanceId + " of class " + instanceClass.Name);
+
+                if (fileHolderAttribute == null)
+                {
+                    //Log.Logger.error("There is no file associate to instances of the class " + instanceClass.Name + ". Aborting retrieval operation.");
+                    throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
+                }
+
+
+
+                switch (fileHolderAttribute["Type"].StringValue)
+                {
+
+                    case "PreparedPackage":
+                        //var resourceManager = new FileResourceManager(connection);
+                        //FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
+                        //var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation, m_connectionString);
+                        //packageRetrievalController.Run();
+                        PackageStreamRetrievalController.SetStreamRetrieval(instance, m_connectionString);
+
+                        break;
+                    case "SQLThumbnail":
+                        //var sqlThumbnailRetrievalController = new SQLThumbnailRetrievalController(...);
+                        //sqlThumbnailRetrievalController.Run();
+                        break;
+                    case "USGSThumbnail":
+
+                        //var usgsThumbnailRetrievalController = new USGSThumbnailRetrievalController(instance);
+                        //usgsThumbnailRetrievalController.processThumbnailRetrieval();
+                        break;
+                    default:
+
+                        //Log.Logger.error(String.Format("Retrieval of instance {0} aborted. The file holder attribute {1} is not supported. Correct the ECSchema or the plugin.", instance.InstanceId, fileHolderAttribute["Type"].StringValue));
+                        throw new ProgrammerException(String.Format("The retrieval of files of type {0} is not supported.", fileHolderAttribute["Type"].StringValue));
+                }
+
+                //if (instance.ClassDefinition.Name == "BentleyFile")
+                //{
+
+                //}
+                //else
+                //{
+                //    throw new UserFriendlyException("Only BentleyFile instances are backed by files");
+                //}
             }
-
-
-
-            switch (fileHolderAttribute["Type"].StringValue)
+            catch(Exception e)
             {
-
-                case "PreparedPackage":
-                    //var resourceManager = new FileResourceManager(connection);
-                    //FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
-                    //var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation, m_connectionString);
-                    //packageRetrievalController.Run();
-                    PackageStreamRetrievalController.SetStreamRetrieval(instance, m_connectionString);
-
-                    break;
-                case "SQLThumbnail":
-                    //var sqlThumbnailRetrievalController = new SQLThumbnailRetrievalController(...);
-                    //sqlThumbnailRetrievalController.Run();
-                    break;
-                case "USGSThumbnail":
-
-                    //var usgsThumbnailRetrievalController = new USGSThumbnailRetrievalController(instance);
-                    //usgsThumbnailRetrievalController.processThumbnailRetrieval();
-                    break;
-                default:
-                    Log.Logger.error("The file holder attribute " + fileHolderAttribute["Type"].StringValue + "is not supported. Correct the ECSchema or the plugin.");
-                    throw new ProgrammerException("This type of file holder attribute is not supported");
+                Log.Logger.error(String.Format("Aborting retrieval of instance {0}. Error message : {1}", instance.InstanceId, e.Message));
+                throw;
             }
-
-            //if (instance.ClassDefinition.Name == "BentleyFile")
-            //{
-
-            //}
-            //else
-            //{
-            //    throw new UserFriendlyException("Only BentleyFile instances are backed by files");
-            //}
         }
 
         internal void ExecuteInsertOperation
@@ -458,19 +474,26 @@ namespace Bentley.ECPluginExamples
         {
             string className = instance.ClassDefinition.Name;
 
-            switch(className)
+            try
             {
-                case "PackageRequest":
-                    Log.Logger.trace("Initiating package creation");
-                    InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
-                    return;
-                //case "AutomaticRequest":
-                //    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
-                //    return;
+                switch (className)
+                {
+                    case "PackageRequest":
+                        InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
+                        return;
+                    //case "AutomaticRequest":
+                    //    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
+                    //    return;
 
-                default:
-                    Log.Logger.error("Package request aborted. Invalid class for insertion.");
-                    throw new Bentley.Exceptions.InvalidInputException("The only insert operation permitted is a PackageRequest instance insertion.");
+                    default:
+                        Log.Logger.error(String.Format("Package request aborted. The class {0} cannot be inserted", className));
+                        throw new Bentley.Exceptions.UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Logger.error(String.Format("Package {1} creation aborted. Error message : {0}", e.Message, instance.InstanceId));
+                throw;
             }
             
         }
@@ -544,7 +567,12 @@ namespace Bentley.ECPluginExamples
         private string InsertPackageRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
         {
             string coordinateSystem = null;
-             
+
+            string name = Guid.NewGuid().ToString();
+            instance.InstanceId = name + ".xrdp";
+
+            Log.Logger.trace(String.Format("Initiating creation of the package {0}", instance.InstanceId));
+
             var csPropValue = instance.GetPropertyValue("CoordinateSystem");
 
             if ((csPropValue != null) && (!csPropValue.IsNull))
@@ -556,18 +584,17 @@ namespace Bentley.ECPluginExamples
             bool osm = false;
             if (osmPropValue != null)
             {
-                if(osmPropValue.StringValue.ToLower() == "true")
-                osm = true;
+                if (osmPropValue.StringValue.ToLower() == "true")
+                    osm = true;
             }
 
             IECArrayValue requestedEntitiesECArray = instance.GetPropertyValue("RequestedEntities") as IECArrayValue;
             if (requestedEntitiesECArray == null)
             {
-                Log.Logger.error("The PackageRequest entry is incorrect. Correct the ECSchema");
-                throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property");
+                //This error should never happen except if the schema file is corrupted.
+                //Log.Logger.error(String.Format("Aborting creation of package {0}. The PackageRequest entry is incorrect. Correct the ECSchema", instance.InstanceId));
+                throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property.");
             }
-
-
 
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> dbRequestedEntities = new List<RequestedEntity>();
@@ -607,114 +634,113 @@ namespace Bentley.ECPluginExamples
             selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
 
             // Create data group and package.
-            string name = Guid.NewGuid().ToString();
-            try
+
+
+            ImageryGroupNet imgGroup = ImageryGroupNet.Create();
+            ModelGroupNet modelGroup = ModelGroupNet.Create();
+            PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
+            TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
+
+            foreach (WmsSourceNet wmsSource in wmsSourceList)
             {
-                ImageryGroupNet imgGroup = ImageryGroupNet.Create();
-                ModelGroupNet modelGroup = ModelGroupNet.Create();
-                PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
-                TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
-
-                foreach (WmsSourceNet wmsSource in wmsSourceList)
+                imgGroup.AddData(wmsSource);
+            }
+            foreach (Tuple<UsgsSourceNet, string> usgsSourceTuple in usgsSourceList)
+            {
+                //This switch case is temporary. The best thing we should have done
+                //was to create a method for this, but these "sourceNet" will probably
+                //change soon, so everything here is temporary until the database is in
+                //a more complete form
+                switch (usgsSourceTuple.Item2)
                 {
-                    imgGroup.AddData(wmsSource);
-                }
-                foreach (Tuple<UsgsSourceNet,string> usgsSourceTuple in usgsSourceList)
-                {
-                    //This switch case is temporary. The best thing we should have done
-                    //was to create a method for this, but these "sourceNet" will probably
-                    //change soon, so everything here is temporary until the database is in
-                    //a more complete form
-                    switch (usgsSourceTuple.Item2)
-	                {
 
-                        //TODO: Correct the switch case. The choice of the group for each class was not verified.
-                        case "Roadway":
-                        case "Bridge":
-                        case "Building":
-                        case "WaterBody":
-                        case "PointCloud":
-                            modelGroup.AddData(usgsSourceTuple.Item1);
-                            break;
-                        case "Terrain":
-                            terrainGroup.AddData(usgsSourceTuple.Item1);
-                            break;
-                        case "Imagery":
-		                default:
-                            imgGroup.AddData(usgsSourceTuple.Item1);
-                            break;
-	                }
-                }
-                
-                foreach (RealityDataSourceNet osmSource in osmSourceList)
-                {
-                    modelGroup.AddData(osmSource);
-                }
-                
-                // Create package.
-                string description = "";
-                string copyright = "";
-                //RealityDataPackageNet.Create(m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
-
-                //Until RealityPackageNet is changed, it creates the file in the temp folder, then we copy it in the database. 
-                RealityDataPackageNet.Create(Path.GetTempPath(), name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
-                instance.InstanceId = name + ".xrdp";
-
-                using (DbConnection sqlConnection = new SqlConnection(m_connectionString))
-                {
-                    sqlConnection.Open();
-                    using (DbCommand dbCommand = sqlConnection.CreateCommand())
-                    {
-                        dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent) VALUES (@param0, @param1, @param2)";
-                        dbCommand.CommandType = CommandType.Text;
-
-                        DbParameter param0 = dbCommand.CreateParameter();
-                        param0.DbType = DbType.String;
-                        param0.ParameterName = "@param0";
-                        param0.Value = instance.InstanceId;
-                        dbCommand.Parameters.Add(param0);
-
-                        DbParameter param1 = dbCommand.CreateParameter();
-                        param1.DbType = DbType.DateTime;
-                        param1.ParameterName = "@param1";
-                        param1.Value = DateTime.Now;
-                        dbCommand.Parameters.Add(param1);
-
-                        FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
-                        BinaryReader reader = new BinaryReader(fstream);
-
-                        long longLength = fstream.Length;
-                        int intLength;
-                        if(longLength > int.MaxValue)
-                        {
-                            Log.Logger.error("Package requested is too large. Aborting request.");
-                            throw new Bentley.Exceptions.InvalidInputException("Package requested is too large. Please reduce the size of the order");
-                        }
-                        intLength = Convert.ToInt32(longLength);
-                        byte[] fileBytes = new byte[fstream.Length];
-                        fstream.Seek(0,SeekOrigin.Begin);
-                        fstream.Read(fileBytes, 0, intLength);
-
-
-
-                        DbParameter param2 = dbCommand.CreateParameter();
-                        param2.DbType = DbType.Binary;
-                        param2.ParameterName = "@param2";
-                        param2.Value = fileBytes;
-                        dbCommand.Parameters.Add(param2);
-
-                        dbCommand.ExecuteNonQuery();
-                    }
-                    sqlConnection.Close();
+                    //TODO: Correct the switch case. The choice of the group for each class was not verified.
+                    case "Roadway":
+                    case "Bridge":
+                    case "Building":
+                    case "WaterBody":
+                    case "PointCloud":
+                        modelGroup.AddData(usgsSourceTuple.Item1);
+                        break;
+                    case "Terrain":
+                        terrainGroup.AddData(usgsSourceTuple.Item1);
+                        break;
+                    case "Imagery":
+                    default:
+                        imgGroup.AddData(usgsSourceTuple.Item1);
+                        break;
                 }
             }
-            catch (Exception e)
+
+            foreach (RealityDataSourceNet osmSource in osmSourceList)
             {
-                Log.Logger.error("There was a problem with the processing of the package order.");
-                throw new Bentley.EC.Persistence.Operations.OperationFailedException("There was a problem with the processing of the order.", e);
+                modelGroup.AddData(osmSource);
             }
+
+            // Create package.
+            string description = "";
+            string copyright = "";
+            //RealityDataPackageNet.Create(m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+
+            //Until RealityPackageNet is changed, it creates the file in the temp folder, then we copy it in the database. 
+            RealityDataPackageNet.Create(Path.GetTempPath(), name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+
+
+            UploadPackageInDatabase(instance);
+
             Log.Logger.trace("Created the package file " + instance.InstanceId);
             return instance.InstanceId;
+        }
+
+        private void UploadPackageInDatabase(IECInstance instance)
+        {
+            using (DbConnection sqlConnection = new SqlConnection(m_connectionString))
+            {
+                sqlConnection.Open();
+                using (DbCommand dbCommand = sqlConnection.CreateCommand())
+                {
+                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent) VALUES (@param0, @param1, @param2)";
+                    dbCommand.CommandType = CommandType.Text;
+
+                    DbParameter param0 = dbCommand.CreateParameter();
+                    param0.DbType = DbType.String;
+                    param0.ParameterName = "@param0";
+                    param0.Value = instance.InstanceId;
+                    dbCommand.Parameters.Add(param0);
+
+                    DbParameter param1 = dbCommand.CreateParameter();
+                    param1.DbType = DbType.DateTime;
+                    param1.ParameterName = "@param1";
+                    param1.Value = DateTime.Now;
+                    dbCommand.Parameters.Add(param1);
+
+                    FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
+                    BinaryReader reader = new BinaryReader(fstream);
+
+                    long longLength = fstream.Length;
+                    int intLength;
+                    if (longLength > int.MaxValue)
+                    {
+                        //Log.Logger.error("Package requested is too large.");
+                        throw new Bentley.Exceptions.UserFriendlyException("Package requested is too large. Please reduce the size of the order");
+                    }
+                    intLength = Convert.ToInt32(longLength);
+                    byte[] fileBytes = new byte[fstream.Length];
+                    fstream.Seek(0, SeekOrigin.Begin);
+                    fstream.Read(fileBytes, 0, intLength);
+
+
+
+                    DbParameter param2 = dbCommand.CreateParameter();
+                    param2.DbType = DbType.Binary;
+                    param2.ParameterName = "@param2";
+                    param2.Value = fileBytes;
+                    dbCommand.Parameters.Add(param2);
+
+                    dbCommand.ExecuteNonQuery();
+                }
+                sqlConnection.Close();
+            }
         }
 
         //This is only there to find the id of the osm entry in the database
@@ -734,7 +760,7 @@ namespace Bentley.ECPluginExamples
 
             if (queriedSpatialEntities.Count() == 0)
             {
-                Log.Logger.error("There is no OSM entry in the database.");
+                //Log.Logger.error("Package creation aborted. There is no OSM entry in the database.");
                 throw new Bentley.EC.Persistence.Operations.OperationFailedException("There is no OSM entry in the database");
             }
 
@@ -896,8 +922,8 @@ namespace Bentley.ECPluginExamples
 
             if(coordinateSystem == null)
             {
-                Log.Logger.error("Packaging interrupted. Coordinate system was not included");
-                throw new Bentley.Exceptions.InvalidInputException("Please enter a coordinate system when requesting this type of data.");
+                //Log.Logger.error("Package creation aborted. Coordinate system was not included");
+                throw new Bentley.Exceptions.UserFriendlyException("Please enter a coordinate system when requesting this type of data.");
             }
 
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
@@ -997,8 +1023,8 @@ namespace Bentley.ECPluginExamples
                 }
                 catch (JsonSerializationException)
                 {
-                    Log.Logger.error("Packaging interrupted. The polygon format is not valid");
-                    throw new Bentley.Exceptions.InvalidInputException("The polygon format is not valid.");
+                    //Log.Logger.error("Package creation aborted. The polygon format is not valid");
+                    throw new Bentley.Exceptions.UserFriendlyException(String.Format("The polygon format of the database entry {0} is not valid.", entityId));
                 }
 
                 MapInfo info = new MapInfo
@@ -1077,7 +1103,7 @@ namespace Bentley.ECPluginExamples
         {
             if (structValue.ClassDefinition.Name != "RequestedEntity")
             {
-                Log.Logger.error("The PackageRequest entry is incorrect. Correct the ECSchema");
+                //Log.Logger.error("Package request aborted. The PackageRequest entry is incorrect. Correct the ECSchema");
                 throw new ProgrammerException("Error in the ECSchema. A PackageRequest must be composed of an array of RequestedEntity.");
             }
 
@@ -1090,39 +1116,38 @@ namespace Bentley.ECPluginExamples
 
         }
 
-        private void CreateArchive(IECInstance instance, List<string> LocationOfFilesList, out string guid)
-        {
-            string archivePath;
+        //private void CreateArchive(IECInstance instance, List<string> LocationOfFilesList, out string guid)
+        //{
+        //    string archivePath;
 
-            do
-            {
-                guid = Guid.NewGuid().ToString();
-                archivePath = Path.Combine(m_packagesLocation, guid + ".zip");
-            }
-            while (File.Exists(archivePath));
+        //    do
+        //    {
+        //        guid = Guid.NewGuid().ToString();
+        //        archivePath = Path.Combine(m_packagesLocation, guid + ".zip");
+        //    }
+        //    while (File.Exists(archivePath));
 
-            FileInfo fileInfo = new FileInfo(archivePath);
-            fileInfo.Directory.Create();
+        //    FileInfo fileInfo = new FileInfo(archivePath);
+        //    fileInfo.Directory.Create();
 
-            try
-            {
-                using (ZipArchive archive = ZipFile.Open(archivePath, ZipArchiveMode.Create))
-                {
-                    foreach (var location in LocationOfFilesList)
-                    {
-                        archive.CreateEntryFromFile(location, Path.GetFileName(location));
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                File.Delete(archivePath);
-                Log.Logger.error("Unable to create archive");
-                throw;
-            }
+        //    try
+        //    {
+        //        using (ZipArchive archive = ZipFile.Open(archivePath, ZipArchiveMode.Create))
+        //        {
+        //            foreach (var location in LocationOfFilesList)
+        //            {
+        //                archive.CreateEntryFromFile(location, Path.GetFileName(location));
+        //            }
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+        //        File.Delete(archivePath);
+        //        Log.Logger.error("Unable to create archive");
+        //        throw;
+        //    }
 
-            //This ID will be used as the name of the package generated. 
-        }
+        //}
 
         private ConnectionFormatFieldInfo[] GetConnectionFormat(ConnectionModule sender,
                                                                 ECSession session,
@@ -1174,9 +1199,10 @@ namespace Bentley.ECPluginExamples
             }
             catch (Exception)
             {
-                throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid token.");
+                Log.Logger.error("Invalid token. Access denied.");
+                throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid token. Access denied.");
             }
-#endif      
+#endif
         }
 
         private void CloseConnection(ConnectionModule sender,

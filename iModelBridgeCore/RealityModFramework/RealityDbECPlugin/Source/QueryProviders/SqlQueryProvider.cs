@@ -96,19 +96,15 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                     model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
                 }
-                catch (JsonSerializationException)
+                catch (JsonException)
                 {
-                    Log.Logger.error("Query aborted : The polygon format is not valid.");
                     throw new UserFriendlyException("The polygon format is not valid.");
                 }
-
                 int polygonSRID;
                 if (!int.TryParse(model.coordinate_system, out polygonSRID))
                 {
-                    Log.Logger.error("Query aborted : The polygon format is not valid.");
                     throw new UserFriendlyException("The polygon format is not valid.");
                 }
-
                 string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
 
                 m_polygonDescriptor = new PolygonDescriptor
@@ -135,6 +131,7 @@ namespace IndexECPlugin.Source.QueryProviders
         {
             //In the future, it might be a good idea to use a DbConnectionFactory instead of using this connection directly
 
+            Log.Logger.info("Fetching Index results for query " + m_query.ID);
 
             List<IECInstance> instanceList = new List<IECInstance>();
 
@@ -232,7 +229,6 @@ namespace IndexECPlugin.Source.QueryProviders
                                 {
                                     if(!ECTypeHelper.IsString(instancePropertyValue.Type))
                                     {
-                                        Log.Logger.error(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
                                         throw new ProgrammerException(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
                                     }
                                     else
@@ -372,7 +368,6 @@ namespace IndexECPlugin.Source.QueryProviders
             //We can only query SQLEntities. We verify that the custom attribute is set correctly.
             if(queriedClass.GetCustomAttributes("SQLEntity") == null)
             {
-                Log.Logger.error(String.Format("Query aborted: It is not permitted to query instances of the {0} class", queriedClass.Name));
                 throw new UserFriendlyException(String.Format("It is not permitted to query instances of the {0} class", queriedClass.Name));
             }
 
@@ -452,7 +447,6 @@ namespace IndexECPlugin.Source.QueryProviders
             }
             catch (Bentley.ECObjects.ECObjectsException.NullValue)
             {
-                Log.Logger.error(String.Format("Query aborted: Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", queriedClass.Name));
                 throw new ProgrammerException(String.Format("Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", queriedClass.Name));
             }
 
@@ -478,7 +472,6 @@ namespace IndexECPlugin.Source.QueryProviders
                 TableDescriptor tempTable1 = table;
                 if (!queriedClass.Contains(property.Name))
                 {
-                    Log.Logger.error(String.Format("Query aborted: The selected property {0} does not exist in class {1}", property.Name, queriedClass.Name));
                     throw new UserFriendlyException(String.Format("The selected property {0} does not exist in class {1}", property.Name, queriedClass.Name));
                 }
 
@@ -525,7 +518,6 @@ namespace IndexECPlugin.Source.QueryProviders
             {
                 if (queriedClass.BaseClasses.Count() != 1)
                 {
-                    Log.Logger.error("Query aborted: IndexECPlugin only supports classes that have at most one base class.");
                     throw new ProgrammerException("IndexECPlugin only supports classes that have at most one base class.");
                 }
 
@@ -662,7 +654,6 @@ namespace IndexECPlugin.Source.QueryProviders
             int baseClassCount = firstClass.BaseClasses.Count();
             if (baseClassCount > 1)
             {
-                Log.Logger.error("Query aborted: IndexECPlugin only supports classes that have at most one derived class.");
                 throw new ProgrammerException("IndexECPlugin only supports classes that have at most one derived class.");
             }
 
@@ -695,16 +686,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 if (firstTableKeyAttribute.IsNull || newTableKeyAttribute.IsNull)
                 {
-                    Log.Logger.error("Query aborted: The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
-                    throw new ProgrammerException("The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
+                    throw new ProgrammerException("The ECSchema was incorrectly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
                 }
                 string firstTableKey = firstTableKeyAttribute.StringValue;
                 string newTableKey = newTableKeyAttribute.StringValue;
 
                 if (String.IsNullOrWhiteSpace(firstTableKey) || String.IsNullOrWhiteSpace(newTableKey))
                 {
-                    Log.Logger.error("Query aborted: The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
-                    throw new ProgrammerException("The ECSchema was badly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
+                    throw new ProgrammerException("The ECSchema was incorrectly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
                 }
 
                 newPropertyTableDescriptor = new TableDescriptor(propertyTableName, GetNewTableAlias());
@@ -807,7 +796,6 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     if (instanceIDExpression.InstanceIdSet.Count() == 0)
                     {
-                        Log.Logger.error("Query aborted: The array of IDs in the ECInstanceIdExpression is empty.");
                         throw new ProgrammerException("The array of IDs in the ECInstanceIdExpression is empty.");
                     }
 
@@ -1056,7 +1044,6 @@ namespace IndexECPlugin.Source.QueryProviders
             }
             if(String.IsNullOrWhiteSpace(columnName))
             {
-                Log.Logger.error("Query aborted: The class for which the user requested a spatial query does not have any spatial property.");
                 throw new UserFriendlyException("The class for which you requested a spatial query does not have any spatial property.");
             }
 

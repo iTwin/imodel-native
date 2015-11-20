@@ -1,4 +1,5 @@
 ﻿using Bentley.EC.Persistence;
+using Bentley.EC.Persistence.Operations;
 using Bentley.ECObjects.Instance;
 using Bentley.Exceptions;
 using System;
@@ -48,8 +49,8 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                         //We read only the first row, since the instance is supposed to be unique
                         if (reader.Read() == false)
                         {
-                            Log.Logger.error("There is no package named " + instance.InstanceId);
-                            throw new UserFriendlyException("There is no such file associated to this instance");
+                            Log.Logger.error("Package retrieval aborted. There is no package named " + instance.InstanceId);
+                            throw new InstanceDoesNotExistException("There is no package named " + instance.InstanceId);
                         }
 
                         MemoryStream mStream = new MemoryStream();

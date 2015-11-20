@@ -1,4 +1,5 @@
-﻿using Bentley.Exceptions;
+﻿using Bentley.EC.Persistence.Operations;
+using Bentley.Exceptions;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,8 @@ namespace IndexECPlugin.Source.Helpers
 
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
+            title = token.TryToGetString("title");
+
             string newTokenZipURL = token.TryToGetString("downloadURL");
             string[] newTokenZipURLSplit = newTokenZipURL.Split('/', '\\');
 
@@ -38,14 +41,21 @@ namespace IndexECPlugin.Source.Helpers
             resolutionInMeters = resolution.TrimEnd('m');
             resolutionInMeters = resolutionInMeters + "x" + resolutionInMeters;
 
-            if (newDateString.Length != 6)
+            //if (newDateString.Length != 6)
+            //{
+            //    Log.Logger.error("Error while filtering High Resolution Orthoimagery results.");
+            //    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering High Resolution Orthoimagery results.");
+            //}
+            try
             {
-                throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+                date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
             }
-
-            date = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
-
-            title = token.TryToGetString("title");
+            catch (System.FormatException)
+            {
+                Log.Logger.error(String.Format("Error while filtering USGS High Resolution Orthoimagery entry {0}.", title));
+                throw new OperationFailedException("Error while filtering USGS High Resolution Orthoimagery results.");
+            }
+            
         }
     }
 
@@ -58,6 +68,8 @@ namespace IndexECPlugin.Source.Helpers
 
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
+            title = token.TryToGetString("title");
+
             string newTokenZipURL = token.TryToGetString("downloadURL");
             string[] newTokenZipURLSplit = newTokenZipURL.Split('/', '\\');
 
@@ -81,7 +93,8 @@ namespace IndexECPlugin.Source.Helpers
                 }
                 else
                 {
-                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+                    Log.Logger.error(String.Format("Error while filtering USGS National Agriculture Imagery Program entry {0}.", title));
+                    throw new OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
                 }
             }
 
@@ -90,13 +103,21 @@ namespace IndexECPlugin.Source.Helpers
             ////The last acquisition date is located at the end
             //string dateString = fileNameSplit[fileNameSplit.Count() - 1];
             string dateString = token.TryToGetString("publicationDate");
-            if (dateString.Length != 10)
+            //if (dateString.Length != 10)
+            //{
+            //    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+            //}
+            try
             {
-                throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+                date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             }
-            date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            catch(FormatException)
+            {
+                Log.Logger.error(String.Format("Error while filtering USGS National Agriculture Imagery Program entry {0}.", title));
+                throw new OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
+            }
 
-            title = token.TryToGetString("title");
+            
         }
     }
 
@@ -115,11 +136,18 @@ namespace IndexECPlugin.Source.Helpers
 
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
-
-            string dateString = token.TryToGetString("publicationDate");
-            date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-
             title = token.TryToGetString("title");
+            string dateString = token.TryToGetString("publicationDate");
+
+            try
+            {
+                date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            }
+            catch(FormatException)
+            {
+                Log.Logger.error(String.Format("Error while filtering USGS National Elevation Dataset entry {0}.", title));
+                throw new OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
+            }
 
             double lat;
             switch (m_dataset)
@@ -151,7 +179,8 @@ namespace IndexECPlugin.Source.Helpers
 
                     break;
                 default:
-                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+                    Log.Logger.error(String.Format("Error while filtering USGS National Elevation Dataset entry {0}.", title));
+                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering USGS National Agriculture Imagery Program results");
             }
         }
     }
@@ -166,16 +195,23 @@ namespace IndexECPlugin.Source.Helpers
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
             string dateString = token.TryToGetString("publicationDate");
-
+            title = token.TryToGetString("title");
             if (dateString != null)
             {
-                date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                try
+                {
+                    date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                }
+                catch(FormatException)
+                {
+                    Log.Logger.error(String.Format("Error while filtering USGS entry {0}.", title));
+                    throw new OperationFailedException("Error while filtering USGS results");
+                }
             }
             else
             {
                 date = null;
             }
-            title = token.TryToGetString("title");
             resolution = "Unknown";
             resolutionInMeters = "Unknown";
         }
@@ -208,7 +244,8 @@ namespace IndexECPlugin.Source.Helpers
                     date = new DateTime(2011, 1, 1);
                     break;
                 default:
-                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+                    Log.Logger.error(String.Format("Error while filtering USGS National Land Cover Database entry {0}.", title));
+                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering USGS National Land Cover Database results.");
             }
 
         }
@@ -224,16 +261,25 @@ namespace IndexECPlugin.Source.Helpers
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
             string dateString = token.TryToGetString("publicationDate");
+            title = token.TryToGetString("title");
+
 
             if (dateString != null)
             {
-                date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                try
+                {
+                    date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                }
+                catch(FormatException)
+                {
+                    Log.Logger.error(String.Format("Error while filtering USGS Lidar entry {0}.", title));
+                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering USGS Lidar results.");
+                }
             }
             else
             {
                 date = null;
             }
-            title = token.TryToGetString("title");
             resolution = "Unknown";
             resolutionInMeters = "Unknown";
         }

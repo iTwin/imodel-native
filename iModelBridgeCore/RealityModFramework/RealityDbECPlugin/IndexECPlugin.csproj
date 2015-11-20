@@ -62,6 +62,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.logging-2.0.dll</HintPath>
     </Reference>
+    <Reference Include="Bentley.logging.log4net-2.0">
+      <HintPath>..\..\LastKnownGood\Winx64\LoggingSDK\Delivery\Bentley.logging.log4net-2.0.dll</HintPath>
+    </Reference>
     <Reference Include="Bentley.Platform">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
     </Reference>

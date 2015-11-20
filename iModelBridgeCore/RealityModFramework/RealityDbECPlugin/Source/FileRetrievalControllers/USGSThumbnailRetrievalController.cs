@@ -43,24 +43,23 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                     using (HttpContent content = response.Content)
                     {
                         string responseString = content.ReadAsStringAsync().Result;
-                        
 
-                        var json = JsonConvert.DeserializeObject(responseString) as JObject;
-                        var linkArray = json["webLinks"] as JArray;
+                        try
+                        {
+                            var json = JsonConvert.DeserializeObject(responseString) as JObject;
+                            var linkArray = json["webLinks"] as JArray;
 
-                        //We'll take the first link of type "browseImage"
-                        var link = linkArray.First(l => l["type"].Value<string>() == "browseImage");
-                        string thumbnailUri = link["uri"].Value<string>();
+                            //We'll take the first link of type "browseImage"
+                            var link = linkArray.First(l => l["type"].Value<string>() == "browseImage");
+                            string thumbnailUri = link["uri"].Value<string>();
 
-                        //long contentLength;
+                            //long contentLength;
 
-                        MemoryStream thumbnailStream = DownloadThumbnail(thumbnailUri);
+                            MemoryStream thumbnailStream = DownloadThumbnail(thumbnailUri);
 
                         //This is a test!!!!
                         //Stream thumbnailStream = File.OpenRead(@"C:\RealityData\PackagesNewDb\test.txt");
                         //StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, 3, DateTime.Now);
-
-
 
                         //TODO : Decide what to do with expectedSize (Currently 0)
                         //throw new Exception(String.Format("Length of the response : {0}", contentLength));
@@ -75,7 +74,12 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                         //    }
                             
                         //}
-
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Logger.error(String.Format("Instance {0} USGS thumbnail retrieval aborted. Received message : {1}"), m_instance.InstanceId, e.Message);
+                            throw new OperationFailedException("There is a problem with the retrieval of this USGS thumbnail");
+                        }
 
 
                     }

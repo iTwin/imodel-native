@@ -38,6 +38,8 @@ ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.Exceptions.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging-2.0.dll
 %include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging.log4net-2.0.dll
+%include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Newtonsoft.Json.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.IdentityModel.dll

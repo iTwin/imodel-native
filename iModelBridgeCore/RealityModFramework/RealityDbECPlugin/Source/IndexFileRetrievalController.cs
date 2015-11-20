@@ -139,7 +139,6 @@ namespace IndexECPlugin.Source
 
         private void preparedPackageProcedure(string name)
         {
-            //TODO : Change this string with something placed in a config file
             string location = Path.Combine(m_packagesLocation, name);
 
             FileInfo fileInfo = new FileInfo(location);

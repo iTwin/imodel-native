@@ -1,4 +1,5 @@
 ﻿using Bentley.EC.Persistence;
+using Bentley.EC.Persistence.Operations;
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
@@ -82,6 +83,8 @@ namespace IndexECPlugin.Source.QueryProviders
         {
             //This method will map to other methods, depending on the search class in the query
 
+            Log.Logger.info("Fetching USGS results for query " + m_query.ID);
+
             List<IECInstance> instanceList = null;
 
             string className = m_query.SearchClasses.First().Class.Name;
@@ -98,7 +101,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     if (instanceIDExpression.InstanceIdSet.Count() == 0)
                     {
-                        throw new ProgrammerException("The array of IDs in the ECInstanceIdExpression is empty.");
+                        throw new UserFriendlyException("Please specify at least one ID in this type of where clause");
                     }
 
                     //We create the requested instances
@@ -133,7 +136,7 @@ namespace IndexECPlugin.Source.QueryProviders
                         instanceList = QuerySpatialEntitiesWithDetailsViewByPolygon();
                         break;
                     default:
-                        throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" ");
+                        throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" in a USGS spatial request. The only class allowed is \"SpatialEntityWithDetailsView\".");
                 }
             }
 
@@ -218,7 +221,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 case "Server":
                     return QuerySingleServer(sourceID, m_query.SearchClasses.First().Class);
                 default:
-                    throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" ");
+                    throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" in a USGS request by ID.");
             }
         }
 
@@ -294,7 +297,6 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["DataProviderName"].StringValue = "United States Geological Survey";
 
             //instance["ParentDatasetIdStr"].StringValue = json["parentId"].Value<string>();
-            //throw new Exception("testing");
             return instance;
 
         }
@@ -645,7 +647,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if(thumbnailURI == null)
             {
-                throw new UserFriendlyException("We have encountered a problem processing the order for the thumbnail of ID " + sourceID);
+                throw new OperationFailedException("We have encountered a problem processing the order for the thumbnail of ID " + sourceID);
             }
 
             //The next part enables downloading the thumbnail
@@ -1051,7 +1053,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     {
                         if (!response.IsSuccessStatusCode)
                         {
-                            throw new Exception("USGS did not respond succesfully.");
+                            throw new Exception("USGS did not send a successful response.");
                         }
                         using (HttpContent content = response.Content)
                         {

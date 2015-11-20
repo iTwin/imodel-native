@@ -17,6 +17,12 @@ namespace IndexECPlugin.Source.Helpers
             StringWriter wktPolygon = new StringWriter(new CultureInfo("en-us"));
             wktPolygon.Write("POLYGON((");
             int numberOfPoints = enumerationOfPoints.Count();
+
+            if (numberOfPoints < 3)
+            {
+                throw new UserFriendlyException("The polygon format is not valid.");
+            }
+
             for (int i = 0; i < numberOfPoints; i++)
             {
                 wktPolygon.Write("{0} {1}", enumerationOfPoints.ElementAt(i)[0], enumerationOfPoints.ElementAt(i)[1]);
