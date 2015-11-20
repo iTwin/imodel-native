@@ -780,9 +780,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
-    ECInstanceKey instanceKey = revision.GetInstanceKey();
     ObjectId newId = revision.GetObjectId();
-
     if (newId.remoteId.empty() || newId.remoteId == info.GetObjectId().remoteId)
         {
         BeAssert(false && "Set remote id with new value");
