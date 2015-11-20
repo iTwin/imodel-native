@@ -36,7 +36,7 @@ namespace ScalableMeshSDKexe
             NULL 
             );
         if (m_pipe == NULL || m_pipe == INVALID_HANDLE_VALUE) fwprintf(stderr, L"Error creating pipe\n");
-        if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
+        //if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
         }
 
     BentleyStatus ScalableMeshSDKexe::Initialize(int argc, WCharP argv[])
@@ -190,10 +190,25 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return true;
         }
     
+
+    DRange3d s_importRange; 
+    
     bool StreamPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
-        {   
+        {           
         if (nbOfPoints > 0)
-            s_dataPipe.WritePoints(points, nbOfPoints);
+            {
+            bvector<DPoint3d> pointsInRange; 
+
+            for (size_t ptInd = 0; ptInd < nbOfPoints; ptInd++)
+                {
+                if (s_importRange.IsContainedXY(points[ptInd]))
+                    {
+                    pointsInRange.push_back(points[ptInd]);
+                    }
+                }        
+
+            s_dataPipe.WritePoints(&pointsInRange[0], pointsInRange.size());
+            }
 
         return true;
         }
@@ -211,8 +226,40 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
             s_finishWritingPointDone = true;
             }
 
-        if (nbOfFeaturesPoints)
-            s_dataPipe.WriteFeature(featurePoints, nbOfFeaturesPoints, featureType);
+        if (nbOfFeaturesPoints > 0)
+            {
+            bvector<DPoint3d> pointsInRange; 
+            bool wasContained; 
+
+            wasContained = s_importRange.IsContainedXY(featurePoints[0]);
+            pointsInRange.push_back(featurePoints[0]);
+
+            for (size_t ptInd = 0; ptInd < nbOfFeaturesPoints; ptInd++)
+                {
+                bool isContained = s_importRange.IsContainedXY(featurePoints[ptInd]);
+
+                if (isContained && !wasContained && (ptInd - 1) == 0)
+                    {
+                    pointsInRange.push_back(featurePoints[ptInd - 1]);                                        
+                    }
+
+                if (isContained || wasContained)
+                    {
+                    pointsInRange.push_back(featurePoints[ptInd]);                                        
+
+                    if (isContained == false)
+                        {
+                        s_dataPipe.WriteFeature(&pointsInRange[0], pointsInRange.size(), featureType);
+                        pointsInRange.clear();
+                        }
+                    }
+                                                                               
+                wasContained = isContained;
+                } 
+
+            if (pointsInRange.size() > 0)
+                s_dataPipe.WriteFeature(&pointsInRange[0], pointsInRange.size(), featureType);
+            }
 
         return true;
         }
@@ -473,6 +520,60 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/    
+void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
+    {    
+    double value;
+    BeXmlStatus status = pRootNode->GetAttributeDoubleValue(value, "xmax");
+
+    if (status != BEXML_Success)
+        {
+        importRange.high.x = numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.high.x = value;
+        }
+
+    status = pRootNode->GetAttributeDoubleValue(value, "xmin");
+
+    if (status != BEXML_Success)
+        {
+        importRange.low.x = -numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.low.x = value;
+        }
+
+    status = pRootNode->GetAttributeDoubleValue(value, "ymax");
+
+    if (status != BEXML_Success)
+        {
+        importRange.high.y = numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.high.y = value;
+        }
+
+    status = pRootNode->GetAttributeDoubleValue(value, "ymin");
+
+    if (status != BEXML_Success)
+        {
+        importRange.low.y = -numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.low.y = value;
+        }
+
+    importRange.low.z = 0;
+    importRange.high.z = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 11/2015
++---------------+---------------+---------------+---------------+---------------+------*/    
 int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                                IMrDTMPtr&                   mrdtmPtr, 
                                const std::vector<DPoint3d>& regionPoints,                               
@@ -586,41 +687,35 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
     return SUCCESS;
     }      
 
-    BentleyStatus ChooseCorrectSubResolution(RefCountedPtr<BcDTM>& singleResolutionDtm)
+    BentleyStatus ChooseCorrectSubResolution(RefCountedPtr<BcDTM>& singleResolutionDtm, const DRange3d& importRange, uint32_t maxNbPointsToImport)
         {
         IMrDTMPtr mrDtmPtr(IMrDTM::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm", true, true));
 
         if (mrDtmPtr == 0)
             return ERROR;
-
        
-        DRange3d range;
         std::vector<DPoint3d> regionPoints(5);
-
-        mrDtmPtr->GetRange(range);
-        
-        regionPoints[0].x = range.low.x;
-        regionPoints[0].y = range.low.y;
-        regionPoints[0].z = range.low.z;
-
-        regionPoints[1].x = range.high.x;
-        regionPoints[1].y = range.low.y;
-        regionPoints[1].z = range.low.z;
-
-        regionPoints[2].x = range.high.x;
-        regionPoints[2].y = range.high.y;
-        regionPoints[2].z = range.low.z;
-
-        regionPoints[3].x = range.low.x;
-        regionPoints[3].y = range.high.y;
-        regionPoints[3].z = range.low.z;
-
-        regionPoints[4].x = range.low.x;
-        regionPoints[4].y = range.low.y;
-        regionPoints[4].z = range.low.z;
-
-        size_t maxNbPointsToImport = 5000000;
                 
+        regionPoints[0].x = importRange.low.x;
+        regionPoints[0].y = importRange.low.y;
+        regionPoints[0].z = importRange.low.z;
+
+        regionPoints[1].x = importRange.high.x;
+        regionPoints[1].y = importRange.low.y;
+        regionPoints[1].z = importRange.low.z;
+
+        regionPoints[2].x = importRange.high.x;
+        regionPoints[2].y = importRange.high.y;
+        regionPoints[2].z = importRange.low.z;
+
+        regionPoints[3].x = importRange.low.x;
+        regionPoints[3].y = importRange.high.y;
+        regionPoints[3].z = importRange.low.z;
+
+        regionPoints[4].x = importRange.low.x;
+        regionPoints[4].y = importRange.low.y;
+        regionPoints[4].z = importRange.low.z;
+                        
         int statusInt = QueryStmFromBestResolution(singleResolutionDtm, mrDtmPtr, regionPoints, maxNbPointsToImport);
 
         if (statusInt != SUCCESS)
@@ -682,7 +777,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         return SUCCESS;
         }
 
-    BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pTestNode)
+    BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pRootNode)
         {
                
 //NEEDS_WORK_MST Remove
@@ -704,7 +799,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             {
             WString gcsKeyName;
 
-            status = pTestNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+            status = pRootNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
 
             if (status == BEXML_Success)
                 {
@@ -712,8 +807,18 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
                 assert(status == SUCCESS);
                 }
-        
-            if (ParseSourceSubNodes(importerPtr->EditSources(), pTestNode) == true)
+
+            uint32_t maximumNbOfPoints;
+            status = pRootNode->GetAttributeUInt32Value(maximumNbOfPoints, "maxNbPointsToImport");
+            
+            if (status != BEXML_Success)
+                {
+                maximumNbOfPoints = 5000000;
+                }
+            
+            GetImportRange(s_importRange, pRootNode);
+                    
+            if (ParseSourceSubNodes(importerPtr->EditSources(), pRootNode) == true)
                 {
                 std::thread workingThread;
 
@@ -738,7 +843,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
 
                 RefCountedPtr<BcDTM> singleResolutionDtm;
 
-                status = ChooseCorrectSubResolution(singleResolutionDtm);
+                status = ChooseCorrectSubResolution(singleResolutionDtm, s_importRange, maximumNbOfPoints);
 
                 if (status != SUCCESS)
                     return ERROR;
@@ -757,7 +862,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
 
 #if 0 
     //NEEDS_WORK_MST To Remove
-    BentleyStatus ScalableMeshSDKexe::ParseImportDefinitionNew(BeXmlNodeP pTestNode)
+    BentleyStatus ScalableMeshSDKexe::ParseImportDefinitionNew(BeXmlNodeP pRootNode)
         {
         BeXmlStatus status;
 
@@ -781,7 +886,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         WString gcsKeyName;            
         UInt64  maxNbPointsToImport;
         
-        status = pTestNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+        status = pRootNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
 
         if (status == BEXML_Success)
             {
@@ -790,14 +895,14 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             assert(status == SUCCESS);
             }
 
-        status = pTestNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
+        status = pRootNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
 
         if (status != BEXML_Success)
             {            
             maxNbPointsToImport = numeric_limits<UInt64>::max();
             }
         /*
-        status = pTestNode->GetAttributeUInt64Value(maxNbPointsToImport, "");
+        status = pRootNode->GetAttributeUInt64Value(maxNbPointsToImport, "");
 
         if (status != BEXML_Success)
             {            
@@ -805,7 +910,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             }
             */
 
-        if (ParseSourceSubNodes(mrdtmCreatorPtr->EditSources(), pTestNode) == false)
+        if (ParseSourceSubNodes(mrdtmCreatorPtr->EditSources(), pRootNode) == false)
             {                
             return ERROR;
             }
@@ -847,7 +952,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         }
 #endif
 
-    BentleyStatus ScalableMeshSDKexe::ParseImportDefinitionNew(BeXmlNodeP pTestNode)
+    BentleyStatus ScalableMeshSDKexe::ParseImportDefinitionNew(BeXmlNodeP pRootNode)
         {
         BeXmlStatus status;
 
@@ -871,7 +976,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         WString gcsKeyName;            
         UInt64  maxNbPointsToImport;
         
-        status = pTestNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+        status = pRootNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
 
         if (status == BEXML_Success)
             {
@@ -880,14 +985,14 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             assert(status == SUCCESS);
             }
 
-        status = pTestNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
+        status = pRootNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
 
         if (status != BEXML_Success)
             {            
             maxNbPointsToImport = numeric_limits<UInt64>::max();
             }
         /*
-        status = pTestNode->GetAttributeUInt64Value(maxNbPointsToImport, "");
+        status = pRootNode->GetAttributeUInt64Value(maxNbPointsToImport, "");
 
         if (status != BEXML_Success)
             {            
@@ -895,7 +1000,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             }
             */
 
-        if (ParseSourceSubNodes(mrdtmCreatorPtr->EditSources(), pTestNode) == false)
+        if (ParseSourceSubNodes(mrdtmCreatorPtr->EditSources(), pRootNode) == false)
             {                
             return ERROR;
             }
@@ -1015,9 +1120,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         Import();        
         //Terminate(true);
         }
-
-    static bool s_useStm = false;
-
+    
     void ScalableMeshSDKexe::Import()
         {
         BeXmlStatus status;
@@ -1032,15 +1135,9 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             }
 
         BeXmlNodeP pRootNode(pXmlDom->GetRootElement());
-
-        if (!s_useStm)
-            {
-            ParseImportDefinition(pRootNode);
-            }
-        else
-            {
-            ParseImportDefinitionNew(pRootNode);
-            }
+                
+        ParseImportDefinition(pRootNode);
+                
         CloseHandle(m_pipe);
         }
 
