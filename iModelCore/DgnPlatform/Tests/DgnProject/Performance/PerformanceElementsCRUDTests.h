@@ -232,19 +232,19 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
 
         void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const;
 
-        static int DetermineElementIdIncrement() { return (s_initialInstanceCount - s_firstElementId) / s_opCount; }
+        static int DetermineElementIdIncrement() { return s_initialInstanceCount / s_opCount; }
 
         //Generate Sql CRUD Statements.
         void GetInsertSql(Utf8CP className, Utf8StringR insertSql, DgnClassId classId) const;
-        void GetSelectSql(Utf8CP className, Utf8StringR selectSql) const;
-        void GetUpdateSql(Utf8CP className, Utf8StringR updateSql) const;
-        void GetDeleteSql(Utf8StringR deleteSql) const;
+        void GetSelectSql(Utf8CP className, Utf8StringR selectSql, bool asTranslatedFromECSql, bool omitClassIdFilter) const;
+        void GetUpdateSql(Utf8CP className, Utf8StringR updateSql, bool omitClassIdFilter) const;
+        void GetDeleteSql(Utf8CP className, Utf8StringR deleteSql, bool omitClassIdFilter) const;
 
         //Generate ECSql CRUD Statements. 
         void GetInsertECSql(Utf8CP className, Utf8StringR insertECSql) const;
-        void GetSelectECSql(Utf8CP className, Utf8StringR selectECSql) const;
-        void GetUpdateECSql(Utf8CP className, Utf8StringR updateECSql) const;
-        void GetDeleteECSql(Utf8CP className, Utf8StringR deleteECSql) const;
+        void GetSelectECSql(Utf8CP className, Utf8StringR selectECSql, bool omitClassIdFilter) const;
+        void GetUpdateECSql(Utf8CP className, Utf8StringR updateECSql, bool omitClassIdFilter) const;
+        void GetDeleteECSql(Utf8CP className, Utf8StringR deleteECSql, bool omitClassIdFilter) const;
 
         //Methods to Bind Business Property Values for Sql Statements
         static DgnDbStatus BindElement1PropertyParams(BeSQLite::Statement& stmt, bool updateParams);
@@ -276,6 +276,8 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         static DgnDbStatus ExtractElement4SelectParams(ECSqlStatement& stmt);
         static void ExtractSelectParams(ECSqlStatement& stmt, Utf8CP className);
 
+        void LogTiming(StopWatch&, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialCount, int opCount) const;
+
     protected:
         void ElementApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ElementApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
@@ -283,18 +285,17 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         void ElementApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
 
         void ECSqlInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ECSqlSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ECSqlUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ECSqlDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ECSqlSelectTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ECSqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ECSqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
 
         void SqlInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void SqlSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void SqlUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void SqlDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void SqlSelectTime(Utf8CP className, bool asTranslatedByECSql, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void SqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void SqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
 
         PerformanceElementsCRUDTestFixture() : DgnDbTestFixture()
             {
             DgnDomains::RegisterDomain(PerformanceElementTestDomain::GetDomain());
             }
-
     };
