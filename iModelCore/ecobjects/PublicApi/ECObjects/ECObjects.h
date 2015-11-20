@@ -43,6 +43,8 @@ EC_TYPEDEFS(StructArrayECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
+EC_TYPEDEFS(ECEnumeration);
+EC_TYPEDEFS(ECEnumerationContainer);
 EC_TYPEDEFS(ECEntityClass);
 EC_TYPEDEFS(ECCustomAttributeClass);
 EC_TYPEDEFS(ECStructClass);
@@ -123,6 +125,7 @@ enum class ECObjectsStatus
     PreconditionViolated,
     SchemaNotFound,
     ClassNotFound,
+    EnumerationNotFound,
     BaseClassUnacceptable,
     SchemaInUse,
     InvalidName,

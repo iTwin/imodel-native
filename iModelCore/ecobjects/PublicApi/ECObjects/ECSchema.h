@@ -44,8 +44,9 @@ bool operator()(Utf8CP s1, Utf8CP s2) const
 };
 
 typedef bvector<ECPropertyP> PropertyList;
-typedef bmap<Utf8CP , ECPropertyP, less_str> PropertyMap;
-typedef bmap<Utf8CP , ECClassP,    less_str> ClassMap;
+typedef bmap<Utf8CP, ECPropertyP,    less_str> PropertyMap;
+typedef bmap<Utf8CP, ECClassP,       less_str> ClassMap;
+typedef bmap<Utf8CP, ECEnumerationP, less_str> EnumerationMap;
 
 /*---------------------------------------------------------------------------------**//**
 * Used to hold property name and display label forECProperty, ECClass, and ECSchema.
@@ -1309,9 +1310,61 @@ public:
     //! @param[in]  currentBaseClass    The source class to check against
     //! @param[in]  arg                 The target to compare to (this parameter must be an ECClassP)
     ECOBJECTS_EXPORT static bool    ClassesAreEqualByName(ECClassCP currentBaseClass, const void * arg);
-
-
 }; // ECClass
+
+//=======================================================================================
+//! The in-memory representation of an ECEnumeration as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct ECEnumeration
+    {
+    //__PUBLISH_SECTION_END__
+friend struct ECSchema;
+
+    private:
+        ECSchemaCR  m_schema;
+        mutable Utf8String              m_fullName;
+        ECValidatedName                 m_validatedName;
+        PrimitiveType                   m_primitiveType;
+        Utf8String                      m_description;
+
+    protected:
+        //  Lifecycle management:  The schema implementation will
+        //  serve as a factory for enumerations and will manage their lifecycle.
+        ECEnumeration(ECSchemaCR schema);
+        virtual ~ECEnumeration();
+
+        // schemas index enumeration by name so publicly name can not be reset
+        ECObjectsStatus                     SetName(Utf8StringCR name);
+
+    //__PUBLISH_SECTION_START__
+    public:
+        //! The ECSchema that this enumeration is defined in
+        ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
+        //! The name of this ECClass
+        ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
+        //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
+        ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
+        //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
+        ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
+        //! Gets the PrimitiveType of this ECProperty
+        ECOBJECTS_EXPORT PrimitiveType GetType() const;
+        //! Whether the display label is explicitly defined or not
+        ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+        //! Sets the display label of this ECClass
+        ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
+        //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
+        ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
+        //! Gets the invariant display label for this ECClass.
+        ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
+
+        //! Sets the description of this ECEnumeration
+        ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
+        //! Gets the description of this ECEnumeration.  Returns the localized description if one exists.
+        ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
+        //! Gets the invariant description for this ECClass.
+        ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
+    };
 
 //---------------------------------------------------------------------------------------
 // The in-memory representation of an EntityClass as defined by ECSchemaXML
@@ -1332,7 +1385,7 @@ protected:
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
     ECEntityClass (ECSchemaCR schema);
-    virtual ~ECEntityClass () {}
+    virtual ~ECEntityClass() {}
 
     virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
     virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
@@ -2086,6 +2139,65 @@ public:
 
 };
 
+//=======================================================================================
+//! Supports STL like iterator of enumerations in a schema
+//! @bsiclass
+//=======================================================================================
+struct ECEnumerationContainer
+    {
+/*__PUBLISH_SECTION_END__*/
+    private:
+        friend struct ECSchema;
+        friend struct ECEnumeration;
+
+        EnumerationMap const&     m_enumerationMap;
+
+    public:
+        ECOBJECTS_EXPORT ECEnumerationContainer(EnumerationMap const& enumerationMap) : m_enumerationMap(enumerationMap) {}; //public for test purposes only
+
+//__PUBLISH_SECTION_START__
+    public:
+        //=======================================================================================
+        // @bsistruct
+        //=======================================================================================
+        struct IteratorState : RefCountedBase
+            {
+            friend struct const_iterator;
+            /*__PUBLISH_SECTION_END__*/
+            public:
+                EnumerationMap::const_iterator     m_mapIterator;
+
+                IteratorState(EnumerationMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
+                static RefCountedPtr<IteratorState> Create(EnumerationMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
+                //__PUBLISH_SECTION_START__
+            };
+
+        //=======================================================================================
+        // @bsistruct
+        //=======================================================================================
+        struct const_iterator : std::iterator<std::forward_iterator_tag, ECEnumerationP const>
+            {
+            private:
+                friend struct ECEnumerationContainer;
+                RefCountedPtr<IteratorState>   m_state;
+
+                /*__PUBLISH_SECTION_END__*/
+                const_iterator(EnumerationMap::const_iterator mapIterator) { m_state = IteratorState::Create(mapIterator); };
+                /*__PUBLISH_SECTION_START__*/
+                const_iterator(char*) { ; } // must publish at least one private constructor to prevent instantiation
+
+            public:
+                ECOBJECTS_EXPORT const_iterator&       operator++(); //!< Increments the iterator
+                ECOBJECTS_EXPORT bool                  operator!=(const_iterator const& rhs) const; //!< Checks for inequality
+                ECOBJECTS_EXPORT bool                  operator==(const_iterator const& rhs) const; //!< Checks for equality
+                ECOBJECTS_EXPORT ECEnumerationP const& operator* () const; //!< Returns the value at the current location
+            };
+
+    public:
+        ECOBJECTS_EXPORT const_iterator begin() const; //!< Returns the beginning of the iterator
+        ECOBJECTS_EXPORT const_iterator end()   const; //!< Returns the end of the iterator
+
+    };
 
 //=======================================================================================
 //! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.
@@ -2242,9 +2354,11 @@ private:
     mutable ECSchemaId      m_ecSchemaId;
     Utf8String              m_description;
     ECClassContainer        m_classContainer;
+    ECEnumerationContainer  m_enumerationContainer;
 
     // maps class name -> class pointer
     ClassMap                    m_classMap;
+    EnumerationMap              m_enumerationMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
@@ -2262,7 +2376,8 @@ private:
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
 
-    ECObjectsStatus                     AddClass (ECClassP pClass, bool deleteClassIfDuplicate = true);
+    template<typename T>
+    ECObjectsStatus                     AddClass (T& pClass, bool deleteClassIfDuplicate = true);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
@@ -2330,6 +2445,10 @@ public:
     ECOBJECTS_EXPORT uint32_t           GetVersionMinor() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
+    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    ECOBJECTS_EXPORT ECEnumerationContainerCR GetEnumerations() const;
+    //! Removes an enumeration from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus    DeleteEnumeration(ECEnumerationR ecEnumeration);
     
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
@@ -2355,6 +2474,9 @@ public:
 
     //! Gets the number of classes in the schema
     ECOBJECTS_EXPORT uint32_t           GetClassCount() const;
+
+    //! Gets the number of enumerations in the schema
+    ECOBJECTS_EXPORT uint32_t           GetEnumerationCount() const;
 
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
@@ -2414,6 +2536,13 @@ public:
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name);
 
+    //! Creates a new ECEnumeration and adds it to the schema.
+    //! @param[out] ecClass If successful, will contain a new ECEntityClass object
+    //! @param[in] name    Name of the enumeration to create
+    //! @param[in] type    Type for the enumeration to create. Must be integer or string.
+    //! @return A status code indicating whether or not the enumeration was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateEnumeration(ECEnumerationP& ecEnumeration, Utf8StringCR name, PrimitiveType type);
+
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
     //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
@@ -2435,6 +2564,16 @@ public:
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
     //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassP           GetClassP (Utf8CP name);
+
+    //! Get an enumeration by name within the context of this schema.
+    //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT ECEnumerationCP          GetEnumerationCP(Utf8CP name) const;
+
+    //! Get an enumeration by name within the context of this schema.
+    //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT ECEnumerationP           GetEnumerationP(Utf8CP name);
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,

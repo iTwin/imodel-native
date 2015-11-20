@@ -235,7 +235,8 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
-    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0)
+    :m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
+        m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0)
     {
     //
     };
@@ -270,6 +271,15 @@ ECSchema::~ECSchema ()
         delete ecClass;
         }
     BeAssert (m_classMap.empty());
+
+    for (auto entry : m_enumerationMap)
+        {
+        ECEnumerationP ecEnumeration = entry.second;
+        delete ecEnumeration;
+        }
+
+    m_enumerationMap.clear();
+    BeAssert(m_enumerationMap.empty());
 
     m_refSchemaList.clear();
 
@@ -603,6 +613,27 @@ ECClassP ECSchema::GetClassP (Utf8CP name)
         return NULL;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationCP ECSchema::GetEnumerationCP(Utf8CP name) const
+    {
+    return const_cast<ECSchemaP> (this)->GetEnumerationP(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECOBJECTS_EXPORT ECEnumerationP ECSchema::GetEnumerationP(Utf8CP name)
+    {
+    EnumerationMap::const_iterator iterator = m_enumerationMap.find(name);
+    if (iterator != m_enumerationMap.end())
+        return iterator->second;
+    else
+        return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -632,6 +663,20 @@ ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Robert.Schili   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::DeleteEnumeration (ECEnumerationR ecEnumeration)
+    {
+    EnumerationMap::iterator iter = m_enumerationMap.find (ecEnumeration.GetName().c_str());
+    if (iter == m_enumerationMap.end() || iter->second != &ecEnumeration)
+        return ECObjectsStatus::EnumerationNotFound;
+
+    m_enumerationMap.erase (iter);
+    delete &ecEnumeration;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
@@ -650,9 +695,25 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddClass (ECClassP pClass, bool deleteClassIfDuplicate)
+template<typename T>
+inline ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    EnumerationMap::const_iterator  enumerationIterator;
+    enumerationIterator = m_enumerationMap.find(pClass->GetName().c_str());
+    if (enumerationIterator != m_enumerationMap.end())
+        {
+        LOG.warningv("Cannot create class '%s' because an enumeration with that name already exists in the schema", pClass->GetName().c_str());
+        if (deleteClassIfDuplicate)
+            {
+            // preserving weird existing behavior, added option to not do this...
+            delete pClass;
+            pClass = nullptr;
+            }
+
+        return ECObjectsStatus::NamedItemAlreadyExists;
+        }
 
     bpair <ClassMap::iterator, bool> resultPair;
     resultPair = m_classMap.insert (bpair<Utf8CP, ECClassP> (pClass->GetName().c_str(), pClass));
@@ -663,7 +724,7 @@ ECObjectsStatus ECSchema::AddClass (ECClassP pClass, bool deleteClassIfDuplicate
             {
             // preserving weird existing behavior, added option to not do this...
             delete pClass;
-            pClass = NULL;
+            pClass = nullptr;
             }
 
         return ECObjectsStatus::NamedItemAlreadyExists;
@@ -684,7 +745,7 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
     if (ECObjectsStatus::Success != status)
         {
         delete pClass;
-        pClass = NULL;
+        pClass = nullptr;
         return status;
         }
 
@@ -821,6 +882,14 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
+    EnumerationMap::const_iterator  enumerationIterator;
+    enumerationIterator = m_enumerationMap.find(name.c_str());
+    if (enumerationIterator != m_enumerationMap.end())
+        {
+        LOG.warningv("Cannot create class '%s' because an enumeration with that name already exists in the schema", name.c_str());
+        return ECObjectsStatus::NamedItemAlreadyExists;
+        }
+
     pClass = new ECRelationshipClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECObjectsStatus::Success != status)
@@ -837,6 +906,49 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
         delete pClass;
         pClass = NULL;
         LOG.warningv (L"Cannot create relationship class '%ls' because it already exists in the schema", name.c_str());
+        return ECObjectsStatus::NamedItemAlreadyExists;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8StringCR name, PrimitiveType type)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ClassMap::const_iterator  classIterator;
+    classIterator = m_classMap.find(name.c_str());
+    if (classIterator != m_classMap.end())
+        {
+        return ECObjectsStatus::NamedItemAlreadyExists;
+        }
+
+    ecEnumeration = new ECEnumeration(*this);
+    ECObjectsStatus status = ecEnumeration->SetName(name);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecEnumeration;
+        ecEnumeration = nullptr;
+        return status;
+        }
+
+    status = ecEnumeration->SetType(type);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecEnumeration;
+        ecEnumeration = nullptr;
+        return status;
+        }
+
+    bpair <EnumerationMap::iterator, bool> resultPair = m_enumerationMap.insert(bpair<Utf8CP, ECEnumerationP>(ecEnumeration->GetName().c_str(), ecEnumeration));
+    if (resultPair.second == false)
+        {
+        LOG.warningv("Cannot create enumeration '%s' because it already exists in the schema", ecEnumeration->GetName().c_str());
+        delete ecEnumeration;
+        ecEnumeration = NULL;
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
@@ -1096,6 +1208,14 @@ ECClassContainerCR ECSchema::GetClasses () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationContainerCR ECSchema::GetEnumerations () const
+    {
+    return m_enumerationContainer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t ECSchema::GetClassCount
@@ -1103,6 +1223,16 @@ uint32_t ECSchema::GetClassCount
 ) const
     {
     return (uint32_t) m_classMap.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSchema::GetEnumerationCount
+(
+) const
+    {
+    return (uint32_t) m_enumerationMap.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2300,6 +2430,63 @@ bool    ECClassContainer::const_iterator::operator== (const_iterator const& rhs)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP const& ECClassContainer::const_iterator::operator*() const
+    {
+    // Get rid of ECClassContainer or make it return a pointer directly
+#ifdef CREATES_A_TEMP
+    bpair<WCharCP , ECClassP> const& mapPair = *(m_state->m_mapIterator);
+    return mapPair.second;
+#else
+    return m_state->m_mapIterator->second;
+#endif
+    };
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// ECEnumerationContainer
+/////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationContainer::const_iterator  ECEnumerationContainer::begin () const
+    {
+    return ECEnumerationContainer::const_iterator(m_enumerationMap.begin());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationContainer::const_iterator  ECEnumerationContainer::end () const
+    {
+    return ECEnumerationContainer::const_iterator(m_enumerationMap.end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationContainer::const_iterator& ECEnumerationContainer::const_iterator::operator++()
+    {
+    m_state->m_mapIterator++;
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECEnumerationContainer::const_iterator::operator!= (const_iterator const& rhs) const
+    {
+    return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECEnumerationContainer::const_iterator::operator== (const_iterator const& rhs) const
+    {
+    return (m_state->m_mapIterator == rhs.m_state->m_mapIterator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationP const& ECEnumerationContainer::const_iterator::operator*() const
     {
     // Get rid of ECClassContainer or make it return a pointer directly
 #ifdef CREATES_A_TEMP

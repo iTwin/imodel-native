@@ -192,6 +192,7 @@ TEST_F (SchemaTest, ExpectReadOnly)
     ECEntityClassP derivedClass;
     ECStructClassP structClass;
     ECCustomAttributeClassP customAttributeClass;
+    ECEnumerationP enumeration;
 
     ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
     ASSERT_TRUE (schema.IsValid ());
@@ -208,6 +209,10 @@ TEST_F (SchemaTest, ExpectReadOnly)
     schema->CreateStructClass (structClass, "StructClass");
     ASSERT_TRUE (structClass != NULL);
 
+    //Create Enumeration
+    schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_TRUE(enumeration != nullptr);
+
     //Add Property of Array type to structClass
     ArrayECPropertyP MyArrayProp;
     structClass->CreateArrayProperty (MyArrayProp, "ArrayProperty");
@@ -221,6 +226,93 @@ TEST_F (SchemaTest, ExpectReadOnly)
     StructECPropertyP PropertyOfCustomAttribute;
     customAttributeClass->CreateStructProperty (PropertyOfCustomAttribute, "PropertyOfCustomAttribute", *structClass);
     ASSERT_TRUE (PropertyOfCustomAttribute != NULL);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaTest, AddAndRemoveEnumerations)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP domainClass;
+    ECEnumerationP enumeration;
+    ECEnumerationP enumeration2;
+
+    ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
+    ASSERT_TRUE (schema.IsValid ());
+
+    //Create Enumeration
+    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_TRUE(enumeration != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+
+    status = schema->CreateEnumeration(enumeration2, "Enumeration", PrimitiveType::PRIMITIVETYPE_String);
+    ASSERT_TRUE(enumeration2 == nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::NamedItemAlreadyExists);
+
+    status = schema->CreateEntityClass(domainClass, "Enumeration");
+    ASSERT_TRUE(domainClass == nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::NamedItemAlreadyExists);
+
+    enumeration2 = schema->GetEnumerationP("Enumeration");
+    ASSERT_TRUE(enumeration2 != nullptr);
+    ASSERT_TRUE(enumeration2 == enumeration);
+
+    int i = 0;
+    for (auto p : schema->GetEnumerations())
+        {
+        i++;
+        ASSERT_TRUE(p != nullptr);
+        ASSERT_TRUE(p == enumeration);
+        }
+
+    ASSERT_TRUE(i == 1);
+
+    ASSERT_TRUE(schema->GetEnumerationCount() == 1);
+
+    ASSERT_TRUE(schema->DeleteEnumeration(*enumeration) == ECObjectsStatus::Success);
+
+    enumeration2 = nullptr;
+    enumeration2 = schema->GetEnumerationP("Enumeration");
+    ASSERT_TRUE(enumeration2 == nullptr);
+
+    ASSERT_TRUE(schema->GetEnumerationCount() == 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaTest, CheckEnumerationBasicProperties)
+    {
+    ECSchemaPtr schema;
+    ECEnumerationP enumeration;
+
+    ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
+    ASSERT_TRUE (schema.IsValid ());
+
+    //Create Enumeration
+    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_TRUE(enumeration != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    
+    EXPECT_STREQ(enumeration->GetName().c_str(), "Enumeration");
+
+    //Type
+    ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_TRUE(enumeration->SetType(PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
+    ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_String);
+    ASSERT_TRUE(enumeration->SetType(PrimitiveType::PRIMITIVETYPE_IGeometry) == ECObjectsStatus::DataTypeNotSupported);
+    ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_String);
+
+    //Description
+    enumeration->SetDescription("MyDescription");
+    EXPECT_STREQ(enumeration->GetDescription().c_str(), "MyDescription");
+
+    //DisplayLabel
+    ASSERT_TRUE(enumeration->GetIsDisplayLabelDefined() == false);
+    ASSERT_TRUE(enumeration->SetDisplayLabel("Display Label") == ECObjectsStatus::Success);
+    EXPECT_STREQ(enumeration->GetDisplayLabel().c_str(), "Display Label");
+    EXPECT_STREQ(enumeration->GetInvariantDisplayLabel().c_str(), "Display Label");
     }
 
 //---------------------------------------------------------------------------------------

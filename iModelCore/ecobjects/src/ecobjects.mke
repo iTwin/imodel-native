@@ -115,6 +115,8 @@ $(o)ECType$(oext)                                          : $(baseDir)ECType.cp
 
 $(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)ECEnumeration$(oext)                                         : $(baseDir)ECEnumeration.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 $(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
