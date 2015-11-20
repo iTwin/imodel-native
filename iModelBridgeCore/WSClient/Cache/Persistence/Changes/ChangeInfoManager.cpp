@@ -21,12 +21,14 @@ ChangeInfoManager::ChangeInfoManager
 (
 ECDbAdapter& dbAdapter,
 ECSqlStatementCache& statementCache,
+HierarchyManager& hierarchyManager,
 ObjectInfoManager& objectInfoManager,
 RelationshipInfoManager& relationshipInfoManager,
 FileInfoManager& fileInfoManager
 ) :
 m_dbAdapter(&dbAdapter),
 m_statementCache(&statementCache),
+m_hierarchyManager(&hierarchyManager),
 m_objectInfoManager(&objectInfoManager),
 m_relationshipInfoManager(&relationshipInfoManager),
 m_fileInfoManager(&fileInfoManager)
@@ -277,6 +279,24 @@ int ChangeInfoManager::ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP st
         }
 
     return statement->GetValueInt(0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::RemoveLocalDeletedInfos()
+    {
+    auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::RemoveLocalDeletedInfos", [&]
+        {
+        return
+            "SELECT GetECClassId(), ECInstanceId FROM " ECSql_ChangeInfoClass " "
+            "WHERE [" CLASS_ChangeInfo_PROPERTY_IsLocal "] = TRUE "
+            "  AND [" CLASS_ChangeInfo_PROPERTY_ChangeStatus "] = ? ";
+        });
+
+    statement->BindInt(1, static_cast<int> (IChangeManager::ChangeStatus::Deleted));
+
+    return m_hierarchyManager->DeleteInstances(*statement);
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -322,6 +322,18 @@ ECInstanceKey StubInstanceInCache(IDataSourceCache& cache, ObjectIdCR objectId, 
     return instance;
     }
 
+ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR objectId, JsonValueCR properties)
+    {
+    std::map<Utf8String, Json::Value> propertiesMap;
+
+    for (Utf8String name : properties.getMemberNames())
+        {
+        propertiesMap[name] = properties[name];
+        }
+
+    return StubInstanceInCache(cache, objectId, propertiesMap);
+    }
+
 ECInstanceKey StubNonExistingInstanceKey(IDataSourceCache& cache, Utf8StringCR classKey, uint64_t instanceId)
     {
     auto ecClass = cache.GetAdapter().GetECClass(classKey);

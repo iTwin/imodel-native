@@ -91,6 +91,7 @@ IECInstancePtr StubInstance(ECClassCP ecClass);
 ECInstanceKey StubECInstanceKey(int64_t classId = 1, int64_t instanceId = 1);
 bpair<ECClassId, ECInstanceId> StubECInstanceKeyPair(int64_t classId = 1, int64_t instanceId = 1);
 ECInstanceKey StubInstanceInCache(IDataSourceCache& cache, ObjectIdCR objectId = ObjectId("TestSchema.TestClass", "Foo"), std::map<Utf8String, Json::Value> properties = {});
+ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR objectId, JsonValueCR properties);
 ECInstanceKey StubNonExistingInstanceKey(IDataSourceCache& cache, Utf8StringCR classKey = "TestSchema.TestClass", uint64_t instanceId = 1);
 ECInstanceKeyMultiMap StubECInstanceKeyMultiMap(const std::vector<ECInstanceKey>& keys = {});
 

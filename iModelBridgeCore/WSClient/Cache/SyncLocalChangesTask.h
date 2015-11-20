@@ -50,6 +50,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
         virtual void _OnError(CachingDataSource::ErrorCR error);
         void OnSyncDone();
 
+        BentleyStatus PrepareChangeGroups(IDataSourceCache& cache);
         void SyncNext();
 
         bool CanSyncChangeset(ChangeGroupCR changeGroup) const;

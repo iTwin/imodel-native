@@ -87,11 +87,46 @@ void ChangeInfo::SetChangeNumber(uint64_t number)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+uint64_t ChangeInfo::GetRevision() const
+    {
+    return BeJsonUtilities::Int64FromValue(m_infoJson[CLASS_ChangeInfo_PROPERTY_Revision], 0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void ChangeInfo::IncrementRevision()
+    {
+    auto revision = ChangeInfo::GetRevision();
+    m_infoJson[CLASS_ChangeInfo_PROPERTY_Revision] = BeJsonUtilities::StringValueFromInt64(++revision);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool ChangeInfo::IsLocal() const
+    {
+    return m_infoJson[CLASS_ChangeInfo_PROPERTY_IsLocal].asBool();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void ChangeInfo::SetIsLocal(bool value)
+    {
+    m_infoJson[CLASS_ChangeInfo_PROPERTY_IsLocal] = value;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 void ChangeInfo::ClearChangeInfo()
     {
     m_infoJson[CLASS_ChangeInfo_PROPERTY_ChangeStatus] = Json::nullValue;
     m_infoJson[CLASS_ChangeInfo_PROPERTY_SyncStatus] = Json::nullValue;
     m_infoJson[CLASS_ChangeInfo_PROPERTY_ChangeNumber] = Json::nullValue;
+    m_infoJson[CLASS_ChangeInfo_PROPERTY_Revision] = Json::nullValue;
+    m_infoJson[CLASS_ChangeInfo_PROPERTY_IsLocal] = Json::nullValue;
     }
 
 /*--------------------------------------------------------------------------------------+
