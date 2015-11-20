@@ -166,10 +166,10 @@ void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_ImportCM(Utf8CP componentName);
-void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
 void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, PhysicalElementCR catalogItem);
-void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists, Utf8CP catalogItemName);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
 
 void SimulateDeveloper();
@@ -415,7 +415,7 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
+void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
     {
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
@@ -431,8 +431,8 @@ void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem
         }
 
     DgnDbStatus status;
-    catalogItem = componentModel->GetSolution(&status, catalogModel, newParameterValues);
-    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::GetSolution failed with error %x", status);
+    catalogItem = componentModel->CaptureSolution(&status, catalogModel, newParameterValues, catalogItemName);
+    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::CaptureSolution failed with error %x", status);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -468,12 +468,22 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
+void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists, Utf8CP ciname)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     PhysicalElementCPtr solution;
-    Client_SolveAndCapture(solution, catalogModel, componentName, parms, solutionAlreadyExists);
+    if (solutionAlreadyExists)
+        {
+        ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
+        ASSERT_TRUE( componentModel.IsValid() );
+        solution = componentModel->QuerySolutionByName(ciname);
+        ASSERT_TRUE(solution.IsValid());
+        }
+    else
+        {
+        Client_SolveAndCapture(solution, catalogModel, componentName, parms, ciname);
+        }
     
     if (solution.IsValid())
         Client_PlaceInstanceOfSolution(ieid, targetModelName, *solution);

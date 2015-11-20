@@ -601,6 +601,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" roleLabel="of a ComponentModel" polymorphic="True">
             <Class class="ComponentModel" />
         </Target>
+        <!-- JSON representation of parameters that were used to solve the target model in order to produce the source element -->
+        <ECProperty propertyName="Parameters" typeName="string"/>
     </ECRelationshipClass>
 
     <!-- An Item can be a copy of a (template) Item. 

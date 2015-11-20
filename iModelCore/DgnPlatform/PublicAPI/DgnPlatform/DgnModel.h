@@ -957,27 +957,46 @@ public:
     //! Get the name of the component.
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
 
-    //! Get the element that captures the result of solving for the specified parameters. If the solution has already been captured 
-    //! then the existing solution is returned. If not already captured, then, if \a createSolutionIfNecessary is true, this component model is solved and a new 
-    //! solution is captured in the specified output catalog model.  
-    //! @param[out] stat        Optional. If not null and if the solution cannot be returned, then an error code is stored here to explain what happened, as explained below.
+    //! Captures the result of solving for the specified parameters, assigning the resulting catalog Item the specified name.   
+    //! @param[out] stat        Optional. If not null and if the solution cannot be captured, then an error code is stored here to explain what happened, as explained below.
     //! @param[in] catalogModel The output catalog model, where the captured solution item(s) is(are) stored.
     //! @param[in] parameters   The parameters that specify the solution
-    //! @param[in] createSolutionIfNecessary Pass true solve and capture a solution if it does not already exists. Pass false if you just want to check if the solution has already been captured.
-    //! @return A handle to the Item that was created to capture the solution results. If more than one element was created, this is the parent. 
-    //! @note This function is used only for solutions that result in PhysicalElements. That is, The ECClass identified by #GetItemECClassName must be a subclass of PhysicalElement.
-    //! @note An existing solution is returned even if it is is not assigned to \a catalogModel.
-    //! @note When a solution cannot be returned, the error code will be:
-    //!     * DgnDbStatus::NotFound - solution does not exist and \a createSolutionIfNecessary is \a false, or no element in the solution is in the category identified by #GetItemCategoryName.
+    //! @param[in] catalogItemName The name of the Item to be created in the catalogModel
+    //! @return A handle to the catalog Item that was created and persisted in \a catalogModel. If more than one element was created, the returned element is the parent.
+    //! @note This function is used only for solutions that result in PhysicalElements. That is, the ECClass identified by #GetItemECClassName must be a subclass of PhysicalElement.
+    //! @note When a solution cannot be captured, the error code will be:
     //!     * DgnDbStatus::ValidationFailed - The model could not be solved, possibly because the values in \a parameters are invalid.
+    //!     * DgnDbStatus::DuplicateCode - A catalog Item already exists with the same name for this component.
+    //!     * DgnDbStatus::NotFound - no element in the solution is in the category identified by #GetItemCategoryName.
     //!     * DgnDbStatus::SQLiteError or DgnDbStatus::WriteError - The solution could not be written to the Db. 
-    //!     * DgnDbStatus::LockNotHeld  - This component model cannot be locked.
+    //!     * DgnDbStatus::LockNotHeld - Failure to lock this component model or the catalog model.
     //!     * DgnDbStatus::InvalidCategory - The category identified by #GetItemCategoryName does not exist in this Db.
     //!     * DgnDbStatus::MissingDomain - The ECClass identified by #GetItemECClassName does not exist in this Db.
     //!     * DgnDbStatus::MissingHandler - The handler for the ECClass identified by #GetItemECClassName has not been registered.
     //!     * DgnDbStatus::WrongClass - The ECClass identified by #GetItemECClassName is not a subclass of PhysicalElement.
+    //! @see MakeInstanceOfSolution, QuerySolutionByName
+    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName);
+
+    //! Get the ComponentModel and parameters that were used to generate the specified catalog item
+    //! @param[out] cmid        The ID of the ComponentModel that was used to generate the specified catalog item
+    //! @param[out] params      The parameters that were used to generate the specified catalog item
+    //! @param[in] catalogItem  The catalog item that is to be queried
+    //! @return non-zero error status if \a catalogItem is not the solution of any component model
     //! @see MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT PhysicalElementCPtr GetSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool createSolutionIfNecessary = true);
+    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionSource(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem);
+
+    //! Delete the specified catalog Item 
+    //! @return DgnDbStatus::BadRequest if \a catalogItem is not an element that capatures a solution to this component model.
+    //! @note This function does not delete all existing instances of the specified catalog Item
+    //! @see MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteSolution(PhysicalElementCR catalogItem);
+
+    //! Get the element that captures the result of solving for the catalog Item Name.
+    //! @param[in] catalogItemName The name of the Item to be looked up in the catalogModel
+    //! @return A handle to the Item that was created to capture the solution results. If more than one element was created, this is the parent. If no catalog Item
+    //! with the specified name is found, then an invalid ptr is returned.
+    //! @see MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT PhysicalElementCPtr QuerySolutionByName(Utf8StringCR catalogItemName);
 
     //! Make a persistent copy of a specified solution Item, along with all of its children.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
@@ -987,7 +1006,7 @@ public:
     //! @param[in] angles       The angles of the new instance element's placement. 
     //! @param[in] code         The code to assign to the new item. If invalid, then a code will be generated by the templateItem's CodeAuthority
     //! @return the instance item if successfull
-    //! @see GetSolution
+    //! @see QuerySolutionByName
     DGNPLATFORM_EXPORT static PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, PhysicalElementCR catalogItem,
                                                     DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code);
 };
