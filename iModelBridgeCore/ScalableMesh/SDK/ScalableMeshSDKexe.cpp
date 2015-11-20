@@ -36,7 +36,7 @@ namespace ScalableMeshSDKexe
             NULL 
             );
         if (m_pipe == NULL || m_pipe == INVALID_HANDLE_VALUE) fwprintf(stderr, L"Error creating pipe\n");
-        //if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
+        if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
         }
 
     BentleyStatus ScalableMeshSDKexe::Initialize(int argc, WCharP argv[])
@@ -192,7 +192,9 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
     
     bool StreamPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
         {   
-        s_dataPipe.WritePoints(points, nbOfPoints);
+        if (nbOfPoints > 0)
+            s_dataPipe.WritePoints(points, nbOfPoints);
+
         return true;
         }
 
@@ -209,7 +211,9 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
             s_finishWritingPointDone = true;
             }
 
-        s_dataPipe.WriteFeature(featurePoints, nbOfFeaturesPoints, featureType);
+        if (nbOfFeaturesPoints)
+            s_dataPipe.WriteFeature(featurePoints, nbOfFeaturesPoints, featureType);
+
         return true;
         }
     
@@ -615,16 +619,13 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         regionPoints[4].y = range.low.y;
         regionPoints[4].z = range.low.z;
 
-        size_t maxNbPointsToImport = 50000;
+        size_t maxNbPointsToImport = 5000000;
                 
         int statusInt = QueryStmFromBestResolution(singleResolutionDtm, mrDtmPtr, regionPoints, maxNbPointsToImport);
 
-        assert(statusInt == SUCCESS);
-
-        __int64 pointCount = mrDtmPtr->GetPointCount();
-
-        pointCount = pointCount;
-
+        if (statusInt != SUCCESS)
+            return ERROR;        
+        
         mrDtmPtr = 0;
         statusInt = _wremove(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm");
         assert(statusInt == 0);
@@ -741,7 +742,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
 
                 if (status != SUCCESS)
                     return ERROR;
-
+               
                 status = StreamDataToApplication(singleResolutionDtm);
 
                 if (status != SUCCESS)

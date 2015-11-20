@@ -160,17 +160,23 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
             Bentley::RefCountedPtr<DgnFile> dgnFilePtr(fileOpenParams.CreateFileAndLoad());
 
-            assert(dgnFilePtr != 0);
+            if (dgnFilePtr == 0)
+                return Bentley::ScalableMesh::IDTMSourcePtr();
+                                    
+            StatusInt status = pTestChildNode->GetAttributeStringValue(model, "model");
+
+            assert(status == SUCCESS);
+            
+            ModelId modelID = dgnFilePtr->FindModelIdByName (model.c_str());
 
             StatusInt errorDetails;
-            //Only supporting DGN with one model with ID 0.
-            ModelId modelID = 0;
 
             DgnModel* modelRef = dgnFilePtr->LoadRootModelById(&errorDetails, modelID);
 
-            assert(modelRef != 0);
-
-            StatusInt  status = pTestChildNode->GetAttributeStringValue(level, "level");
+            if (modelRef == 0)
+                return Bentley::ScalableMesh::IDTMSourcePtr();
+            
+            status = pTestChildNode->GetAttributeStringValue(level, "level");
 
             assert(status == SUCCESS);
 
@@ -474,6 +480,10 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                         (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                         {
                         Bentley::ScalableMesh::IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+
+                        if (srcPtr == 0)
+                            return false;
+
                         AddOptionToSource(srcPtr, pTestChildNode);
                         if (BSISUCCESS != sourceCollection.Add(srcPtr))
                             {

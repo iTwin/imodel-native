@@ -184,7 +184,7 @@ private:
             {        
             if (m_points.size() > 0)
                 {
-                s_dataPipe.FinishProcessingData();
+                s_dataPipe.FinishProcessingPoints();
                 m_points.clear();
                 }
             
@@ -210,7 +210,7 @@ private:
         else
             {
             m_anyMorePoints = false;
-            s_dataPipe.FinishProcessingData();            
+            s_dataPipe.FinishProcessingPoints();            
             }
         }
 
@@ -341,7 +341,7 @@ private:
             m_hasAnyNewFeature = false;
             }
 
-        s_dataPipe.FinishProcessingData();
+        s_dataPipe.FinishProcessingFeatures();
 
         return;
 

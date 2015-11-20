@@ -577,7 +577,7 @@ Bentley::RefCountedPtr<DgnFile> file = nullptr;
 
 void InitializeSDK(DgnPlatformLib::Host& host)
         {
-        AppHost appHost;
+        static AppHost appHost;
         appHost.Startup ();
 
         DependencyManager::SetTrackingDisabled(true);
@@ -606,9 +606,11 @@ void InitializeSDK(DgnPlatformLib::Host& host)
 
 void CloseSDK()
     {
-    file = nullptr;
-    docPtr = nullptr;
+    WString dgnFileName(file->GetFileName ());
 
+    file = nullptr;    
+    docPtr = nullptr;
+    _wremove(dgnFileName.c_str());
     }
     }
 

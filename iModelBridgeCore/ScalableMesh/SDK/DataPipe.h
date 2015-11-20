@@ -27,10 +27,13 @@ using namespace Bentley::Bstdcxx;
             const DPoint3d*         m_points;
             size_t                  m_nbOfPoints;
             DTMFeatureType          m_featureType;
-            std::condition_variable m_consume;
-            std::condition_variable m_produce;
+            std::condition_variable m_consumePoints;
+            std::condition_variable m_producePoints;
+            std::condition_variable m_consumeFeatures;
+            std::condition_variable m_produceFeatures;
             std::mutex              m_availableDataMutex; 
-            std::atomic<bool>       m_consumeDone;   
+            std::atomic<bool>       m_consumePointsDone;   
+            std::atomic<bool>       m_consumeFeaturesDone;   
             std::atomic<bool>       m_finishWritingPoints;   
             std::atomic<bool>       m_finishWritingFeature;   
 
@@ -38,8 +41,9 @@ using namespace Bentley::Bstdcxx;
         public : 
 
             DataPipe()
-                {
-                m_consumeDone = true;   
+                {                
+                m_consumePointsDone = true;   
+                m_consumeFeaturesDone = true;   
                 m_finishWritingPoints = false;
                 m_finishWritingFeature = false;
                 }
@@ -50,9 +54,9 @@ using namespace Bentley::Bstdcxx;
                 m_points = featurePoints;
                 m_nbOfPoints = nbOfFeaturesPoints;
                 m_featureType = featureType;
-                m_consumeDone = false;                
-                m_consume.notify_one();              
-                while (!m_consumeDone) m_produce.wait(lck);   
+                m_consumeFeaturesDone = false;                
+                m_consumeFeatures.notify_one();              
+                while (!m_consumeFeaturesDone) m_produceFeatures.wait(lck);   
 
                 return true;
                 }
@@ -60,7 +64,7 @@ using namespace Bentley::Bstdcxx;
              void ReadFeature(bvector<DPoint3d>& points, DTMFeatureType& featureType)
                 {                 
                 std::unique_lock<std::mutex> lck(m_availableDataMutex); 
-                while (m_consumeDone && !m_finishWritingFeature) m_consume.wait(lck);                                
+                while (m_consumeFeaturesDone && !m_finishWritingFeature) m_consumeFeatures.wait(lck);                                
                 points.resize(m_nbOfPoints);
                 if (points.size() > 0)
                     {
@@ -75,15 +79,15 @@ using namespace Bentley::Bstdcxx;
                 std::unique_lock<std::mutex> lck(m_availableDataMutex);                   
                 m_points = points;
                 m_nbOfPoints = nbOfPoints; 
-                m_consumeDone = false;                
-                m_consume.notify_one();              
-                while (!m_consumeDone) m_produce.wait(lck);                
+                m_consumePointsDone = false;                
+                m_consumePoints.notify_one();              
+                while (!m_consumePointsDone) m_producePoints.wait(lck);                
                 }
 
             void ReadPoints(bvector<DPoint3d>& points)
                 {               
                 std::unique_lock<std::mutex> lck(m_availableDataMutex); 
-                while (m_consumeDone && !m_finishWritingPoints) m_consume.wait(lck);                                
+                while (m_consumePointsDone && !m_finishWritingPoints) m_consumePoints.wait(lck);                                
                 points.resize(m_nbOfPoints);
                 if (points.size() > 0)
                     {
@@ -91,10 +95,16 @@ using namespace Bentley::Bstdcxx;
                     }                           
                 }
 
-            void FinishProcessingData()
+            void FinishProcessingPoints()
                 {
-                m_consumeDone = true;
-                m_produce.notify_one();              
+                m_consumePointsDone = true;
+                m_producePoints.notify_one();              
+                }
+
+            void FinishProcessingFeatures()
+                {
+                m_consumeFeaturesDone = true;
+                m_produceFeatures.notify_one();              
                 }
                         
             void FinishWritingPoints()
