@@ -1035,6 +1035,31 @@ TEST_F(ChangeManagerTests, GetObjectChangeStatus_ObjectModified_Modified)
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, status);
     }
 
+TEST_F(ChangeManagerTests, DISABLED_GetObjectChangeStatus_ObjectDeleted_Deleted)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
+    // Act
+    auto status = cache->GetChangeManager().GetObjectChangeStatus(instance);
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, status);
+    }
+
+TEST_F(ChangeManagerTests, DISABLED_GetObjectChangeStatus_CreatedObjectDeleted_Deleted)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
+    // Act
+    auto status = cache->GetChangeManager().GetObjectChangeStatus(instance);
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, status);
+    }
+
 TEST_F(ChangeManagerTests, ReadInstanceRevision_NotExistingInstance_ReturnsInvalid)
     {
     // Arrange
