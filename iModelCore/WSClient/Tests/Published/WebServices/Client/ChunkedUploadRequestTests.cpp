@@ -11,7 +11,7 @@
 #include "../../../../Client/ChunkedUploadRequest.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 TEST_F (ChunkedUploadRequestTests, PerformAsync_MethodSpecified_HandShakeWithSameMethod)
     {

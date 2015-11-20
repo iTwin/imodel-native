@@ -12,7 +12,7 @@
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 using namespace ::testing;
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+

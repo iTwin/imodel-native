@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\BackDoor.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestApplication.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestEnvironment.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnViewportHelpers.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
     <ClInclude Include="Published\Utils\MockHttpHandler.h" />
@@ -145,12 +145,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
-    <ClCompile Include="BackDoor\MobileDgnTestApplication.cpp" />
-    <ClCompile Include="BackDoor\MobileDgnTestEnvironment.cpp" />
-    <ClCompile Include="BackDoor\MobileDgnViewportHelpers.cpp" />
+    <ClCompile Include="BackDoor\TestApplication.cpp" />
+    <ClCompile Include="BackDoor\TestEnvironment.cpp" />
+    <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
     <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
-    <ClCompile Include="NonPublished\MobileDgnECExpressionTests.cpp" />
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
     <ClCompile Include="NonPublished\NonPublishedBackstageTests.cpp" />
     <ClCompile Include="NonPublished\NonPublishedTaskManagerTests.cpp" />
     <ClCompile Include="NonPublished\PortableUiTests.cpp" />
@@ -343,7 +343,7 @@
     <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
     <NMakeReBuildCommandLine>bb  reb wsclientunittests begtestexe -x86</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>x86;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(OutRoot)Winx86\BuildContexts\MobileDgn\PublicAPI\;$(OutRoot)Winx86\BuildContexts\MobileDgn\VendorAPI\;$(OutRoot)Winx86\build\UnitTests\MobileDgn\BackDoorMobileDgnUnitTests\PublicAPI\;$(SrcRoot)MobileDgn\PublicAPI\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx86\BuildContexts\DgnClientFx\PublicAPI\;$(OutRoot)Winx86\BuildContexts\DgnClientFx\VendorAPI\;$(OutRoot)Winx86\build\UnitTests\DgnClientFx\BackDoorUnitTests\PublicAPI\;$(SrcRoot)DgnClientFx\PublicAPI\</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <BuildLog>

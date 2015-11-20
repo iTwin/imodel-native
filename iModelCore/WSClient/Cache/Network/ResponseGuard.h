@@ -9,12 +9,12 @@
 #pragma once
 
 #include <WebServices/Cache/WebServicesCache.h>
-#include <MobileDgn/Utils/Http/HttpRequest.h>
-#include <MobileDgn/Utils/Threading/CancellationToken.h>
+#include <DgnClientFx/Utils/Http/HttpRequest.h>
+#include <DgnClientFx/Utils/Threading/CancellationToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 *  @bsiclass                                                    Vincas.Razma    12/2013

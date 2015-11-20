@@ -11,7 +11,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #define DGNDBSERVER_LOCAL_LAST_REVISION "dgndbserver_lastRevisionId"
@@ -29,7 +29,7 @@ DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnec
     return DgnDbBriefcasePtr(new DgnDbBriefcase(db, connection));
     }
 
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::Sync(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback, MobileDgn::Utils::ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::Sync(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
     {
     return m_repositoryConnection->Pull(m_lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbRevisionsResult& result)
         {
@@ -46,7 +46,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::Sync(MobileDgn::Utils::HttpRequest::Pr
         });
     }
 
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::SyncAndPush(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback, MobileDgn::Utils::ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::SyncAndPush(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
     {
     std::shared_ptr<DgnDbResult> finalResult = std::shared_ptr<DgnDbResult>();
     return Sync(callback, cancellationToken)->Then([=] (const DgnDbResult& result)

@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <MobileDgn/Utils/Threading/AsyncTask.h>
+#include <DgnClientFx/Utils/Threading/AsyncTask.h>
 #include <WebServices/Cache/CachingDataSource.h>
 #include <atomic>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Benediktas.Lipnickas   10/2013

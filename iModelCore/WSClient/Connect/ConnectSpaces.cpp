@@ -8,16 +8,16 @@
 #include "ClientInternal.h"
 #include <WebServices/Connect/ConnectSpaces.h>
 
-#include <MobileDgn/MobileDgnApplication.h>
-#include <MobileDgn/Utils/Http/HttpStatusHelper.h>
-#include <MobileDgn/Utils/Threading/WorkerThreadPool.h>
+#include <DgnClientFx/DgnClientApp.h>
+#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
+#include <DgnClientFx/Utils/Threading/WorkerThreadPool.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/Connect.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_MOBILEDGN
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define MESSAGE_STRING_FIELD(x) messageObj[(x)].asCString()
@@ -168,7 +168,7 @@ void ConnectSpaces::SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR re
         wrapper["data"] = response;
         }
 
-    MobileDgnApplication::App().Messages().Send(JsonMessage(messageType, wrapper));
+    DgnClientApp::App().Messages().Send(JsonMessage(messageType, wrapper));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -403,7 +403,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
         return false;
         }
 
-    BeFileName tempPathName = MobileDgnApplication::App().GetApplicationPaths().GetTemporaryDirectory();
+    BeFileName tempPathName = DgnClientApp::App().GetApplicationPaths().GetTemporaryDirectory();
     tempPathName.AppendToPath(L"eula.html");
     Utf8String tempPath(tempPathName);
     Utf8String url = sm_eulaUrlBase;

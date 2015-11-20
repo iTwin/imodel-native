@@ -15,16 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\BackDoor.h">
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\BackDoor.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestEnvironment.h">
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestApplication.h">
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnViewportHelpers.h">
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
     <ClInclude Include="Published\Utils\Threading\AsyncResultTests.h" />
@@ -152,7 +152,7 @@
     <ClCompile Include="BackDoor\BackDoor.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\MobileDgnTestEnvironment.cpp">
+    <ClCompile Include="BackDoor\TestEnvironment.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
     <ClCompile Include="Published\ApplicationTests.cpp">
@@ -170,7 +170,7 @@
     <ClCompile Include="Published\ViewportTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\MobileDgnTestApplication.cpp">
+    <ClCompile Include="BackDoor\TestApplication.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\UiTests.cpp">
@@ -182,13 +182,13 @@
     <ClCompile Include="Published\TaskManagerTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\MobileDgnViewportHelpers.cpp">
+    <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\UiEventHandlerTests.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\MobileDgnECExpressionTests.cpp">
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="Published\BackstageTests.cpp">

@@ -13,7 +13,7 @@
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <MobileDgn/MobileDgnApplication.h>
+#include <DgnClientFx/DgnClientApp.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

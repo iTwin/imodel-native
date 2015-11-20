@@ -9,7 +9,7 @@
 #include "RawWSObjectsReader.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 static rapidjson::Value s_emptyArrayJsonObject(rapidjson::Type::kArrayType);
 

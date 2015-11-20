@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Client/ClientInfo.h>
-#include <MobileDgn/Device.h>
+#include <DgnClientFx/Device.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 Utf8CP ClientInfo::DefaultLanguage = "en";

@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Cache/Util/FileUtil.h>
 #include <WebServices/Client/WSChangeset.h>
-#include <MobileDgn/Utils/Http/HttpStatusHelper.h>
+#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
 
 #include "Util/JsonUtil.h"
 

@@ -9,11 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/WString.h>
-#include <MobileDgn/MobileDgnCommon.h>
+#include <DgnClientFx/DgnClientFxCommon.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Configuration/BuddiClient.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
