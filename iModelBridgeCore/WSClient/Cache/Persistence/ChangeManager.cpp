@@ -9,7 +9,6 @@
 #include <WebServices/Cache/Persistence/ChangeManager.h>
 
 #include <WebServices/Cache/Util/ECDbHelper.h>
-#include <WebServices/Cache/Util/JsonDiff.h>
 
 #include "Changes/ChangeInfoManager.h"
 #include "Core/CacheSchema.h"
@@ -180,7 +179,7 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         {
         Json::Value instanceJson;
         if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJson, instanceKey) ||
-            SUCCESS != m_changeInfoManager->SaveBackupInstance(info.GetInfoKey(), instanceJson))
+            SUCCESS != m_changeInfoManager->SaveBackupInstance(info, instanceJson))
             {
             return ERROR;
             }
@@ -689,29 +688,12 @@ BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, Js
         return ERROR;
         }
 
-    // Read backup instance
-    rapidjson::Document backupJson;
-    if (SUCCESS != m_changeInfoManager->ReadBackupInstance(info.GetInfoKey(), backupJson))
-        {
-        return ERROR;
-        }
-
-    // Read current instance
-    Json::Value instanceJsonValue;
-    if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJsonValue, instance))
-        {
-        return ERROR;
-        }
-
-    rapidjson::Document instanceJson;
-    JsonUtil::RemoveECMembers(instanceJsonValue);
-    JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
-
-    // Detect changes
     rapidjson::Document changesJson;
-    JsonDiff(false).GetChanges(backupJson, instanceJson, changesJson);
+    if (SUCCESS != m_changeInfoManager->ReadInstanceChanges(info, changesJson))
+        {
+        return ERROR;
+        }
 
-    // Write output value
     JsonUtil::ToJsonValue(changesJson, propertiesOut);
     return SUCCESS;
     }
@@ -775,7 +757,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
             {
             info.ClearChangeInfo();
             if (SUCCESS != m_objectInfoManager->UpdateInfo(info) ||
-                SUCCESS != m_changeInfoManager->DeleteBackupInstance(info.GetInfoKey()))
+                SUCCESS != m_changeInfoManager->DeleteBackupInstance(info))
                 {
                 return ERROR;
                 }
@@ -783,19 +765,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
             }
         else if (info.GetChangeStatus() == ChangeStatus::Modified)
             {
-            rapidjson::Document backup;
-            if (SUCCESS != m_changeInfoManager->ReadBackupInstance(info.GetInfoKey(), backup))
-                {
-                return ERROR;
-                }
-
-            rapidjson::Value empty(rapidjson::kObjectType);
-            rapidjson::Document revisionChanges;
-            JsonUtil::ToRapidJson(*revision.GetChangedProperties(), revisionChanges);
-
-            JsonDiff(false).GetChanges(empty, revisionChanges, backup);
-
-            return m_changeInfoManager->SaveBackupInstance(info.GetInfoKey(), backup);
+            return m_changeInfoManager->ApplyChangesToBackup(info, *revision.GetChangedProperties());
             }
         else if (info.GetChangeStatus() == ChangeStatus::Deleted)
             {
@@ -844,27 +814,10 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
     else if (info.GetChangeStatus() == ChangeStatus::Created)
         {
         // Instance was modified before commiting creation revision
-        Json::Value instanceJsonValue;
-        if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
+        if (SUCCESS != m_changeInfoManager->ApplyChangesToInstanceAndBackupIt(info, *revision.GetChangedProperties()))
             {
             return ERROR;
             }
-
-        rapidjson::Document instanceJson;
-        JsonUtil::RemoveECMembers(instanceJsonValue);
-        JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
-
-        rapidjson::Value empty(rapidjson::kObjectType);
-        rapidjson::Document revisionChanges;
-        JsonUtil::ToRapidJson(*revision.GetChangedProperties(), revisionChanges);
-
-        JsonDiff(false).GetChanges(empty, revisionChanges, instanceJson);
-
-        if (SUCCESS != m_changeInfoManager->SaveBackupInstance(info.GetInfoKey(), instanceJson))
-            {
-            return ERROR;
-            }
-
         info.SetChangeStatus(ChangeStatus::Modified);
         }
     else if (info.GetChangeStatus() == ChangeStatus::Deleted)

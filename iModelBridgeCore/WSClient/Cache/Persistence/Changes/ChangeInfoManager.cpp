@@ -9,6 +9,7 @@
 #include "ChangeInfoManager.h"
 
 #include <WebServices/Cache/Util/ECDbHelper.h>
+#include <WebServices/Cache/Util/JsonDiff.h>
 #include "../Core/CacheSchema.h"
 #include "../../Util/JsonUtil.h"
 
@@ -330,7 +331,7 @@ BentleyStatus ChangeInfoManager::SetupChangeNumber(ChangeInfoR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeInfoManager::ReadBackupInstance(ECInstanceKeyCR infoKey, RapidJsonDocumentR instanceOut)
+BentleyStatus ChangeInfoManager::ReadBackupInstance(ObjectInfoCR info, RapidJsonDocumentR instanceOut)
     {
     auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::ReadBackupInstance", [&]
         {
@@ -341,7 +342,7 @@ BentleyStatus ChangeInfoManager::ReadBackupInstance(ECInstanceKeyCR infoKey, Rap
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, infoKey.GetECInstanceId());
+    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
     statement->Step();
     auto backupStr = statement->GetValueText(0);
 
@@ -358,30 +359,30 @@ BentleyStatus ChangeInfoManager::ReadBackupInstance(ECInstanceKeyCR infoKey, Rap
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, RapidJsonValueCR instance)
+BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, RapidJsonValueCR instance)
     {
     using namespace rapidjson;
     GenericStringBuffer<UTF8<>> buffer;
     Writer<GenericStringBuffer<UTF8<>>> writer(buffer);
     instance.Accept(writer);
-    return SaveBackupInstance(infoKey, buffer.GetString());
+    return SaveBackupInstance(info, buffer.GetString());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, JsonValueR instance)
+BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, JsonValueR instance)
     {
     JsonUtil::RemoveECMembers(instance);
-    return SaveBackupInstance(infoKey, Json::FastWriter::ToString(instance).c_str());
+    return SaveBackupInstance(info, Json::FastWriter::ToString(instance).c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, Utf8CP serializedInstance)
+BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, Utf8CP serializedInstance)
     {
-    auto backupId = FindBackupInstance(infoKey);
+    auto backupId = FindBackupInstance(info);
     if (backupId.IsValid())
         {
         auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::SaveBackupInstance:Update", [&]
@@ -409,7 +410,7 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, Utf
             }
 
         auto relClass = m_dbAdapter->GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ChangeInfoToInstanceBackup);
-        if (!m_dbAdapter->RelateInstances(relClass, infoKey, backupKey).IsValid())
+        if (!m_dbAdapter->RelateInstances(relClass, info.GetInfoKey(), backupKey).IsValid())
             {
             return ERROR;
             }
@@ -421,9 +422,9 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, Utf
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeInfoManager::DeleteBackupInstance(ECInstanceKeyCR infoKey)
+BentleyStatus ChangeInfoManager::DeleteBackupInstance(ObjectInfoCR info)
     {
-    auto backupId = FindBackupInstance(infoKey);
+    auto backupId = FindBackupInstance(info);
     if (!backupId.IsValid())
         {
         return SUCCESS;
@@ -445,7 +446,7 @@ BentleyStatus ChangeInfoManager::DeleteBackupInstance(ECInstanceKeyCR infoKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ECInstanceId ChangeInfoManager::FindBackupInstance(ECInstanceKeyCR infoKey)
+ECInstanceId ChangeInfoManager::FindBackupInstance(ObjectInfoCR info)
     {
     auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::FindBackupInstance", [&]
         {
@@ -455,7 +456,77 @@ ECInstanceId ChangeInfoManager::FindBackupInstance(ECInstanceKeyCR infoKey)
             "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.SourceECInstanceId = ? "
             "LIMIT 1 ";
         });
-    statement->BindId(1, infoKey.GetECInstanceId());
+    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
     statement->Step();
     return statement->GetValueId<ECInstanceId>(0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::ReadInstanceChanges(ObjectInfoCR info, RapidJsonDocumentR changesOut)
+    {
+    rapidjson::Document backupJson;
+    if (SUCCESS != ReadBackupInstance(info, backupJson))
+        {
+        return ERROR;
+        }
+
+    Json::Value instanceJsonValue;
+    if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
+        {
+        return ERROR;
+        }
+
+    rapidjson::Document instanceJson;
+    JsonUtil::RemoveECMembers(instanceJsonValue);
+    JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
+
+    JsonDiff(false).GetChanges(backupJson, instanceJson, changesOut);
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::ApplyChangesToBackup(ObjectInfoCR info, JsonValueCR changes)
+    {
+    rapidjson::Document backupJson;
+    if (SUCCESS != ReadBackupInstance(info, backupJson))
+        {
+        return ERROR;
+        }
+
+    rapidjson::Value emptyJson(rapidjson::kObjectType);
+    rapidjson::Document changesJson;
+    JsonUtil::ToRapidJson(changes, changesJson);
+
+    JsonDiff(false).GetChanges(emptyJson, changesJson, backupJson);
+
+    return SaveBackupInstance(info, backupJson);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::ApplyChangesToInstanceAndBackupIt(ObjectInfoCR info, JsonValueCR changes)
+    {
+    Json::Value instanceJsonValue;
+    if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
+        {
+        return ERROR;
+        }
+
+    rapidjson::Document instanceJson;
+    JsonUtil::RemoveECMembers(instanceJsonValue);
+    JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
+
+    rapidjson::Value emptyJson(rapidjson::kObjectType);
+    rapidjson::Document changesJson;
+    JsonUtil::ToRapidJson(changes, changesJson);
+
+    JsonDiff(false).GetChanges(emptyJson, changesJson, instanceJson);
+
+    return SaveBackupInstance(info, instanceJson);
     }

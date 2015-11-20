@@ -11,7 +11,6 @@
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
 #include <WebServices/Cache/Persistence/CachedObjectInfo.h>
 #include <WebServices/Cache/Util/ECDbHelper.h>
-#include <WebServices/Cache/Util/JsonDiff.h>
 
 #include "../Core/CacheSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
@@ -327,28 +326,14 @@ BentleyStatus InstanceCacheHelper::SaveExistingInstance(ObjectInfoCR info, ECCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR newPropertiesJson)
     {
-    // Read backup instance
-    rapidjson::Document backupJson;
-    if (SUCCESS != m_changeInfoManager.ReadBackupInstance(info.GetInfoKey(), backupJson))
-        {
-        return ERROR;
-        }
-
-    // Read current instance
-    Json::Value instanceJsonValue;
-    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
-        {
-        return ERROR;
-        }
-
-    rapidjson::Document instanceJson;
-    JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
-
     // Merge changes
     rapidjson::Document mergedJson;
     JsonUtil::DeepCopy(newPropertiesJson, mergedJson);
 
-    JsonDiff(false).GetChanges(backupJson, instanceJson, mergedJson);
+    if (SUCCESS != m_changeInfoManager.ReadInstanceChanges(info, mergedJson))
+        {
+        return ERROR;
+        }
 
     // Save merged instance
     if (SUCCESS != m_updaters.Get(ecClass).Update(info.GetCachedInstanceKey().GetECInstanceId(), mergedJson))
@@ -357,7 +342,7 @@ BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR inf
         }
 
     // Save latest version as backup
-    if (SUCCESS != m_changeInfoManager.SaveBackupInstance(info.GetInfoKey(), newPropertiesJson))
+    if (SUCCESS != m_changeInfoManager.SaveBackupInstance(info, newPropertiesJson))
         {
         return ERROR;
         }

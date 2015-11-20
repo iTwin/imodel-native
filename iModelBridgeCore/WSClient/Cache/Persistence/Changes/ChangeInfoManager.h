@@ -41,8 +41,8 @@ struct ChangeInfoManager
         std::shared_ptr<ECSqlStatement> GetPreparedStatementForGetChanges(ECClassCP infoClass, bool onlyReadyToSync);
         int ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP statusPropertyName);
 
-        ECInstanceId FindBackupInstance(ECInstanceKeyCR infoKey);
-        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, Utf8CP serializedInstance);
+        ECInstanceId FindBackupInstance(ObjectInfoCR info);
+        BentleyStatus SaveBackupInstance(ObjectInfoCR info, Utf8CP serializedInstance);
 
     public:
         ChangeInfoManager
@@ -72,10 +72,14 @@ struct ChangeInfoManager
         BentleyStatus SetupChangeNumber(ChangeInfoR info);
         BentleyStatus RemoveLocalDeletedInfos();
 
-        BentleyStatus ReadBackupInstance(ECInstanceKeyCR infoKey, RapidJsonDocumentR instanceOut);
-        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, RapidJsonValueCR instance);
-        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, JsonValueR instance);
-        BentleyStatus DeleteBackupInstance(ECInstanceKeyCR infoKey);
+        BentleyStatus ReadBackupInstance(ObjectInfoCR info, RapidJsonDocumentR instanceOut);
+        BentleyStatus SaveBackupInstance(ObjectInfoCR info, RapidJsonValueCR instance);
+        BentleyStatus SaveBackupInstance(ObjectInfoCR info, JsonValueR instance);
+        BentleyStatus DeleteBackupInstance(ObjectInfoCR info);
+
+        BentleyStatus ReadInstanceChanges(ObjectInfoCR info, RapidJsonDocumentR changesOut);
+        BentleyStatus ApplyChangesToBackup(ObjectInfoCR info, JsonValueCR changes);
+        BentleyStatus ApplyChangesToInstanceAndBackupIt(ObjectInfoCR info, JsonValueCR changes);
     };
 
 typedef ChangeInfoManager& ChangeInfoManagerR;
