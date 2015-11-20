@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* hshftr.c                                            twl    11-Dec-1998     */
@@ -13,10 +13,10 @@
 /*----------------------------------------------------------------------------*/
 #include "stdafx.h"
 
-static int aecDTM_hashFeatureGUID(const void *);
-static int aecDTM_hashFeatureName(const void *);
-static int aecDTM_compareFeatureNames(const void *, const void *);
-static int aecDTM_compareFeatureGUIDs(const void *, const void *);
+//static int aecDTM_hashFeatureGUID(const void *);
+//static int aecDTM_hashFeatureName(const void *);
+//static int aecDTM_compareFeatureNames(const void *, const void *);
+//static int aecDTM_compareFeatureGUIDs(const void *, const void *);
 static int aecDTM_hashAllFeaturesProc(void *, struct CIVdtmsrf *, int, struct CIVdtmftr *);
 
 
@@ -236,7 +236,7 @@ void aecDTM_hashFeatureDestroy
 }
 
 
-
+#ifdef NOTUSED
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFeatureGUID
  DESC: Hashes a GUID.
@@ -348,3 +348,4 @@ static int aecDTM_compareFeatureNames
 
   return ( wcscmp ( e1P->nam, e2P->nam ) );
 }
+#endif
