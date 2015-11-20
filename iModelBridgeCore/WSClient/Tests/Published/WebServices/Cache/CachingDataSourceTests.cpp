@@ -2154,10 +2154,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     auto ds = GetTestDataSource({2, 1});
 
     auto txn = ds->StartCacheTransaction();
-    auto testRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
-    auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClassA", "A"});
-    auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClassB", "B"});
-    auto relationship = txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB);
+    StubCreatedRelationshipInCache(txn.GetCache(),
+        "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     txn.Commit();
 
     // Act & Assert
@@ -3805,16 +3803,14 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForObjectChangePassed_Sy
     ds->SyncLocalChanges(toSync, nullptr, nullptr)->Wait();
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForRelationshipChangePassed_SyncsFile)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForRelationshipChangePassed_SyncsRelationship)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    auto testRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
-    auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
-    auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "B"});
-    auto relationship = txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB);
+    auto relationship = StubCreatedRelationshipInCache(txn.GetCache(), 
+        "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     txn.Commit();
 
     // Act & Assert
