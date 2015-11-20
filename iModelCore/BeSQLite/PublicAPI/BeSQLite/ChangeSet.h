@@ -296,9 +296,9 @@ struct AbortOnConflictChangeSet : BeSQLite::ChangeSet
     };
 
 //=======================================================================================
-//! A base class for a streaming version of the ChangeSet. ChangeSets require that the 
-//! entire contents to be stored in large memory buffers. This streaming version is meant to
-//! be used in low memory environments where it is required to handle very large changesets. 
+//! A base class for a streaming version of the ChangeSet. ChangeSets require that their 
+//! entire contents be stored in large memory buffers. This streaming version is meant to
+//! be used in low memory environments where it is required to handle very large Change Sets. 
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
 struct ChangeStream : NonCopyableClass
