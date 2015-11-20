@@ -130,6 +130,7 @@ bool LsComponent::IsValidComponentType(LsComponentType value)
         case LsComponentType::LineCode:
         case LsComponentType::LinePoint:
         case LsComponentType::PointSymbol:
+        case LsComponentType::RasterImage:
             return true;
         }
     

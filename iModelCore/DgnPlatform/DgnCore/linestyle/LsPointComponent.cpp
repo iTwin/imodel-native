@@ -376,13 +376,16 @@ void LsPointComponent::_StartTextureGeneration() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2015
 //---------------------------------------------------------------------------------------
-LsPointComponent::LsPointComponent(LsPointComponentCR source) : LsComponent(source)
+LsPointComponent::LsPointComponent(LsPointComponentCR source, bool removeSymbrefOnVertex) : LsComponent(source)
     {
     m_strokeComponent = source.m_strokeComponent;
     m_okayForTextureGeneration = source.m_okayForTextureGeneration;
     m_postProcessed = false;
     for (LsSymbolReference const& ref: source.m_symbols)
-        m_symbols.push_back(ref);
+        {
+        if (!removeSymbrefOnVertex || ref.GetVertexMask() == LsSymbolReference::VERTEX_None)
+            m_symbols.push_back(ref);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -395,7 +398,7 @@ LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
 
     BeAssert(m_okayForTextureGeneration != Dgn::LsOkayForTextureGeneration::NotAllowed);  //  the caller must check for this
 
-    LsPointComponentP retval = new LsPointComponent(*this);
+    LsPointComponentP retval = new LsPointComponent(*this, true);
     retval->m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired;
 
     LsComponentPtr strokeComp = m_strokeComponent->_GetForTextureGeneration();
@@ -406,9 +409,10 @@ LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
         symbref.m_parent = const_cast<LsPointComponentP>(this);
         LsComponentPtr symbol = symbref.m_symbol->_GetForTextureGeneration();
         symbref.m_symbol = dynamic_cast<LsSymbolComponentP>(symbol.get());
+
         if (symbref.GetVertexMask() != LsSymbolReference::VERTEX_None)
             {
-            BeAssert(symbref.GetVertexMask() == LsSymbolReference::VERTEX_None); //  otherwise it should set m_okayForTextureGeneration to NotAllowed
+            BeAssert(symbref.GetVertexMask() == LsSymbolReference::VERTEX_None);    //  it should have been removed prior to this
             continue;
             }
 
@@ -450,12 +454,16 @@ LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
     //  and any symbol goes outside of the full pattern we shift the symbols to try to make each symbol fall into 
     //  its stroke.
     //
-    //  If any symbol has a vertex mask then the LsPointComponent is not allowed.
-    //
+    //  If any symbol has a vertex mask then it should be removed from the definition.  Some line styles are useless with
+    //  these symbols removed; other you barely notice.  We may want to do line style stroking for styles that only have
+    //  symbols at the beginning and end. 
     for (LsSymbolReference const& symref : m_symbols)
         {
-        if (symref.GetVertexMask() != 0)
+        if ((symref.GetVertexMask() & LsSymbolReference::VERTEX_Each) != 0)
             return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
+
+        if (symref.GetVertexMask() != 0)
+            return m_okayForTextureGeneration = LsOkayForTextureGeneration::ChangeRequired;
         }
 
     UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, VerifySymbols());

@@ -2001,7 +2001,8 @@ LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration
 
     m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
 
-    if (HasIterationLimit())
+    //  If |IsStretchable() || IsRigid() the iteration limit is ignored.
+    if (HasIterationLimit() && IsStretchable() && !IsRigid())
         return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
 
     //  Need to verify that fixed with a distance != 0 is okay.

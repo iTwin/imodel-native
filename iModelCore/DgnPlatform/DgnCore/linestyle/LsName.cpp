@@ -422,8 +422,8 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
         {
         //  This should not matter because we pass false for isColorBySymbol causing DefineQVGeometryMap to use QV_GEOTEXTURE_DEFERCLRSEL
         //  However, at the time this was tested it QV_GEOTEXTURE_DEFERCLRSEL did not provide the expected behavior.
-        lineColor = ColorDef::White();
-        fillColor = ColorDef::White();
+        lineColor = ColorDef::Black();
+        fillColor = ColorDef::Black();
         }
 
     uint32_t lineWeight;
@@ -643,6 +643,8 @@ BentleyStatus       LsCache::Load ()
     if (IsLoaded())
         return SUCCESS;
 
+    //  Signal that this should abort a query and should not trigger an assertion failure in GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed
+    wt_OperationForGraphics  opForGraphics;
     TreeLoaded ();
 
     Statement stmt;

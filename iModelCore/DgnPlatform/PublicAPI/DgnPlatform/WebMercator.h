@@ -250,6 +250,8 @@ protected:
     //! Helper function that invokes _CreateUrl on the handler
     DGNPLATFORM_EXPORT BentleyStatus CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid);
 
+    DGNPLATFORM_EXPORT bool ShouldRejectTile (WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
+
     DGNPLATFORM_EXPORT Utf8String _GetCopyrightMessage(DgnViewportR vp) override;
 
     //! Displays tiled rasters and schedules downloads. 
@@ -340,6 +342,8 @@ namespace dgn_ModelHandler
         //! @return non-zero if URL cannot be computed
         virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
 
+        virtual bool _ShouldRejectTile (WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) {return false;}
+
         //! Return the copyright message that must be displayed in the view.
         //! @param[in] mapService       Identifies the type of map that is being displayed
         //! @return non-zero if copyright cannot be computed
@@ -386,6 +390,7 @@ namespace dgn_ModelHandler
 
     protected:
         DGNPLATFORM_EXPORT BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
+        DGNPLATFORM_EXPORT bool _ShouldRejectTile (WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData) override;
         DGNPLATFORM_EXPORT Utf8String _GetCopyright(WebMercatorModel::Mercator const& props) override;
 
         DGNPLATFORM_EXPORT Utf8String CreateOsmUrl(WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
