@@ -8,7 +8,7 @@
 #include "ClientInternal.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <MobileDgn/Utils/Http/HttpConfigurationHandler.h>
+#include <DgnClientFx/Utils/Http/HttpConfigurationHandler.h>
 
 #define LOCAL_STATE_NAMESPACE   "UrlCache"
 #define LOCAL_STATE_ENVIRONMENT "Environment"
@@ -128,7 +128,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, ILocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
     {
-    s_localState = customLocalState ? customLocalState : &MobileDgnCommon::LocalState();
+    s_localState = customLocalState ? customLocalState : &DgnClientFxCommon::LocalState();
     s_customHandler = customHandler;
     s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>(s_customHandler);
     s_env = env;

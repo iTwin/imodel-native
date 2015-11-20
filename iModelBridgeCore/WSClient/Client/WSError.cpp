@@ -8,7 +8,7 @@
 #include "ClientInternal.h"
 #include <map>
 #include <WebServices/Connect/Connect.h>
-#include <MobileDgn/Utils/Http/HttpStatusHelper.h>
+#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
 
 #include "WSError.xliff.h"

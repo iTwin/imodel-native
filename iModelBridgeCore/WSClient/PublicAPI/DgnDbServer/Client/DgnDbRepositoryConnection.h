@@ -16,9 +16,9 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 typedef std::shared_ptr<struct DgnDbRepositoryConnection> DgnDbRepositoryConnectionPtr;
 
-typedef MobileDgn::Utils::AsyncResult<void, DgnDbServerError> DgnDbResult;
-typedef MobileDgn::Utils::AsyncResult<Dgn::DgnRevisionPtr, DgnDbServerError> DgnDbRevisionResult;
-typedef MobileDgn::Utils::AsyncResult<bvector<Dgn::DgnRevisionPtr>, DgnDbServerError> DgnDbRevisionsResult;
+typedef DgnClientFx::Utils::AsyncResult<void, DgnDbServerError> DgnDbResult;
+typedef DgnClientFx::Utils::AsyncResult<Dgn::DgnRevisionPtr, DgnDbServerError> DgnDbRevisionResult;
+typedef DgnClientFx::Utils::AsyncResult<bvector<Dgn::DgnRevisionPtr>, DgnDbServerError> DgnDbRevisionsResult;
 
 struct DgnDbRepositoryConnection
 {
@@ -29,21 +29,21 @@ private:
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
-    MobileDgn::Utils::AsyncTaskPtr<WebServices::WSObjectsResult> AcquireBriefcaseId(MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> DownloadBriefcaseFile(BeFileName localFile, MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> DownloadRevisionFile(Dgn::DgnRevisionPtr revision, MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> Push(Dgn::DgnRevisionPtr revision, MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbRevisionsResult> Pull(Utf8StringCR revisionId, MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbRevisionsResult> RevisionsFromQuery(const WebServices::WSQuery& query, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> GetRevisionIndex(uint64_t& index, Utf8StringCR revisionId, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<WebServices::WSObjectsResult> AcquireBriefcaseId(DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> DownloadBriefcaseFile(BeFileName localFile, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> DownloadRevisionFile(Dgn::DgnRevisionPtr revision, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> Push(Dgn::DgnRevisionPtr revision, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionsResult> Pull(Utf8StringCR revisionId, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionsResult> RevisionsFromQuery(const WebServices::WSQuery& query, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> GetRevisionIndex(uint64_t& index, Utf8StringCR revisionId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
 protected:
     DgnDbRepositoryConnection(RepositoryInfoPtr repository, Utf8StringCR host, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
 //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT static DgnDbRepositoryConnectionPtr Create(RepositoryInfoPtr repository, Utf8StringCR host, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbRevisionResult> GetRevisionById(Utf8StringCR revisionId, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbRevisionsResult> GetRevisionsFromId(Utf8StringCR revisionId, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
-    DGNDBSERVERCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> VerifyConnection(MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionResult> GetRevisionById(Utf8StringCR revisionId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionsResult> GetRevisionsFromId(Utf8StringCR revisionId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> VerifyConnection(DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
     DGNDBSERVERCLIENT_EXPORT RepositoryInfoCR GetRepositoryInfo();
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

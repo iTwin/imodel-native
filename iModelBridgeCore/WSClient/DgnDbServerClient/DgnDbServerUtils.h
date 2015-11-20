@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnDbServer/DgnDbServerCommon.h>
-#include <MobileDgn/Utils/Http/HttpRequest.h>
+#include <DgnClientFx/Utils/Http/HttpRequest.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 struct CallbackQueue
@@ -16,7 +16,7 @@ struct CallbackQueue
         void Notify();
         struct Callback
             {
-            MobileDgn::Utils::HttpRequest::ProgressCallback callback;
+            DgnClientFx::Utils::HttpRequest::ProgressCallback callback;
             CallbackQueue& m_queue;
             double m_bytesTransfered;
             double m_bytesTotal;
@@ -24,10 +24,10 @@ struct CallbackQueue
             };
         friend struct CallbackQueue::Callback;
         bvector<std::shared_ptr<CallbackQueue::Callback>> m_callbacks;
-        MobileDgn::Utils::HttpRequest::ProgressCallbackCR m_callback;
+        DgnClientFx::Utils::HttpRequest::ProgressCallbackCR m_callback;
     public:
-        CallbackQueue(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback);
+        CallbackQueue(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback);
 
-        MobileDgn::Utils::HttpRequest::ProgressCallbackCR NewCallback();
+        DgnClientFx::Utils::HttpRequest::ProgressCallbackCR NewCallback();
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

@@ -13,7 +13,7 @@
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <MobileDgn/MobileDgnApplication.h>
+#include <DgnClientFx/DgnClientApp.h>
 
 #define CONNECT_COMMAND_SHOW_USER_DATA  "CONNECT.Command.ShowUserData"
 #define CONNECT_REQUEST_SETUP           "CONNECT.Message.Setup"

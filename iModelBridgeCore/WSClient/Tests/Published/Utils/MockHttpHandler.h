@@ -8,9 +8,9 @@
 #pragma once
 
 #include "WebServicesUnitTests.h"
-#include <MobileDgn/Utils/Http/IHttpHandler.h>
+#include <DgnClientFx/Utils/Http/IHttpHandler.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
