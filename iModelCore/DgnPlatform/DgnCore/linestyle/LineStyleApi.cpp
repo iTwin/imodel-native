@@ -132,7 +132,7 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
             return _StrokeLineString (context, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
             }
 
-        context->GetCurrentGraphicR().DrawLineString3d (nPts, pts, NULL);
+        context->GetCurrentGraphicR().AddLineString (nPts, pts, NULL);
 
         return SUCCESS;
         }
@@ -279,11 +279,11 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             curve->push_back (ICurvePrimitive::CreateArc (ellipse));
             curve->push_back (ICurvePrimitive::CreateLineString (pts, 3));
 
-            context->GetCurrentGraphicR().DrawCurveVector (*curve, filled);
+            context->GetCurrentGraphicR().AddCurveVector (*curve, filled);
             }
         else
             {
-            context->GetCurrentGraphicR().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphicR().AddArc (ellipse, NULL == inSweep, filled, range);
             }
         }
     else
@@ -292,7 +292,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
         ElemDisplayParamsP elParams = context->GetCurrentDisplayParams();
         if (0 == elParams->GetWeight())
             {
-            context->GetCurrentGraphic().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
             }
         else
             {
@@ -304,11 +304,11 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             elParams->SetWeight (0);
             context->CookDisplayParams();
             context->GetCurrentGraphic().ActivateMatSymb (context->GetElemMatSymb());
-            context->GetCurrentGraphic().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
             context->GetCurrentGraphic().ActivateMatSymb (&saveMatSymb);
             }
 #else
-        context->GetCurrentGraphicR().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+        context->GetCurrentGraphicR().AddArc (ellipse, NULL == inSweep, filled, range);
 #endif
         }
 
@@ -433,7 +433,7 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
     // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
     if (!IsWidthDiscernible (context, lsSymb, firstPt))
         {
-        context->GetCurrentGraphicR().DrawBSplineCurve (*curve, false);
+        context->GetCurrentGraphicR().AddBSplineCurve (*curve, false);
 
         return SUCCESS;
         }

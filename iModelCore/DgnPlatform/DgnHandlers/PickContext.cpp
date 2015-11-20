@@ -861,7 +861,7 @@ bool PickOutput::_DrawSprite(ISpriteP sprite, DPoint3dCP location, DPoint3dCP xV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickOutput::_DrawTextString(TextStringCR text, double* zDepth)
+void PickOutput::_AddTextString(TextStringCR text, double* zDepth)
     {
     if (text.GetText().empty())
         return;
@@ -898,7 +898,7 @@ void PickOutput::_DrawTextString(TextStringCR text, double* zDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickOutput::_DrawPointCloud(IPointCloudDrawParams* drawParams)
+void PickOutput::_AddPointCloud(IPointCloudDrawParams* drawParams)
     {
     m_currGeomDetail.SetGeomType(HitGeomType::Point);
     m_currGeomDetail.SetDetailSource(HitDetailSource::PointCloud | m_currGeomDetail.GetDetailSource());
@@ -1021,9 +1021,9 @@ void PickContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
     if (NULL == _GetCurrLineStyle(NULL))
         {
         if (closed)
-            m_IDrawGeom->DrawShape3d(nPts, pts, false, range);
+            m_IDrawGeom->AddShape(nPts, pts, false, range);
         else
-            m_IDrawGeom->DrawLineString3d(nPts, pts, range);
+            m_IDrawGeom->AddLineString(nPts, pts, range);
         return;
         }
 
@@ -1035,9 +1035,9 @@ void PickContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
     m_output.SetTestLStylePhase(TEST_LSTYLE_BaseGeom);
 
     if (closed)
-        m_IDrawGeom->DrawShape3d(nPts, pts, false, range);
+        m_IDrawGeom->AddShape(nPts, pts, false, range);
     else
-        m_IDrawGeom->DrawLineString3d(nPts, pts, range);
+        m_IDrawGeom->AddLineString(nPts, pts, range);
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif
@@ -1052,9 +1052,9 @@ void PickContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
     if (NULL == _GetCurrLineStyle(NULL))
         {
         if (closed)
-            m_IDrawGeom->DrawShape2d(nPts, pts, false, priority, range);
+            m_IDrawGeom->AddShape2d(nPts, pts, false, priority, range);
         else
-            m_IDrawGeom->DrawLineString2d(nPts, pts, priority, range);
+            m_IDrawGeom->AddLineString2d(nPts, pts, priority, range);
         return;
         }
 
@@ -1066,9 +1066,9 @@ void PickContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
     m_output.SetTestLStylePhase(TEST_LSTYLE_BaseGeom);
 
     if (closed)
-        m_IDrawGeom->DrawShape2d(nPts, pts, false, priority, range);
+        m_IDrawGeom->AddShape2d(nPts, pts, false, priority, range);
     else
-        m_IDrawGeom->DrawLineString2d(nPts, pts, priority, range);
+        m_IDrawGeom->AddLineString2d(nPts, pts, priority, range);
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif
@@ -1082,7 +1082,7 @@ void PickContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (NULL == _GetCurrLineStyle(NULL))
         {
-        m_IDrawGeom->DrawArc3d(ellipse, isEllipse, false, range);
+        m_IDrawGeom->AddArc(ellipse, isEllipse, false, range);
         return;
         }
 
@@ -1093,7 +1093,7 @@ void PickContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_BaseGeom);
 
-    m_IDrawGeom->DrawArc3d(ellipse, isEllipse, false, range);
+    m_IDrawGeom->AddArc(ellipse, isEllipse, false, range);
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif
@@ -1107,7 +1107,7 @@ void PickContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (NULL == _GetCurrLineStyle(NULL))
         {
-        m_IDrawGeom->DrawArc2d(ellipse, isEllipse, false, zDepth, range);
+        m_IDrawGeom->AddArc2d(ellipse, isEllipse, false, zDepth, range);
         return;
         }
 
@@ -1118,7 +1118,7 @@ void PickContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_BaseGeom);
 
-    m_IDrawGeom->DrawArc2d(ellipse, isEllipse, false, zDepth, range);
+    m_IDrawGeom->AddArc2d(ellipse, isEllipse, false, zDepth, range);
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif
@@ -1132,7 +1132,7 @@ void PickContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR curve)
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (NULL == _GetCurrLineStyle(NULL))
         {
-        m_IDrawGeom->DrawBSplineCurve(curve, false);
+        m_IDrawGeom->AddBSplineCurve(curve, false);
         return;
         }
 
@@ -1143,7 +1143,7 @@ void PickContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR curve)
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_BaseGeom);
 
-    m_IDrawGeom->DrawBSplineCurve(curve, false);
+    m_IDrawGeom->AddBSplineCurve(curve, false);
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif
@@ -1157,7 +1157,7 @@ void PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDept
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (NULL == _GetCurrLineStyle(NULL))
         {
-        m_IDrawGeom->DrawBSplineCurve2d(curve, false, zDepth);
+        m_IDrawGeom->AddBSplineCurve2d(curve, false, zDepth);
         return;
         }
 
@@ -1168,7 +1168,7 @@ void PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDept
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_BaseGeom);
 
-    m_IDrawGeom->DrawBSplineCurve2d(curve, false, zDepth);
+    m_IDrawGeom->AddBSplineCurve2d(curve, false, zDepth);
 
     m_output.SetTestLStylePhase(TEST_LSTYLE_None);
 #endif

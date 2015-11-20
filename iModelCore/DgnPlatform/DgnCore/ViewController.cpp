@@ -1741,8 +1741,8 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
 
     color.SetAlpha(200);
     output->SetSymbology(color, color, 1, 0);
-    output->DrawArc3d(ellipse, true, true, nullptr);
-    output->DrawArc3d(ellipse, false, false, nullptr);
+    output->AddArc(ellipse, true, true, nullptr);
+    output->AddArc(ellipse, false, false, nullptr);
 
     double      length = (0.6 * radius);
     DSegment3d  segment;
@@ -1750,12 +1750,12 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
     normal.Normalize(ellipse.vector0);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    output->DrawLineString3d(2, segment.point, nullptr);
+    output->AddLineString(2, segment.point, nullptr);
 
     normal.Normalize(ellipse.vector90);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    output->DrawLineString3d(2, segment.point, nullptr);
+    output->AddLineString(2, segment.point, nullptr);
 #endif
     }
 
@@ -1783,15 +1783,15 @@ static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
 
     white.SetAlpha(165);
     output->SetSymbology(white, white, 1, 0);
-    output->DrawArc2d(ellipse, true, true, 0.0, NULL);
+    output->AddArc2d(ellipse, true, true, 0.0, NULL);
 
     black.SetAlpha(100);
     output->SetSymbology(black, black, 1, 0);
-    output->DrawArc2d(ellipse2, false, false, 0.0, NULL);
+    output->AddArc2d(ellipse2, false, false, 0.0, NULL);
 
     white.SetAlpha(20);
     output->SetSymbology(white, white, 1, 0);
-    output->DrawArc2d(ellipse, false, false, 0.0, NULL);
+    output->AddArc2d(ellipse, false, false, 0.0, NULL);
 
     output->SetToViewCoords(false);
 #endif

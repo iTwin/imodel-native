@@ -890,7 +890,7 @@ double          scale
         
         pointIndices.push_back(0);
         AddPatternParametersToPolyface(polyface, rMatrix, origin, spacing);
-        context.GetIDrawGeom().DrawPolyface(*polyface, true);
+        context.GetIDrawGeom().AddPolyface(*polyface, true);
 
         PatternHelper::PopBoundaryClipStencil(context, qvElem);
         }
@@ -915,7 +915,7 @@ double          scale
             }
 
         AddPatternParametersToPolyface(polyface, rMatrix, origin, spacing);
-        context.GetIDrawGeom().DrawPolyface(*polyface, true);
+        context.GetIDrawGeom().AddPolyface(*polyface, true);
         }
 
     return true;
@@ -966,7 +966,7 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 DPoint3d    tmpPt;
 
                 cellTrans.GetTranslation(tmpPt);
-                context.GetCurrentGraphicR().DrawPointString3d(1, &tmpPt, NULL);
+                context.GetCurrentGraphicR().AddPointString(1, &tmpPt, NULL);
                 }
             else
                 {

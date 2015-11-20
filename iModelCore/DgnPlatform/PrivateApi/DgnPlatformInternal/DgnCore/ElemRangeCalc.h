@@ -147,16 +147,16 @@ public:
     void      UpdateRange(DEllipse3dCP ellipse);
     StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled) override;
     StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR primitive) override;
-    void      _DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
-    StatusInt _DrawBody(ISolidKernelEntityCR entity, double) override;
-    void      _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
-    void      _DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
-    void      _DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range) override;
+    void      _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
+    StatusInt _AddBody(ISolidKernelEntityCR entity, double) override;
+    void      _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
+    void      _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
+    void      _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range) override;
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void      _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) override;
+    void      _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) override;
 #endif
-    void      _DrawTextString(TextStringCR text, double* zDepth) override;
-    void      _DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
+    void      _AddTextString(TextStringCR text, double* zDepth) override;
+    void      _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
 };
 
 END_BENTLEY_DGN_NAMESPACE

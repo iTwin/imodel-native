@@ -212,7 +212,7 @@ static void processCurvePrimitives(SimplifyViewDrawGeom& drawGeom, CurveVectorCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
+void SimplifyViewDrawGeom::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
     {
     BeAssert(numX==1 && numY==1 && "TBD: march over tiles");
 
@@ -223,7 +223,7 @@ void SimplifyViewDrawGeom::_DrawMosaic(int numX, int numY, uintptr_t const* tile
     shapePoints[2] = points[2];
     shapePoints[3] = points[3];
 
-    _DrawShape3d(5, shapePoints, true, NULL);
+    _AddShape(5, shapePoints, true, NULL);
     }
  
 /*---------------------------------------------------------------------------------**//**
@@ -1040,7 +1040,7 @@ static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyViewDrawGeom::_AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     
@@ -1051,18 +1051,18 @@ void SimplifyViewDrawGeom::_DrawLineString3d(int numPoints, DPoint3dCP points, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawLineString3d(numPoints, &localPointsBuf3d[0], NULL);
+    _AddLineString(numPoints, &localPointsBuf3d[0], NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyViewDrawGeom::_AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
 
@@ -1073,18 +1073,18 @@ void SimplifyViewDrawGeom::_DrawPointString3d(int numPoints, DPoint3dCP points, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawPointString3d(numPoints, &localPointsBuf3d[0], NULL);
+    _AddPointString(numPoints, &localPointsBuf3d[0], NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
+void SimplifyViewDrawGeom::_AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
     {
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
 
@@ -1095,18 +1095,18 @@ void SimplifyViewDrawGeom::_DrawShape3d(int numPoints, DPoint3dCP points, bool f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawShape3d(numPoints, &localPointsBuf3d[0], filled, NULL);
+    _AddShape(numPoints, &localPointsBuf3d[0], filled, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
+void SimplifyViewDrawGeom::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
     {
     if (1 == usageFlags) // represents thickened line...
         {
@@ -1121,30 +1121,30 @@ void SimplifyViewDrawGeom::_DrawTriStrip3d(int numPoints, DPoint3dCP points, int
 
         tmpPtsP[nPt] = tmpPtsP[0]; // Add closure point...simplifies drop of extrude thickness...
 
-        _DrawShape3d(numPoints+1, tmpPtsP, true, NULL);
+        _AddShape(numPoints+1, tmpPtsP, true, NULL);
         return;
         }
 
     // spew triangles
     for (int iPt=0; iPt < numPoints-2; iPt++)
-        _DrawShape3d(3, &points[iPt], true, NULL);
+        _AddShape(3, &points[iPt], true, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d>  localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawTriStrip3d(numPoints, &localPointsBuf3d[0], usageFlags, NULL);
+    _AddTriStrip(numPoints, &localPointsBuf3d[0], usageFlags, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
+void SimplifyViewDrawGeom::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
     {
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
     CurveVectorPtr  curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
@@ -1169,15 +1169,15 @@ void SimplifyViewDrawGeom::_DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
     {
-    _DrawArc3d(ellipse, isEllipse, filled, NULL);
+    _AddArc(ellipse, isEllipse, filled, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
+void SimplifyViewDrawGeom::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
     CurveVectorPtr  curve = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
 
@@ -1188,15 +1188,15 @@ void SimplifyViewDrawGeom::_DrawBSplineCurve(MSBsplineCurveCR bcurve, bool fille
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
+void SimplifyViewDrawGeom::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
     {
-    _DrawBSplineCurve(bcurve, filled);
+    _AddBSplineCurve(bcurve, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawCurveVector(CurveVectorCR curves, bool isFilled)
+void SimplifyViewDrawGeom::_AddCurveVector(CurveVectorCR curves, bool isFilled)
     {
     ClipAndProcessCurveVector(curves, isFilled);
     }
@@ -1204,15 +1204,15 @@ void SimplifyViewDrawGeom::_DrawCurveVector(CurveVectorCR curves, bool isFilled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
+void SimplifyViewDrawGeom::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
     {
-    _DrawCurveVector(curves, isFilled); // Ignore zDepth...
+    _AddCurveVector(curves, isFilled); // Ignore zDepth...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawSolidPrimitive(ISolidPrimitiveCR primitive)
+void SimplifyViewDrawGeom::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
     {
     ClipAndProcessSolidPrimitive(primitive);
     }
@@ -1220,7 +1220,7 @@ void SimplifyViewDrawGeom::_DrawSolidPrimitive(ISolidPrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawBSplineSurface(MSBsplineSurfaceCR surface)
+void SimplifyViewDrawGeom::_AddBSplineSurface(MSBsplineSurfaceCR surface)
     {
     ClipAndProcessSurface(surface);
     }
@@ -1288,7 +1288,7 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshDa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPolyface(PolyfaceQueryCR meshData, bool filled)
+void SimplifyViewDrawGeom::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
     {
     if (_ProcessAsFacets(true))
         {
@@ -1322,7 +1322,7 @@ void SimplifyViewDrawGeom::_DrawPolyface(PolyfaceQueryCR meshData, bool filled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::_DrawBody(ISolidKernelEntityCR entity, double pixelSize)
+StatusInt SimplifyViewDrawGeom::_AddBody(ISolidKernelEntityCR entity, double pixelSize)
     {
     ClipAndProcessBody(entity, NULL);
     return SUCCESS;
@@ -1331,7 +1331,7 @@ StatusInt SimplifyViewDrawGeom::_DrawBody(ISolidKernelEntityCR entity, double pi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
+void SimplifyViewDrawGeom::_AddTextString(TextStringCR text, double* zDepth)
     {
     AutoRestore <bool>  saveInTextDraw(&m_inTextDraw, true);
 
@@ -1344,7 +1344,7 @@ void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
         text.ComputeBoundingShape(points);
         text.ComputeTransform().Multiply(points, _countof(points));
 
-        _DrawShape3d(5, points, false, NULL);
+        _AddShape(5, points, false, NULL);
         return;
         }
 
@@ -1354,7 +1354,7 @@ void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
+void SimplifyViewDrawGeom::_AddRaster3d (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
     {
     DPoint3d    shapePoints[5];
 
@@ -1363,24 +1363,24 @@ void SimplifyViewDrawGeom::_DrawRaster (DPoint3d const points[4], int pitch, int
     shapePoints[2] = points[2];
     shapePoints[3] = points[3];
 
-    _DrawShape3d(5, shapePoints, true, NULL);
+    _AddShape(5, shapePoints, true, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_AddRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(4);
 
     copy2dTo3d(4, &localPointsBuf3d[0], points, 0.0);
-    _DrawRaster(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, NULL);
+    _AddRaster3d(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawDgnOle(DgnOleDraw* ole)
+void SimplifyViewDrawGeom::_AddDgnOle(DgnOleDraw* ole)
     {
 
     // NEEDSWORK...Draw Shape...
@@ -1389,7 +1389,7 @@ void SimplifyViewDrawGeom::_DrawDgnOle(DgnOleDraw* ole)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPointCloud(PointCloudDraw* drawParams)
+void SimplifyViewDrawGeom::_AddPointCloud(PointCloudDraw* drawParams)
     {
     enum {MAX_POINTS_PER_BATCH = 300};
 
@@ -1418,7 +1418,7 @@ void SimplifyViewDrawGeom::_DrawPointCloud(PointCloudDraw* drawParams)
             
             uint32_t pointsThisIter = numPoints > MAX_POINTS_PER_BATCH ? MAX_POINTS_PER_BATCH: numPoints;
 
-            _DrawPointString3d(pointsThisIter, dPoints, NULL);
+            _AddPointString(pointsThisIter, dPoints, NULL);
             numPoints -= pointsThisIter;
             dPoints   += pointsThisIter;
             }
@@ -1452,7 +1452,7 @@ void SimplifyViewDrawGeom::_DrawPointCloud(PointCloudDraw* drawParams)
             curr->z = currIn->z + offsets.z;
             }
 
-        _DrawPointString3d(pointsThisIter, pointBuffer, NULL);
+        _AddPointString(pointsThisIter, pointBuffer, NULL);
         numPoints -= pointsThisIter;
         }
     }

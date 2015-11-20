@@ -220,8 +220,8 @@ protected:
     //! For normal views, this does the same thing as _DrawView.
     DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
 
-    //! Stroke a single element through a ViewContext.
-    //! An application can override _StrokeGeometry to change the symbology of elements.
+    //! Stroke a single GeometrySource through a ViewContext.
+    //! An application can override _StrokeElement to change the symbology of a GeometrySource.
     DGNPLATFORM_EXPORT virtual void _StrokeGeometry(ViewContextR, GeometrySourceCR);
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.

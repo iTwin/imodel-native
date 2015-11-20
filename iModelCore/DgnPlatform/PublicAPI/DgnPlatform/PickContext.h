@@ -42,12 +42,12 @@ private:
     virtual StatusInt _ProcessBody(ISolidKernelEntityCR entity) override;
 
 protected:
-    virtual void _DrawTextString(TextStringCR, double* zDepth) override;
+    virtual void _AddTextString(TextStringCR, double* zDepth) override;
     virtual bool _DoClipping() const override {return m_inSymbolDraw;} // Only need clip for symbols...
     virtual bool _DoSymbolGeometry() const override {return true;}
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
-    virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
+    virtual void _AddPointCloud(Render::IPointCloudDrawParams* drawParams) override;
 #endif
 
 public:

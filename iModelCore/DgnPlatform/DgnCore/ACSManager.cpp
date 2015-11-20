@@ -939,7 +939,7 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP l
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         cached->ActivateMatSymb(&elemMatSymb);
-        cached->DrawShape3d(5, pts, true, NULL);
+        cached->AddShape(5, pts, true, NULL);
 #endif
         }
 
@@ -950,7 +950,7 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP l
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     cached->ActivateMatSymb(&elemMatSymb);
-    cached->DrawTextString(textStr);
+    cached->AddTextString(textStr);
 #endif
     }
 
@@ -972,11 +972,11 @@ void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* 
     elemMatSymb.SetWidth(2);
 
     cached->ActivateMatSymb(&elemMatSymb);
-    cached->DrawLineString3d(2, linePts, NULL);
+    cached->AddLineString(2, linePts, NULL);
 
     elemMatSymb.SetWidth(6);
     cached->ActivateMatSymb(&elemMatSymb);
-    cached->DrawPointString3d(2, linePts, NULL);
+    cached->AddPointString(2, linePts, NULL);
 
     double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
     DVec3d      xVec, yVec;
@@ -1001,8 +1001,8 @@ void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* 
 
     ellipse.InitFromDGNFields3d(center, xVec, yVec, scale, scale, start, sweep);
 
-    cached->DrawArc3d(ellipse, true, true, NULL);
-    cached->DrawArc3d(ellipse, false, false, NULL);
+    cached->AddArc(ellipse, true, true, NULL);
+    cached->AddArc(ellipse, false, false, NULL);
 #endif
     }
 
@@ -1050,7 +1050,7 @@ void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, SceneP cached, Transfo
         {
         // Add text and arrow outline...
         cached->ActivateMatSymb(&elemMatSymb);
-        cached->DrawLineString3d(8, shapePts, NULL);
+        cached->AddLineString(8, shapePts, NULL);
 
         _DrawAxisText(viewport, cached, labelStrP, true, userOrg.x, userOrg.y, scale, angle, options);
 
@@ -1060,7 +1060,7 @@ void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, SceneP cached, Transfo
     // Draw arrow fill as blanking region...
     elemMatSymb.SetIsBlankingRegion(true);
     cached->ActivateMatSymb(&elemMatSymb);
-    cached->DrawShape3d(8, shapePts, true, NULL);
+    cached->AddShape(8, shapePts, true, NULL);
 #endif
     }
 

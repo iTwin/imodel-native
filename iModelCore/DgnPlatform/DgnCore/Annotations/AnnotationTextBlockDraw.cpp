@@ -83,7 +83,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
         }
     
     context.CookDisplayParams();
-    context.DrawTextString(ts);
+    context.AddTextString(ts);
     
     return SUCCESS;
     }
@@ -151,7 +151,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
         TextStyleInterop::AnnotationToTextString(tsNumerator.GetStyleR(), *effectiveStyle);
         tsNumerator.GetStyleR().SetSize(fontSize);
 
-        context.DrawTextString(tsNumerator);
+        context.AddTextString(tsNumerator);
         }
     
     if (!run.GetDenominatorContent().empty())
@@ -162,7 +162,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
         TextStyleInterop::AnnotationToTextString(tsDenominator.GetStyleR(), *effectiveStyle);
         tsDenominator.GetStyleR().SetSize(fontSize);
 
-        context.DrawTextString(tsDenominator);
+        context.AddTextString(tsDenominator);
         }
     
     return SUCCESS;

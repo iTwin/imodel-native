@@ -458,9 +458,9 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
         curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, GetGeomDetail().GetCurvePrimitive()->Clone());
 
     if (GetViewport().Is3dView())
-        context.GetCurrentGraphicR().DrawCurveVector(*curve, false);
+        context.GetCurrentGraphicR().AddCurveVector(*curve, false);
     else
-        context.GetCurrentGraphicR().DrawCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
+        context.GetCurrentGraphicR().AddCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**

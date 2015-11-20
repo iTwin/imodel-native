@@ -665,13 +665,13 @@ void ViewContext::DrawBox(DPoint3dP box, bool is3d)
         tmpPts[8] = box[0];
 
         // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
-        drawGeom.DrawLineString3d(9, tmpPts, nullptr);
+        drawGeom.AddLineString(9, tmpPts, nullptr);
 
         // Draw missing connecting lines to complete box...
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[0], box[3]).point, nullptr);
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[4], box[5]).point, nullptr);
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[1], box[7]).point, nullptr);
-        drawGeom.DrawLineString3d(2, DSegment3d::From(box[2], box[6]).point, nullptr);
+        drawGeom.AddLineString(2, DSegment3d::From(box[0], box[3]).point, nullptr);
+        drawGeom.AddLineString(2, DSegment3d::From(box[4], box[5]).point, nullptr);
+        drawGeom.AddLineString(2, DSegment3d::From(box[1], box[7]).point, nullptr);
+        drawGeom.AddLineString(2, DSegment3d::From(box[2], box[6]).point, nullptr);
         return;
         }
 
@@ -681,7 +681,7 @@ void ViewContext::DrawBox(DPoint3dP box, bool is3d)
     tmpPts[3] = box[3];
     tmpPts[4] = box[0];
 
-    drawGeom.DrawLineString3d(5, tmpPts, nullptr);
+    drawGeom.AddLineString(5, tmpPts, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -988,9 +988,9 @@ void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
         }
 
     if (closed)
-        GetCurrentGraphicR().DrawShape3d(nPts, pts, false, range);
+        GetCurrentGraphicR().AddShape(nPts, pts, false, range);
     else
-        GetCurrentGraphicR().DrawLineString3d(nPts, pts, range);
+        GetCurrentGraphicR().AddLineString(nPts, pts, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1011,9 +1011,9 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
         }
 
     if (closed)
-        GetCurrentGraphicR().DrawShape2d(nPts, pts, false, priority, range);
+        GetCurrentGraphicR().AddShape2d(nPts, pts, false, priority, range);
     else
-        GetCurrentGraphicR().DrawLineString2d(nPts, pts, priority, range);
+        GetCurrentGraphicR().AddLineString2d(nPts, pts, priority, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1035,7 +1035,7 @@ void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
         return;
         }
 
-    GetCurrentGraphicR().DrawArc3d(ellipse, isEllipse, false, range);
+    GetCurrentGraphicR().AddArc(ellipse, isEllipse, false, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1058,7 +1058,7 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
         return;
         }
 
-    GetCurrentGraphicR().DrawArc2d(ellipse, isEllipse, false, zDepth, range);
+    GetCurrentGraphicR().AddArc2d(ellipse, isEllipse, false, zDepth, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1075,7 +1075,7 @@ void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
         return;
         }
 
-    GetCurrentGraphicR().DrawBSplineCurve(bcurve, false);
+    GetCurrentGraphicR().AddBSplineCurve(bcurve, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1111,7 +1111,7 @@ void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDep
         return;
         }
 
-    GetCurrentGraphicR().DrawBSplineCurve2d(bcurve, false, zDepth);
+    GetCurrentGraphicR().AddBSplineCurve2d(bcurve, false, zDepth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1746,13 +1746,13 @@ void ElemDisplayParams::Resolve(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawTextString(TextStringCR text)
+void ViewContext::_AddTextString(TextStringCR text)
     {
     text.GetGlyphSymbology(GetCurrentDisplayParams());
     CookDisplayParams();
 
     double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
-    GetCurrentGraphicR().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
+    GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments(*this);
     }
 

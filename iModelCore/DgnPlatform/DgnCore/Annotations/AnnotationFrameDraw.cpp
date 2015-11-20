@@ -97,14 +97,14 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
         {
         setStrokeSymbology(context, frameStyle->GetStrokeColorType(), frameStyle->GetStrokeColorValue(), frameStyle->GetStrokeWeight());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
-        output.DrawCurveVector(*frameGeometry, false);
+        output.AddCurveVector(*frameGeometry, false);
         }
 
     if (frameStyle->IsFillEnabled())
         {
         setFillSymbology(context, frameStyle->GetFillColorType(), frameStyle->GetFillColorValue(), frameStyle->GetFillTransparency());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
-        output.DrawCurveVector(*frameGeometry, true);
+        output.AddCurveVector(*frameGeometry, true);
         }
 
     return SUCCESS;

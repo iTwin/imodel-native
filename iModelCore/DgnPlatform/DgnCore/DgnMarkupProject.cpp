@@ -1511,7 +1511,7 @@ BentleyStatus RedlineModel::DrawImage(ViewContextR context, DPoint3dCR viewOrg, 
     uintptr_t const& x = m_tileIds.front();
     int tilesY = (int)m_tileIds.size() / m_tilesX;
 
-    context.GetCurrentGraphicR().DrawMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
+    context.GetCurrentGraphicR().AddMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
 
     return BSISUCCESS;
     }

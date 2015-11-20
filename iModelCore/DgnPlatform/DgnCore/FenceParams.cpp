@@ -822,7 +822,7 @@ bool AcceptCurveVector(CurveVectorCR curves, FenceParamsP fp)
         return false;
 
     m_graphic->Init();
-    m_graphic->DrawCurveVector(curves, false);
+    m_graphic->AddCurveVector(curves, false);
     _Detach();
 
     return m_graphic->GetCurrentAccept();

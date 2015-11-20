@@ -219,10 +219,10 @@ void NamedVolume::DrawFace (DPoint3dCP points, size_t numPoints, uint32_t color,
     GraphicR vDraw = context.GetCurrentGraphicR();
 
     viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Thin, STYLE_Solid);
-    vDraw.DrawShape3d ((int) numPoints, points, true, nullptr);
+    vDraw.AddShape ((int) numPoints, points, true, nullptr);
 
     viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Bold, STYLE_Solid);
-    vDraw.DrawLineString3d ((int) numPoints, points, nullptr);
+    vDraw.AddLineString ((int) numPoints, points, nullptr);
     }
 
 //--------------------------------------------------------------------------------------
