@@ -182,6 +182,7 @@
     <ClInclude Include="Cache\Persistence\Core\ECDbFileInfoSchema.h" />
     <ClInclude Include="Cache\Persistence\Core\SchemaContext.h" />
     <ClInclude Include="Cache\Persistence\Core\SchemaManager.h" />
+    <ClInclude Include="Cache\Persistence\Core\Version.h" />
     <ClInclude Include="Cache\Persistence\Files\FileCacheManager.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfo.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfoManager.h" />
