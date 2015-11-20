@@ -26,9 +26,6 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DataSourceCache : public IDataSourceCache
     {
-    public:
-        static const int CURRENT_CACHE_FORMAT_VERSION = 9;
-
     private:
         ObservableECDb m_db;
         std::shared_ptr<struct DataSourceCacheOpenState> m_state;
