@@ -1478,7 +1478,7 @@ bool dgn_ModelHandler::StreetMap::_ShouldRejectTile (WebMercatorModel::Mercator 
 
         // MapBox
     auto const& data = realityData.GetData();
-    if (data.size() == sizeof(s_mapbox_x) && 0==memcmp(&data[0], s_mapbox_x, data.size()))
+    if (data.GetSize() == sizeof(s_mapbox_x) && 0==memcmp(data.GetData(), s_mapbox_x, data.GetSize()))
         return true;
 
     return false;
