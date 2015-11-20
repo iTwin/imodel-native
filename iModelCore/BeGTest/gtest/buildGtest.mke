@@ -83,7 +83,7 @@ GUNITTEST_LIBS       + $[@wildcard $(collectionProduct)Libs/*$(libext)]
 GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
 
 %if $(TARGET_PLATFORM)=="Windows"
-    GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) user32.lib
+    GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) ws2_32$(libext) user32.lib
 %elif $(TARGET_PLATFORM)=="Linux"
     GUNITTEST_LIBS   + -lpthread
 %endif
