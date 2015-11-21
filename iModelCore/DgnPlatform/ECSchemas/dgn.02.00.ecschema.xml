@@ -113,7 +113,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="True">
             <Class class="Element" >
                 <Key>
-                    <Property name="CodeAuthorityId" />
+                    <Property name="Code.AuthorityId" />
                 </Key>
             </Class>
         </Target>
@@ -132,7 +132,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="True">
             <Class class="Model" >
                 <Key>
-                    <Property name="CodeAuthorityId" />
+                    <Property name="Code.AuthorityId" />
                 </Key>
             </Class>
         </Target>
@@ -157,44 +157,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                         <Name>idx_dgn_Model_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>CodeAuthorityId</string>
-                            <string>CodeNameSpace</string>
-                            <string>Code</string>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="CodeAuthorityId" typeName="long">
-             <!-- Foreign key relationship: AuthorityIssuesModelCode.CodeAuthorityId --> 
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CodeNameSpace" typeName="string">
-            <!-- The namespace enclosing the "business key" for this model. -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                    <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Code" typeName="string">
-            <!-- The "business key" for this Model. Typically used to link this Model with a record in an external system (identified by CodeAuthorityId). -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable><!-- IFF namespace is blank - signifies the code is not meaningful/unique -->
-                    <Collation>NoCase</Collation>
-                    <!-- Code by itself is not necessarily unique, but CodeAuthorityId+CodeNameSpace+Code is unique.  -->
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode" />
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Props" typeName="string" />
         <ECProperty propertyName="Visibility" typeName="int" />
@@ -329,22 +300,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                         <Name>idx_dgn_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>CodeAuthorityId</string>
-                            <string>CodeNameSpace</string>
-                            <string>Code</string>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
                         </Properties>
                     </DbIndex>
-                    <!-- Convert Code to Struct
-                    <DbIndex>
-                        <Name>idx_dgn_Element_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>CodeStruct.AuthorityId</string>
-                            <string>CodeStruct.Namespace</string>
-                            <string>CodeStruct.Value</string>
-                        </Properties>
-                    </DbIndex>
-                    -->
                     <DbIndex>
                         <!-- Index on ParentId -->
                         <Name>idx_dgn_Element_ParentId</Name>
@@ -352,6 +312,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                         <Properties>
                             <string>ParentId</string>
                         </Properties>
+                        <Where>ECDB_NOTNULL</Where>
                     </DbIndex>
                     <DbIndex>
                         <!-- Index on ModelId -->
@@ -385,40 +346,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="CodeAuthorityId" typeName="long">
-             <!-- Foreign key relationship: AuthorityIssuesElementCode.CodeAuthorityId --> 
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CodeNameSpace" typeName="string">
-            <!-- The namespace enclosing the "business key" for this element. -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                    <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Code" typeName="string">
-            <!-- The "business key" for this Element. Typically used to link this Element with a record in an external system (identified by CodeAuthorityId). -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable><!-- IFF namespace is blank - signifies the code is not meaningful/unique -->
-                    <Collation>NoCase</Collation>
-                    <!-- Code by itself is not necessarily unique, but CodeAuthorityId+CodeNameSpace+Code is unique.  -->
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <!-- WIP: Convert Code to Struct
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode">
-        </ECStructProperty>
-        -->
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode" />
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -725,6 +653,16 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <!-- Index on CategoryId -->
+                        <Name>idx_dgn_ElementGeom_CategoryId</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>CategoryId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Placement" typeName="binary"/>
