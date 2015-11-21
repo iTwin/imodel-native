@@ -1105,6 +1105,7 @@ void PerformanceElementsCRUDTestFixture::ExtractSelectParams (ECSqlStatement& st
 void PerformanceElementsCRUDTestFixture::GetInsertSql (Utf8CP className, Utf8StringR insertSql, DgnClassId classId) const
     {
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+    ASSERT_TRUE(ecClass != nullptr);
 
     insertSql = Utf8String ("INSERT INTO dgn_Element ([Id], ");
     Utf8String insertValuesSql (") VALUES (:Id, ");
@@ -1135,29 +1136,66 @@ void PerformanceElementsCRUDTestFixture::GetInsertSql (Utf8CP className, Utf8Str
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8StringR selectSql) const
+void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8StringR selectSql, bool asTranslatedFromECSql, bool omitClassIdFilter) const
     {
-    ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
-    selectSql = "SELECT ";
-    bool isFirstItem = true;
-    for (auto prop : ecClass->GetProperties (true))
+    ECN::ECClassCP ecClass = m_db->Schemas().GetECClass(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+    ASSERT_TRUE(ecClass != nullptr);
+
+    if (!asTranslatedFromECSql)
         {
-        if (!isFirstItem)
+
+        selectSql = "SELECT ";
+        bool isFirstItem = true;
+        for (auto prop : ecClass->GetProperties(true))
             {
-            selectSql.append (", ");
+            if (!isFirstItem)
+                {
+                selectSql.append(", ");
+                }
+            selectSql.append(prop->GetName());
+            isFirstItem = false;
             }
-        selectSql.append (prop->GetName ());
-        isFirstItem = false;
+        selectSql.append(" FROM dgn_Element WHERE Id = ?");
+        if (!omitClassIdFilter)
+            {
+            Utf8String classIdFilter;
+            classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+            selectSql.append(classIdFilter);
+            }
+
+        return;
         }
-    selectSql.append (" FROM dgn_Element WHERE Id = ?");
+
+    if (omitClassIdFilter)
+        selectSql.assign("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[CodeAuthorityId], [Element4].[CodeNameSpace], [Element4].[Code], [Element4].[LastMod], [Element4].[Prop1_1], "
+                     "[Element4].[Prop1_2], [Element4].[Prop1_3], [Element4].[Prop2_1], [Element4].[Prop2_2], [Element4].[Prop2_3], [Element4].[Prop3_1], [Element4].[Prop3_2], [Element4].[Prop3_3], [Element4].[Prop4_1], "
+                     "[Element4].[Prop4_2], [Element4].[Prop4_3] FROM (SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], [CodeAuthorityId][CodeAuthorityId], "
+                     "[CodeNameSpace][CodeNameSpace], [Code][Code], [LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], [Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], "
+                     "[Prop3_2][Prop3_2], [Prop3_3][Prop3_3], [Prop4_1][Prop4_1], [Prop4_2][Prop4_2], [Prop4_3][Prop4_3] FROM[dgn_Element])[Element4]  WHERE[Element4].[Id] = ? ");
+    else
+        {
+        selectSql.Sprintf("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[CodeAuthorityId], "
+                         "[Element4].[CodeNameSpace], [Element4].[Code], [Element4].[LastMod], [Element4].[Prop1_1], "
+                         "[Element4].[Prop1_2], [Element4].[Prop1_3], [Element4].[Prop2_1], [Element4].[Prop2_2], "
+                         "[Element4].[Prop2_3], [Element4].[Prop3_1], [Element4].[Prop3_2], [Element4].[Prop3_3], "
+                         "[Element4].[Prop4_1], [Element4].[Prop4_2], [Element4].[Prop4_3] FROM "
+                         "(SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], "
+                         "[CodeAuthorityId][CodeAuthorityId], [CodeNameSpace][CodeNameSpace], [Code][Code], "
+                         "[LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], "
+                         "[Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], [Prop3_2][Prop3_2], [Prop3_3][Prop3_3], "
+                         "[Prop4_1][Prop4_1], [Prop4_2][Prop4_2], [Prop4_3][Prop4_3] FROM [dgn_Element] "
+                         "WHERE ECClassId = %lld)[Element4]  WHERE[Element4].[Id] = ?", ecClass->GetId());
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::GetUpdateSql (Utf8CP className, Utf8StringR updateSql) const
+void PerformanceElementsCRUDTestFixture::GetUpdateSql (Utf8CP className, Utf8StringR updateSql, bool omitClassIdFilter) const
     {
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+    ASSERT_TRUE(ecClass != nullptr);
+
     updateSql = "UPDATE dgn_Element SET ";
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
@@ -1172,14 +1210,31 @@ void PerformanceElementsCRUDTestFixture::GetUpdateSql (Utf8CP className, Utf8Str
         isFirstItem = false;
         }
     updateSql.append (" WHERE Id = :Id");
+
+    if (!omitClassIdFilter)
+        {
+        Utf8String classIdFilter;
+        classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+        updateSql.append(classIdFilter);
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::GetDeleteSql (Utf8StringR deleteSql) const
+void PerformanceElementsCRUDTestFixture::GetDeleteSql (Utf8CP className, Utf8StringR deleteSql, bool omitClassIdFilter) const
     {
     deleteSql = "DELETE FROM dgn_Element WHERE Id = ?";
+
+    if (!omitClassIdFilter)
+        {
+        ECN::ECClassCP ecClass = m_db->Schemas().GetECClass(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+        ASSERT_TRUE(ecClass != nullptr);
+        Utf8String classIdFilter;
+        classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+        deleteSql.append(classIdFilter);
+        }
+
     }
 
 //Overloads to Generate ECSql statements. 
@@ -1189,6 +1244,8 @@ void PerformanceElementsCRUDTestFixture::GetDeleteSql (Utf8StringR deleteSql) co
 void PerformanceElementsCRUDTestFixture::GetInsertECSql (Utf8CP className, Utf8StringR insertECSql) const
     {
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+    ASSERT_TRUE(ecClass != nullptr);
+
     Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
 
     insertECSql = Utf8String ("INSERT INTO ");
@@ -1217,9 +1274,10 @@ void PerformanceElementsCRUDTestFixture::GetInsertECSql (Utf8CP className, Utf8S
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8StringR selectECSql) const
+void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8StringR selectECSql, bool omitClassIdFilter) const
     {
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+    ASSERT_TRUE(ecClass != nullptr);
 
     Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     selectECSql = "SELECT ";
@@ -1234,15 +1292,19 @@ void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8S
         isFirstItem = false;
         }
 
-    selectECSql.append (" FROM ").append (ecClassName).append (" WHERE ECInstanceId = ?");
+    selectECSql.append(" FROM ").append(ecClassName).append(" WHERE ECInstanceId = ?");
+    if(omitClassIdFilter)
+        selectECSql.append(" ECSQLOPTIONS NoECClassIdFilter");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8StringR updateECSql) const
+void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8StringR updateECSql, bool omitClassIdFilter) const
     {
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+    ASSERT_TRUE(ecClass != nullptr);
+
     Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     updateECSql = "UPDATE ";
     updateECSql.append (ecClassName).append (" SET ");
@@ -1259,17 +1321,26 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8S
         isFirstItem = false;
         }
     updateECSql.append (" WHERE ECInstanceId = :ecInstanceId");
+    
+    if (omitClassIdFilter)
+        updateECSql.append(" ECSQLOPTIONS NoECClassIdFilter");
+
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::GetDeleteECSql (Utf8CP className, Utf8StringR deleteECSql) const
+void PerformanceElementsCRUDTestFixture::GetDeleteECSql (Utf8CP className, Utf8StringR deleteECSql, bool omitClassIdFilter) const
     {
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
+    ASSERT_TRUE(ecClass != nullptr);
+
     Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     deleteECSql = "DELETE FROM ONLY ";
     deleteECSql.append (ecClassName).append (" WHERE ").append ("ECInstanceId = ?");
+
+    if (omitClassIdFilter)
+        deleteECSql.append(" ECSQLOPTIONS NoECClassIdFilter");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1294,7 +1365,7 @@ void PerformanceElementsCRUDTestFixture::ElementApiInsertTime(Utf8CP className, 
         ASSERT_EQ (DgnDbStatus::Success, stat);
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Element API Insert '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), (int)testElements.size ());
+    LogTiming(timer, "Element API Insert", className, false, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1316,7 +1387,8 @@ void PerformanceElementsCRUDTestFixture::ElementApiSelectTime(Utf8CP className, 
         ASSERT_TRUE(element != nullptr);
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Element API Read '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+
+    LogTiming(timer, "Element API Read", className, false, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1342,7 +1414,7 @@ void PerformanceElementsCRUDTestFixture::ElementApiUpdateTime(Utf8CP className, 
         }
 
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("Element API Update '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+    LogTiming(timer, "Element API Update", className, false, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1363,7 +1435,7 @@ void PerformanceElementsCRUDTestFixture::ElementApiDeleteTime(Utf8CP className, 
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
     timer.Stop();
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), Utf8PrintfString("Element API Delete '%s' [Initial count: %d]", className, initialInstanceCount).c_str(), opCount);
+    LogTiming(timer, "Element API Delete", className, false, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1394,51 +1466,54 @@ void PerformanceElementsCRUDTestFixture::ECSqlInsertTime(Utf8CP className, int i
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSQL INSERT '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+    LogTiming(timer, "ECSQL INSERT", className, false, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName (L"ECSqlSelect%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), initialInstanceCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
-    ECSqlStatement stmt;
     Utf8String selectECSql;
-    GetSelectECSql (className, selectECSql);
+    GetSelectECSql (className, selectECSql, omitClassIdFilter);
     //printf ("\n Select ECSql %s : %s \n", className, selectECSql.c_str ());
 
     const int elementIdIncrement = DetermineElementIdIncrement();
 
+    ECSqlStatement stmt;
+
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, selectECSql.c_str ()));
     //printf ("\n Native Sql %s : %s \n", className, stmt.GetNativeSql());
+    //printf("Attach to profiler...\r\n");getchar();
     for (int i = 0; i < opCount; i++)
         {
         const ECInstanceId id(s_firstElementId + i*elementIdIncrement);
         ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (1, id));
         ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-        ExtractSelectParams (stmt, className);
+        //ExtractSelectParams (stmt, className);
         stmt.Reset ();
         stmt.ClearBindings ();
         }
+    //printf("Detach from profiler...\r\n"); getchar();
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSQL SELECT '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+    LogTiming(timer, "ECSQL SELECT", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName (L"ECSqlUpdate%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     ECSqlStatement stmt;
     Utf8String updateECSql;
-    GetUpdateECSql (className, updateECSql);
+    GetUpdateECSql (className, updateECSql, omitClassIdFilter);
     //printf ("\n Update ECSql %s : %s \n", className, updateECSql.c_str ());
 
     const int elementIdIncrement = DetermineElementIdIncrement();
@@ -1456,20 +1531,21 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, int i
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSQL UPDATE '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+
+    LogTiming(timer, "ECSQL UPDATE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName (L"ECSqlDelete%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     ECSqlStatement stmt;
     Utf8String deleteECSql;
-    GetDeleteECSql (className, deleteECSql);
+    GetDeleteECSql (className, deleteECSql, omitClassIdFilter);
     //printf ("\n Delete ECSql %s : %s \n", className, deleteECSql.c_str ());
 
     const int elementIdIncrement = DetermineElementIdIncrement();
@@ -1486,7 +1562,8 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, int i
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("ECSQL DELETE '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+
+    LogTiming(timer, "ECSQL DELETE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1518,20 +1595,21 @@ void PerformanceElementsCRUDTestFixture::SqlInsertTime(Utf8CP className, int ini
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("SQLite INSERT '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+
+    LogTiming(timer, "SQLite INSERT", className, false, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool asTranslatedByECSql, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName (L"SqlSelect%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String selectSql;
-    GetSelectSql (className, selectSql);
+    GetSelectSql (className, selectSql, asTranslatedByECSql, omitClassIdFilter);
     //printf ("\n Select Sql %s : %s \n", className, selectSql.c_str ());
 
     const int elementIdIncrement = DetermineElementIdIncrement();
@@ -1543,25 +1621,26 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, int ini
         const ECInstanceId id(s_firstElementId + i*elementIdIncrement);
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (1, id));
         ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-        ExtractSelectParams (stmt, className);
+        //ExtractSelectParams (stmt, className);
         stmt.Reset ();
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("SQLite SELECT '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+    Utf8CP description = asTranslatedByECSql ? "SQLite SELECT (ECSQL translation)" : "SQLite SELECT";
+    LogTiming(timer, description, className, omitClassIdFilter, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName (L"SqlUpdate%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String updateSql;
-    GetUpdateSql (className, updateSql);
+    GetUpdateSql (className, updateSql, omitClassIdFilter);
     //printf ("\n Update Sql %s : %s \n", className, updateSql.c_str ());
 
     const int elementIdIncrement = DetermineElementIdIncrement();
@@ -1579,20 +1658,20 @@ void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, int ini
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("SQLite UPDATE '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+    LogTiming(timer, "SQLite UPDATE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, int initialInstanceCount, int opCount)
+void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName (L"SqlDelete%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String deleteSql;
-    GetDeleteSql (deleteSql);
+    GetDeleteSql (className, deleteSql, omitClassIdFilter);
     //printf ("\n Delete Sql %s : %s \n", className, deleteSql.c_str ());
 
     const int elementIdIncrement = DetermineElementIdIncrement();
@@ -1609,137 +1688,221 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, int ini
         stmt.ClearBindings ();
         }
     timer.Stop ();
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), Utf8PrintfString ("SQLite DELETE '%s' [Initial count: %d]", className, initialInstanceCount).c_str (), opCount);
+    LogTiming(timer, "SQLite DELETE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const
+    {
+    Utf8CP noClassIdFilterStr = omitClassIdFilter ? "w/o ECClassId filter " : " ";
+
+    Utf8String totalDescription;
+    totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsInsertSql)
+TEST_F(PerformanceElementsCRUDTestFixture, SQLiteInsert)
     {
-    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsInsertECSql)
+TEST_F(PerformanceElementsCRUDTestFixture, ECSqlInsert)
     {
-    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+  /*  ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsInsertDgnApi)
+TEST_F(PerformanceElementsCRUDTestFixture, ElementApiInsert)
     {
-    ElementApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    ElementApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ElementApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ElementApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ElementApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ElementApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsReadSql)
+TEST_F(PerformanceElementsCRUDTestFixture, SQLiteSelect_NoECClassIdFilter)
     {
-    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, true);
+
+    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true /* SQL as generated by ECSQL */, true);
+
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsReadECSql)
+TEST_F(PerformanceElementsCRUDTestFixture, SQLiteSelect)
     {
-    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    /*    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
+    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false);
+
+    SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true /* SQL as generated by ECSQL */, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementsCRUDTestFixture, ECSqlSelect)
+    {
+/*    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsReadDgnApi)
+TEST_F(PerformanceElementsCRUDTestFixture, ECSqlSelect_NoECClassIdFilter)
     {
-    ElementApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    /*    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
+    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementsCRUDTestFixture, ElementApiRead)
+    {
+/*    ElementApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ElementApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ElementApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ElementApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ElementApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsUpdateSql)
+TEST_F(PerformanceElementsCRUDTestFixture, SQLiteUpdate_NoECClassIdFilter)
     {
-    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsUpdateECSql)
+TEST_F(PerformanceElementsCRUDTestFixture, SQLiteUpdate)
     {
-    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    /*    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
+    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementsCRUDTestFixture, ECSqlUpdate_NoECClassIdFilter)
+    {
+/*    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsUpdateDgnApi)
+TEST_F(PerformanceElementsCRUDTestFixture, ECSqlUpdate)
     {
-    ElementApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    /*    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
+    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementsCRUDTestFixture, ElementApiUpdate)
+    {
+/*    ElementApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ElementApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ElementApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ElementApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ElementApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsDeleteSql)
+TEST_F(PerformanceElementsCRUDTestFixture, SQLiteDelete_NoECClassIdFilter)
     {
-    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+/*    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsDeleteECSql)
+TEST_F(PerformanceElementsCRUDTestFixture, SQLiteDelete)
     {
-    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    /*    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
+    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementsCRUDTestFixture, ECSqlDelete_NoECClassIdFilter)
+    {
+/*    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementsCRUDTestFixture, ElementsDeleteDgnApi)
+TEST_F(PerformanceElementsCRUDTestFixture, ECSqlDelete)
     {
-    ElementApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    /*    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
+    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
+    ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementsCRUDTestFixture, ElementApiDelete)
+    {
+/*    ElementApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
     ElementApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    ElementApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    ElementApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);*/
     ElementApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
