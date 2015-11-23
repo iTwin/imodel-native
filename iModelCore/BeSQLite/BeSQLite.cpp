@@ -234,12 +234,20 @@ void StatementDiagnostics::Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile
             {
             Utf8String queryPlan = dbFile.ExplainQuery(sql, true, true);
 
+            const size_t truncatedSqlSize = 150;
+            Utf8String truncatedSql(sql);
+            if (truncatedSql.size() > truncatedSqlSize)
+                {
+                truncatedSql = truncatedSql.substr(0, truncatedSqlSize - 4);
+                truncatedSql.append(" ...");
+                }
+
             if (queryPlanLogger != nullptr)
-                queryPlanLogger->messagev(s_sev, "%s | %s", sql, queryPlan.c_str());
+                queryPlanLogger->messagev(s_sev, "%s | %s", truncatedSql.c_str(), queryPlan.c_str());
 
             if (queryPlanWithTableScansLogger != nullptr && queryPlan.find("SCAN TABLE") != queryPlan.npos)
                 {
-                queryPlanWithTableScansLogger->messagev(s_sev, "%s | %s", sql, queryPlan.c_str());
+                queryPlanWithTableScansLogger->messagev(s_sev, "%s | %s", truncatedSql.c_str(), queryPlan.c_str());
                 }
             }
         }
@@ -2128,6 +2136,7 @@ bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     {
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT(Utf8PrintfString("Db::OpenBeSQLiteDb(%s) - START", dbName));
     DbResult rc = DoOpenDb(dbName, params);
 
     if (rc == BE_SQLITE_OK && !params.m_skipSchemaCheck)
@@ -2136,6 +2145,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     if (rc != BE_SQLITE_OK)
         DoCloseDb();
 
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT(Utf8PrintfString("Db::OpenBeSQLiteDb(%s) - END", dbName));
     return rc;
     }
 
