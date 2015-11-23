@@ -684,14 +684,14 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, BeS
     DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
     if (elementCode.IsEmpty ())
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull (stmt.GetParameterIndex (":Code")));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull (stmt.GetParameterIndex (":Code_Value")));
         }
     else
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":Code"), elementCode.GetValue ().c_str (), BeSQLite::Statement::MakeCopy::No));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":Code_Value"), elementCode.GetValue ().c_str (), BeSQLite::Statement::MakeCopy::No));
         }
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":CodeAuthorityId"), elementCode.GetAuthority ()));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":CodeNameSpace"), elementCode.GetNameSpace ().c_str (), BeSQLite::Statement::MakeCopy::No));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Code_AuthorityId"), elementCode.GetAuthority ()));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":Code_Namespace"), elementCode.GetNamespace ().c_str (), BeSQLite::Statement::MakeCopy::No));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":ParentId"), element->GetParentId ()));
 
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -866,17 +866,25 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
     bool updateParams = false;
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ECInstanceId"), element->GetElementId ()));
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ModelId"), element->GetModelId ()));
-    DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
-    if (elementCode.IsEmpty ())
+
+    // Bind Code
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Code")));
+        DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
+        IECSqlStructBinder& codeBinder = stmt.BindStruct(stmt.GetParameterIndex("Code"));
+
+        if (elementCode.IsEmpty())
+            {
+            ASSERT_EQ(ECSqlStatus::Success, codeBinder.GetMember("Value").BindNull());
+            }
+        else
+            {
+            ASSERT_EQ(ECSqlStatus::Success, codeBinder.GetMember("Value").BindText(elementCode.GetValue().c_str(), IECSqlBinder::MakeCopy::No));
+            }
+
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("AuthorityId").BindId(elementCode.GetAuthority()));
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
         }
-    else
-        {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (stmt.GetParameterIndex ("Code"), elementCode.GetValue ().c_str (), IECSqlBinder::MakeCopy::No));
-        }
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("CodeAuthorityId"), elementCode.GetAuthority ()));
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (stmt.GetParameterIndex ("CodeNameSpace"), elementCode.GetNameSpace ().c_str (), IECSqlBinder::MakeCopy::No));
+
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ParentId"), element->GetParentId ()));
 
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -1192,7 +1200,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateSql (Utf8CP className, Utf8Str
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
-        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("CodeAuthorityId", prop->GetName ().c_str ()) || 0 == strcmp ("CodeNameSpace", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
+        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
             continue;
         if (!isFirstItem)
             {
@@ -1303,7 +1311,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8S
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
-        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("CodeAuthorityId", prop->GetName ().c_str ()) || 0 == strcmp ("CodeNameSpace", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
+        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
             continue;
         if (!isFirstItem)
             {

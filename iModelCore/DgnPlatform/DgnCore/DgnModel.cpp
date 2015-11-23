@@ -25,9 +25,9 @@ static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
 DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
     {
     CachedStatementPtr stmt;
-    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE CodeAuthorityId=? AND CodeNameSpace=? AND Code=? LIMIT 1");
+    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=? LIMIT 1");
     stmt->BindId(1, code.GetAuthority());
-    stmt->BindText(2, code.GetNameSpace(), Statement::MakeCopy::No);
+    stmt->BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
     stmt->BindText(3, code.GetValue(), Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
@@ -37,7 +37,7 @@ DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Code,Descr,ECClassId,Visibility,CodeNameSpace,CodeAuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Code_Value,Descr,ECClassId,Visibility,Code_Namespace,Code_AuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -60,7 +60,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT CodeAuthorityId,CodeNameSpace,Code FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Code_AuthorityId,Code_Namespace,Code_Value FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -75,7 +75,7 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
     {
-    return DgnModel::Code(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNameSpace());
+    return DgnModel::Code(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,7 +161,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Code,Descr,Visibility,ECClassId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        Utf8String sqlString = "SELECT Id,Code_Value,Descr,Visibility,ECClassId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -187,7 +187,7 @@ Utf8CP          DgnModels::Iterator::Entry::GetCodeValue() const {Verify(); retu
 Utf8CP          DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
 bool            DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(3));}
 DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
-Utf8CP          DgnModels::Iterator::Entry::GetCodeNameSpace() const {Verify(); return m_sql->GetValueText(5);}
+Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,14 +904,14 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Code,Descr,ECClassId,Visibility,CodeAuthorityId,CodeNameSpace) VALUES(?,?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Code_Value,Descr,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_code.GetValue().c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
     stmt.BindId(4, GetClassId());
     stmt.BindInt(5, inGuiList ? 1 : 0);
     stmt.BindId(6, m_code.GetAuthority());
-    stmt.BindText(7, m_code.GetNameSpace().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(7, m_code.GetNamespace().c_str(), Statement::MakeCopy::No);
 
     auto rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
@@ -1094,8 +1094,8 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,Code_Value=2,ParentId=3,Code_AuthorityId=4,Code_Namespace=5};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code_Value,ParentId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     _SetFilled();
@@ -1115,7 +1115,7 @@ void DgnModel::_FillModel()
 
         elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
-            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code), stmt.GetValueText(Column::CodeNameSpace)), 
+            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace)), 
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)),
             true);
