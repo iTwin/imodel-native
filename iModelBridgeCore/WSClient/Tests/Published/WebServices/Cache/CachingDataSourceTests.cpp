@@ -1844,7 +1844,7 @@ TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnecti
     {
     auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
-    BeCriticalSection c;
+    BeMutex c;
     auto ds1 = CreateMockedCachingDataSource(nullptr, cache1);
     auto ds2 = CreateMockedCachingDataSource(nullptr, cache2);
 
