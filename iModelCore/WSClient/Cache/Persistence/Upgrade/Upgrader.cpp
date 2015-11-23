@@ -13,7 +13,7 @@
 #include <WebServices/Cache/Util/FileUtil.h>
 
 #include "../Core/CacheSettings.h"
-#include "../Files/FileCacheManager.h"
+#include "../Files/FileStorage.h"
 #include "UpgraderFromV3ToV4.h"
 #include "UpgraderFromV4ToV5.h"
 #include "UpgraderFromV5ToCurrent.h"
@@ -88,8 +88,8 @@ BentleyStatus Upgrader::FinalizeUpgradeIfNeeded(BeFileNameCR oldCachePath, Cache
         return ERROR;
         }
 
-    auto oldEnv = FileCacheManager::CreateCacheEnvironment(oldCachePath, environment);
-    auto newEnv = FileCacheManager::CreateCacheEnvironment(newCachePath, environment);
+    auto oldEnv = FileStorage::CreateCacheEnvironment(oldCachePath, environment);
+    auto newEnv = FileStorage::CreateCacheEnvironment(newCachePath, environment);
 
     if (oldEnv.persistentFileCacheDir.DoesPathExist() &&
         BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(oldEnv.persistentFileCacheDir))

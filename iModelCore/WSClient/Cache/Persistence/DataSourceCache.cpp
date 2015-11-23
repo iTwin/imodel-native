@@ -255,7 +255,7 @@ BentleyStatus DataSourceCache::ExecuteWithinTransaction(std::function<BentleySta
 void DataSourceCache::SetupOpenState(CacheEnvironmentCR environment)
     {
     BeFileName cachePath(m_db.GetDbFileName());
-    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, FileCacheManager::CreateCacheEnvironment(cachePath, environment));
+    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, FileStorage::CreateCacheEnvironment(cachePath, environment));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -322,7 +322,7 @@ BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<ECSchemaPtr>& sch
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::DeleteCacheFromDisk(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment)
     {
-    if (SUCCESS != FileCacheManager::DeleteFileCacheDirectories(FileCacheManager::CreateCacheEnvironment(cacheFilePath, environment)))
+    if (SUCCESS != FileStorage::DeleteFileCacheDirectories(FileStorage::CreateCacheEnvironment(cacheFilePath, environment)))
         {
         return ERROR;
         }
@@ -343,7 +343,7 @@ BentleyStatus DataSourceCache::Reset()
     {
     LogCacheDataForMethod();
 
-    if (SUCCESS != FileCacheManager::DeleteFileCacheDirectories(m_state->GetFileCacheEnvironment()))
+    if (SUCCESS != FileStorage::DeleteFileCacheDirectories(m_state->GetFileCacheEnvironment()))
         {
         return ERROR;
         }
@@ -950,7 +950,7 @@ BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
         return SUCCESS;
         }
 
-    if (SUCCESS != m_state->GetFileInfoManager().CleanupCachedFile(fileInfo))
+    if (SUCCESS != m_state->GetFileStorage().CleanupCachedFile(fileInfo.GetFilePath()))
         {
         return ERROR;
         }
@@ -1324,8 +1324,13 @@ BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCac
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::SetFileCacheLocationWithoutSaving(ObjectIdCR objectId, FileCache cacheLocation)
     {
-    ECInstanceKey instance = m_state->GetObjectInfoManager().FindCachedInstance(objectId);
-    return m_state->GetFileCacheManager().SetFileCacheLocation(instance, cacheLocation);
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
+    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation) ||
+        SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
+        {
+        return ERROR;
+        }
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1348,37 +1353,38 @@ FileCache cacheLocation
 )
     {
     LogCacheDataForMethod();
+
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
+    if (!info.GetInstanceKey().IsValid())
+        {
+        return ERROR;
+        }
+
     if (!fileResult.IsModified())
         {
-        FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
         if (!info.IsInCache())
             {
             return ERROR;
             }
 
         info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
-
-        if (SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
-            {
-            return ERROR;
-            }
         }
     else
         {
-        ECInstanceKey instance = m_state->GetObjectInfoManager().FindCachedInstance(objectId);
-        if (SUCCESS != m_state->GetFileCacheManager().CacheFile
-            (
-            instance,
-            fileResult.GetFilePath(),
-            fileResult.GetETag().c_str(),
-            cacheLocation,
-            DateTime::GetCurrentTimeUtc(),
-            false
-            ))
+        auto path = fileResult.GetFilePath();
+        auto eTag = fileResult.GetETag();
+        auto time = DateTime::GetCurrentTimeUtc();
+        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, time, false))
             {
             return ERROR;
             }
         }
+
+    if (SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
+        {
+        return ERROR;
+        }
+
     return SUCCESS;
     }
 
