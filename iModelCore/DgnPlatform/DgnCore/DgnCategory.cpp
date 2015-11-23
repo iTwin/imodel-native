@@ -275,7 +275,7 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_SetCode(Code const& code)
     {
-    return code.GetNameSpace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
+    return code.GetNamespace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -344,7 +344,7 @@ DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
 
     // all sub-category codes have namespace = category ID
     uint64_t categoryIdVal;
-    if (SUCCESS != BeStringUtilities::ParseUInt64(categoryIdVal, code.GetNameSpace().c_str()) || GetCategoryId().GetValue() != categoryIdVal)
+    if (SUCCESS != BeStringUtilities::ParseUInt64(categoryIdVal, code.GetNamespace().c_str()) || GetCategoryId().GetValue() != categoryIdVal)
         return DgnDbStatus::InvalidName;
 
     if (m_elementId.IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
