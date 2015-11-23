@@ -1748,6 +1748,88 @@ static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instan
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentModel::Importer::Importer(DgnDbR destDb, ComponentModel& sourceComponent)
+    : DgnImportContext(sourceComponent.GetDgnDb(), destDb), m_sourceComponent(sourceComponent)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentModelPtr ComponentModel::Importer::ImportComponentModel(DgnDbStatus* status)
+    {
+    return m_destComponent = DgnModel::Import(status, m_sourceComponent, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::Importer::ImportSolutions(DgnModelR destCatalogModel, bvector<AuthorityIssuedCode> const& selected)
+    {
+    if (!m_destComponent.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadModel;
+        }
+
+    if (&m_destComponent->GetDgnDb() != &destCatalogModel.GetDgnDb())
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongDgnDb;
+        }
+
+    if (m_destComponent.get() == &destCatalogModel)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel;
+        }
+
+    EC::ECSqlStatement selectCatalogItems;
+    selectCatalogItems.Prepare(GetSourceDb(), "SELECT SourceECInstanceId,Parameters FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE(TargetECInstanceId=?)");
+    selectCatalogItems.BindId(1, m_sourceComponent.GetModelId());
+    while (BE_SQLITE_ROW == selectCatalogItems.Step())
+        {
+        DgnElementCPtr sourceCatalogItem = GetSourceDb().Elements().GetElement(selectCatalogItems.GetValueId<DgnElementId>(0));
+        if (!sourceCatalogItem.IsValid())
+            continue;
+
+        if (!selected.empty() && selected.end() != std::find(selected.begin(), selected.end(), sourceCatalogItem->GetCode()))  // apply optional caller-supplied filter
+            continue;
+
+        Json::Value paramsObj(Json::objectValue);
+        Json::Reader::Parse(selectCatalogItems.GetValueText(1), paramsObj);
+        ModelSolverDef::ParameterSet params = ModelSolverDef::ParameterSet(paramsObj);
+
+        DgnDbStatus status;
+        DgnElementCPtr destCatalogItem = sourceCatalogItem->Import(&status, destCatalogModel, *this);
+        if (!destCatalogItem.IsValid())
+            {
+            return status;
+            }
+
+        createSolutionOfComponentRelationship(*destCatalogItem, *m_destComponent, params);
+        }
+
+    return DgnDbStatus::Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::QuerySolutions(bvector<DgnElementId>& solutions)
+    {
+    EC::ECSqlStatement selectCatalogItems;
+    selectCatalogItems.Prepare(GetDgnDb(), "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE(TargetECInstanceId=?)");
+    selectCatalogItems.BindId(1, GetModelId());
+    while (BE_SQLITE_ROW == selectCatalogItems.Step())
+        {
+        solutions.push_back(selectCatalogItems.GetValueId<DgnElementId>(0));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName)

@@ -957,6 +957,9 @@ public:
     //! Get the name of the component.
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
 
+    /** @name Capturing Slutions */
+    /** @{ */
+
     //! Captures the result of solving for the specified parameters, assigning the resulting catalog Item the specified name.   
     //! @param[out] stat        Optional. If not null and if the solution cannot be captured, then an error code is stored here to explain what happened, as explained below.
     //! @param[in] catalogModel The output catalog model, where the captured solution item(s) is(are) stored.
@@ -977,6 +980,28 @@ public:
     //! @see MakeInstanceOfSolution, QuerySolutionByName
     DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName);
 
+    //! Delete the specified catalog Item 
+    //! @return DgnDbStatus::BadRequest if \a catalogItem is not an element that capatures a solution to this component model.
+    //! @note This function does not delete all existing instances of the specified catalog Item
+    //! @see MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteSolution(PhysicalElementCR catalogItem);
+
+    /** @} */
+
+    /** @name Searching for Captured Slutions */
+    /** @{ */
+
+    //! Search for all captured solutions for this component model
+    //! @param solutions    Where to return the IDs of the captured solutions
+    DGNPLATFORM_EXPORT void QuerySolutions(bvector<DgnElementId>& solutions);
+
+    //! Get the element that captures the result of solving for the catalog Item Name.
+    //! @param[in] catalogItemName The name of the Item to be looked up in the catalogModel
+    //! @return A handle to the Item that was created to capture the solution results. If more than one element was created, this is the parent. If no catalog Item
+    //! with the specified name is found, then an invalid ptr is returned.
+    //! @see MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT PhysicalElementCPtr QuerySolutionByName(Utf8StringCR catalogItemName);
+    
     //! Get the ComponentModel and parameters that were used to generate the specified catalog item
     //! @param[out] cmid        The ID of the ComponentModel that was used to generate the specified catalog item
     //! @param[out] params      The parameters that were used to generate the specified catalog item
@@ -985,18 +1010,40 @@ public:
     //! @see MakeInstanceOfSolution
     DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionSource(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem);
 
-    //! Delete the specified catalog Item 
-    //! @return DgnDbStatus::BadRequest if \a catalogItem is not an element that capatures a solution to this component model.
-    //! @note This function does not delete all existing instances of the specified catalog Item
-    //! @see MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteSolution(PhysicalElementCR catalogItem);
+    /** @} */
 
-    //! Get the element that captures the result of solving for the catalog Item Name.
-    //! @param[in] catalogItemName The name of the Item to be looked up in the catalogModel
-    //! @return A handle to the Item that was created to capture the solution results. If more than one element was created, this is the parent. If no catalog Item
-    //! with the specified name is found, then an invalid ptr is returned.
-    //! @see MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT PhysicalElementCPtr QuerySolutionByName(Utf8StringCR catalogItemName);
+    //! Helper class for importing component models and their catalogs
+    struct Importer : DgnImportContext
+        {
+        ComponentModelR m_sourceComponent;
+        ComponentModelPtr m_destComponent;
+
+        //! Construct a new importer
+        DGNPLATFORM_EXPORT Importer(DgnDbR destDb, ComponentModel& sourceComponent);
+
+        //! If necessary, set the destination component model. 
+        //! @note This is rarely needed. ImportComponentModel will set the destination model automatically.
+        void SetDestComponent(ComponentModelR m) {m_destComponent=&m;}
+
+        //! Import the component model.
+        //! @param[out] status  Optional. If not null, then an error code is stored here in case the clone fails.
+        //! @return the newly created component model in the destinataion Db
+        DGNPLATFORM_EXPORT ComponentModelPtr ImportComponentModel(DgnDbStatus* status = nullptr);
+
+        //! Import all or selected solutions of this component model.
+        //! @param destModel    The model to which solutions are to be copied. 
+        //! @param solutionFilter Optional. If not empty, this is the list of solutions to import. If empty, then all solutions are imported.
+        //! @return non-zero error status if the import failed, including \a DgnDbStatus::WrongDgnDb if \a destModel is not in the
+        //!         same DgnDb as the destination component model, \a DgnDbStatus::WrongModel if \a destModel is the same as the destination component model,
+        //!         or \a DgnDbStatus::BadModel if the destination component model is not set, or some other
+        //!         error code if the import of any individual solution Item fails.
+        //! @note \a destModel must be different from but in the same DgnDb as the destination component model.
+        DGNPLATFORM_EXPORT DgnDbStatus ImportSolutions(DgnModelR destModel, bvector<AuthorityIssuedCode> const& selected = bvector<AuthorityIssuedCode>());
+        };
+
+
+    /** @name Placing Instances of Captured Slutions */
+    /** @{ */
 
     //! Make a persistent copy of a specified solution Item, along with all of its children.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
@@ -1009,6 +1056,8 @@ public:
     //! @see QuerySolutionByName
     DGNPLATFORM_EXPORT static PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, PhysicalElementCR catalogItem,
                                                     DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code);
+
+    /** @} */
 };
 
 //=======================================================================================

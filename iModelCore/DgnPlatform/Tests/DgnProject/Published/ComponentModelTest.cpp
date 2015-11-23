@@ -146,7 +146,6 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
 +===============+===============+===============+===============+===============+======*/
 struct ComponentModelTest : public testing::Test
 {
-protected:
 BeFileName         m_componentDbName;
 BeFileName         m_componentSchemaFileName;
 BeFileName         m_clientDbName;
@@ -154,26 +153,43 @@ DgnDbPtr           m_componentDb;
 DgnDbPtr           m_clientDb;
 Dgn::ScopedDgnHost m_host;
 FakeScriptLibrary  m_scriptLibrary;
+Json::Value m_wsln1, m_wsln3, m_wsln4, m_wsln44, m_gsln1;
 
 ComponentModelTest();
 void AddToFakeScriptLibrary(Utf8CP jns, Utf8CP jtext);
 DgnCategoryId Developer_CreateCategory(Utf8CP code, ColorDef const&);
 void Developer_CreateCMs();
 void OpenComponentDb(DgnDb::OpenMode mode) {openDb(m_componentDb, m_componentDbName, mode);}
-void CloseComponentDb() {m_componentDb->CloseDb(); m_componentDb=nullptr;}
+void CloseComponentDb() {if (m_componentDb.IsValid()) m_componentDb->CloseDb(); m_componentDb=nullptr;}
 void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode);}
-void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
+void CloseClientDb() {if (m_clientDb.IsValid()) m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_ImportCM(Utf8CP componentName);
-void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
+void Developer_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
 void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, PhysicalElementCR catalogItem);
-void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists, Utf8CP catalogItemName);
+void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
 
 void SimulateDeveloper();
 void SimulateClient();
+};
+
+struct AutoCloseClientDb
+{
+ComponentModelTest& m_test;
+
+AutoCloseClientDb(ComponentModelTest& t) : m_test(t) {;}
+~AutoCloseClientDb() {m_test.CloseClientDb();}
+};
+
+struct AutoCloseComponentDb
+{
+ComponentModelTest& m_test;
+
+AutoCloseComponentDb(ComponentModelTest& t) : m_test(t) {;}
+~AutoCloseComponentDb() {m_test.CloseComponentDb();}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,6 +198,26 @@ void SimulateClient();
 ComponentModelTest::ComponentModelTest()
     {
     m_host.SetFetchScriptCallback(&m_scriptLibrary);// In this test, we redirect all requests for JS programs to our fake library
+
+    m_wsln1 = Json::objectValue;
+    m_wsln1["X"] = 10;
+    m_wsln1["Y"] = 11;
+    m_wsln1["Z"] = 12;
+
+    m_wsln3 = m_wsln1;
+    m_wsln3["X"] = 100;
+
+    m_wsln4 = m_wsln3;
+    m_wsln4["X"] = 2;
+
+    m_wsln44 = m_wsln4;
+    m_wsln44["X"] = 44;
+
+    m_gsln1 = Json::objectValue;
+    m_gsln1["Q"] = 3;
+    m_gsln1["W"] = 2;
+    m_gsln1["R"] = 1;
+    m_gsln1["T"] = "text";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -213,6 +249,7 @@ DgnCategoryId ComponentModelTest::Developer_CreateCategory(Utf8CP code, ColorDef
 void ComponentModelTest::Developer_CreateCMs()
     {
     OpenComponentDb(Db::OpenMode::ReadWrite);
+    AutoCloseComponentDb closeComponentDb(*this);
 
     ASSERT_TRUE(m_componentDb.IsValid());
 
@@ -293,8 +330,6 @@ void ComponentModelTest::Developer_CreateCMs()
     ASSERT_TRUE( gcm.IsValid() );
 
     m_componentDb->SaveChanges(); // should trigger validation
-
-    CloseComponentDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,6 +338,7 @@ void ComponentModelTest::Developer_CreateCMs()
 void ComponentModelTest::Developer_TestWidgetSolver()
     {
     OpenComponentDb(Db::OpenMode::ReadWrite);
+    AutoCloseComponentDb closeComponentDb(*this);
 
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_WIDGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
@@ -326,8 +362,6 @@ void ComponentModelTest::Developer_TestWidgetSolver()
                                                         params.GetParameter("Y")->GetValue().GetDouble(),
                                                         params.GetParameter("Z")->GetValue().GetDouble());
         }
-
-    CloseComponentDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -336,6 +370,7 @@ void ComponentModelTest::Developer_TestWidgetSolver()
 void ComponentModelTest::Developer_TestGadgetSolver()
     {
     OpenComponentDb(Db::OpenMode::ReadWrite);
+    AutoCloseComponentDb closeComponentDb(*this);
 
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_GADGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
@@ -359,47 +394,57 @@ void ComponentModelTest::Developer_TestGadgetSolver()
                                                         params.GetParameter("W")->GetValue().GetDouble(),
                                                         params.GetParameter("R")->GetValue().GetDouble());
         }
-
-    CloseComponentDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
+* ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     {
     OpenComponentDb(Db::OpenMode::Readonly);
+    AutoCloseComponentDb closeComponentDb(*this);
     
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);
+    ComponentModelPtr cmOriginal = getModelByName<ComponentModel>(*m_componentDb, componentName);
 
-    // ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
-    ASSERT_TRUE( componentModel.IsValid() );
+    ASSERT_TRUE( cmOriginal.IsValid() );
 
-    DgnImportContext importer(*m_componentDb, *m_clientDb);
-
-    DgnDbStatus status;
-    ComponentModelPtr cmCopy = DgnModel::Import(&status, *componentModel, importer);
+    ComponentModel::Importer importer(*m_clientDb, *cmOriginal);
     
+    //  Import the component model itself
+    ComponentModelPtr cmCopy = importer.ImportComponentModel();
+
     ASSERT_TRUE( cmCopy.IsValid() );
 
-    ASSERT_EQ( countElementsInModel(*componentModel), countElementsInModel(*cmCopy) ); // at least make sure the copy has the same number of elements.
+    ASSERT_EQ( countElementsInModel(*cmOriginal), countElementsInModel(*cmCopy) ); // at least make sure the copy has the same number of elements.
 
-    // Original ComponentModel and the copy should contain only PhysicalElements (in this test)
     bset<DgnClassId> cmModelElementClasses;
     cmModelElementClasses.insert(DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*componentModel, cmModelElementClasses);
+    checkElementClassesInModel(*cmOriginal, cmModelElementClasses);
 
     bset<DgnClassId> cmCopyModelElementClasses;
     cmCopyModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
     checkElementClassesInModel(*cmCopy, cmCopyModelElementClasses);
 
+    // Import the item catalog
+    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+    if (!catalogModel.IsValid())
+        createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+
+    ASSERT_TRUE(catalogModel.IsValid());
+
+    importer.ImportSolutions(*catalogModel);
+
+    bvector<DgnElementId> originalSolutions, importedSolutions;
+    cmOriginal->QuerySolutions(originalSolutions);
+    cmCopy->QuerySolutions(importedSolutions);
+    ASSERT_EQ( originalSolutions.size() , importedSolutions.size() );
+
     m_clientDb->SaveChanges();
 
-    //  Verify that we can look up an existing cmCopy
+    //  Verify that we can look up an existing component
     DgnModelId ccId = m_clientDb->Models().QueryModelId(DgnModel::CreateModelCode(componentName));
     ASSERT_EQ( ccId.GetValue(), cmCopy->GetModelId().GetValue() );
-
-    CloseComponentDb();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -415,9 +460,9 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
+void ComponentModelTest::Developer_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
     {
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
+    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
 
     ModelSolverDef::ParameterSet newParameterValues = componentModel->GetSolver().GetParameters();
@@ -468,25 +513,20 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists, Utf8CP ciname)
+void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    PhysicalElementCPtr solution;
-    if (solutionAlreadyExists)
+    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
+    ASSERT_TRUE( componentModel.IsValid() );
+    PhysicalElementCPtr solution = componentModel->QuerySolutionByName(ciname);
+    if (!expectToFindSolution)
         {
-        ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
-        ASSERT_TRUE( componentModel.IsValid() );
-        solution = componentModel->QuerySolutionByName(ciname);
-        ASSERT_TRUE(solution.IsValid());
+        ASSERT_FALSE(solution.IsValid());
+        return;
         }
-    else
-        {
-        Client_SolveAndCapture(solution, catalogModel, componentName, parms, ciname);
-        }
-    
-    if (solution.IsValid())
-        Client_PlaceInstanceOfSolution(ieid, targetModelName, *solution);
+    ASSERT_TRUE(solution.IsValid());
+    Client_PlaceInstanceOfSolution(ieid, targetModelName, *solution);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -512,6 +552,23 @@ void ComponentModelTest::SimulateDeveloper()
     Developer_CreateCMs();
     Developer_TestWidgetSolver();
     Developer_TestGadgetSolver();
+
+    // Create catalogs of widgets and gadgets
+    OpenComponentDb(Db::OpenMode::ReadWrite);
+    AutoCloseComponentDb closeComponentDb(*this);
+
+    PhysicalModelPtr catalogModel;
+    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
+
+    PhysicalElementCPtr ci;
+    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1, "wsln1");
+    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln3, "wsln3");
+    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4, "wsln4");
+    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln44, "wsln44");
+
+    Developer_SolveAndCapture(ci, *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1, "gsln1");
+    
+    ci = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,18 +577,11 @@ void ComponentModelTest::SimulateDeveloper()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::SimulateClient()
     {
-    Json::Value wsln1(Json::objectValue);
-    wsln1["X"] = 10;
-    wsln1["Y"] = 11;
-    wsln1["Z"] = 12;
-
-    Json::Value wsln3 = wsln1;
-    wsln3["X"] = 100;
-
     DgnElementId w1, w2, w3;
 
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
+        AutoCloseClientDb closeClientDb(*this);
         //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
         PhysicalModelPtr targetModel;
         ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
@@ -543,38 +593,42 @@ void ComponentModelTest::SimulateClient()
         //  Once per component, import the component model
         Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
 
-        PhysicalModelPtr catalogModel;
-        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
+        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+        ASSERT_TRUE( catalogModel.IsValid() ) << "importing component should also import its catalog";
 
         // Now start placing instances of Widgets
-        Client_SolveAndPlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
-        Client_SolveAndPlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, true);
+        Client_PlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
+        Client_PlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
         ASSERT_TRUE( w1.IsValid() );
         ASSERT_TRUE( w2.IsValid() );
         ASSERT_NE( w1.GetValue() , w2.GetValue() );
-        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
-        Client_CheckComponentInstance(w2, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
+        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());
+        Client_CheckComponentInstance(w2, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
     
+        DgnElementId noidexpected;
+        Client_PlaceInstance(noidexpected, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "no_such_solution", false);
+        ASSERT_FALSE(noidexpected.IsValid());
+
         //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
         for (int i=0; i<5; ++i)
             Client_InsertNonInstanceElement("Instances");
 
-        Client_SolveAndPlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln3, false);
+        Client_PlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln3", true);
     
-        Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
-        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+        Client_CheckComponentInstance(w3, 2, m_wsln3["X"].asDouble(), m_wsln3["Y"].asDouble(), m_wsln3["Z"].asDouble());
+        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
 
         //  new instance of new solution should not affect existing instances of other solutions
         if (true)
             {
             DgnElementId w1_second_time;
-            Client_SolveAndPlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln1, true);
-            Client_CheckComponentInstance(w1_second_time, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+            Client_PlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
+            ASSERT_TRUE(w1_second_time.IsValid());
+            Client_CheckComponentInstance(w1_second_time, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
             }
 
         // Just for a little variety, close the client Db and re-open it
         catalogModel = nullptr;
-        CloseClientDb();
         }
 
     ASSERT_TRUE(w1.IsValid());
@@ -583,43 +637,35 @@ void ComponentModelTest::SimulateClient()
 
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
+        AutoCloseClientDb closeClientDb(*this);
         PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
 
-        Json::Value wsln4 = wsln3;
-        wsln4["X"] = 2;
         DgnElementId w4;
-        Client_SolveAndPlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln4, false);
+        Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln4", true);
+        ASSERT_TRUE(w4.IsValid());
 
-        Client_CheckComponentInstance(w4, 2, wsln4["X"].asDouble(), wsln4["Y"].asDouble(), wsln4["Z"].asDouble());
-        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+        Client_CheckComponentInstance(w4, 2, m_wsln4["X"].asDouble(), m_wsln4["Y"].asDouble(), m_wsln4["Z"].asDouble());
+        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
 
         // Now start placing instances of Gadgets
         Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
-        Json::Value gsln1(Json::objectValue);
-        gsln1["Q"] = 3;
-        gsln1["W"] = 2;
-        gsln1["R"] = 1;
-        gsln1["T"] = "text";
         DgnElementId g1, g2;
-        Client_SolveAndPlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, gsln1, false);
-        BeTest::SetFailOnAssert(false);
-        Client_SolveAndPlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, gsln1, true);
-        BeTest::SetFailOnAssert(true);
+        Client_PlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, "gsln1", true);
+        Client_PlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, "gsln1", true);
+        ASSERT_TRUE(g1.IsValid());
+        ASSERT_TRUE(g2.IsValid());
 
-        Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
-        Client_CheckComponentInstance(g2, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+        Client_CheckComponentInstance(g1, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
+        Client_CheckComponentInstance(g2, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
 
         //  And place another Widget
-        Json::Value wsln44 = wsln4;
-        wsln44["X"] = 44;
         DgnElementId w44;
-        Client_SolveAndPlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, wsln44, false);
+        Client_PlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln44", true);
+        ASSERT_TRUE(w44.IsValid());
 
-        Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
-        Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
-        Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
-
-        CloseClientDb();
+        Client_CheckComponentInstance(w3, 2, m_wsln3["X"].asDouble(), m_wsln3["Y"].asDouble(), m_wsln3["Z"].asDouble());
+        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());
+        Client_CheckComponentInstance(g1, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
         }
     }
 
