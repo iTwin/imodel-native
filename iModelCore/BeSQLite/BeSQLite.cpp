@@ -2136,7 +2136,6 @@ bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     {
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT(Utf8PrintfString("Db::OpenBeSQLiteDb(%s) - START", dbName));
     DbResult rc = DoOpenDb(dbName, params);
 
     if (rc == BE_SQLITE_OK && !params.m_skipSchemaCheck)
@@ -2145,7 +2144,6 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     if (rc != BE_SQLITE_OK)
         DoCloseDb();
 
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT(Utf8PrintfString("Db::OpenBeSQLiteDb(%s) - END", dbName));
     return rc;
     }
 
