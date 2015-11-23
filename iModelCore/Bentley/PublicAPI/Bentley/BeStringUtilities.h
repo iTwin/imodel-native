@@ -73,7 +73,7 @@ enum class HexFormatOptions
 //! @ingroup BeStringGroup
 //=======================================================================================
 struct BeStringUtilities : public NonCopyableClass
-    {
+{
 private:
     // Static class; don't allow new instances.
     BeStringUtilities () { }
@@ -593,7 +593,9 @@ public:
     //! return   0 if strings are equal, < 0 if pszName1 is less than pszName2, else > 0
     BENTLEYDLL_EXPORT static int LexicographicCompare (WCharCP value0, WCharCP value1);
 
-
-    }; // BeStringUtilities
+    //! Attempts to detect if a string contains any invalid UTF-8 sequences.
+    //! This does NOT ensure the string accurately represents what the user intends, however it can be used to discard obviously corrupt data.
+    BENTLEYDLL_EXPORT static bool IsInvalidUtf8Sequence(Utf8CP);
+};
 
 END_BENTLEY_NAMESPACE
