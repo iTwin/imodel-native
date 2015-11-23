@@ -1004,7 +1004,7 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "WITH RECURSIVE DerivedClassList(RootClassId,CurrentClassId,DerivedClassId) "
         "AS (SELECT Id, Id, Id FROM ec_Class "
         "UNION "
-        "SELECT RootClassId,  BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
+        "SELECT RootClassId, BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
         "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
         "TableMapInfo AS ("
         "SELECT  ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
@@ -1013,10 +1013,10 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101)  AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
-        "GROUP BY  ec_Class.Id , ec_Table.Name) "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
+        "GROUP BY ec_Class.Id, ec_Table.Name) "
         "SELECT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
-        "INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
+        "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
 
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)
