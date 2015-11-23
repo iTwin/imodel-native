@@ -121,11 +121,11 @@ ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, Utf8StringCR s
     {
     if (0 == strengthString.length())
         return ECObjectsStatus::ParseError;
-    if (0 == strengthString.compare(ECXML_STRENGTH_EMBEDDING))
+    if (0 == strengthString.CompareToI(ECXML_STRENGTH_EMBEDDING))
         strength = StrengthType::Embedding;
-    else if (0 == strengthString.compare(ECXML_STRENGTH_HOLDING))
+    else if (0 == strengthString.CompareToI(ECXML_STRENGTH_HOLDING))
         strength = StrengthType::Holding;
-    else if (0 == strengthString.compare(ECXML_STRENGTH_REFERENCING))
+    else if (0 == strengthString.CompareToI(ECXML_STRENGTH_REFERENCING))
         strength = StrengthType::Referencing;
     else
         return ECObjectsStatus::ParseError;
@@ -156,9 +156,9 @@ ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& directi
     {
     if (0 == directionString.length())
         return ECObjectsStatus::ParseError;
-    if (0 == directionString.compare(ECXML_DIRECTION_BACKWARD))
+    if (0 == directionString.CompareToI(ECXML_DIRECTION_BACKWARD))
         direction = ECRelatedInstanceDirection::Backward;
-    else if (0 == directionString.compare(ECXML_DIRECTION_FORWARD))
+    else if (0 == directionString.CompareToI(ECXML_DIRECTION_FORWARD))
         direction = ECRelatedInstanceDirection::Forward;
     else
         return ECObjectsStatus::ParseError;
