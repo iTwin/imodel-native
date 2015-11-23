@@ -327,10 +327,10 @@ BentleyStatus InstanceCacheHelper::SaveExistingInstance(ObjectInfoCR info, ECCla
 BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR newPropertiesJson)
     {
     // Merge changes
-    rapidjson::Document mergedJson;
+    rapidjson::Document mergedJson, t1, t2;
     JsonUtil::DeepCopy(newPropertiesJson, mergedJson);
 
-    if (SUCCESS != m_changeInfoManager.ReadInstanceChanges(info, mergedJson))
+    if (SUCCESS != m_changeInfoManager.ReadInstanceChanges(info, mergedJson, t1, t2))
         {
         return ERROR;
         }

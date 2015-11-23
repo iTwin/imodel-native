@@ -77,7 +77,8 @@ struct ChangeInfoManager
         BentleyStatus SaveBackupInstance(ObjectInfoCR info, JsonValueR instance);
         BentleyStatus DeleteBackupInstance(ObjectInfoCR info);
 
-        BentleyStatus ReadInstanceChanges(ObjectInfoCR info, RapidJsonDocumentR changesOut);
+        // Values will not be coppied to changesOut so keep them alive with t1 and t2 until changesOut are used
+        BentleyStatus ReadInstanceChanges(ObjectInfoCR info, RapidJsonDocumentR changesOut, RapidJsonDocumentR temp1, RapidJsonDocumentR temp2);
         BentleyStatus ApplyChangesToBackup(ObjectInfoCR info, JsonValueCR changes);
         BentleyStatus ApplyChangesToInstanceAndBackupIt(ObjectInfoCR info, JsonValueCR changes);
     };
