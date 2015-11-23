@@ -91,6 +91,10 @@ void JsonUtil::DeepCopy(RapidJsonValueCR source, RapidJsonDocumentR target)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String JsonUtil::ToStyledString(RapidJsonValueCR value)
     {
+    if (value.IsNull())
+        {
+        return "null";
+        }
     rapidjson::GenericStringBuffer<UTF8<>> buffer;
     rapidjson::PrettyWriter<rapidjson::GenericStringBuffer<UTF8<>>> writer(buffer);
     value.Accept(writer);
