@@ -1038,7 +1038,7 @@ public:
         //!         or \a DgnDbStatus::BadModel if the destination component model is not set, or some other
         //!         error code if the import of any individual solution Item fails.
         //! @note \a destModel must be different from but in the same DgnDb as the destination component model.
-        DGNPLATFORM_EXPORT DgnDbStatus ImportSolutions(DgnModelR destModel, bvector<AuthorityIssuedCode> const& selected = bvector<AuthorityIssuedCode>());
+        DGNPLATFORM_EXPORT DgnDbStatus ImportSolutions(DgnModelR destModel, bvector<AuthorityIssuedCode> const& solutionFilter = bvector<AuthorityIssuedCode>());
         };
 
 
