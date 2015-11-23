@@ -19,6 +19,7 @@
 #include "../WebServices/Configuration/StubBuddiClient.h"
 
 #include "ValuePrinter.h"
+#include "AsyncTestCheckpoint.h"
 #include "StubInstances.h"
 #include "WSClientBaseTest.h"
 #include "BaseMockHttpHandlerTest.h"

@@ -63,6 +63,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ChangeInfo_PROPERTY_ChangeStatus                      "ChangeStatus"
 #define CLASS_ChangeInfo_PROPERTY_SyncStatus                        "SyncStatus"
 #define CLASS_ChangeInfo_PROPERTY_ChangeNumber                      "ChangeNumber"
+#define CLASS_ChangeInfo_PROPERTY_Revision                          "Revision"
+#define CLASS_ChangeInfo_PROPERTY_IsLocal                           "IsLocal"
 
 #define CLASS_InstanceBackup                                        "InstanceBackup"
 #define CLASS_InstanceBackup_PROPERTY_Instance                      "Instance"

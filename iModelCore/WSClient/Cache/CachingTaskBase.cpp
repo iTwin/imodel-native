@@ -30,6 +30,11 @@ m_cancellationToken(MergeCancellationToken::Create(m_userProvidedCancellationTok
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CachingTaskBase::SetError(CachingDataSource::ErrorCR error)
     {
+    if (error.GetStatus() == ICachingDataSource::Status::InternalCacheError)
+        {
+        BeAssert(false && "Unexpected error");
+        }
+
     m_error = error;
     m_errorCancellationToken->SetCanceled();
 

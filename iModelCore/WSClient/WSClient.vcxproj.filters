@@ -336,13 +336,13 @@
     <ClCompile Include="Cache\Util\JsonUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV8.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Client\WSChangeset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Cache\SyncOptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -740,13 +740,16 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonDiff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV8.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Client\WSChangeset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncOptions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Core\Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
