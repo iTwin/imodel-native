@@ -20,47 +20,43 @@ bool operator >= (const DateTime& lhs, const DateTime& rhs);
 
 // Returns true if relationship between instances exist
 
-bool VerifyHasRelationship
-(
-std::shared_ptr<DataSourceCache> cache,
-ECRelationshipClassCP relClass,
-ObjectIdCR sourceId,
-ObjectIdCR targetId
-);
+bool VerifyHasRelationship(
+    std::shared_ptr<DataSourceCache> cache,
+    Utf8StringCR relClassKey,
+    ObjectIdCR sourceId,
+    ObjectIdCR targetId);
 
-bool VerifyHasRelationship
-(
-std::shared_ptr<DataSourceCache> cache,
-ECRelationshipClassCP relClass,
-ECInstanceKeyCR source,
-ECInstanceKeyCR target
-);
+bool VerifyHasRelationship(
+    std::shared_ptr<DataSourceCache> cache,
+    ECRelationshipClassCP relClass,
+    ObjectIdCR sourceId,
+    ObjectIdCR targetId);
 
-ECInstanceKey FindRelationship
-(
-std::shared_ptr<DataSourceCache> cache,
-ECRelationshipClassCP relClass,
-ObjectIdCR sourceId,
-ObjectIdCR targetId
-);
+bool VerifyHasRelationship(
+    std::shared_ptr<DataSourceCache> cache,
+    ECRelationshipClassCP relClass,
+    ECInstanceKeyCR source,
+    ECInstanceKeyCR target);
 
-ECInstanceKey FindRelationship
-(
-std::shared_ptr<DataSourceCache> cache,
-ECRelationshipClassCP relClass,
-ECInstanceKeyCR source,
-ECInstanceKeyCR target
-);
+ECInstanceKey FindRelationship(
+    std::shared_ptr<DataSourceCache> cache,
+    ECRelationshipClassCP relClass,
+    ObjectIdCR sourceId,
+    ObjectIdCR targetId);
+
+ECInstanceKey FindRelationship(
+    std::shared_ptr<DataSourceCache> cache,
+    ECRelationshipClassCP relClass,
+    ECInstanceKeyCR source,
+    ECInstanceKeyCR target);
 
 int CountClassInstances(IDataSourceCache& ds, Utf8StringCR classKey);
 
-ICachingDataSource::ObjectsResult StubObjectsResult
-(
-JsonValueCR jsonInstances = Json::arrayValue,
-ICachingDataSource::DataOrigin origin = ICachingDataSource::DataOrigin::CachedData
-);
+ICachingDataSource::ObjectsResult StubObjectsResult(
+    JsonValueCR jsonInstances = Json::arrayValue,
+    ICachingDataSource::DataOrigin origin = ICachingDataSource::DataOrigin::CachedData);
 
-// Create result with IsModified == false
+    // Create result with IsModified == false
 WSObjectsResponse StubWSObjectsResponseNotModified();
 WSObjectsResponse StubWSObjectsResponseV2(Utf8StringCR jsonBody, Utf8StringCR eTag = "");
 WSObjectsResult StubWSObjectsResultNotModified();
@@ -82,16 +78,61 @@ WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR re
 CacheEnvironment StubCacheEnvironemnt();
 
 Utf8String StubSchemaXml(Utf8StringCR schemaName = "TestSchema", Utf8String optionalSchemaPrefix = "");
+
 ECSchemaPtr StubSchema(Utf8StringCR schemaName = "TestSchema", Utf8String optionalSchemaPrefix = "");
-ECSchemaPtr StubRelationshipSchema(Utf8StringCR schemaName = "TestSchema", Utf8StringCR classA = "A", Utf8StringCR classB = "B", Utf8StringCR relAB = "AB");
+
+ECSchemaPtr StubRelationshipSchema(
+    Utf8StringCR schemaName = "TestSchema",
+    Utf8StringCR classA = "A",
+    Utf8StringCR classB = "B",
+    Utf8StringCR relAB = "AB");
 
 IECInstancePtr StubInstance(ECSchemaPtr ecSchema);
+
 IECInstancePtr StubInstance(ECClassCP ecClass);
 
 ECInstanceKey StubECInstanceKey(int64_t classId = 1, int64_t instanceId = 1);
+
 bpair<ECClassId, ECInstanceId> StubECInstanceKeyPair(int64_t classId = 1, int64_t instanceId = 1);
-ECInstanceKey StubInstanceInCache(IDataSourceCache& cache, ObjectIdCR objectId = ObjectId("TestSchema.TestClass", "Foo"), std::map<Utf8String, Json::Value> properties = {});
+
+ECInstanceKey StubInstanceInCache(
+    IDataSourceCache& cache,
+    ObjectIdCR objectId = ObjectId("TestSchema.TestClass", "Foo"),
+    std::map<Utf8String, Json::Value> properties = {});
+
+ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR objectId, JsonValueCR properties);
+
 ECInstanceKey StubNonExistingInstanceKey(IDataSourceCache& cache, Utf8StringCR classKey = "TestSchema.TestClass", uint64_t instanceId = 1);
+
 ECInstanceKeyMultiMap StubECInstanceKeyMultiMap(const std::vector<ECInstanceKey>& keys = {});
+
+CachedResponseKey StubInstancesInCache(
+    IDataSourceCache& cache,
+    StubInstances& instances,
+    Utf8StringCR root = BeGuid().ToString(),
+    Utf8String responseName = BeGuid().ToString());
+
+ECInstanceKey StubRelationshipInCache(
+    IDataSourceCache& cache,
+    ObjectIdCR relId = {"TestSchema.TestRelationshipClass", "AB"},
+    ObjectIdCR source = {"TestSchema.TestClass", "A"},
+    ObjectIdCR target = {"TestSchema.TestClass", "B"});
+
+ECInstanceKey StubCreatedRelationshipInCache(
+    IDataSourceCache& cache,
+    Utf8StringCR relClassKey = "TestSchema.TestRelationshipClass",
+    ObjectIdCR source = {"TestSchema.TestClass", "A"},
+    ObjectIdCR target = {"TestSchema.TestClass", "B"});
+
+ECInstanceKey StubCreatedRelationshipInCache(
+    IDataSourceCache& cache,
+    IChangeManager::SyncStatus status,
+    Utf8StringCR relClassKey = "TestSchema.TestRelationshipClass",
+    ObjectIdCR source = {"TestSchema.TestClass", "A"},
+    ObjectIdCR target = {"TestSchema.TestClass", "B"});
+
+ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, Utf8StringCR classKey = "TestSchema.TestClass");
+
+ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, IChangeManager::SyncStatus status, Utf8StringCR classKey = "TestSchema.TestClass");
 
 CachedResponseKey StubCachedResponseKey(IDataSourceCache& cache, Utf8StringCR name = "TestQuery");

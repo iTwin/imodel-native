@@ -44,50 +44,62 @@ void SyncLocalChangesTask::_OnExecute()
     {
     auto txn = m_ds->StartCacheTransaction();
 
-    m_serverInfo = m_ds->GetServerInfo(txn);
-
-    if (!txn.GetCache().GetChangeManager().HasChanges())
+    if (SUCCESS != txn.GetCache().GetChangeManager().CommitLocalDeletions() ||
+        SUCCESS != PrepareChangeGroups(txn.GetCache()))
         {
-        OnSyncDone();
+        SetError();
         return;
+        }
+
+    m_serverInfo = m_ds->GetServerInfo(txn);
+    txn.Commit();
+
+    SyncNext();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncLocalChangesTask::PrepareChangeGroups(IDataSourceCache& cache)
+    {
+    if (!cache.GetChangeManager().HasChanges())
+        {
+        return SUCCESS;
         }
 
     ChangeManager::Changes changesToSync;
     if (m_objectsToSyncPtr == nullptr)
         {
-        // sync all
-        //depricated.    SyncAll just has an array of a list of items we are going to sync.
-        if (SUCCESS != txn.GetCache().GetChangeManager().GetChanges(changesToSync, true))
+        // Sync all
+        if (SUCCESS != cache.GetChangeManager().GetChanges(changesToSync, true))
             {
-            SetError(CachingDataSource::Status::InternalCacheError);
-            return;
+            return ERROR;
             }
         }
     else
         {
-        // sync specific
+        // Sync specific
         for (auto instanceKey : *m_objectsToSyncPtr)
             {
-            txn.GetCache().GetChangeManager().GetChanges(instanceKey, changesToSync);
+            if (SUCCESS != cache.GetChangeManager().GetChanges(instanceKey, changesToSync))
+                {
+                return ERROR;
+                }
             }
         }
 
     m_changeGroups = ChangesGraph(changesToSync).BuildCacheChangeGroups();
-    if (m_changeGroups.empty())
-        {
-        return;
-        }
 
     for (CacheChangeGroupPtr changeGroup : m_changeGroups)
         {
         if (IChangeManager::ChangeStatus::NoChange != changeGroup->GetFileChange().GetChangeStatus())
             {
-            BeFileName filePath = txn.GetCache().ReadFilePath(changeGroup->GetFileChange().GetInstanceKey());
+            BeFileName filePath = cache.ReadFilePath(changeGroup->GetFileChange().GetInstanceKey());
             m_totalBytesToUpload += FileUtil::GetFileSize(filePath);
             }
         }
 
-    SyncNext();
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -162,7 +174,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
         auto revisions = std::make_shared<RevisionMap>();
         auto changesetChangeGroups = std::make_shared<bvector<CacheChangeGroup*>>();
         auto changeset = BuildChangeset(txn.GetCache(), *revisions, *changesetChangeGroups);
-        if (nullptr == changeset)
+        if (nullptr == changeset || changeset->IsEmpty())
             {
             SetError();
             return;
@@ -251,7 +263,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncChangeGroup(CacheChangeGroupPtr cha
     else
         {
         BeAssert(false && "Sync not supported for this change");
-        SetError(CachingDataSource::Status::InternalCacheError);
+        SetError();
 
         return CreateCompletedAsyncTask();
         }
@@ -292,7 +304,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
         auto changeset = BuildSingleInstanceChangeset(txn.GetCache(), *changeGroup, *revisions);
         if (nullptr == changeset)
             {
-            SetError(CachingDataSource::Status::InternalCacheError);
+            SetError();
             return;
             }
 
@@ -387,7 +399,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
                         bmap<ECInstanceKey, ECInstanceKey> changedKeys;
                         if (SUCCESS != txn.GetCache().GetChangeManager().UpdateCreatedInstance(newObjectId, result.GetValue(), changedKeys))
                             {
-                            SetError(CachingDataSource::Status::InternalCacheError);
+                            SetError();
                             return;
                             }
 
@@ -452,7 +464,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(CacheChangeGroup
             auto txn = m_ds->StartCacheTransaction();
             if (SUCCESS != txn.GetCache().GetChangeManager().CommitInstanceRevision(*revision))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
+                SetError();
                 return;
                 }
             txn.Commit();
@@ -494,7 +506,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(CacheChangeGroupPt
             m_totalBytesUploaded += currentFileSize;
             if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*revision))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
+                SetError();
                 return;
                 }
             txn.Commit();
@@ -524,7 +536,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(CacheChangeGroupPtr 
             }
         else
             {
-            SetError(CachingDataSource::Status::InternalCacheError);
+            SetError();
             BeAssert(false);
             return;
             }
@@ -545,7 +557,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(CacheChangeGroupPtr 
             auto txn = m_ds->StartCacheTransaction();
             if (SUCCESS != txn.GetCache().GetChangeManager().CommitInstanceRevision(*revision))
                 {
-                SetError(CachingDataSource::Status::InternalCacheError);
+                SetError();
                 return;
                 }
             txn.Commit();
@@ -564,6 +576,8 @@ bvector<CacheChangeGroup*>& changesetChangeGroupsOut
 )
     {
     auto changeset = std::make_shared<WSChangeset>();
+
+    bool changesetClipped = false;
     for (auto i = m_changeGroupIndexToSyncNext; i < m_changeGroups.size(); ++i)
         {
         CacheChangeGroup& changeGroup = *m_changeGroups[i];
@@ -585,6 +599,7 @@ bvector<CacheChangeGroup*>& changesetChangeGroupsOut
             m_options.GetMaxChangesetInstanceCount() < changeset->GetInstanceCount())
             {
             changeset->RemoveInstance(*newInstance);
+            changesetClipped = true;
             break;
             }
 
@@ -593,7 +608,7 @@ bvector<CacheChangeGroup*>& changesetChangeGroupsOut
         m_changeGroupIndexToSyncNext += 1;
         }
 
-    if (changesetChangeGroupsOut.empty())
+    if (changeset->IsEmpty() && changesetClipped)
         {
         BeAssert(false && "Could not fit any changes into changeset. Check SyncOptions limitations");
         return nullptr;

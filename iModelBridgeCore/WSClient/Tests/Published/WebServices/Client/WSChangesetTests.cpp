@@ -15,6 +15,19 @@ using namespace ::testing;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+TEST_F(WSChangesetTests, IsEmpty_Empty_True)
+    {
+    WSChangeset changeset;
+    EXPECT_TRUE(changeset.IsEmpty());
+    }
+
+TEST_F(WSChangesetTests, IsEmpty_InstanceAdded_False)
+    {
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass","A"}, WSChangeset::Existing, std::make_shared<Json::Value>(Json::objectValue));
+    EXPECT_FALSE(changeset.IsEmpty());
+    }
+
 TEST_F(WSChangesetTests, ToRequestString_EmptyChangeset_ReturnsEmptyChangesetAndSizeIsSameAsEmptyChangesetJson)
     {
     WSChangeset changeset;

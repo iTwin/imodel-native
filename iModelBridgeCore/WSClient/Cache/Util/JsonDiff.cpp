@@ -36,9 +36,12 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, Ra
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, RapidJsonValueR jsonOut, rapidjson::Value::AllocatorType& allocator)
+bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn, RapidJsonValueR jsonOut, rapidjson::Value::AllocatorType& allocator)
     {
     bool changesFound = false;
+
+    RapidJsonValueCR oldJson = ValidateObject(oldJsonIn);
+    RapidJsonValueCR newJson = ValidateObject(newJsonIn);
 
     if (jsonOut.IsNull())
         {
@@ -49,14 +52,12 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, Ra
     for (auto newMemberItr = newJson.MemberBegin(); newMemberItr != newJson.MemberEnd(); ++newMemberItr)
         {
         // null member added case
-        if (newMemberItr->value.IsNull())
+        if (newMemberItr->value.IsNull() &&
+            !oldJson.HasMember(newMemberItr->name.GetString()))
             {
-            if (!oldJson.HasMember(newMemberItr->name.GetString()))
-                {
-                changesFound = true;
-                AddMember(jsonOut, newMemberItr->name, newMemberItr->value, allocator);
-                continue;
-                }
+            changesFound = true;
+            AddMember(jsonOut, newMemberItr->name, newMemberItr->value, allocator);
+            continue;
             }
 
         auto& oldValue = oldJson[newMemberItr->name.GetString()];
@@ -90,18 +91,16 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, Ra
         }
 
     // Find deletions
-    if (!m_ignoreDeletedProperties)
+    if (!m_ignoreDeletedProperties &&
+        std::distance(oldJson.MemberBegin(), oldJson.MemberEnd()) != std::distance(newJson.MemberBegin(), newJson.MemberEnd()))
         {
-        if (std::distance(oldJson.MemberBegin(), oldJson.MemberEnd()) != std::distance(newJson.MemberBegin(), newJson.MemberEnd()))
+        for (auto oldMemberItr = oldJson.MemberBegin(); oldMemberItr != oldJson.MemberEnd(); ++oldMemberItr)
             {
-            for (auto oldMemberItr = oldJson.MemberBegin(); oldMemberItr != oldJson.MemberEnd(); ++oldMemberItr)
+            auto& newValue = newJson[oldMemberItr->name.GetString()];
+            if (newValue.IsNull())
                 {
-                auto& newValue = newJson[oldMemberItr->name.GetString()];
-                if (newValue.IsNull())
-                    {
-                    changesFound = true;
-                    AddMember(jsonOut, oldMemberItr->name, newValue, allocator);
-                    }
+                changesFound = true;
+                AddMember(jsonOut, oldMemberItr->name, newValue, allocator);
                 }
             }
         }
@@ -308,4 +307,21 @@ bool JsonDiff::StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value
         } // fast path for constant string
 
     return (std::memcmp(str1, str2, sizeof(UTF8<>::Ch)* len1) == 0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+RapidJsonValueCR JsonDiff::ValidateObject(RapidJsonValueCR value)
+    {
+    using namespace rapidjson;
+
+    if (!value.IsObject())
+        {
+        BeAssert(false && "Expecting object value");
+        static const Value empty(kObjectType);
+        return empty;
+        }
+
+    return value;
     }

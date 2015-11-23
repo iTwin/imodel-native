@@ -9,7 +9,6 @@
 #include <WebServices/Cache/Persistence/ChangeManager.h>
 
 #include <WebServices/Cache/Util/ECDbHelper.h>
-#include <WebServices/Cache/Util/JsonDiff.h>
 
 #include "Changes/ChangeInfoManager.h"
 #include "Core/CacheSchema.h"
@@ -26,7 +25,7 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-Utf8CP ChangeManager::NewObjectIdPrefix = "NewObject";
+Utf8CP ChangeManager::LocalInstanceIdPrefix = "LocalInstance-";
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -62,7 +61,7 @@ m_isSyncActive(false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ChangeManager::CreateRemoteId()
     {
-    return NewObjectIdPrefix + BeGuid().ToString();
+    return LocalInstanceIdPrefix + BeGuid().ToString();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -79,6 +78,15 @@ bool ChangeManager::IsSyncActive() const
 void ChangeManager::SetSyncActive(bool active)
     {
     m_isSyncActive = active;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::SetupNewRevision(struct ChangeInfo& info)
+    {
+    info.IncrementRevision();
+    return m_changeInfoManager->SetupChangeNumber(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -121,7 +129,7 @@ ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR propert
         return ECInstanceKey();
         }
 
-    if (SUCCESS != m_changeInfoManager->SetupChangeNumber(info))
+    if (SUCCESS != SetupNewRevision(info))
         {
         return ECInstanceKey();
         }
@@ -130,6 +138,7 @@ ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR propert
     info.SetRemoteId(newObjectId.remoteId);
     info.SetChangeStatus(ChangeStatus::Created);
     info.SetSyncStatus(syncStatus);
+    info.SetIsLocal(true);
 
     rapidjson::Document propertiesRapidJson;
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
@@ -170,13 +179,13 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         {
         Json::Value instanceJson;
         if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJson, instanceKey) ||
-            SUCCESS != m_changeInfoManager->SaveBackupInstance(info.GetInfoKey(), instanceJson))
+            SUCCESS != m_changeInfoManager->SaveBackupInstance(info, instanceJson))
             {
             return ERROR;
             }
         }
 
-    if (SUCCESS != m_changeInfoManager->SetupChangeNumber(info))
+    if (SUCCESS != SetupNewRevision(info))
         {
         return ERROR;
         }
@@ -224,35 +233,24 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
         return ERROR;
         }
 
-    if (info.GetChangeStatus() == ChangeStatus::Created)
+    // Reset change number
+    info.SetChangeNumber(0);
+    if (SUCCESS != SetupNewRevision(info))
         {
-        if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetCachedInstanceKey()))
-            {
-            return ERROR;
-            }
+        return ERROR;
         }
-    else
+
+    info.SetChangeStatus(ChangeStatus::Deleted);
+    info.SetSyncStatus(syncStatus);
+
+    if (SUCCESS != m_objectInfoManager->DeleteInstanceLeavingInfo(info))
         {
-        // Reset change number
-        info.ClearChangeInfo();
+        return ERROR;
+        }
 
-        if (SUCCESS != m_changeInfoManager->SetupChangeNumber(info))
-            {
-            return ERROR;
-            }
-
-        info.SetChangeStatus(ChangeStatus::Deleted);
-        info.SetSyncStatus(syncStatus);
-
-        if (SUCCESS != m_objectInfoManager->DeleteInstanceLeavingInfo(info))
-            {
-            return ERROR;
-            }
-
-        if (SUCCESS != m_objectInfoManager->UpdateInfo(info))
-            {
-            return ERROR;
-            }
+    if (SUCCESS != m_objectInfoManager->UpdateInfo(info))
+        {
+        return ERROR;
         }
 
     return SUCCESS;
@@ -275,7 +273,7 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
         return ERROR;
         }
 
-    if (SUCCESS != m_changeInfoManager->SetupChangeNumber(info))
+    if (SUCCESS != SetupNewRevision(info))
         {
         return ERROR;
         }
@@ -351,7 +349,7 @@ uint64_t changeNumber
 
     if (0 == changeNumber)
         {
-        if (SUCCESS != m_changeInfoManager->SetupChangeNumber(info))
+        if (SUCCESS != SetupNewRevision(info))
             {
             return ECInstanceKey();
             }
@@ -365,6 +363,7 @@ uint64_t changeNumber
     info.SetRemoteId(CreateRemoteId());
     info.SetChangeStatus(ChangeStatus::Created);
     info.SetSyncStatus(syncStatus);
+    info.SetIsLocal(true);
 
     if (SUCCESS != m_relationshipInfoManager->SaveInfo(info))
         {
@@ -402,32 +401,22 @@ SyncStatus syncStatus
         return ERROR;
         }
 
-    if (info.GetChangeStatus() == ChangeStatus::Created)
+    if (SUCCESS != m_relationshipInfoManager->DeleteRelationshipLeavingInfo(info))
         {
-        if (SUCCESS != m_hierarchyManager->DeleteRelationship(info.GetRelationshipKey()))
-            {
-            return ERROR;
-            }
+        return ERROR;
         }
-    else
+
+    if (SUCCESS != SetupNewRevision(info))
         {
-        if (SUCCESS != m_relationshipInfoManager->DeleteRelationshipLeavingInfo(info))
-            {
-            return ERROR;
-            }
+        return ERROR;
+        }
 
-        if (SUCCESS != m_changeInfoManager->SetupChangeNumber(info))
-            {
-            return ERROR;
-            }
+    info.SetChangeStatus(ChangeStatus::Deleted);
+    info.SetSyncStatus(syncStatus);
 
-        info.SetChangeStatus(ChangeStatus::Deleted);
-        info.SetSyncStatus(syncStatus);
-
-        if (SUCCESS != m_relationshipInfoManager->SaveInfo(info))
-            {
-            return ERROR;
-            }
+    if (SUCCESS != m_relationshipInfoManager->SaveInfo(info))
+        {
+        return ERROR;
         }
 
     return SUCCESS;
@@ -685,6 +674,7 @@ void ChangeManager::SetupRevisionChanges(ChangeInfoCR info, Revision& revision)
     revision.SetChangeStatus(info.GetChangeStatus());
     revision.SetSyncStatus(info.GetSyncStatus());
     revision.SetChangeNumber(info.GetChangeNumber());
+    revision.SetRevisionNumber(info.GetRevision());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -698,31 +688,22 @@ BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, Js
         return ERROR;
         }
 
-    // Read backup instance
-    rapidjson::Document backupJson;
-    if (SUCCESS != m_changeInfoManager->ReadBackupInstance(info.GetInfoKey(), backupJson))
+    rapidjson::Document changesJson, t1, t2;
+    if (SUCCESS != m_changeInfoManager->ReadInstanceChanges(info, changesJson, t1, t2))
         {
         return ERROR;
         }
 
-    // Read current instance
-    Json::Value instanceJsonValue;
-    if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJsonValue, instance))
-        {
-        return ERROR;
-        }
-
-    rapidjson::Document instanceJson;
-    JsonUtil::RemoveECMembers(instanceJsonValue);
-    JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
-
-    // Detect changes
-    rapidjson::Document changesJson;
-    JsonDiff(false).GetChanges(backupJson, instanceJson, changesJson);
-
-    // Write output value
     JsonUtil::ToJsonValue(changesJson, propertiesOut);
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ChangeManager::CommitLocalDeletions()
+    {
+    return m_changeInfoManager->RemoveLocalDeletedInfos();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -758,61 +739,89 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
-    if (info.GetChangeStatus() == ChangeStatus::Deleted)
+    bool currentRevision = info.GetRevision() == revision.GetRevisionNumber();
+    if (currentRevision && revision.GetChangeStatus() != info.GetChangeStatus())
+        {
+        BeAssert(false && "Revision state invalid");
+        return ERROR;
+        }
+
+    if (revision.GetChangeStatus() == ChangeStatus::Deleted && currentRevision)
         {
         return m_hierarchyManager->DeleteInstance(info.GetInfoKey());
         }
 
-    if (info.GetChangeStatus() == ChangeStatus::Modified)
+    if (revision.GetChangeStatus() == ChangeStatus::Modified)
         {
-        info.ClearChangeInfo();
-        if (SUCCESS != m_objectInfoManager->UpdateInfo(info) ||
-            SUCCESS != m_changeInfoManager->DeleteBackupInstance(info.GetInfoKey()))
+        if (currentRevision)
             {
-            return ERROR;
+            info.ClearChangeInfo();
+            if (SUCCESS != m_objectInfoManager->UpdateInfo(info) ||
+                SUCCESS != m_changeInfoManager->DeleteBackupInstance(info))
+                {
+                return ERROR;
+                }
+            return SUCCESS;
             }
-        return SUCCESS;
+        else if (info.GetChangeStatus() == ChangeStatus::Modified)
+            {
+            return m_changeInfoManager->ApplyChangesToBackup(info, *revision.GetChangedProperties());
+            }
+        else if (info.GetChangeStatus() == ChangeStatus::Deleted)
+            {
+            return SUCCESS;
+            }
+        return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::Created)
+    if (revision.GetChangeStatus() != ChangeStatus::Created)
         {
         BeAssert(false && "Change status is unsupported for commit");
         return ERROR;
         }
 
-    ECInstanceKey instanceKey = revision.GetInstanceKey();
-    Utf8String newRemoteId = revision.GetObjectId().remoteId;
-
-    if (newRemoteId.empty() || newRemoteId == info.GetObjectId().remoteId)
+    ObjectId newId = revision.GetObjectId();
+    if (newId.remoteId.empty() || newId.remoteId == info.GetObjectId().remoteId)
         {
-        BeAssert(false && "Set remote id with remote value");
+        BeAssert(false && "Set remote id with new value");
         return ERROR;
         }
 
-    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
-    ECInstanceKey oldVersionInstance = m_objectInfoManager->FindCachedInstance(ecClass, newRemoteId);
+    ECInstanceKey oldVersionInstance = m_objectInfoManager->FindCachedInstance(newId);
     if (oldVersionInstance.IsValid() && oldVersionInstance != info.GetCachedInstanceKey())
         {
         // Instance with same remoteId already exists in cache.
         // This usually happens when creating new version of object and referances to latest version need to be preserved.
         // Old instance is invalidated as it is replaced by new one.
 
-        if (SUCCESS != m_responseManager->InvalidateResponsesContainingInstance(oldVersionInstance))
-            {
-            return ERROR;
-            }
-        if (SUCCESS != m_rootManager->CopyRootRelationships(oldVersionInstance, info.GetCachedInstanceKey()))
-            {
-            return ERROR;
-            }
-        if (SUCCESS != m_hierarchyManager->DeleteInstance(oldVersionInstance))
+        if (SUCCESS != m_responseManager->InvalidateResponsesContainingInstance(oldVersionInstance) ||
+            SUCCESS != m_rootManager->CopyRootRelationships(oldVersionInstance, info.GetCachedInstanceKey()) ||
+            SUCCESS != m_hierarchyManager->DeleteInstance(oldVersionInstance))
             {
             return ERROR;
             }
         }
 
-    info.SetRemoteId(newRemoteId);
-    info.ClearChangeInfo();
+    info.SetRemoteId(newId.remoteId);
+    info.SetIsLocal(false);
+
+    if (currentRevision)
+        {
+        info.ClearChangeInfo();
+        }
+    else if (info.GetChangeStatus() == ChangeStatus::Created)
+        {
+        // Instance was modified before commiting creation revision
+        if (SUCCESS != m_changeInfoManager->ApplyChangesToInstanceAndBackupIt(info, *revision.GetChangedProperties()))
+            {
+            return ERROR;
+            }
+        info.SetChangeStatus(ChangeStatus::Modified);
+        }
+    else if (info.GetChangeStatus() == ChangeStatus::Deleted)
+        {
+        // Leave as deleted
+        }
 
     return m_objectInfoManager->UpdateInfo(info);
     }
@@ -829,29 +838,36 @@ BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revisio
         return ERROR;
         }
 
-    if (info.GetChangeStatus() == ChangeStatus::Deleted)
+    bool currentRevision = info.GetRevision() == revision.GetRevisionNumber();
+
+    if (revision.GetChangeStatus() == ChangeStatus::Deleted)
         {
         return m_hierarchyManager->DeleteInstance(info.GetInfoKey());
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::Created)
+    if (revision.GetChangeStatus() != ChangeStatus::Created)
         {
         BeAssert(false && "Change status is unsupported for commit");
         return ERROR;
         }
 
     Utf8String newRemoteId = revision.GetObjectId().remoteId;
-    if (newRemoteId.empty())
-        {
-        if (SUCCESS != m_hierarchyManager->DeleteRelationship(info.GetRelationshipKey()))
-            {
-            return ERROR;
-            }
-        return SUCCESS;
-        }
 
     info.SetRemoteId(newRemoteId);
-    info.ClearChangeInfo();
+    info.SetIsLocal(false);
+
+    if (currentRevision && newRemoteId.empty())
+        {
+        return m_hierarchyManager->DeleteRelationship(info.GetRelationshipKey());
+        }
+    else if (currentRevision)
+        {
+        info.ClearChangeInfo();
+        }
+    else if (info.GetChangeStatus() == ChangeStatus::Deleted)
+        {
+        // Leave as deleted
+        }
 
     return m_relationshipInfoManager->SaveInfo(info);
     }
@@ -861,25 +877,30 @@ BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revisio
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
     {
-    FileInfo info = m_fileInfoManager->ReadInfo(revision.GetInstanceKey());    
+    FileInfo info = m_fileInfoManager->ReadInfo(revision.GetInstanceKey());
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
         BeAssert(false && "Nothing to commit");
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::Modified)
+    if (info.GetChangeStatus() != ChangeStatus::Modified || 
+        revision.GetChangeStatus() != ChangeStatus::Modified)
         {
         BeAssert(false && "Change status is unsupported for commit");
         return ERROR;
         }
 
-    info.ClearChangeInfo();
-    if (SUCCESS != m_fileInfoManager->SaveInfo(info))
+    bool currentRevision = info.GetRevision() == revision.GetRevisionNumber();
+    if (!currentRevision)
         {
-        return ERROR;
+        // Leave as modified
+        return SUCCESS;
         }
-    if (SUCCESS != m_fileManager->SetFileCacheLocation(info.GetInstanceKey(), FileCache::Temporary))
+
+    info.ClearChangeInfo();
+    if (SUCCESS != m_fileInfoManager->SaveInfo(info) ||
+        SUCCESS != m_fileManager->SetFileCacheLocation(info.GetInstanceKey(), FileCache::Temporary))
         {
         return ERROR;
         }
