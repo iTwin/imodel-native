@@ -643,11 +643,14 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
     if (SUCCESS != stat)
         return stat;
 
+    Utf8StringCR opStr = opNode->getTokenValue();
     BinarySqlOperator op;
-    if (opNode->getTokenValue() == "*")
+    if (opStr.Equals("*"))
         op = BinarySqlOperator::Multiply;
-    else if(opNode->getTokenValue() == "/")
+    else if(opStr.Equals("/"))
         op = BinarySqlOperator::Divide;
+    else if (opStr.Equals("%"))
+        op = BinarySqlOperator::Modulo;
     else
         {
         BeAssert (false && "Wrong grammar");
@@ -1034,10 +1037,11 @@ BentleyStatus ECSqlParser::parse_factor (unique_ptr<ValueExp>& exp, OSQLParseNod
     if (SUCCESS != stat)
         return stat;
 
+    Utf8StringCR opStr = opNode->getTokenValue();
     UnarySqlOperator op = UnarySqlOperator::Plus;
-    if (opNode->getTokenValue ().Equals ("+"))
+    if (opStr.Equals ("+"))
         op = UnarySqlOperator::Plus;
-    else if (opNode->getTokenValue().Equals ("-"))
+    else if (opStr.Equals ("-"))
         op = UnarySqlOperator::Minus;
     else
         {
