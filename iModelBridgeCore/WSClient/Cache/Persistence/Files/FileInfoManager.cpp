@@ -23,15 +23,15 @@ FileInfoManager::FileInfoManager
 (
 ECDbAdapter& dbAdapter,
 ECSqlStatementCache& statementCache,
+FileStorage& fileStorage,
 ObjectInfoManager& objectInfoManager,
-HierarchyManager& hierarchyManager,
-CacheEnvironmentCR environment
+HierarchyManager& hierarchyManager
 ) :
 m_dbAdapter(&dbAdapter),
 m_statementCache(&statementCache),
+m_fileStorage(&fileStorage),
 m_hierarchyManager(&hierarchyManager),
 m_objectInfoManager(&objectInfoManager),
-m_environment(environment),
 
 m_infoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedFileInfo)),
 m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedFileInfoRelationship)),
@@ -155,59 +155,7 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName FileInfoManager::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const
     {
-    BeFileName absolutePath;
-    if (relativePath.empty())
-        {
-        return absolutePath;
-        }
-
-    WCharCP saveDirectory;
-    if (isPersistent)
-        {
-        saveDirectory = m_environment.persistentFileCacheDir.c_str();
-        }
-    else
-        {
-        saveDirectory = m_environment.temporaryFileCacheDir.c_str();
-        }
-
-    absolutePath
-        .AppendToPath(saveDirectory)
-        .AppendToPath(relativePath);
-
-    return absolutePath;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    12/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::RemoveContainingFolder(BeFileNameCR filePath)
-    {
-    BeFileName directoryPath(BeFileName::GetDirectoryName(filePath));
-    BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(directoryPath);
-    if (status != BeFileNameStatus::Success &&
-        status != BeFileNameStatus::FileNotFound)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    12/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::CleanupCachedFile(FileInfoCR info)
-    {
-    BeFileName filePath = info.GetFilePath();
-    if (!filePath.empty())
-        {
-        if (SUCCESS != RemoveContainingFolder(filePath))
-            {
-            return ERROR;
-            }
-        }
-    return SUCCESS;
+    return m_fileStorage->GetAbsoluteFilePath(isPersistent, relativePath);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -254,7 +202,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
             continue;
             }
 
-        if (SUCCESS != CleanupCachedFile(fileInfo))
+        if (SUCCESS != m_fileStorage->CleanupCachedFile(fileInfo.GetFilePath()))
             {
             return ERROR;
             }
@@ -322,7 +270,9 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
     JsonReader reader(m_dbAdapter->GetECDb(), ecClass.GetId());
     reader.ReadInstance(infoJson, ecInstanceId, ECValueFormat::RawNativeValues);
 
-    CleanupCachedFile(FileInfo(Json::nullValue, infoJson, ECInstanceKey(), this));
+    FileInfo info (Json::nullValue, infoJson, ECInstanceKey(), this);
+
+    m_fileStorage->CleanupCachedFile(info.GetFilePath());
     return SUCCESS;
     }
 

@@ -26,7 +26,7 @@ m_statementCache(db),
 
 m_objectInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager),
 m_relationshipInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager),
-m_fileInfoManager(m_dbAdapter, m_statementCache, m_objectInfoManager, m_hierarchyManager, environment),
+m_fileInfoManager(m_dbAdapter, m_statementCache, m_fileStorage, m_objectInfoManager, m_hierarchyManager),
 m_hierarchyManager(m_dbAdapter, m_statementCache, m_objectInfoManager, m_changeInfoManager, {&m_fileInfoManager, &m_relationshipInfoManager, &m_cachedQueryManager}),
 m_instanceHelper(m_dbAdapter, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_changeInfoManager),
 m_rootManager(m_dbAdapter, m_statementCache, m_instanceHelper, m_hierarchyManager, m_objectInfoManager),
@@ -34,8 +34,8 @@ m_cachedQueryManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_relati
 m_navigationBaseManager(m_dbAdapter, m_statementCache),
 m_changeInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_fileInfoManager),
 m_changeManager(m_dbAdapter, m_instanceHelper, m_hierarchyManager, m_cachedQueryManager, m_objectInfoManager, m_relationshipInfoManager,
-m_fileInfoManager, m_changeInfoManager, m_fileCacheManager, m_rootManager),
-m_fileCacheManager(m_dbAdapter, m_statementCache, environment, m_fileInfoManager),
+m_fileInfoManager, m_changeInfoManager, m_fileStorage, m_rootManager),
+m_fileStorage(m_dbAdapter, m_statementCache, environment),
 
 m_cacheSchema(nullptr),
 m_extendedDataAdapter(db)

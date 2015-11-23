@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 struct CachedResponseManager;
 struct ChangeInfoManager;
 struct ECDbAdapter;
-struct FileCacheManager;
+struct FileStorage;
 struct FileInfoManager;
 struct HierarchyManager;
 struct InstanceCacheHelper;
@@ -41,7 +41,7 @@ struct ChangeManager : public IChangeManager
         ObjectInfoManager*          m_objectInfoManager;
         RelationshipInfoManager*    m_relationshipInfoManager;
         ChangeInfoManager*          m_changeInfoManager;
-        FileCacheManager*           m_fileManager;
+        FileStorage*                m_fileStorage;
         RootManager*                m_rootManager;
         bool                        m_isSyncActive;
 
@@ -87,7 +87,7 @@ struct ChangeManager : public IChangeManager
             RelationshipInfoManager&  relationshipInfoManager,
             FileInfoManager& fileInfoManager,
             ChangeInfoManager& changeInfoManager,
-            FileCacheManager& fileManager,
+            FileStorage& fileStorage,
             RootManager& rootManager
             );
 
