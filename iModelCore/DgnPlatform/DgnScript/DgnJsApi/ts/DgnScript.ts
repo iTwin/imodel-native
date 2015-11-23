@@ -1,4 +1,4 @@
-﻿module BentleyApi.Dgn
+﻿module Bentley.Dgn
 {
     // The dictionary of EGA functions
     var m_egaFunctions: any = {};

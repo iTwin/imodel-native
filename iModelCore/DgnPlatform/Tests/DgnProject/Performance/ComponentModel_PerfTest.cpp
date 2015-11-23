@@ -208,19 +208,19 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 "(function () { \
     function makeBoxes(model, params, options) { \
         model.DeleteAllElements();\
-        var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
+        var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
         for (var i = 0; i < params.box_count; i++)\
             {\
             var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
-            var origin = new BentleyApi.Dgn.JsDPoint3d(i,i,i);\
-            var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
+            var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
+            var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
             builder.AppendBox(params.H, params.W, params.D); \
             builder.SetGeomStreamAndPlacement(element); \
             element.Insert(); \
             }\
         return 0;\
     } \
-    BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Boxes" "', makeBoxes); \
+    Bentley.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Boxes" "', makeBoxes); \
 })();\
 ");
     ASSERT_TRUE( wcm.IsValid() );
