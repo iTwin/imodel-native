@@ -198,7 +198,102 @@ BentleyStatus BeGuid::FromString(Utf8CP uuid_str)
     return SUCCESS;
     }
 
-void        Statement::Finalize() {if (m_stmt){sqlite3_finalize(m_stmt);m_stmt=nullptr;}}
+#ifdef NDEBUG
+ #define LOG_STATEMENT_DIAGNOSTICS(sql, prepareStat, dbFile, suppressDiagnostics)
+#else
+ #define LOG_STATEMENT_DIAGNOSTICS(sql, prepareStat, dbFile, suppressDiagnostics) StatementDiagnostics::Log(sql, prepareStat, dbFile, suppressDiagnostics)
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+bool StatementDiagnostics::s_isEnabled = true;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+void StatementDiagnostics::Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile, bool suppressDiagnostics)
+    {
+    if (!s_isEnabled || suppressDiagnostics)
+        return;
+
+    NativeLogging::ILogger* prepareLogger = GetLoggerIfEnabledForSeverity(DIAGNOSTICS_PREPARE_LOGGER_NAME);
+    if (prepareLogger != nullptr)
+        prepareLogger->message(s_sev, sql);
+
+    //only do query plan diagnostics if preparation succeeded
+    if (BE_SQLITE_OK == prepareStat)
+        {
+        NativeLogging::ILogger* queryPlanLogger = GetLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLAN_LOGGER_NAME);
+        NativeLogging::ILogger* queryPlanWithTableScansLogger = GetLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME);
+        if (queryPlanLogger == nullptr && queryPlanWithTableScansLogger == nullptr)
+            return;
+
+        if (!ExcludeSqlFromExplainQuery(sql))
+            {
+            Utf8String queryPlan = dbFile.ExplainQuery(sql, true, true);
+
+            if (queryPlanLogger != nullptr)
+                queryPlanLogger->messagev(s_sev, "%s | %s", sql, queryPlan.c_str());
+
+            if (queryPlanWithTableScansLogger != nullptr && queryPlan.find("SCAN TABLE") != queryPlan.npos)
+                {
+                queryPlanWithTableScansLogger->messagev(s_sev, "%s | %s", sql, queryPlan.c_str());
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+void StatementDiagnostics::LogComment(Utf8CP comment)
+    {
+    if (!s_isEnabled || Utf8String::IsNullOrEmpty(comment))
+        return;
+
+    bvector<WCharCP> loggerNames;
+    loggerNames.push_back(DIAGNOSTICS_PREPARE_LOGGER_NAME);
+    loggerNames.push_back(DIAGNOSTICS_QUERYPLAN_LOGGER_NAME);
+    loggerNames.push_back(DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME);
+
+    for (WCharCP loggerName : loggerNames)
+        {
+        NativeLogging::ILogger* logger = GetLoggerIfEnabledForSeverity(loggerName);
+        if (logger != nullptr)
+            logger->message(s_sev, comment);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+NativeLogging::ILogger* StatementDiagnostics::GetLoggerIfEnabledForSeverity(WCharCP loggerName)
+    {
+    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger(loggerName);
+    BeAssert(logger != nullptr);
+    if (logger->isSeverityEnabled(s_sev))
+        return logger;
+
+    return nullptr;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+bool StatementDiagnostics::ExcludeSqlFromExplainQuery(Utf8CP sql)
+    {
+    return BeStringUtilities::Strnicmp("explain", sql, 7) == 0 ||
+        BeStringUtilities::Strnicmp("pragma", sql, 6) == 0;
+    }
+#endif
+
+void        Statement::Finalize() { if (m_stmt) { sqlite3_finalize(m_stmt); m_stmt = nullptr; } }
 DbResult    Statement::Step() {return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
 DbResult    Statement::ClearBindings() {return m_stmt ? (DbResult)sqlite3_clear_bindings(m_stmt): BE_SQLITE_ERROR;}
@@ -236,7 +331,6 @@ DbDupValue  Statement::GetDbValue(int col)
 
 int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
 Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt); }
-DbResult    Statement::Prepare(DbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
 
 DbValueType DbValue::GetValueType() const             {return (DbValueType) sqlite3_value_type(m_val);}
 int         DbValue::GetValueBytes() const            {return sqlite3_value_bytes(m_val);}
@@ -294,22 +388,21 @@ void SchemaVersion::FromJson(Utf8CP val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Statement::TryPrepare(DbCR db, Utf8CP sql)
     {
-    return DoPrepare(db.GetSqlDb(), sql);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle    04/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult Statement::DoPrepare(SqlDbP db, Utf8CP sql)
-    {
-    HPOS_CheckSQLiteOperationAllowed(db);
-    return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) sqlite3_prepare_v2(db, sql, -1, &m_stmt, 0);
+    DbFileCR dbFile = *db.m_dbFile;
+    const DbResult stat = DoPrepare(dbFile, sql);
+    LOG_STATEMENT_DIAGNOSTICS(sql, stat, dbFile, false);
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::Prepare(DbFile const& dbFile, Utf8CP sql)
+DbResult Statement::Prepare(DbCR db, Utf8CP sql) { return Prepare(*db.m_dbFile, sql);  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/11
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostics)
     {
     if (!dbFile.CheckImplicitTxn())
         {
@@ -317,15 +410,26 @@ DbResult Statement::Prepare(DbFile const& dbFile, Utf8CP sql)
         return BE_SQLITE_ERROR_NoTxnActive;
         }
 
-    DbResult rc = DoPrepare(dbFile.m_sqlDb, sql);
-    if (rc != BE_SQLITE_OK)
+    const DbResult stat = DoPrepare(dbFile, sql);
+    if (stat != BE_SQLITE_OK)
         {
         Utf8String lastError = dbFile.GetLastError(nullptr); // keep on separate line for debugging
         LOG.errorv("Error \"%s\" preparing SQL: %s", lastError.c_str(), sql);
         BeAssert(false);
         }
 
-    return rc;
+    LOG_STATEMENT_DIAGNOSTICS(sql, stat, dbFile, suppressDiagnostics);
+    return stat;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    04/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult Statement::DoPrepare(DbFileCR dbFile, Utf8CP sql)
+    {
+    SqlDbP dbHdl = dbFile.GetSqlDb();
+    HPOS_CheckSQLiteOperationAllowed(dbHdl);
+    return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) sqlite3_prepare_v2(dbHdl, sql, -1, &m_stmt, 0);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -578,6 +682,29 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const
+    {
+    Statement queryPlan;
+    if (BE_SQLITE_OK != queryPlan.Prepare(*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql), suppressDiagnostics))
+        return GetLastError(nullptr);
+
+    Utf8CP fmt = explainPlan ? "%s %s %s %s" : "%-3s %-12s %-4s %-4s";
+    Utf8String plan;
+    bool isFirstRow = true;
+    while (BE_SQLITE_ROW == queryPlan.Step())
+        {
+        if (!isFirstRow)
+            plan.append(";");
+
+        plan.append(Utf8PrintfString(fmt, queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3)));
+        isFirstRow = false;
+        }
+    return plan;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(nullptr) {}
@@ -645,19 +772,7 @@ DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan)
-    {
-    Statement queryPlan;
-    if (BE_SQLITE_OK != queryPlan.Prepare(*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql)))
-        return GetLastError();
-
-    Utf8CP fmt = explainPlan ? "%s %s %s %s\n" : "%-3s %-12s %-4s %-4s\n";
-    Utf8String plan;
-    while (BE_SQLITE_ROW == queryPlan.Step())
-        plan.append(Utf8PrintfString(fmt, queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3)));
-
-    return plan;
-    }
+Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan) const { return m_dbFile->ExplainQuery(sql, explainPlan, false); }
 
 static Utf8CP getTempPrefix(bool temp) {return temp ? TEMP_TABLE_UniquePrefix : "";}
 /*---------------------------------------------------------------------------------**//**
@@ -1370,6 +1485,7 @@ Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& params)
     {
+
     if (IsDbOpen())
         return BE_SQLITE_ERROR_AlreadyOpen;
 

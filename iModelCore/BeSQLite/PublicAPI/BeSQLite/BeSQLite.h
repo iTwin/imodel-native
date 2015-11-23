@@ -10,6 +10,10 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/bset.h>
 
+#ifndef NDEBUG
+#include <Logging/bentleylogging.h>
+#endif
+
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
 
 /****
@@ -677,7 +681,7 @@ struct Statement : NonCopyableClass
 private:
     SqlStatementP m_stmt;
 
-    DbResult DoPrepare(SqlDbP db, Utf8CP sql);
+    DbResult DoPrepare(DbFileCR, Utf8CP sql);
 
 public:
     enum class MakeCopy : bool {No=0, Yes=1};
@@ -689,7 +693,7 @@ public:
     ~Statement() {Finalize();}
 
     SqlStatementP& GetStmtR() {return m_stmt;} //! @private internal use only
-    DbResult Prepare(DbFileCR, Utf8CP sql); //! @private internal use only
+    DbResult Prepare(DbFileCR, Utf8CP sql, bool suppressDiagnostics = false); //! @private internal use only
 
     //! Determine whether this Statement has already been prepared.
     bool IsPrepared() const {return nullptr != m_stmt;}
@@ -887,6 +891,71 @@ public:
     SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
     operator SqlStatementP(){return m_stmt;}                 // for direct use of sqlite3 api
 };
+
+#define DIAGNOSTICS_PREPARE_LOGGER_NAME L"Diagnostics.BeSQLite.Prepare"
+#define DIAGNOSTICS_QUERYPLAN_LOGGER_NAME L"Diagnostics.BeSQLite.QueryPlan"
+#define DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME L"Diagnostics.BeSQLite.QueryPlan.WithTableScans"
+
+#ifdef NDEBUG
+#define STATEMENT_DIAGNOSTICS_ON
+#define STATEMENT_DIAGNOSTICS_OFF
+#define STATEMENT_DIAGNOSTICS_LOGCOMMENT(comment)
+#else
+#define STATEMENT_DIAGNOSTICS_ON StatementDiagnostics::SetIsEnabled(true);
+#define STATEMENT_DIAGNOSTICS_OFF StatementDiagnostics::SetIsEnabled(false);
+#define STATEMENT_DIAGNOSTICS_LOGCOMMENT(comment) StatementDiagnostics::LogComment(comment)
+
+//=======================================================================================
+//! Class to turn on/off diagnostics for BeSQLite::Statement.
+//! ###How to enable the diagnostics:
+//! -turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
+//! - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with one of the names below
+//! and assign it the log severity @c @b DEBUG.
+//!
+//! @note The diagnostics are only available in debug builds.
+//!
+//! ###Available diagnostics
+//! - Minimize SQL preparation cost(Logger name : @b Diagnostics.BeSQLite.Prepare)
+//! Preparing an @ref BentleyApi::BeSQLite::Statement "Statement" can be expensive.So statements should be reused
+//! where applicable.In order to help analyze which statements to reuse and which not, turn on preparation diagnostics
+//! by using this logger name.This will log all SQL statements being prepared by BeSQLite.
+//! - Examine the SQL query plan(Logger name : @b Diagnostics.BeSQLite.QueryPlan or @b Diagnostics.BeSQLite.QueryPlan.WithTableScans)
+//! Examining the SQL query plan can, for example, be used to identify missing indexes.They can slow down queries significantly.
+//! Turn on the query plan diagnostics by using one of the two logger names.
+//! With @b Diagnostics.BeSQLite.QueryPlan the whole query plan is logged along with the SQL string.
+//! With @b Diagnostics.BeSQLite.QueryPlan.WithTableScans only query plans are logged if they contain <c>SCAN TABLE</c> directives,
+//! which can be (but must not be) indications for missing indexes.
+// @bsiclass                                                    11/2015
+//=======================================================================================
+struct StatementDiagnostics
+    {
+private:
+    static const NativeLogging::SEVERITY s_sev = NativeLogging::LOG_DEBUG;
+
+    static bool s_isEnabled;
+
+    StatementDiagnostics();
+    ~StatementDiagnostics();
+
+    static NativeLogging::ILogger* GetLoggerIfEnabledForSeverity(WCharCP loggerName);
+
+    static bool ExcludeSqlFromExplainQuery(Utf8CP sql);
+
+public:
+#if !defined (DOCUMENTATION_GENERATOR)
+    static void Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile, bool suppressDiagnostics);
+#endif
+    //! Globally turn on or off statement diagnostics. If turned on, the logging configuration
+    //! determines what is actually logged and what not. So use this method to globally disable
+    //! diagnostics from code which you are not interested in.
+    //! @param[in] isEnabled if true, diagnostics is enabled. If false, diagnostics is disabled.
+    static void SetIsEnabled(bool isEnabled) { s_isEnabled = isEnabled; }
+
+    //! @param[in] comment Comment to add to diagnostics output
+    BE_SQLITE_EXPORT static void LogComment(Utf8CP comment);
+
+    };
+#endif
 
 //=======================================================================================
 //! A Blob handle for incremental I/O. See sqlite3_blob_open for details.
@@ -1963,10 +2032,13 @@ protected:
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedRlvs(bool isCommit);
 public:
+#if !defined (DOCUMENTATION_GENERATOR)
+    Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
     int OnCommit();
-    bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
     bool UseSettingsTable(PropertySpecCR spec) const;
+#endif
     void OnSettingsDirtied() {m_settingsDirty=true;}
+    bool CheckImplicitTxn() const { return m_allowImplicitTxns || m_txns.size() > 0; }
     SqlDbP GetSqlDb() const {return m_sqlDb;}
 
 protected:
@@ -2342,7 +2414,7 @@ public:
     BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0);
 
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
-    BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true);
+    BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true) const;
 
     //! Create a new table in this Db.
     //! @param[in] tableName The name for the new table.
