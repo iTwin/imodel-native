@@ -464,9 +464,13 @@ ECInstanceId ChangeInfoManager::FindBackupInstance(ObjectInfoCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeInfoManager::ReadInstanceChanges(ObjectInfoCR info, RapidJsonDocumentR changesOut)
+BentleyStatus ChangeInfoManager::ReadInstanceChanges(ObjectInfoCR info, RapidJsonDocumentR changesOut, RapidJsonDocumentR temp1, RapidJsonDocumentR temp2)
     {
-    rapidjson::Document backupJson;
+    temp1.SetNull();
+    temp2.SetNull();
+    rapidjson::Document& backupJson = temp1;
+    rapidjson::Document& instanceJson = temp2;
+
     if (SUCCESS != ReadBackupInstance(info, backupJson))
         {
         return ERROR;
@@ -478,7 +482,6 @@ BentleyStatus ChangeInfoManager::ReadInstanceChanges(ObjectInfoCR info, RapidJso
         return ERROR;
         }
 
-    rapidjson::Document instanceJson;
     JsonUtil::RemoveECMembers(instanceJsonValue);
     JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
 

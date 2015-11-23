@@ -688,8 +688,8 @@ BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, Js
         return ERROR;
         }
 
-    rapidjson::Document changesJson;
-    if (SUCCESS != m_changeInfoManager->ReadInstanceChanges(info, changesJson))
+    rapidjson::Document changesJson, t1, t2;
+    if (SUCCESS != m_changeInfoManager->ReadInstanceChanges(info, changesJson, t1, t2))
         {
         return ERROR;
         }
