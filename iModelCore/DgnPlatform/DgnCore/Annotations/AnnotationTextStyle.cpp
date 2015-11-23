@@ -288,7 +288,7 @@ size_t AnnotationTextStyle::QueryCount(DgnDbR db)
 AnnotationTextStyle::Iterator AnnotationTextStyle::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code, Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle), 0);
 
     return iter;
     }

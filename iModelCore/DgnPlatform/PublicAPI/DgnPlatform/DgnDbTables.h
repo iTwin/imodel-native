@@ -141,7 +141,7 @@ public:
     Utf8StringCR GetValue() const {return m_value;}
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
     //! Get the namespace for this Code
-    Utf8StringCR GetNameSpace() const {return m_nameSpace;}
+    Utf8StringCR GetNamespace() const {return m_nameSpace;}
     //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
     DgnAuthorityId GetAuthority() const {return m_authority;}
     void RelocateToDestinationDb(DgnImportContext&);
@@ -263,7 +263,7 @@ public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
             DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-            DGNPLATFORM_EXPORT Utf8CP GetCodeNameSpace() const;
+            DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;

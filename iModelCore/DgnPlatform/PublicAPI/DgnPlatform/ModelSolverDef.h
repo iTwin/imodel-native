@@ -43,7 +43,7 @@ struct ModelSolverDef
             Type=1,         //!< fixed for all instances of a given type
             Instance=2      //!< can vary per instance
             };
-        private:
+      private:
         Scope   m_scope;
         Utf8String m_name;
         ECN::ECValue m_value;
@@ -52,9 +52,10 @@ struct ModelSolverDef
         Json::Value ToJson() const;
         //! Deserialize a Parameter from a stored JSON object
         explicit Parameter(Json::Value const&);
-        public:
+      public:
         //! Construct a new Parameter
         DGNPLATFORM_EXPORT Parameter(Utf8CP n, Scope s, ECN::ECValueCR v);
+        bool operator==(Parameter const& rhs) const {return m_scope == rhs.m_scope && m_name == rhs.m_name && m_value.Equals(rhs.m_value);}
         //! Get the scope of this parameter
         Scope GetScope() const {return m_scope;}
         //! Get the name of this parameter
@@ -78,6 +79,8 @@ struct ModelSolverDef
         explicit ParameterSet(bvector<Parameter> const& p) : m_parameters(p) {;}
 
         ParameterSet& operator=(ParameterSet const& rhs) {if (&rhs != this) m_parameters = rhs.m_parameters; return *this;}
+
+        bool operator==(ParameterSet const& rhs) const {return m_parameters == rhs.m_parameters;}
 
         DGNPLATFORM_EXPORT Json::Value ToJson() const;
 
