@@ -1378,7 +1378,7 @@ void PerformanceElementsCRUDTestFixture::ElementApiSelectTime(Utf8CP className, 
     WPrintfString dbName (L"ElementApiSelect%ls_%d.idgndb", wClassName.c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
     StopWatch timer (true);
     for (uint64_t i = 0; i < opCount; i++)
         {
@@ -1399,7 +1399,7 @@ void PerformanceElementsCRUDTestFixture::ElementApiUpdateTime(Utf8CP className, 
     WPrintfString dbName (L"ElementApiUpdate%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
     for (uint64_t i = 0; i < opCount; i++)
@@ -1425,13 +1425,15 @@ void PerformanceElementsCRUDTestFixture::ElementApiDeleteTime(Utf8CP className, 
     WPrintfString dbName(L"ElementApiDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName, className, initialInstanceCount);
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer(true);
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(s_firstElementId + i*elementIdIncrement);
+        STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - START");
         const DgnDbStatus stat = m_db->Elements().Delete(id);
+        STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - END");
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
     timer.Stop();
@@ -1481,7 +1483,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, bool 
     GetSelectECSql (className, selectECSql, omitClassIdFilter);
     //printf ("\n Select ECSql %s : %s \n", className, selectECSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     ECSqlStatement stmt;
 
@@ -1516,7 +1518,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool 
     GetUpdateECSql (className, updateECSql, omitClassIdFilter);
     //printf ("\n Update ECSql %s : %s \n", className, updateECSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, updateECSql.c_str ()));
@@ -1548,7 +1550,9 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool 
     GetDeleteECSql (className, deleteECSql, omitClassIdFilter);
     //printf ("\n Delete ECSql %s : %s \n", className, deleteECSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECSQL DELETE - START");
 
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, deleteECSql.c_str ()));
@@ -1562,6 +1566,8 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool 
         stmt.ClearBindings ();
         }
     timer.Stop ();
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECSQL DELETE - END");
 
     LogTiming(timer, "ECSQL DELETE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
@@ -1612,7 +1618,7 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool as
     GetSelectSql (className, selectSql, asTranslatedByECSql, omitClassIdFilter);
     //printf ("\n Select Sql %s : %s \n", className, selectSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*m_db, selectSql.c_str ()));
@@ -1643,7 +1649,7 @@ void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, bool om
     GetUpdateSql (className, updateSql, omitClassIdFilter);
     //printf ("\n Update Sql %s : %s \n", className, updateSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*m_db, updateSql.c_str ()));
@@ -1674,7 +1680,9 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, bool om
     GetDeleteSql (className, deleteSql, omitClassIdFilter);
     //printf ("\n Delete Sql %s : %s \n", className, deleteSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("SQLite DELETE - START");
 
     StopWatch timer (true);
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*m_db, deleteSql.c_str ()));
@@ -1688,6 +1696,8 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, bool om
         stmt.ClearBindings ();
         }
     timer.Stop ();
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("SQLite DELETE - END");
+
     LogTiming(timer, "SQLite DELETE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
 
