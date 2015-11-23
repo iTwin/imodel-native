@@ -93,7 +93,6 @@ enum class OpCode : uint32_t
     {
     Invalid             = 0,
     Header              = 1,    //!< Required to be first opcode
-    BeginSubCategory    = 2,    //!< Mark start of geometry having same sub-category and transform
     GeomPartInstance    = 3,    //!< Draw referenced geometry part
     BasicSymbology      = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
     PointPrimitive      = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
@@ -109,7 +108,6 @@ enum class OpCode : uint32_t
     BRepPolyfaceExact   = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
     BRepEdges           = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
     BRepFaceIso         = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
-    LineStyle           = 18,   //!< Raster/vector line styles
     AreaFill            = 19,   //!< Opaque and gradient fills
     Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
     Material            = 21,   //!< Render material
@@ -184,9 +182,8 @@ struct Writer
     void Append(MSBsplineSurfaceCR);
     void Append(ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
     void Append(ElementGeometryCR);
-    void Append(DgnSubCategoryId, TransformCP geomToElem); // geomToElem should only be non-null when inserting a GeomPart...
-    void Append(DgnGeomPartId);
-    void Append(ElemDisplayParamsCR); // Adds multiple op-codes...
+    void Append(DgnGeomPartId, TransformCP geomToElem);
+    void Append(ElemDisplayParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
     void Append(TextStringCR);
 
     }; // Writer;
@@ -213,8 +210,7 @@ struct Reader
     bool Get(Operation const&, MSBsplineSurfacePtr&) const;
     bool Get(Operation const&, ISolidKernelEntityPtr&) const;
     bool Get(Operation const&, ElementGeometryPtr&) const;
-    bool Get(Operation const&, DgnSubCategoryId&, TransformR) const;
-    bool Get(Operation const&, DgnGeomPartId&) const;
+    bool Get(Operation const&, DgnGeomPartId&, TransformR) const;
     bool Get(Operation const&, ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
     bool Get(Operation const&, TextStringR) const;
 
@@ -421,7 +417,6 @@ bool                    m_is3d;
 Placement3d             m_placement3d;
 Placement2d             m_placement2d;
 DgnDbR                  m_dgnDb;
-DgnSubCategoryId        m_prevSubCategory;
 ElemDisplayParams       m_elParams;
 ElementGeomIO::Writer   m_writer;
 
@@ -432,7 +427,7 @@ ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d);
 bool ConvertToLocal (ElementGeometryR);
 bool AppendWorld (ElementGeometryR);
 bool AppendLocal (ElementGeometryCR);
-void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement = nullptr);
+void OnNewGeom (DRange3dCR localRange);
 
 public:
 
@@ -459,8 +454,9 @@ DGNPLATFORM_EXPORT bool Append (TextStringCR);
 DGNPLATFORM_EXPORT bool Append (TextAnnotationCR);
 
 DGNPLATFORM_EXPORT void SetUseCurrentDisplayParams(bool newValue);
+
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeomStreamCR, DgnDbR db); //!< @private
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeomStreamCR, DgnDbR db, bool ignoreSymbology = false); //!< @private
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
