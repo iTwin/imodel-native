@@ -3831,8 +3831,10 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
     if (!geomToElement.IsIdentity())
         geomToElement.Multiply(localRange, localRange);
 
+    m_prevSubCategory.Invalidate(); // Ensure that a symbology reset and transform push is recorded...
     OnNewGeom(localRange, &geomToElement);
     m_writer.Append(geomPartId);
+    m_prevSubCategory.Invalidate(); // Ensure that a symbology reset and transform pop is recorded if a non-GeomPart is added next...
 
     return true;
     }
@@ -3860,8 +3862,8 @@ void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomTo
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
 
-    // Establish "geometry group" boundaries at sub-category and GeomPart changes...geomToElement should only be non-null when inserting a GeomPart..
-    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || nullptr != geomToElement))
+    // Establish "geometry group" boundaries at sub-category and GeomPart changes...
+    if (!m_prevSubCategory.IsValid() || m_prevSubCategory != m_elParams.GetSubCategoryId())
         {
         m_writer.Append(m_elParams.GetSubCategoryId(), geomToElement);
         m_prevSubCategory = m_elParams.GetSubCategoryId();

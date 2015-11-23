@@ -1,26 +1,27 @@
-declare module BentleyApi.Dgn {
-
+declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
+{
     //! A wrapper for BentleyApi::DPoint3d
-    class JsDPoint3d implements IDisposable {
+    class DPoint3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ 
         constructor(x: cxx_double, y: cxx_double, z: cxx_double);
         X: cxx_double;
         Y: cxx_double;
         Z: cxx_double;
 
-        Clone () : JsDPoint3dP;
+        Clone () : DPoint3dP;
 
-        Interpolate (fraction : cxx_double, right : JsDPoint3dP) : JsDPoint3dP;
-        Plus (vector : JsDVector3dP) : JsDPoint3dP;
-        Minus (vector : JsDVector3dP) : JsDPoint3dP;
-        PlusScaled (vector : JsDVector3dP, scalar : cxx_double) : JsDPoint3dP;
-        Plus2Scaled (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double) : JsDPoint3dP;
-        Plus3Scaled (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double, vectorC : JsDVector3dP, scalarC : cxx_double) : JsDPoint3dP;
+        Interpolate (fraction : cxx_double, right : DPoint3dP) : DPoint3dP;
+        Plus (vector : DVector3dP) : DPoint3dP;
+        Minus (vector : DVector3dP) : DPoint3dP;
+        PlusScaled (vector : DVector3dP, scalar : cxx_double) : DPoint3dP;
+        Plus2Scaled (vectorA : DVector3dP, scalarA : cxx_double, vectorB : DVector3dP, scalarB : cxx_double) : DPoint3dP;
+        Plus3Scaled (vectorA : DVector3dP, scalarA : cxx_double, vectorB : DVector3dP, scalarB : cxx_double, vectorC : DVector3dP, scalarC : cxx_double) : DPoint3dP;
 
-        VectorTo(other : JsDPoint3dP): JsDVector3dP;
+        VectorTo(other : DPoint3dP): DVector3dP;
 
-        Distance(other: JsDPoint3dP): cxx_double;
-        DistanceSquared (other : JsDPoint3dP) : cxx_double;        
-        MaxAbsDiff(vectorB: JsDPoint3dP): cxx_double;
+        Distance(other: DPoint3dP): cxx_double;
+        DistanceSquared (other : DPoint3dP) : cxx_double;        
+        MaxAbsDiff(vectorB: DPoint3dP): cxx_double;
         MaxAbs (): cxx_double;
 
         OnDispose(): void;
@@ -28,35 +29,37 @@ declare module BentleyApi.Dgn {
     }
 
     //! A wrapper for BentleyApi::DPoint2d
-    class JsDPoint2d implements IDisposable {
+    class DPoint2d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDPoint2d ***/ 
         constructor(x: cxx_double, y: cxx_double);
-        Clone () : JsDPoint2dP;
+        Clone () : DPoint2dP;
         X: cxx_double;
         Y: cxx_double;
         OnDispose(): void;
         Dispose(): void;
 
-        Interpolate(fraction: cxx_double, right: JsDPoint2dP): JsDPoint2dP;
-        Plus(vector: JsDVector2dP): JsDPoint2dP;
-        Minus(vector: JsDVector2dP): JsDPoint2dP;
-        PlusScaled(vector: JsDVector2dP, scalar: cxx_double): JsDPoint2dP;
-        Plus2Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double): JsDPoint2dP;
-        Plus3Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double, vectorC: JsDVector2dP, scalarC: cxx_double): JsDPoint2dP;
+        Interpolate(fraction: cxx_double, right: DPoint2dP): DPoint2dP;
+        Plus(vector: DVector2dP): DPoint2dP;
+        Minus(vector: DVector2dP): DPoint2dP;
+        PlusScaled(vector: DVector2dP, scalar: cxx_double): DPoint2dP;
+        Plus2Scaled(vectorA: DVector2dP, scalarA: cxx_double, vectorB: DVector2dP, scalarB: cxx_double): DPoint2dP;
+        Plus3Scaled(vectorA: DVector2dP, scalarA: cxx_double, vectorB: DVector2dP, scalarB: cxx_double, vectorC: DVector2dP, scalarC: cxx_double): DPoint2dP;
 
-        VectorTo (other: JsDPoint2dP) : JsDVector2dP;
+        VectorTo (other: DPoint2dP) : DVector2dP;
 
-        Distance(other: JsDPoint2dP): cxx_double;
-        DistanceSquared(other: JsDPoint2dP): cxx_double;        
-        MaxAbsDiff(vectorB: JsDPoint2dP): cxx_double;
+        Distance(other: DPoint2dP): cxx_double;
+        DistanceSquared(other: DPoint2dP): cxx_double;        
+        MaxAbsDiff(vectorB: DPoint2dP): cxx_double;
         MaxAbs(): cxx_double;
 
     }
 
 
-    type JsDPoint3dP = cxx_pointer<JsDPoint3d>;
-    type JsDPoint2dP = cxx_pointer<JsDPoint2d>;
+    type DPoint3dP = cxx_pointer<DPoint3d>;
+    type DPoint2dP = cxx_pointer<DPoint2d>;
     //! A wrapper for BentleyApi::DVector3d
-    class JsDVector3d implements IDisposable {
+    class DVector3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDVector3d ***/ 
         constructor(x: cxx_double, y: cxx_double, z: cxx_double);
         X: cxx_double;
         Y: cxx_double;
@@ -67,78 +70,79 @@ declare module BentleyApi.Dgn {
 
 
 
-    Normalize () : JsDVector3dP;
+    Normalize () : DVector3dP;
     
-    Clone () : JsDVector3dP;
+    Clone () : DVector3dP;
 
     //Scaled vector by -1
-    Negate () : JsDVector3dP;
+    Negate () : DVector3dP;
         
-    UnitVectorTo(target: JsDVector3dP) : JsDVector3dP;
+    UnitVectorTo(target: DVector3dP) : DVector3dP;
 
     //return a vector same length as source but rotate 90 degrees CCW
-    FromCCWPerpendicularXY (source : JsDVector3dP) : JsDVector3dP;  
-    Rotate90Towards (target : JsDVector3dP) : JsDVector3dP;
-    Rotate90Around (axis : JsDVector3dP) : JsDVector3dP;
+    FromCCWPerpendicularXY (source : DVector3dP) : DVector3dP;  
+    Rotate90Towards (target : DVector3dP) : DVector3dP;
+    Rotate90Around (axis : DVector3dP) : DVector3dP;
 
 
-    static CreateXYAngleAndMagnitude(angle: JsAngleP, magnitude: cxx_double): JsDVector3dP;
+    static CreateXYAngleAndMagnitude(angle: AngleP, magnitude: cxx_double): DVector3dP;
     // Adding vectors
-    Interpolate(fraction: cxx_double, right: JsDVector3dP): JsDVector3dP;
-    Plus(vector: JsDVector3dP): JsDVector3dP;
-    Minus(vector: JsDVector3dP): JsDVector3dP;
-    PlusScaled(vector: JsDVector3dP, scalar: cxx_double): JsDVector3dP;
-    Plus2Scaled(vectorA: JsDVector3dP, scalarA: cxx_double, vectorB: JsDVector3dP, scalarB: cxx_double): JsDVector3dP;
-    Plus3Scaled(vectorA: JsDVector3dP, scalarA: cxx_double, vectorB: JsDVector3dP, scalarB: cxx_double, vectorC: JsDVector3dP, scalarC: cxx_double): JsDVector3dP;
+    Interpolate(fraction: cxx_double, right: DVector3dP): DVector3dP;
+    Plus(vector: DVector3dP): DVector3dP;
+    Minus(vector: DVector3dP): DVector3dP;
+    PlusScaled(vector: DVector3dP, scalar: cxx_double): DVector3dP;
+    Plus2Scaled(vectorA: DVector3dP, scalarA: cxx_double, vectorB: DVector3dP, scalarB: cxx_double): DVector3dP;
+    Plus3Scaled(vectorA: DVector3dP, scalarA: cxx_double, vectorB: DVector3dP, scalarB: cxx_double, vectorC: DVector3dP, scalarC: cxx_double): DVector3dP;
 
-    VectorTo(other: JsDVector3dP): JsDVector3dP;
+    VectorTo(other: DVector3dP): DVector3dP;
 
-    Scale (scale : cxx_double) : JsDVector3dP;
+    Scale (scale : cxx_double) : DVector3dP;
 
-    ScaleToLength(scale: cxx_double): JsDVector3dP;
-    UnitCrossProduct(vectorB: JsDVector3dP): JsDVector3dP;
-    SizedCrossProduct (vectorA : JsDVector3dP, vectorB : JsDVector3dP, productLength : cxx_double) : JsDVector3dP;
-    UnitPerpendicularXY(vector: JsDVector3dP): JsDVector3dP;
-    UnitPerpendicular(): JsDVector3dP;
+    ScaleToLength(scale: cxx_double): DVector3dP;
+    UnitCrossProduct(vectorB: DVector3dP): DVector3dP;
+    SizedCrossProduct (vectorA : DVector3dP, vectorB : DVector3dP, productLength : cxx_double) : DVector3dP;
+    UnitPerpendicularXY(vector: DVector3dP): DVector3dP;
+    UnitPerpendicular(): DVector3dP;
 
-    RotateXY(angle: cxx_double): JsDVector3dP;
+    RotateXY(angle: cxx_double): DVector3dP;
 
     // products
-    CrossProductMagnitude (vectorB : JsDVector3dP) : cxx_double;
-    DotProduct (vectorB : JsDVector3dP) : cxx_double;
-    DotProductXY (vectorB : JsDVector3dP) : cxx_double;
-    CrossProductXY (vectorB : JsDVector3dP) : cxx_double;
-    TripleProduct(vectorB: JsDVector3dP, vectorC: JsDVector3dP): cxx_double;
-    CrossProduct(vectorB: JsDVector3dP): JsDVector3dP;
+    CrossProductMagnitude (vectorB : DVector3dP) : cxx_double;
+    DotProduct (vectorB : DVector3dP) : cxx_double;
+    DotProductXY (vectorB : DVector3dP) : cxx_double;
+    CrossProductXY (vectorB : DVector3dP) : cxx_double;
+    TripleProduct(vectorB: DVector3dP, vectorC: DVector3dP): cxx_double;
+    CrossProduct(vectorB: DVector3dP): DVector3dP;
 
 
     Magnitude () : cxx_double;
     MagnitudeSquared () : cxx_double;
-    Distance (vectorB : JsDVector3dP) : cxx_double;
-    DistanceSquared (vectorB : JsDVector3dP) : cxx_double;
+    Distance (vectorB : DVector3dP) : cxx_double;
+    DistanceSquared (vectorB : DVector3dP) : cxx_double;
     MaxAbs () : cxx_double;
-    MaxAbsDiff(vectorB: JsDVector3dP): cxx_double;
+    MaxAbsDiff(vectorB: DVector3dP): cxx_double;
 
 
     // angles
-    AngleTo (vectorB : JsDVector3dP) : JsAngleP;
-    AngleToXY (vectorB : JsDVector3dP) : JsAngleP;
-    SmallerUnorientedAngleTo (vectorB : JsDVector3dP) : JsAngleP;
-    SignedAngleTo (vectorB : JsDVector3dP, upVector : JsDVector3dP) : JsAngleP;
-    PlanarAngleTo (vectorB : JsDVector3dP, planeNormal : JsDVector3dP) : JsAngleP;
+    AngleTo (vectorB : DVector3dP) : AngleP;
+    AngleToXY (vectorB : DVector3dP) : AngleP;
+    SmallerUnorientedAngleTo (vectorB : DVector3dP) : AngleP;
+    SignedAngleTo (vectorB : DVector3dP, upVector : DVector3dP) : AngleP;
+    PlanarAngleTo (vectorB : DVector3dP, planeNormal : DVector3dP) : AngleP;
     // sectors
-    IsInSmallerSector(vectorA: JsDVector3dP, vectorB: JsDVector3dP): cxx_bool;
-    IsInCCWSector (vectorA : JsDVector3dP, vectorB : JsDVector3dP, upVector : JsDVector3dP) : cxx_bool;
-    IsParallelTo (vectorB : JsDVector3dP) : cxx_bool;
-    IsPerpendicularTo (vectorB : JsDVector3dP) : cxx_bool;
+    IsInSmallerSector(vectorA: DVector3dP, vectorB: DVector3dP): cxx_bool;
+    IsInCCWSector (vectorA : DVector3dP, vectorB : DVector3dP, upVector : DVector3dP) : cxx_bool;
+    IsParallelTo (vectorB : DVector3dP) : cxx_bool;
+    IsPerpendicularTo (vectorB : DVector3dP) : cxx_bool;
 
     }
 
-    type JsDVector3dP = cxx_pointer<JsDVector3d>;
+    type DVector3dP = cxx_pointer<DVector3d>;
 
     //! A wrapper for BentleyApi::DVector2d
-    class JsDVector2d implements IDisposable
+    class DVector2d implements IDisposable
     {
+        /*** NATIVE_TYPE_NAME = JsDVector2d ***/ 
         constructor(x: cxx_double, y: cxx_double);
         X: cxx_double;
         Y: cxx_double;
@@ -147,33 +151,34 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
 
 
-        Clone(): JsDVector2dP;
+        Clone(): DVector2dP;
 
-        Interpolate(fraction: cxx_double, right: JsDVector2dP): JsDVector2dP;
-        Plus(vector: JsDVector2dP): JsDVector2dP;
-        Minus(vector: JsDVector2dP): JsDVector2dP;
-        PlusScaled(vector: JsDVector2dP, scalar: cxx_double): JsDVector2dP;
-        Plus2Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double): JsDVector2dP;
-        Plus3Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double, vectorC: JsDVector2dP, scalarC: cxx_double): JsDVector2dP;
+        Interpolate(fraction: cxx_double, right: DVector2dP): DVector2dP;
+        Plus(vector: DVector2dP): DVector2dP;
+        Minus(vector: DVector2dP): DVector2dP;
+        PlusScaled(vector: DVector2dP, scalar: cxx_double): DVector2dP;
+        Plus2Scaled(vectorA: DVector2dP, scalarA: cxx_double, vectorB: DVector2dP, scalarB: cxx_double): DVector2dP;
+        Plus3Scaled(vectorA: DVector2dP, scalarA: cxx_double, vectorB: DVector2dP, scalarB: cxx_double, vectorC: DVector2dP, scalarC: cxx_double): DVector2dP;
 
-        VectorTo(other: JsDVector2dP ): JsDVector2dP;
+        VectorTo(other: DVector2dP ): DVector2dP;
 
         Magnitude(): cxx_double;
         MagnitudeSquared(): cxx_double;
-        Distance(vectorB: JsDVector2dP): cxx_double;
-        DistanceSquared(vectorB: JsDVector2dP): cxx_double;
+        Distance(vectorB: DVector2dP): cxx_double;
+        DistanceSquared(vectorB: DVector2dP): cxx_double;
         MaxAbs(): cxx_double;
-        MaxAbsDiff(vectorB: JsDVector2dP): cxx_double;
+        MaxAbsDiff(vectorB: DVector2dP): cxx_double;
 
     }
-    type JsDVector2dP = cxx_pointer<JsDVector2d>;
+    type DVector2dP = cxx_pointer<DVector2d>;
 
 
 
     //! A wrapper for BentleyApi::YawPitchRollAngles
-    class JsYawPitchRollAngles implements IDisposable {
+    class YawPitchRollAngles implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ 
         constructor(yaw: cxx_double, pitch: cxx_double, roll: cxx_double);
-        Clone () : JsYawPitchRollAnglesP;
+        Clone () : YawPitchRollAnglesP;
         YawDegrees: cxx_double;
         PitchDegrees: cxx_double;
         RollDegrees: cxx_double;
@@ -181,30 +186,32 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
 
-    type JsYawPitchRollAnglesP = cxx_pointer<JsYawPitchRollAngles>;
+    type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
 
     
     //! A strongly typed angle, with explicitly named access to degrees and radians
-    class JsAngle implements IDisposable {
+    class Angle implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsAngle ***/ 
 
-        Clone () : JsAngleP;        
-        static CreateDegrees (value : cxx_double) : JsAngleP;
-        static CreateRadians (value : cxx_double) : JsAngleP;
+        Clone () : AngleP;        
+        static CreateDegrees (value : cxx_double) : AngleP;
+        static CreateRadians (value : cxx_double) : AngleP;
         Radians : cxx_double;
         Degrees : cxx_double;
         OnDispose(): void;
         Dispose(): void;
     }
-    type JsAngleP = cxx_pointer<JsAngle>;
+    type AngleP = cxx_pointer<Angle>;
 
     //! A wrapper for BentleyApi::DEllipse3d
-    class JsDRange3d implements IDisposable {
+    class DRange3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDRange3d ***/ 
         //! constructor for empty range.
         constructor();
-        Clone () : JsDRange3dP;
+        Clone () : DRange3dP;
         
-        Low: JsDPoint3dP;
-        High: JsDPoint3dP;
+        Low: DPoint3dP;
+        High: DPoint3dP;
 
 
         IsNull(): cxx_bool;
@@ -220,24 +227,24 @@ declare module BentleyApi.Dgn {
         IsAlmostZeroZ(): cxx_bool;
 
         ContainsXYZ(x: cxx_double, y: cxx_double, z: cxx_double): cxx_bool;
-        ContainsPoint(point: JsDPoint3dP): cxx_bool;
-        ContainsPointPointXY(point: JsDPoint3dP): cxx_bool;
-        ContainsRange(other: JsDRange3dP): cxx_bool;
+        ContainsPoint(point: DPoint3dP): cxx_bool;
+        ContainsPointPointXY(point: DPoint3dP): cxx_bool;
+        ContainsRange(other: DRange3dP): cxx_bool;
 
-        IntersectsRange(other: JsDRange3dP): cxx_bool;
+        IntersectsRange(other: DRange3dP): cxx_bool;
 
         // policy: only return distances (squared : no -- sqrt time will not show up in ts)
-        DistanceToPoint(point: JsDPoint3dP): cxx_double;
-        DistanceToRange(other: JsDRange3dP): cxx_double;
+        DistanceToPoint(point: DPoint3dP): cxx_double;
+        DistanceToRange(other: DRange3dP): cxx_double;
 
 
         ExtendAllDirections(a: cxx_double): void;
         ExtendXYZ(x: cxx_double, y: cxx_double, z: cxx_double): void;
-        ExtendPoint(point: JsDPoint3dP): void;
-        ExtendRange(range: JsDRange3dP): void;
+        ExtendPoint(point: DPoint3dP): void;
+        ExtendRange(range: DRange3dP): void;
 
-        Intersect(other: JsDRange3dP): JsDRange3dP;
-        Union(other: JsDRange3dP): JsDRange3dP;
+        Intersect(other: DRange3dP): DRange3dP;
+        Union(other: DRange3dP): DRange3dP;
 
         Init(): void;
 
@@ -245,92 +252,97 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
 
-    type JsDRange3dP = cxx_pointer<JsDRange3d>;
+    type DRange3dP = cxx_pointer<DRange3d>;
 
 
     //! A wrapper for BentleyApi::DEllipse3d
-    class JsDEllipse3d implements IDisposable {
-        constructor (
-                center      : JsDPoint3dP,
-                vector0     : JsDVector3dP,
-                vector90    : JsDVector3dP,
-                startAngle  : JsAngleP,
-                sweepAngle  : JsAngleP
+    class DEllipse3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDEllipse3d ***/ 
+        constructor(
+                center      : DPoint3dP,
+                vector0     : DVector3dP,
+                vector90    : DVector3dP,
+                startAngle  : AngleP,
+                sweepAngle  : AngleP
                 );
-        Clone () : JsDEllipse3dP;
+        Clone () : DEllipse3dP;
 
-        PointAtFraction (f : cxx_double) : JsDPoint3dP;                
+        PointAtFraction (f : cxx_double) : DPoint3dP;                
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type JsDEllipse3dP = cxx_pointer<JsDEllipse3d>;
+    type DEllipse3dP = cxx_pointer<DEllipse3d>;
 
     //! A wrapper for BentleyApi::DSegment3d
-    class JsDSegment3d implements IDisposable {
-        Clone () : JsDSegment3dP;
+    class DSegment3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDSegment3d ***/ 
+        Clone(): DSegment3dP;
     
         constructor (
-                startPoint : JsDPoint3dP,
-                endPoint   : JsDPoint3dP
+                startPoint : DPoint3dP,
+                endPoint   : DPoint3dP
                 );
-        PointAtFraction (f : cxx_double) : JsDPoint3dP;                
+        PointAtFraction (f : cxx_double) : DPoint3dP;                
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type JsDSegment3dP = cxx_pointer<JsDSegment3d>;
+    type DSegment3dP = cxx_pointer<DSegment3d>;
 
 
     //! A wrapper for BentleyApi::DRay3d
-    class JsDRay3d implements IDisposable {
-        Clone () : JsDRay3dP;
+    class DRay3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDRay3d ***/ 
+        Clone(): DRay3dP;
         constructor (
-                Origin : JsDPoint3dP,
-                Direction   : JsDVector3dP
+                Origin : DPoint3dP,
+                Direction   : DVector3dP
                 );
-        PointAtFraction (f : cxx_double) : JsDPoint3dP;                
-        Origin: JsDPoint3dP;
-        Direction: JsDVector3dP;
+        PointAtFraction (f : cxx_double) : DPoint3dP;                
+        Origin: DPoint3dP;
+        Direction: DVector3dP;
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type JsDRay3dP = cxx_pointer<JsDRay3d>;
+    type DRay3dP = cxx_pointer<DRay3d>;
 
 
-    type JsDPoint3dArrayP = cxx_pointer<JsDPoint3dArray>;
+    type DPoint3dArrayP = cxx_pointer<DPoint3dArray>;
 
     //! A wrapper for BentleyApi::DPoint3dArray
-    class JsDPoint3dArray implements IDisposable {
-        Clone () : JsDPoint3dArrayP;
+    class DPoint3dArray implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDPoint3dArray ***/ 
+        Clone(): DPoint3dArrayP;
         constructor();
 
-        Add(value: JsDPoint3dP): void;
+        Add(value: DPoint3dP): void;
 
         Size(): cxx_double;
         Clear (): void;
-        Append(other: JsDPoint3dArrayP): void;
+        Append(other: DPoint3dArrayP): void;
 
-        At(index: cxx_double): JsDPoint3dP;
+        At(index: cxx_double): DPoint3dP;
 
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type JsDoubleArrayP = cxx_pointer<JsDoubleArray>;
+    type DoubleArrayP = cxx_pointer<DoubleArray>;
 
     //! A wrapper for BentleyApi::DoubleArray
-    class JsDoubleArray implements IDisposable
+    class DoubleArray implements IDisposable
     {
-        Clone(): JsDoubleArrayP;
+        /*** NATIVE_TYPE_NAME = JsDoubleArray ***/ 
+        Clone(): DoubleArrayP;
         constructor();
 
         Add(value: cxx_double): void;
 
         Size(): cxx_double;
         Clear(): void;
-        Append(other: JsDoubleArrayP): void;
+        Append(other: DoubleArrayP): void;
 
         At(index: cxx_double): cxx_double;
 
@@ -339,10 +351,11 @@ declare module BentleyApi.Dgn {
     }
 
 
-    type JsRotMatrixP = cxx_pointer<JsRotMatrix>;
+    type RotMatrixP = cxx_pointer<RotMatrix>;
 
     //! A wrapper for BentleyApi::JsRotMatrix
-    class JsRotMatrix implements IDisposable {
+    class RotMatrix implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsRotMatrix ***/ 
         constructor();
         constructor
             (
@@ -350,46 +363,46 @@ declare module BentleyApi.Dgn {
             ayx : cxx_double, ayy : cxx_double, ayz : cxx_double,
             azx : cxx_double, azy : cxx_double, azz : cxx_double
             );
-        static CreateRotationAroundVector(axis: JsDVector3dP, angle: JsAngleP): JsRotMatrixP;
-        static Create90DegreeRotationAroundVector(axis: JsDVector3dP): JsRotMatrixP;
-        static CreateIdentity () : JsRotMatrixP;
-        static CreateUniformScale (scaleFactor : cxx_double) : JsRotMatrixP;
+        static CreateRotationAroundVector(axis: DVector3dP, angle: AngleP): RotMatrixP;
+        static Create90DegreeRotationAroundVector(axis: DVector3dP): RotMatrixP;
+        static CreateIdentity () : RotMatrixP;
+        static CreateUniformScale (scaleFactor : cxx_double) : RotMatrixP;
         static CreateRowValues(x00: cxx_double, x01: cxx_double, x02: cxx_double,
             x10: cxx_double, x11: cxx_double, x12: cxx_double,
-            x20: cxx_double, x21: cxx_double, x22: cxx_double): JsRotMatrixP;
+            x20: cxx_double, x21: cxx_double, x22: cxx_double): RotMatrixP;
 
-        Clone () : JsRotMatrixP;
-        ColumnX : JsDVector3dP;        
-        ColumnY : JsDVector3dP;        
-        ColumnZ : JsDVector3dP;        
+        Clone () : RotMatrixP;
+        ColumnX : DVector3dP;        
+        ColumnY : DVector3dP;        
+        ColumnZ : DVector3dP;        
 
-        RowX: JsDVector3dP;        
-        RowY: JsDVector3dP;        
-        RowZ: JsDVector3dP;        
+        RowX: DVector3dP;        
+        RowY: DVector3dP;        
+        RowZ: DVector3dP;        
 
-        static CreateScale (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : JsRotMatrixP;
-        static CreateColumns (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
-        static CreateRows (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
+        static CreateScale (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : RotMatrixP;
+        static CreateColumns (vectorU : DVector3dP, vectorV : DVector3dP, vectorZ : DVector3dP) : RotMatrixP;
+        static CreateRows (vectorU : DVector3dP, vectorV : DVector3dP, vectorZ : DVector3dP) : RotMatrixP;
 
         
-        static CreateDirectionalScale (direction : JsDVector3dP, scale : cxx_double) : JsRotMatrixP;
+        static CreateDirectionalScale (direction : DVector3dP, scale : cxx_double) : RotMatrixP;
         // TODO: square and normalize !!!
         
-        static Create1Vector (direction : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
-        static CreateFromXYVectors (vectorX : JsDVector3dP, vectorY : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
-        MultiplyVector (vector : JsDVector3dP) : JsDVector3dP;        
-        MultiplyTransposeVector (vector : JsDVector3dP) : JsDVector3dP;        
+        static Create1Vector (direction : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
+        static CreateFromXYVectors (vectorX : DVector3dP, vectorY : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
+        MultiplyVector (vector : DVector3dP) : DVector3dP;        
+        MultiplyTransposeVector (vector : DVector3dP) : DVector3dP;        
 
-        MultiplyXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : DVector3dP;        
             
-        MultiplyTransposeXYZ ( x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyTransposeXYZ ( x : cxx_double, y : cxx_double, z : cxx_double) : DVector3dP;        
 
-        Solve (rightHandSide : JsDVector3dP) : JsDVector3dP;
+        Solve (rightHandSide : DVector3dP) : DVector3dP;
 
-         MultiplyMatrix (other : JsRotMatrixP) : JsRotMatrixP;
+         MultiplyMatrix (other : RotMatrixP) : RotMatrixP;
 
-         Transpose () : JsRotMatrixP;
-         Inverse () : JsRotMatrixP;
+         Transpose () : RotMatrixP;
+         Inverse () : RotMatrixP;
         At(ai : cxx_double, aj : cxx_double) : cxx_double;
         SetAt (ai : cxx_double, aj : cxx_double, value : cxx_double) : void;
             
@@ -402,7 +415,7 @@ declare module BentleyApi.Dgn {
         SumSquares () : cxx_double;
         SumDiagonalSquares () : cxx_double;
         MaxAbs () : cxx_double;
-        MaxDiff (other : JsRotMatrixP) : cxx_double;
+        MaxDiff (other : RotMatrixP) : cxx_double;
         
         IsIdentity () : cxx_bool;
         IsDiagonal () : cxx_bool;
@@ -415,9 +428,10 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
 
-    type JsTransformP = cxx_pointer<JsTransform>;
+    type TransformP = cxx_pointer<Transform>;
     //! A wrapper for BentleyApi::Transform
-    class JsTransform implements IDisposable {
+    class Transform implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsTransform ***/ 
         constructor();
         constructor
             (
@@ -427,69 +441,69 @@ declare module BentleyApi.Dgn {
             );
 
 
-        Clone () : JsTransformP;
+        Clone () : TransformP;
 
 
-        static CreateIdentity () : JsTransformP;
-        static CreateMatrix (matrix : JsRotMatrixP) : JsTransformP;
-        static CreateMatrixAndTranslation (matrix : JsRotMatrixP, translation : JsDPoint3dP) : JsTransformP;
-        static CreateMatrixAndFixedPoint (matrix : JsRotMatrixP, fixedPoint : JsDPoint3dP) : JsTransformP;
-        static CreateTranslation (translation : JsDPoint3dP) : JsTransformP;
-        static CreateTranslationXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : JsTransformP;
-        static CreateScaleAroundPoint (fixedPoint : JsDPoint3dP, scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : JsTransformP;
+        static CreateIdentity () : TransformP;
+        static CreateMatrix (matrix : RotMatrixP) : TransformP;
+        static CreateMatrixAndTranslation (matrix : RotMatrixP, translation : DPoint3dP) : TransformP;
+        static CreateMatrixAndFixedPoint (matrix : RotMatrixP, fixedPoint : DPoint3dP) : TransformP;
+        static CreateTranslation (translation : DPoint3dP) : TransformP;
+        static CreateTranslationXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : TransformP;
+        static CreateScaleAroundPoint (fixedPoint : DPoint3dP, scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : TransformP;
 
-        static CreateOriginAndVectors (origin : JsDPoint3dP, xVector : JsDVector3dP, yVector : JsDVector3dP, zVector : JsDVector3dP) : JsTransformP;
+        static CreateOriginAndVectors (origin : DPoint3dP, xVector : DVector3dP, yVector : DVector3dP, zVector : DVector3dP) : TransformP;
 
-        static CreateOriginAnd3TargetPoints (origin : JsDPoint3dP, xPoint : JsDPoint3dP, yPoint : JsDPoint3dP, zPoint : JsDPoint3dP) : JsTransformP;
+        static CreateOriginAnd3TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP, zPoint : DPoint3dP) : TransformP;
 
-        static CreateOriginAnd2TargetPoints (origin : JsDPoint3dP, xPoint : JsDPoint3dP, yPoint : JsDPoint3dP) : JsTransformP;
+        static CreateOriginAnd2TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP) : TransformP;
 
-        static CreateRotationAroundRay (ray : JsDRay3dP, angle : JsAngleP) : JsTransformP;                
+        static CreateRotationAroundRay (ray : DRay3dP, angle : AngleP) : TransformP;                
         
         
-        MultiplyPoint (Point : JsDPoint3dP) : JsDPoint3dP;
+        MultiplyPoint (Point : DPoint3dP) : DPoint3dP;
             
 
-        MultiplyXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : JsDPoint3dP;        
+        MultiplyXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : DPoint3dP;        
             
-        MultiplyMatrixOnly (vector : JsDVector3dP) : JsDVector3dP;        
-        MultiplyTransposeMatrixOnly (vector : JsDVector3dP) : JsDVector3dP;        
+        MultiplyMatrixOnly (vector : DVector3dP) : DVector3dP;        
+        MultiplyTransposeMatrixOnly (vector : DVector3dP) : DVector3dP;        
 
-        MultiplyXYZMatrixOnly (x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyXYZMatrixOnly (x : cxx_double, y : cxx_double, z : cxx_double) : DVector3dP;        
             
-        MultiplyTransposeXYZMatrixOnly (x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyTransposeXYZMatrixOnly (x : cxx_double, y : cxx_double, z : cxx_double) : DVector3dP;        
 
-        Solve (rightHandSide : JsDPoint3dP) : JsDPoint3dP;
+        Solve (rightHandSide : DPoint3dP) : DPoint3dP;
 
-         MultiplyTransform (other : JsTransformP) : JsTransformP;
-         Inverse () : JsTransformP;
-        GetColumnX () : JsDVector3dP;
-        GetColumnY () : JsDVector3dP;
-        GetColumnZ () : JsDVector3dP;
-        GetRowX () : JsDVector3dP;
-        GetRowY () : JsDVector3dP;
-        GetRowZ () : JsDVector3dP;
+         MultiplyTransform (other : TransformP) : TransformP;
+         Inverse () : TransformP;
+        GetColumnX () : DVector3dP;
+        GetColumnY () : DVector3dP;
+        GetColumnZ () : DVector3dP;
+        GetRowX () : DVector3dP;
+        GetRowY () : DVector3dP;
+        GetRowZ () : DVector3dP;
         
-        SetColumnX (value : JsDVector3dP) : void;
-        SetColumnY (value : JsDVector3dP) : void;
-        SetColumnZ (value : JsDVector3dP) : void;
+        SetColumnX (value : DVector3dP) : void;
+        SetColumnY (value : DVector3dP) : void;
+        SetColumnZ (value : DVector3dP) : void;
 
-        SetRowX (value : JsDVector3dP) : void;
-        SetRowY (value : JsDVector3dP) : void;
-        SetRowZ (value : JsDVector3dP) : void;
+        SetRowX (value : DVector3dP) : void;
+        SetRowY (value : DVector3dP) : void;
+        SetRowZ (value : DVector3dP) : void;
 
-        GetMatrix () : JsRotMatrixP;
-        SetMatrix (value : JsRotMatrixP) : void;
+        GetMatrix () : RotMatrixP;
+        SetMatrix (value : RotMatrixP) : void;
 
-        GetTranslation () : JsDPoint3dP;
-        SetTranslation (value : JsDPoint3dP) : void;
+        GetTranslation () : DPoint3dP;
+        SetTranslation (value : DPoint3dP) : void;
         ZeroTranslation () : void;
-        SetFixedPoint (value : JsDPoint3dP) : void;
+        SetFixedPoint (value : DPoint3dP) : void;
         MatrixEntryAt (ai : cxx_double, aj : cxx_double) : cxx_double;
         SetMatrixAt (ai : cxx_double, aj : cxx_double, value : cxx_double) : void;
 
         Determinant () : cxx_double;
-        MaxDiff (other : JsTransformP) : cxx_double;
+        MaxDiff (other : TransformP) : cxx_double;
         MatrixColumnMagnitude (axisIndex : cxx_double) : cxx_double;
         IsIdentity () : cxx_bool;
         IsRigid () : cxx_bool;
@@ -502,68 +516,71 @@ declare module BentleyApi.Dgn {
 
 
     //! A wrapper for a polyface visitor
-    class JsBsplineCurve implements IDisposable, BeJsProjection_SuppressConstructor
+    class BsplineCurve implements IDisposable, BeJsProjection_SuppressConstructor
     {
+        /*** NATIVE_TYPE_NAME = JsBsplineCurve ***/ 
 
         OnDispose(): void;
         Dispose(): void;
         IsPeriodic () : cxx_bool;
-        static CreateFromPoles(xyz: JsDPoint3dArrayP,
-            weights: JsDoubleArrayP,
-            knots : JsDoubleArrayP,
-            order: cxx_double, closed: cxx_bool, preWeighted: cxx_bool): JsBsplineCurveP;
+        static CreateFromPoles(xyz: DPoint3dArrayP,
+            weights: DoubleArrayP,
+            knots : DoubleArrayP,
+            order: cxx_double, closed: cxx_bool, preWeighted: cxx_bool): BsplineCurveP;
     }
 
-    type JsBsplineCurveP = cxx_pointer<JsBsplineCurve>;
+    type BsplineCurveP = cxx_pointer<BsplineCurve>;
 
 
 
-
+    
 //! A wrapper for BentleyApi::JsCurvePrimitive
-class JsCurvePrimitive implements IDisposable
+class CurvePrimitive implements IDisposable
     {
-    Clone () : JsCurvePrimitiveP;
+    /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
+    Clone(): CurvePrimitiveP;
     constructor ();
-    static CreateLineSegment(segment: JsDSegment3dP): JsCurvePrimitiveP;
-    static CreateEllipticArc(arc: JsDEllipse3dP): JsCurvePrimitiveP;
-    static CreateLineString(points: JsDPoint3dArrayP): JsCurvePrimitiveP;
-    static CreateBsplineCurve (curve: JsBsplineCurveP) : JsCurvePrimitiveP;
+    static CreateLineSegment(segment: DSegment3dP): CurvePrimitiveP;
+    static CreateEllipticArc(arc: DEllipse3dP): CurvePrimitiveP;
+    static CreateLineString(points: DPoint3dArrayP): CurvePrimitiveP;
+    static CreateBsplineCurve (curve: BsplineCurveP) : CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
-    PointAtFraction(f: cxx_double): JsDPoint3dP; 
+    PointAtFraction(f: cxx_double): DPoint3dP; 
 
     OnDispose(): void;
     Dispose(): void;
     }
 
-    type JsCurvePrimitiveP = cxx_pointer<JsCurvePrimitive>;
+    type CurvePrimitiveP = cxx_pointer<CurvePrimitive>;
 
 
 //! A wrapper for a polyface mesh !!!
-class JsPolyfaceMesh implements IDisposable
+class PolyfaceMesh implements IDisposable
     {
-    Clone () : JsPolyfaceMeshP;
+    /*** NATIVE_TYPE_NAME = JsPolyfaceMesh ***/ 
+    Clone(): PolyfaceMeshP;
 
     GetTwoSided () : cxx_bool;
 
-    static CreateVariableSizeIndexed() : JsPolyfaceMeshP;
+    static CreateVariableSizeIndexed() : PolyfaceMeshP;
     
-    static CreateFixedIndexed(aNumPerFace : cxx_double) : JsPolyfaceMeshP;
+    static CreateFixedIndexed(aNumPerFace : cxx_double) : PolyfaceMeshP;
 
-    static CreateQuadGrid(numPerRow : cxx_double) : JsPolyfaceMeshP;
+    static CreateQuadGrid(numPerRow : cxx_double) : PolyfaceMeshP;
 
-    static CreateTriangleGrid(numPerRow : cxx_double) : JsPolyfaceMeshP;
+    static CreateTriangleGrid(numPerRow : cxx_double) : PolyfaceMeshP;
 
-    static CreateCoordinateTriangleMesh() : JsPolyfaceMeshP;
+    static CreateCoordinateTriangleMesh() : PolyfaceMeshP;
 
-    static CreateCoordinateQuadMesh() : JsPolyfaceMeshP;
+    static CreateCoordinateQuadMesh() : PolyfaceMeshP;
 
     PolyfaceMeshStyle() : cxx_double;
 
     // Single-value AddXxx methods -- note that Append method on blocked arrays SetActive () : does !!!
-    AddPoint(data : JsDPoint3dP) : void;
+    AddPoint(data : DPoint3dP) : void;
 
-    AddNormal(data : JsDVector3dP) : void;
-    AddParam(data : JsDPoint2dP) : void;
+    AddNormal(data : DVector3dP) : void;
+    AddParam(data : DPoint2dP) : void;
     AddIntColor(aColor : cxx_double) : void;
 
     AddPointIndex(aData : cxx_double) : void;
@@ -573,7 +590,7 @@ class JsPolyfaceMesh implements IDisposable
  
     InspectFaces() : Bentley_BeJsObject<Object>;
 
-    GetRange() : JsDRange3dP;
+    GetRange() : DRange3dP;
 
     GetTightTolerance() : cxx_double;
     GetMediumTolerance() : cxx_double;
@@ -586,26 +603,27 @@ class JsPolyfaceMesh implements IDisposable
     OnDispose(): void;
     Dispose(): void;
     }
-    type JsPolyfaceMeshP = cxx_pointer<JsPolyfaceMesh>;
+    type PolyfaceMeshP = cxx_pointer<PolyfaceMesh>;
 
 
     //! A wrapper for a polyface visitor
-class JsPolyfaceVisitor implements IDisposable
+class PolyfaceVisitor implements IDisposable
     {
-    static CreateVisitor(mesh : JsPolyfaceMeshP, aNumWrap : cxx_double) : JsPolyfaceVisitorP;
+    /*** NATIVE_TYPE_NAME = JsPolyfaceVisitor ***/ 
+    static CreateVisitor(mesh: PolyfaceMeshP, aNumWrap : cxx_double) : PolyfaceVisitorP;
     Reset() : void;
     AdvanceToNextFacet() : cxx_bool;
     
-    GetPoint(aIndex : cxx_double) : JsDPoint3dP;
-    GetParam(aIndex : cxx_double) : JsDPoint2dP;
-    GetNormal(aIndex : cxx_double) : JsDVector3dP;
+    GetPoint(aIndex : cxx_double) : DPoint3dP;
+    GetParam(aIndex : cxx_double) : DPoint2dP;
+    GetNormal(aIndex : cxx_double) : DVector3dP;
     
     GetEdgeCount () : cxx_double;
     OnDispose(): void;
     Dispose(): void;
 }
 
-type JsPolyfaceVisitorP = cxx_pointer<JsPolyfaceVisitor>;
+type PolyfaceVisitorP = cxx_pointer<PolyfaceVisitor>;
 
 
 

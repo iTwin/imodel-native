@@ -44,8 +44,7 @@ struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
 //
 // @bsiclass                                                    Sam.Wilson      10/15
 //=======================================================================================
-BEJAVASCRIPT_EXPORT_CLASS
-(BentleyApi.Dgn)
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
 enum class LoggingSeverity : uint32_t
     {
     // *** WARNING: Keep this consistent with DgnPlatformLib::ScriptAdmin::LoggingSeverity
@@ -134,8 +133,8 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
 {
     ElementGeometryBuilderPtr m_builder;
 
-    JsElementGeometryBuilder(DgnElement3dR el, DPoint3dCR o, YawPitchRollAnglesCR angles) : m_builder (ElementGeometryBuilder::Create(el, o, angles)) {}
-    JsElementGeometryBuilder(DgnElement2dR el, DPoint2dCR o, AngleInDegrees angle) : m_builder (ElementGeometryBuilder::Create(el, o, angle)) {}
+    //JsElementGeometryBuilder(DgnElement3dR el, DPoint3dCR o, YawPitchRollAnglesCR angles) : m_builder (ElementGeometryBuilder::Create(el, o, angles)) {} // Not exposed to JS
+    //JsElementGeometryBuilder(DgnElement2dR el, DPoint2dCR o, AngleInDegrees angle) : m_builder (ElementGeometryBuilder::Create(el, o, angle)) {} // Not exposed to JS
     JsElementGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
     ~JsElementGeometryBuilder() {}
 
