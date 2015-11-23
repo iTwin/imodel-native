@@ -171,17 +171,22 @@ using namespace connectivity;
 
 //EC data types
 %token <pParseNode> SQL_TOKEN_BINARY SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT32 SQL_TOKEN_LONG SQL_TOKEN_INT64 SQL_TOKEN_STRING SQL_TOKEN_DATE SQL_TOKEN_TIMESTAMP SQL_TOKEN_DATETIME SQL_TOKEN_POINT2D SQL_TOKEN_POINT3D 
-    /* operators */
+
+/* operators */
 %left SQL_TOKEN_NAME
 %left SQL_TOKEN_ARRAY_INDEX
 
 %left <pParseNode> SQL_TOKEN_OR
 %left <pParseNode> SQL_TOKEN_AND
 
-%left <pParseNode> SQL_LESSEQ SQL_GREATEQ SQL_NOTEQUAL SQL_LESS SQL_GREAT SQL_EQUAL /* '<' '>' = <> < > <= >= != */
+%left <pParseNode> '|'
+%left <pParseNode> '&'
+
+%left <pParseNode> SQL_LESSEQ SQL_GREATEQ SQL_NOTEQUAL SQL_LESS SQL_GREAT SQL_EQUAL
 %left <pParseNode> '+' '-' SQL_CONCAT
-%left <pParseNode> '*' '/'
+%left <pParseNode> '*' '/' '%'
 %left SQL_TOKEN_NATURAL SQL_TOKEN_CROSS SQL_TOKEN_FULL SQL_TOKEN_LEFT SQL_TOKEN_RIGHT
+%right '~'
 %left ')'
 %right '='
 %right '.'
@@ -2490,6 +2495,7 @@ num_primary:
         value_exp_primary
       | num_value_fct
     ;
+
 factor:
         num_primary
     |    '-' num_primary  %prec SQL_TOKEN_UMINUS
@@ -2520,6 +2526,13 @@ term:
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = newNode("/", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }
+      | term '%' factor
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = newNode("%", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
       ;
