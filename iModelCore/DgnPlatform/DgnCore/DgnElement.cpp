@@ -309,7 +309,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
+    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
         return DgnDbStatus::LockNotHeld;
 
     return GetModel()->_OnUpdateElement(*this, original);
