@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* delpnt.c                                         tmi    13-Mar-1991        */
@@ -27,9 +27,9 @@ struct CIVremdup_dat
 /*----------------------------------------------------------------------------*/
 /* Private static function prototypes                                         */
 /*----------------------------------------------------------------------------*/
-static int aecDTM_removeDuplicatePointsProcess(void *,int,long,DPoint3d *,struct CIVdtmpnt *);
-static int aecDTM_hashPoint(const void *);
-static int aecDTM_comparePoints(const void *, const void *);
+//static int aecDTM_removeDuplicatePointsProcess(void *,int,long,DPoint3d *,struct CIVdtmpnt *);
+//static int aecDTM_hashPoint(const void *);
+//static int aecDTM_comparePoints(const void *, const void *);
 
 
 /*----------------------------------------------------------------------------*/
@@ -80,7 +80,7 @@ int aecDTM_deletePoint /* <= TRUE if error                         */
   return ( sts );
 }
 
-
+#ifdef NOTUSED
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_removeDuplicatePointsProcess
  DESC: Helps out the previous function.
@@ -110,7 +110,6 @@ static int aecDTM_removeDuplicatePointsProcess
 
   return ( SUCCESS );
 }
-
 
 
 /*%-----------------------------------------------------------------------------
@@ -178,3 +177,4 @@ static int aecDTM_comparePoints
 
   return ( memcmp ( &pPnt1->cor, &pPnt2->cor, sizeof ( DPoint3d ) ) );
 }
+#endif

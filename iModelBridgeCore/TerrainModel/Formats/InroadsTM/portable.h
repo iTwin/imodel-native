@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* portable.h                                                                 */
@@ -64,7 +64,7 @@
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
-#pragma warning( disable : 4996)
+//#pragma warning( disable : 4996)
 
 
 #include <afxwin.h>                     // MFC core and standard components
@@ -124,8 +124,7 @@ using namespace Bentley;
 //-------------------------------------------------------------------
 // Standard product pragmas
 //-------------------------------------------------------------------
-
-#pragma warning(disable:4100 4505 4189 4805 4800)          /* unreferenced formal parameter       */
+// To find size issues. #pragma warning(error:4311 4312 4302)
 
 //-------------------------------------------------------------------
 // Standard product definitions

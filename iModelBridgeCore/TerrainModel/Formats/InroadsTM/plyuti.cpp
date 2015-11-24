@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* plyuti.c                                            tmi    30-Dec-1992     */
@@ -49,7 +49,7 @@ typedef struct
 /*----------------------------------------------------------------------------*/
 static int  aecPolygon_sendConvexPolygonsVerify(DPoint3d *,DPoint3d *,DPoint3d *,long,DPoint3d *);
 static int  intersectFunc(void*,void*,void*);
-static int convexAccumFunc ( long numPoints, DPoint3d *points, void *userData );
+//static int convexAccumFunc ( long numPoints, DPoint3d *points, void *userData );
 static int aecPolygon_clipLinestringClip(void *,DPoint3d *,DPoint3d *);
 static int aecPolygon_clipLinestringSegment(void *,int,long,DPoint3d *);
 static int aecPolygon_areLineSegmentsColinear( DPoint3d *, DPoint3d *, DPoint3d *, DPoint3d * );
@@ -590,6 +590,7 @@ void aecPolygon_computeRange
         }
     }
 
+#ifdef NOTUSED
 //---------------------------------------------------------------------------
 // DESC: static function to accumulate the polygons into an array of polygons
 //       and an array of points
@@ -629,4 +630,4 @@ static int convexAccumFunc
 
     return SUCCESS;
     }
-
+#endif
