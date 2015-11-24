@@ -40,10 +40,6 @@ struct JsonDiff
 
         void CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapidjson::Value::AllocatorType& allocator);
 
-        static bool StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-        static bool ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-        static bool ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-
         static RapidJsonValueCR ValidateObject(RapidJsonValueCR value);
 
     public:
@@ -75,9 +71,6 @@ struct JsonDiff
             RapidJsonValueR jsonOut,
             rapidjson::Value::AllocatorType& allocator
             );
-
-        //! Check if values are equal
-        WSCACHE_EXPORT static bool ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

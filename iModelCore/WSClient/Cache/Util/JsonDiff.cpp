@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <WebServices/Cache/Util/JsonDiff.h>
+#include "JsonUtil.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace rapidjson;
@@ -83,7 +84,7 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
                     }
                 }
             }
-        else if (!ValuesEqual(oldValue, newMemberItr->value))
+        else if (!JsonUtil::AreValuesEqual(oldValue, newMemberItr->value))
             {
             changesFound = true;
             AddMember(jsonOut, newMemberItr->name, newMemberItr->value, allocator);
@@ -136,177 +137,7 @@ void JsonDiff::AddMember(RapidJsonValueR parent, RapidJsonValueCR name, RapidJso
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonDiff::CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapidjson::Value::AllocatorType& allocator)
     {
-    switch (source.GetType())
-        {
-        case kObjectType:
-            for (auto memberSourceItr = source.MemberBegin(); memberSourceItr != source.MemberEnd(); ++memberSourceItr)
-                {
-                Value nameToAdd(kStringType);
-                CopyValues(memberSourceItr->name, nameToAdd, allocator);
-
-                Value valueToAdd(memberSourceItr->value.GetType());
-                CopyValues(memberSourceItr->value, valueToAdd, allocator);
-
-                target.AddMember(nameToAdd, valueToAdd, allocator);
-                }
-            break;
-
-        case kArrayType:
-            for (SizeType i = 0; i < source.Size(); i++)
-                {
-                Value valueToAdd(source[i].GetType());
-
-                CopyValues(source[i], valueToAdd, allocator);
-
-                target.PushBack(valueToAdd, allocator);
-                }
-            break;
-
-        case kStringType:
-            if (m_avoidCopies)
-                {
-                target.SetString(source.GetString(), source.GetStringLength());
-                }
-            else
-                {
-                target.SetString(source.GetString(), source.GetStringLength(), allocator);
-                }
-            break;
-
-        case kNumberType:
-            {
-            if (source.IsInt())
-                {
-                target.SetInt(source.GetInt());
-                break;
-                }
-            if (source.IsDouble())
-                {
-                target.SetDouble(source.GetDouble());
-                break;
-                }
-            if (source.IsInt64())
-                {
-                target.SetInt64(source.GetInt64());
-                break;
-                }
-            if (source.IsUint())
-                {
-                target.SetUint(source.GetUint());
-                break;
-                }
-            if (source.IsUint64())
-                {
-                target.SetUint64(source.GetUint64());
-                break;
-                }
-            }
-        }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonDiff::ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
-    {
-    if (value1.GetType() != value2.GetType())
-        {
-        return false;
-        }
-
-    switch (value1.GetType())
-        {
-        case kObjectType:
-            return ObjectValuesEqual(value1, value2);
-
-        case kArrayType:
-            return ArrayValuesEqual(value1, value2);
-
-        case kStringType:
-            return StringValuesEqual(value1, value2);
-
-        case kNumberType:
-            // TODO: update rapidjson lib to newer version that supports native comparison
-            BeAssert((!value1.IsInt64() && !value1.IsUint64() || value1.IsInt() || value1.IsUint()) &&
-                     (!value2.IsInt64() && !value2.IsUint64() || value2.IsInt() || value2.IsUint()) &&
-                    "64 bit integer comparison not supported. 64 bit integers should be saved as string in JSON");
-
-            // Convert values to double and compare
-            return value1.GetDouble() == value2.GetDouble();
-        case kTrueType:
-        case kFalseType:
-        case kNullType:
-            return true;
-        }
-
-    return false;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonDiff::ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
-    {
-    if (std::distance(value1.MemberBegin(), value1.MemberEnd()) !=
-        std::distance(value2.MemberBegin(), value2.MemberEnd()))
-        {
-        return false;
-        }
-
-    for (auto member1Itr = value1.MemberBegin(); member1Itr != value1.MemberEnd(); ++member1Itr)
-        {
-        auto& value2Value = value2[member1Itr->name.GetString()];
-
-        if (!ValuesEqual(member1Itr->value, value2Value))
-            {
-            return false;
-            }
-        }
-
-    return true;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonDiff::ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
-    {
-    if (value1.Size() != value2.Size())
-        {
-        return false;
-        }
-
-    for (SizeType i = 0; i < value1.Size(); i++)
-        {
-        if (!ValuesEqual(value1[i], value2[i]))
-            {
-            return false;
-            }
-        }
-
-    return true;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonDiff::StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
-    {
-    const SizeType len1 = value1.GetStringLength();
-    const SizeType len2 = value2.GetStringLength();
-    if (len1 != len2)
-        {
-        return false;
-        }
-
-    const UTF8<>::Ch* const str1 = value1.GetString();
-    const UTF8<>::Ch* const str2 = value2.GetString();
-    if (str1 == str2)
-        {
-        return true;
-        } // fast path for constant string
-
-    return (std::memcmp(str1, str2, sizeof(UTF8<>::Ch)* len1) == 0);
+    JsonUtil::CopyValues(source, target, allocator, m_avoidCopies);
     }
 
 /*--------------------------------------------------------------------------------------+
