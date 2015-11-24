@@ -186,7 +186,7 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromCurrentTransaction(ChangeSumm
     ASSERT_TRUE(BE_SQLITE_OK == result);
 
     changeSummary.Free();
-    BentleyStatus status = changeSummary.FromSqlChangeSet(sqlChangeSet);
+    BentleyStatus status = changeSummary.FromChangeSet(sqlChangeSet);
     ASSERT_TRUE(SUCCESS == status);
     }
 

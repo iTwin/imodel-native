@@ -477,7 +477,7 @@ static DgnAuthority::Code createResourceCode(Utf8StringCR name, Utf8CP nameSpace
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool validateResourceCode(DgnAuthority::Code const& code, Utf8CP nameSpace)
     {
-    return code.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Resource) && code.GetNameSpace().Equals(nameSpace) && !code.GetValue().empty();
+    return code.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Resource) && code.GetNamespace().Equals(nameSpace) && !code.GetValue().empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
