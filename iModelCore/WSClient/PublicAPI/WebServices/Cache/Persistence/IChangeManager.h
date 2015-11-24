@@ -92,6 +92,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! Modify object properties
         virtual BentleyStatus ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
+        //! Remove change and revert modified instance properties to latest cached version
+        virtual BentleyStatus RevertModifiedObject(ECInstanceKeyCR instance) = 0;
+
         //! Delete object from cache and mark it for sync
         virtual BentleyStatus DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 

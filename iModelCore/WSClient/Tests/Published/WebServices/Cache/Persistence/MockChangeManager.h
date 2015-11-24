@@ -37,6 +37,8 @@ struct MockChangeManager : public IChangeManager
             ECInstanceKey (ECClassCR, JsonValueCR, SyncStatus));
         MOCK_METHOD3 (ModifyObject,
             BentleyStatus (ECInstanceKeyCR, JsonValueCR, SyncStatus));
+        MOCK_METHOD1 (RevertModifiedObject,
+            BentleyStatus(ECInstanceKeyCR));
         MOCK_METHOD2 (DeleteObject,
             BentleyStatus (ECInstanceKeyCR, SyncStatus));
         MOCK_METHOD4 (CreateRelationship,
