@@ -36,8 +36,8 @@ enum DgnDbSchemaValues : int32_t
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
-    DGNDB_SUPPORTED_VERSION_Major = 5,  // oldest version of the schema supported by the current api
-    DGNDB_SUPPORTED_VERSION_Minor = 2,
+    DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
+    DGNDB_SUPPORTED_VERSION_Minor = 0,
     };
 
 //=======================================================================================
