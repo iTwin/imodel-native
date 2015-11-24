@@ -4174,9 +4174,9 @@ void            AnnotationTableFillRun::SetVerticalSpan (uint32_t     val)  { m_
 template <typename T_RunType, typename T_InitializerType>
 static void     insertSpan (bvector<T_RunType>& runVector, uint32_t insertIndex, uint32_t insertSpan, T_InitializerType const& initializer)
     {
-    bvector<T_RunType>::iterator    iter = runVector.begin();
-    bvector<T_RunType>::iterator    seedRun = iter;
-    bool                            expandRun = false;
+    typename bvector<T_RunType>::iterator   iter = runVector.begin();
+    typename bvector<T_RunType>::iterator   seedRun = iter;
+    bool                                    expandRun = false;
 
     // Find the enclosing run (if any)
     while (iter < runVector.end())
@@ -4231,9 +4231,9 @@ static void     insertSpan (bvector<T_RunType>& runVector, uint32_t insertIndex,
 template <typename T_RunType>
 static typename bvector<T_RunType>::iterator    fillGap (bvector<T_RunType>& runVector, uint32_t insertIndex, uint32_t insertSpan)
     {
-    bvector<T_RunType>::iterator    iter = runVector.begin();
-    bvector<T_RunType>::iterator    seedRun = iter;
-    bool                            expandRun = false;
+    typename bvector<T_RunType>::iterator   iter = runVector.begin();
+    typename bvector<T_RunType>::iterator   seedRun = iter;
+    bool                                    expandRun = false;
 
     // Iterate to the run just after the gap
     while (iter < runVector.end())
@@ -4288,7 +4288,7 @@ static typename bvector<T_RunType>::iterator    fillGap (bvector<T_RunType>& run
         }
     else
         {
-        bvector<T_RunType>::iterator    lookAheadIter = iter;
+        typename bvector<T_RunType>::iterator lookAheadIter = iter;
         ++lookAheadIter;
 
             // If there is a next run, don't overlap it
@@ -4313,11 +4313,11 @@ static void     mergeRedundantRuns (bvector<T_RunType>& runVector, AnnotationTab
     if (runVector.empty())
         return;
 
-    bvector<T_RunType>::iterator    iter = runVector.begin();
+    typename bvector<T_RunType>::iterator iter = runVector.begin();
 
     while (true)
         {
-        bvector<T_RunType>::iterator    nextIter = iter;
+        typename bvector<T_RunType>::iterator    nextIter = iter;
         ++nextIter;
 
         if (runVector.end() == nextIter)
@@ -4364,8 +4364,8 @@ static typename bvector<T_RunType>::iterator    modifySpan (bvector<T_RunType>* 
       Splits any edges at the specified span start / end.  Call the modifier
       for each edge within the specified span.
     ----------------------------------------------------------------------------*/
-    uint32_t                        modEndIndex = modStartIndex + modSpan;
-    bvector<T_RunType>::iterator    iter = runVector.begin();
+    uint32_t modEndIndex = modStartIndex + modSpan;
+    typename bvector<T_RunType>::iterator iter = runVector.begin();
 
     while (iter < runVector.end())
         {
@@ -4469,7 +4469,7 @@ static typename bvector<T_RunType>::iterator    modifySpan (bvector<T_RunType>* 
 
             (*iter).SetSpan (modStartIndex - runStartIndex);
 
-            bvector<T_RunType>::iterator    preSplitIter = iter;
+            typename bvector<T_RunType>::iterator preSplitIter = iter;
 
             if ( ! modifier.CreateGap())
                 {
