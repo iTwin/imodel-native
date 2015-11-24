@@ -7,11 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "WebServicesTestsHelper.h"
-#include <WebServices/Cache/Util/JsonDiff.h>
+#include "../../../Cache/Util/JsonUtil.h"
 
 bool rapidjson::operator==(const rapidjson::Value& a, const rapidjson::Value& b)
     {
-    return JsonDiff::ValuesEqual(a, b);
+    return JsonUtil::AreValuesEqual(a, b);
     }
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
