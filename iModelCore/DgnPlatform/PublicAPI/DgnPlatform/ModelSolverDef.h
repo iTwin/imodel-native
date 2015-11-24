@@ -119,8 +119,6 @@ struct ModelSolverDef
     void FromJson(Utf8CP);
     Utf8String ToJson() const;
 
-    void Solve(GeometricModel&);
-
     DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
 
     public:
@@ -134,6 +132,8 @@ struct ModelSolverDef
     //! @param identifier   Identifies the solver. The meaning of this identifier varies, depending on the type of the solver.
     //! @param parameters   The parameters to be passed to the solver
     DGNPLATFORM_EXPORT ModelSolverDef(Type type, Utf8CP identifier, bvector<Parameter> const& parameters);
+
+    DGNPLATFORM_EXPORT void Solve(GeometricModel&);
 
     //! Test if this object specifies a solver
     bool IsValid() const {return Type::None != GetType();}
