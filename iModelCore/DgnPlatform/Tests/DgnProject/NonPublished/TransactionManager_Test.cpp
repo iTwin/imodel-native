@@ -758,8 +758,8 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     EXPECT_EQ(nullptr, m_db->Elements().FindElement(e1id));
     EXPECT_EQ(nullptr, m_db->Elements().FindElement(e2id));
 
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e2id).IsValid());
+    EXPECT_FALSE(m_db->Elements().QueryECInstanceKey(e1id).IsValid());
+    EXPECT_FALSE(m_db->Elements().QueryECInstanceKey(e2id).IsValid());
 
     //Reinstate transcation.The elements should be back in the model.
     stat = txns.ReinstateTxn();
@@ -811,7 +811,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     EXPECT_EQ (DgnDbStatus::Success, m_db->Elements().Delete(*pE1));
     m_db->SaveChanges("changeSet3");
 
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
+    EXPECT_FALSE(m_db->Elements().QueryECInstanceKey(e1id).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(e1id) == nullptr);
 
     //Reverse Transaction. Element should be back in the model now.
@@ -825,7 +825,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet4");
 
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
+    EXPECT_FALSE(m_db->Elements().QueryECInstanceKey(e1id).IsValid());
 
     //Both the elements and the model should'nt be in the database.
     txns.ReverseAll(true);

@@ -235,7 +235,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
         }
 
     DgnElementCPtr newElem = db.Elements().Insert(*gelem);
-    ASSERT_EQ( expectSuccess , newElem.IsValid() && newElem->GetElementKey().IsValid() );
+    ASSERT_EQ( expectSuccess , newElem.IsValid() && newElem->GetElementId().IsValid() );
     }
 
 //---------------------------------------------------------------------------------------

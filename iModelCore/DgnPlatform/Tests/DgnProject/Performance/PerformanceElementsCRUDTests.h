@@ -55,7 +55,7 @@ struct PerformanceElement1 : Dgn::PhysicalElement
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement1CPtr Insert ();
         PerformanceElement1CPtr Update ();
@@ -91,7 +91,7 @@ struct PerformanceElement2 : PerformanceElement1
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement2CPtr Insert ();
         PerformanceElement2CPtr Update ();
@@ -127,7 +127,7 @@ struct PerformanceElement3 : PerformanceElement2
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement3CPtr Insert ();
         PerformanceElement3CPtr Update ();
@@ -165,7 +165,7 @@ struct PerformanceElement4 : PerformanceElement3
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement4Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement4Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement4CPtr Insert ();
         PerformanceElement4CPtr Update ();

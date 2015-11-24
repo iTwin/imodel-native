@@ -263,7 +263,7 @@ public:
 
     typedef DgnAuthority::Code Code;
 
-    //! Parameters for creating new DgnElements
+    //! Parameters for creating a new DgnElement
     struct CreateParams
     {
     public:
@@ -271,15 +271,18 @@ public:
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
         Code            m_code;
+        Utf8String      m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
-            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_id(id), m_parentId(parent) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code=Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent) {SetLabel(label);}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
-        void SetCode(Code code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
-        void SetParentId(DgnElementId parent) {m_parentId=parent;} //!< Set the ParentId for DgnElements created with this CreateParams
+        void SetCode(Code code) {m_code = code;}                    //!< Set the Code for elements created with this CreateParams
+        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
+        void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
+        void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
     };
 
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
@@ -681,30 +684,6 @@ public:
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    //! Allows a label to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE LabelAspect : AppData
-    {
-    private:
-        Utf8String m_label;
-
-        explicit LabelAspect(Utf8CP label)
-            {
-            m_label.AssignOrClear(label);
-            }
-
-    protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
-
-    public:
-        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<LabelAspect> Create(Utf8CP label);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR label, DgnElementCR);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
-        Utf8CP GetLabel() const {return m_label.c_str();}
-    };
-
-    typedef RefCountedPtr<LabelAspect> LabelAspectPtr;
-
     //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
     struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
     {
@@ -753,6 +732,7 @@ protected:
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
     Code            m_code;
+    Utf8String      m_label;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -956,7 +936,7 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return GetCode().GetValue();}
+    virtual Utf8String _GetDisplayLabel() const {return HasLabel() ? m_label : GetCode().GetValue();}
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
@@ -1115,22 +1095,17 @@ public:
     //! Get the DgnClassId of this DgnElement.
     DgnClassId GetElementClassId() const {return m_classId;}
 
-    //! Get the DgnElementKey (the element DgnClassId and DgnElementId) of this DgnElement
-    DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
+    //! Get the ECInstanceKey (the element DgnClassId and DgnElementId) of this DgnElement
+    //! @see GetElementClassId, GetElementId
+    BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId().GetValue(), GetElementId());}
 
     //! Get a pointer to the ECClass of this DgnElement.
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
-
-    //! Static method to Query the DgnClassId of the dgn.Element ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.Element class - it does @em not return the class of a specific instance.
-    //! @see GetElementClassId
-    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 
     //! Get the DgnElementId of the parent of this element.
     //! @see SetParentId
     //! @return Id will be invalid if this element does not have a parent element.
     DgnElementId GetParentId() const {return m_parentId;}
-
     //! Set the parent (owner) of this DgnElement.
     //! @see GetParentId, _SetParentId
     //! @return DgnDbStatus::Success if the parent was set
@@ -1139,7 +1114,6 @@ public:
 
     //! Get the code (business key) of this DgnElement.
     Code GetCode() const {return m_code;}
-
     //! Set the code (business key) of this DgnElement.
     //! @see GetCode, _SetCode
     //! @return DgnDbStatus::Success if the code was set
@@ -1148,6 +1122,14 @@ public:
 
     //! Query the database for the last modified time of this DgnElement.
     DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
+
+    //! Return true if this DgnElement has a label.
+    bool HasLabel() const {return !m_label.empty();}
+    //! Get the label of this DgnElement.
+    //! @note may be nullptr
+    Utf8CP GetLabel() const {return m_label.c_str();}
+    //! Set the label of this DgnElement.
+    void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
     //! Get the display label (for use in the GUI) of this DgnElement.
     //! @note The default implementation returns the label if it is set or the code if the label is not set.
@@ -1419,8 +1401,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : DgnElement, GeometrySource3d
     DgnCategoryId m_categoryId;
     Placement3dCR m_placement;
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, code, label, parent), m_categoryId(category), m_placement(placement) {}
 
     explicit CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId(), Placement3dCR placement = Placement3d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
     CreateParams(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
@@ -1476,8 +1458,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
     DgnCategoryId m_categoryId;
     Placement2dCR m_placement;
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, code, id, parent), m_categoryId(category), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, code, label, parent), m_categoryId(category), m_placement(placement) {}
 
     explicit CreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
     CreateParams(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
@@ -1540,10 +1522,6 @@ public:
     //! @param[in] model The PhysicalModel for the new PhysicalElement.
     //! @param[in] categoryId The category for the new PhysicalElement.
     DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
-
-    //! Query the DgnClassId for the dgn.PhysicalElement class in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.PhysicalElement class - it does @b not return the class of a specific instance.
-    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 };
 
 //=======================================================================================
@@ -1562,10 +1540,6 @@ public:
     explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
-
-    //! Query the DgnClassId for the dgn.DrawingElement class in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.DrawingElement class - it does @b not return the class of a specific instance.
-    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 };
 
 //=======================================================================================
@@ -1717,18 +1691,19 @@ public:
         DEFINE_T_SUPER(DictionaryElement::T_Super::CreateParams);
 
         //! Constructs parameters for a dictionary element.
-        //! @param[in]      db       The DgnDb in which the element is to reside.
-        //! @param[in]      classId  The ID of the ECClass representing this element.
-        //! @param[in]      code     The element's unique code.
-        //! @param[in]      parentId The ID of the element's parent element.
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId=DgnElementId());
+        //! @param[in] db       The DgnDb in which the element is to reside.
+        //! @param[in] classId  The ID of the ECClass representing this element.
+        //! @param[in] code     The element's unique code.
+        //! @param[in] label    The element's label
+        //! @param[in] parentId The ID of the element's parent element.
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId());
 
         //! Constructor from base class. Primarily for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
 
         //! Constructs parameters for a dictionary element with the specified values. Chiefly for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, code, id, parent) { }
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, code, label, parent) { }
     };
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
@@ -1919,11 +1894,11 @@ public:
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
 
-    //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
+    //! Query the ECInstanceKey for a DgnElement from this DgnDb by its DgnElementId.
     //! @return Invalid key if the element does not exist.
     //! @remarks This queries the database for the DgnClassId for the given DgnElementId. It does not check if the element is loaded, nor does it load the element into memory.
-    //! If you have a DgnElement, call GetElementKey on it rather than using this method.
-    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
+    //! If you have a DgnElement, call DgnElement::GetECInstanceKey on it rather than using this method.
+    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey QueryECInstanceKey(DgnElementId elementId) const;
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}

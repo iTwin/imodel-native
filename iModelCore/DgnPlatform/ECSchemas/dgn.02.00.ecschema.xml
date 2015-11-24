@@ -90,6 +90,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Value" typeName="string">
+            <!-- Note: use Code.[Value] in ECSql since "Value" is a reserved word -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable>
@@ -322,6 +323,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                             <string>ModelId</string>
                         </Properties>
                     </DbIndex>
+                    <DbIndex>
+                        <!-- Index on Label -->
+                        <Name>idx_dgn_Element_Label</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>Label</string>
+                        </Properties>
+                        <Where>ECDB_NOTNULL</Where>
+                    </DbIndex>
                 </Indexes>
             </ClassMap>
             <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -347,6 +357,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode" />
+        <ECProperty propertyName="Label" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -757,41 +776,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="ElementExternalKey">
                 <Key>
                     <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECClass typeName="ElementLabel" isDomainClass="True" >
-        <!-- The aspect that holds a user-defined label for an element -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- The ECInstanceId for ElementLabel is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Label" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECRelationshipClass typeName="ElementOwnsLabel" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="ElementLabel">
-                <Key>
-                    <Property name="ECInstanceId"/>
                 </Key>
             </Class>
         </Target>
