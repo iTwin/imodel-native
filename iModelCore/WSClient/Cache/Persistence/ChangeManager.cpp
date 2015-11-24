@@ -163,12 +163,6 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
-        {
-        BeAssert(false && "Cannot modify object while syncing");
-        return ERROR;
-        }
-
     if (info.GetChangeStatus() == ChangeStatus::Deleted)
         {
         BeAssert(false && "Cannot modify object that is deleted");
