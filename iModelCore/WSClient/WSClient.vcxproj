@@ -98,7 +98,7 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
-    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV8.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.cpp" />
     <ClCompile Include="Cache\ServerQueryHelper.cpp" />
     <ClCompile Include="Cache\SyncCachedDataTask.cpp" />
     <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
@@ -182,6 +182,7 @@
     <ClInclude Include="Cache\Persistence\Core\ECDbFileInfoSchema.h" />
     <ClInclude Include="Cache\Persistence\Core\SchemaContext.h" />
     <ClInclude Include="Cache\Persistence\Core\SchemaManager.h" />
+    <ClInclude Include="Cache\Persistence\Core\Version.h" />
     <ClInclude Include="Cache\Persistence\Files\FileCacheManager.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfo.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfoManager.h" />
@@ -203,7 +204,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
-    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV8.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.h" />
     <ClInclude Include="Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
     <ClInclude Include="Cache\SyncCachedDataTask.h" />

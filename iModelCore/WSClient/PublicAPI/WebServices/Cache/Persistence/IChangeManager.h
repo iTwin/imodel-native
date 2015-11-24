@@ -155,6 +155,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
 
         // -- Commiting changes --
 
+        //! Commit and clear all created and deleted objects.
+        virtual BentleyStatus CommitLocalDeletions() = 0;
+
         //! Commit revision for object or relationship in local cache.
         virtual BentleyStatus CommitInstanceRevision(InstanceRevisionCR revision) = 0;
 
@@ -274,6 +277,7 @@ struct IChangeManager::Revision
         ChangeStatus m_changeStatus = ChangeStatus::NoChange;
         SyncStatus m_syncStatus = SyncStatus::NotReady;
         uint64_t m_changeNumber = 0;
+        uint64_t m_revisionNumber = 0;
 
     public:
         ECInstanceKeyCR GetInstanceKey() const
@@ -319,6 +323,14 @@ struct IChangeManager::Revision
         void SetChangeNumber(uint64_t value)
             {
             m_changeNumber = value;
+            }
+        uint64_t GetRevisionNumber() const
+            {
+            return m_revisionNumber;
+            }
+        void SetRevisionNumber(uint64_t value)
+            {
+            m_revisionNumber = value;
             }
         bool IsValid() const
             {

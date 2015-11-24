@@ -28,6 +28,7 @@ struct ChangeInfoManager
     private:
         IECDbAdapter*                       m_dbAdapter;
         WebServices::ECSqlStatementCache*   m_statementCache;
+        HierarchyManager*                   m_hierarchyManager;
         ObjectInfoManager*                  m_objectInfoManager;
         RelationshipInfoManager*            m_relationshipInfoManager;
         FileInfoManager*                    m_fileInfoManager;
@@ -40,14 +41,15 @@ struct ChangeInfoManager
         std::shared_ptr<ECSqlStatement> GetPreparedStatementForGetChanges(ECClassCP infoClass, bool onlyReadyToSync);
         int ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP statusPropertyName);
 
-        ECInstanceId FindBackupInstance(ECInstanceKeyCR infoKey);
-        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, Utf8CP serializedInstance);
+        ECInstanceId FindBackupInstance(ObjectInfoCR info);
+        BentleyStatus SaveBackupInstance(ObjectInfoCR info, Utf8CP serializedInstance);
 
     public:
         ChangeInfoManager
             (
             ECDbAdapter& dbAdapter,
             ECSqlStatementCache& statementCache,
+            HierarchyManager& hierarchyManager,
             ObjectInfoManager& objectInfoManager,
             RelationshipInfoManager& relationshipInfoManager,
             FileInfoManager& fileInfoManager
@@ -68,11 +70,17 @@ struct ChangeInfoManager
         IChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey);
 
         BentleyStatus SetupChangeNumber(ChangeInfoR info);
+        BentleyStatus RemoveLocalDeletedInfos();
 
-        BentleyStatus ReadBackupInstance(ECInstanceKeyCR infoKey, RapidJsonDocumentR instanceOut);
-        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, RapidJsonValueCR instance);
-        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, JsonValueR instance);
-        BentleyStatus DeleteBackupInstance(ECInstanceKeyCR infoKey);
+        BentleyStatus ReadBackupInstance(ObjectInfoCR info, RapidJsonDocumentR instanceOut);
+        BentleyStatus SaveBackupInstance(ObjectInfoCR info, RapidJsonValueCR instance);
+        BentleyStatus SaveBackupInstance(ObjectInfoCR info, JsonValueR instance);
+        BentleyStatus DeleteBackupInstance(ObjectInfoCR info);
+
+        // Values will not be coppied to changesOut so keep them alive with t1 and t2 until changesOut are used
+        BentleyStatus ReadInstanceChanges(ObjectInfoCR info, RapidJsonDocumentR changesOut, RapidJsonDocumentR temp1, RapidJsonDocumentR temp2);
+        BentleyStatus ApplyChangesToBackup(ObjectInfoCR info, JsonValueCR changes);
+        BentleyStatus ApplyChangesToInstanceAndBackupIt(ObjectInfoCR info, JsonValueCR changes);
     };
 
 typedef ChangeInfoManager& ChangeInfoManagerR;

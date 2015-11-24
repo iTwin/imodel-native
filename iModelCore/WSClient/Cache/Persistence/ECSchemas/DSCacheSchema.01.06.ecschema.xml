@@ -44,6 +44,8 @@
         <ECProperty propertyName="ChangeStatus" typeName="int" />
         <ECProperty propertyName="SyncStatus" typeName="int" />
         <ECProperty propertyName="ChangeNumber" typeName="long" />
+        <ECProperty propertyName="Revision" typeName="long" />
+        <ECProperty propertyName="IsLocal" typeName="bool" />
     </ECClass>
     <ECClass typeName="InstanceBackup" isDomainClass="True">
         <ECProperty propertyName="Instance" typeName="string" />

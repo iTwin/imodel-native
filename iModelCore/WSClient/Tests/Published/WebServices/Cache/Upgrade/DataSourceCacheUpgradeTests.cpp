@@ -6,6 +6,18 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+//--------------------------------------------------------------------------------------+
+// Adding DataSourceCacheUpgradeTests test case:
+// 1. Write SetupVx test that creates version x cache test against. See SetupV7, SetupV8.
+// 2. Zip files into:
+//      Tests\Published\WebServices\Cache\Upgrade\UpgradeSeeds\x.zip
+//    Zip should contain:
+//      Named folders with cache.ecdb file and "persistent", "temporary" folders inside.
+// 3. Add new x.zip delivery/extraction into TestAssetsDeliver.mke
+// 4. Write Open_Vx... test case to test upgrade. 
+// 5. Use GetSeedPaths() to get paths to extracted files.
+//--------------------------------------------------------------------------------------+
+
 #include "DataSourceCacheUpgradeTests.h"
 
 #include <Bentley/BeDebugLog.h>
@@ -338,12 +350,10 @@ TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
     }
 
 // Left for referance
-//TEST_F(DataSourceCacheUpgradeTests, SetupV7)
+//TEST_F(DataSourceCacheUpgradeTests, DISABLED_SetupV7)
 //    {
 //    DataSourceCache cache;
-//
 //    ASSERT_EQ(SUCCESS, cache.Create(BeFileName("C:/t/data/cache.ecdb"), {BeFileName("C:/t/data/persistent"), BeFileName("C:/t/data/temporary")}));
-//
 //    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
 //
 //    StubInstances instances;
@@ -429,6 +439,72 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadMod
     expected["TestProperty"] = "LatestValueA";
     expected["TestProperty2"] = "OldValueB";
     EXPECT_EQ(expected, changesJson);
+    }
+
+// Left for referance
+//TEST_F(DataSourceCacheUpgradeTests, DISABLED_SetupV8)
+//    {
+//    DataSourceCache cache;
+//    BeFileName::EmptyAndRemoveDirectory(L"C:/t/");
+//    ASSERT_EQ(SUCCESS, cache.Create(BeFileName("C:/t/data/cache.ecdb"), {BeFileName("C:/t/data/persistent"), BeFileName("C:/t/data/temporary")}));
+//    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+//
+//    // Setup test data
+//    StubInstances instances;
+//    instances.Add({"TestSchema.TestClass", "A"});
+//    instances.Add({"TestSchema.TestClass", "B"});
+//    CachedResponseKey key(cache.FindOrCreateRoot(nullptr), nullptr);
+//    ASSERT_EQ(SUCCESS, cache.CacheResponse(key, instances.ToWSObjectsResponse()));
+//
+//    // Create instance
+//    auto ecClass = cache.GetAdapter().GetECClass("TestSchema.TestClass");
+//    Json::Value properties;
+//    properties["TestProperty"] = "NewValueA";
+//    ECInstanceKey instance = cache.GetChangeManager().CreateObject(*ecClass, properties);
+//    ASSERT_TRUE(instance.IsValid());
+//
+//    // Created relationship
+//    auto ecRelClass = cache.GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
+//    auto a = cache.FindInstance({"TestSchema.TestClass", "A"});
+//    auto b = cache.FindInstance({"TestSchema.TestClass", "B"});
+//    ECInstanceKey relationship = cache.GetChangeManager().CreateRelationship(*ecRelClass, a, b);
+//    ASSERT_TRUE(relationship.IsValid());
+//
+//    // Save
+//    cache.GetECDb().SaveChanges();
+//    cache.Close();
+//    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalDeletionsRemovesThem)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(8, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    IChangeManager::Changes changes;
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().GetChanges(changes));
+
+    ASSERT_EQ(1, changes.GetObjectChanges().size());
+    ASSERT_EQ(1, changes.GetRelationshipChanges().size());
+    ASSERT_EQ(0, changes.GetFileChanges().size());
+    ASSERT_EQ(IChangeManager::ChangeStatus::Created, changes.GetObjectChanges().begin()->GetChangeStatus());
+    ASSERT_EQ(IChangeManager::ChangeStatus::Created, changes.GetRelationshipChanges().begin()->GetChangeStatus());
+
+    auto instance = changes.GetObjectChanges().begin()->GetInstanceKey();
+    auto relationship = changes.GetRelationshipChanges().begin()->GetInstanceKey();
+
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().DeleteObject(instance));
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().DeleteRelationship(relationship));
+
+    // Act
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().CommitLocalDeletions());
+
+    // Assert
+    EXPECT_FALSE(cache.GetChangeManager().HasChanges());
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache.GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache.GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
     }
 
 #endif
