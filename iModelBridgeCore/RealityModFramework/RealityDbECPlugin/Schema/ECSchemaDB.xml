@@ -570,6 +570,42 @@
         
     </ECClass>   
     
+    <ECClass typeName="OsmSource" isDomainClass="true" baseClass="SpatialDataSource">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>index</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.OsmSources</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>    
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>   
+        
+        <ECProperty propertyName="AlternateURL1" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>AlternateURL1</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="AlternateURL2" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>AlternateURL2</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>   
+    
     <ECClass typeName="Server" isDomainClass="true">
         <ECCustomAttributes>
             <QueryType>
