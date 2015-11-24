@@ -103,6 +103,8 @@ struct ChangeManager : public IChangeManager
 
         WSCACHE_EXPORT BentleyStatus ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) override;
 
+        WSCACHE_EXPORT BentleyStatus RevertModifiedObject(ECInstanceKeyCR instance) override;
+
         WSCACHE_EXPORT BentleyStatus DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) override;
 
         WSCACHE_EXPORT ECInstanceKey CreateRelationship

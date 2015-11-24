@@ -206,6 +206,36 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::RevertModifiedObject(ECInstanceKeyCR instance)
+    {
+    ObjectInfo info = m_objectInfoManager->ReadInfo(instance);
+    if (info.GetChangeStatus() != ChangeStatus::Modified)
+        {
+        BeAssert(false && "Cannot revert non-modified instance");
+        return ERROR;
+        }
+
+    if (IsSyncActive())
+        {
+        BeAssert(false && "Change reverting while syncing is not implemented");
+        return ERROR;
+        }
+
+    info.ClearChangeInfo();
+
+    rapidjson::Document instanceJson;
+    if (SUCCESS != m_changeInfoManager->ReadBackupInstance(info, instanceJson) ||
+        SUCCESS != m_instanceHelper->UpdateExistingInstanceData(info, instanceJson))
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus)
     {
     ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
