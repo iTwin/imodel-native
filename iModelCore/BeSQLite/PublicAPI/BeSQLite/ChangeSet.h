@@ -10,6 +10,10 @@
 
 #include "BeSQLite.h"
 
+BESQLITE_TYPEDEFS(IChangeSet);
+BESQLITE_TYPEDEFS(ChangeSet);
+BESQLITE_TYPEDEFS(ChangeStream);
+
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 //=======================================================================================
@@ -84,9 +88,6 @@ public:
     void Restart() {EndTracking(); EnableTracking(true);}
     bool IsTracking() const {return m_isTracking;}
 };
-
-struct ChangeSet;
-struct ChangeStream;
 
 //=======================================================================================
 //! An Iterator for a ChangeSet or a ChangeStream. This class is used to step through the individual 
@@ -204,6 +205,54 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                     Paul.Connelly   11/15
+//=======================================================================================
+struct IChangeSet
+{
+public:
+    enum class SetType : bool {Full=0, Patch=1};
+    enum class ApplyChangesForTable : bool {No=0, Yes=1};
+    enum class ConflictCause : int {Data=1, NotFound=2, Conflict=3, Constraint=4, ForeignKey=5};
+    enum class ConflictResolution : int {Skip=0, Replace=1, Abort=2};
+protected:
+    virtual ~IChangeSet() { }
+
+    virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}
+    virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
+    virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) = 0;
+    virtual DbResult _FromChangeGroup(ChangeGroup& changeGroup) = 0;
+    virtual DbResult _ApplyChanges(DbR db) = 0;
+    virtual Changes _GetChanges() = 0;
+public:
+    //! Implement to handle conflicts when applying changes
+    //! @see ApplyChanges
+    ApplyChangesForTable FilterTable(Utf8CP tableName) { return _FilterTable(tableName); }
+
+    //! Implement to filter out specific tables when applying changes
+    //! @see ApplyChanges
+    ConflictResolution OnConflict(ConflictCause cause, Changes::Change iter) { return _OnConflict(cause, iter); }
+
+    //! Create a ChangeSet or PatchSet from a ChangeTracker. The ChangeSet can then be saved persistently.
+    //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
+    //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
+    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full) { return _FromChangeTrack(tracker, setType); }
+
+    //! Create a ChagneSet or PathSet by merging the contents of a ChangeGroup
+    //! @param[in] changeGroup ChangeGroup to be merged together. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    DbResult FromChangeGroup(ChangeGroup& changeGroup) { return _FromChangeGroup(changeGroup); }
+
+    //! Apply all of the changes in an ChangeSet to the supplied database.
+    //! @param[in] db the database to which the changes are applied.
+    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    DbResult ApplyChanges(DbR db) { return _ApplyChanges(db); }
+
+    //! Returns a Changes object for iterating over the changes contained within this IChangeSet
+    Changes GetChanges() { return _GetChanges(); }
+};
+
+//=======================================================================================
 //! A set of changes to database rows. A ChangeSet is a contiguous set of bytes that serializes everything
 //! tracked by a ChangeTracker. It can be constructed from a ChangeTracker and then saved
 //! to remember what happened. Then, a ChangeTracker can be recreated from a previously saved state. One
@@ -215,21 +264,16 @@ public:
 //! In this way, ChangeSets can be used to implement application Undo.
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
-struct ChangeSet : NonCopyableClass
+struct ChangeSet : NonCopyableClass, IChangeSet
 {
-    enum class SetType : bool {Full=0, Patch=1};
-    enum class ApplyChangesForTable : bool {No=0, Yes=1};
-    enum class ConflictCause : int {Data=1, NotFound=2, Conflict=3, Constraint=4, ForeignKey=5};
-    enum class ConflictResolution : int {Skip=0, Replace=1, Abort=2};
-
 private:
     int    m_size;
     void*  m_changeset;
-
-public:
-    virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}
-    virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
-
+protected:
+    BE_SQLITE_EXPORT virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override;
+    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroup& changeGroup) override;
+    BE_SQLITE_EXPORT virtual DbResult _ApplyChanges(DbR db) override;
+    virtual Changes _GetChanges() override { return Changes(*this); }
 public:
     //! construct a blank, empty ChangeSet
     ChangeSet() {m_size=0; m_changeset=nullptr;}
@@ -244,22 +288,6 @@ public:
     //! Re-create this ChangeSet from data from a previously saved ChangeSet.
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     BE_SQLITE_EXPORT DbResult FromData(int size, void const* data, bool invert);
-
-    //! Create a ChangeSet or PatchSet from a ChangeTracker. The ChangeSet can then be saved persistently.
-    //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
-    //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full);
-
-    //! Create a ChagneSet or PathSet by merging the contents of a ChangeGroup
-    //! @param[in] changeGroup ChangeGroup to be merged together. 
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    BE_SQLITE_EXPORT DbResult FromChangeGroup(ChangeGroup& changeGroup);
-
-    //! Apply all of the changes in a ChangeSet to the supplied database.
-    //! @param[in] db the database to which the changes are applied.
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db);
 
     //! Concatenate this ChangeSet with a second ChangeSet
     //! @param[in] second The change set to concatenate
@@ -301,7 +329,7 @@ struct AbortOnConflictChangeSet : BeSQLite::ChangeSet
 //! be used in low memory environments where it is required to handle very large Change Sets. 
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeStream : NonCopyableClass
+struct ChangeStream : NonCopyableClass, IChangeSet
 {
 friend struct Changes;
 private:
@@ -316,6 +344,11 @@ private:
     static DbResult TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream);
 
 protected:
+    BE_SQLITE_EXPORT virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override;
+    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroup& changeGroup) override;
+    BE_SQLITE_EXPORT virtual DbResult _ApplyChanges(DbR db) override;
+    virtual Changes _GetChanges() override { return Changes(*this); }
+
     //! Application implements this to supply input to the system. 
     //! @param[out] pData Buffer to copy data into. 
     //! @param[in,out] pnData System sets this to the size of the buffer. Implementation sets it to the 
@@ -328,14 +361,6 @@ protected:
     //! @param[in] nData Size of buffer
     //! @return BE_SQLITE_OK if the data has been successfully processed. Return BE_SQLITE_ERROR otherwise. 
     virtual DbResult _OutputPage(const void *pData, int nData) { return BE_SQLITE_OK; }
-        
-    //! Implement to handle conflicts when applying changes
-    //! @see ApplyChanges
-    virtual ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause clause, Changes::Change iter) = 0;
-        
-    //! Implement to filter out specific tables when applying changes
-    //! @see ApplyChanges
-    virtual ChangeSet::ApplyChangesForTable _FilterTable(Utf8CP tableName) { return ChangeSet::ApplyChangesForTable::Yes; }
 
     //! Override to reset any state of the change stream
     //! @remarks Called at end of various change stream operations, and is used by application to reset the stream and 
@@ -345,18 +370,6 @@ protected:
 public:
     //! Constructor
     ChangeStream() {}
-
-    //! Stream changes from a ChangeTracker. 
-    //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
-    //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
-    //! @remarks Implement _OutputPage to receive the stream
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, ChangeSet::SetType setType = ChangeSet::SetType::Full);
-
-    //! Stream changes from a ChangeGroup
-    //! @remarks Implement _OutputPage to receive the stream
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    BE_SQLITE_EXPORT DbResult FromChangeGroup(ChangeGroup const& changeGroup);
 
     //! Stream changes to a ChangeGroup. 
     //! @remarks Implement _InputPage to send the stream
@@ -386,12 +399,6 @@ public:
     //! need to implement _InputPage to send the streams. 
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     BE_SQLITE_EXPORT DbResult FromConcatenatedChangeStreams(ChangeStream& inStream1, ChangeStream& inStream2);
-
-    //! Apply all of the changes in this stream to the supplied database.
-    //! @param[in] db the database to which the changes are applied.
-    //! @remarks Implement _InputPage to send the stream
-    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db);
         
     //! Dump the contents of this stream for debugging
     BE_SQLITE_EXPORT void Dump(Utf8CP label, DbCR db, bool isPatchSet = false, int detailLevel = 0);

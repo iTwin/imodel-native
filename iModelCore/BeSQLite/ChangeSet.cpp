@@ -91,7 +91,7 @@ bool ChangeTracker::HasChanges() {return m_session && 0 == sqlite3session_isempt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::FromChangeTrack(ChangeTracker& session, SetType setType)
+DbResult ChangeSet::_FromChangeTrack(ChangeTracker& session, SetType setType)
     {
     BeAssert(!IsValid());
     return (setType == SetType::Full) ? (DbResult) sqlite3session_changeset(session.GetSqlSession(), &m_size, &m_changeset) :
@@ -211,13 +211,13 @@ void ChangeSet::Free()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int conflictCallback(void *pCtx, int cause, SqlChangesetIterP iter) {return (int) ((ChangeSet*) pCtx)->_OnConflict((ChangeSet::ConflictCause) cause, Changes::Change(iter, true));}
-static int filterTableCallback(void *pCtx, Utf8CP tableName) {return (int) ((ChangeSet*) pCtx)->_FilterTable(tableName);}
+static int conflictCallback(void *pCtx, int cause, SqlChangesetIterP iter) {return (int) ((ChangeSet*) pCtx)->OnConflict((ChangeSet::ConflictCause) cause, Changes::Change(iter, true));}
+static int filterTableCallback(void *pCtx, Utf8CP tableName) {return (int) ((ChangeSet*) pCtx)->FilterTable(tableName);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::ApplyChanges(DbR db)
+DbResult ChangeSet::_ApplyChanges(DbR db)
     {
     return (DbResult) sqlite3changeset_apply(db.GetSqlDb(), m_size, m_changeset, filterTableCallback, conflictCallback, this);
     }
@@ -616,7 +616,7 @@ DbResult ChangeGroup::AddChanges(int size, void const* data)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::FromChangeGroup(ChangeGroup& changegroup)
+DbResult ChangeSet::_FromChangeGroup(ChangeGroup& changegroup)
     {
     return (DbResult) sqlite3changegroup_output((sqlite3_changegroup*) changegroup.m_changegroup, &m_size, &m_changeset);
     }
@@ -730,7 +730,7 @@ int ChangeStream::FilterTableCallback(void *pCtx, Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetType setType)
+DbResult ChangeStream::_FromChangeTrack(ChangeTracker& session, ChangeSet::SetType setType)
     {
     DbResult result;
     if (ChangeSet::SetType::Full == setType)
@@ -745,7 +745,7 @@ DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::FromChangeGroup(ChangeGroup const& changeGroup)
+DbResult ChangeStream::_FromChangeGroup(ChangeGroup& changeGroup)
     {
     DbResult result = (DbResult) sqlite3changegroup_output_strm((sqlite3_changegroup*) changeGroup.m_changegroup, OutputCallback, this);
     _Reset();
@@ -765,7 +765,7 @@ DbResult ChangeStream::ToChangeGroup(ChangeGroup& changeGroup)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ApplyChanges(DbR db)
+DbResult ChangeStream::_ApplyChanges(DbR db)
     {
     DbResult result = (DbResult) sqlite3changeset_apply_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this);
     _Reset();
