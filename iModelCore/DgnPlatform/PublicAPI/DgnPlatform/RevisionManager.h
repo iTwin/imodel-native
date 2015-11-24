@@ -136,8 +136,8 @@ private:
     BentleyStatus UpdateInitialParentRevisionId();
 
     BentleyStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
-    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup const& changeGroup);
-    static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup const& changeGroup);
+    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup& changeGroup);
+    static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
 public:
     //! Constructor

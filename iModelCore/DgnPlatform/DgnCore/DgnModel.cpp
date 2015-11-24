@@ -1115,7 +1115,7 @@ void DgnModel::_FillModel()
             }
 
         DgnElement::Code code;
-        code.From(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code), stmt.GetValueText(Column::CodeNamespace));
+        code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
         elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             code,

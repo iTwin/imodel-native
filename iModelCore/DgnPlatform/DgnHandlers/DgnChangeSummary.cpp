@@ -184,9 +184,9 @@ template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, 
         }
 
     auto instance = entry.GetImpl().GetInstance();
-    DbDupValue oldAuthId = instance.GetOldValue("CodeAuthorityId"),
-               oldNamespace = instance.GetOldValue("CodeNameSpace"),
-               oldValue = instance.GetOldValue("Code");
+    DbDupValue oldAuthId = instance.GetOldValue("Code.AuthorityId"),
+               oldNamespace = instance.GetOldValue("Code.NameSpace"),
+               oldValue = instance.GetOldValue("Code.Value");
 
     if (DbOpcode::Delete == op)
         {
@@ -198,7 +198,7 @@ template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, 
         if (oldAuthId.IsValid() || oldNamespace.IsValid() || oldValue.IsValid())
             {
             DgnAuthorityId authId = oldAuthId.IsValid() ? oldAuthId.GetValueId<DgnAuthorityId>() : currentCode.GetAuthority();
-            Utf8String nameSpace = oldNamespace.IsValid() ? oldNamespace.GetValueText() : currentCode.GetNameSpace();
+            Utf8String nameSpace = oldNamespace.IsValid() ? oldNamespace.GetValueText() : currentCode.GetNamespace();
             Utf8String value = oldValue.IsValid() ? oldValue.GetValueText() : currentCode.GetValue();
             code.From(authId, value, nameSpace);
             }

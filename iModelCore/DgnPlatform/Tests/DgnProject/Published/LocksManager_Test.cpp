@@ -899,6 +899,7 @@ TEST_F(DoubleBriefcaseTest, Dynamics)
     ExpectLevel(*elemA, LockLevel::Exclusive);
     }
 
+#ifdef WIP_LOCKS_FROM_CHANGESET
 /*---------------------------------------------------------------------------------**//**
 * Test functions which query the set of locks which are required by the changes actually
 * made in the briefcase. (Excluding locks obtained but not actually used).
@@ -974,4 +975,5 @@ TEST_F(SingleBriefcaseLocksTest, UsedLocks)
     EXPECT_EQ(DgnDbStatus::Success, req.FromChangeSet(db));
     EXPECT_TRUE(req.IsEmpty());
     }
+#endif
 
