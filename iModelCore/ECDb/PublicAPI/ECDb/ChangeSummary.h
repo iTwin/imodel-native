@@ -263,7 +263,12 @@ public:
     //! Create a ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 
     //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromSqlChangeSet(BeSQLite::ChangeSet& changeSet);
+    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::ChangeSet& changeSet);
+
+    //! Create a ChangeSummary from the contents of a BeSQLite ChangeStream
+    //! @remarks The ChangeSummary needs to be new or freed before this call. 
+    //! @see MakeIterator, GetInstancesTableName
+    ECDB_EXPORT BentleyStatus FromChangeStream(BeSQLite::ChangeStream& changeStream);
 
     //! Free the data held by this ChangeSummary.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
@@ -276,10 +281,10 @@ public:
     ECDB_EXPORT void Dump() const;
 
     //! Make an iterator over the changed instances
-    //! Use @ref FromSqlChangeSet to populate the ChangeSummary
+    //! Use @ref FromChangeSet to populate the ChangeSummary
     InstanceIterator MakeInstanceIterator(InstanceIterator::Options const& options=InstanceIterator::Options()) const { return InstanceIterator(*this, options); }
 
-    //! Check if the change summary constains a specific instance
+    //! Check if the change summary contains a specific instance
     ECDB_EXPORT bool ContainsInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
 
     //! Get a specific changed instance
@@ -287,12 +292,12 @@ public:
 
     //! Get the name of the table containing summary of changed instances
     //! @remarks The table includes ClassId, InstanceId, DbOpcode and Indirect columns, and can be used as part of other 
-    //! queries. Use @ref FromSqlChangeSet to populate the ChangeSummary table.
+    //! queries. Use @ref FromChangeSet to populate the ChangeSummary table.
     ECDB_EXPORT Utf8String GetInstancesTableName() const;
 
     //! Get the name of the table containing all the changed values
     //! @remarks The table includes ClassId, InstanceId, AccessString, OldValue, NewValue columns, and can be used as part of other 
-    //! queries. Use @ref FromSqlChangeSet to populate the ChangeSummary table.
+    //! queries. Use @ref FromChangeSet to populate the ChangeSummary table.
     ECDB_EXPORT Utf8String GetValuesTableName() const;
 
     //! @private internal use only

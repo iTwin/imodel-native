@@ -369,7 +369,7 @@ YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 "||"                 { SQL_NEW_NODE(Utf8String(SQLyytext), SQL_NODE_CONCAT);return SQL_CONCAT;}
 
 
-[-+*/:(),.;?{}]    { return SQLyytext[0]; }
+[-+*/%:(),.;?{}&|~]    { return SQLyytext[0]; }
 
 
 <SQL>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_][A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_0-9]*      {return gatherName( SQLyytext);}

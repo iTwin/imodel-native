@@ -793,15 +793,14 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable () const
         return;
 
     Utf8CP sql0 =
-        "SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName "
-        "     FROM ec_PropertyMap  "
-        "         JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
-        "         JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "         JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "         JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "         JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "     WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-        "    GROUP BY  ec_Table.Id, ec_Class.Id ";
+        "SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
+        "GROUP BY  ec_Table.Id, ec_Class.Id";
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     ECDbTableId currentTableId = -1;
@@ -833,11 +832,8 @@ void ECDbMap::LightweightCache::LoadAnyClassRelationships () const
         return;
 
     Utf8CP sql1 =
-        " SELECT"
-        "       RCC.RelationshipClassId,"
-        "       RCC.RelationshipEnd"
-        " FROM ec_RelationshipConstraintClass RCC"
-        " WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
+        "SELECT RCC.RelationshipClassId, RCC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC "
+        "WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
 
     auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
     while (stmt1->Step () == BE_SQLITE_ROW)
@@ -866,15 +862,14 @@ void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
         return;
 
     Utf8CP sql1 =
-        "SELECT ec_Class.Id "
-        "  FROM ec_PropertyMap "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "SELECT ec_Class.Id  FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
 		"WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
-        "GROUP BY ec_Class.Id ";
+        "GROUP BY ec_Class.Id";
 
 
     auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
@@ -895,29 +890,14 @@ void ECDbMap::LightweightCache::LoadRelationshipCache () const
         return;
 
     Utf8CP sql0 =
-        "WITH RECURSIVE "
-        "  DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
-        "  AS ( "
-        "      SELECT "
-        "            RCC.RelationshipClassId, "
-        "            RCC.RelationshipEnd, "
-        "            RC.IsPolymorphic, "
-        "            RCC.ClassId, "
-        "            RCC.ClassId "
-        "      FROM ec_RelationshipConstraintClass RCC "
-        "      INNER JOIN ec_RelationshipConstraint RC "
-        "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
-        "    UNION "
-        "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
-        "            FROM DerivedClassList DCL "
-        "        INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
-        "        WHERE IsPolymorphic = 1 "
-        "  ) "
-        "  SELECT DerivedClassId, "
-        "         RelationshipClassId, "
-        "         RelationshipEnd "
-        "  FROM DerivedClassList ";
-
+        "WITH RECURSIVE DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
+        "AS (SELECT RCC.RelationshipClassId,RCC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
+        "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
+        "UNION "
+        "SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
+        "FROM DerivedClassList DCL INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
+        "WHERE IsPolymorphic = 1) "
+        "SELECT DerivedClassId, RelationshipClassId, RelationshipEnd FROM DerivedClassList";
 
     auto stmt0 = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt0->Step () == BE_SQLITE_ROW)
@@ -990,15 +970,14 @@ void ECDbMap::LightweightCache::LoadVerticalPartitions()  const
         return;
 
     Utf8CP sql0 =
-        "SELECT  ec_Class.Id ClassId, ec_Table.Name "
-        "    FROM ec_PropertyMap "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
-        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "    WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-        "    GROUP BY ec_Class.Id, ec_Table.Name ";
+        "SELECT ec_Class.Id ClassId, ec_Table.Name FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
+        "GROUP BY ec_Class.Id, ec_Table.Name";
 
     CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql0);
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -1022,29 +1001,22 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
 
     auto anyClassId = GetAnyClassId ();
     Utf8CP sql0 =
-        "WITH RECURSIVE  "
-        "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
-        "   AS ( "
-        "       SELECT Id, Id, Id FROM ec_Class "
-        "   UNION  "
-        "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
-        "           FROM DerivedClassList DCL  "
-        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
-        "   ), "
-        "   TableMapInfo "
-        "   AS ( "
-        "   SELECT  ec_Class.Id ClassId, ec_Table.Name TableName "
-        "   FROM ec_PropertyMap  "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
-        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "   WHERE ec_ClassMap.MapStrategy NOT IN (100, 101)  AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
-        "  GROUP BY  ec_Class.Id , ec_Table.Name "
-        "   )  "
-        "SELECT  DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL  "
-        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
+        "WITH RECURSIVE DerivedClassList(RootClassId,CurrentClassId,DerivedClassId) "
+        "AS (SELECT Id, Id, Id FROM ec_Class "
+        "UNION "
+        "SELECT RootClassId, BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
+        "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
+        "TableMapInfo AS ("
+        "SELECT  ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
+        "GROUP BY ec_Class.Id, ec_Table.Name) "
+        "SELECT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
+        "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
 
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)
@@ -1078,17 +1050,16 @@ void ECDbMap::LightweightCache::LoadRelationshipByTable ()  const
         return;
 
     Utf8CP sql0 =
-        " SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy"
-        "    FROM ec_Column"
-        "        INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "        INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id"
-        "        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
-        "        INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
-        "        INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
-        "        INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
-        "    WHERE ec_ClassMap.MapStrategy  <> 0 AND" 
-        "       (ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = 0) AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) AND"
-        "        ec_Class.IsRelationship = 1 AND ec_Table.IsVirtual = 0";
+        "SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy FROM ec_Column "
+        "INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id "
+        "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+        "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
+        "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "WHERE ec_ClassMap.MapStrategy  <> 0 AND " 
+        "(ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = 0) AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) AND "
+        "ec_Class.IsRelationship = 1 AND ec_Table.IsVirtual = 0";
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)

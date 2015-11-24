@@ -550,8 +550,16 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
     BeAssert(fkIdColumn != nullptr);
     if (!m_autogenerateForeignKeyColumns)
         {
+        bool canEdit = fkIdColumn->GetTableR().GetEditHandle().CanEdit();
+        if (!canEdit)
+            fkIdColumn->GetTableR().GetEditHandleR().BeginEdit();
+
         if (!Enum::Intersects(fkIdColumn->GetKind(), fkColumnId))
             fkIdColumn->AddKind(fkColumnId);
+
+        if (!canEdit)
+            fkIdColumn->GetTableR().GetEditHandleR().EndEdit();
+
         }
 
     return MapStatus::Success;

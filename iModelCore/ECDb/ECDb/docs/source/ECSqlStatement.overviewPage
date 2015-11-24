@@ -59,7 +59,7 @@
     ECSqlStatement preparation diagnostics:
     - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
     - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the
-    name <b>Diagnostics.ECSqlStatement.Prepare</b> and assign it the log severity @c @b TRACE.
+    name <b>Diagnostics.ECSqlStatement.Prepare</b> and assign it the log severity @c @b DEBUG.
     With that enabled, %ECDb logs all prepared ECSQL statements (i.e. all calls to BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare). For each call
     the ECSQL string and the preparation time (in @b milliseconds) is logged.
     The log output can then be analyzed for repetition patterns.
@@ -78,7 +78,7 @@
     </appender>
     ...
     <logger name="Diagnostics.ECSqlStatement.Prepare">
-    <priority value="trace" />
+    <priority value="debug" />
     <appender-ref ref="ECSqlStatementPrepareDiagnostics"/>
     </logger>
     ...
