@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/MrDTMDataRef.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -3599,8 +3599,8 @@ int MrDTMDataRef::ReadFile(DgnGCSP targetGCS)
     ViewContextP g_currentViewContextP = 0;
 
     int CheckTriangulationStopCallback(DTMFeatureType dtmFeatureType)
-        {       
-        if ((g_currentViewContextP != 0) && (g_currentViewContextP->CheckStop() == true))
+        {  
+        if ((DgnPlatformLib::QueryHost() != NULL) && (g_currentViewContextP != 0) && (g_currentViewContextP->CheckStop() == true))
             {             
             return DTM_ERROR;
             }  

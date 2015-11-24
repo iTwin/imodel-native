@@ -178,7 +178,7 @@ int wmain(int argc, wchar_t *argv[])
 ** Initialise DTM
 */
  bcdtmInitialise() ;
- test ();
+ //test ();
  if( fpLOG != NULL ) { fclose(fpLOG) ; fpLOG = NULL ; }
  bcdtmInitialise_openLogFile(L"bcTin.log") ;
  importStartTime = bcdtmClock() ;

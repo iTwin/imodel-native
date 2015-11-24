@@ -13,11 +13,9 @@
 #include <algorithm>
 #include <list>
 
-
-
-
-
 #include <thread>
+
+const int MINIMUM_POINTS_PER_TIN_THREAD = 2000;
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -51,7 +49,7 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
 ** Author : Rob Cormack  January 2007  Rob.Cormack@Bentley.com
 **
 */
- int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
+int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
  long colinear=0,startTime,useMultiThread=TRUE ;
 /*
 ** Write Entry Message
@@ -114,7 +112,7 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
 /*
 ** Single Thread Triangulate DTM Object
 */
- if( useMultiThread == FALSE || DTM_NUM_PROCESSORS == 1 || dtmP->numPoints < 1000 )
+ if( useMultiThread == FALSE || DTM_NUM_PROCESSORS == 1 || dtmP->numPoints < (MINIMUM_POINTS_PER_TIN_THREAD * 2) )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Single Thread Triangulating") ;
     startTime = bcdtmClock() ;
@@ -430,6 +428,8 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
  dtmP->dtmState = DTMState::TinError ;
  goto cleanup ;
 }
+
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -629,14 +629,31 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
  long startPoint, numThreadPoints = 0;
  bvector<long> numThreadArrayPoints;
  long p1l,p1r,col1,p2l,p2r,col2,cListPtr,cListDelPtr ;
- std::vector<std::thread> thread;
+ int numThreads = DTM_NUM_PROCESSORS;
+ std::vector<std::thread> threads;
  bvector<DTM_MULTI_THREAD> multiThread;
+/*
+** Determine Number Of Points Per Thread
+*/
+ numThreadPoints = dtmP->numPoints / numThreads;
+
+ if (numThreadPoints < MINIMUM_POINTS_PER_TIN_THREAD)
+     numThreadPoints = MINIMUM_POINTS_PER_TIN_THREAD;
+
+ numThreads = dtmP->numPoints / numThreadPoints;
+ 
+ numThreadPoints = dtmP->numPoints / numThreads;
+
  /*
  ** Resize arrays
  */
- numThreadArrayPoints.resize (DTM_NUM_PROCESSORS);
- thread.resize (DTM_NUM_PROCESSORS);;
- multiThread.resize (DTM_NUM_PROCESSORS);
+ numThreadArrayPoints.resize(numThreads);
+ multiThread.resize(numThreads);
+
+ for (n = 0; n < numThreads - 1; n++)
+     numThreadArrayPoints[n] = numThreadPoints;
+ numThreadArrayPoints[numThreads - 1] = dtmP->numPoints - (numThreads - 1) * numThreadPoints;
+ if (dbg) for (n = 0; n < numThreads; ++n) bcdtmWrite_message(0, 0, 0, "Thread[%2ld] ** numPoints = %6ld", n, numThreadArrayPoints[n]);
  /*
 ** Write Entry Message
 */
@@ -660,18 +677,10 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
 */
  for( p = 0 , longP = sortOfsP ; p < dtmP->numPoints ; ++p , ++longP ) *longP = p ;
 /*
-** Determine Number Of Points Per Thread
-*/
- numThreadPoints = dtmP->numPoints / DTM_NUM_PROCESSORS + 1 ;
- if( dtmP->numPoints % DTM_NUM_PROCESSORS == 0 ) --numThreadPoints ;
- for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n ) numThreadArrayPoints[n] =  numThreadPoints ;
- if( dtmP->numPoints % DTM_NUM_PROCESSORS != 0 ) numThreadArrayPoints[DTM_NUM_PROCESSORS-1] = dtmP->numPoints - (DTM_NUM_PROCESSORS-1) * numThreadPoints ;
- if( dbg ) for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n  ) bcdtmWrite_message(0,0,0,"Thread[%2ld] ** numPoints = %6ld",n,numThreadArrayPoints[n]) ;
-/*
 ** Initialise Multi Thread Triangulation Array
 */
  startPoint = 0 ;
- for( n = 0 ; n < DTM_NUM_PROCESSORS ; ++n )
+ for (n = 0; n < numThreads; ++n)
    {
     multiThread[n].thread          = n ;
     multiThread[n].dtmP            = dtmP ;
@@ -686,8 +695,10 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
     multiThread[n].cListPtr        = startPoint * 6 ;
     multiThread[n].cListDelPtr     = dtmP->nullPtr  ;
     startPoint = startPoint + numThreadArrayPoints[n] ;
-   }
-/*
+    BeAssert(startPoint <= dtmP->numPoints);
+     }
+ BeAssert(startPoint == dtmP->numPoints);
+ /*
 **  Allocate Nodes Memory For Dtm Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Nodes Memory For Dtm Object") ;
@@ -706,14 +717,14 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
 /*
 ** Create Threads To Triangulate Dtm Object
 */
- for( n = 1 ; n < DTM_NUM_PROCESSORS ; ++n )
-   thread[n] = std::thread (bcdtmTin_multiThreadTriangulationWorkerDtmObject, &multiThread[n]);
+ for (n = 0; n < numThreads - 1; ++n)
+     threads.push_back(std::thread(bcdtmTin_multiThreadTriangulationWorkerDtmObject, &multiThread[n]));
 /*
 ** Wait For All Threads To Complete
 */
- bcdtmTin_multiThreadTriangulationWorkerDtmObject(&multiThread[0]);
- for (n = 1; n < DTM_NUM_PROCESSORS; ++n)
-     thread[n].join ();
+ bcdtmTin_multiThreadTriangulationWorkerDtmObject(&multiThread[numThreads - 1]);
+ for (auto& thread : threads)
+     thread.join ();
 /*
 ** Check For Check Stop Termination
 */
@@ -762,7 +773,7 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
 /*
 ** Merge Left And Right Triangulations
 */
- for( n = 1 ; n < DTM_NUM_PROCESSORS ; ++n )
+ for( n = 1 ; n < numThreads ; ++n )
    {
 /*
 ** Check For Check Stop Termination
@@ -817,7 +828,7 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
 **  Map Unused Cyclic List Entries Back To Left Hand
 */
     numClist = numClist + multiThread[n].numPoints * 6 ;
-    if( n < DTM_NUM_PROCESSORS - 1 )
+    if( n < numThreads - 1 )
       {
        for( cListPtr = dtmP->cListPtr ; cListPtr < numClist ; ++cListPtr )
          {
