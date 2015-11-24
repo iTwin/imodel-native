@@ -894,7 +894,7 @@ public:
 
 #define DIAGNOSTICS_PREPARE_LOGGER_NAME L"Diagnostics.BeSQLite.Prepare"
 #define DIAGNOSTICS_QUERYPLAN_LOGGER_NAME L"Diagnostics.BeSQLite.QueryPlan"
-#define DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME L"Diagnostics.BeSQLite.QueryPlan.WithTableScans"
+#define DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME L"Diagnostics.BeSQLite.QueryPlanWithTableScans"
 
 #ifdef NDEBUG
 #define STATEMENT_DIAGNOSTICS_ON
@@ -919,12 +919,14 @@ public:
 //! Preparing an @ref BentleyApi::BeSQLite::Statement "Statement" can be expensive.So statements should be reused
 //! where applicable.In order to help analyze which statements to reuse and which not, turn on preparation diagnostics
 //! by using this logger name.This will log all SQL statements being prepared by BeSQLite.
-//! - Examine the SQL query plan(Logger name : @b Diagnostics.BeSQLite.QueryPlan or @b Diagnostics.BeSQLite.QueryPlan.WithTableScans)
+//! - Examine the SQL query plan(Logger name : @b Diagnostics.BeSQLite.QueryPlan or @b Diagnostics.BeSQLite.QueryPlanWithTableScans)
 //! Examining the SQL query plan can, for example, be used to identify missing indexes.They can slow down queries significantly.
 //! Turn on the query plan diagnostics by using one of the two logger names.
 //! With @b Diagnostics.BeSQLite.QueryPlan the whole query plan is logged along with the SQL string.
-//! With @b Diagnostics.BeSQLite.QueryPlan.WithTableScans only query plans are logged if they contain <c>SCAN TABLE</c> directives,
+//! With @b Diagnostics.BeSQLite.QueryPlanWithTableScans only query plans are logged if they contain <c>SCAN TABLE</c> directives,
 //! which can be (but must not be) indications for missing indexes.
+//!
+//! Output format: <SQL>|<1st item of query plan>;<2nd item of query plan>;<3rd item of query plan>...
 //!
 //! Further notes:
 //!  - BentleyApi::BeSQLite::StatementDiagnostics::SetIsEnabled
