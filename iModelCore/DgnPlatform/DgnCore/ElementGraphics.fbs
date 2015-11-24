@@ -21,7 +21,7 @@ struct DPoint3d {x:double; y:double; z:double;}
 struct DPoint2d {x:double; y:double;}
 struct DVec3d {x:double; y:double; z:double;}
 struct Transform {x00:double; x01:double; x02:double; tx:double; x10:double; x11:double; x12:double; ty:double; x20:double; x21:double; x22:double; tz:double;}
-struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; subCategoryId:long; materialId:long; transparency:double; uv:DPoint2d;}
+struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; materialId:long; transparency:double; uv:DPoint2d;}
 struct FaceSymbologyIndex {faceIndex:uint; symbIndex:uint;}
 
 //=======================================================================================
@@ -74,22 +74,13 @@ table BRepData
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
-table BeginSubCategory
+table GeomPart
     {
-    subCategoryId:long;
+    geomPartId:long; // only reason to use flatbuffers is to make it easier if we need to add more info down the road...
     origin:DPoint3d;
     yaw:double;
     pitch:double;
     roll:double;
-
-    } // BeginSubCategory
-
-//=======================================================================================
-// @bsiclass                                                    
-//=======================================================================================
-table GeomPart
-    {
-    geomPartId:long; // only reason to use flatbuffers is to make it easier if we need to add more info down the road...
 
     } // GeomPart
 
@@ -98,31 +89,25 @@ table GeomPart
 //=======================================================================================
 table BasicSymbology
     {
+    subCategoryId:long;
     color:uint;
     weight:uint;
-    transparency:double; // contributes to net transparency, not an override.
-    displayPriority:int; // contributes to net display priority, not an override. (2d only)
-    useColor:ubyte;  // color overrides sub-category appearance
-    useWeight:ubyte; // weight overrides sub-category appearance
+    lineStyleId:long;           // LineStyleParams are in a separate table. They are provided only when necessary.
+    transparency:double;        // contributes to net transparency, not an override.
+    displayPriority:int;        // contributes to net display priority, not an override. (2d only)
     geomClass:GeometryClass;
+    useColor:ubyte;             // color overrides sub-category appearance
+    useWeight:ubyte;            // weight overrides sub-category appearance
+    useStyle:ubyte;             // style overrides sub-category appearance
 
     } // BasicSymbology
 
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
-table LineStyle
-    {
-    lineStyleId:long;
-    //  LineStyleParams are in a separate table. They are provided only when necessary.
-    } // LineStyle
-
-//=======================================================================================
-// @bsiclass                                                    
-//=======================================================================================
 table LineStyleModifiers
     {
-    modifiers:uint;             //  see STYLEMOD_... 
+    modifiers:uint;             // see STYLEMOD_... 
     scale:double;               // Applied to all length values
     dashScale:double;           // Applied to adjustable dash strokes
     gapScale:double;            // Applied to adjustable gap strokes

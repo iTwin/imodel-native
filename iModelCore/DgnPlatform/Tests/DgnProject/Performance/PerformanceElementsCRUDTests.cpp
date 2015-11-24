@@ -684,14 +684,14 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, BeS
     DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
     if (elementCode.IsEmpty ())
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull (stmt.GetParameterIndex (":Code")));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull (stmt.GetParameterIndex (":Code_Value")));
         }
     else
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":Code"), elementCode.GetValue ().c_str (), BeSQLite::Statement::MakeCopy::No));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":Code_Value"), elementCode.GetValue ().c_str (), BeSQLite::Statement::MakeCopy::No));
         }
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":CodeAuthorityId"), elementCode.GetAuthority ()));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":CodeNameSpace"), elementCode.GetNameSpace ().c_str (), BeSQLite::Statement::MakeCopy::No));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Code_AuthorityId"), elementCode.GetAuthority ()));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":Code_Namespace"), elementCode.GetNamespace ().c_str (), BeSQLite::Statement::MakeCopy::No));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":ParentId"), element->GetParentId ()));
 
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -866,17 +866,25 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
     bool updateParams = false;
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ECInstanceId"), element->GetElementId ()));
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ModelId"), element->GetModelId ()));
-    DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
-    if (elementCode.IsEmpty ())
+
+    // Bind Code
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull (stmt.GetParameterIndex ("Code")));
+        DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
+        IECSqlStructBinder& codeBinder = stmt.BindStruct(stmt.GetParameterIndex("Code"));
+
+        if (elementCode.IsEmpty())
+            {
+            ASSERT_EQ(ECSqlStatus::Success, codeBinder.GetMember("Value").BindNull());
+            }
+        else
+            {
+            ASSERT_EQ(ECSqlStatus::Success, codeBinder.GetMember("Value").BindText(elementCode.GetValue().c_str(), IECSqlBinder::MakeCopy::No));
+            }
+
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("AuthorityId").BindId(elementCode.GetAuthority()));
+        ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
         }
-    else
-        {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (stmt.GetParameterIndex ("Code"), elementCode.GetValue ().c_str (), IECSqlBinder::MakeCopy::No));
-        }
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("CodeAuthorityId"), elementCode.GetAuthority ()));
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (stmt.GetParameterIndex ("CodeNameSpace"), elementCode.GetNameSpace ().c_str (), IECSqlBinder::MakeCopy::No));
+
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ParentId"), element->GetParentId ()));
 
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -1159,20 +1167,20 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8Str
         }
 
     if (omitClassIdFilter)
-        selectSql.assign("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[CodeAuthorityId], [Element4].[CodeNameSpace], [Element4].[Code], [Element4].[LastMod], [Element4].[Prop1_1], "
+        selectSql.assign("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[Code_AuthorityId], [Element4].[Code_Namespace], [Element4].[Code_Value], [Element4].[LastMod], [Element4].[Prop1_1], "
                      "[Element4].[Prop1_2], [Element4].[Prop1_3], [Element4].[Prop2_1], [Element4].[Prop2_2], [Element4].[Prop2_3], [Element4].[Prop3_1], [Element4].[Prop3_2], [Element4].[Prop3_3], [Element4].[Prop4_1], "
-                     "[Element4].[Prop4_2], [Element4].[Prop4_3] FROM (SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], [CodeAuthorityId][CodeAuthorityId], "
-                     "[CodeNameSpace][CodeNameSpace], [Code][Code], [LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], [Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], "
+                     "[Element4].[Prop4_2], [Element4].[Prop4_3] FROM (SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], [Code_AuthorityId][Code_AuthorityId], "
+                     "[Code_Namespace][Code_Namespace], [Code_Value][Code_Value], [LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], [Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], "
                      "[Prop3_2][Prop3_2], [Prop3_3][Prop3_3], [Prop4_1][Prop4_1], [Prop4_2][Prop4_2], [Prop4_3][Prop4_3] FROM[dgn_Element])[Element4]  WHERE[Element4].[Id] = ? ");
     else
         {
-        selectSql.Sprintf("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[CodeAuthorityId], "
-                         "[Element4].[CodeNameSpace], [Element4].[Code], [Element4].[LastMod], [Element4].[Prop1_1], "
+        selectSql.Sprintf("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[Code_AuthorityId], "
+                         "[Element4].[Code_Namespace], [Element4].[Code_Value], [Element4].[LastMod], [Element4].[Prop1_1], "
                          "[Element4].[Prop1_2], [Element4].[Prop1_3], [Element4].[Prop2_1], [Element4].[Prop2_2], "
                          "[Element4].[Prop2_3], [Element4].[Prop3_1], [Element4].[Prop3_2], [Element4].[Prop3_3], "
                          "[Element4].[Prop4_1], [Element4].[Prop4_2], [Element4].[Prop4_3] FROM "
                          "(SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], "
-                         "[CodeAuthorityId][CodeAuthorityId], [CodeNameSpace][CodeNameSpace], [Code][Code], "
+                         "[Code_AuthorityId][Code_AuthorityId], [Code_Namespace][Code_Namespace], [Code_Value][Code_Value], "
                          "[LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], "
                          "[Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], [Prop3_2][Prop3_2], [Prop3_3][Prop3_3], "
                          "[Prop4_1][Prop4_1], [Prop4_2][Prop4_2], [Prop4_3][Prop4_3] FROM [dgn_Element] "
@@ -1192,7 +1200,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateSql (Utf8CP className, Utf8Str
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
-        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("CodeAuthorityId", prop->GetName ().c_str ()) || 0 == strcmp ("CodeNameSpace", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
+        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
             continue;
         if (!isFirstItem)
             {
@@ -1303,7 +1311,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8S
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
-        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("CodeAuthorityId", prop->GetName ().c_str ()) || 0 == strcmp ("CodeNameSpace", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
+        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
             continue;
         if (!isFirstItem)
             {
@@ -1370,7 +1378,7 @@ void PerformanceElementsCRUDTestFixture::ElementApiSelectTime(Utf8CP className, 
     WPrintfString dbName (L"ElementApiSelect%ls_%d.idgndb", wClassName.c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
     StopWatch timer (true);
     for (uint64_t i = 0; i < opCount; i++)
         {
@@ -1391,7 +1399,7 @@ void PerformanceElementsCRUDTestFixture::ElementApiUpdateTime(Utf8CP className, 
     WPrintfString dbName (L"ElementApiUpdate%ls_%d.idgndb", WString (className, BentleyCharEncoding::Utf8).c_str (), opCount);
     SetUpTestDgnDb (dbName, className, initialInstanceCount);
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
     for (uint64_t i = 0; i < opCount; i++)
@@ -1417,13 +1425,15 @@ void PerformanceElementsCRUDTestFixture::ElementApiDeleteTime(Utf8CP className, 
     WPrintfString dbName(L"ElementApiDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
     SetUpTestDgnDb(dbName, className, initialInstanceCount);
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer(true);
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(s_firstElementId + i*elementIdIncrement);
+        STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - START");
         const DgnDbStatus stat = m_db->Elements().Delete(id);
+        STATEMENT_DIAGNOSTICS_LOGCOMMENT("Elements::Delete - END");
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
     timer.Stop();
@@ -1473,7 +1483,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, bool 
     GetSelectECSql (className, selectECSql, omitClassIdFilter);
     //printf ("\n Select ECSql %s : %s \n", className, selectECSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     ECSqlStatement stmt;
 
@@ -1508,7 +1518,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool 
     GetUpdateECSql (className, updateECSql, omitClassIdFilter);
     //printf ("\n Update ECSql %s : %s \n", className, updateECSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, updateECSql.c_str ()));
@@ -1540,7 +1550,9 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool 
     GetDeleteECSql (className, deleteECSql, omitClassIdFilter);
     //printf ("\n Delete ECSql %s : %s \n", className, deleteECSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECSQL DELETE - START");
 
     StopWatch timer (true);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, deleteECSql.c_str ()));
@@ -1554,6 +1566,8 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool 
         stmt.ClearBindings ();
         }
     timer.Stop ();
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECSQL DELETE - END");
 
     LogTiming(timer, "ECSQL DELETE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
@@ -1604,15 +1618,15 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool as
     GetSelectSql (className, selectSql, asTranslatedByECSql, omitClassIdFilter);
     //printf ("\n Select Sql %s : %s \n", className, selectSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*m_db, selectSql.c_str ()));
+    ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (*m_db, selectSql.c_str ())) << className << " As translated by ECSQL: " << asTranslatedByECSql << " Omit ECClassIdFilter: " << omitClassIdFilter << " Error: " << m_db->GetLastError().c_str();
     for (int i = 0; i < opCount; i++)
         {
         const ECInstanceId id(s_firstElementId + i*elementIdIncrement);
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (1, id));
-        ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
+        ASSERT_EQ (BE_SQLITE_OK, stmt.BindId (1, id)) << className << " As translated by ECSQL: " << asTranslatedByECSql << " Omit ECClassIdFilter: " << omitClassIdFilter;
+        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ()) << className << " As translated by ECSQL: " << asTranslatedByECSql << " Omit ECClassIdFilter: " << omitClassIdFilter;
         //ExtractSelectParams (stmt, className);
         stmt.Reset ();
         stmt.ClearBindings ();
@@ -1635,7 +1649,7 @@ void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, bool om
     GetUpdateSql (className, updateSql, omitClassIdFilter);
     //printf ("\n Update Sql %s : %s \n", className, updateSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*m_db, updateSql.c_str ()));
@@ -1666,7 +1680,9 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, bool om
     GetDeleteSql (className, deleteSql, omitClassIdFilter);
     //printf ("\n Delete Sql %s : %s \n", className, deleteSql.c_str ());
 
-    const int elementIdIncrement = DetermineElementIdIncrement();
+    const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("SQLite DELETE - START");
 
     StopWatch timer (true);
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*m_db, deleteSql.c_str ()));
@@ -1680,6 +1696,8 @@ void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, bool om
         stmt.ClearBindings ();
         }
     timer.Stop ();
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("SQLite DELETE - END");
+
     LogTiming(timer, "SQLite DELETE", className, omitClassIdFilter, initialInstanceCount, opCount);
     }
 
