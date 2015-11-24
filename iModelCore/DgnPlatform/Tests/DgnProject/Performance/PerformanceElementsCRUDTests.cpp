@@ -1167,20 +1167,20 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8Str
         }
 
     if (omitClassIdFilter)
-        selectSql.assign("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[CodeAuthorityId], [Element4].[CodeNameSpace], [Element4].[Code], [Element4].[LastMod], [Element4].[Prop1_1], "
+        selectSql.assign("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[Code_AuthorityId], [Element4].[Code_Namespace], [Element4].[Code_Value], [Element4].[LastMod], [Element4].[Prop1_1], "
                      "[Element4].[Prop1_2], [Element4].[Prop1_3], [Element4].[Prop2_1], [Element4].[Prop2_2], [Element4].[Prop2_3], [Element4].[Prop3_1], [Element4].[Prop3_2], [Element4].[Prop3_3], [Element4].[Prop4_1], "
-                     "[Element4].[Prop4_2], [Element4].[Prop4_3] FROM (SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], [CodeAuthorityId][CodeAuthorityId], "
-                     "[CodeNameSpace][CodeNameSpace], [Code][Code], [LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], [Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], "
+                     "[Element4].[Prop4_2], [Element4].[Prop4_3] FROM (SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], [Code_AuthorityId][Code_AuthorityId], "
+                     "[Code_Namespace][Code_Namespace], [Code_Value][Code_Value], [LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], [Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], "
                      "[Prop3_2][Prop3_2], [Prop3_3][Prop3_3], [Prop4_1][Prop4_1], [Prop4_2][Prop4_2], [Prop4_3][Prop4_3] FROM[dgn_Element])[Element4]  WHERE[Element4].[Id] = ? ");
     else
         {
-        selectSql.Sprintf("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[CodeAuthorityId], "
-                         "[Element4].[CodeNameSpace], [Element4].[Code], [Element4].[LastMod], [Element4].[Prop1_1], "
+        selectSql.Sprintf("SELECT [Element4].[ModelId], [Element4].[ParentId], [Element4].[Code_AuthorityId], "
+                         "[Element4].[Code_Namespace], [Element4].[Code_Value], [Element4].[LastMod], [Element4].[Prop1_1], "
                          "[Element4].[Prop1_2], [Element4].[Prop1_3], [Element4].[Prop2_1], [Element4].[Prop2_2], "
                          "[Element4].[Prop2_3], [Element4].[Prop3_1], [Element4].[Prop3_2], [Element4].[Prop3_3], "
                          "[Element4].[Prop4_1], [Element4].[Prop4_2], [Element4].[Prop4_3] FROM "
                          "(SELECT[dgn_Element].ECClassId, [dgn_Element].[Id][Id], [ModelId][ModelId], [ParentId][ParentId], "
-                         "[CodeAuthorityId][CodeAuthorityId], [CodeNameSpace][CodeNameSpace], [Code][Code], "
+                         "[Code_AuthorityId][Code_AuthorityId], [Code_Namespace][Code_Namespace], [Code_Value][Code_Value], "
                          "[LastMod][LastMod], [Prop1_1][Prop1_1], [Prop1_2][Prop1_2], [Prop1_3][Prop1_3], [Prop2_1][Prop2_1], "
                          "[Prop2_2][Prop2_2], [Prop2_3][Prop2_3], [Prop3_1][Prop3_1], [Prop3_2][Prop3_2], [Prop3_3][Prop3_3], "
                          "[Prop4_1][Prop4_1], [Prop4_2][Prop4_2], [Prop4_3][Prop4_3] FROM [dgn_Element] "
@@ -1621,12 +1621,12 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool as
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
     StopWatch timer (true);
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*m_db, selectSql.c_str ()));
+    ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (*m_db, selectSql.c_str ())) << className << " As translated by ECSQL: " << asTranslatedByECSql << " Omit ECClassIdFilter: " << omitClassIdFilter << " Error: " << m_db->GetLastError().c_str();
     for (int i = 0; i < opCount; i++)
         {
         const ECInstanceId id(s_firstElementId + i*elementIdIncrement);
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (1, id));
-        ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
+        ASSERT_EQ (BE_SQLITE_OK, stmt.BindId (1, id)) << className << " As translated by ECSQL: " << asTranslatedByECSql << " Omit ECClassIdFilter: " << omitClassIdFilter;
+        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ()) << className << " As translated by ECSQL: " << asTranslatedByECSql << " Omit ECClassIdFilter: " << omitClassIdFilter;
         //ExtractSelectParams (stmt, className);
         stmt.Reset ();
         stmt.ClearBindings ();
