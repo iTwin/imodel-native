@@ -24,7 +24,7 @@ private:
     struct Diagnostics : NonCopyableClass
         {
     private:
-        static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_TRACE;
+        static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_DEBUG;
         NativeLogging::ILogger& m_logger;
         std::unique_ptr<StopWatch> m_timer;
         Utf8CP m_ecsql;

@@ -24,11 +24,11 @@ public:
         bool m_expectedToSucceed;
         Utf8String m_assertMessage;
 
-        SchemaItem(Utf8CP name, Utf8CP schemaXml) : m_name(name), m_schemaXmlList({schemaXml}), m_expectedToSucceed(true) {}
         explicit SchemaItem(Utf8CP schemaXml) : SchemaItem("", schemaXml) {}
+        SchemaItem(Utf8CP name, Utf8CP schemaXml) : m_name(name), m_expectedToSucceed(true) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
+        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
+        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_expectedToSucceed(expectedToSucceeed) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
         SchemaItem(std::vector<Utf8String> const& schemaXmlList, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList(schemaXmlList), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
-        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
-        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXmlList({Utf8String(schemaXml)}), m_expectedToSucceed(expectedToSucceeed) {}
         };
 
 private:

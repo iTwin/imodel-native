@@ -157,23 +157,18 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& outECSc
         if (SUCCESS != LoadECSchemaFromDb(key->m_resolvedECSchema, ecSchemaId))
             return ERROR;
 
-        newlyLoadedSchemas.push_back (key);
-        DbECSchemaReferenceInfo info;
-        info.ColsSelect = DbECSchemaReferenceInfo::COL_ReferencedSchemaId;
-        info.ColsWhere = DbECSchemaReferenceInfo::COL_SchemaId;
-        info.m_ecSchemaId = ecSchemaId;
-
-        CachedStatementPtr stmt = nullptr;
-        if (SUCCESS != ECDbSchemaPersistence::FindECSchemaReference(stmt, m_db, info))
+        bvector<ECSchemaId> referencedSchemaIds;
+        if (SUCCESS != ECDbSchemaPersistence::GetReferencedSchemas(referencedSchemaIds, m_db, ecSchemaId))
             return ERROR;
 
-        DbECSchemaEntry* referenceSchemaKey;
-        while (ECDbSchemaPersistence::Step (info, *stmt) == BE_SQLITE_ROW)
+        newlyLoadedSchemas.push_back(key);
+        for (ECSchemaId referencedSchemaId : referencedSchemaIds)
             {
-            if (SUCCESS != LoadECSchemaDefinition(referenceSchemaKey, newlyLoadedSchemas, info.m_referencedECSchemaId))
+            DbECSchemaEntry* referenceSchemaKey = nullptr;
+            if (SUCCESS != LoadECSchemaDefinition(referenceSchemaKey, newlyLoadedSchemas, referencedSchemaId))
                 return ERROR;
 
-            ECObjectsStatus s = key->m_resolvedECSchema->AddReferencedSchema(*referenceSchemaKey->m_resolvedECSchema); 
+            ECObjectsStatus s = key->m_resolvedECSchema->AddReferencedSchema(*referenceSchemaKey->m_resolvedECSchema);
             if (s != ECObjectsStatus::Success)
                 return ERROR;
             }
