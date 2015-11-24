@@ -1647,22 +1647,11 @@ ChangeSummary::~ChangeSummary()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummary::FromChangeSet(ChangeSet& changeSet)
+BentleyStatus ChangeSummary::FromChangeSet(IChangeSet& changeSet)
     {
     Initialize();
 
-    Changes changes(changeSet);
-    return m_changeExtractor->ExtractFromSqlChanges(changes);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummary::FromChangeStream(BeSQLite::ChangeStream& changeStream)
-    {
-    Initialize();
-
-    Changes changes(changeStream);
+    Changes changes = changeSet.GetChanges();
     return m_changeExtractor->ExtractFromSqlChanges(changes);
     }
 

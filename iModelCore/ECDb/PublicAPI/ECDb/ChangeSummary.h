@@ -263,12 +263,7 @@ public:
     //! Create a ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 
     //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::ChangeSet& changeSet);
-
-    //! Create a ChangeSummary from the contents of a BeSQLite ChangeStream
-    //! @remarks The ChangeSummary needs to be new or freed before this call. 
-    //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromChangeStream(BeSQLite::ChangeStream& changeStream);
+    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet);
 
     //! Free the data held by this ChangeSummary.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
