@@ -127,8 +127,8 @@ void DgnChangeSummary::GetChangedElements(DgnElementIdSet& elementIds, ChangeSum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnChangeSummary::ElementIterator::ElementIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
-    : m_impl(summary, Impl::Options(summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), true, opcodes))
+DgnChangeSummary::ModelIterator::ModelIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
+    : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model), opcodes)
     {
     //
     }
@@ -136,9 +136,18 @@ DgnChangeSummary::ElementIterator::ElementIterator(DgnChangeSummary const& summa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnChangeSummary::ElementIterator::Entry::GetModelId(bool old) const
+DgnChangeSummary::ElementIterator::ElementIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
+    : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), opcodes)
     {
-    auto instance = m_impl.GetInstance();
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DgnChangeSummary::ElementEntry::GetModelId(bool old) const
+    {
+    auto instance = GetImpl().GetInstance();
     DgnModelId modelId;
     if (instance.ContainsValue("ModelId"))
         {
@@ -149,7 +158,7 @@ DgnModelId DgnChangeSummary::ElementIterator::Entry::GetModelId(bool old) const
     else if (DbOpcode::Delete != GetDbOpcode())
         {
         static const Utf8CP s_selectModelId { "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?" };
-        DgnDbR dgndb = static_cast<DgnChangeSummary const&>(m_impl.GetChangeSummary()).GetDgnDb();
+        DgnDbR dgndb = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
         CachedStatementPtr stmt = dgndb.Elements().GetStatement(s_selectModelId);
         stmt->BindId(1, instance.GetInstanceId());
         if (BE_SQLITE_ROW == stmt->Step())
@@ -162,27 +171,19 @@ DgnModelId DgnChangeSummary::ElementIterator::Entry::GetModelId(bool old) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode DgnChangeSummary::ElementIterator::Entry::GetCode(bool old) const
+template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, DbOpcode op)
     {
-    AuthorityIssuedCode code;
-    auto op = GetDbOpcode();
-    if ((old && DbOpcode::Insert == op) || (!old && DbOpcode::Delete == op))
-        return code;
-
-    AuthorityIssuedCode currentCode;
-    DgnDbR db = static_cast<DgnChangeSummary const&>(m_impl.GetChangeSummary()).GetDgnDb();
-    if (DbOpcode::Insert == op || DbOpcode::Update == op)
+    AuthorityIssuedCode code, currentCode;
+    switch (op)
         {
-        auto elem = db.Elements().GetElement(GetElementId());
-        BeAssert(elem.IsValid());
-        if (elem.IsValid())
-            currentCode = elem->GetCode();
-
-        if (!old)
-            return currentCode;
+        case DbOpcode::Insert:
+            return code; // no original code...
+        case DbOpcode::Update:
+            currentCode = entry.GetCurrentCode();
+            break;
         }
 
-    auto instance = m_impl.GetInstance();
+    auto instance = entry.GetImpl().GetInstance();
     DbDupValue oldAuthId = instance.GetOldValue("CodeAuthorityId"),
                oldNamespace = instance.GetOldValue("CodeNameSpace"),
                oldValue = instance.GetOldValue("Code");
@@ -208,6 +209,42 @@ AuthorityIssuedCode DgnChangeSummary::ElementIterator::Entry::GetCode(bool old) 
         }
 
     return code;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AuthorityIssuedCode DgnChangeSummary::ElementEntry::GetCode(bool old) const
+    {
+    auto op = GetDbOpcode();
+    if (old)
+        return getOriginalCode(*this, op);
+
+    if (DbOpcode::Delete == op)
+        return AuthorityIssuedCode(); // no new code...
+
+    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
+    auto elem = db.Elements().GetElement(GetElementId());
+    BeAssert(elem.IsValid());
+    return elem.IsValid() ? elem->GetCode() : AuthorityIssuedCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AuthorityIssuedCode DgnChangeSummary::ModelEntry::GetCode(bool old) const
+    {
+    auto op = GetDbOpcode();
+    if (old)
+        return getOriginalCode(*this, op);
+
+    if (DbOpcode::Delete == op)
+        return AuthorityIssuedCode();
+
+    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
+    auto model = db.Models().GetModel(GetModelId());
+    BeAssert(model.IsValid());
+    return model.IsValid() ? model->GetCode() : AuthorityIssuedCode();
     }
 
 //---------------------------------------------------------------------------------------
