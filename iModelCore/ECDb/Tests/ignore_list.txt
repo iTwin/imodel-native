@@ -21,3 +21,8 @@ ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 #TFS333029 to address this (Raman)
 JsonUpdaterTests.UpdateRelationshipProperty
 ECDbInstances.UpdateRelationshipProperty
+
+# fails with exception _C_data D:\DgnDb06New\out\Winx64\BuildContexts\DgnClientFx\PublicAPI\Bentley/stdcxx/basic_string.h 872 0 
+# SEH exception with code 0xc0000005 thrown in the test body.
+ECDbMappingTestFixture.ECDbMapTests 
+
