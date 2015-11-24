@@ -49,7 +49,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_description.AssignOrClear(stmt.GetValueText(1));
         out->m_classId = DgnClassId(stmt.GetValueInt64(2));
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
-        out->m_code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
+        out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
         }
 
     return SUCCESS;
@@ -66,7 +66,7 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
     if (BE_SQLITE_ROW != stmt.Step())
         return  ERROR;
 
-    code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+    code.From(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
     return  SUCCESS;
     }
 
@@ -75,7 +75,9 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
     {
-    return DgnModel::Code(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
+    DgnModel::Code code;
+    code.From(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
+    return code;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -898,7 +900,6 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 
     DgnModels& models = GetDgnDb().Models();
 
-    m_code.m_value.Trim();
     if (models.QueryModelId(m_code).IsValid()) // can't allow two models with the same code
         return DgnDbStatus::DuplicateName;
 
@@ -1113,9 +1114,11 @@ void DgnModel::_FillModel()
             continue;
             }
 
+        DgnElement::Code code;
+        code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
         elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
-            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace)), 
+            code,
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)),
             true);

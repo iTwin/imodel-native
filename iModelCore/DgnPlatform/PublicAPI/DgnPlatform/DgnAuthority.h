@@ -29,10 +29,9 @@ public:
         DgnAuthorityId  m_id;
         DgnClassId      m_classId;
         Utf8String      m_name;
-        Utf8String      m_uri;
 
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Utf8CP uri=nullptr, DgnAuthorityId id=DgnAuthorityId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_uri(uri) { }
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DgnAuthorityId id=DgnAuthorityId()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) { }
     };
 protected:
     friend struct DgnAuthorities;
@@ -42,7 +41,6 @@ protected:
     DgnAuthorityId  m_authorityId;
     DgnClassId      m_classId;
     Utf8String      m_name;
-    Utf8String      m_uri;
     
     DGNPLATFORM_EXPORT explicit DgnAuthority(CreateParams const&);
 
@@ -63,7 +61,6 @@ public:
     DgnAuthorityId GetAuthorityId() const { return m_authorityId; }
     DgnClassId GetClassId() const { return m_classId; }
     Utf8StringCR GetName() const { return m_name; }
-    Utf8StringCR GetUri() const { return m_uri; }
 
     DGNPLATFORM_EXPORT AuthorityHandlerR GetAuthorityHandler() const;
 
@@ -100,7 +97,7 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 
     DGNPLATFORM_EXPORT DgnAuthority::Code CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const { return T_Super::CreateCode(value, nameSpace); }
 
-    DGNPLATFORM_EXPORT static RefCountedPtr<NamespaceAuthority> CreateNamespaceAuthority(Utf8CP name, DgnDbR dgndb, Utf8CP uri = nullptr);
+    DGNPLATFORM_EXPORT static RefCountedPtr<NamespaceAuthority> CreateNamespaceAuthority(Utf8CP name, DgnDbR dgndb);
     DGNPLATFORM_EXPORT static DgnAuthority::Code CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace="");
 };
 
