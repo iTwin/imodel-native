@@ -32,11 +32,11 @@ double      RenderMaterial::_GetDouble (char const* key, BentleyStatus* status) 
         return DEFAULT_Specular;
 
     if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Reflect) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Transmit))
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Transmit) || 
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Glow))
         return 0.0;
 
-    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Glow) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Refract))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Refract))
         return 1.0;
 
     BeAssert (false);
