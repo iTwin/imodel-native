@@ -542,7 +542,7 @@ bool copyCustomAttributes
     if (sourceProperty->GetIsDisplayLabelDefined())
         destProperty->SetDisplayLabel(sourceProperty->GetInvariantDisplayLabel());
     destProperty->SetName(sourceProperty->GetName());
-    destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
+    destProperty->SetIsReadOnly(sourceProperty->IsReadOnlyFlagSet());
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
 
