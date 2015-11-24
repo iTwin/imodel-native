@@ -1513,8 +1513,6 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
     if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
         return true;
 
-    DgnCategoryId categoryId;
-
     for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
         {
         FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
@@ -2270,11 +2268,7 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 BeAssert((subCategoryId.IsValid() == remappedSubCategoryId.IsValid()) && "Category and all subcategories should have been remapped by the element that owns this geometry");
 
                 DgnStyleId lineStyleId((uint64_t)ppfb->lineStyleId());
-#if defined (NEEDS_WORK_IMPORT)
-                DgnStyleId remappedLineStyleId = (lineStyleId.IsValid() ? importer.FindLineStyle(lineStyleId) : DgnStyleId());
-#else
-                DgnStyleId remappedLineStyleId = DgnStyleId();
-#endif
+                DgnStyleId remappedLineStyleId = (lineStyleId.IsValid() ? importer.RemapLineStyleId(lineStyleId) : DgnStyleId());
                 BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
 
                 FlatBufferBuilder remappedfbb;
@@ -2310,9 +2304,53 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
 
                 FlatBufferBuilder remappedfbb;
-                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValueUnchecked(), nullptr, nullptr, 0.0, 0.0, 0.0);
+                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValueUnchecked(), fbSymb->origin(), fbSymb->size(), fbSymb->yaw(), fbSymb->pitch(), fbSymb->roll());
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
+                break;
+                }
+
+            case ElementGeomIO::OpCode::ParasolidBRep:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
+
+                if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+                    {
+                    writer.Append(egOp);
+                    break;
+                    }
+
+                bvector<FB::FaceSymbology> remappedFaceSymbVec;
+
+                for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+                    {
+                    FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+
+                    if (fbSymb->useMaterial())
+                        {
+                        DgnMaterialId materialId((uint64_t)fbSymb->materialId());
+                        DgnMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapMaterialId(materialId) : DgnMaterialId());
+                        BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
+
+                        FB::FaceSymbology  remappedfbSymb(fbSymb->useColor(), fbSymb->useMaterial(),
+                                                          fbSymb->color(), remappedMaterialId.GetValueUnchecked(),
+                                                          fbSymb->transparency(), fbSymb->uv());
+
+                        remappedFaceSymbVec.push_back(remappedfbSymb);
+                        }
+                    else
+                        {
+                        remappedFaceSymbVec.push_back(*fbSymb);
+                        }
+                    }
+
+                FlatBufferBuilder remappedfbb;
+                auto remappedEntityData = remappedfbb.CreateVector(ppfb->entityData()->Data(), ppfb->entityData()->Length());
+                auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(&remappedFaceSymbVec.front(), remappedFaceSymbVec.size());
+                auto remappedFaceSymbIndex = remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length());
+                auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
+                remappedfbb.Finish(mloc);
+                writer.Append(Operation(OpCode::ParasolidBRep, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
                 }
 
@@ -4335,6 +4373,30 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR st
                     break;
 
                 builder->m_writer.Append(egOp); // Append raw data...
+                break;
+                }
+
+            case ElementGeomIO::OpCode::ParasolidBRep:
+                {
+                if (!ignoreSymbology)
+                    {
+                    builder->m_writer.Append(egOp); // Append raw data...
+                    break;
+                    }
+
+                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
+
+                if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+                    {
+                    builder->m_writer.Append(egOp); // Append raw data...
+                    break;
+                    }
+
+                FlatBufferBuilder fbb;
+                auto tmpEntityData = fbb.CreateVector(ppfb->entityData()->Data(), ppfb->entityData()->Length());
+                auto mloc = FB::CreateBRepData(fbb, ppfb->entityTransform(), ppfb->brepType(), tmpEntityData);
+                fbb.Finish(mloc);
+                builder->m_writer.Append(ElementGeomIO::Operation(ElementGeomIO::OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
                 break;
                 }
 
