@@ -22,9 +22,17 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct JsonDiff
     {
+    public:
+        enum Flags
+            {
+            Default         = 0,        // No flags
+            DoNotCopyValues = 1 << 0,   // Dont copying values and just reference original JSON values
+            FindDeletions   = 1 << 1    // Find deletions in change and present them as nulls
+            };
+
     private:
-        bool m_copyValues;
-        bool m_ignoreDeletedProperties;
+        bool m_avoidCopies;
+        bool m_findDeletions;
 
     private:
         void AddMember(RapidJsonValueR parent, RapidJsonValueR name, RapidJsonValueR value, rapidjson::Value::AllocatorType& allocator);
@@ -39,7 +47,7 @@ struct JsonDiff
         static RapidJsonValueCR ValidateObject(RapidJsonValueCR value);
 
     public:
-        WSCACHE_EXPORT JsonDiff(bool copyValues = true, bool ignoreDeletedProperties = true);
+        WSCACHE_EXPORT JsonDiff(int flags = Flags::Default);
         WSCACHE_EXPORT virtual ~JsonDiff();
         
         //! Get changes between JSON objects

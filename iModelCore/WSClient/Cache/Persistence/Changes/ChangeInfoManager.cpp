@@ -485,7 +485,7 @@ BentleyStatus ChangeInfoManager::ReadInstanceChanges(ObjectInfoCR info, RapidJso
     JsonUtil::RemoveECMembers(instanceJsonValue);
     JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
 
-    JsonDiff(false).GetChanges(backupJson, instanceJson, changesOut);
+    JsonDiff(JsonDiff::DoNotCopyValues).GetChanges(backupJson, instanceJson, changesOut);
 
     return SUCCESS;
     }
@@ -505,7 +505,7 @@ BentleyStatus ChangeInfoManager::ApplyChangesToBackup(ObjectInfoCR info, JsonVal
     rapidjson::Document changesJson;
     JsonUtil::ToRapidJson(changes, changesJson);
 
-    JsonDiff(false).GetChanges(emptyJson, changesJson, backupJson);
+    JsonDiff(JsonDiff::DoNotCopyValues).GetChanges(emptyJson, changesJson, backupJson);
 
     return SaveBackupInstance(info, backupJson);
     }
@@ -529,7 +529,7 @@ BentleyStatus ChangeInfoManager::ApplyChangesToInstanceAndBackupIt(ObjectInfoCR 
     rapidjson::Document changesJson;
     JsonUtil::ToRapidJson(changes, changesJson);
 
-    JsonDiff(false).GetChanges(emptyJson, changesJson, instanceJson);
+    JsonDiff(JsonDiff::DoNotCopyValues).GetChanges(emptyJson, changesJson, instanceJson);
 
     return SaveBackupInstance(info, instanceJson);
     }
