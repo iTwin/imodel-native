@@ -21,3 +21,4 @@ ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 #TFS333029 to address this (Raman)
 JsonUpdaterTests.UpdateRelationshipProperty
 ECDbInstances.UpdateRelationshipProperty
+
