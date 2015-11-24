@@ -925,6 +925,14 @@ public:
 //! With @b Diagnostics.BeSQLite.QueryPlan the whole query plan is logged along with the SQL string.
 //! With @b Diagnostics.BeSQLite.QueryPlan.WithTableScans only query plans are logged if they contain <c>SCAN TABLE</c> directives,
 //! which can be (but must not be) indications for missing indexes.
+//!
+//! Further notes:
+//!  - BentleyApi::BeSQLite::StatementDiagnostics::SetIsEnabled
+//!    As the diagnostics log every SQL being prepared, you can use this method to programmatically enable/disable diagnostics, 
+//!    so that only the code is diagnosed that you are interested in.
+//!  - BentleyApi::BeSQLite::StatementDiagnostics::LogComment
+//!    This will add the specified comment to the diagnostics output. This allows you to define sections
+//!    in the diagnostics output 
 // @bsiclass                                                    11/2015
 //=======================================================================================
 struct StatementDiagnostics
