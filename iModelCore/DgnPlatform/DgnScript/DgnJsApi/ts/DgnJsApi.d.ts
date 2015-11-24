@@ -1,12 +1,12 @@
-declare module BentleyApi.Dgn {
-
+declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
+{
     /*** BEGIN_FORWARD_DECLARATIONS ***/
-    class JsDPoint3d { }
-    class JsYawPitchRollAngles { }
+    class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
+    class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
-    type JsDPoint3dP = cxx_pointer<JsDPoint3d>;
-    type JsYawPitchRollAnglesP = cxx_pointer<JsYawPitchRollAngles>;
+    type DPoint3dP = cxx_pointer<DPoint3d>;
+    type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
 
     //! Logging serverity level.
     enum LoggingSeverity { }
@@ -44,32 +44,35 @@ declare module BentleyApi.Dgn {
     }
 
     //! A wrapper for BentleyApi::Dgn::DgnElement.
-    class JsDgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
         GetElementId(): Bentley_Utf8String;
         Insert(): cxx_int32_t;
         Update(): cxx_int32_t;
-        SetParent(parent: cxx_pointer<JsDgnElement>): void;
+        SetParent(parent: cxx_pointer<DgnElement>): void;
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type JsDgnElementP = cxx_pointer<JsDgnElement>;
+    type DgnElementP = cxx_pointer<DgnElement>;
 
     //! A wrapper for BentleyApi::Dgn::DgnModel. There is no constructor. The native caller must supply one.
-    class JsDgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnModel ***/ 
         GetModelId(): Bentley_Utf8String;
-        CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): JsDgnElementP;
+        CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): DgnElementP;
         DeleteAllElements(): void;
         OnDispose(): void;
         Dispose(): void;
     }
 
     //! A wrapper for BentleyApi::Dgn::ElementGeometryBuilder. There is no constructor. The user must call the Create method to create a new one.
-    class JsElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        constructor(el: JsDgnElementP, o: JsDPoint3dP, angles: JsYawPitchRollAnglesP);
+    class ElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 
+        constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
         AppendSphere(radius: cxx_double): void;
-        SetGeomStreamAndPlacement(element: JsDgnElementP): cxx_double;
+        SetGeomStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;
     }

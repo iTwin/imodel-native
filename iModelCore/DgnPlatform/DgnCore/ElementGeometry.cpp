@@ -1012,7 +1012,6 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 
                 FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
                                           faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
-                                          faceParams.GetSubCategoryId().GetValueUnchecked(),
                                           faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterial().GetValueUnchecked(),
                                           faceParams.GetTransparency(), uv);
 
@@ -1077,7 +1076,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
                 if (0 == buffer.size())
                     continue;
 
-                Append(params[i]);
+                Append(params[i], true);
                 Append(Operation(OpCode::BRepPolyface, (uint32_t) buffer.size(), &buffer.front()));
                 }
             }
@@ -1119,7 +1118,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
                 if (0 == buffer.size())
                     continue;
 
-                Append(params[i]);
+                Append(params[i], true);
                 Append(Operation(OpCode::BRepEdges, (uint32_t) buffer.size(), &buffer.front()));
                 }
             }
@@ -1161,7 +1160,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
                 if (0 == buffer.size())
                     continue;
 
-                Append(params[i]);
+                Append(params[i], true);
                 Append(Operation(OpCode::BRepFaceIso, (uint32_t) buffer.size(), &buffer.front()));
                 }
             }
@@ -1185,16 +1184,16 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCP geomToElem)
+void ElementGeomIO::Writer::Append(DgnGeomPartId geomPart, TransformCP geomToElem)
     {
     if (nullptr == geomToElem || geomToElem->IsIdentity())
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateBeginSubCategory(fbb, subCategory.GetValueUnchecked());
+        auto mloc = FB::CreateGeomPart(fbb, geomPart.GetValueUnchecked());
 
         fbb.Finish(mloc);
-        Append(Operation(OpCode::BeginSubCategory, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        Append(Operation(OpCode::GeomPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         return;
         }
 
@@ -1208,20 +1207,7 @@ void ElementGeomIO::Writer::Append(DgnSubCategoryId subCategory, TransformCP geo
 
     FlatBufferBuilder fbb;
 
-    auto mloc = FB::CreateBeginSubCategory(fbb, subCategory.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
-
-    fbb.Finish(mloc);
-    Append(Operation(OpCode::BeginSubCategory, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(DgnGeomPartId geomPart)
-    {
-    FlatBufferBuilder fbb;
-
-    auto mloc = FB::CreateGeomPart(fbb, geomPart.GetValueUnchecked());
+    auto mloc = FB::CreateGeomPart(fbb, geomPart.GetValueUnchecked(), (FB::DPoint3d*) &origin, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
 
     fbb.Finish(mloc);
     Append(Operation(OpCode::GeomPartInstance, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1230,44 +1216,47 @@ void ElementGeomIO::Writer::Append(DgnGeomPartId geomPart)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
+void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams, bool ignoreSubCategory)
     {
     bool useColor  = !elParams.IsLineColorFromSubCategoryAppearance();
     bool useWeight = !elParams.IsWeightFromSubCategoryAppearance();
+    bool useStyle  = !elParams.IsLineStyleFromSubCategoryAppearance();
 
-    if (useColor || useWeight || 0.0 != elParams.GetTransparency() || 0 != elParams.GetDisplayPriority() || DgnGeometryClass::Primary != elParams.GetGeometryClass())
+    if (useColor || useWeight || useStyle || 0.0 != elParams.GetTransparency() || 0 != elParams.GetDisplayPriority() || DgnGeometryClass::Primary != elParams.GetGeometryClass())
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateBasicSymbology(fbb, useColor ? elParams.GetLineColor().GetValue() : 0,
-                                                   useWeight ? elParams.GetWeight() : 0,
-                                                   elParams.GetTransparency(), elParams.GetDisplayPriority(),
-                                                   useColor, useWeight, (FB::GeometryClass) elParams.GetGeometryClass());
+        auto mloc = FB::CreateBasicSymbology(fbb, ignoreSubCategory ? 0 : elParams.GetSubCategoryId().GetValueUnchecked(),
+                                             useColor ? elParams.GetLineColor().GetValue() : 0,
+                                             useWeight ? elParams.GetWeight() : 0,
+                                             useStyle && nullptr != elParams.GetLineStyle() ? elParams.GetLineStyle()->GetStyleId().GetValueUnchecked() : 0,
+                                             elParams.GetTransparency(), elParams.GetDisplayPriority(), (FB::GeometryClass) elParams.GetGeometryClass(),
+                                             useColor, useWeight, useStyle);
+        fbb.Finish(mloc);
+        Append(Operation(OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        }
+    else // NOTE: When ignoreSubCategory is set, "all default values" triggers a sub-category appearance reset for the current sub-category...
+        {
+        FlatBufferBuilder fbb;
+
+        auto mloc = FB::CreateBasicSymbology(fbb, ignoreSubCategory ? 0 : elParams.GetSubCategoryId().GetValueUnchecked());
+
         fbb.Finish(mloc);
         Append(Operation(OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
 #if LINESTYLES_ENABLED
-    if (elParams.GetLineStyle() != nullptr)
+    if (nullptr != elParams.GetLineStyle() && nullptr != elParams.GetLineStyle()->GetStyleParams())
         {
-        LineStyleInfoCP lsInfo = elParams.GetLineStyle();
-        FlatBufferBuilder fbb;
+        FlatBufferBuilder   fbb;
+        LineStyleParamsCP   lsParams = elParams.GetLineStyle()->GetStyleParams();
+        YawPitchRollAngles  angles;
 
-        auto mloc = FB::CreateLineStyle(fbb, lsInfo->GetStyleId().GetValue());
-
-        fbb.Finish(mloc);
-        Append(Operation(OpCode::LineStyle, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
-        LineStyleParamsCP lsParams = lsInfo->GetStyleParams();
-        if (nullptr != lsParams)
-            {
-            YawPitchRollAngles  angles;
-
-            YawPitchRollAngles::TryFromRotMatrix(angles, lsParams->rMatrix);
-            auto modifiers = FB::CreateLineStyleModifiers(fbb, lsParams->modifiers, lsParams->scale, lsParams->dashScale, lsParams->gapScale, lsParams->startWidth, lsParams->endWidth, lsParams->distPhase, lsParams->fractPhase,
-                                                            (FB::DPoint3d*)&lsParams->normal, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
-            fbb.Finish(modifiers);
-            Append(Operation(OpCode::LineStyleModifiers, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
-            }
+        YawPitchRollAngles::TryFromRotMatrix(angles, lsParams->rMatrix);
+        auto modifiers = FB::CreateLineStyleModifiers(fbb, lsParams->modifiers, lsParams->scale, lsParams->dashScale, lsParams->gapScale, lsParams->startWidth, lsParams->endWidth, lsParams->distPhase, lsParams->fractPhase,
+                                                      (FB::DPoint3d*)&lsParams->normal, angles.GetYaw().Degrees(), angles.GetPitch().Degrees(), angles.GetRoll().Degrees());
+        fbb.Finish(modifiers);
+        Append(Operation(OpCode::LineStyleModifiers, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 #endif
 
@@ -1296,10 +1285,10 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
             auto values = fbb.CreateVector(keyValues);
 
             auto mloc = FB::CreateAreaFill(fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
-                                            0, 0, 0, elParams.GetFillTransparency(),
-                                            (FB::GradientMode) gradient.GetMode(), gradient.GetFlags(),
-                                            gradient.GetAngle(), gradient.GetTint(), gradient.GetShift(),
-                                            colors, values);
+                                           0, 0, 0, elParams.GetFillTransparency(),
+                                           (FB::GradientMode) gradient.GetMode(), gradient.GetFlags(),
+                                           gradient.GetAngle(), gradient.GetTint(), gradient.GetShift(),
+                                           colors, values);
             fbb.Finish(mloc);
             }
         else
@@ -1308,8 +1297,8 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
             bool useFillColor = !isBgFill && !elParams.IsFillColorFromSubCategoryAppearance();
 
             auto mloc = FB::CreateAreaFill(fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
-                                            useFillColor ? elParams.GetFillColor().GetValue() : 0, useFillColor, isBgFill,
-                                            elParams.GetFillTransparency());
+                                           useFillColor ? elParams.GetFillColor().GetValue() : 0, useFillColor, isBgFill,
+                                           elParams.GetFillTransparency());
             fbb.Finish(mloc);
             }
 
@@ -1322,11 +1311,11 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
     //                          when !useMaterial because ElemDisplayParams::Resolve hasn't been called...
     bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
 
-    if (useMaterial && elParams.GetMaterial().IsValid())
+    if (useMaterial)
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial ? elParams.GetMaterial().GetValue() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
+        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial && elParams.GetMaterial().IsValid() ? elParams.GetMaterial().GetValueUnchecked() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
         fbb.Finish(mloc);
 
         Append(Operation(OpCode::Material, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1531,13 +1520,6 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
         FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
 
         ElemDisplayParams faceParams;
-        DgnSubCategoryId  subCategoryId = DgnSubCategoryId((uint64_t)fbSymb->subCategoryId());
-
-        if (!categoryId.IsValid())
-            categoryId = DgnSubCategory::QueryCategoryId(subCategoryId, m_db);
-
-        faceParams.SetCategoryId(categoryId);
-        faceParams.SetSubCategoryId(subCategoryId);
 
         if (fbSymb->useColor())
             faceParams.SetLineColor(ColorDef(fbSymb->color()));
@@ -1579,27 +1561,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnSubCategoryId& subCategory, TransformR geomToElem) const
-    {
-    if (OpCode::BeginSubCategory != egOp.m_opCode)
-        return false;
-
-    auto ppfb = flatbuffers::GetRoot<FB::BeginSubCategory>(egOp.m_data);
-
-    subCategory = DgnSubCategoryId((uint64_t)ppfb->subCategoryId());
-
-    DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
-    YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
-
-    geomToElem = angles.ToTransform(origin);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnGeomPartId& geomPart) const
+bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnGeomPartId& geomPart, TransformR geomToElem) const
     {
     if (OpCode::GeomPartInstance != egOp.m_opCode)
         return false;
@@ -1607,6 +1569,11 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnGeomPartId& geomPart) 
     auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
 
     geomPart = DgnGeomPartId((uint64_t)ppfb->geomPartId());
+
+    DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
+    YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+
+    geomToElem = angles.ToTransform(origin);
 
     return true;
     }
@@ -1623,6 +1590,24 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
         case OpCode::BasicSymbology:
             {
             auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+
+            DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
+
+            if (!subCategoryId.IsValid())
+                subCategoryId = elParams.GetSubCategoryId(); // Preserve current sub-category if not explicitly stored (GeomPart, FaceAttachment, etc.)...
+
+            if (subCategoryId.IsValid())
+                {
+                DgnCategoryId categoryId = elParams.GetCategoryId(); // Preserve current category and reset to sub-category appearance...
+
+                if (!categoryId.IsValid())
+                    categoryId = DgnSubCategory::QueryCategoryId(subCategoryId, m_db);
+
+                elParams = ElemDisplayParams();
+                elParams.SetCategoryId(categoryId);
+                elParams.SetSubCategoryId(subCategoryId);
+                changed = true;
+                }
 
             if (ppfb->useColor())
                 {
@@ -1642,6 +1627,27 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
                 if (elParams.IsWeightFromSubCategoryAppearance() || weight != elParams.GetWeight())
                     {
                     elParams.SetWeight(weight);
+                    changed = true;
+                    }
+                }
+
+            if (ppfb->useStyle())
+                {
+                DgnStyleId  styleId((uint64_t)ppfb->lineStyleId());
+                DgnStyleId  currStyleId = (nullptr != elParams.GetLineStyle() ? elParams.GetLineStyle()->GetStyleId() : DgnStyleId());
+
+                if (elParams.IsLineStyleFromSubCategoryAppearance() || styleId != currStyleId)
+                    {
+                    if (styleId.IsValid())
+                        {
+                        LineStyleInfoPtr lsInfo = LineStyleInfo::Create(styleId, nullptr);
+                        elParams.SetLineStyle(lsInfo.get());
+                        }
+                    else
+                        {
+                        elParams.SetLineStyle(nullptr); // Override sub-category appearance to a solid/continuous line...
+                        }
+
                     changed = true;
                     }
                 }
@@ -1755,20 +1761,6 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
                     changed = true;
                     }
                 }
-            break;
-            }
-
-        case OpCode::LineStyle:
-            {
-            auto ppfb = flatbuffers::GetRoot<FB::LineStyle>(egOp.m_data);
-
-            DgnStyleId styleId((uint64_t)ppfb->lineStyleId());
-            LineStyleInfoCP   currentLsInfo = elParams.GetLineStyle();
-            LineStyleParamsCP styleParams = currentLsInfo == nullptr ? nullptr : currentLsInfo->GetStyleParams();
-
-            LineStyleInfoPtr    lsInfo = LineStyleInfo::Create(styleId, styleParams);
-            elParams.SetLineStyle(lsInfo.get());
-            changed = true;
             break;
             }
 
@@ -2028,8 +2020,9 @@ void ElementGeomIO::Collection::GetGeomPartIds(IdSet<DgnGeomPartId>& parts, DgnD
             continue;
 
         DgnGeomPartId geomPartId;
+        Transform     geomToElem;
 
-        if (!reader.Get(egOp, geomPartId))
+        if (!reader.Get(egOp, geomPartId, geomToElem))
             continue;
 
         parts.insert(geomPartId);
@@ -2041,42 +2034,12 @@ void ElementGeomIO::Collection::GetGeomPartIds(IdSet<DgnGeomPartId>& parts, DgnD
 +===============+===============+===============+===============+===============+======*/
 struct DrawState
 {
-Transform           m_geomToElem;
 ViewContextR        m_context;
 ViewFlagsCR         m_flags;
 bool                m_symbologyChanged;
-bool                m_geomToElemPushed;
 
-DrawState(ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags(flags) {m_symbologyChanged = false; m_geomToElemPushed = false;}
-~DrawState() {End();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Begin(DgnSubCategoryId subCategory, TransformCR geomToElem)
-    {
-    End(); // Pop state from a previous Begin (if any). Calls aren't required to be paired...
-
-    m_geomToElem = geomToElem;
-
-    // NEEDSWORK: Draw changes - Begin new QvElem...
-    if (m_geomToElemPushed = !m_geomToElem.IsIdentity())
-        m_context.PushTransform(m_geomToElem);
-
-    SetElemDisplayParams(subCategory);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void End()
-    {
-    // NEEDSWORK: Draw changes - Complete/Save/Draw QvElem pushing/popping partToWorld...
-    if (m_geomToElemPushed)
-        m_context.PopTransformClip();
-
-    m_geomToElemPushed = false;
-    }
+DrawState(ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags(flags) {m_symbologyChanged = false;}
+~DrawState() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
@@ -2288,61 +2251,74 @@ static void Increment(ViewContextR context)
 DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& importer)
     {
     if (!source.HasGeometry())
-        return DgnDbStatus::Success;    // otherwise we end up writing a header for an otherwise empty stream...
+        return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
     Writer writer(importer.GetDestinationDb());
     Reader reader(importer.GetSourceDb());
     Collection collection(source.GetData(), source.GetSize());
+
     for (auto const& egOp : collection)
         {
         switch (egOp.m_opCode)
             {
-            default:
-                writer.Append(egOp);
-                break;
-
-            case ElementGeomIO::OpCode::BeginSubCategory:
+            case ElementGeomIO::OpCode::BasicSymbology:
                 {
-                DgnSubCategoryId subCategory;
-                Transform        geomToElem;
+                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
 
-                if (reader.Get(egOp, subCategory, geomToElem))
-                    {
-                    DgnSubCategoryId remappedSubCategoryId = importer.FindSubCategory(subCategory);
-                    BeAssert(remappedSubCategoryId.IsValid() && "Category and all subcategories should have been remapped by the element that owns this geometry");
-                    writer.Append(remappedSubCategoryId, &geomToElem);
-                    }
+                DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
+                DgnSubCategoryId remappedSubCategoryId = (subCategoryId.IsValid() ? importer.FindSubCategory(subCategoryId) : DgnSubCategoryId());
+                BeAssert((subCategoryId.IsValid() == remappedSubCategoryId.IsValid()) && "Category and all subcategories should have been remapped by the element that owns this geometry");
+
+                DgnStyleId lineStyleId((uint64_t)ppfb->lineStyleId());
+#if defined (NEEDS_WORK_IMPORT)
+                DgnStyleId remappedLineStyleId = (lineStyleId.IsValid() ? importer.FindLineStyle(lineStyleId) : DgnStyleId());
+#else
+                DgnStyleId remappedLineStyleId = DgnStyleId();
+#endif
+                BeAssert((lineStyleId.IsValid() == remappedLineStyleId.IsValid()));
+
+                FlatBufferBuilder remappedfbb;
+
+                auto mloc = FB::CreateBasicSymbology(remappedfbb, remappedSubCategoryId.GetValueUnchecked(),
+                                                     ppfb->color(), ppfb->weight(), remappedLineStyleId.GetValueUnchecked(),
+                                                     ppfb->transparency(), ppfb->displayPriority(), ppfb->geomClass(),
+                                                     ppfb->useColor(), ppfb->useWeight(), ppfb->useStyle());
+                remappedfbb.Finish(mloc);
+                writer.Append(Operation(OpCode::BasicSymbology, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
                 }
 
             case ElementGeomIO::OpCode::GeomPartInstance:
                 {
                 DgnGeomPartId geomPartId;
+                Transform     geomToElem;
 
-                if (reader.Get(egOp, geomPartId))
+                if (reader.Get(egOp, geomPartId, geomToElem))
                     {
-                    DgnGeomPartId remappedGeomPartId = importer.RemapGeomPartId(geomPartId); //Trigger deep-copy if necessary
+                    DgnGeomPartId remappedGeomPartId = importer.RemapGeomPartId(geomPartId); // Trigger deep-copy if necessary
                     BeAssert(remappedGeomPartId.IsValid() && "Unable to deep-copy geompart!");
-                    writer.Append(remappedGeomPartId);
+                    writer.Append(remappedGeomPartId, &geomToElem);
                     }
                 break;
                 }
 
             case ElementGeomIO::OpCode::Material:
                 {
-#ifdef WIP_REMAP_MATERIAL // *** Should I always remap materialids in this opcode?
-                          // *** There two cases: material from subcategory and not from subcategory. Should I handle them differently?
-#endif
                 auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
                 DgnMaterialId materialId((uint64_t)fbSymb->materialId());
-                DgnMaterialId remappedMaterialId = importer.RemapMaterialId(materialId);
-                BeAssert(remappedMaterialId.IsValid() && "Unable to deep-copy material");
+                DgnMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapMaterialId(materialId) : DgnMaterialId());
+                BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
 
                 FlatBufferBuilder remappedfbb;
-                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValue(), nullptr, nullptr, 0.0, 0.0, 0.0);
+                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValueUnchecked(), nullptr, nullptr, 0.0, 0.0, 0.0);
                 remappedfbb.Finish(mloc);
-
                 writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
+                break;
+                }
+
+            default:
+                {
+                writer.Append(egOp);
                 break;
                 }
             }
@@ -2373,84 +2349,116 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
                 break;
                 }
 
-            case ElementGeomIO::OpCode::BeginSubCategory:
-                {
-                DgnSubCategoryId subCategory;
-                Transform        geomToElem;
-
-                if (!reader.Get(egOp, subCategory, geomToElem))
-                    break;
-
-                output._DoOutputLine(Utf8PrintfString("\nOpCode::BeginSubCategory - SubCategoryId: %" PRIu64 " - Have GeomToElem: %s\n", subCategory.GetValue(), geomToElem.IsIdentity() ? "No" : "Yes").c_str());
-
-                if (!output._WantVerbose() || geomToElem.IsIdentity())
-                    break;
-
-                for (int i=0; i<3; i++)
-                    output._DoOutputLine(Utf8PrintfString("  [%lf, \t%lf, \t%lf, \t%lf]\n", geomToElem.form3d[i][0], geomToElem.form3d[i][1], geomToElem.form3d[i][2], geomToElem.form3d[i][3]).c_str());
-                break;
-                }
-
             case ElementGeomIO::OpCode::GeomPartInstance:
                 {
-                DgnGeomPartId partId;
+                auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
 
-                if (!reader.Get(egOp, partId))
-                    break;
+                DgnGeomPartId       partId = DgnGeomPartId((uint64_t)ppfb->geomPartId());
+                DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
+                YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
                 if (output._WantPartGeometry())
                     parts.insert(partId);
 
                 output._DoOutputLine(Utf8PrintfString("OpCode::GeomPartInstance - PartId: %" PRIu64 "\n", partId.GetValue()).c_str());
+
+                if (!output._WantVerbose())
+                    break;
+
+                // Transform geomToElem = angles.ToTransform(origin);
+                //
+                // for (int i=0; i<3; i++)
+                //     output._DoOutputLine(Utf8PrintfString("  [%lf, \t%lf, \t%lf, \t%lf]\n", geomToElem.form3d[i][0], geomToElem.form3d[i][1], geomToElem.form3d[i][2], geomToElem.form3d[i][3]).c_str());
+
+                if (!(ppfb->has_origin() || ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll()))
+                    break;
+
+                output._DoOutputLine(Utf8PrintfString("  ").c_str());
+
+                if (ppfb->has_origin())
+                    output._DoOutputLine(Utf8PrintfString("Origin: [%lf, %lf, %lf] ", origin.x, origin.y, origin.z).c_str());
+
+                if (ppfb->has_yaw())
+                    output._DoOutputLine(Utf8PrintfString("Yaw: %lf ", angles.GetYaw().Degrees()).c_str());
+
+                if (ppfb->has_pitch())
+                    output._DoOutputLine(Utf8PrintfString("Pitch: %lf ", angles.GetPitch().Degrees()).c_str());
+
+                if (ppfb->has_roll())
+                    output._DoOutputLine(Utf8PrintfString("Roll: %lf ", angles.GetRoll().Degrees()).c_str());
+
+                output._DoOutputLine(Utf8PrintfString("\n").c_str());
                 break;
                 }
 
             case ElementGeomIO::OpCode::BasicSymbology:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology\n").c_str());
+                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+
+                DgnSubCategoryId   subCategoryId((uint64_t)ppfb->subCategoryId());
+                DgnSubCategoryCPtr subCat = (subCategoryId.IsValid() ? DgnSubCategory::QuerySubCategory(subCategoryId, db) : nullptr);
+
+                if (subCat.IsValid() && nullptr != subCat->GetCode().GetValueCP())
+                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategory: %s\n", subCat->GetCode().GetValueCP()).c_str());
+                else if (subCategoryId.IsValid())
+                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategoryId: %" PRIu64 "\n", subCategoryId.GetValue()).c_str());
+                else
+                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology\n").c_str());
 
                 if (!output._WantVerbose())
                     break;
 
-                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+                if (!(ppfb->has_color() || ppfb->has_useColor() || 
+                      ppfb->has_weight() || ppfb->has_useWeight() || 
+                      ppfb->has_lineStyleId() || ppfb->has_useStyle() || 
+                      ppfb->has_transparency() || ppfb->has_displayPriority() || ppfb->has_geomClass()))
+                    break;
 
-                if (ppfb->useColor())
+                output._DoOutputLine(Utf8PrintfString("  ").c_str());
+
+                if (ppfb->has_color() || ppfb->has_useColor())
                     {
                     ColorDef color(ppfb->color());
-
-                    output._DoOutputLine(Utf8PrintfString("  Color: [Red:%d Green:%d Blue:%d Alpha:%d] - Transparency: %lf\n", color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha(), ppfb->transparency()).c_str());
+                    output._DoOutputLine(Utf8PrintfString("Color: [Red:%d Green:%d Blue:%d Alpha:%d] ", color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()).c_str());
                     }
-                else
+
+                if (ppfb->has_weight() || ppfb->has_useWeight())
+                    output._DoOutputLine(Utf8PrintfString("Weight: %d ", ppfb->weight()).c_str());
+
+                if (ppfb->has_lineStyleId() || ppfb->has_useStyle())
+                    output._DoOutputLine(Utf8PrintfString("Style: %" PRIu64 " ", ppfb->lineStyleId()).c_str());
+
+                if (ppfb->has_transparency())
+                    output._DoOutputLine(Utf8PrintfString("Transparency: %lf ", ppfb->transparency()).c_str());
+
+                if (ppfb->has_displayPriority())
+                    output._DoOutputLine(Utf8PrintfString("Display Priority: %d ", ppfb->displayPriority()).c_str());
+
+                if (ppfb->has_geomClass())
                     {
-                    output._DoOutputLine(Utf8PrintfString("  Color: by Subcategory - Transparency: %lf\n", ppfb->transparency()).c_str());
+                    DgnGeometryClass geomClass = (DgnGeometryClass) ppfb->geomClass();
+                    Utf8String       classStr;
+
+                    switch (geomClass)
+                        {
+                        case DgnGeometryClass::Primary:
+                            classStr.append("Primary");
+                            break;
+                        case DgnGeometryClass::Construction:
+                            classStr.append("Construction");
+                            break;
+                        case DgnGeometryClass::Dimension:
+                            classStr.append("Dimension");
+                            break;
+                        case DgnGeometryClass::Pattern:
+                            classStr.append("Pattern");
+                            break;
+                        }
+
+                    output._DoOutputLine(Utf8PrintfString("Geometry Class: %s ", classStr.c_str()).c_str());
                     }
 
-                if (ppfb->useWeight())
-                    output._DoOutputLine(Utf8PrintfString("  Weight: %d\n", ppfb->weight()).c_str());
-                else
-                    output._DoOutputLine(Utf8PrintfString("  Weight: by Subcategory\n").c_str());
-
-                int32_t          displayPriority = ppfb->displayPriority();
-                DgnGeometryClass geomClass = (DgnGeometryClass) ppfb->geomClass();
-                Utf8String       classStr;
-
-                switch (geomClass)
-                    {
-                    case DgnGeometryClass::Primary:
-                        classStr.append("Primary");
-                        break;
-                    case DgnGeometryClass::Construction:
-                        classStr.append("Construction");
-                        break;
-                    case DgnGeometryClass::Dimension:
-                        classStr.append("Dimension");
-                        break;
-                    case DgnGeometryClass::Pattern:
-                        classStr.append("Pattern");
-                        break;
-                    }
-
-                output._DoOutputLine(Utf8PrintfString("  Geometry Class: %s - Display Priority: %d\n", classStr.c_str(), displayPriority).c_str());
+                output._DoOutputLine(Utf8PrintfString("\n").c_str());
                 break;
                 }
 
@@ -2612,33 +2620,20 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
                 break;
                 }
 
-            case ElementGeomIO::OpCode::LineStyle:
-                {
-                output._DoOutputLine(Utf8PrintfString("OpCode::LineStyle\n").c_str());
-                break;
-                }
-
             case ElementGeomIO::OpCode::AreaFill:
                 {
-                output._DoOutputLine(Utf8PrintfString("OpCode::AreaFill\n").c_str());
-
-                if (!output._WantVerbose())
-                    break;
-
                 auto ppfb = flatbuffers::GetRoot<FB::AreaFill>(egOp.m_data);
 
                 FillDisplay fillDisplay = (FillDisplay) ppfb->fill();
-
-                if (FillDisplay::Never == fillDisplay)
-                    break;
-
-                GradientMode  mode = (GradientMode) ppfb->mode();
-                Utf8String    fillStr;
+                Utf8String  fillStr;
 
                 switch (fillDisplay)
                     {
+                    case FillDisplay::Never:
+                        fillStr.append("Never");
+                        break;
                     case FillDisplay::ByView:
-                        fillStr.append("by View");
+                        fillStr.append("By View");
                         break;
                     case FillDisplay::Always:
                         fillStr.append("Always");
@@ -2648,26 +2643,44 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
                         break;
                     }
 
-                if (GradientMode::None != mode)
+                output._DoOutputLine(Utf8PrintfString("OpCode::AreaFill - Display: %s\n", fillStr.c_str()).c_str());
+
+                if (!output._WantVerbose())
+                    break;
+
+                if (FillDisplay::Never == fillDisplay)
+                    break;
+
+                if (ppfb->has_mode())
                     {
-                    output._DoOutputLine(Utf8PrintfString("  Gradient: %s - Transparency: %lf\n", fillStr.c_str(), ppfb->transparency()).c_str());
+                    output._DoOutputLine(Utf8PrintfString("  Gradient: %d ", ppfb->mode()).c_str());
+
+                    if (ppfb->has_transparency())
+                        output._DoOutputLine(Utf8PrintfString("Transparency: %lf ", ppfb->transparency()).c_str());
+
+                    output._DoOutputLine(Utf8PrintfString("\n").c_str());
                     break;
                     }
 
-                if (ppfb->useColor())
+                if (!(ppfb->has_color() || ppfb->has_useColor() || ppfb->has_isBgColor() || ppfb->has_transparency()))
+                    break;
+
+                output._DoOutputLine(Utf8PrintfString("  ").c_str());
+
+                if (ppfb->has_color() || ppfb->has_useColor())
                     {
                     ColorDef color(ppfb->color());
-
-                    output._DoOutputLine(Utf8PrintfString("  Fill: %s - Color: [Red:%d Green:%d Blue:%d Alpha:%d] - Transparency: %lf\n", fillStr.c_str(), color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha(), ppfb->transparency()).c_str());
+                    output._DoOutputLine(Utf8PrintfString("Fill: [Red:%d Green:%d Blue:%d Alpha:%d] ", color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()).c_str());
                     }
-                else if (ppfb->isBgColor())
-                    {
-                    output._DoOutputLine(Utf8PrintfString("  Fill: %s - Color: View Background\n", fillStr.c_str()).c_str());
-                    }
+                else if (ppfb->has_isBgColor())
+                    output._DoOutputLine(Utf8PrintfString("Fill: View Background ").c_str());
                 else
-                    {
-                    output._DoOutputLine(Utf8PrintfString("  Fill: %s - Color: by Subcategory - Transparency: %lf\n", fillStr.c_str(), ppfb->transparency()).c_str());
-                    }
+                    output._DoOutputLine(Utf8PrintfString("Fill: Opaque ").c_str());
+
+                if (ppfb->has_transparency())
+                    output._DoOutputLine(Utf8PrintfString("Transparency: %lf ", ppfb->transparency()).c_str());
+
+                output._DoOutputLine(Utf8PrintfString("\n").c_str());
                 break;
                 }
 
@@ -2804,23 +2817,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 break;
                 }
 
-            case ElementGeomIO::OpCode::BeginSubCategory:
-                {
-                DgnSubCategoryId subCategory;
-                Transform        geomToElem;
-
-                if (!reader.Get(egOp, subCategory, geomToElem))
-                    {
-                    state.End();
-                    break;
-                    }
-
-                state.Begin(subCategory, geomToElem);
-                break;
-                }
-
             case ElementGeomIO::OpCode::BasicSymbology:
-            case ElementGeomIO::OpCode::LineStyle:
             case ElementGeomIO::OpCode::LineStyleModifiers:
             case ElementGeomIO::OpCode::AreaFill:
             case ElementGeomIO::OpCode::Pattern:
@@ -2838,8 +2835,9 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 GeomStreamEntryIdHelper::Increment(context);
 
                 DgnGeomPartId geomPartId;
+                Transform     geomToElem;
 
-                if (!reader.Get(egOp, geomPartId))
+                if (!reader.Get(egOp, geomPartId, geomToElem))
                     break;
 
                 DgnGeomPartPtr partGeometry = context.GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
@@ -2851,7 +2849,10 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 
                 GeomStreamEntryIdHelper::SetActiveGeomPart(context, geomPartId);
                 state.CookElemDisplayParams();
+
+                context.PushTransform(geomToElem);
                 collection.Draw(context, category, flags);
+                context.PopTransformClip();
                 break;
                 }
 
@@ -3371,6 +3372,7 @@ void ElementGeometryCollection::Iterator::ToNext()
             m_totalDataSize = m_saveTotalDataSize;;
 
             m_partGeometry = nullptr;
+            m_context->PopTransformClip(); // Pop part transform...
 
             if (m_dataOffset >= m_totalDataSize)
                 {
@@ -3399,34 +3401,8 @@ void ElementGeometryCollection::Iterator::ToNext()
                 break;
                 }
 
-            case ElementGeomIO::OpCode::BeginSubCategory:
-                {
-                Transform        geomToElem;
-                DgnSubCategoryId subCategory;
-
-                if (!reader.Get(egOp, subCategory, geomToElem))
-                    break;
-
-                if (m_geomToElemPushed)
-                    m_context->PopTransformClip(); // Pop previous sub-category/transform...
-
-                m_context->PushTransform(geomToElem);
-                m_geomToElemPushed = true;
-
-                ElemDisplayParamsR  elParams = m_context->GetCurrentDisplayParams();
-                DgnCategoryId       category = elParams.GetCategoryId();
-
-                if (!category.IsValid())
-                    category = DgnSubCategory::QueryCategoryId(subCategory, m_context->GetDgnDb());
-
-                elParams = ElemDisplayParams();
-                elParams.SetCategoryId(category);
-                elParams.SetSubCategoryId(subCategory);
-                break;
-                }
-
             case ElementGeomIO::OpCode::BasicSymbology:
-            case ElementGeomIO::OpCode::LineStyle:
+            case ElementGeomIO::OpCode::LineStyleModifiers:
             case ElementGeomIO::OpCode::AreaFill:
             case ElementGeomIO::OpCode::Pattern:
             case ElementGeomIO::OpCode::Material:
@@ -3440,14 +3416,18 @@ void ElementGeometryCollection::Iterator::ToNext()
                 GeomStreamEntryIdHelper::Increment(*m_context);
 
                 DgnGeomPartId geomPartId;
+                Transform     geomToElem;
 
-                if (!reader.Get(egOp, geomPartId))
+                if (!reader.Get(egOp, geomPartId, geomToElem))
                     break;
 
                 m_partGeometry = m_context->GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
 
                 if (!m_partGeometry.IsValid())
                     break;
+
+                // Push part transform...
+                m_context->PushTransform(geomToElem);
 
                 // Save current data position...
                 m_saveData = m_data;
@@ -3630,6 +3610,7 @@ ElementGeometryCollection::ElementGeometryCollection(GeometrySourceCR source)
     m_dataSize = source.GetGeomStream().GetSize();
     m_elemToWorld = source.GetPlacementTransform();
     m_context = new ElementGeometryCollectionContext(source.GetSourceDgnDb());
+    m_context->GetCurrentDisplayParams().SetCategoryId(source.GetCategoryId());
     m_context->PushTransform(m_elemToWorld);
     }
 
@@ -3705,7 +3686,6 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometrySourceR 
     if (source.GetCategoryId() != m_elParams.GetCategoryId())
         return ERROR;
 
-    // NOT_NOW_GEOMETRY_SOURCE - Where should this check go???
     DgnElementCP el = source.ToElement();
 
     if (nullptr != el && el->GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::SetGeometry))
@@ -3771,14 +3751,6 @@ bool ElementGeometryBuilder::Append(ElemDisplayParamsCR elParams)
     if (m_elParams == elParams)
         return true;
 
-    if (m_prevSubCategory.IsValid() && (elParams.GetSubCategoryId() == m_elParams.GetSubCategoryId()) &&
-        ((elParams.IsLineColorFromSubCategoryAppearance() && !m_elParams.IsLineColorFromSubCategoryAppearance()) ||
-         (elParams.IsWeightFromSubCategoryAppearance() && !m_elParams.IsWeightFromSubCategoryAppearance()) ||
-         (elParams.IsLineStyleFromSubCategoryAppearance() && !m_elParams.IsLineStyleFromSubCategoryAppearance()) ||
-         (elParams.IsMaterialFromSubCategoryAppearance() && !m_elParams.IsMaterialFromSubCategoryAppearance()) ||
-         (elParams.IsFillColorFromSubCategoryAppearance() && !m_elParams.IsFillColorFromSubCategoryAppearance())))
-        m_prevSubCategory.Invalidate(); // Ensure that a symbology reset to sub-category appearance is recorded...
-
     m_elParams = elParams;
     m_appearanceChanged = true; // Defer append until we actually have some geometry...
 
@@ -3831,8 +3803,8 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
     if (!geomToElement.IsIdentity())
         geomToElement.Multiply(localRange, localRange);
 
-    OnNewGeom(localRange, &geomToElement);
-    m_writer.Append(geomPartId);
+    OnNewGeom(localRange);
+    m_writer.Append(geomPartId, &geomToElement);
 
     return true;
     }
@@ -3840,15 +3812,15 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomToElement)
+void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange)
     {
     if (m_isPartCreate)
         {
-        // NOTE: Don't need placement or want OpCode::BeginSubCategory to be added, but we do want to
+        // NOTE: Don't need placement or want sub-category to be added, but we do want to
         //       store symbology/material attachments that aren't from the sub-category appearance.
         if (m_appearanceChanged)
             {
-            m_writer.Append(m_elParams);
+            m_writer.Append(m_elParams, m_isPartCreate);
             m_appearanceChanged = false;
             }
 
@@ -3860,16 +3832,9 @@ void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomTo
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
 
-    // Establish "geometry group" boundaries at sub-category and GeomPart changes...geomToElement should only be non-null when inserting a GeomPart..
-    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || nullptr != geomToElement))
-        {
-        m_writer.Append(m_elParams.GetSubCategoryId(), geomToElement);
-        m_prevSubCategory = m_elParams.GetSubCategoryId();
-        }
-
     if (m_appearanceChanged)
         {
-        m_writer.Append(m_elParams);
+        m_writer.Append(m_elParams, m_isPartCreate);
         m_appearanceChanged = false;
         }
     }
@@ -4321,7 +4286,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR stream, DgnDbR db)
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR stream, DgnDbR db, bool ignoreSymbology)
     {
     ElementGeometryBuilderPtr builder = new ElementGeometryBuilder(db, DgnCategoryId(), Placement3d());
     ElementGeomIO::Collection collection(stream.GetData(), stream.GetSize());
@@ -4331,11 +4296,47 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR st
         switch (egOp.m_opCode)
             {
             case ElementGeomIO::OpCode::Header:
-            case ElementGeomIO::OpCode::BeginSubCategory:
-                break; // Already have header, can't change sub-category, and part geometry is always in local coords...
+                break; // Already have header....
 
             case ElementGeomIO::OpCode::GeomPartInstance:
                 return nullptr; // Nested parts aren't supported...
+
+            case ElementGeomIO::OpCode::BasicSymbology:
+                {
+                if (ignoreSymbology)
+                    break;
+
+                // Can't change sub-category in GeomPart's GeomStream, only preserve sub-category appearance overrides.
+                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+
+                if (0 == ppfb->subCategoryId())
+                    {
+                    builder->m_writer.Append(egOp); // No sub-category, ok to write as-is...
+                    break;
+                    }
+
+                if (!(ppfb->useColor() || ppfb->useWeight() || ppfb->useStyle() || 0.0 != ppfb->transparency() || 0 != ppfb->displayPriority() || 0 != ppfb->geomClass()))
+                    break;
+
+                FlatBufferBuilder fbb;
+
+                auto mloc = FB::CreateBasicSymbology(fbb, 0, ppfb->color(), ppfb->weight(), ppfb->lineStyleId(), ppfb->transparency(), ppfb->displayPriority(), ppfb->geomClass(), ppfb->useColor(), ppfb->useWeight(), ppfb->useStyle());
+                fbb.Finish(mloc);
+                builder->m_writer.Append(ElementGeomIO::Operation(ElementGeomIO::OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+                break;
+                }
+
+            case ElementGeomIO::OpCode::LineStyleModifiers:
+            case ElementGeomIO::OpCode::AreaFill:
+            case ElementGeomIO::OpCode::Pattern:
+            case ElementGeomIO::OpCode::Material:
+                {
+                if (ignoreSymbology)
+                    break;
+
+                builder->m_writer.Append(egOp); // Append raw data...
+                break;
+                }
 
             default:
                 builder->m_writer.Append(egOp); // Append raw data so we don't lose bReps, etc. even when we don't have Parasolid available...
