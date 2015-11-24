@@ -201,7 +201,7 @@ void WriteStringToHttpBody(Utf8StringCR string, HttpBodyPtr body)
         auto written = body->Write(bytesWritten + string.c_str(), bytesToWrite);
         if (!written)
             {
-            BeAssert(false);
+            EXPECT_TRUE(false);
             break;
             }
         bytesWritten += written;
@@ -340,13 +340,13 @@ Utf8String SimpleReadFile(BeFileNameCR filePath)
     BeFileStatus status;
 
     status = file.Open(filePath, BeFileAccess::Read);
-    BeAssert(status == BeFileStatus::Success);
+    EXPECT_EQ(BeFileStatus::Success, status);
 
     status = file.ReadEntireFile(fileContents);
-    BeAssert(status == BeFileStatus::Success);
+    EXPECT_EQ(BeFileStatus::Success, status);
 
     status = file.Close();
-    BeAssert(status == BeFileStatus::Success);
+    EXPECT_EQ(BeFileStatus::Success, status);
 
     Utf8String stringContents;
     stringContents.append(fileContents.begin(), fileContents.end());
@@ -361,13 +361,13 @@ void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath)
     BeFileStatus status;
 
     status = file.Create(filePath, true);
-    BeAssert(status == BeFileStatus::Success);
+    EXPECT_EQ(BeFileStatus::Success, status);
 
     status = file.Write(&written, content.c_str(), (uint32_t) content.size());
-    BeAssert(status == BeFileStatus::Success);
+    EXPECT_EQ(BeFileStatus::Success, status);
 
     status = file.Close();
-    BeAssert(status == BeFileStatus::Success);
+    EXPECT_EQ(BeFileStatus::Success, status);
     }
 
 END_WSCLIENT_UNITTESTS_NAMESPACE
