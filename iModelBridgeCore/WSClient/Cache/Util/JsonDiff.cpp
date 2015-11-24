@@ -14,9 +14,9 @@ using namespace rapidjson;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonDiff::JsonDiff(bool copyValues, bool ignoreDeletedProperties) :
-m_copyValues(copyValues),
-m_ignoreDeletedProperties(ignoreDeletedProperties)
+JsonDiff::JsonDiff(int flags) :
+m_avoidCopies(flags & Flags::DoNotCopyValues ? true : false),
+m_findDeletions(flags & Flags::FindDeletions ? true : false)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -91,7 +91,7 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
         }
 
     // Find deletions
-    if (!m_ignoreDeletedProperties &&
+    if (m_findDeletions &&
         std::distance(oldJson.MemberBegin(), oldJson.MemberEnd()) != std::distance(newJson.MemberBegin(), newJson.MemberEnd()))
         {
         for (auto oldMemberItr = oldJson.MemberBegin(); oldMemberItr != oldJson.MemberEnd(); ++oldMemberItr)
@@ -163,13 +163,13 @@ void JsonDiff::CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapid
             break;
 
         case kStringType:
-            if (m_copyValues)
+            if (m_avoidCopies)
                 {
-                target.SetString(source.GetString(), source.GetStringLength(), allocator);
+                target.SetString(source.GetString(), source.GetStringLength());
                 }
             else
                 {
-                target.SetString(source.GetString(), source.GetStringLength());
+                target.SetString(source.GetString(), source.GetStringLength(), allocator);
                 }
             break;
 
