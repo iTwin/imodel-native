@@ -900,3 +900,102 @@ TEST_F(DoubleBriefcaseTest, Dynamics)
     ExpectLevel(*elemA, LockLevel::Exclusive);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ExtractLocksTest : SingleBriefcaseLocksTest
+{
+    DgnDbStatus ExtractLocks(LockRequestR req)
+        {
+        if (BE_SQLITE_OK != m_db->SaveChanges())
+            return DgnDbStatus::WriteError;
+
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision();
+        if (rev.IsNull())
+            return DgnDbStatus::BadRequest;
+
+        ChangeStreamFileReader stream(rev->GetChangeStreamFile());
+        DgnDbStatus status = req.FromChangeSet(stream, *m_db);
+
+        m_db->Revisions().AbandonCreateRevision();
+
+        return status;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Test functions which query the set of locks which are required by the changes actually
+* made in the briefcase. (Excluding locks obtained but not actually used).
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ExtractLocksTest, UsedLocks)
+    {
+    struct AssertScope
+    {
+        AssertScope() { BeTest::SetFailOnAssert(false); }
+        ~AssertScope() { BeTest::SetFailOnAssert(true); }
+    };
+
+    struct UndoScope
+    {
+        DgnDbR m_db;
+        TxnManager::TxnId m_id;
+        UndoScope(DgnDbR db) : m_db(db), m_id(db.Txns().GetCurrentTxnId()) { }
+        ~UndoScope() { m_db.Txns().ReverseTo(m_id); }
+    };
+
+    AssertScope V_V_V_Asserts;
+    m_db = SetupDb(L"UsedLocks.dgndb", m_bcId);
+
+    DgnDbR db = *m_db;
+    DgnModelR model = *db.Models().GetModel(m_modelId);
+    DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+
+    LockRequest req;
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Modify an elem (it's a DgnCategory...)
+        {
+        UndoScope V_V_V_Undo(db);
+        auto pEl = cpEl->CopyForEdit();
+        DgnElement::Code newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+        EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
+        cpEl = pEl->Update();
+        ASSERT_TRUE(cpEl.IsValid());
+
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        EXPECT_FALSE(req.IsEmpty());
+        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(model)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*pEl)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Create a new model
+    DgnModelPtr newModel = CreateModel("NewModel");
+    DgnElementCPtr newElem = CreateElement(*newModel);
+
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_EQ(3, req.Size());
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+
+    // Delete the new element
+    EXPECT_EQ(DgnDbStatus::Success, newElem->Delete());
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_EQ(2, req.Size());
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+
+    // Delete the new model
+    EXPECT_EQ(DgnDbStatus::Success, newModel->Delete());
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+    }
+

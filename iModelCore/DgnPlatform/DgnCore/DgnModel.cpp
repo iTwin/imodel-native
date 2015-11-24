@@ -49,7 +49,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_description.AssignOrClear(stmt.GetValueText(1));
         out->m_classId = DgnClassId(stmt.GetValueInt64(2));
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
-        out->m_code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
+        out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
         }
 
     return SUCCESS;
@@ -66,7 +66,7 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
     if (BE_SQLITE_ROW != stmt.Step())
         return  ERROR;
 
-    code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+    code.From(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
     return  SUCCESS;
     }
 
@@ -75,7 +75,9 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
     {
-    return DgnModel::Code(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
+    DgnModel::Code code;
+    code.From(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
+    return code;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -898,7 +900,6 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 
     DgnModels& models = GetDgnDb().Models();
 
-    m_code.m_value.Trim();
     if (models.QueryModelId(m_code).IsValid()) // can't allow two models with the same code
         return DgnDbStatus::DuplicateName;
 
@@ -1113,9 +1114,11 @@ void DgnModel::_FillModel()
             continue;
             }
 
+        DgnElement::Code code;
+        code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
         DgnElement::CreateParams createParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
-            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace)), 
+            code,
             stmt.GetValueText(Column::Label),
             stmt.GetValueId<DgnElementId>(Column::ParentId));
 
@@ -1657,11 +1660,11 @@ void ComponentModel::CompProps::ToJson(Json::Value& outValue) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSolutionOfComponentRelationship(DgnElementCR inst, ComponentModelR componentModel)
+static DgnDbStatus createSolutionOfComponentRelationship(DgnElementCR inst, ComponentModelR componentModel, ModelSolverDef::ParameterSet const& params)
     {
     CachedECSqlStatementPtr statement = inst.GetDgnDb().GetPreparedECSqlStatement(
         "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent)
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,Parameters) VALUES(?,?,?,?,?)");
 
     if (!statement.IsValid())
         return DgnDbStatus::BadRequest;
@@ -1670,25 +1673,45 @@ static DgnDbStatus createSolutionOfComponentRelationship(DgnElementCR inst, Comp
     statement->BindId(2, inst.GetElementId());
     statement->BindId(3, componentModel.GetClassId());
     statement->BindId(4, componentModel.GetModelId());
+    statement->BindText(5, Json::FastWriter::ToString(params.ToJson()).c_str(), EC::IECSqlBinder::MakeCopy::Yes);
     return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus deleteSolutionOfComponentRelationship(DgnElementCR inst)
+    {
+    CachedECSqlStatementPtr statement = inst.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE (SourceECInstanceId=?)");
+
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, inst.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
-static DgnModelId queryComponentModelFromSolution(DgnDbR db, DgnElementId itemId)
+static BeSQLite::DbResult queryComponentModelFromSolution(DgnModelId& mid, ModelSolverDef::ParameterSet& params, DgnDbR db, DgnElementId itemId)
     {
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
-        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE SourceECInstanceId=? LIMIT 1");
+        "SELECT TargetECInstanceId, Parameters FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE SourceECInstanceId=? LIMIT 1");
 
     if (!statement.IsValid())
-        return DgnModelId();
+        return BE_SQLITE_ERROR_BadDbSchema;
 
     statement->BindId(1, itemId);
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnModelId();
+    DbResult dbr = statement->Step();
+    if (BE_SQLITE_ROW != dbr)
+        return dbr;
 
-    return statement->GetValueId<DgnModelId>(0);
+    mid = statement->GetValueId<DgnModelId>(0);
+    Json::Value paramsObj(Json::objectValue);
+    Json::Reader::Parse(statement->GetValueText(1), paramsObj);
+    params = ModelSolverDef::ParameterSet(paramsObj);
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1731,9 +1754,91 @@ static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instan
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentModel::Importer::Importer(DgnDbR destDb, ComponentModel& sourceComponent)
+    : DgnImportContext(sourceComponent.GetDgnDb(), destDb), m_sourceComponent(sourceComponent)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentModelPtr ComponentModel::Importer::ImportComponentModel(DgnDbStatus* status)
+    {
+    return m_destComponent = DgnModel::Import(status, m_sourceComponent, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::Importer::ImportSolutions(DgnModelR destCatalogModel, bvector<AuthorityIssuedCode> const& selected)
+    {
+    if (!m_destComponent.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadModel;
+        }
+
+    if (&m_destComponent->GetDgnDb() != &destCatalogModel.GetDgnDb())
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongDgnDb;
+        }
+
+    if (m_destComponent.get() == &destCatalogModel)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel;
+        }
+
+    EC::ECSqlStatement selectCatalogItems;
+    selectCatalogItems.Prepare(GetSourceDb(), "SELECT SourceECInstanceId,Parameters FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE(TargetECInstanceId=?)");
+    selectCatalogItems.BindId(1, m_sourceComponent.GetModelId());
+    while (BE_SQLITE_ROW == selectCatalogItems.Step())
+        {
+        DgnElementCPtr sourceCatalogItem = GetSourceDb().Elements().GetElement(selectCatalogItems.GetValueId<DgnElementId>(0));
+        if (!sourceCatalogItem.IsValid())
+            continue;
+
+        if (!selected.empty() && selected.end() != std::find(selected.begin(), selected.end(), sourceCatalogItem->GetCode()))  // apply optional caller-supplied filter
+            continue;
+
+        Json::Value paramsObj(Json::objectValue);
+        Json::Reader::Parse(selectCatalogItems.GetValueText(1), paramsObj);
+        ModelSolverDef::ParameterSet params = ModelSolverDef::ParameterSet(paramsObj);
+
+        DgnDbStatus status;
+        DgnElementCPtr destCatalogItem = sourceCatalogItem->Import(&status, destCatalogModel, *this);
+        if (!destCatalogItem.IsValid())
+            {
+            return status;
+            }
+
+        createSolutionOfComponentRelationship(*destCatalogItem, *m_destComponent, params);
+        }
+
+    return DgnDbStatus::Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::QuerySolutions(bvector<DgnElementId>& solutions)
+    {
+    EC::ECSqlStatement selectCatalogItems;
+    selectCatalogItems.Prepare(GetDgnDb(), "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE(TargetECInstanceId=?)");
+    selectCatalogItems.BindId(1, GetModelId());
+    while (BE_SQLITE_ROW == selectCatalogItems.Step())
+        {
+        solutions.push_back(selectCatalogItems.GetValueId<DgnElementId>(0));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::GetSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool generateSolution)
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -1745,9 +1850,7 @@ PhysicalElementCPtr ComponentModel::GetSolution(DgnDbStatus* statusOut, Physical
         return nullptr;
         }
 
-    Utf8String solutionName = parameters.ComputeSolutionName();
-
-    DgnElement::Code icode = CreateCatalogItemCode(solutionName);
+    DgnElement::Code icode = CreateCatalogItemCode(catalogItemName);
     if (!icode.IsValid())
         {
         BeAssert(false);
@@ -1755,34 +1858,53 @@ PhysicalElementCPtr ComponentModel::GetSolution(DgnDbStatus* statusOut, Physical
         return nullptr;
         }
 
-    //  Check to see if this solution has already been captured. If so, return the existing catalog item.
-    DgnElementId existingTemplateItemId = db.Elements().QueryElementIdByCode(icode);
-    if (existingTemplateItemId.IsValid())
+    //  Check to see if this solution has already been captured.
+    DgnElementId existingCatalogItemId = db.Elements().QueryElementIdByCode(icode);
+    if (existingCatalogItemId.IsValid())
         {
-        PhysicalElementCPtr existingTemplateItem = db.Elements().Get<PhysicalElement>(existingTemplateItemId);
-        if (!existingTemplateItem.IsValid())
-            {
-            BeAssert(false && "template item cannot be loaded");
-            status = DgnDbStatus::BadElement;
-            return nullptr;
-            }
-        if (existingTemplateItem->GetModel().get() != &catalogModel)
-            {
-            BeDataAssert(false && "solution has already been captured in a different model");
-            }
-        return existingTemplateItem;
-        }
-    
-    if (!generateSolution)
-        {
-        status = DgnDbStatus::NotFound;
+        status = DgnDbStatus::DuplicateCode;
         return nullptr;
         }
 
     if (DgnDbStatus::Success != (status = Solve(parameters)))
         return nullptr;
 
-    return HarvestSolution(status, catalogModel, solutionName, icode);
+    return HarvestSolution(status, catalogModel, catalogItemName, icode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::QuerySolutionByName(Utf8StringCR catalogItemName)
+    {
+    DgnElement::Code icode = CreateCatalogItemCode(catalogItemName);
+    if (!icode.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    //  Check to see if this solution has already been captured.
+    DgnElementId existingCatalogItemId = GetDgnDb().Elements().QueryElementIdByCode(icode);
+    if (!existingCatalogItemId.IsValid())
+        return nullptr;
+
+    return GetDgnDb().Elements().Get<PhysicalElement>(existingCatalogItemId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::DeleteSolution(PhysicalElementCR catalogItem)
+    {
+    DgnDbStatus status = deleteSolutionOfComponentRelationship(catalogItem);
+    if (DgnDbStatus::Success != status)
+        {
+        if (DgnDbStatus::NotFound == status)
+            return DgnDbStatus::BadRequest;
+        return status;
+        }
+    return catalogItem.Delete();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1943,8 +2065,14 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
     PhysicalElementCPtr persistentCatalogItem = persistentDgnElem->ToPhysicalElement();
 
     //  Link the catalog item to this ComponentModel
-    createSolutionOfComponentRelationship(*persistentCatalogItem, *this);
-    BeAssert(queryComponentModelFromSolution(db, persistentCatalogItem->GetElementId()) == GetModelId());
+    createSolutionOfComponentRelationship(*persistentCatalogItem, *this, GetSolver().GetParameters());
+    #ifndef NDEBUG
+    DgnModelId qmid;
+    ModelSolverDef::ParameterSet qparams;
+    BeAssert(BE_SQLITE_OK == queryComponentModelFromSolution(qmid, qparams, db, persistentCatalogItem->GetElementId()) 
+                && qmid == GetModelId() 
+                && qparams == GetSolver().GetParameters());
+    #endif
     return persistentCatalogItem;
     }
 
@@ -1965,8 +2093,9 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
         }
 
     //  Generate the item code. This will be a null code, unless there's a specified authority for the componentmodel.
-    DgnModelId mid = queryComponentModelFromSolution(db, catalogItem.GetElementId());
-    if (!mid.IsValid())
+    DgnModelId mid;
+    ModelSolverDef::ParameterSet qparams;
+    if (BE_SQLITE_OK != queryComponentModelFromSolution(mid, qparams, db, catalogItem.GetElementId()))
         {
         status = DgnDbStatus::BadArg;
         BeAssert(false && "input catalog item must be the solution of a componentmodel");
@@ -1999,6 +2128,17 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
     BeAssert(queryTemplateItemFromInstance(db, inst->GetElementId()) == catalogItem.GetElementId());
 
     return inst;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::QuerySolutionSource(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
+    {
+    if (BE_SQLITE_OK != queryComponentModelFromSolution(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))
+        return DgnDbStatus::BadArg;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

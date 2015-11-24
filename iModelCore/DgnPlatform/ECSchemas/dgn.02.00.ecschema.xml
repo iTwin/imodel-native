@@ -63,12 +63,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECClass>
-    <ECClass typeName="ComponentAuthority" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECClass>
 
     <ECClass typeName="AuthorityIssuedCode" isStruct="True">
         <ECProperty propertyName="AuthorityId" typeName="long">
@@ -375,19 +369,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
-    <ECClass typeName="GeometrySource" isDomainClass="False">
+    <ECClass typeName="GeometrySource" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- abstract - interface adopted by Elements which have geometry
              Note this is intended to serve as a relationship endpoint, but ECDb doesn't support an abstract relationship endpoint (needs primary key)... -->
     </ECClass>
 
-    <ECClass typeName="DictionaryElement" isDomainClass="False">
+    <ECClass typeName="DictionaryElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <BaseClass>Element</BaseClass>
     </ECClass>
-    <ECClass typeName="Element3d" isDomainClass="False">
+    <ECClass typeName="Element3d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
-    <ECClass typeName="Element2d" isDomainClass="False">
+    <ECClass typeName="Element2d"  isCustomAttributeClass="False" isStruct="False" isDomainClass="False">
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
@@ -548,6 +542,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" roleLabel="of a ComponentModel" polymorphic="True">
             <Class class="ComponentModel" />
         </Target>
+        <!-- JSON representation of parameters that were used to solve the target model in order to produce the source element -->
+        <ECProperty propertyName="Parameters" typeName="string"/>
     </ECRelationshipClass>
 
     <!-- An Item can be a copy of a (template) Item. 
@@ -973,7 +969,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Value" displayLabel="" typeName="string" />
     </ECClass>
 
-    <ECClass typeName="ViewDefinition" isDomainClass="False">
+    <ECClass typeName="ViewDefinition" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- abstract -->
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
@@ -1017,7 +1013,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="ViewDefinition2d" isDomainClass="False">
+    <ECClass typeName="ViewDefinition2d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- abstract -->
         <BaseClass>ViewDefinition</BaseClass>
     </ECClass>
