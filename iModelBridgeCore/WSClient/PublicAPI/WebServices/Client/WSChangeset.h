@@ -72,6 +72,8 @@ struct WSChangeset
         //! @return true if removed, false if not found
         WSCLIENT_EXPORT bool RemoveInstance(Instance& instance);
 
+        //! Check if changeset does not contain any instances
+        WSCLIENT_EXPORT bool IsEmpty() const;
         //! Get total instance count (root and related) used in changeset. Excludes relationship instances.
         WSCLIENT_EXPORT size_t GetInstanceCount() const;
         //! Get total relationship count used in changeset.

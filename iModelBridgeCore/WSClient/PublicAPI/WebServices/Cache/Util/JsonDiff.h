@@ -36,16 +36,30 @@ struct JsonDiff
         static bool ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
         static bool ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
 
+        static RapidJsonValueCR ValidateObject(RapidJsonValueCR value);
+
     public:
         WSCACHE_EXPORT JsonDiff(bool copyValues = true, bool ignoreDeletedProperties = true);
         WSCACHE_EXPORT virtual ~JsonDiff();
         
+        //! Get changes between JSON objects
+        //! @param oldJson 
+        //! @param newJson
+        //! @param jsonOut output for changes
+        //! @return true if any changes found
         WSCACHE_EXPORT bool GetChanges
             (
             RapidJsonValueCR oldJson,
             RapidJsonValueCR newJson,
             RapidJsonDocumentR jsonOut
             );
+
+        //! Get changes between JSON objects
+        //! @param oldJson
+        //! @param newJson
+        //! @param jsonOut output for changes
+        //! @param allocator allocator for jsonOut values
+        //! @return true if any changes found
         WSCACHE_EXPORT bool GetChanges
             (
             RapidJsonValueCR oldJson,
@@ -54,6 +68,7 @@ struct JsonDiff
             rapidjson::Value::AllocatorType& allocator
             );
 
+        //! Check if values are equal
         WSCACHE_EXPORT static bool ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
     };
 

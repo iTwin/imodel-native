@@ -21,6 +21,7 @@
 #include "Core/DataSourceCacheOpenState.h"
 #include "Core/SchemaContext.h"
 #include "Core/SchemaManager.h"
+#include "Core/Version.h"
 #include "Upgrade/Upgrader.h"
 
 #include "../Logging.h"
@@ -171,7 +172,7 @@ const ECDb::OpenParams& params
             });
         }
 
-    if (version == CURRENT_CACHE_FORMAT_VERSION)
+    if (version == WSCACHE_FORMAT_VERSION)
         {
         return SUCCESS;
         }
@@ -198,7 +199,7 @@ const ECDb::OpenParams& params
     return ExecuteWithinTransaction([&]
         {
         CacheSettings settings(m_db);
-        settings.SetVersion(CURRENT_CACHE_FORMAT_VERSION);
+        settings.SetVersion(WSCACHE_FORMAT_VERSION);
         return settings.Save();
         });
     }
@@ -214,7 +215,7 @@ BentleyStatus DataSourceCache::InitializeCreatedDb()
         }
 
     CacheSettings settings(m_db);
-    settings.SetVersion(CURRENT_CACHE_FORMAT_VERSION);
+    settings.SetVersion(WSCACHE_FORMAT_VERSION);
     return settings.Save();
     }
 

@@ -34,6 +34,43 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 using namespace ::testing;
 
+TEST_F(JsonDiffTests, GetChanges_OldAndNewAreNull_ReturnsEmptyJson)
+    {
+    BeTest::SetFailOnAssert(false);
+    TEST_GET_CHANGES(R"(null)",
+                     R"(null)",
+                     R"({ })");
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(JsonDiffTests, GetChanges_OldIsNull_ReturnsAllNew)
+    {
+    BeTest::SetFailOnAssert(false);
+    TEST_GET_CHANGES(R"(null)",
+                     R"({"A" : "foo"})",
+                     R"({"A" : "foo"})");
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(JsonDiffTests, GetChanges_NewIsNullAndIgnoreDeletions_ReturnsEmpty)
+    {
+    BeTest::SetFailOnAssert(false);
+    TEST_GET_CHANGES(R"({"A" : "foo"})",
+                     R"(null)",
+                     R"({ })");
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(JsonDiffTests, GetChanges_NewIsNullAndNotIgnoreDeletions_ReturnsAllOldAsDeleted)
+    {
+    BeTest::SetFailOnAssert(false);
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                     R"({"A" : "foo"})",
+                     R"(null)",
+                     R"({"A" : null})");
+    BeTest::SetFailOnAssert(true);
+    }
+
 TEST_F(JsonDiffTests, GetChanges_EmptyJsons_ReturnsEmptyJson)
     {
     TEST_GET_CHANGES(R"({ })",

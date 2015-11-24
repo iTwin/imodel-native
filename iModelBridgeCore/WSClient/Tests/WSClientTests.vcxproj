@@ -23,6 +23,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
+    <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
     <ClInclude Include="Published\Utils\MockHttpHandler.h" />

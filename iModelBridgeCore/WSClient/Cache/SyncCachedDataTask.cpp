@@ -207,7 +207,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
             ECInstanceKeyMultiMap cachedInstances;
             if (CacheStatus::OK != txn.GetCache().ReadResponseInstanceKeys(responseKey, cachedInstances))
                 {
-                SetError(ICachingDataSource::Status::InternalCacheError);
+                SetError();
                 return;
                 }
 
@@ -293,8 +293,7 @@ bool SyncCachedDataTask::IsInstancePersistent(CacheTransactionCR txn, ECInstance
         m_persistentInstances = std::make_shared<ECInstanceKeyMultiMap>();
         if (SUCCESS != txn.GetCache().ReadFullyPersistedInstanceKeys(*m_persistentInstances))
             {
-            BeAssert(false);
-            SetError(ICachingDataSource::Status::InternalCacheError);
+            SetError();
             }
         }
 

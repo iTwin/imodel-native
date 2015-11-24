@@ -17,7 +17,7 @@
 #include "UpgraderFromV3ToV4.h"
 #include "UpgraderFromV4ToV5.h"
 #include "UpgraderFromV5ToCurrent.h"
-#include "UpgraderFromV7ToV8.h"
+#include "UpgraderFromV7ToV9.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -46,7 +46,8 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
         case 6:
             return ERROR; // 5 to 6 handled in previous case
         case 7:
-            if (SUCCESS != UpgraderFromV7ToV8(m_adapter).Upgrade()) return ERROR;
+        case 8:
+            if (SUCCESS != UpgraderFromV7ToV9(m_adapter).Upgrade()) return ERROR;
 
             // Current version, return
             return SUCCESS;
