@@ -325,56 +325,6 @@ DbResult ECDbSchemaPersistence::Step (DbBaseClassInfo& info , BeSQLite::Statemen
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::FindECSchemaReference(BeSQLite::CachedStatementPtr& stmt, ECDbCR db, DbECSchemaReferenceInfo const& info)
-    {
-    Utf8String sql("SELECT ");
-
-    //prepare select list
-    SqlClauseBuilder selectClause(",");
-    if (info.ColsSelect & DbECSchemaReferenceInfo::COL_SchemaId) selectClause.AddItem("SchemaId");
-    if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) selectClause.AddItem("ReferencedSchemaId");
-
-    BeAssert(!selectClause.IsEmpty());
-
-    sql.append(selectClause.ToString()).append(" FROM ec_SchemaReference");
-
-    //prepare where
-    SqlClauseBuilder whereClause("AND");
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_SchemaId) whereClause.AddItem("SchemaId=?");
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) whereClause.AddItem("ReferencedSchemaId=?");
-
-    if (!whereClause.IsEmpty())
-        sql.append(" WHERE ").append(whereClause.ToString());
-
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, sql.c_str()))
-        return ERROR;
-
-    int nCol = 1;
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_SchemaId) stmt->BindInt64(nCol++, info.m_ecSchemaId);
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) stmt->BindInt64(nCol++, info.m_referencedECSchemaId);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::Step (DbECSchemaReferenceInfo& info, BeSQLite::Statement& stmt)
-    {
-    DbResult r;
-    if ((r = stmt.Step ()) == BE_SQLITE_ROW)
-        {
-        int nCol = 0;
-        info.ColsNull = 0;
-        if (info.ColsSelect & DbECSchemaReferenceInfo::COL_SchemaId) info.m_ecSchemaId = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) info.m_referencedECSchemaId = stmt.GetValueInt64 (nCol++);
-        }
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaPersistence::InsertECProperty(ECDbCR db, DbECPropertyInfo const& info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
@@ -786,6 +736,28 @@ bool ECDbSchemaPersistence::ContainsECClass(ECDbCR db, ECClassCR ecClass)
                                             Utf8String(ecClass.GetName().c_str()).c_str(), ResolveSchema::BySchemaName);
 
     return classId > ECClass::UNSET_ECCLASSID;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle     11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECDbSchemaPersistence::GetReferencedSchemas(bvector<ECSchemaId>& referencedSchemaIds, ECDbCR ecdb, ECSchemaId schemaId)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT ReferencedSchemaId FROM ec_SchemaReference WHERE SchemaId=?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, schemaId))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        BeAssert(!stmt->IsColumnNull(0));
+        referencedSchemaIds.push_back((ECSchemaId) stmt->GetValueInt64(0));
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------

@@ -352,31 +352,29 @@ struct ECDbSchemaPersistence
         //Find CustomAttributeInfo
         static  BentleyStatus FindCustomAttribute(BeSQLite::CachedStatementPtr&, ECDbCR, DbCustomAttributeInfo const&);
         static  BeSQLite::DbResult Step(DbCustomAttributeInfo&, BeSQLite::Statement&);
-        //Find CustomAttributeInfo
-        static  BentleyStatus FindECSchemaReference(BeSQLite::CachedStatementPtr& stmt, ECDbCR, DbECSchemaReferenceInfo const&);
-        static  BeSQLite::DbResult Step(DbECSchemaReferenceInfo&, BeSQLite::Statement& stmt);
 
         //Helper
-        static                bool ContainsECSchemaReference(ECDbCR, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferencedSchemaId);
-        static                bool ContainsECClass(ECDbCR, ECClassCR);
-        static                bool ContainsECSchemaWithId(ECDbCR, ECSchemaId);
-        static          ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
-        static          ECSchemaId GetECSchemaId(ECDbCR, ECSchemaCR);
-        static           ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
-        static        ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
+        static BentleyStatus GetReferencedSchemas(bvector<ECSchemaId>&, ECDbCR, ECSchemaId);
+        static bool ContainsECSchemaReference(ECDbCR, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferencedSchemaId);
+        static bool ContainsECClass(ECDbCR, ECClassCR);
+        static bool ContainsECSchemaWithId(ECDbCR, ECSchemaId);
+        static ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
+        static ECSchemaId GetECSchemaId(ECDbCR, ECSchemaCR);
+        static ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
+        static ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
-        static  BentleyStatus InitializeSystemTables(ECDbCR);
-        static                bool RequiredSystemTablesExist(ECDbCR);
-        static  BentleyStatus ResolveECClassId(DbECClassEntry& key, ECClassId ecClassId, ECDbCR);
-        static  BentleyStatus GetDerivedECClasses(ECClassIdListR classIds, ECClassId baseClassId, ECDbCR);
-        static  BentleyStatus GetBaseECClasses(ECClassIdListR baseClassIds, ECClassId ecClassId, ECDbCR);
-        static  BentleyStatus ResolveECSchemaId(DbECSchemaEntry& key, ECSchemaId ecSchemaId, ECDbCR);
+        static BentleyStatus InitializeSystemTables(ECDbCR);
+        static bool RequiredSystemTablesExist(ECDbCR);
+        static BentleyStatus ResolveECClassId(DbECClassEntry& key, ECClassId ecClassId, ECDbCR);
+        static BentleyStatus GetDerivedECClasses(ECClassIdListR classIds, ECClassId baseClassId, ECDbCR);
+        static BentleyStatus GetBaseECClasses(ECClassIdListR baseClassIds, ECClassId ecClassId, ECDbCR);
+        static BentleyStatus ResolveECSchemaId(DbECSchemaEntry& key, ECSchemaId ecSchemaId, ECDbCR);
 
-        static  BentleyStatus GetECSchemaKeys(ECSchemaKeys&, ECDbCR);
-        static  BentleyStatus GetECClassKeys(ECClassKeys&, ECSchemaId, ECDbCR);
-        static                bool IsECSchemaMapped(bool* schemaNotFound, ECN::ECSchemaCR, ECDbCR);
-        static                bool IsCustomAttributeDefined(ECDbCR, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
-        static  ECDbPropertyPathId GetECPropertyPathId(ECPropertyId rootECPropertyId, Utf8CP accessString, ECDbCR);
+        static BentleyStatus GetECSchemaKeys(ECSchemaKeys&, ECDbCR);
+        static BentleyStatus GetECClassKeys(ECClassKeys&, ECSchemaId, ECDbCR);
+        static bool IsECSchemaMapped(bool* schemaNotFound, ECN::ECSchemaCR, ECDbCR);
+        static bool IsCustomAttributeDefined(ECDbCR, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
+        static ECDbPropertyPathId GetECPropertyPathId(ECPropertyId rootECPropertyId, Utf8CP accessString, ECDbCR);
 
         static BentleyStatus GetSchemaNamespacePrefixes(bvector<Utf8String>& prefixes, ECDbCR);
     };
