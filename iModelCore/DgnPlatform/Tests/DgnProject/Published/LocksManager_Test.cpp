@@ -30,7 +30,7 @@ private:
 
 
     virtual bool _QueryLocksHeld(LockRequestCR reqs, DgnDbR db) override;
-    virtual LockStatus _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
+    virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db, ResponseOptions opts) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
@@ -249,10 +249,13 @@ void LocksServer::Reset()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocksServer::_AcquireLocks(LockRequestCR reqs, DgnDbR db)
+LockRequest::Response LocksServer::_AcquireLocks(LockRequestCR reqs, DgnDbR db, ResponseOptions opts)
     {
     if (!AreLocksAvailable(reqs, db.GetBriefcaseId()))
-        return LockStatus::AlreadyHeld;
+        {
+        // ###TODO: populate denied locks if requested in ResponseOptions
+        return LockRequest::Response(LockStatus::AlreadyHeld);
+        }
 
     for (auto const& req : reqs)
         {
@@ -300,7 +303,7 @@ LockStatus LocksServer::_AcquireLocks(LockRequestCR reqs, DgnDbR db)
             }
         }
 
-    return LockStatus::Success;
+    return LockRequest::Response(LockStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -414,7 +417,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
         LockRequest req;
         req.Insert(obj, level);
         DgnDbR db = ExtractDgnDb(obj);
-        LockStatus status = db.Locks().AcquireLocks(req);
+        LockStatus status = db.Locks().AcquireLocks(req).GetStatus();
 
         m_server.Dump("After acquiring locks");
 

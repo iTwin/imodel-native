@@ -113,7 +113,7 @@ void LockRequest::Remove(LockableId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t LockRequest::Subtract(LockRequestCR rhs)
+size_t LockRequest::Subtract(DgnLockSet const& rhs)
     {
     size_t nRemoved = 0;
     for (auto const& lock : rhs)
@@ -221,7 +221,7 @@ LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level, DgnMode
             request.Insert(*originalModel, LockLevel::Shared);
         }
 
-    return AcquireLocks(request);
+    return AcquireLocks(request).GetStatus();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,7 +235,7 @@ LockStatus ILocksManager::_LockModel(DgnModelCR model, LockLevel level)
 
     LockRequest request;
     request.Insert(model, level);
-    return AcquireLocks(request);
+    return AcquireLocks(request).GetStatus();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -245,7 +245,7 @@ LockStatus ILocksManager::LockDb(LockLevel level)
     {
     LockRequest request;
     request.Insert(GetDgnDb(), level);
-    return AcquireLocks(request);
+    return AcquireLocks(request).GetStatus();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,7 +259,7 @@ private:
     UnrestrictedLocksManager(DgnDbR db) : ILocksManager(db) { }
 
     virtual bool _QueryLocksHeld(LockRequestR, bool) override { return true; }
-    virtual LockStatus _AcquireLocks(LockRequestR) override { return LockStatus::Success; }
+    virtual LockRequest::Response _AcquireLocks(LockRequestR, AcquireAll) override { return LockRequest::Response(LockStatus::Success); }
     virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
     virtual void _OnModelInserted(DgnModelId) override { }
@@ -301,7 +301,7 @@ private:
     BeBriefcaseId GetId() const { return GetDgnDb().GetBriefcaseId(); }
 
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly) override;
-    virtual LockStatus _AcquireLocks(LockRequestR locks) override;
+    virtual LockRequest::Response _AcquireLocks(LockRequestR locks, AcquireAll acquireAll) override;
     virtual LockStatus _RelinquishLocks() override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
     virtual LockStatus _RefreshLocks() override;
@@ -662,23 +662,33 @@ bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::_AcquireLocks(LockRequestR locks)
+LockRequest::Response LocalLocksManager::_AcquireLocks(LockRequestR locks, AcquireAll acquireAll)
     {
     if (!Validate())
-        return LockStatus::SyncError;
+        return LockRequest::Response(LockStatus::SyncError);
 
     Cull(locks);
     if (locks.IsEmpty())
-        return LockStatus::Success;
+        return LockRequest::Response(LockStatus::Success);
 
     auto server = GetLocksServer();
-    auto status = nullptr != server ? server->AcquireLocks(locks, GetDgnDb()) : LockStatus::ServerUnavailable;
-    if (LockStatus::Success != status)
-        return status;
+    if (nullptr == server)
+        return LockRequest::Response(LockStatus::ServerUnavailable);
+
+    auto responseOptions = (AcquireAll::Yes == acquireAll) ? ILocksServer::ResponseOptions::DeniedLocks : ILocksServer::ResponseOptions::None;
+    auto response = server->AcquireLocks(locks, GetDgnDb(), responseOptions);
+    if (AcquireAll::No == acquireAll && LockStatus::AlreadyHeld == response.GetStatus())
+        {
+        // ###TODO: Remove denied locks from request and retry.
+        return response;
+        }
+
+    if (LockStatus::Success != response.GetStatus())
+        return response;
 
     Insert(locks, true);
     Save();
-    return LockStatus::Success;
+    return response;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -705,5 +715,237 @@ ILocksManagerPtr DgnPlatformLib::Host::LocksAdmin::_CreateLocksManager(DgnDbR db
 ILocksServerP ILocksManager::GetLocksServer() const
     {
     return T_HOST.GetLocksAdmin()._GetLocksServer(GetDgnDb());
+    }
+
+#define JSON_Status "Status"            // LockStatus
+#define JSON_AllAcquired "AllAcquired"  // boolean
+#define JSON_Locks "Locks"              // list of DgnLock.
+#define JSON_LockableId "LockableId"    // LockableId
+#define JSON_Id "Id"                    // BeInt64Id
+#define JSON_LockType "Type"            // LockType
+#define JSON_LockLevel "Level"          // LockLevel
+#define JSON_Owner "Owner"              // BeBriefcaseId
+#define JSON_DeniedLocks "DeniedLocks"  // list of DgnHeldLock. Only supplied if AllAcquired=false
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool idFromJson(BeInt64Id& id, JsonValueCR value)
+    {
+    if (!value.isConvertibleTo(Json::intValue))
+        return false;
+
+    id = BeInt64Id(value.asInt64());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool lockLevelFromJson(LockLevel& level, JsonValueCR value)
+    {
+    if (value.isConvertibleTo(Json::uintValue))
+        {
+        level = static_cast<LockLevel>(value.asUInt());
+        switch (level)
+            {
+            case LockLevel::None:
+            case LockLevel::Shared:
+            case LockLevel::Exclusive:
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool lockTypeFromJson(LockableType& type, JsonValueCR value)
+    {
+    if (value.isConvertibleTo(Json::uintValue))
+        {
+        type = static_cast<LockableType>(value.asUInt());
+        switch (type)
+            {
+            case LockableType::Db:
+            case LockableType::Model:
+            case LockableType::Element:
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool lockStatusFromJson(LockStatus& status, JsonValueCR value)
+    {
+    if (!value.isConvertibleTo(Json::uintValue))
+        return false;
+
+    status = static_cast<LockStatus>(value.asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockableId::ToJson(JsonValueR value) const
+    {
+    value[JSON_Id] = m_id.GetValue();
+    value[JSON_LockType] = static_cast<uint32_t>(m_type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LockableId::FromJson(JsonValueCR value)
+    {
+    if (!idFromJson(m_id, value[JSON_Id]) || !lockTypeFromJson(m_type, value[JSON_LockType]))
+        {
+        Invalidate();
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLock::ToJson(JsonValueR value) const
+    {
+    m_id.ToJson(value[JSON_LockableId]);
+    value[JSON_LockLevel] = static_cast<uint32_t>(m_level);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnLock::FromJson(JsonValueCR value)
+    {
+    if (!m_id.FromJson(value[JSON_LockableId]) || !lockLevelFromJson(m_level, value[JSON_LockLevel]))
+        {
+        Invalidate();
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnHeldLock::ToJson(JsonValueR value) const
+    {
+    DgnLock::ToJson(value);
+    value[JSON_Owner] = m_owner.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnHeldLock::FromJson(JsonValueCR value)
+    {
+    auto const& ownerValue = value[JSON_Owner];
+    if (!ownerValue.isConvertibleTo(Json::uintValue) || !DgnLock::FromJson(value))
+        {
+        Invalidate();
+        return false;
+        }
+
+    m_owner = BeBriefcaseId(ownerValue.asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::ToJson(JsonValueR value) const
+    {
+    uint32_t nLocks = static_cast<uint32_t>(m_locks.size());
+    Json::Value locks(Json::arrayValue);
+    locks.resize(nLocks);
+
+    uint32_t i = 0;
+    for (auto const& lock : m_locks)
+        lock.ToJson(locks[i++]);
+
+    value[JSON_Locks] = locks;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LockRequest::FromJson(JsonValueCR value)
+    {
+    Clear();
+    JsonValueCR locks = value[JSON_Locks];
+    if (!locks.isArray())
+        return false;
+
+    DgnLock lock;
+    uint32_t nLocks = locks.size();
+    for (uint32_t i = 0; i < nLocks; i++)
+        {
+        if (!lock.FromJson(locks[i]))
+            {
+            Clear();
+            return false;
+            }
+
+        m_locks.insert(lock);
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::Response::ToJson(JsonValueR value) const
+    {
+    uint32_t nLocks = static_cast<uint32_t>(m_denied.size());
+    Json::Value locks(Json::arrayValue);
+    locks.resize(nLocks);
+
+    uint32_t i = 0;
+    for (auto const& lock : m_denied)
+        lock.ToJson(locks[i++]);
+
+    value[JSON_DeniedLocks] = locks;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LockRequest::Response::FromJson(JsonValueCR value)
+    {
+    m_denied.clear();
+    JsonValueCR locks = value[JSON_DeniedLocks];
+    if (!locks.isArray() || !lockStatusFromJson(m_status, value[JSON_Status]))
+        {
+        Invalidate();
+        return false;
+        }
+
+    DgnHeldLock lock;
+    uint32_t nLocks = locks.size();
+    for (uint32_t i = 0; i < nLocks; i++)
+        {
+        if (!lock.FromJson(locks[i++]))
+            {
+            Invalidate();
+            return false;
+            }
+
+        m_denied.insert(lock);
+        }
+
+    return true;
     }
 

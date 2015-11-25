@@ -47,12 +47,16 @@ public:
     BeSQLite::BeInt64Id GetId() const { return m_id; } //!< The ID of the lockable object
     LockableType GetType() const { return m_type; } //!< The type of the lockable object
     bool IsValid() const { return m_id.IsValid(); } //!< Determine if this LockableId refers to a valid object
+    void Invalidate() { m_id.Invalidate(); } //!< Invalidates this LockableId
 
     //! Compare two LockableIds for sorting purposes
     bool operator<(LockableId const& rhs) const
         {
         return m_type != rhs.m_type ? m_type < rhs.m_type : m_id < rhs.m_id;
         }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 //=======================================================================================
@@ -113,16 +117,44 @@ public:
 
     void SetLevel(LockLevel level) { m_level = level; } //!< Set the lock level
     void EnsureLevel(LockLevel minLevel) { if (minLevel > m_level) SetLevel(minLevel); } //!< Ensure the lock level is no lower than the specified level
+    void Invalidate() { m_id.Invalidate(); m_level = LockLevel::None; } //!< Invalidates this DgnLock
 
     //! Compare two locks by ID for sorting purposes
     struct IdentityComparator
     {
         bool operator()(DgnLockCR lhs, DgnLockCR rhs) const { return lhs.GetLockableId() < rhs.GetLockableId(); }
     };
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 //! A set of locks compared by identity, ignoring lock level
 typedef bset<DgnLock, DgnLock::IdentityComparator> DgnLockSet;
+
+//=======================================================================================
+//! Identifies a lockable object owned by a briefcase.
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct DgnHeldLock : DgnLock
+{
+private:
+    BeSQLite::BeBriefcaseId m_owner;
+public:
+    DgnHeldLock() { } //!< Constructs a lock with an invalid ID.
+
+    //! Constructs a lock held at the specified level by the specified briefcase
+    DgnHeldLock(LockableId id, LockLevel level, BeSQLite::BeBriefcaseId owner) : DgnLock(id, level), m_owner(owner) { }
+
+    BeSQLite::BeBriefcaseId GetOwner() const { return m_owner; } //!< Returns the ID of the owning briefcase
+
+    void Invalidate() { DgnLock::Invalidate(); m_owner.Invalidate(); } //!< Invalidate this lock
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+};
+
+//! A set of held locks compared by identity, ignoring lock level and owning briefcase ID
+typedef bset<DgnHeldLock, DgnLock::IdentityComparator> DgnHeldLockSet;
 
 //=======================================================================================
 //! Specifies a request for one or more locks.
@@ -173,6 +205,7 @@ public:
     bool IsEmpty() const { return m_locks.empty(); } //!< Determine if this request contains no locks
     size_t Size() const { return m_locks.size(); } //!< Returns the number of locks in this request
     void Clear() { m_locks.clear(); } //!< Removes all locks from this request
+    DgnLockSet const& GetLockSet() const { return m_locks; }
 
     //! Looks up a lock.
     //! @param[in]      lock            Specifies the ID and lock level to find
@@ -200,7 +233,39 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db);
 
     //! Remove any locks from this request which are also present (at any lock level) in the supplied request, returning the number of locks removed.
-    DGNPLATFORM_EXPORT size_t Subtract(LockRequestCR request);
+    DGNPLATFORM_EXPORT size_t Subtract(DgnLockSet const& locks);
+
+    //! Remove any locks from this request which are also present (at any lock level) in the supplied request, returning the number of locks removed.
+    size_t Subtract(LockRequestCR request) { return Subtract(request.GetLockSet()); }
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+
+    //! Specifies how locks are to be acquired
+    enum class AcquireAll
+    {
+        Yes = 0,    //!< If any of the desired locks cannot be acquired, no locks will be acquired
+        No = 1,     //!< Acquire all locks which can be acquired, and ignore those which cannot be acquired
+    };
+
+    //! A response from the server for a request to acquire locks
+    struct Response
+    {
+    private:
+        LockStatus      m_status;
+        DgnHeldLockSet  m_denied;
+    public:
+        explicit Response(LockStatus status=LockStatus::InvalidResponse) : m_status(status) { }
+
+        LockStatus GetStatus() const { return m_status; } //!< The status code returned by the server
+
+        //! If the request was denied, and the client specified ILocksServer::ResponseOptions::DeniedLocks, returns the set of locks which were not granted because they were already held by another briefcase.
+        DgnHeldLockSet const& GetDeniedLocks() const { return m_denied; }
+        void Invalidate() { m_status = LockStatus::InvalidResponse; m_denied.clear(); } //!< Invalidate this response
+
+        DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+        DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    };
 };
 
 //=======================================================================================
@@ -218,13 +283,14 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILocksManager : RefCountedBase
 {
+    typedef LockRequest::AcquireAll AcquireAll;
 private:
     DgnDbR  m_db;
 protected:
     ILocksManager(DgnDbR db) : m_db(db) { }
 
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly) = 0;
-    virtual LockStatus _AcquireLocks(LockRequestR locks) = 0;
+    virtual LockRequest::Response _AcquireLocks(LockRequestR locks, AcquireAll acquire=AcquireAll::Yes) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
     virtual LockStatus _RefreshLocks() = 0;
@@ -244,7 +310,7 @@ public:
     bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false) { return _QueryLocksHeld(locks, localQueryOnly); }
 
     //! Attempts to acquire the specified locks. Note this function may modify the LockRequest object.
-    LockStatus AcquireLocks(LockRequestR locks) { return _AcquireLocks(locks); }
+    LockRequest::Response AcquireLocks(LockRequestR locks, AcquireAll acquire=AcquireAll::Yes) { return _AcquireLocks(locks, acquire); }
 
     //! Relinquishes all locks held by the DgnDb.
     LockStatus RelinquishLocks() { return _RelinquishLocks(); }
@@ -284,9 +350,16 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILocksServer
 {
+    //! Customizes information to be included in the response. Note that specifying certain options may require more work on the part of the server and/or
+    //! more involved processing of the response by the client.
+    enum class ResponseOptions
+    {
+        None = 0, //!< No special options
+        DeniedLocks = 1 << 0, //!< If a request to acquire locks is denied, the response will include the current lock state of each denied lock
+    };
 protected:
     virtual bool _QueryLocksHeld(LockRequestCR locks, DgnDbR db) = 0;
-    virtual LockStatus _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
+    virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db, ResponseOptions options) = 0;
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
@@ -295,7 +368,7 @@ public:
     bool QueryLocksHeld(LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(locks, db); }
 
     //! Attempts to acquire the specified locks for the specified briefcase
-    LockStatus AcquireLocks(LockRequestCR locks, DgnDbR db) { return _AcquireLocks(locks, db); }
+    LockRequest::Response AcquireLocks(LockRequestCR locks, DgnDbR db, ResponseOptions options=ResponseOptions::None) { return _AcquireLocks(locks, db, options); }
 
     //! Relinquishes all locks owned by a briefcase
     LockStatus RelinquishLocks(DgnDbR db) { return _RelinquishLocks(db); }
