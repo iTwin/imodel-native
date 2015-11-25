@@ -398,6 +398,26 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
 };
 
+//=======================================================================================
+//! DEPRECATED: Use DgnElementId (preferred) or ECInstanceKey (for ECRelationships) instead
+//! @private
+//=======================================================================================
+struct DgnElementKey : BeSQLite::EC::ECInstanceKey
+{
+    DgnElementKey() : BeSQLite::EC::ECInstanceKey() {}
+    DgnElementKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
+    DgnElementKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
+
+    //! Converts an ECInstanceKey to a DgnElementKey.
+    //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid DgnElementKey
+    explicit DgnElementKey(BeSQLite::EC::ECInstanceKeyCR key) : BeSQLite::EC::ECInstanceKey(key) {}
+
+    DgnClassId GetClassId() const {return DgnClassId(GetECClassId());}
+    DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
+};
+
+typedef DgnElementKey const& DgnElementKeyCR; //!< @private
+
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.

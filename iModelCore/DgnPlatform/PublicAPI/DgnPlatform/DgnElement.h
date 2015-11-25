@@ -1102,6 +1102,10 @@ public:
     //! Get the DgnClassId of this DgnElement.
     DgnClassId GetElementClassId() const {return m_classId;}
 
+    //! DEPRECATED: use GetElementId (preferred) or GetECInstanceKey (for ECRelationships) instead
+    //! @private
+    DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
+
     //! Get the ECInstanceKey (the element DgnClassId and DgnElementId) of this DgnElement
     //! @see GetElementClassId, GetElementId
     BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId().GetValue(), GetElementId());}
@@ -1900,12 +1904,6 @@ public:
 
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Query the ECInstanceKey for a DgnElement from this DgnDb by its DgnElementId.
-    //! @return Invalid key if the element does not exist.
-    //! @remarks This queries the database for the DgnClassId for the given DgnElementId. It does not check if the element is loaded, nor does it load the element into memory.
-    //! If you have a DgnElement, call DgnElement::GetECInstanceKey on it rather than using this method.
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey QueryECInstanceKey(DgnElementId elementId) const;
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}

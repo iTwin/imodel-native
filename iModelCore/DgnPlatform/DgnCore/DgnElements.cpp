@@ -1133,16 +1133,6 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     return (nullptr != element) ? element : LoadElement(elementId, true);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                  05/15
-//+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceKey DgnElements::QueryECInstanceKey(DgnElementId elementId) const
-    {
-    CachedStatementPtr stmt =GetStatement("SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    stmt->BindInt64(1, elementId.GetValueUnchecked());
-    return BE_SQLITE_ROW == stmt->Step() ? ECInstanceKey(stmt->GetValueInt64(0), elementId) : ECInstanceKey();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
