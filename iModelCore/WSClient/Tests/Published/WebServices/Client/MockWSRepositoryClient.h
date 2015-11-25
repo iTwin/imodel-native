@@ -28,57 +28,57 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
     public:
         typedef std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> PackagedAsyncTaskVoidWSError;
 
-        static std::shared_ptr<NiceMock<MockWSRepositoryClient>> Create (Utf8StringCR id = "test")
+        static std::shared_ptr<NiceMock<MockWSRepositoryClient>> Create(Utf8StringCR id = "test")
             {
             // Set the default return values for tasks so they would crash with stack trace in unit tests
-            DefaultValue<AsyncTaskPtr<WSCreateObjectResult>>::Set (AsyncTaskPtr<WSCreateObjectResult> ());
-            DefaultValue<AsyncTaskPtr<WSUpdateObjectResult>>::Set (AsyncTaskPtr<WSUpdateObjectResult> ());
-            DefaultValue<AsyncTaskPtr<WSDeleteObjectResult>>::Set (AsyncTaskPtr<WSDeleteObjectResult> ());
-            DefaultValue<AsyncTaskPtr<WSUpdateFileResult>>::Set (AsyncTaskPtr<WSUpdateFileResult> ());
+            DefaultValue<AsyncTaskPtr<WSCreateObjectResult>>::Set(AsyncTaskPtr<WSCreateObjectResult>());
+            DefaultValue<AsyncTaskPtr<WSUpdateObjectResult>>::Set(AsyncTaskPtr<WSUpdateObjectResult>());
+            DefaultValue<AsyncTaskPtr<WSDeleteObjectResult>>::Set(AsyncTaskPtr<WSDeleteObjectResult>());
+            DefaultValue<AsyncTaskPtr<WSUpdateFileResult>>::Set(AsyncTaskPtr<WSUpdateFileResult>());
 
-            auto client = std::make_shared<NiceMock<MockWSRepositoryClient>> ();
-            client->m_client = MockWSClient::Create ();
+            auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+            client->m_client = MockWSClient::Create();
             client->m_id = id;
             return client;
             };
 
-        Utf8StringCR GetRepositoryId () const override
+        Utf8StringCR GetRepositoryId() const override
             {
             return m_id;
             };
 
-        IWSClientPtr GetWSClient () const override
+        IWSClientPtr GetWSClient() const override
             {
             return m_client;
             }
 
-        MockWSClient& GetMockWSClient ()
+        MockWSClient& GetMockWSClient()
             {
             return *m_client;
             }
 
-        MOCK_METHOD1 (SetCredentials, void (Credentials credentials));
+        MOCK_METHOD1(SetCredentials, void(Credentials credentials));
 
-        MOCK_CONST_METHOD1 (VerifyAccess, PackagedAsyncTaskVoidWSError
+        MOCK_CONST_METHOD1(VerifyAccess, PackagedAsyncTaskVoidWSError
             (
             ICancellationTokenPtr canncelationToken
             ));
 
-        MOCK_CONST_METHOD3 (SendGetObjectRequest, AsyncTaskPtr<WSObjectsResult>
+        MOCK_CONST_METHOD3(SendGetObjectRequest, AsyncTaskPtr<WSObjectsResult>
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag,
             ICancellationTokenPtr canncelationToken
             ));
 
-        MOCK_CONST_METHOD3 (SendGetChildrenRequest, AsyncTaskPtr<WSObjectsResult>
+        MOCK_CONST_METHOD3(SendGetChildrenRequest, AsyncTaskPtr<WSObjectsResult>
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag,
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD4 (SendGetChildrenRequest, AsyncTaskPtr<WSObjectsResult>
+        MOCK_CONST_METHOD4(SendGetChildrenRequest, AsyncTaskPtr<WSObjectsResult>
             (
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
@@ -86,7 +86,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD5 (SendGetFileRequest, AsyncTaskPtr<WSFileResult>
+        MOCK_CONST_METHOD5(SendGetFileRequest, AsyncTaskPtr<WSFileResult>
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
@@ -95,13 +95,13 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD2 (SendGetSchemasRequest, AsyncTaskPtr<WSObjectsResult>
+        MOCK_CONST_METHOD2(SendGetSchemasRequest, AsyncTaskPtr<WSObjectsResult>
             (
             Utf8StringCR eTag,
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD3 (SendQueryRequest, AsyncTaskPtr<WSObjectsResult>
+        MOCK_CONST_METHOD3(SendQueryRequest, AsyncTaskPtr<WSObjectsResult>
             (
             WSQueryCR query,
             Utf8StringCR eTag,
@@ -115,7 +115,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr
             ));
 
-        MOCK_CONST_METHOD4 (SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
+        MOCK_CONST_METHOD4(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath,
@@ -123,7 +123,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD5 (SendUpdateObjectRequest, AsyncTaskPtr<WSUpdateObjectResult>
+        MOCK_CONST_METHOD5(SendUpdateObjectRequest, AsyncTaskPtr<WSUpdateObjectResult>
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
@@ -132,13 +132,13 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD2 (SendDeleteObjectRequest, AsyncTaskPtr<WSDeleteObjectResult>
+        MOCK_CONST_METHOD2(SendDeleteObjectRequest, AsyncTaskPtr<WSDeleteObjectResult>
             (
             ObjectIdCR objectId,
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD4 (SendUpdateFileRequest, AsyncTaskPtr<WSUpdateFileResult>
+        MOCK_CONST_METHOD4(SendUpdateFileRequest, AsyncTaskPtr<WSUpdateFileResult>
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,

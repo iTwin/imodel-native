@@ -11,5 +11,4 @@
 #include "../../Utils/WebServicesTestsHelper.h"
 
 class WSChangesetTests : public WSClientBaseTest
-    {
-    };
+    {};

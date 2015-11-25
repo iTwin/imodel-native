@@ -79,8 +79,8 @@ TEST_F(WSErrorTests, Ctor_JsonErrorFormatCorrectButContentTypeXml_SetsStatusServ
 
 TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectAndContentTypeXml_ParsesXmlAndSetsError)
     {
-    auto body = R"( <ModelError 
-                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance" 
+    auto body = R"( <ModelError
+                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
                       xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
                         <errorId>ClassNotFound</errorId>
                         <errorMessage>TestMessage</errorMessage>
@@ -97,8 +97,8 @@ TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectAndContentTypeXml_ParsesXmlAndSet
 
 TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectWithNullDescription_ParsesXmlAndSetsError)
     {
-    auto body = R"( <ModelError 
-                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance" 
+    auto body = R"( <ModelError
+                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
                       xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
                         <errorId>ClassNotFound</errorId>
                         <errorMessage>Foo</errorMessage>

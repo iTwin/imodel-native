@@ -21,42 +21,42 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 struct MockWSClient : public IWSClient
     {
     public:
-        static std::shared_ptr<NiceMock<MockWSClient>> Create ()
+        static std::shared_ptr<NiceMock<MockWSClient>> Create()
             {
             // Set the default return values for tasks so they would crash with stack trace in unit tests
-            DefaultValue<AsyncTaskPtr<WSInfoResult>>::Set (AsyncTaskPtr<WSInfoResult> ());
-            DefaultValue<AsyncTaskPtr<WSRepositoriesResult>>::Set (AsyncTaskPtr<WSRepositoriesResult> ());
+            DefaultValue<AsyncTaskPtr<WSInfoResult>>::Set(AsyncTaskPtr<WSInfoResult>());
+            DefaultValue<AsyncTaskPtr<WSRepositoriesResult>>::Set(AsyncTaskPtr<WSRepositoriesResult>());
 
-            auto client = std::make_shared<NiceMock<MockWSClient>> ();
+            auto client = std::make_shared<NiceMock<MockWSClient>>();
 
-            ON_CALL (*client, RegisterServerInfoListener (_)).WillByDefault (Return ());
-            ON_CALL (*client, UnregisterServerInfoListener (_)).WillByDefault (Return ());
+            ON_CALL(*client, RegisterServerInfoListener(_)).WillByDefault(Return());
+            ON_CALL(*client, UnregisterServerInfoListener(_)).WillByDefault(Return());
 
             return client;
             };
 
-        MOCK_CONST_METHOD0 (GetServerUrl, Utf8String ());
+        MOCK_CONST_METHOD0(GetServerUrl, Utf8String());
 
-        MOCK_METHOD1 (RegisterServerInfoListener, void (std::weak_ptr<IServerInfoListener> listener));
+        MOCK_METHOD1(RegisterServerInfoListener, void(std::weak_ptr<IServerInfoListener> listener));
 
-        MOCK_METHOD1 (UnregisterServerInfoListener, void (std::weak_ptr<IServerInfoListener> listener));
+        MOCK_METHOD1(UnregisterServerInfoListener, void(std::weak_ptr<IServerInfoListener> listener));
 
-        MOCK_CONST_METHOD1 (GetServerInfo, AsyncTaskPtr<WSInfoResult>
+        MOCK_CONST_METHOD1(GetServerInfo, AsyncTaskPtr<WSInfoResult>
             (
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD1 (SendGetInfoRequest, AsyncTaskPtr<WSInfoResult>
+        MOCK_CONST_METHOD1(SendGetInfoRequest, AsyncTaskPtr<WSInfoResult>
             (
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD1 (SendGetRepositoriesRequest, AsyncTaskPtr<WSRepositoriesResult>
+        MOCK_CONST_METHOD1(SendGetRepositoriesRequest, AsyncTaskPtr<WSRepositoriesResult>
             (
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD3 (SendGetRepositoriesRequest, AsyncTaskPtr<WSRepositoriesResult>
+        MOCK_CONST_METHOD3(SendGetRepositoriesRequest, AsyncTaskPtr<WSRepositoriesResult>
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,

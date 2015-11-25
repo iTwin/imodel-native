@@ -756,7 +756,7 @@ TEST_F(CachingDataSourceTests, DownloadAndCacheChildren_SpecificParent_ChildIsCa
     txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"});
     txn.Commit();
 
-    // Act & Assert    
+    // Act & Assert
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Child"});
 
@@ -780,7 +780,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_SpecificParentInstance_Chil
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"}));
     txn.Commit();
 
-    // Act & Assert  
+    // Act & Assert
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Child"});
     EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
@@ -806,7 +806,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsC
     // Arrange
     auto ds = CreateNewTestDataSource();
 
-    // Act & Assert  
+    // Act & Assert
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
@@ -835,7 +835,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingCachedDataAfterCache
     // Arrange
     auto ds = CreateNewTestDataSource();
 
-    // Act & Assert  
+    // Act & Assert
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
@@ -868,7 +868,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_SpecificParentInstance_
     txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"});
     txn.Commit();
 
-    // Act & Assert  
+    // Act & Assert
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Child"});
     EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
@@ -891,7 +891,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingRemoteData_Objec
     // Arrange
     auto ds = CreateNewTestDataSource();
 
-    // Act & Assert  
+    // Act & Assert
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
@@ -919,7 +919,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingCachedDataAfterC
     // Arrange
     auto ds = CreateNewTestDataSource();
 
-    // Act & Assert  
+    // Act & Assert
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
@@ -946,7 +946,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_TwoLevelsCachedPreviouslyAsTempor
     // Arrange
     auto ds = CreateNewTestDataSource();
 
-    // Act & Assert 
+    // Act & Assert
     StubInstances instances1;
     instances1.Add({"TestSchema.TestClass", "A"});
     StubInstances instances2;
@@ -991,7 +991,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_OneLevelCachedPreviouslyAsTempora
     // Arrange
     auto ds = CreateNewTestDataSource();
 
-    // Act & Assert 
+    // Act & Assert
     StubInstances instances1;
     instances1.Add({"TestSchema.TestClass", "A"});
 
@@ -1029,7 +1029,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_TemporaryNavigationNotCached_Does
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    // Act & Assert 
+    // Act & Assert
     bvector<ObjectId> navigationTreesToCacheFully;
     bvector<ObjectId> navigationTreesToUpdateOnly;
     navigationTreesToUpdateOnly.push_back(ObjectId());
@@ -1048,7 +1048,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_NotCachedRootPassedToBeFullyCache
     // Arrange
     auto ds = GetTestDataSourceV1();
 
-    // Act & Assert 
+    // Act & Assert
     EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(StubWSInfoResult())));
     EXPECT_CALL(GetMockClient(), SendGetChildrenRequest(_, _, _, _)).Times(2)
@@ -1302,7 +1302,7 @@ TEST_F(CachingDataSourceTests, GetObjects_ResponseDoesNotContainPreviouslyCached
     txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
     txn.Commit();
 
-    // Act & Assert    
+    // Act & Assert
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _)).Times(1)
         .WillOnce(InvokeWithoutArgs([&]
         {
@@ -2012,11 +2012,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SendsCreateObjectR
     Json::Value expectedCreationJson = ToJson(
         R"( {
             "instance" :
-                {  
+                {
                 "changeState": "new",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
-                "properties" : 
+                "properties" :
                     {
                     "TestProperty" : "42"
                     }
@@ -2977,7 +2977,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
                 "changeState": "new",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
-                "properties" : 
+                "properties" :
                     {
                     "TestProperty" : "ValB"
                     },
@@ -2999,11 +2999,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
     Json::Value expectedCreationJson2 = ToJson(
         R"( {
             "instance" :
-                {  
+                {
                 "changeState": "new",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
-                "properties" : 
+                "properties" :
                     {
                     "TestProperty" : "ValC"
                     },
@@ -3086,7 +3086,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                 "changeState": "new",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
-                "properties" : 
+                "properties" :
                     {
                     "TestProperty" : "ValB"
                     },
@@ -3108,11 +3108,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
     Json::Value expectedCreationJson2 = ToJson(
         R"( {
             "instance" :
-                {  
+                {
                 "changeState": "new",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
-                "properties" : 
+                "properties" :
                     {
                     "TestProperty" : "ValC"
                     },
@@ -3215,11 +3215,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
     Json::Value expectedCreationJson1 = ToJson(
         R"( {
             "instance" :
-                {  
+                {
                 "changeState": "new",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
-                "properties" : 
+                "properties" :
                     {
                     "TestProperty" : "ValC"
                     },
@@ -3242,7 +3242,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
     Json::Value expectedCreationJson2 = ToJson(
         R"( {
             "instance" :
-                {   
+                {
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
                 "instanceId" : "B",
@@ -3809,7 +3809,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForRelationshipChangePas
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    auto relationship = StubCreatedRelationshipInCache(txn.GetCache(), 
+    auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
         "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
     txn.Commit();
 
