@@ -400,11 +400,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="AnnotationTableElement" isDomainClass="True">
-        <!-- An AnnotationTableElement is a physical element that displays a grid containing text and or graphics -->
+        <!-- An AnnotationTableElement is a drawing element that displays a grid containing text and or graphics -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalElement</BaseClass>
+        <BaseClass>DrawingElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="AnnotationTableHeader" isDomainClass="True">
@@ -412,7 +412,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="RowCount"                     typeName="int"/>
         <ECProperty propertyName="ColumnCount"                  typeName="int"/>
-        <ECProperty propertyName="TextStyleId"                  typeName="int"/>
+        <ECProperty propertyName="TextStyleId"                  typeName="long"/>
         <ECProperty propertyName="TitleRowCount"                typeName="int"/>
         <ECProperty propertyName="HeaderRowCount"               typeName="int"/>
         <ECProperty propertyName="FooterRowCount"               typeName="int"/>
@@ -434,19 +434,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="DefaultCellOrientation"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyOddRow"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyEvenRow"      typeName="int"/>
-        <ECProperty propertyName="TitleRowTextStyle"            typeName="int"/>
-        <ECProperty propertyName="HeaderRowTextStyle"           typeName="int"/>
-        <ECProperty propertyName="FooterRowTextStyle"           typeName="int"/>
-        <ECProperty propertyName="HeaderColumnTextStyle"        typeName="int"/>
-        <ECProperty propertyName="FooterColumnTextStyle"        typeName="int"/>
+        <ECProperty propertyName="TitleRowTextStyle"            typeName="long"/>
+        <ECProperty propertyName="HeaderRowTextStyle"           typeName="long"/>
+        <ECProperty propertyName="FooterRowTextStyle"           typeName="long"/>
+        <ECProperty propertyName="HeaderColumnTextStyle"        typeName="long"/>
+        <ECProperty propertyName="FooterColumnTextStyle"        typeName="long"/>
         <ECProperty propertyName="BackupTextHeight"             typeName="double"/>
-        <ECProperty propertyName="DataSourceProviderId"         typeName="int"/>
+        <ECProperty propertyName="DataSourceProviderId"         typeName="long"/>
         <ECProperty propertyName="BodyTextHeight"               typeName="double"/>
         <ECProperty propertyName="TitleRowTextHeight"           typeName="double"/>
         <ECProperty propertyName="HeaderRowTextHeight"          typeName="double"/>
         <ECProperty propertyName="FooterRowTextHeight"          typeName="double"/>
         <ECProperty propertyName="HeaderColumnTextHeight"       typeName="double"/>
         <ECProperty propertyName="FooterColumnTextHeight"       typeName="double"/>
+        <ECProperty propertyName="TextSymbKey"                  typeName="int"/>
     </ECClass>
 
     <ECClass typeName="AnnotationTableRow" isDomainClass="True">
@@ -510,6 +511,38 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECStructProperty propertyName="RootCell"               typeName="AnnotationTableCellIndex"/>
         <ECProperty propertyName="RowSpan"                      typeName="int"/>
         <ECProperty propertyName="ColumnSpan"                   typeName="int"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableSymbology" isDomainClass="True">
+        <!-- The aspect that holds properties describing symbology in an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="SymbologyKey"                 typeName="int"/>
+        <ECProperty propertyName="Visible"                      typeName="boolean"/>
+        <ECProperty propertyName="Color"                        typeName="int"/>
+        <ECProperty propertyName="Weight"                       typeName="int"/>
+        <ECProperty propertyName="LineStyleId"                  typeName="long"/>
+        <ECProperty propertyName="LineStyleScale"               typeName="double"/>
+        <ECProperty propertyName="FillColor"                    typeName="int"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableEdgeRun" isDomainClass="True">
+        <!-- The aspect that holds properties describing edges in an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="HostType"                     typeName="int"/>
+        <ECProperty propertyName="Host"                         typeName="int"/>
+        <ECProperty propertyName="Start"                        typeName="int"/>
+        <ECProperty propertyName="Span"                         typeName="int"/>
+        <ECProperty propertyName="SymbologyKey"                 typeName="int"/>
     </ECClass>
 
     <!-- An Item in (a catalog/template model) can hold a soultion of a ComponentModel. 

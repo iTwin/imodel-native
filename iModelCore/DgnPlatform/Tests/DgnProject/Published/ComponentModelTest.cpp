@@ -491,7 +491,10 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     ASSERT_TRUE( targetModel.IsValid() );
 
     DgnDbStatus status;
-    PhysicalElementCPtr instanceElement = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, catalogItem, DPoint3d::From(1, 2, 3), YawPitchRollAngles::FromDegrees(4, 5, 6), DgnElement::Code());
+    Placement3d placement;
+    placement.GetOriginR() = DPoint3d::From(1, 2, 3);
+    placement.GetAnglesR() = YawPitchRollAngles::FromDegrees(4, 5, 6);
+    PhysicalElementCPtr instanceElement = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, catalogItem, placement);
     ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
 
     ieid = instanceElement->GetElementId();
