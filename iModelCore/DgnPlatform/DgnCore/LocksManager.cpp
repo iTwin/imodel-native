@@ -113,20 +113,60 @@ void LockRequest::Remove(LockableId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t LockRequest::Subtract(DgnLockSet const& rhs)
+void ILocksManager::ReformulateRequest(LockRequestR req, DgnLockSet const& denied) const
     {
-    size_t nRemoved = 0;
-    for (auto const& lock : rhs)
+    DgnLockSet& locks = req.GetLockSet();
+    for (auto const& lock : denied)
         {
-        auto found = m_locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
-        if (m_locks.end() != found)
+        auto found = locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
+        if (locks.end() != found)
             {
-            m_locks.erase(found);
-            ++nRemoved;
+            if (LockLevel::Exclusive == lock.GetLevel())
+                {
+                switch (lock.GetType())
+                    {
+                    case LockableType::Db:
+                        // The entire Db is locked. We can do nothing.
+                        req.Clear();
+                        return;
+                    case LockableType::Model:
+                        locks.erase(found);
+                        RemoveElements(req, DgnModelId(lock.GetId().GetValue()));
+                        break;
+                    default:
+                        locks.erase(found);
+                        break;
+                    }
+                }
+            else if (LockLevel::Shared == lock.GetLevel())
+                {
+                // Shared lock should not have been denied if no one holds an exclusive lock on it...
+                // Note that if we requested an exclusive lock, we will now downgrade it to a shared lock
+                BeAssert(LockLevel::Exclusive == found->GetLevel());
+                switch (lock.GetType())
+                    {
+                    case LockableType::Db:
+                    case LockableType::Model:
+                        found->SetLevel(LockLevel::Shared);
+                        break;
+                    default:
+                        locks.erase(found);
+                        break;
+                    }
+                }
             }
         }
+    }
 
-    return nRemoved;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ILocksManager::RemoveElements(LockRequestR request, DgnModelId modelId) const
+    {
+    Statement stmt(m_db, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    stmt.BindId(1, modelId);
+    while (BE_SQLITE_ROW == stmt.Step())
+        request.Remove(LockableId(stmt.GetValueId<DgnElementId>(0)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,7 +299,7 @@ private:
     UnrestrictedLocksManager(DgnDbR db) : ILocksManager(db) { }
 
     virtual bool _QueryLocksHeld(LockRequestR, bool) override { return true; }
-    virtual LockRequest::Response _AcquireLocks(LockRequestR, AcquireAll) override { return LockRequest::Response(LockStatus::Success); }
+    virtual LockRequest::Response _AcquireLocks(LockRequestR) override { return LockRequest::Response(LockStatus::Success); }
     virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
     virtual void _OnModelInserted(DgnModelId) override { }
@@ -301,7 +341,7 @@ private:
     BeBriefcaseId GetId() const { return GetDgnDb().GetBriefcaseId(); }
 
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly) override;
-    virtual LockRequest::Response _AcquireLocks(LockRequestR locks, AcquireAll acquireAll) override;
+    virtual LockRequest::Response _AcquireLocks(LockRequestR locks) override;
     virtual LockStatus _RelinquishLocks() override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
     virtual LockStatus _RefreshLocks() override;
@@ -662,7 +702,7 @@ bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockRequest::Response LocalLocksManager::_AcquireLocks(LockRequestR locks, AcquireAll acquireAll)
+LockRequest::Response LocalLocksManager::_AcquireLocks(LockRequestR locks)
     {
     if (!Validate())
         return LockRequest::Response(LockStatus::SyncError);
@@ -675,19 +715,13 @@ LockRequest::Response LocalLocksManager::_AcquireLocks(LockRequestR locks, Acqui
     if (nullptr == server)
         return LockRequest::Response(LockStatus::ServerUnavailable);
 
-    auto responseOptions = (AcquireAll::Yes == acquireAll) ? ILocksServer::ResponseOptions::DeniedLocks : ILocksServer::ResponseOptions::None;
-    auto response = server->AcquireLocks(locks, GetDgnDb(), responseOptions);
-    if (AcquireAll::No == acquireAll && LockStatus::AlreadyHeld == response.GetStatus())
+    auto response = server->AcquireLocks(locks, GetDgnDb());
+    if (LockStatus::Success == response.GetStatus())
         {
-        // ###TODO: Remove denied locks from request and retry.
-        return response;
+        Insert(locks, true);
+        Save();
         }
 
-    if (LockStatus::Success != response.GetStatus())
-        return response;
-
-    Insert(locks, true);
-    Save();
     return response;
     }
 
@@ -725,14 +759,15 @@ ILocksServerP ILocksManager::GetLocksServer() const
 #define JSON_LockType "Type"            // LockType
 #define JSON_LockLevel "Level"          // LockLevel
 #define JSON_Owner "Owner"              // BeBriefcaseId
-#define JSON_DeniedLocks "DeniedLocks"  // list of DgnHeldLock. Only supplied if AllAcquired=false
+#define JSON_DeniedLocks "DeniedLocks"  // list of DgnLock. Only supplied if AllAcquired=false
+#define JSON_Options "Options"          // LockRequest::ResponseOptions
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool idFromJson(BeInt64Id& id, JsonValueCR value)
     {
-    if (!value.isConvertibleTo(Json::intValue))
+    if (value.isNull())
         return false;
 
     id = BeInt64Id(value.asInt64());
@@ -876,6 +911,7 @@ void LockRequest::ToJson(JsonValueR value) const
         lock.ToJson(locks[i++]);
 
     value[JSON_Locks] = locks;
+    value[JSON_Options] = static_cast<uint32_t>(m_options);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -885,7 +921,8 @@ bool LockRequest::FromJson(JsonValueCR value)
     {
     Clear();
     JsonValueCR locks = value[JSON_Locks];
-    if (!locks.isArray())
+    JsonValueCR opts = value[JSON_Options];
+    if (!locks.isArray() || !opts.isConvertibleTo(Json::uintValue))
         return false;
 
     DgnLock lock;
@@ -901,6 +938,7 @@ bool LockRequest::FromJson(JsonValueCR value)
         m_locks.insert(lock);
         }
 
+    m_options = static_cast<ResponseOptions>(opts.asUInt());
     return true;
     }
 
@@ -933,7 +971,7 @@ bool LockRequest::Response::FromJson(JsonValueCR value)
         return false;
         }
 
-    DgnHeldLock lock;
+    DgnLock lock;
     uint32_t nLocks = locks.size();
     for (uint32_t i = 0; i < nLocks; i++)
         {

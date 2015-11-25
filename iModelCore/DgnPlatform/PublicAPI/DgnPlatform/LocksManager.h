@@ -162,15 +162,27 @@ typedef bset<DgnHeldLock, DgnLock::IdentityComparator> DgnHeldLockSet;
 //=======================================================================================
 struct LockRequest
 {
+    //! Customizes information to be included in the response. Note that specifying certain options may require more work on the part of the server and/or
+    //! more involved processing of the response by the client.
+    enum class ResponseOptions
+    {
+        None = 0, //!< No special options
+        DeniedLocks = 1 << 0, //!< If a request to acquire locks is denied, the response will include the current lock state of each denied lock
+    };
+
     typedef DgnLockSet::const_iterator const_iterator;
     typedef const_iterator iterator;
 private:
     typedef DgnLockSet::iterator set_iterator;
 
     DgnLockSet m_locks;
+    ResponseOptions m_options;
 
     void InsertLock(LockableId id, LockLevel level);
 public:
+    //! Constructor
+    explicit LockRequest(ResponseOptions options=ResponseOptions::None) : m_options(options) { }
+
     //! Insert a request to lock an eleemnt.
     //! @param[in]      element The element to insert
     //! @param[in]      level   The desired lock level.
@@ -202,10 +214,14 @@ public:
             Insert(lockableObject, level);
         }
 
+    ResponseOptions GetOptions() const { return m_options; } //!< Returns the options specifying how the response is to be formulated
     bool IsEmpty() const { return m_locks.empty(); } //!< Determine if this request contains no locks
     size_t Size() const { return m_locks.size(); } //!< Returns the number of locks in this request
     void Clear() { m_locks.clear(); } //!< Removes all locks from this request
     DgnLockSet const& GetLockSet() const { return m_locks; }
+    DgnLockSet& GetLockSet() { return m_locks; }
+
+    void SetOptions(ResponseOptions options) { m_options = options; } //!< Sets the options specifying how the response is to be formulated
 
     //! Looks up a lock.
     //! @param[in]      lock            Specifies the ID and lock level to find
@@ -232,41 +248,32 @@ public:
     //! Populate a LockRequest object from the set of changes in a DgnDb, containing all locks required for the actual changes made.
     DGNPLATFORM_EXPORT DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db);
 
-    //! Remove any locks from this request which are also present (at any lock level) in the supplied request, returning the number of locks removed.
-    DGNPLATFORM_EXPORT size_t Subtract(DgnLockSet const& locks);
-
-    //! Remove any locks from this request which are also present (at any lock level) in the supplied request, returning the number of locks removed.
-    size_t Subtract(LockRequestCR request) { return Subtract(request.GetLockSet()); }
-
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
-
-    //! Specifies how locks are to be acquired
-    enum class AcquireAll
-    {
-        Yes = 0,    //!< If any of the desired locks cannot be acquired, no locks will be acquired
-        No = 1,     //!< Acquire all locks which can be acquired, and ignore those which cannot be acquired
-    };
 
     //! A response from the server for a request to acquire locks
     struct Response
     {
     private:
-        LockStatus      m_status;
-        DgnHeldLockSet  m_denied;
+        LockStatus  m_status;
+        DgnLockSet  m_denied;
     public:
         explicit Response(LockStatus status=LockStatus::InvalidResponse) : m_status(status) { }
 
         LockStatus GetStatus() const { return m_status; } //!< The status code returned by the server
 
-        //! If the request was denied, and the client specified ILocksServer::ResponseOptions::DeniedLocks, returns the set of locks which were not granted because they were already held by another briefcase.
-        DgnHeldLockSet const& GetDeniedLocks() const { return m_denied; }
+        //! If the request was denied, and the client specified ResponseOptions::DeniedLocks, returns the set of locks which were not granted because they were already held by another briefcase.
+        DgnLockSet const& GetDeniedLocks() const { return m_denied; }
+        DgnLockSet& GetDeniedLocks() { return m_denied; } //!< Returns a writable reference to the set of denied locks
+
         void Invalidate() { m_status = LockStatus::InvalidResponse; m_denied.clear(); } //!< Invalidate this response
 
         DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
 };
+
+ENUM_IS_FLAGS(LockRequest::ResponseOptions);
 
 //=======================================================================================
 //! Manages the acquisition of element and model locks for a briefcase.
@@ -283,14 +290,15 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILocksManager : RefCountedBase
 {
-    typedef LockRequest::AcquireAll AcquireAll;
 private:
     DgnDbR  m_db;
+
+    void RemoveElements(LockRequestR request, DgnModelId modelId) const;
 protected:
     ILocksManager(DgnDbR db) : m_db(db) { }
 
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly) = 0;
-    virtual LockRequest::Response _AcquireLocks(LockRequestR locks, AcquireAll acquire=AcquireAll::Yes) = 0;
+    virtual LockRequest::Response _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
     virtual LockStatus _RefreshLocks() = 0;
@@ -310,7 +318,7 @@ public:
     bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false) { return _QueryLocksHeld(locks, localQueryOnly); }
 
     //! Attempts to acquire the specified locks. Note this function may modify the LockRequest object.
-    LockRequest::Response AcquireLocks(LockRequestR locks, AcquireAll acquire=AcquireAll::Yes) { return _AcquireLocks(locks, acquire); }
+    LockRequest::Response AcquireLocks(LockRequestR locks) { return _AcquireLocks(locks); }
 
     //! Relinquishes all locks held by the DgnDb.
     LockStatus RelinquishLocks() { return _RelinquishLocks(); }
@@ -335,6 +343,12 @@ public:
     LockStatus LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId=DgnModelId()); //!< Used internally to lock an element for direct changes.
     LockStatus LockModel(DgnModelCR model, LockLevel level); //!< Used internally to lock a model for direct changes.
     LockStatus LockDb(LockLevel level); //!< Used internally to lock the DgnDb
+
+    //! Reformulate a denied request such that it does not contain any of the locks in the "denied" set.
+    //! If the request contains locks which are dependent upon other locks in the denied set (e.g., elements within a model for which the model lock was not granted),
+    //! the dependent locks will be removed.
+    DGNPLATFORM_EXPORT void ReformulateRequest(LockRequestR request, DgnLockSet const& deniedLocks) const;
+
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static void BackDoor_SetLockingEnabled(bool enable);
 //__PUBLISH_SECTION_START__
@@ -350,16 +364,9 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILocksServer
 {
-    //! Customizes information to be included in the response. Note that specifying certain options may require more work on the part of the server and/or
-    //! more involved processing of the response by the client.
-    enum class ResponseOptions
-    {
-        None = 0, //!< No special options
-        DeniedLocks = 1 << 0, //!< If a request to acquire locks is denied, the response will include the current lock state of each denied lock
-    };
 protected:
     virtual bool _QueryLocksHeld(LockRequestCR locks, DgnDbR db) = 0;
-    virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db, ResponseOptions options) = 0;
+    virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
@@ -368,7 +375,7 @@ public:
     bool QueryLocksHeld(LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(locks, db); }
 
     //! Attempts to acquire the specified locks for the specified briefcase
-    LockRequest::Response AcquireLocks(LockRequestCR locks, DgnDbR db, ResponseOptions options=ResponseOptions::None) { return _AcquireLocks(locks, db, options); }
+    LockRequest::Response AcquireLocks(LockRequestCR locks, DgnDbR db) { return _AcquireLocks(locks, db); }
 
     //! Relinquishes all locks owned by a briefcase
     LockStatus RelinquishLocks(DgnDbR db) { return _RelinquishLocks(db); }

@@ -19,23 +19,58 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //#define DUMP_SERVER 1
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectLocksEqual(DgnLockCR a, DgnLockCR b)
+    {
+    EXPECT_EQ(a.GetLevel(), b.GetLevel());
+    EXPECT_EQ(a.GetType(), b.GetType());
+    EXPECT_EQ(a.GetId(), b.GetId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectLockSetsEqual(DgnLockSet const& a, DgnLockSet const& b)
+    {
+    EXPECT_EQ(a.size(), b.size());
+    if (a.size() != b.size())
+        return;
+
+    auto iterA = a.begin(), iterB = b.begin();
+    while (iterA != a.end())
+        ExpectLocksEqual(*iterA++, *iterB++);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectRequestsEqual(LockRequestCR a, LockRequestCR b)
+    {
+    EXPECT_EQ(a.GetOptions(), b.GetOptions());
+    ExpectLockSetsEqual(a.GetLockSet(), b.GetLockSet());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Mock server, since we currently lack a real server.
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LocksServer : ILocksServer
 {
 private:
+    typedef LockRequest::ResponseOptions ResponseOptions;
+
     Db m_db;
     bool m_offline;
 
-
     virtual bool _QueryLocksHeld(LockRequestCR reqs, DgnDbR db) override;
-    virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db, ResponseOptions opts) override;
+    virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
+    void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
     void Reset();
 
     int32_t QueryLockCount(BeBriefcaseId bc);
@@ -153,10 +188,17 @@ LockStatus LocksServer::_RelinquishLocks(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocksServer::_QueryLocksHeld(LockRequestCR reqs, DgnDbR db)
+bool LocksServer::_QueryLocksHeld(LockRequestCR inputReqs, DgnDbR db)
     {
     if (m_offline)
         return false;
+
+    // Simulating serialization and deserialization of server request...
+    Json::Value reqJson;
+    inputReqs.ToJson(reqJson);
+    LockRequest reqs;
+    EXPECT_TRUE(reqs.FromJson(reqJson));
+    ExpectRequestsEqual(inputReqs, reqs);
 
     Statement stmt;
     stmt.Prepare(m_db, "SELECT count(*) FROM " SERVER_Table
@@ -214,6 +256,30 @@ bool LocksServer::AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId bcId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LocksServer::GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId)
+    {
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " SERVER_LockType "," SERVER_LockId "," SERVER_Exclusive
+                       " FROM " SERVER_Table " WHERE " SERVER_BcId " != ?" " AND InVirtualSet(@vset," SERVER_LockType "," SERVER_LockId "," SERVER_Exclusive ")");
+
+    RequestConflictsVirtualSet vset(reqs);
+    bindBcId(stmt, 1, bcId);
+    stmt.BindVirtualSet(2, vset);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        LockableId id(static_cast<LockableType>(stmt.GetValueInt(0)), stmt.GetValueId<BeInt64Id>(1));
+        auto level = (0 != stmt.GetValueInt(2)) ? LockLevel::Exclusive : LockLevel::Shared;
+        DgnLock lock(id, level);
+        auto inserted = locks.insert(lock);
+        if (!inserted.second && LockLevel::Exclusive == level)
+            *inserted.first = lock; // ensure highest lock level recorded for each lock...
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus LocksServer::_QueryLockLevel(LockLevel& level, LockableId id, DgnDbR db)
@@ -249,12 +315,22 @@ void LocksServer::Reset()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockRequest::Response LocksServer::_AcquireLocks(LockRequestCR reqs, DgnDbR db, ResponseOptions opts)
+LockRequest::Response LocksServer::_AcquireLocks(LockRequestCR inputReqs, DgnDbR db)
     {
+    // Simulating serialization and deserialization of server request...
+    Json::Value reqJson;
+    inputReqs.ToJson(reqJson);
+    LockRequest reqs;
+    EXPECT_TRUE(reqs.FromJson(reqJson));
+    ExpectRequestsEqual(inputReqs, reqs);
+
     if (!AreLocksAvailable(reqs, db.GetBriefcaseId()))
         {
-        // ###TODO: populate denied locks if requested in ResponseOptions
-        return LockRequest::Response(LockStatus::AlreadyHeld);
+        LockRequest::Response response(LockStatus::AlreadyHeld);
+        if (ResponseOptions::None != (ResponseOptions::DeniedLocks & reqs.GetOptions()))
+            GetDeniedLocks(response.GetDeniedLocks(), reqs, db.GetBriefcaseId());
+
+        return response;
         }
 
     for (auto const& req : reqs)
