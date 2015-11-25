@@ -16,11 +16,13 @@
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemDisplayParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
@@ -34,8 +36,9 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
+DEFINE_REF_COUNTED_PTR(Device)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(Image)
@@ -46,8 +49,9 @@ DEFINE_REF_COUNTED_PTR(MultiResImage)
 DEFINE_REF_COUNTED_PTR(Renderer)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
-DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Texture)
+DEFINE_REF_COUNTED_PTR(Task)
+DEFINE_REF_COUNTED_PTR(Window)
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
@@ -269,12 +273,9 @@ protected:
     double          m_shift;
     ColorDef        m_colors[MAX_GRADIENT_KEYS];
     double          m_values[MAX_GRADIENT_KEYS];
-
     DGNPLATFORM_EXPORT GradientSymb();
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
     //! Create an instance of a GradientSymb.
@@ -300,7 +301,6 @@ public:
 
 //=======================================================================================
 //! This structure holds all of the information about an element specifying the "displayable parameters" of the element.
-//! It is typically extracted from the "dhdr" section of the element header and from user data.
 // @bsiclass
 //=======================================================================================
 struct ElemDisplayParams
@@ -1117,8 +1117,9 @@ enum class DrawExportFlags
 //=======================================================================================
 struct SystemContext {};
 
-
 //=======================================================================================
+//! A Render::Window is a platform specific object that identifies a rectangular "window" on a screen.
+//! On Windows, for example, the Render::Window holds an "HWND"
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
 struct Window : RefCounted<NonCopyableClass>
@@ -1134,12 +1135,15 @@ struct Window : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
+//! A Render::Device is the platform specific object that connects a render target to a the platform's rendering system.
+//! Render::Device holds a reference to a Render::Window.
+//! On Windows, for example, the Render::Device holds a "DC"
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
 struct Device : RefCounted<NonCopyableClass>
 {
     struct PixelsPerInch {int width, height;};
-    RefCountedCPtr<Window> m_window;
+    WindowPtr m_window;
     void* m_nativeDevice;
 
     void* GetNativeDevice() const {return m_nativeDevice;}
@@ -1154,18 +1158,19 @@ struct Cursor {};
 struct CursorSource {};
 
 //=======================================================================================
-// @bsiclass
+//! A Render::Target is the renderer-specific factory for creating Render::Graphics.
+//! Every DgnViewport holds a reference to one Render::Target.
+// @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    RefCountedCPtr<Device> m_device;
+    DevicePtr m_device;
 
-    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
+    virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
-    virtual void _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual void _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
     virtual StatusInt _SynchDrawingFromBackingStore() = 0;
@@ -1180,14 +1185,13 @@ protected:
     virtual void _AccumulateDirtyRegion(bool val) = 0;
     virtual void _ClearHealRegion() = 0;
     virtual void _SetNeedsHeal(BSIRect const* dirty) = 0;
-    virtual void _HealComplete(bool aborted) = 0;
     virtual bool _CheckNeedsHeal(BSIRect* rect) = 0;
     virtual void _OnResized() {}
-    virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
+    virtual ByteStream _FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
-                                                
+
 public:
     virtual double _GetCameraFrustumNearScaleLimit() = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
@@ -1197,14 +1201,12 @@ public:
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}
-    Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params) {return _CreateGraphic(params);}
+    GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
     void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, aaLines, aaText);}
-    Render::Device const* GetRenderDevice() const {return m_device.get();}
+    DeviceCP GetRenderDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
-    void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = nullptr) {_AddLights(threeDview, rotMatrixP, model);}
     void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
     void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}
-    void HealComplete(bool aborted) {_HealComplete(aborted);}
     StatusInt SynchDrawingFromBackingStore() {return _SynchDrawingFromBackingStore();}
     void SynchDrawingFromBackingStoreAsynch() {_SynchDrawingFromBackingStoreAsynch();}
     StatusInt SynchScreenFromDrawing() {return _SynchScreenFromDrawing();}
@@ -1216,7 +1218,7 @@ public:
     void AccumulateDirtyRegion(bool val) {_AccumulateDirtyRegion(val);}
     void ClearHealRegion() {_ClearHealRegion();}
     void SetNeedsHeal(BSIRectCP dirty) {_SetNeedsHeal(dirty);}
-    BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
+    ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
     bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
