@@ -1827,7 +1827,7 @@ DgnDbStatus ComponentModel::Importer::ImportSolutions(DgnModelR destCatalogModel
     selectCatalogItems.BindId(1, m_sourceComponent.GetModelId());
     while (BE_SQLITE_ROW == selectCatalogItems.Step())
         {
-        PhysicalElementCPtr sourceCatalogItem = m_sourceComponent.GetSolution(selectCatalogItems.GetValueId<DgnElementId>(0));
+        DgnElementCPtr sourceCatalogItem = GetSourceDb().Elements().GetElement(selectCatalogItems.GetValueId<DgnElementId>(0));
         if (!sourceCatalogItem.IsValid())
             continue;
 
@@ -1920,42 +1920,6 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
         return nullptr;
 
     return HarvestSolution(status, catalogModel, catalogItemName, icode, placement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::QuerySolutionByName(Utf8StringCR catalogItemName)
-    {
-    DgnElement::Code icode = CreateCapturedSolutionCode(catalogItemName);
-    if (!icode.IsValid())
-        return nullptr;
-
-    return GetSolution(GetDgnDb().Elements().QueryElementIdByCode(icode));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::GetSolution(DgnElementId existingCatalogItemId)
-    {
-    if (!existingCatalogItemId.IsValid())
-        return nullptr;
-
-    PhysicalElementCPtr ele = GetDgnDb().Elements().Get<PhysicalElement>(existingCatalogItemId);
-    if (!ele.IsValid())
-        return nullptr;
-
-    if (ele->GetModel().get() != this)
-        return nullptr;
-
-    if (!IsCapturedSolutionCode(ele->GetCode()))
-        return nullptr;
-
-    // *** WIP_COMPONENT_MODELS - Should we check that ele is the source of a DGN_RELNAME_SolutionOfComponent ECRelationship?
-    // ***                          That's an expensive look-up. Probably too much to do every time.
-
-    return ele;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2209,25 +2173,53 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::QuerySolutionSource(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
+DgnDbStatus ComponentModel::QuerySolutionInfo(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
     {
-    if (BE_SQLITE_OK != queryComponentModelFromSolution(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))
-        return DgnDbStatus::BadArg;
-
-    return DgnDbStatus::Success;
+    return (BE_SQLITE_OK == queryComponentModelFromSolution(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))? DgnDbStatus::Success: DgnDbStatus::NotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentModel::AreParmetersEqual(ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
+DgnDbStatus ComponentModel::QuerySolutionInfo(ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
     {
     DgnModelId cmid;
-    ModelSolverDef::ParameterSet ciparms;
-    if (BE_SQLITE_OK != queryComponentModelFromSolution(cmid, ciparms, catalogItem.GetDgnDb(), catalogItem.GetElementId()))
-        return false;
+    DgnDbStatus status = QuerySolutionInfo(cmid, params, catalogItem);
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    return ciparms == params;
+    if (GetModelId() != cmid)
+        return DgnDbStatus::WrongModel;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::QuerySolutionById(PhysicalElementCPtr& ele, ModelSolverDef::ParameterSet& params, DgnElementId solutionId)
+    {
+    ele = GetDgnDb().Elements().Get<PhysicalElement>(solutionId);
+    if (!ele.IsValid())
+        return DgnDbStatus::NotFound;
+
+    return QuerySolutionInfo(params, *ele);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::QuerySolutionByName(PhysicalElementCPtr& ele, ModelSolverDef::ParameterSet& params, Utf8StringCR capturedSolutionName)
+    {
+    DgnElement::Code icode = CreateCapturedSolutionCode(capturedSolutionName);
+    if (!icode.IsValid())
+        return DgnDbStatus::NotFound;
+
+    ele = GetDgnDb().Elements().Get<PhysicalElement>(GetDgnDb().Elements().QueryElementIdByCode(icode));
+    if (!ele.IsValid())
+        return DgnDbStatus::NotFound;
+
+    return QuerySolutionInfo(params, *ele);
     }
 
 /*---------------------------------------------------------------------------------**//**
