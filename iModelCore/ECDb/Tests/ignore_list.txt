@@ -22,3 +22,5 @@ ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 JsonUpdaterTests.UpdateRelationshipProperty
 ECDbInstances.UpdateRelationshipProperty
 
+#TFS341360 to address this (Affan)
+ECSqlStatementTestFixture.PolymorphicDeleteWithSubclassesInMultipleTables

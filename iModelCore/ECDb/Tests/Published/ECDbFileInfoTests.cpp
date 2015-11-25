@@ -48,8 +48,6 @@ TEST(ECDbFileInfo, EmptyECDbHasFileInfoSchema)
     ASSERT_TRUE (ecClass != nullptr);
     ecClass = schemaManager.GetECClass (ECDB_FILEINFO_SCHEMA_NAME, "EmbeddedFileInfo");
     ASSERT_TRUE (ecClass != nullptr);
-    ecClass = schemaManager.GetECClass (ECDB_FILEINFO_SCHEMA_NAME, "InstanceHasFileInfo");
-    ASSERT_TRUE (ecClass != nullptr);
 
     ASSERT_TRUE(ecdb.TableExists("be_EmbedFile")) << "Empty ECDb file is expected to contain the table 'be_EmbedFile'.";
 
@@ -92,22 +90,22 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     BeFileName ecdbPath;
 
     {
-        ECDbTestProject testProject;
-        auto& ecdb = testProject.Create("ecdbfileinfo.ecdb");
-        ecdbPath = BeFileName(ecdb.GetDbFileName());
+    ECDbTestProject testProject;
+    auto& ecdb = testProject.Create("ecdbfileinfo.ecdb");
+    ecdbPath = BeFileName(ecdb.GetDbFileName());
 
-        BeFileName schemaFolder;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(schemaFolder);
-        schemaFolder.AppendToPath(L"ECSchemas");
-        schemaFolder.AppendToPath(L"ECDb");
+    BeFileName schemaFolder;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(schemaFolder);
+    schemaFolder.AppendToPath(L"ECSchemas");
+    schemaFolder.AppendToPath(L"ECDb");
 
-        auto schemaContext = ECSchemaReadContext::CreateContext();
-        schemaContext->AddSchemaLocater (ecdb. GetSchemaLocater ());
-        schemaContext->AddSchemaPath(schemaFolder.GetName());
+    auto schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
+    schemaContext->AddSchemaPath(schemaFolder.GetName());
 
-        ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadECSchemaFromString(schemaContext, GetTestSchemaXml()));
+    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadECSchemaFromString(schemaContext, GetTestSchemaXml()));
 
-        ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (schemaContext->GetCache ()));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemaContext->GetCache()));
     }
 
     ECDb ecdb;
@@ -128,7 +126,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Foo (Name) VALUES (?)"));
     stmt.BindText(1, "Foo1", IECSqlBinder::MakeCopy::Yes);
     ECInstanceKey fooKey;
-    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step(fooKey));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooKey));
     stmt.Finalize();
 
     ECClassCP embeddedFileInfoClass = ecdb. Schemas ().GetECClass (ECDB_FILEINFO_SCHEMA_NAME, "EmbeddedFileInfo");
@@ -145,30 +143,30 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
-    //insert InstanceHasFileInfo relationship
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.InstanceHasFileInfo (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?,?,?,?)"));
+    //insert ownership
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.FileInfoOwnership (OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES (?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, fooKey.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedFileId));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, embeddedFileInfoClass->GetId()));
 
-    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     
     //RETRIEVE scenario
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ts.Foo f JOIN ecdbf.EmbeddedFileInfo fi USING ecdbf.InstanceHasFileInfo "
-        "WHERE f.ECInstanceId = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ecdbf.FileInfo fi JOIN ecdbf.FileInfoOwnership o ON fi.ECInstanceId=o.FileInfoId AND fi.GetECClassId()=o.FileInfoECClassId WHERE o.OwnerId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ((int)BE_SQLITE_ROW, (int)stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8CP actualFileName = stmt.GetValueText(0);
+    ASSERT_STREQ(testFileName, actualFileName);
     DateTime actualLastModified = stmt.GetValueDateTime(1);
     double actualLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, actualLastModified.ToJulianDay(actualLastModifiedJd));
     EXPECT_DOUBLE_EQ(expectedLastModifiedJd, actualLastModifiedJd);
     ECInstanceId actualFileId = stmt.GetValueId<ECInstanceId>(2);
-
-    ASSERT_STREQ(testFileName, actualFileName);
     ASSERT_EQ(embeddedFileId.GetValue(), actualFileId.GetValue());
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only 1 entry expected in FileInfoOwnership for given OwnerId";
 
     BeFileName exportFilePath;
     BeTest::GetHost ().GetOutputRoot (exportFilePath);
@@ -179,22 +177,35 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
 
     stmt.Finalize();
     ecdb.SaveChanges ();
-    //DELETE scenario
-    //TODO_ROWAFFECTED
-    //stmt.EnableDefaultEventHandler();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId = ?"));
+    //DELETE scenario -> FileInfo is not implicitly deleted when the owner is deleted
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
-    //check referential integrity
-    //TODO_ROWAFFECTED
-    //ASSERT_EQ(3, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
- 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.InstanceHasFileInfo LIMIT 1"));
-    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, embeddedFileId));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "FileInfo is expected to still contain the one instance inserted";
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo LIMIT 1"));
-    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfoOwnership WHERE OwnerId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "FileInfoOwnership is expected to still contain the ownership for the deleted Foo instance";
+    stmt.Finalize();
+
+    //now delete the file info
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ecdbf.EmbeddedFileInfo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, embeddedFileId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfoOwnership WHERE OwnerId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << "FileInfoOwnership is not expected to be deleted if FileInfo is deleted";
+    stmt.Finalize();
 }
 
 //---------------------------------------------------------------------------------------
