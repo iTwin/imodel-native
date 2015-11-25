@@ -54,26 +54,9 @@ DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _Appl
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 
 DG_INLINE void DgnViewport::SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction) {_SetFrustumFromRootCorners(rootBox, compressionFraction);}
-DG_INLINE void DgnViewport::SetNeedsRefresh() {_SetNeedsRefresh();}
-DG_INLINE void DgnViewport::SetNeedsHeal() {_SetNeedsHeal();}
 DG_INLINE double DgnViewport::GetMinimumLOD() const {return _GetMinimumLOD();}
-DG_INLINE BSIRect DgnViewport::GetClientRect() const {return _GetClientRect();}
-DG_INLINE Point2d DgnViewport::GetScreenOrigin() const {return _GetScreenOrigin();}
-DG_INLINE DVec2d DgnViewport::GetDpiScale() const    {return _GetDpiScale();}
-DG_INLINE ColorDef DgnViewport::GetHiliteColor() const {return _GetHiliteColor();}
 DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, fixedRepetitions);}
 
-DG_INLINE void ViewController::SetBackgroundColor(ColorDef color) {m_backgroundColor = color;}
-DG_INLINE bool ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
-DG_INLINE void ViewController::ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
-DG_INLINE bool ViewController::Allow3dManipulations() const {return _Allow3dManipulations();}
-DG_INLINE DgnModelP ViewController::GetTargetModel() const {return _GetTargetModel();}
-DG_INLINE bool ViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
-DG_INLINE void ViewController::OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
-
-DG_INLINE ClipVectorPtr PhysicalViewController::GetClipVector() const {return _GetClipVector();}
-DG_INLINE void CameraViewController::SetClipVector(ClipVectorR c) {m_clipVector = &c;}
-DG_INLINE void CameraViewController::ClearClipVector() {m_clipVector=NULL;}
 DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_clipVector;}
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
@@ -152,7 +135,6 @@ DG_INLINE PatternParamsHoleStyleType PatternParams::GetHoleStyle() const {return
 DG_INLINE DwgHatchDefCR PatternParams::GetDwgHatchDef() const {return dwgHatchDef;}
 DG_INLINE DPoint3dCR PatternParams::GetOrigin() const {return origin;}
 DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationscale;}
-
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
 

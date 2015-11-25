@@ -317,8 +317,7 @@ unique_ptr<FenceParams> NamedVolume::CreateFence(DgnViewportP viewport, bool all
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-// static
-unique_ptr<DgnViewport> NamedVolume::CreateNonVisibleViewport (DgnDbR project) 
+DgnViewportPtr NamedVolume::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
     // TODO: Is it cool to assume the first view found can be used to create a PhysicalViewController?
@@ -333,7 +332,10 @@ unique_ptr<DgnViewport> NamedVolume::CreateNonVisibleViewport (DgnDbR project)
 #ifdef WIP_NAMED_VOLUME
     viewController->SetCameraOn (false); // Has to be done after Load()!!
 #endif
-    return std::unique_ptr<NonVisibleViewport> (new NonVisibleViewport (*viewController));
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    return new NonVisibleViewport (*viewController);
+#endif
+    return nullptr;
     }
     
 //--------------------------------------------------------------------------------------
@@ -404,7 +406,7 @@ bool allowPartialOverlaps /*=true*/
     if (nullptr == elementIds)
         return;
 
-    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
+    DgnViewportPtr viewport = CreateNonVisibleViewport (dgnDb);
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
     
     // Prepare element query by range
@@ -504,7 +506,7 @@ bool allowPartialOverlaps /*=true*/
 
     DgnDbR dgnDb = element.GetDgnDb();
 
-    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
+    DgnViewportPtr viewport = CreateNonVisibleViewport (dgnDb);
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
 
     return fence->AcceptElement (*geomElement);

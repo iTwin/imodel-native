@@ -1136,7 +1136,7 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
 
     if (minimumSizePixels > 0)
         {
-        BSIRect  screenRect = viewport.GetClientRect();
+        BSIRect  screenRect = viewport.GetViewRect();
         if (screenRect.Width() > 0 && screenRect.Height() > 0)
             {
             double width = minimumSizePixels/screenRect.Width();

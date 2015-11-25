@@ -437,7 +437,6 @@ protected:
     bool            m_zClipAdjusted;          // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView;               // view is of a 3d model
     bool            m_isCameraOn;             // view is 3d and the camera is turned on.
-    bool            m_deviceAssigned;         // whether the RenderDevice was assigned for RenderTarget
     bool            m_targetParamsSet;
     bool            m_invertY;
     bool            m_frustumValid;
@@ -468,7 +467,6 @@ protected:
     ViewStateStack  m_backStack;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
-
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
     virtual bool _IsGridOn() const {return m_rootViewFlags.grid;}
     virtual bool _IsVisible() const {return true;}
@@ -483,41 +481,31 @@ protected:
     virtual ColorDef _GetHiliteColor() const {return ColorDef::Magenta();}
     virtual void _SynchViewTitle() {}
     virtual void _DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {}
-    virtual BSIRect _GetClientRect() const = 0;
-    virtual Point2d _GetScreenOrigin() const  {Point2d pt={0,0}; return pt;}
-    virtual DVec2d _GetDpiScale() const {return DVec2d::From(1,1);}
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
-    DGNPLATFORM_EXPORT virtual StatusInt _ConnectRenderTarget();
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
-    DGNPLATFORM_EXPORT virtual void _GetViewCorners(DPoint3dR low, DPoint3dR high) const;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
     DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(Render::PaintOptions const&);
     DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
-    virtual Render::RenderDevice* _GetRenderDevice() const = 0;
     DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
 
 public:
-    DGNPLATFORM_EXPORT DgnViewport();
+    DGNPLATFORM_EXPORT DgnViewport(Render::Target*);
     virtual ~DgnViewport() {DestroyViewport();}
-
-    void Resized() {m_deviceAssigned = false;}
+    void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     bool CheckNeedsRefresh() const {return m_needsRefresh;}
     bool ShadowCastingLightsExist() const;
     bool IsVisible() {return _IsVisible();}
     ViewFlagsP GetViewFlagsP () {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
-    Render::RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
     DGNPLATFORM_EXPORT void GetGridRoundingDistance(DPoint2dR roundingDistance);
     DGNPLATFORM_EXPORT void GridFix(DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions = nullptr);
-    DGNPLATFORM_EXPORT BSIRect GetClientRect() const;
-    DGNPLATFORM_EXPORT Point2d GetScreenOrigin() const;
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
     void ClearNeedsRefresh() {m_needsRefresh = false;}
     void AlignWithRootZ();
@@ -541,7 +529,7 @@ public:
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
-    DGNPLATFORM_EXPORT void SetNeedsHeal();
+    void SetNeedsHeal() {_SetNeedsHeal();}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     StatusInt RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return SUCCESS;}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
@@ -553,8 +541,9 @@ public:
     DPoint3dCP GetViewCmdTargetCenter() {return m_targetCenterValid ? &m_viewCmdTargetCenter : nullptr;}
     DGNVIEW_EXPORT void PointToGrid(DPoint3dR pointActive);
     void DrawGrid();
+    Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
-    DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
+    DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT bool HandlePaintMsg(BSIRect const& dirtyRect);
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(uint32_t const* endTime);
@@ -648,7 +637,7 @@ public:
 
     //! Get the current TBGR color value of the user-selected hilite color for this DgnViewport.
     //! @return the current TBGR hilite color.
-    DGNPLATFORM_EXPORT ColorDef GetHiliteColor() const;
+    ColorDef GetHiliteColor() const {return _GetHiliteColor();}
 
     //! Set the current display symbology for this DgnViewport by TBGR color values, a pixel width, and 0-7 line code.
     //! @param[in]          lineColor Line color
@@ -666,15 +655,13 @@ public:
     RotMatrixCR GetRotMatrix() const {return m_rotMatrix;}
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
-    BSIRect GetViewRect() const {return _GetClientRect();}
+    BSIRect GetViewRect() const {return m_renderTarget->GetViewRect();}
 
     //! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
-    //! @param[out] low The lower left back corner of the view
-    //! @param[out] high The upper right front corner of the view
-    void GetViewCorners(DPoint3dR low, DPoint3dR high) const {_GetViewCorners(low,high);}
+    DGNPLATFORM_EXPORT DRange3d GetViewCorners() const;
 
     //! Get the DPI scale which can be used for conversion between physical pixels and device-independent pixels (DIPs).
-    DGNPLATFORM_EXPORT DVec2d GetDpiScale() const;
+    DVec2d GetDpiScale() const {return m_renderTarget->GetDpiScale();}
 
     //! Get an 8-point frustum corresponding to the 8 corners of the DgnViewport in the specified coordinate system.
     //! When front or back clipping is turned \em off, there are two sets of corners that may be of interest.
@@ -860,7 +847,7 @@ public:
     //! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
     void SynchWithViewController(bool saveInUndo) {_SynchWithViewController(saveInUndo);}
 
-    DGNPLATFORM_EXPORT void SetNeedsRefresh();
+    void SetNeedsRefresh() {_SetNeedsRefresh();}
 /** @} */
 
 /** @name Changing DgnViewport Frustum */
@@ -912,10 +899,11 @@ public:
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    virtual Render::RenderDevice* _GetRenderDevice() const override {return nullptr;}
     virtual ColorDef _GetBackgroundColor() const override {return ColorDef::Black();}
-    virtual StatusInt _ConnectRenderTarget() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    virtual StatusInt _ConnectRenderTarget() override { return SUCCESS; }
     virtual BSIRect _GetClientRect() const override
         {
         BSIRect rect;
@@ -923,43 +911,15 @@ protected:
         rect.corner.x = rect.corner.y = 1;
         return rect;
         }
+#endif
 
     virtual void _SetFrustumFromRootCorners(DPoint3dCP worldBox, double compressFraction) override {}
     virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:
-    NonVisibleViewport(ViewControllerR viewController) {m_viewController = &viewController; SetupFromViewController();}
+    NonVisibleViewport(Render::Target* target, ViewControllerR viewController) : DgnViewport(target) {m_viewController = &viewController; SetupFromViewController();}
 };
 END_BENTLEY_DGN_NAMESPACE
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-BEGIN_BENTLEY_RENDER_NAMESPACE
-
-//=======================================================================================
-// @bsiclass                                                      KeithBentley    10/02
-//=======================================================================================
-struct Viewport : DgnViewport
-{
-    DEFINE_T_SUPER(DgnViewport)
-
-protected:
-    DGNVIEW_EXPORT virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) override;
-    DGNVIEW_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const override;
-    virtual Render::RenderWindow* _GetRenderWindow() const = 0;
-    virtual bool _IsVisible() const {return true;}
-    virtual void _Initialize(ViewControllerR viewController) {}
-
-public:
-    DGNVIEW_EXPORT void Resized();
-    Render::RenderWindow* GetRenderWindow() const {return _GetRenderWindow();}
-    DGNVIEW_EXPORT static void AddMosaic(Render::Graphic* qvElem, int numX, int numY, uintptr_t* tileIds, DPoint3d const* verts);
-    DGNVIEW_EXPORT bool UpdateView(struct FullUpdateInfo& info);
-    DGNVIEW_EXPORT UpdateAbort UpdateViewDynamic(DynamicUpdateInfo& info);
-    bool IsVisible() {return _IsVisible();}
-};
-
-END_BENTLEY_RENDER_NAMESPACE
-#endif
 
 /** @endGroup */
 

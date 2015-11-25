@@ -342,8 +342,7 @@ static double computeGroundResolutionInMeters (uint8_t zoomLevel, double latitud
 +---------------+---------------+---------------+---------------+---------------+------*/
 double WebMercatorUorConverter::ComputeViewResolutionInMetersPerPixel (DgnViewportR vp)
     {
-    DRange3d    range;
-    vp.GetViewCorners (range.low, range.high); // lower left back, upper right front    -- View coordinates aka "pixels"
+    DRange3d range = vp.GetViewCorners(); // lower left back, upper right front    -- View coordinates aka "pixels"
     
     DPoint3d corners[8];
     range.Get8Corners (corners);    // pixels
@@ -840,7 +839,7 @@ BentleyStatus WebMercatorTilingSystem::GetTileIdsForView (bvector<TileId>& tilei
     DPoint2d ul, lr;
         {
         // Get view corners
-        auto rect = vp.GetViewRect();
+        BSIRect rect = vp.GetViewRect();
 
         auto range = DRange3d::NullRange();
         range.Extend (vp.ViewToWorld (DPoint3d::From (rect.Left(), rect.Top())));

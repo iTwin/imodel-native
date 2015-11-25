@@ -312,9 +312,9 @@ public:
     StatusInt VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitElements(ViewContextR context) {return _VisitElements(context);}
-    DGNPLATFORM_EXPORT void ChangeModelDisplay(DgnModelId, bool onOff);
+    void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
     DGNPLATFORM_EXPORT StatusInt GetRangeForFit(DRange3dR range);
-    DGNPLATFORM_EXPORT void OnViewOpened(DgnViewportR);
+    void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     void SetBaseModelId(DgnModelId id) {m_baseModelId = id;}
     DgnModelId GetBaseModelId() const {return m_baseModelId;}
     bool IsCategoryViewed(DgnCategoryId categoryId) const {return m_viewedCategories.Contains(categoryId);}
@@ -387,7 +387,7 @@ public:
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
     //! determine whether this view has been loaded from the database.
-    DGNPLATFORM_EXPORT bool IsLoaded() const;
+    bool IsLoaded() const {return m_baseModelId.IsValid();}
 
     //! Gets a const reference to the ViewFlags.
     ViewFlagsCR GetViewFlags() const {return m_viewFlags;}
@@ -444,7 +444,7 @@ public:
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT bool IsViewChanged(Utf8StringCR base) const;
-    DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point);
+    bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui);
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
@@ -466,13 +466,13 @@ public:
 
     //! Change the background color of the view.
     //! @param[in] color The new background color
-    DGNPLATFORM_EXPORT void SetBackgroundColor(ColorDef color);
+    void SetBackgroundColor(ColorDef color) {m_backgroundColor = color;}
 
     //! Initialize this ViewController .
     DGNPLATFORM_EXPORT void Init();
 
     //! Gets the DgnModel that will be the target of tools that add new elements.
-    DGNPLATFORM_EXPORT DgnModelP GetTargetModel() const;
+    DgnModelP GetTargetModel() const {return _GetTargetModel();}
 
     //! Tests whether a rotation matrix corresponds to one of the StandardView orientations.
     //! @param[in] rotation  The matrix to test.
@@ -499,7 +499,7 @@ public:
 
     //! @return true if this view supports 3d viewing operations. Otherwise the z-axis of the view must remain aligned with the world z axis, even
     //! if the view is a physical view.
-    DGNPLATFORM_EXPORT bool Allow3dManipulations() const;
+    bool Allow3dManipulations() const {return _Allow3dManipulations();}
 
     //! Establish the view parameters from an 8-point frustum.
     //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController
@@ -573,7 +573,7 @@ public:
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT PhysicalViewController(DgnDbR project, DgnViewId viewId);
 
-    DGNPLATFORM_EXPORT ClipVectorPtr GetClipVector() const;
+    ClipVectorPtr GetClipVector() const {return _GetClipVector();}
     DGNPLATFORM_EXPORT void TransformBy(TransformCR);
 
 //__PUBLISH_SECTION_END__
@@ -816,8 +816,8 @@ public:
 
 /** @name ClipVector */
 /** @{ */
-    DGNPLATFORM_EXPORT void SetClipVector(ClipVectorR);
-    DGNPLATFORM_EXPORT void ClearClipVector();
+    void SetClipVector(ClipVectorR clip) {m_clipVector = &clip;}
+    void ClearClipVector() {m_clipVector=nullptr;}
 /** @} */
 };
 

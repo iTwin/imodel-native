@@ -1116,9 +1116,41 @@ enum class DrawExportFlags
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct SystemContext {};
-struct RenderDevice {};
-struct RenderWindow {};
-struct RenderCursor {};
+
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct Window : RefCounted<NonCopyableClass>
+{
+    struct Rectangle {int left, top, right, bottom;};
+    void* m_nativeWindow;
+    void* GetNativeWindow() const {return m_nativeWindow;}
+    Window(void* nativeWindow) {m_nativeWindow=nativeWindow;}
+
+    virtual Point2d _GetScreenOrigin() const = 0;
+    virtual BSIRect _GetViewRect() const = 0;
+    virtual void _OnPaint(Rectangle&) const = 0;
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct Device : RefCounted<NonCopyableClass>
+{
+    struct PixelsPerInch {int width, height;};
+    RefCountedCPtr<Window> m_window;
+    void* m_nativeDevice;
+
+    void* GetNativeDevice() const {return m_nativeDevice;}
+    Window const* GetWindow() const {return m_window.get();}
+    virtual PixelsPerInch _GetPixelsPerInch() const = 0;
+    virtual DVec2d _GetDpiScale() const = 0;
+    Device(Window* window, void* device) : m_window(window), m_nativeDevice(device) {}
+    double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
+};
+
+struct Cursor {};
 struct CursorSource {};
 
 //=======================================================================================
@@ -1129,10 +1161,10 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
+    RefCountedCPtr<Device> m_device;
+
     virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
     virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
-    virtual RenderDevice* _GetRenderDevice() const = 0;
-    virtual StatusInt _AssignRenderDevice(DgnViewportR) = 0;
     virtual void _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual void _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
@@ -1150,6 +1182,7 @@ protected:
     virtual void _SetNeedsHeal(BSIRect const* dirty) = 0;
     virtual void _HealComplete(bool aborted) = 0;
     virtual bool _CheckNeedsHeal(BSIRect* rect) = 0;
+    virtual void _OnResized() {}
     virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
@@ -1160,10 +1193,14 @@ public:
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual Scene* _GetMainScene() {return nullptr;} // TEMPORARY!
 
+    Target(Device* device) : m_device(device) {}
+    Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
+    BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
+    DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params) {return _CreateGraphic(params);}
     void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, aaLines, aaText);}
-    RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
-    StatusInt AssignRenderDevice(DgnViewportR vp) {return _AssignRenderDevice(vp);}
+    Render::Device const* GetRenderDevice() const {return m_device.get();}
+    void OnResized() {_OnResized();}
     void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = nullptr) {_AddLights(threeDview, rotMatrixP, model);}
     void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
     void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}

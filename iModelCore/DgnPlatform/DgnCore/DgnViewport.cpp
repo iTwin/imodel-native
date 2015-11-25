@@ -34,10 +34,9 @@ static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewport::DgnViewport()
+DgnViewport::DgnViewport(Render::Target* target) : m_renderTarget(target)
     {
     m_minLOD            = DEFAULT_MINUMUM_LOD;
-    m_deviceAssigned    = false;
     m_targetParamsSet   = false;
     m_isCameraOn        = false;
     m_needsRefresh      = false;
@@ -61,9 +60,9 @@ void DgnViewport::DestroyViewport()
     {
     m_progressiveDisplay.clear();
     m_viewController = nullptr;
-    m_deviceAssigned = false;
     m_targetParamsSet = false;
     m_frustumValid = false;
+    m_renderTarget = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,27 +103,29 @@ enum Constant
 * NOTE: the y values are "swapped" (llb.y is greater than urf.y) on the screen and and "unswapped" when we plot.
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_GetViewCorners(DPoint3dR llb, DPoint3dR urf) const
+DRange3d DgnViewport::GetViewCorners() const
     {
     BSIRect viewRect = GetViewRect();
 
-    llb.x  = viewRect.origin.x;
-    llb.z  = MINIMUM_WINDOW_DEPTH;
+    DRange3d corners;
+    corners.low.x  = viewRect.origin.x;
+    corners.low.z  = MINIMUM_WINDOW_DEPTH;
 
-    urf.x = viewRect.corner.x;
-    urf.z = MAXIMUM_WINDOW_DEPTH;
+    corners.high.x = viewRect.corner.x;
+    corners.high.z = MAXIMUM_WINDOW_DEPTH;
 
     if (m_invertY)
         {
         // y's are swapped on the screen!
-        llb.y = viewRect.corner.y;
-        urf.y = viewRect.origin.y;
+        corners.low.y = viewRect.corner.y;
+        corners.high.y = viewRect.origin.y;
         }
     else
         {
-        llb.y = viewRect.origin.y;
-        urf.y = viewRect.corner.y;
+        corners.low.y = viewRect.origin.y;
+        corners.high.y = viewRect.corner.y;
         }
+    return corners;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,11 +133,9 @@ void DgnViewport::_GetViewCorners(DPoint3dR llb, DPoint3dR urf) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
     {
-    DPoint3d llb, urf;
-    _GetViewCorners(llb, urf);
-
+    DRange3d corners = GetViewCorners();
     Transform scrToNpcTran;
-    bsiTransform_initFromRange(nullptr, &scrToNpcTran, &llb, &urf);
+    bsiTransform_initFromRange(nullptr, &scrToNpcTran, &corners.low, &corners.high);
     scrToNpcTran.Multiply(npcVec, screenVec, nPts);
     }
 
@@ -145,11 +144,9 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) const
     {
-    DPoint3d llb, urf;
-    _GetViewCorners(llb, urf);
-
+    DRange3d corners = GetViewCorners();
     Transform    npcToScrTran;
-    bsiTransform_initFromRange(&npcToScrTran, nullptr, &llb, &urf);
+    bsiTransform_initFromRange(&npcToScrTran, nullptr, &corners.low, &corners.high);
     npcToScrTran.Multiply(screenVec, npcVec, nPts);
     }
 
@@ -278,7 +275,7 @@ void DgnViewport::AlignWithRootZ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expandView)
     {
-    BSIRect viewRect = GetClientRect();
+    BSIRect viewRect = GetViewRect();
     viewController.AdjustAspectRatio(viewRect.Aspect(), expandView);
     }
 
@@ -380,6 +377,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
     return  SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/02
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -397,6 +395,7 @@ StatusInt DgnViewport::_ConnectRenderTarget()
 
     return status;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * calculate the NPC-to-view transformation matrix.
@@ -404,9 +403,8 @@ StatusInt DgnViewport::_ConnectRenderTarget()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::CalcNpcToView(DMap4dR npcToView)
     {
-    DPoint3d    viewLow, viewHigh;
-    _GetViewCorners(viewLow, viewHigh);
-    npcToView.InitFromRanges(s_NpcCorners[NPC_000], s_NpcCorners[NPC_111], viewLow, viewHigh);
+    DRange3d corners = GetViewCorners();
+    npcToView.InitFromRanges(s_NpcCorners[NPC_000], s_NpcCorners[NPC_111], corners.low, corners.high);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -631,7 +629,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_viewOrg   = origin;
     m_viewDelta = delta;
 
-    if (SUCCESS != _ConnectRenderTarget())
+    if (!m_renderTarget.IsValid())
         return ViewportStatus::InvalidViewport;
 
     double compressionFraction;
@@ -708,8 +706,10 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     if (nullptr == viewController)
         return  ViewportStatus::InvalidViewport;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (!m_deviceAssigned)
         _SetupFromViewController();
+#endif
 
     DPoint3d worldPts[3] = {pts[0], pts[1], viewController->GetOrigin()};
     DPoint3d viewPts[3];

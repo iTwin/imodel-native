@@ -37,7 +37,7 @@ private:
     void Get3dShape (bvector<DPoint3d>& shape) const;
     ClipVectorPtr CreateClipVector() const;
     std::unique_ptr<FenceParams> CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
-    static std::unique_ptr<DgnViewport> CreateNonVisibleViewport (DgnDbR dgnDb);
+    static DgnViewportPtr CreateNonVisibleViewport (DgnDbR dgnDb);
 
     // Gets the range of the volume, described from the Project Coordinate System in storage units 
     void GetRange(DRange3d& range) const;
