@@ -76,16 +76,7 @@ void JsonUtil::ToJsonValue(RapidJsonValueCR source, JsonValueR target)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonUtil::DeepCopy(RapidJsonValueCR source, RapidJsonDocumentR target)
     {
-    rapidjson::GenericStringBuffer<UTF8<>> buffer;
-    rapidjson::Writer<rapidjson::GenericStringBuffer<UTF8<>>> writer(buffer);
-    source.Accept(writer);
-
-    auto sourceStr = buffer.GetString();
-
-    target.Parse<0>(sourceStr);
-    BeAssert(!target.HasParseError());
-
-    //CopyValues(source, target, target.GetAllocator());
+    CopyValues(source, target, target.GetAllocator());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -96,6 +87,14 @@ void JsonUtil::CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapid
     switch (source.GetType())
         {
         case kObjectType:
+            {
+            bool targetIsEmpty = false;
+            if (kObjectType != target.GetType())
+                {
+                targetIsEmpty = true;
+                target.SetObject();
+                }
+
             for (auto memberSourceItr = source.MemberBegin(); memberSourceItr != source.MemberEnd(); ++memberSourceItr)
                 {
                 Value nameToAdd(kStringType);
@@ -104,11 +103,18 @@ void JsonUtil::CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapid
                 Value valueToAdd(memberSourceItr->value.GetType());
                 CopyValues(memberSourceItr->value, valueToAdd, allocator);
 
+                if (!targetIsEmpty)
+                    {
+                    target.RemoveMember(nameToAdd.GetString());
+                    }
+
                 target.AddMember(nameToAdd, valueToAdd, allocator);
                 }
+            }
             break;
 
         case kArrayType:
+            target.SetArray();
             for (SizeType i = 0; i < source.Size(); i++)
                 {
                 Value valueToAdd(source[i].GetType());
@@ -157,7 +163,19 @@ void JsonUtil::CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapid
                 target.SetUint64(source.GetUint64());
                 break;
                 }
+            BeAssert(false);
             }
+        case kTrueType:
+            target.SetBool(true);
+            break;
+        case kFalseType:
+            target.SetBool(false);
+            break;
+        case kNullType:
+            target.SetNull();
+            break;
+        default:
+            BeAssert(false);
         }
     }
 

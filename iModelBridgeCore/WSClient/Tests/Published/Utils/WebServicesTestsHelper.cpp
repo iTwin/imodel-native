@@ -28,8 +28,7 @@ std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString)
     bool fail = json->Parse<0>(jsonString.c_str()).HasParseError();
     if (fail)
         {
-        BeDebugLog("Check json string");
-        EXPECT_TRUE(false);
+        EXPECT_TRUE(false && "Check json string");
         }
     return json;
     }
@@ -40,8 +39,7 @@ Json::Value ToJson(Utf8StringCR jsonString)
     bool success = Json::Reader::Parse(jsonString, json);
     if (!success)
         {
-        BeDebugLog("Check json string");
-        EXPECT_TRUE(false);
+        EXPECT_TRUE(false && "Check json string");
         }
     return json;
     }
