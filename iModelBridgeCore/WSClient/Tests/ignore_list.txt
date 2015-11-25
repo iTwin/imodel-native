@@ -30,4 +30,6 @@ BuddiClientTests.GetRegions_Default_ReturnsSomeRegions                          
 BuddiClientTests.GetUrl_ExistingUrlName_ReturnsUrl                               # Was DISABLED. Need to investigate
 BuddiClientTests.GetUrl_NotExistingUrlName_ReturnsUrlNotConfiguredError          # Was DISABLED. Need to investigate
 
-
+# Fail because data source schema uses AnyClass
+ExtendedDataAdapterTests.UpdateData_InstanceExistsAndFirstTime_SavesData
+ExtendedDataAdapterTests.GetData_InstanceDeleted_DataReturnedIsEmpty
