@@ -75,7 +75,7 @@ public:
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value="",
                     DgnMaterialId parentMaterialId=DgnMaterialId(), Utf8StringCR descr="");
 
-        Utf8String GetPaletteName() const { return m_code.GetNameSpace(); } //!< Return the palette name
+        Utf8String GetPaletteName() const { return m_code.GetNamespace(); } //!< Return the palette name
         Utf8String GetMaterialName() const { return m_code.GetValue(); } //!< Return the material name
     };
 
@@ -103,7 +103,7 @@ public:
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
     DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the ID of this material.
-    Utf8String GetPaletteName() const { return GetCode().GetNameSpace(); } //!< Returns the palette name
+    Utf8String GetPaletteName() const { return GetCode().GetNamespace(); } //!< Returns the palette name
     Utf8String GetMaterialName() const { return GetCode().GetValue(); } //!< Returns the material name
 
     Utf8StringCR GetValue() const { return m_data.m_value; } //!< Returns the material data as a JSON string

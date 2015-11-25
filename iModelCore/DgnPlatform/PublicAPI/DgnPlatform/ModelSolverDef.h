@@ -43,7 +43,7 @@ struct ModelSolverDef
             Type=1,         //!< fixed for all instances of a given type
             Instance=2      //!< can vary per instance
             };
-        private:
+      private:
         Scope   m_scope;
         Utf8String m_name;
         ECN::ECValue m_value;
@@ -52,9 +52,11 @@ struct ModelSolverDef
         Json::Value ToJson() const;
         //! Deserialize a Parameter from a stored JSON object
         explicit Parameter(Json::Value const&);
-        public:
+      public:
         //! Construct a new Parameter
         DGNPLATFORM_EXPORT Parameter(Utf8CP n, Scope s, ECN::ECValueCR v);
+        bool operator==(Parameter const& rhs) const {return m_scope == rhs.m_scope && m_name == rhs.m_name && m_value.Equals(rhs.m_value);}
+        bool operator!=(Parameter const& rhs) const {return !(*this == rhs);}
         //! Get the scope of this parameter
         Scope GetScope() const {return m_scope;}
         //! Get the name of this parameter
@@ -78,6 +80,9 @@ struct ModelSolverDef
         explicit ParameterSet(bvector<Parameter> const& p) : m_parameters(p) {;}
 
         ParameterSet& operator=(ParameterSet const& rhs) {if (&rhs != this) m_parameters = rhs.m_parameters; return *this;}
+
+        bool operator==(ParameterSet const& rhs) const {return m_parameters == rhs.m_parameters;}
+        bool operator!=(ParameterSet const& rhs) const {return !(*this == rhs);}
 
         DGNPLATFORM_EXPORT Json::Value ToJson() const;
 
@@ -116,8 +121,6 @@ struct ModelSolverDef
     void FromJson(Utf8CP);
     Utf8String ToJson() const;
 
-    void Solve(GeometricModel&);
-
     DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
 
     public:
@@ -131,6 +134,8 @@ struct ModelSolverDef
     //! @param identifier   Identifies the solver. The meaning of this identifier varies, depending on the type of the solver.
     //! @param parameters   The parameters to be passed to the solver
     DGNPLATFORM_EXPORT ModelSolverDef(Type type, Utf8CP identifier, bvector<Parameter> const& parameters);
+
+    DGNPLATFORM_EXPORT void Solve(GeometricModel&);
 
     //! Test if this object specifies a solver
     bool IsValid() const {return Type::None != GetType();}

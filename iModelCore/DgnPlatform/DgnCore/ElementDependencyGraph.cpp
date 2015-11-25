@@ -191,7 +191,7 @@ Utf8String DgnElementDependencyGraph::FmtCyclePath(Edge const& edge, bvector<Edg
 Utf8String DgnElementDependencyGraph::GetElementCode(DgnElementId eid)
     {
     ECSqlSelectBuilder b;
-    b.Select("Code").From(*GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), true).Where(ECSQL_ECINSTANCEID "=?");
+    b.Select("Code.[Value]").From(*GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), true).Where(ECSQL_ECINSTANCEID "=?");
     ECSqlStatement s;
     s.Prepare(GetDgnDb(), b.ToString().c_str());
     s.BindId(1, eid);

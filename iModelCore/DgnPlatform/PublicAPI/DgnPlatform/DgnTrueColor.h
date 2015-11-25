@@ -64,7 +64,7 @@ public:
 
     DgnTrueColorId GetColorId() const { return DgnTrueColorId(GetElementId().GetValueUnchecked()); } //!< The ID of this color
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of this color
-    Utf8String GetBook() const { return GetCode().GetNameSpace(); } //!< The name of this color's color book
+    Utf8String GetBook() const { return GetCode().GetNamespace(); } //!< The name of this color's color book
     ColorDef GetColorDef() const { return m_colorDef; } //!< The value of this color
 
     //! Creates a code for a color with the given name and book name

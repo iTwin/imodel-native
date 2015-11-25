@@ -223,7 +223,7 @@ size_t TextAnnotationSeed::QueryCount(DgnDbR db)
 TextAnnotationSeed::Iterator TextAnnotationSeed::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code, Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationSeed), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationSeed), 0);
 
     return iter;
     }
