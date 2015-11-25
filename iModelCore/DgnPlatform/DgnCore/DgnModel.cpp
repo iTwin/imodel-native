@@ -1631,7 +1631,7 @@ static StatusInt deleteComponentViews(DgnDbR db, DgnModelId mid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::_OnDelete()
     {
-    // If any instance exists, then block the deletion
+    // If any instance exists, then block the deletion. Tricky: unique/singleton elements are both types and instances -- they are instances of themselves.
     bvector<DgnElementId> types;
     QuerySolutions(types);
     for (auto teid : types)
@@ -1644,10 +1644,6 @@ DgnDbStatus ComponentModel::_OnDelete()
                 return DgnDbStatus::IdExists; // *** WIP_COMPONENT_MODEL need more appropriate error code
             }
         }
-
-    // *** WIP_COMPONENT_MODEL: Need additional logic to detect unique/singleton solutions. 
-    //  ***                     They will be returned in 'types' above. They will not be referenced by any instance.
-    //  ***                     They are instances nonetheless.
 
     deleteComponentViews(GetDgnDb(), GetModelId());
     deleteAllSolutionsOfComponentRelationships(GetDgnDb(), GetModelId());
@@ -1897,7 +1893,7 @@ void ComponentModel::QueryInstances(bvector<DgnElementId>& instances, DgnElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName, Placement3dCR placement, DgnElement::Code code)
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName, Placement3dCR placement, DgnElement::Code code, bool isSingleton)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -1934,7 +1930,20 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
     if (DgnDbStatus::Success != (status = Solve(parameters)))
         return nullptr;
 
-    return HarvestSolution(status, catalogModel, catalogItemName, icode, placement);
+    PhysicalElementCPtr el = HarvestSolution(status, catalogModel, catalogItemName, icode, placement);
+
+    if (isSingleton)
+        createInstanceOfTemplateRelationship(*el, *el);
+
+    return el;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName)
+    {
+    return CaptureSolution(statusOut, catalogModel, parameters, catalogItemName, Placement3d(), DgnElement::Code(), /*isSingleton*/false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2183,6 +2192,21 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
     BeAssert(queryTemplateItemFromInstance(db, inst->GetElementId()) == catalogItem.GetElementId());
 
     return inst;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, PhysicalModelR targetModel, 
+                                                Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, 
+                                                Placement3dCR placement, DgnElement::Code const& code)
+    {
+    PhysicalElementCPtr typeElem;
+    ModelSolverDef::ParameterSet typeParams;
+    if ((DgnDbStatus::Success != QuerySolutionByName(typeElem, typeParams, capturedSolutionName)) || (params != typeParams))
+        return CaptureSolution(statusOut, targetModel, params, "", placement, DgnElement::Code(), true);
+
+    return MakeInstanceOfSolution(statusOut, targetModel, *typeElem, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**
