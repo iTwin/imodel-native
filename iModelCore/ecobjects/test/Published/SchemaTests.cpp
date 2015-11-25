@@ -1770,6 +1770,32 @@ TEST_F (SchemaCopyTest, ExpectSuccessWhenCopyingStructs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaCopyTest, CopySchemaWithEnumeration)
+    {
+    ECSchemaPtr schema;
+    ECEnumerationP enumeration;
+    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+
+    //Create Enumeration
+    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_TRUE(enumeration != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    EXPECT_TRUE (schema.IsValid ());
+    enumeration->SetDisplayLabel("My Display Label");
+
+    ECSchemaPtr copiedSchema = NULL;
+    schema->CopySchema (copiedSchema);
+    EXPECT_TRUE (copiedSchema.IsValid ());
+    ECEnumerationP enumeration2 = copiedSchema->GetEnumerationP("Enumeration");
+    ASSERT_TRUE(enumeration2 != nullptr);
+    EXPECT_TRUE(enumeration2->GetType() == enumeration->GetType());
+    EXPECT_TRUE(enumeration2 != enumeration); //ensure the object was copied and not just referenced
+    EXPECT_STREQ(enumeration2->GetDisplayLabel().c_str(), enumeration->GetDisplayLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ClassTest, ExpectErrorWithCircularBaseClasses)
     {
     ECSchemaPtr schema;

@@ -876,6 +876,25 @@ ECClassCR sourceClass
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP & targetEnumeration, ECEnumerationCR sourceEnumeration)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    status = CreateEnumeration(targetEnumeration, sourceEnumeration.GetName(), sourceEnumeration.GetType());
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourceEnumeration.GetIsDisplayLabelDefined())
+        targetEnumeration->SetDisplayLabel(sourceEnumeration.GetInvariantDisplayLabel());
+
+    targetEnumeration->SetDescription(sourceEnumeration.GetInvariantDescription());
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass, Utf8StringCR name)
@@ -1154,6 +1173,14 @@ ECSchemaPtr& schemaOut
         {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass);
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+            return status;
+        }
+
+    for (auto ecEnumeration : m_enumerationContainer)
+        {
+        ECEnumerationP copyEnumeration;
+        status = schemaOut->CopyEnumeration(copyEnumeration, *ecEnumeration);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
