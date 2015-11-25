@@ -8,6 +8,8 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnDbTables.h>
 
+static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnModelId cmid);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1602,22 +1604,39 @@ bool ComponentModel::IsValid() const
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      090/2015
+//---------------------------------------------------------------------------------------
+static StatusInt deleteComponentViews(DgnDbR db, DgnModelId mid)
+    {
+    // construct an iterator using the criteria from the request message
+    auto viewIterator = ViewDefinition::MakeIterator(db, ViewDefinition::Iterator::Options(mid));
+
+    bvector<DgnViewId> tbd;
+
+    for (auto const& viewEntry : viewIterator)
+        tbd.push_back(viewEntry.GetId());
+
+    for (auto vid : tbd)
+        {
+        auto viewElem = db.Elements().GetElement(vid);
+        viewElem->Delete();
+        }
+
+    return BSISUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::_OnDelete()
     {
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-        //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
-    Statement delSolutions;
+    deleteComponentViews(GetDgnDb(), GetModelId());
+    deleteAllSolutionsOfComponentRelationships(GetDgnDb(), GetModelId());
 
-    delSolutions.Prepare(GetDgnDb(), "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=?");
-    delSolutions.BindText(1, GetModelName(), Statement::MakeCopy::No);
-    delSolutions.Step();
+    // *** WIP_COMPONENT_MODEL - Deleting a ComponentModel turns existing catalog items and unique/singleton solutions into orphans.
+    // ***                          Maybe we should refuse to delete a ComponentModel in the case where it is still referenced by instances??
 
-    // *** NEEDS WORK: I should kill off all of the GeomParts referenced by the geomstreams in the rows of ComponentSolution 
-
-#endif
     return DgnDbStatus::Success;
     }
 
@@ -1685,6 +1704,20 @@ static DgnDbStatus deleteSolutionOfComponentRelationship(DgnElementCR inst)
         return DgnDbStatus::BadRequest;
 
     statement->BindId(1, inst.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnModelId cmid)
+    {
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE (TargetECInstanceId=?)");
+
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, cmid);
     return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
@@ -1794,7 +1827,7 @@ DgnDbStatus ComponentModel::Importer::ImportSolutions(DgnModelR destCatalogModel
     selectCatalogItems.BindId(1, m_sourceComponent.GetModelId());
     while (BE_SQLITE_ROW == selectCatalogItems.Step())
         {
-        DgnElementCPtr sourceCatalogItem = GetSourceDb().Elements().GetElement(selectCatalogItems.GetValueId<DgnElementId>(0));
+        PhysicalElementCPtr sourceCatalogItem = m_sourceComponent.GetSolution(selectCatalogItems.GetValueId<DgnElementId>(0));
         if (!sourceCatalogItem.IsValid())
             continue;
 
@@ -1833,6 +1866,20 @@ void ComponentModel::QuerySolutions(bvector<DgnElementId>& solutions)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::QueryInstances(bvector<DgnElementId>& instances, DgnElementId solutionId)
+    {
+    EC::ECSqlStatement selectCatalogItems;
+    selectCatalogItems.Prepare(GetDgnDb(), "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate) " WHERE(TargetECInstanceId=?)");
+    selectCatalogItems.BindId(1, solutionId);
+    while (BE_SQLITE_ROW == selectCatalogItems.Step())
+        {
+        instances.push_back(selectCatalogItems.GetValueId<DgnElementId>(0));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName, Placement3dCR placement, DgnElement::Code code)
@@ -1852,7 +1899,7 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
         {
         if (!catalogItemName.empty()) // catalogItemName wilil be blank when we are creating a unique solution, rather than a catalog item.
             {
-            icode = CreateCatalogItemCode(catalogItemName);
+            icode = CreateCapturedSolutionCode(catalogItemName);
             if (!icode.IsValid())
                 {
                 BeAssert(false && "could not generate a code for a catalog item??");
@@ -1880,16 +1927,35 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementCPtr ComponentModel::QuerySolutionByName(Utf8StringCR catalogItemName)
     {
-    DgnElement::Code icode = CreateCatalogItemCode(catalogItemName);
+    DgnElement::Code icode = CreateCapturedSolutionCode(catalogItemName);
     if (!icode.IsValid())
         return nullptr;
 
-    //  Check to see if this solution has already been captured.
-    DgnElementId existingCatalogItemId = GetDgnDb().Elements().QueryElementIdByCode(icode);
+    return GetSolution(GetDgnDb().Elements().QueryElementIdByCode(icode));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::GetSolution(DgnElementId existingCatalogItemId)
+    {
     if (!existingCatalogItemId.IsValid())
         return nullptr;
 
-    return GetDgnDb().Elements().Get<PhysicalElement>(existingCatalogItemId);
+    PhysicalElementCPtr ele = GetDgnDb().Elements().Get<PhysicalElement>(existingCatalogItemId);
+    if (!ele.IsValid())
+        return nullptr;
+
+    if (ele->GetModel().get() != this)
+        return nullptr;
+
+    if (!IsCapturedSolutionCode(ele->GetCode()))
+        return nullptr;
+
+    // *** WIP_COMPONENT_MODELS - Should we check that ele is the source of a DGN_RELNAME_SolutionOfComponent ECRelationship?
+    // ***                          That's an expensive look-up. Probably too much to do every time.
+
+    return ele;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1897,6 +1963,9 @@ PhysicalElementCPtr ComponentModel::QuerySolutionByName(Utf8StringCR catalogItem
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::DeleteSolution(PhysicalElementCR catalogItem)
     {
+    // *** WIP_COMPONENT_MODELS - Deleting a captured solution makes orphans of all instances of that solution. 
+    // ***                          Maybe we should refuse to delete the captured solution in this case?
+
     DgnDbStatus status = deleteSolutionOfComponentRelationship(catalogItem);
     if (DgnDbStatus::Success != status)
         {
