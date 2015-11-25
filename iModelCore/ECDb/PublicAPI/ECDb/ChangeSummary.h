@@ -47,6 +47,19 @@ public:
 //=======================================================================================
 struct ChangeSummary : NonCopyableClass
 {
+    //! DbOpcodes that can be bitwise combined to pass as arguments to query methods
+    enum class QueryDbOpcode
+        {
+        None            = 0,
+        Insert          = 1,
+        Delete          = 1 << 1,
+        Update          = 1 << 2,
+        All             = Insert | Delete | Update,
+        InsertUpdate    = Insert | Update,
+        InsertDelete    = Insert | Delete,
+        UpdateDelete    = Update | Delete,
+        };
+
     struct Instance;
     struct InstanceIterator;
     struct ValueIterator;
@@ -116,11 +129,36 @@ struct ChangeSummary : NonCopyableClass
     //! An iterator over changed instances in a ChangeSummary
     struct InstanceIterator : BeSQLite::DbTableIterator
     {
+    public:
+        struct Options
+        {
+        private:
+            friend struct InstanceIterator;
+
+            ECN::ECClassId m_classId;
+            bool m_polymorphic;
+            QueryDbOpcode m_opcodes;
+
+            Utf8String ToSelectStatement(Utf8CP columnsToSelect, ChangeSummaryCR summary) const;
+            void Bind(BeSQLite::Statement& stmt) const;
+        public:
+            explicit Options(ECN::ECClassId classId=(ECN::ECClassId)0, bool polymorphic=true, QueryDbOpcode queryDbOpcodes=QueryDbOpcode::All)
+                : m_classId(classId), m_polymorphic(polymorphic), m_opcodes(queryDbOpcodes) { }
+
+            ECN::ECClassId GetClassId() const { return m_classId; }
+            bool IsPolymorphic() const { return m_polymorphic; }
+            QueryDbOpcode GetOpcodes() const { return m_opcodes; }
+
+            bool IsEmpty() const { return ((ECN::ECClassId)0) == m_classId; }
+        };
     private:
         ChangeSummaryCR m_changeSummary;
+        Options m_options;
         
+        Utf8String MakeSelectStatement(Utf8CP columns) const;
     public:
-        explicit InstanceIterator(ChangeSummaryCR changeSummary) : DbTableIterator((BeSQLite::DbCR) changeSummary.GetDb()), m_changeSummary(changeSummary) {}
+        explicit InstanceIterator(ChangeSummaryCR changeSummary, Options const& options=Options())
+            : DbTableIterator((BeSQLite::DbCR) changeSummary.GetDb()), m_changeSummary(changeSummary), m_options(options) { }
 
         //! An entry in the table.
         struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
@@ -147,6 +185,8 @@ struct ChangeSummary : NonCopyableClass
                 ECDB_EXPORT Instance GetInstance() const;
 
                 Entry const& operator*() const { return *this; }
+
+                ChangeSummaryCR GetChangeSummary() const { return m_changeSummary; } //!< @private
             };
 
         typedef Entry const_iterator;
@@ -196,15 +236,6 @@ struct ChangeSummary : NonCopyableClass
         ECDB_EXPORT int QueryCount() const;
     }; // ValueIterator
 
-    //! DbOpcodes that can be bitwise combined to pass as arguments to query methods
-    enum QueryDbOpcode
-        {
-        Insert = 1,
-        Delete = 1 << 1,
-        Update = 1 << 2,
-        All = Insert | Delete | Update
-        };
-
 private:
     ECDbR m_ecdb;
     bool m_isValid = false;
@@ -219,7 +250,6 @@ private:
     static void RegisterSqlFunctions(ECDbR ecdb);
     static void UnregisterSqlFunctions();
 
-    Utf8String ConstructWhereInClause(int queryDbOpcodes) const;
 public:
     //! Construct a ChangeSummary from a BeSQLite ChangeSet
     ECDB_EXPORT explicit ChangeSummary(ECDbR);
@@ -233,12 +263,7 @@ public:
     //! Create a ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 
     //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::ChangeSet& changeSet);
-
-    //! Create a ChangeSummary from the contents of a BeSQLite ChangeStream
-    //! @remarks The ChangeSummary needs to be new or freed before this call. 
-    //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromChangeStream(BeSQLite::ChangeStream& changeStream);
+    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet);
 
     //! Free the data held by this ChangeSummary.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
@@ -252,7 +277,7 @@ public:
 
     //! Make an iterator over the changed instances
     //! Use @ref FromChangeSet to populate the ChangeSummary
-    InstanceIterator MakeInstanceIterator() const { return InstanceIterator(*this); }
+    InstanceIterator MakeInstanceIterator(InstanceIterator::Options const& options=InstanceIterator::Options()) const { return InstanceIterator(*this, options); }
 
     //! Check if the change summary contains a specific instance
     ECDB_EXPORT bool ContainsInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
@@ -272,7 +297,13 @@ public:
 
     //! @private internal use only
     //! Query for all changed instances of the specified class (and it's sub classes). 
-    ECDB_EXPORT void QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic = true, int queryDbOpcodes = QueryDbOpcode::All) const;
+    ECDB_EXPORT void QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic = true, QueryDbOpcode queryDbOpcodes = QueryDbOpcode::All) const;
+
+    //! @private
+    Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const;
 };
+
+
+ENUM_IS_FLAGS(ChangeSummary::QueryDbOpcode);
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
