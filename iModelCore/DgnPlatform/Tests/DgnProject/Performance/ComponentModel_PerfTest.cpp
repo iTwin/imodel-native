@@ -355,8 +355,9 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     //  Place instances of this solution
     for (int i=0; i<ninstances; ++i)
         {
-        DPoint3d placementOrigin = DPoint3d::From(-i,-i,-i);
-        ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem, placementOrigin, placementAngles, DgnElement::Code());
+        Placement3d placement;
+        placement.GetOriginR() = DPoint3d::From(-i,-i,-i);
+        ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem, placement);
         }
     timer.Stop();
     NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());

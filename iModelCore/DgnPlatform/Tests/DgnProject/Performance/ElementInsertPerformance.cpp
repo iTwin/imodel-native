@@ -5,18 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnPlatformLib.h>
-#include <Bentley/BeTest.h>
-#include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECDbApi.h>
 #include "PerformanceTestFixture.h"
-
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_DGNDB_UNIT_TESTS_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                     Krischan.Eberle      06/15
@@ -150,7 +139,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ModelId,CategoryId,Code.AuthorityId,Code.[Value],Code.[NameSpace],"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace],"
                                                                               "Prop1_1,Prop1_2,Prop1_3,"
                                                                               "Prop2_1,Prop2_2,Prop2_3,"
                                                                               "Prop3_1,Prop3_2,Prop3_3,"
@@ -159,8 +148,9 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
         ASSERT_TRUE (insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
-        stmt.BindId (1, modelId);
-        stmt.BindId (2, s_catId);
+        const ECInstanceId id (i+10);
+        stmt.BindId (1, id);
+        stmt.BindId (2, modelId);
         stmt.BindId (3, s_codeAuthorityId);
         code.Sprintf ("Id-%d", i);
         stmt.BindText (4, code.c_str (), IECSqlBinder::MakeCopy::No);
@@ -211,7 +201,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ModelId,CategoryId,Code.AuthorityId,Code.[Value],Code.[Namespace]) VALUES (?,?,?,?,'')");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace]) VALUES (?,?,?,?,'')");
         ASSERT_TRUE (insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -231,8 +221,9 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
         ASSERT_TRUE (updateStmt != nullptr);
         updateStmts.push_back (updateStmt);
 
-        insertStmt->BindId (1, modelId);
-        insertStmt->BindId (2, s_catId);
+        const ECInstanceId id (i + 10);
+        insertStmt->BindId (1, id);
+        insertStmt->BindId (2, modelId);
         insertStmt->BindId (3, s_codeAuthorityId);
         code.Sprintf ("Id-%d", i);
         insertStmt->BindText (4, code.c_str (), IECSqlBinder::MakeCopy::No);
@@ -241,6 +232,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
         ASSERT_EQ (BE_SQLITE_DONE, insertStmt->Step (newKey));
         insertStmt->Reset ();
         insertStmt->ClearBindings ();
+        m_db->SaveChanges ();//Save changes to Db otherwise Update operations will simply be performed In-Memory
 
         for (CachedECSqlStatementPtr& updateStmt : updateStmts)
             {
@@ -276,12 +268,12 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ModelId,CategoryId,Code.AuthorityId,Code.[Value],Code.[Namespace],"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace],"
                                                                               "Prop1_1,Prop1_2,Prop1_3,"
                                                                               "Prop2_1,Prop2_2,Prop2_3,"
                                                                               "Prop3_1,Prop3_2,Prop3_3,"
                                                                               "Prop4_1,Prop4_2,Prop4_3) "
-                                                                              "VALUES (:modelid,:catid,:authorityid,:code,'',"
+                                                                              "VALUES (:ecinstanceid,:modelid,:authorityid,:code,'',"
                                                                               ":p11,:p12,:p13,"
                                                                               ":p21,:p22,:p23,"
                                                                               ":p31,:p32,:p33,"
@@ -290,8 +282,9 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
 
         CachedECSqlStatement& stmt = *insertStmt;
 
+        const ECInstanceId id (i + 10);
+        stmt.BindId (stmt.GetParameterIndex ("ecinstanceid"), id);
         stmt.BindId (stmt.GetParameterIndex ("modelid"), modelId);
-        stmt.BindId (stmt.GetParameterIndex ("catid"), s_catId);
         stmt.BindId (stmt.GetParameterIndex ("authorityid"), s_codeAuthorityId);
         code.Sprintf ("Id-%d", i);
         stmt.BindText (stmt.GetParameterIndex ("code"), code.c_str (), IECSqlBinder::MakeCopy::No);
