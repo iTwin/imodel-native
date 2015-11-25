@@ -1631,11 +1631,26 @@ static StatusInt deleteComponentViews(DgnDbR db, DgnModelId mid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::_OnDelete()
     {
+    // If any instance exists, then block the deletion
+    bvector<DgnElementId> types;
+    QuerySolutions(types);
+    for (auto teid : types)
+        {
+        bvector<DgnElementId> instances;
+        QueryInstances(instances, teid);
+        for (auto ieid : instances)
+            {
+            if (GetDgnDb().Elements().GetElement(ieid).IsValid())
+                return DgnDbStatus::IdExists; // *** WIP_COMPONENT_MODEL need more appropriate error code
+            }
+        }
+
+    // *** WIP_COMPONENT_MODEL: Need additional logic to detect unique/singleton solutions. 
+    //  ***                     They will be returned in 'types' above. They will not be referenced by any instance.
+    //  ***                     They are instances nonetheless.
+
     deleteComponentViews(GetDgnDb(), GetModelId());
     deleteAllSolutionsOfComponentRelationships(GetDgnDb(), GetModelId());
-
-    // *** WIP_COMPONENT_MODEL - Deleting a ComponentModel turns existing catalog items and unique/singleton solutions into orphans.
-    // ***                          Maybe we should refuse to delete a ComponentModel in the case where it is still referenced by instances??
 
     return DgnDbStatus::Success;
     }
