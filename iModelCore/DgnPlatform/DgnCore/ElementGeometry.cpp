@@ -1012,7 +1012,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 
                 FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
                                           faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
-                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterial().GetValueUnchecked(),
+                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterialId().GetValueUnchecked(),
                                           faceParams.GetTransparency(), uv);
 
                 fbSymbVec.push_back(fbSymb);
@@ -1315,7 +1315,7 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams, bool ignoreSubC
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial && elParams.GetMaterial().IsValid() ? elParams.GetMaterial().GetValueUnchecked() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
+        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial && elParams.GetMaterialId().IsValid() ? elParams.GetMaterialId().GetValueUnchecked() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
         fbb.Finish(mloc);
 
         Append(Operation(OpCode::Material, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
