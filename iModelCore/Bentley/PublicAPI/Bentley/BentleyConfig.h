@@ -32,12 +32,15 @@
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #endif
 
+    #define BENTLEYCONFIG_DISPLAY_APPLE
+
 #elif defined (ANDROID)
 
     #define BENTLEYCONFIG_OS_ANDROID
     #define BENTLEYCONFIG_OS_UNIX
     #define BENTLEYCONFIG_GRAPHICS_OPENGLES
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
+    #define BENTLEYCONFIG_DISPLAY_ANDROID
 
 #elif defined (_WIN32)
 
@@ -53,21 +56,23 @@
     #if defined (BENTLEY_WINRT)
         // BENTLEYCONFIG_OS_WINRT will only be set for WinRTx86 and WinRTx64 (Store/Metro apps)
         #define BENTLEYCONFIG_OS_WINRT
+        #define BENTLEYCONFIG_DISPLAY_METRO
     #else
         #define BENTLEYCONFIG_GRAPHICS_SUPPORT_QV_THREAD
         #define BENTLEYCONFIG_SUPPORT_PRELOADING_DISK_CACHE
         #define BENTLEYCONFIG_PARASOLIDS
+        #define BENTLEYCONFIG_DISPLAY_WIN32
     #endif
 
 #elif defined (__linux)
 
     #define BENTLEYCONFIG_OS_UNIX
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
+    #define BENTLEYCONFIG_DISPLAY_WX
 
 #else
     #error Unexpected OS configuration
 #endif
-
 
 #ifdef NO_STD_REGEX
     #define BENTLEYCONFIG_CPP_MISSING_STD_REGEX
