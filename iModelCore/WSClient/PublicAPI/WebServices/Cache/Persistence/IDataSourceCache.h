@@ -373,8 +373,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //  Cached file managment
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        // Change or prepare instances file cache location. Will move file if location changed.
-        virtual BentleyStatus SetFileCacheLocation(const bvector<ObjectId>& ids, FileCache cacheLocation) = 0;
         // Change or prepare instance file cache location. Will move file if location changed.
         virtual BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation) = 0;
         // Returns FileCache location that is setup for given instasnce - Temporary or Persistent

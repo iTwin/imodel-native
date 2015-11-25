@@ -44,9 +44,6 @@ struct DataSourceCache : public IDataSourceCache
             const ECDb::OpenParams& params
             );
 
-        //! TODO: remove FileCache parameter and auotmaically use Root persistence instead
-        BentleyStatus SetFileCacheLocationWithoutSaving(ObjectIdCR objectId, FileCache cacheLocation);
-
         //! Saves query results to cache
         //! If partialProperties is true, then results will be cached as partial instances
         //! @param[out] rejectedOut - returns objects that are protected by full persistence and were not updated with partial data
@@ -288,7 +285,6 @@ struct DataSourceCache : public IDataSourceCache
         //  Cached file managment
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        WSCACHE_EXPORT BentleyStatus SetFileCacheLocation(const bvector<ObjectId>& ids, FileCache cacheLocation) override;
         WSCACHE_EXPORT BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation) override;
         WSCACHE_EXPORT FileCache     GetFileCacheLocation(ObjectIdCR objectId) override;
     };

@@ -1293,37 +1293,10 @@ BentleyStatus DataSourceCache::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocation(const bvector<ObjectId>& ids, FileCache cacheLocation)
-    {
-    LogCacheDataForMethod();
-    for (ObjectIdCR objectId : ids)
-        {
-        if (SUCCESS != SetFileCacheLocationWithoutSaving(objectId, cacheLocation))
-            {
-            return ERROR;
-            }
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation)
     {
+    //! TODO: remove FileCache parameter and auotmaically use Root persistence instead
     LogCacheDataForMethod();
-    if (SUCCESS != SetFileCacheLocationWithoutSaving(objectId, cacheLocation))
-        {
-        return ERROR;
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocationWithoutSaving(ObjectIdCR objectId, FileCache cacheLocation)
-    {
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
     if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation) ||
         SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
