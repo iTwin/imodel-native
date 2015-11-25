@@ -86,6 +86,7 @@ public:
 
 //=======================================================================================
 //! @private
+//! @note If adding a new "geometry" OpCode, update Operation::IsGeometryOp!
 //=======================================================================================
 struct ElementGeomIO
 {
@@ -118,7 +119,7 @@ enum class OpCode : uint32_t
 enum class HeaderFlags : uint32_t
     {
     None                    = 0,
-    UseCurrentDisplayParams = 1,    //!< Do not reinitialize mat symb when using drawing this stream
+    UseCurrentDisplayParams = 1,    //!< Do not reinitialize ElemDisplayParams before processing this GeomStream
     };
 
 //=======================================================================================
@@ -436,6 +437,7 @@ bool Is3d() const {return m_is3d;} //!< @private
 Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private
 Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private
 DGNPLATFORM_EXPORT BentleyStatus GetGeomStream (GeomStreamR); //!< @private
+DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId() const; //! Return the primitive id of the geometry last added to the builder.
 
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometrySourceR);

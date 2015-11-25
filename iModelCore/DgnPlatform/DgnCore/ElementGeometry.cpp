@@ -3679,6 +3679,51 @@ static bool is3dGeometryType(ElementGeometry::GeometryType geomType)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+GeomStreamEntryId ElementGeometryBuilder::GetGeomStreamEntryId() const
+    {
+    GeomStreamEntryId entryId;
+
+    ElementGeomIO::Collection collection(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
+
+                entryId.SetType(GeomStreamEntryId::Type::Indexed);
+                entryId.SetGeomPartId(DgnGeomPartId((uint64_t)ppfb->geomPartId()));
+                entryId.SetIndex(entryId.GetIndex()+1);
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepPolyface:
+            case ElementGeomIO::OpCode::BRepPolyfaceExact:
+            case ElementGeomIO::OpCode::BRepEdges:
+            case ElementGeomIO::OpCode::BRepFaceIso:
+                break; // These are considered part of OpCode::ParasolidBRep for purposes of GeomStreamEntryId...
+
+            default:
+                {
+                if (!egOp.IsGeometryOp())
+                    break;
+
+                entryId.SetType(GeomStreamEntryId::Type::Indexed);
+                entryId.SetGeomPartId(DgnGeomPartId());
+                entryId.SetIndex(entryId.GetIndex()+1);
+                break;
+                }
+            }
+        }
+
+    return entryId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementGeometryBuilder::GetGeomStream(GeomStreamR geom)
