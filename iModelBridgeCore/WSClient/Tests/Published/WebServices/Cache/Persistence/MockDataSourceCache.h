@@ -194,8 +194,6 @@ struct MockDataSourceCache : public IDataSourceCache
         MOCK_METHOD1 (MarkTemporaryInstancesAsPartial,
             BentleyStatus (const std::vector<CachedResponseKey>& resultsKeys));
         MOCK_METHOD2 (SetFileCacheLocation,
-            BentleyStatus (const bvector<ObjectId>& ids, FileCache cacheLocation));
-        MOCK_METHOD2 (SetFileCacheLocation,
             BentleyStatus (ObjectIdCR objectId, FileCache cacheLocation));
         MOCK_METHOD1 (GetFileCacheLocation,
             FileCache (ObjectIdCR objectId));
