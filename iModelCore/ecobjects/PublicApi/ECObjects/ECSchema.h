@@ -2635,6 +2635,11 @@ public:
     //! @param[in]  sourceClass The class to copy
     ECOBJECTS_EXPORT ECObjectsStatus        CopyClass(ECClassP& targetClass, ECClassCR sourceClass);
 
+    //! Given a source enumeration, will copy that enumeration into this schema if it does not already exist
+    //! @param[out] targetEnumeration If successful, will contain a new ECEnumeration object that is a copy of the sourceEnumeration
+    //! @param[in]  sourceEnumeration The enumeration to copy
+    ECOBJECTS_EXPORT ECObjectsStatus        CopyEnumeration(ECEnumerationP& targetEnumeration, ECEnumerationCR sourceEnumeration);
+
     //! Copies this schema
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
     ECOBJECTS_EXPORT ECObjectsStatus        CopySchema(ECSchemaPtr& schemaOut) const;
