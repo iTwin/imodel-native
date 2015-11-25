@@ -319,3 +319,11 @@ TEST (BeStringUtilitiesTests, StrLwr)
     EXPECT_TRUE( nonascwithcaseUtf8String.CompareToI(nonascwithcaseUtf8StringLower) == 0 );
 #endif
     }
+
+TEST (BeStringUtilitiesTests, IsInvalidUtf8Sequence)
+    {
+    static const Utf8CP TEST_URI = "pw://VILTEST2-5.bentley.com:PW_Ora/Documents/Ega/variuos_names/%AD%E4%CE%F3n%E5,%FD%85%DD%FC%BF%EB%B5%A4%C8gY.pdf";
+    ASSERT_FALSE(BeStringUtilities::IsInvalidUtf8Sequence(TEST_URI));
+    Utf8String decodedUri = BeStringUtilities::UriDecode(TEST_URI);
+    ASSERT_TRUE(BeStringUtilities::IsInvalidUtf8Sequence(decodedUri.c_str()));
+    }
