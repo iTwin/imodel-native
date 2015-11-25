@@ -19,7 +19,7 @@ using namespace ::testing;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MockWSSchemaProvider : public IWSSchemaProvider
     {
-    MOCK_METHOD1 (GetSchema, BeFileName (WSInfoCR info));
+    MOCK_METHOD1(GetSchema, BeFileName(WSInfoCR info));
     };
 #endif
 
