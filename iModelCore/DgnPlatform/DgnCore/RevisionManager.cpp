@@ -286,7 +286,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    static Utf8String GenerateId(Utf8String parentRevId, ChangeGroup const& changeGroup)
+    static Utf8String GenerateId(Utf8String parentRevId, ChangeGroup& changeGroup)
         {
         DgnRevisionIdGenerator idgen;
         idgen.AddIdStringToHash(parentRevId);
@@ -565,7 +565,7 @@ BentleyStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup const& changeGroup)
+DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup& changeGroup)
     {
     Utf8String parentRevId = GetParentRevisionId();
     Utf8String revId = DgnRevisionIdGenerator::GenerateId(parentRevId, changeGroup);
@@ -584,7 +584,7 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup const& changeGr
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
-BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup const& changeGroup)
+BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup& changeGroup)
     {
     ChangeStreamFileWriter writer(pathname);
     DbResult result = writer.FromChangeGroup(changeGroup);

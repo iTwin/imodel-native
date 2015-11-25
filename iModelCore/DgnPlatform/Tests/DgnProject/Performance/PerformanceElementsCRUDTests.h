@@ -232,7 +232,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
 
         void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const;
 
-        static int DetermineElementIdIncrement() { return s_initialInstanceCount / s_opCount; }
+        static int DetermineElementIdIncrement(int initialInstanceCount, int opCount) { return initialInstanceCount / opCount; }
 
         //Generate Sql CRUD Statements.
         void GetInsertSql(Utf8CP className, Utf8StringR insertSql, DgnClassId classId) const;
@@ -279,10 +279,10 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         void LogTiming(StopWatch&, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialCount, int opCount) const;
 
     protected:
-        void ElementApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ElementApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ElementApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ElementApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
 
         void ECSqlInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ECSqlSelectTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
