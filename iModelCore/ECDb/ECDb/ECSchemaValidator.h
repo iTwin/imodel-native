@@ -255,26 +255,36 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
         //+===============+===============+===============+===============+===============+======
         struct Error : ECSchemaValidationRule::Error
             {
+            enum class Kind
+                {
+                HasAnyClassConstraint = 0,
+                HasRelationshipClassAsConstraint = 1,
+                IsAbstractAndConstraintsAreDefined = 2,
+                IncompleteConstraintDefinition = 4
+                };
+
             private:
                 struct Inconsistency
                     {
                     ECN::ECRelationshipClassCP m_relationshipClass;
-                    bool m_isAbstract;
+                    Kind m_kind;
                     ECN::ECRelationshipClassCP m_relationshipClassAsConstraintClass;
 
-                    Inconsistency(ECN::ECRelationshipClassCR relClass, bool isAbstract, ECN::ECRelationshipClassCP relationshipClassAsConstraintClass)
-                        : m_relationshipClass(&relClass),  m_isAbstract (isAbstract), m_relationshipClassAsConstraintClass(relationshipClassAsConstraintClass) {}
+                    Inconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relationshipClassAsConstraintClass)
+                        : m_relationshipClass(&relClass), m_kind(kind), m_relationshipClassAsConstraintClass(relationshipClassAsConstraintClass)
+                        {}
                     };
 
                 std::vector<Inconsistency> m_inconsistencies;
 
                 virtual Utf8String _ToString() const override;
 
+
             public:
                 explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
                 ~Error() {}
 
-                void AddInconsistency(ECN::ECRelationshipClassCR relClass, bool isAbstract, ECN::ECRelationshipClassCP relClassAsConstraint = nullptr) { m_inconsistencies.push_back(Inconsistency (relClass, isAbstract, relClassAsConstraint));}
+                void AddInconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relClassAsConstraint = nullptr) { m_inconsistencies.push_back(Inconsistency (relClass, kind, relClassAsConstraint));}
                 bool HasInconsistencies() const { return !m_inconsistencies.empty(); }
             };
 

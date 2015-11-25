@@ -518,20 +518,40 @@ bool ValidRelationshipConstraintsRule::_ValidateSchema(ECN::ECSchemaCR schema, E
 bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, bool isAbstractRelClass, ECN::ECRelationshipConstraintCR constraint) const
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
-    if (isAbstractRelClass != (constraintClasses.size() == 0))
+    const size_t constraintClassCount = constraintClasses.size();
+    if (isAbstractRelClass)
         {
-        //if rel is abstract, constraint must not have classes. if rel is not abstract, constraint must have classes
-        m_error->AddInconsistency(relClass, isAbstractRelClass);
-        return false;
+        if (constraintClassCount > 0)
+            {
+            //if rel is abstract, constraint must not have classes. if rel is not abstract, constraint must have classes
+            m_error->AddInconsistency(relClass, Error::Kind::IsAbstractAndConstraintsAreDefined);
+            return false;
+            }
+        }
+    else
+        {
+        if (constraintClassCount == 0)
+            {
+            //if rel is not abstract, constraint must have classes
+            m_error->AddInconsistency(relClass, Error::Kind::IncompleteConstraintDefinition);
+            return false;
+            }
         }
 
     bool valid = true;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
+        ECClassCR constraintECClass = constraintClass->GetClass();
+        if (IClassMap::IsAnyClass(constraintECClass))
+            {
+            m_error->AddInconsistency(relClass, Error::Kind::HasAnyClassConstraint);
+            valid = false;
+            }
+
         ECRelationshipClassCP relClassAsConstraint = constraintClass->GetClass().GetRelationshipClassCP();
         if (relClassAsConstraint != nullptr)
             {
-            m_error->AddInconsistency(relClass, isAbstractRelClass, relClassAsConstraint);
+            m_error->AddInconsistency(relClass, Error::Kind::HasRelationshipClassAsConstraint, relClassAsConstraint);
             valid = false;
             }
         }
@@ -569,20 +589,26 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
     for (Inconsistency const& inconsistency : m_inconsistencies)
         {
         if (!isFirstItem)
-            str.append("; ");
+            str.append(" - ");
 
-        str.append("Relationship ").append(Utf8String(inconsistency.m_relationshipClass->GetFullName()));
+        str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
         
-        if (inconsistency.m_relationshipClassAsConstraintClass == nullptr)
-            {
-            if (inconsistency.m_isAbstract)
-                str.append(" is abstract and therefore constraints must not be defined (as they are not inherited anyways).");
-            else
-                str.append(": at least one constraint definition is not complete.");
+        const Kind kind = inconsistency.m_kind;
 
+        if (Enum::Contains(kind, Kind::HasAnyClassConstraint))
+            str.append(" AnyClass must not be used as constraint.");
+
+        if (Enum::Contains(kind, Kind::HasRelationshipClassAsConstraint))
+            {
+            BeAssert(inconsistency.m_relationshipClassAsConstraintClass != nullptr);
+            str.append(" The relationship class ").append(inconsistency.m_relationshipClassAsConstraintClass->GetFullName()).append(" is specified as constraint class which is not supported.");
             }
-        else
-            str.append(": The relationship class ").append(inconsistency.m_relationshipClassAsConstraintClass->GetFullName()).append(" is specified as constraint class which is not supported.");
+
+        if (Enum::Contains(kind, Kind::IncompleteConstraintDefinition))
+            str.append(" At least one constraint definition is not complete.");
+
+        if (Enum::Contains(kind, Kind::IsAbstractAndConstraintsAreDefined))
+            str.append(" The relationship class is abstract and therefore constraints must not be defined (as they are not inherited anyways).");
 
         isFirstItem = false;
         }
