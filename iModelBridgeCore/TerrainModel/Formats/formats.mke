@@ -95,6 +95,9 @@ always:
         |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
         |  -------- --------
 
+#NEEDS_WORK_DH
+CCompOpts + -wd4838
+
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
