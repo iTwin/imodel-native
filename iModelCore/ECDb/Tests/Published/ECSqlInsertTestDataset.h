@@ -31,7 +31,6 @@ public:
     static ECSqlTestDataset ParameterAdvancedTests ();
     static ECSqlTestDataset RelationshipEndTableMappingTests (ECDbR);
     static ECSqlTestDataset RelationshipLinkTableMappingTests (ECDbCR);
-    static ECSqlTestDataset RelationshipWithAnyClassConstraintTests (ECDbR);
     static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbCR);
     static ECSqlTestDataset RelationshipWithParametersTests (ECDbR);
     static ECSqlTestDataset StructTests ();

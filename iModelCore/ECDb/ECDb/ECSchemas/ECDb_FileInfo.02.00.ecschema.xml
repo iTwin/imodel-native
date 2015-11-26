@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="ECDb_FileInfo" nameSpacePrefix="ecdbf" version="1.0" description="ECDb FileInfo" 
+<ECSchema schemaName="ECDb_FileInfo" nameSpacePrefix="ecdbf" version="2.0" description="ECDb FileInfo" 
 displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
@@ -10,7 +10,7 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
     <ECCustomAttributes>
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.10"/>
     </ECCustomAttributes>
-       
+   
     <ECClass typeName="FileInfo" isDomainClass="False" isStruct="False" isCustomAttributeClass="False" description="Abstract base class for holding attributes of a file" >
         <ECProperty propertyName="Name" typeName="string" description="File name" />
         <ECProperty propertyName="Size" typeName="long" description="File size" />
@@ -86,14 +86,12 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
         </ECProperty>
         <ECProperty propertyName="Type" typeName="string" description="File type"/>
     </ECClass>
-    
-    <ECRelationshipClass typeName="InstanceHasFileInfo" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source polymorphic="False" cardinality="(1,1)">
-            <Class class="bsc:AnyClass"/>
-        </Source>
-        <Target polymorphic="True" cardinality="(0,1)">
-            <Class class="FileInfo"/>
-        </Target>
-    </ECRelationshipClass>
-    
+
+    <ECClass typeName="FileInfoOwnership" isDomainClass="True" isStruct="False" isCustomAttributeClass="False">
+        <ECProperty propertyName="OwnerId" typeName="long" />
+        <ECProperty propertyName="OwnerECClassId" typeName="long" />
+        <ECProperty propertyName="FileInfoId" typeName="long" />
+        <ECProperty propertyName="FileInfoECClassId" typeName="long" />
+    </ECClass> 
+
 </ECSchema>

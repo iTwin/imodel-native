@@ -977,7 +977,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTest)
+TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTestWithStructArrays)
     {
     // Create and populate a sample project
     ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
@@ -1011,6 +1011,78 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTest)
         ASSERT_EQ (DbResult::BE_SQLITE_DONE, readStatement.Step ()) << "step failed for " << selectSql.c_str ();
         readStatement.Finalize ();
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTables)
+    {
+    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8' ?>"
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                          "    <ECClass typeName='A' isDomainClass='True'>"
+                          "        <ECProperty propertyName='Price' typeName='double' />"
+                          "    </ECClass>"
+                          "</ECSchema>", false, "");
+    ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", testSchema);
+
+    ECInstanceId fi1Id;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.ExternalFileInfo(Name, Size, RootFolder, RelativePath) VALUES('testfile.txt', 123, 1, 'myfolder')"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    fi1Id = key.GetECInstanceId();
+    }
+
+    ECInstanceId fi2Id;
+    {
+    BeFileName testFilePath;
+    BeTest::GetHost().GetDocumentsRoot(testFilePath);
+    testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"StartupCompany.json");
+    DbEmbeddedFileTable& embeddedFileTable = ecdb.EmbeddedFiles();
+    DbResult stat = BE_SQLITE_OK;
+    fi2Id = embeddedFileTable.Import(&stat, "embed1", testFilePath.GetNameUtf8().c_str(), "JSON");
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(fi2Id.IsValid());
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
     }
 
 //---------------------------------------------------------------------------------------

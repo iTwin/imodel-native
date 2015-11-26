@@ -441,9 +441,6 @@
     <None Include="docs\preparedocgeneration.mke">
       <Filter>docs</Filter>
     </None>
-    <None Include="ECDbPolicy.mki">
-      <Filter>Mke</Filter>
-    </None>
     <None Include="docs\source\ECSQL.overviewPage">
       <Filter>docs\source</Filter>
     </None>
@@ -780,7 +777,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">
+    <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
   </ItemGroup>

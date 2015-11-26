@@ -240,14 +240,13 @@
     <None Include="docs\source\ECSQL.overviewPage" />
     <None Include="docs\source\ECSqlStatement.overviewPage" />
     <None Include="ECDb.mke" />
-    <None Include="ECDbPolicy.mki" />
     <None Include="ECSql\Parser\LICENSE" />
     <None Include="ECSql\Parser\NOTICE" />
     <None Include="ECSql\parser\sqlbison.y" />
     <None Include="ECSql\parser\sqlflex.l" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">
+    <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
   </ItemGroup>

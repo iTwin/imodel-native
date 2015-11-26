@@ -782,40 +782,6 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAnyClassConstraintTests (int rowCountPerClass)
-    {
-    ECSqlTestDataset dataset;
-
-    Utf8CP ecsql = "UPDATE ONLY ecsql.PSAHasAnyClass_0N SET SourceECInstanceId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.PSAHasAnyClass_0N SET TargetECInstanceId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.PSAHasAnyClass_0N SET SourceECClassId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.PSAHasAnyClass_0N SET TargetECClassId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.AnyClassHasP_0N SET SourceECInstanceId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.AnyClassHasP_0N SET TargetECInstanceId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.AnyClassHasP_0N SET SourceECClassId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.AnyClassHasP_0N SET TargetECClassId = 123";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
-
-    return dataset;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlUpdateTestDataset::StructTests (int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
