@@ -9,6 +9,7 @@
 #include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/DgnCore/GeomPart.h>
 #include <DgnPlatform/DgnCore/ElementGeometry.h>
+#include <ECDb/ECDbApi.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -100,6 +101,31 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
         return nullptr;
 
     return testElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin    06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementPtr TestElement::Create(Dgn::DgnDbR db, Dgn::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize)
+    {
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
+
+    //  Add some hard-wired geometry
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
+    EXPECT_TRUE(builder->Append(ep));
+    EXPECT_TRUE(builder->Append(*computeShape(shapeSize)));
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+        return nullptr;
+
+    return testElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementPtr TestElement::CreateWithoutGeometry(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId)
+    {
+    return new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), DgnElement::Code()));
     }
 
 /*---------------------------------------------------------------------------------**//**

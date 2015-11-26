@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "../TestFixture/BlankDgnDbTestFixture.h"
 #include <DgnPlatform/DgnCore/DgnMaterial.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -13,35 +13,9 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MaterialTest : public ::testing::Test
+struct MaterialTest : public BlankDgnDbTestFixture
 {
-private:
-    ScopedDgnHost   m_host;
-    DgnDbPtr        m_db;
-protected:
-    void SetupProject()
-        {
-        m_db = CreateDb(L"materials.idgndb");
-        ASSERT_TRUE(m_db != nullptr);
-        }
-
-    DgnDbPtr CreateDb(WCharCP dbname)
-        {
-        BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath(dbname);
-        BeFileName::BeDeleteFile(filename);
-
-        CreateDgnDbParams params;
-        params.SetOverwriteExisting(false);
-        DbResult status;
-        DgnDbPtr db = DgnDb::CreateDgnDb(&status, filename, params);
-        EXPECT_EQ(BE_SQLITE_OK, status) << status;
-
-        return db;
-        }
-
     void ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR parentName);
-
-    DgnDbR GetDb() const { return *m_db; }
 
     DgnMaterial::CreateParams MakeParams(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), Utf8StringCR descr="", DgnDbP pDb=nullptr)
         {
@@ -73,7 +47,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, CRUD)
     {
-    SetupProject();
+    SetupProject(L"materials.idgndb");
     auto params = MakeParams("Palette1", "Material1");
     DgnMaterialPtr mat = new DgnMaterial(params);
     ASSERT_TRUE(mat.IsValid());
@@ -114,7 +88,7 @@ void MaterialTest::ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, ParentChildCycles)
     {
-    SetupProject();
+    SetupProject(L"materials.idgndb");
     auto params = MakeParams("Palette", "Parent");
     DgnMaterialPtr parent = new DgnMaterial(params);
     parent->Insert();
@@ -165,7 +139,7 @@ TEST_F(MaterialTest, ParentChildCycles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, ParentChildClone)
     {
-    SetupProject();
+    SetupProject(L"materials.idgndb");
     DgnDbPtr db2 = CreateDb(L"clonematerials.idgndb");
 
     Utf8String palette("Palette");

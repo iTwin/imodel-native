@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
@@ -36,20 +36,10 @@ struct TxnMonitorVerifier : TxnMonitor
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-struct TransactionManagerTests : public ::testing::Test
+struct TransactionManagerTests : public DgnDbTestFixture
 {
 public:
-    ScopedDgnHost m_host;
-    DgnDbPtr      m_db;
-    DgnModelId    m_defaultModelId;
-    DgnCategoryId m_defaultCategoryId;
-
-    TransactionManagerTests();
     ~TransactionManagerTests();
-    void CloseDb() {m_db->CloseDb();}
-    DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
-    DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     void TwiddleTime(DgnElementCPtr);
 };
 
@@ -114,57 +104,9 @@ void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransactionManagerTests::TransactionManagerTests()
-    {
-    // Must register my domain whenever I initialize a host
-    DgnPlatformTestDomain::Register();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TransactionManagerTests::~TransactionManagerTests()
     {
-    if (m_db.IsValid())
-        m_db->SaveChanges();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .dgndb project file after copying it to out
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
-    {
-    BeFileName outFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, projFile, testFile, __FILE__));
-    DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(mode));
-    ASSERT_TRUE(m_db.IsValid());
-    ASSERT_TRUE( result == BE_SQLITE_OK);
-
-    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
-
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_TRUE(defaultModel.IsValid());
-    GetDefaultModel().FillModel();
-
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr TransactionManagerTests::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId )
-    {
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
-
-    if (!categoryId.IsValid())
-        categoryId = m_defaultCategoryId;
-
-    TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
-    return m_db->Elements().Insert(*el);
+    SaveDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,10 +154,10 @@ TEST_F(TransactionManagerTests, CRUD)
     //  -------------------------------------------------------------
     //  Test adds
     //  -------------------------------------------------------------
-    auto key1 = InsertElement("E1");
+    auto key1 = InsertElement();
     ASSERT_TRUE( key1->GetElementId().IsValid() );
 
-    auto key2 = InsertElement("E2");
+    auto key2 = InsertElement();
     ASSERT_TRUE( key2->GetElementId().IsValid() );
 
     m_db->SaveChanges();
@@ -739,8 +681,8 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
-    auto keyE1 = InsertElement("E1", m1id);
-    auto keyE2 = InsertElement("E2", m1id);
+    auto keyE1 = InsertElement(m1id);
+    auto keyE2 = InsertElement(m1id);
     m_db->SaveChanges("changeSet2");
 
     DgnElementId e1id = keyE1->GetElementId();
@@ -796,7 +738,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
-    auto keyE1 = InsertElement("E1", m1id);
+    auto keyE1 = InsertElement(m1id);
     m_db->SaveChanges("changeSet2");
 
     DgnElementId e1id = keyE1->GetElementId();

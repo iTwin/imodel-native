@@ -11,6 +11,8 @@
 #include <DgnPlatform/DgnCore/DgnMaterial.h>
 #include <DgnPlatform/DgnCore/DgnTexture.h>
 
+USING_NAMESPACE_BENTLEY_DPTEST
+
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry Builder
 * @bsimethod                                                    Umar.Hayat      07/15
@@ -19,7 +21,6 @@ struct ElementGeometryBuilderTests : public DgnDbTestFixture
 {
 
 };
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015

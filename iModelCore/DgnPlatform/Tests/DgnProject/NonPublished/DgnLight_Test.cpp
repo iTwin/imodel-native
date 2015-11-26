@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "../TestFixture/BlankDgnDbTestFixture.h"
 #include <DgnPlatform/DgnCore/DgnLight.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -15,27 +15,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnLightsTest : public ::testing::Test
+struct DgnLightsTest : public BlankDgnDbTestFixture
 {
-private:
-    ScopedDgnHost   m_host;
-    DgnDbPtr        m_db;
-protected:
-    void SetupProject()
-        {
-        BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath (L"lights.idgndb");
-        BeFileName::BeDeleteFile (filename);
-
-        CreateDgnDbParams params;
-        params.SetOverwriteExisting (false);
-        DbResult status;
-        m_db = DgnDb::CreateDgnDb (&status, filename, params);
-        ASSERT_TRUE (m_db != nullptr);
-        ASSERT_EQ (BE_SQLITE_OK, status) << status;
-        }
-
-    DgnDbR GetDb() { return *m_db; }
-
     Utf8String MakeLightValue(Utf8CP dummyJsonValue)
         {
         Json::Value json(Json::objectValue);
@@ -62,7 +43,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLightsTest, CRUD)
     {
-    SetupProject();
+    SetupProject(L"lights.idgndb");
     auto params = MakeParams("Light1", "one");
     LightDefinition lt(params);
     LightDefinitionCPtr persistent = lt.Insert();

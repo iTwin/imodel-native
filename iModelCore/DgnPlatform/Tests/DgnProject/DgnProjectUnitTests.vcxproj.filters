@@ -225,9 +225,6 @@
     <ClInclude Include="NonPublished\DgnHandlersTests.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
-    <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
     <ClInclude Include="Performance\DgnECPerformanceTests.h">
       <Filter>Performance</Filter>
     </ClInclude>
@@ -266,6 +263,12 @@
     </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h">
       <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h">
+      <Filter>TestFixture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

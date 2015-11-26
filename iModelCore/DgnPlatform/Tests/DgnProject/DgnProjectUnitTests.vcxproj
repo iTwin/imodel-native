@@ -101,7 +101,6 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h" />
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
-    <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceElements.h" />
     <ClInclude Include="Performance\PerformanceElementsCRUDTests.h" />
@@ -110,7 +109,9 @@
     <ClInclude Include="Published\AnnotationTestFixture.h" />
     <ClInclude Include="Published\DgnHandlersTests.h" />
     <ClInclude Include="Published\GenericDgnModelTestFixture.h" />
+    <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h" />
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />
+    <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h" />
     <ClInclude Include="TestFixture\GeomHelper.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -170,7 +171,7 @@
     <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -a x64 rebuild DgnProjectUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
-    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\Delivery\</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>DgnDbUnitTests.exe</NMakeOutput>

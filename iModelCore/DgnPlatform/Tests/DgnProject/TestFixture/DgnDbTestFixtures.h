@@ -8,6 +8,7 @@
 #pragma once
 
 #include "../NonPublished/DgnHandlersTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include "GeomHelper.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -19,112 +20,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
-
-#define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
-#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
-#define TMTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
-#define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
-#define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
-#define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
-#define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
-
-struct TestElementHandler;
-struct TestElement;
-struct TestElement2dHandler;
-struct TestElement2d;
-
-//These typedefs have to be defined
-typedef RefCountedPtr<TestElement> TestElementPtr;
-typedef RefCountedCPtr<TestElement> TestElementCPtr;
-typedef TestElement& TestElementR;
-typedef TestElement const& TestElementCR;
-
-//These typedefs have to be defined
-typedef RefCountedPtr<TestElement2d> TestElement2dPtr;
-typedef RefCountedCPtr<TestElement2d> TestElement2dCPtr;
-typedef TestElement2d& TestElement2dR;
-typedef TestElement2d const& TestElement2dCR;
-
-
-//=======================================================================================
-//! A test Element. Has methods to manipulate Item data.
-// @bsiclass                                                     Sam.Wilson      04/15
-//=======================================================================================
-struct TestElement : PhysicalElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, PhysicalElement) 
-
-protected:
-    friend struct TestElementHandler;
-
-    Utf8String m_testItemProperty;
-    Utf8String m_testElemProperty;
-
-    virtual DgnDbStatus _InsertInDb() override;
-    virtual DgnDbStatus _UpdateInDb() override;
-    virtual DgnDbStatus _DeleteInDb() const override;
-
-    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual void _CopyFrom(DgnElementCR el) override;
-
-public:
-    TestElement(CreateParams const& params) : T_Super(params) {}
-    static TestElementPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
-    static TestElementPtr CreateWithoutGeometry(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId);
-    static TestElementPtr Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
-    static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
-    void SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }
-    Utf8StringCR GetTestElementProperty() const { return m_testElemProperty; }
-    void SetTestElementProperty(Utf8StringCR value) { m_testElemProperty = value; }
-};
-
-//=======================================================================================
-//! A test ElementHandler for a class in DgnPlatformTest schema
-// @bsiclass                                                     Sam.Wilson      01/15
-//=======================================================================================
-struct TestElementHandler : dgn_ElementHandler::Physical
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Physical, )
-protected: virtual void _GetClassParams(ECSqlClassParams& params) override;
-};
-struct GTestElement2dHandler;
-
-//=======================================================================================
-//! A test Element
-// @bsiclass                                                     Sam.Wilson      04/15
-//=======================================================================================
-struct TestElement2d : Dgn::DrawingElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::DrawingElement) 
-
-private:
-    friend struct GTestElement2dHandler;
-public:
-    TestElement2d(CreateParams const& params) : T_Super(params) {}
-    static TestElement2dPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
-};
-
-//=======================================================================================
-//! A test ElementHandler
-// @bsiclass                                                     Sam.Wilson      01/15
-//=======================================================================================
-struct TestElement2dHandler : dgn_ElementHandler::Drawing
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, dgn_ElementHandler::Drawing, )
-};
-
-//=======================================================================================
-//! Domain that knows DgnPlatformTest schema
-// @bsiclass                                                     Majd.Uddin      06/15
-//=======================================================================================
-struct DgnPlatformTestDomain : DgnDomain
-{
-    DOMAIN_DECLARE_MEMBERS(DgnPlatformTestDomain, )
-public:
-    DgnPlatformTestDomain();
-};
 
 //=======================================================================================
 //! A base test fixture to be used for using DgnPlatformTest schema and domain
@@ -140,7 +35,7 @@ struct DgnDbTestFixture : ::testing::Test
 public:
     DgnDbTestFixture()
     {
-        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain());
+        DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain());
     }
 
     ~DgnDbTestFixture()
@@ -148,14 +43,22 @@ public:
     }
 
     void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite);
+    void CloseDb() { m_db->CloseDb(); }
+    void SaveDb() {
+        if (m_db.IsValid())
+            m_db->SaveChanges();
+    }
 
-    DgnElementCPtr InsertElement(DgnElement::Code elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnDbStatus* result = nullptr);
-    DgnElementCPtr InsertElement(DgnElement::Code elementCode, ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
-    DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
-    DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
-    DgnElementKey InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
-    DgnElementKey InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
-    bool SelectElementItem(DgnElementId id);
+    DgnModelR GetDefaultModel() { return *m_defaultModelP; }
+
+    DgnElementCPtr InsertElement(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnDbStatus* result = nullptr, DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementCPtr InsertElement(ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementKey InsertElement2d(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+
+    DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementKey InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+
     void setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
 };
 

@@ -5,38 +5,40 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "../TestFixture/BlankDgnDbTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #define EXPECT_STR_EQ(X,Y) { if ((X).empty() || (Y).empty()) { EXPECT_EQ ((X).empty(), (Y).empty()); } else { EXPECT_EQ ((X), (Y)); } }
 
+//=======================================================================================
+// Test Authority
+// @bsistruct                                                    Umar.Hayat   10/15
+//=======================================================================================
+//struct TestAuthority : DgnAuthority
+//{
+//    DEFINE_T_SUPER(DgnAuthority)
+//
+//    TestAuthority(CreateParams const& params) : T_SUPER(params) { }
+//
+//    DgnAuthority::Code CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "testnamespace::") const { return T_Super::CreateCode(value, nameSpace); }
+//
+//    DGNPLATFORM_EXPORT static RefCountedPtr<NamespaceAuthority> CreateNamespaceAuthority(Utf8CP name, DgnDbR dgndb, Utf8CP uri = nullptr);
+//    DGNPLATFORM_EXPORT static DgnAuthority::Code CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace = "");
+//};
+//
+//namespace dgn_AuthorityHandler
+//{
+//    struct Test : Authority
+//    {
+//        AUTHORITYHANDLER_DECLARE_MEMBERS("TestAuthority", TestAuthority, Namespace, Authority, DGNPLATFORM_EXPORT)
+//    };
+//};
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnAuthoritiesTest : public ::testing::Test
+struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
     {
-private:
-    ScopedDgnHost       m_host;
-    DgnDbPtr            m_db;
-protected:
-    void SetupProject()
-        {
-        BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath (L"authorities.idgndb");
-        BeFileName::BeDeleteFile (filename);
-
-        CreateDgnDbParams params;
-        params.SetOverwriteExisting (false);
-        DbResult status;
-        m_db = DgnDb::CreateDgnDb (&status, filename, params);
-        ASSERT_TRUE (m_db != nullptr);
-        ASSERT_EQ (BE_SQLITE_OK, status) << status;
-        }
-
-    DgnDbR      GetDb()
-        {
-        return *m_db;
-        }
 
     void Compare(DgnAuthorityId id, Utf8CP name, Utf8StringCR uri)
         {
@@ -69,11 +71,13 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnAuthoritiesTest, Authorities)
     {
-    SetupProject();
+    SetupProject(L"authorities.idgndb");
 
     // Create some new authorities
     auto auth1Id = Create("Auth1")->GetAuthorityId();
     auto auth2Id = Create("Auth2", "auth2:uri")->GetAuthorityId();
+    //auto auth3Id = Create("Auth3")->GetAuthorityId();
+    //auto auth3Id = Create("Auth4", "auth2:uri")->GetAuthorityId();
 
     // Test persistent
     Compare(auth1Id, "Auth1", nullptr);

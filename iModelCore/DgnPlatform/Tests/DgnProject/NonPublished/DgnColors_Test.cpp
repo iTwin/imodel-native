@@ -11,28 +11,18 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Umar.Hayat   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnColorTests : public ::testing::Test
+struct DgnColorTests : public GenericDgnModelTestFixture
 {
-public:
-    ScopedDgnHost  m_host;
-    DgnDbPtr       m_project;
-
-    void SetupProject(WCharCP projFile, Db::OpenMode mode)
-    {
-        DgnDbTestDgnManager tdm(projFile, __FILE__, mode);
-        m_project = tdm.GetDgnProjectP();
-        ASSERT_TRUE(m_project != NULL);
-    }
+public: DgnColorTests() : GenericDgnModelTestFixture(__FILE__, false /*2D*/) {}
 };
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnColorTests, TrueColors)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbR db = *m_project;
+    //SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+    DgnDbR db = *GetDgnProjectP();
 
     DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
     EXPECT_TRUE(color1.Insert().IsValid());

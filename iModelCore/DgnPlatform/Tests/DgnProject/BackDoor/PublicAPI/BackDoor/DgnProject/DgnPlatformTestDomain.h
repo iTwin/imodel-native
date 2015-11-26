@@ -22,6 +22,7 @@
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
+
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #define DPTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
 #define DPTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
@@ -59,7 +60,8 @@ struct TestElement : Dgn::PhysicalElement
     TestElement(CreateParams const& params) : T_Super(params) {} 
 
 public:
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) {return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));}
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
+    static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
     
     // This Create function does not put any geometry on the new element. The caller is expected to add a TestItem.
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode="");
@@ -67,6 +69,10 @@ public:
 
     // This Create function sets the element's geometry to a shape
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode, double shapeSize);
+
+    // Create element with display params 
+    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize);
+    static RefCountedPtr<TestElement> CreateWithoutGeometry(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
 
     // Change the shape size
     void ChangeElement(double shapeSize);
