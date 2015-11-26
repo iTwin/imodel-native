@@ -1445,37 +1445,7 @@ BentleyStatus DataSourceCache::CacheResponse
 (
 CachedResponseKeyCR responseKey,
 WSObjectsResponseCR response,
-ICancellationTokenPtr cancellationToken
-)
-    {
-    bset<ObjectId> rejected;
-    return CacheResponse(responseKey, response, false, rejected, nullptr, cancellationToken);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::CachePartialResponse
-(
-CachedResponseKeyCR responseKey,
-WSObjectsResponseCR response,
-bset<ObjectId>& rejectedOut,
-const WSQuery* query,
-ICancellationTokenPtr cancellationToken
-)
-    {
-    return CacheResponse(responseKey, response, true, rejectedOut, query, cancellationToken);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::CacheResponse
-(
-CachedResponseKeyCR responseKey,
-WSObjectsResponseCR response,
-bool partialProperties,
-bset<ObjectId>& rejectedOut,
+bset<ObjectId>* rejectedOut,
 const WSQuery* query,
 ICancellationTokenPtr ct
 )
@@ -1493,8 +1463,13 @@ ICancellationTokenPtr ct
         ECInstanceKeyMultiMap fullyPersistedInstances;
         std::shared_ptr<InstanceCacheHelper::PartialCachingState> partialCachingState;
 
-        if (partialProperties)
+        if (nullptr != query)
             {
+            if (nullptr == rejectedOut)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
             if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
                 {
                 return ERROR;
@@ -1504,7 +1479,7 @@ ICancellationTokenPtr ct
                 m_state->GetECDbAdapter(),
                 query,
                 fullyPersistedInstances,
-                rejectedOut
+                *rejectedOut
                 );
             }
 

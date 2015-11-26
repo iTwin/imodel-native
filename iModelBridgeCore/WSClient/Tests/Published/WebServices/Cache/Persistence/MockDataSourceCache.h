@@ -71,10 +71,8 @@ struct MockDataSourceCache : public IDataSourceCache
             IChangeManagerR ());
         MOCK_CONST_METHOD1 (ObjectIdFromJsonInstance,
             ObjectId (JsonValueCR instance));
-        MOCK_METHOD3 (CacheResponse,
-            BentleyStatus (CachedResponseKeyCR responseKey, WSObjectsResponseCR response, ICancellationTokenPtr));
-        MOCK_METHOD5 (CachePartialResponse,
-            BentleyStatus (CachedResponseKeyCR responseKey, WSObjectsResponseCR response, bset<ObjectId>& rejectedOut, const WSQuery* query, ICancellationTokenPtr));
+        MOCK_METHOD5 (CacheResponse,
+            BentleyStatus (CachedResponseKeyCR responseKey, WSObjectsResponseCR response, bset<ObjectId>* rejectedOut, const WSQuery* query, ICancellationTokenPtr));
         MOCK_METHOD3 (CacheInstanceAndLinkToRoot,
             BentleyStatus (ObjectIdCR objectId, WSObjectsResponseCR response, Utf8StringCR rootName));
         MOCK_METHOD4 (CacheInstanceAndLinkToRoot,

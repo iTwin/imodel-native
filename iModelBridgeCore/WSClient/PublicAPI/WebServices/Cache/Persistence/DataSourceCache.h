@@ -44,19 +44,6 @@ struct DataSourceCache : public IDataSourceCache
             const ECDb::OpenParams& params
             );
 
-        //! Saves query results to cache
-        //! If partialProperties is true, then results will be cached as partial instances
-        //! @param[out] rejectedOut - returns objects that are protected by full persistence and were not updated with partial data
-        BentleyStatus CacheResponse
-            (
-            CachedResponseKeyCR responseKey,
-            WSObjectsResponseCR response,
-            bool partialProperties,
-            bset<ObjectId>& rejectedOut,
-            const WSQuery* query,
-            ICancellationTokenPtr cancellationToken
-            );
-
         std::shared_ptr<ECSqlStatement> GetReadInstanceStatement(ECClassCR ecClass, Utf8CP remoteId);
         std::shared_ptr<ECSqlStatement> GetReadInstanceStatement(ECClassCR ecClass, ECInstanceId ecInstanceId);
 
@@ -108,14 +95,7 @@ struct DataSourceCache : public IDataSourceCache
             (
             CachedResponseKeyCR responseKey,
             WSObjectsResponseCR response,
-            ICancellationTokenPtr cancellationToken = nullptr
-            ) override;
-
-        WSCACHE_EXPORT BentleyStatus CachePartialResponse
-            (
-            CachedResponseKeyCR responseKey,
-            WSObjectsResponseCR response,
-            bset<ObjectId>& rejectedOut,
+            bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) override;
