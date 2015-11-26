@@ -67,12 +67,17 @@
 #define PACKAGE_ELEMENT_Source              "Source"
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "type"
+#define PACKAGE_ELEMENT_Copyright           "Copyright"
+#define PACKAGE_ELEMENT_Provider            "Provider"
 #define PACKAGE_ELEMENT_Filesize            "Filesize"
+#define PACKAGE_ELEMENT_Metadata            "Metadata"
+#define PACKAGE_ELEMENT_SisterFiles         "SisterFiles"
 
 #define PACKAGE_ELEMENT_WmsSource           "WmsSource"
-#define WMS_SOURCE_TYPE                     L"wms"
+#define WMS_SOURCE_TYPE                     "wms"
 
-#define PACKAGE_ELEMENT_CompoundSource      "CompoundSource"
+#define PACKAGE_ELEMENT_OsmSource           "OsmSource"
+#define OSM_SOURCE_TYPE                     "osm"
 
 #define SPACE_DELIMITER    " "
 #define SPACE_DELIMITER_U L" "
@@ -80,7 +85,8 @@
 // lat/long precision of 0.1 millimeter
 // g == The precision specifies the maximum number of significant digits printed. Any trailing zeros are truncated. 
 // So to get get the precision we want 9 decimal AFTER the point we need 12 digits. xxx.123456789
-#define LATLONG_PRINT_FORMAT                L"%.12g %.12g"    //  lat/long precision of 0.1 millimeter.
+#define LATLONG_PRINT_FORMAT               L"%.12g %.12g"    //  lat/long precision of 0.1 millimeter.
+#define LATLONG_PRINT_FORMAT_COMMA          "%.12g,%.12g"    //  lat/long precision of 0.1 millimeter.
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 

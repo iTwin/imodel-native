@@ -597,9 +597,8 @@ namespace Bentley.ECPluginExamples
             }
 
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
-            List<RequestedEntity> dbRequestedEntities = new List<RequestedEntity>();
+            List<RequestedEntity> wmsRequestedEntities = new List<RequestedEntity>();
             List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
-            List<RequestedEntity> basicRequestedEntities = new List<RequestedEntity>();
             for (int i = 0; i < requestedEntitiesECArray.Count; i++)
             {
 
@@ -607,24 +606,13 @@ namespace Bentley.ECPluginExamples
 
                 if (requestedEntity.ID.Length != IndexConstants.USGSIdLenght)
                 {
-                    dbRequestedEntities.Add(requestedEntity);
+                    wmsRequestedEntities.Add(requestedEntity);
                 }
                 else
                 {
                     usgsRequestedEntities.Add(requestedEntity);
                 }
             }
-
-            if (osm)
-            {
-                basicRequestedEntities.Add(CreateOSMRequestedEntity(sender, connection, queryModule));
-            }
-
-            List<WmsSourceNet> wmsSourceList = IndexPackager(sender, connection, queryModule, coordinateSystem, dbRequestedEntities);
-
-            List<Tuple<UsgsSourceNet, string>> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
-
-            List<RealityDataSourceNet> osmSourceList = RealityDataPackager(sender, connection, queryModule, basicRequestedEntities);
 
             // Create package bounding box (region of interest).
             List<double> selectedRegion = new List<double>();
@@ -633,9 +621,16 @@ namespace Bentley.ECPluginExamples
 
             selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
 
+            // Create data source.
+            List<WmsSourceNet> wmsSourceList = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
+
+            List<Tuple<RealityDataSourceNet, string>> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
+
+            List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
+            if (osm)
+                osmSourceList.Add(OsmPackager(sender, connection, queryModule, selectedRegion));
+
             // Create data group and package.
-
-
             ImageryGroupNet imgGroup = ImageryGroupNet.Create();
             ModelGroupNet modelGroup = ModelGroupNet.Create();
             PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
@@ -645,14 +640,15 @@ namespace Bentley.ECPluginExamples
             {
                 imgGroup.AddData(wmsSource);
             }
-            foreach (Tuple<UsgsSourceNet, string> usgsSourceTuple in usgsSourceList)
+
+            foreach (Tuple<RealityDataSourceNet,string> usgsSourceTuple in usgsSourceList)
             {
                 //This switch case is temporary. The best thing we should have done
                 //was to create a method for this, but these "sourceNet" will probably
                 //change soon, so everything here is temporary until the database is in
                 //a more complete form
                 switch (usgsSourceTuple.Item2)
-                {
+	            {
 
                     //TODO: Correct the switch case. The choice of the group for each class was not verified.
                     case "Roadway":
@@ -666,26 +662,25 @@ namespace Bentley.ECPluginExamples
                         terrainGroup.AddData(usgsSourceTuple.Item1);
                         break;
                     case "Imagery":
-                    default:
+		            default:
                         imgGroup.AddData(usgsSourceTuple.Item1);
                         break;
-                }
+	            }
             }
 
             foreach (RealityDataSourceNet osmSource in osmSourceList)
             {
                 modelGroup.AddData(osmSource);
             }
-
+                
             // Create package.
             string description = "";
             string copyright = "";
-            //RealityDataPackageNet.Create(m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+            string packageId = "";
 
             //Until RealityPackageNet is changed, it creates the file in the temp folder, then we copy it in the database. 
-            RealityDataPackageNet.Create(Path.GetTempPath(), name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
-
-
+            RealityDataPackageNet.Create(Path.GetTempPath(), name, description, copyright, packageId, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+            
             UploadPackageInDatabase(instance);
 
             Log.Logger.trace("Created the package file " + instance.InstanceId);
@@ -694,40 +689,40 @@ namespace Bentley.ECPluginExamples
 
         private void UploadPackageInDatabase(IECInstance instance)
         {
-            using (DbConnection sqlConnection = new SqlConnection(m_connectionString))
-            {
-                sqlConnection.Open();
-                using (DbCommand dbCommand = sqlConnection.CreateCommand())
+                using (DbConnection sqlConnection = new SqlConnection(m_connectionString))
                 {
-                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent) VALUES (@param0, @param1, @param2)";
-                    dbCommand.CommandType = CommandType.Text;
-
-                    DbParameter param0 = dbCommand.CreateParameter();
-                    param0.DbType = DbType.String;
-                    param0.ParameterName = "@param0";
-                    param0.Value = instance.InstanceId;
-                    dbCommand.Parameters.Add(param0);
-
-                    DbParameter param1 = dbCommand.CreateParameter();
-                    param1.DbType = DbType.DateTime;
-                    param1.ParameterName = "@param1";
-                    param1.Value = DateTime.Now;
-                    dbCommand.Parameters.Add(param1);
-
-                    FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
-                    BinaryReader reader = new BinaryReader(fstream);
-
-                    long longLength = fstream.Length;
-                    int intLength;
-                    if (longLength > int.MaxValue)
+                    sqlConnection.Open();
+                    using (DbCommand dbCommand = sqlConnection.CreateCommand())
                     {
-                        //Log.Logger.error("Package requested is too large.");
+                        dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent) VALUES (@param0, @param1, @param2)";
+                        dbCommand.CommandType = CommandType.Text;
+
+                        DbParameter param0 = dbCommand.CreateParameter();
+                        param0.DbType = DbType.String;
+                        param0.ParameterName = "@param0";
+                        param0.Value = instance.InstanceId;
+                        dbCommand.Parameters.Add(param0);
+
+                        DbParameter param1 = dbCommand.CreateParameter();
+                        param1.DbType = DbType.DateTime;
+                        param1.ParameterName = "@param1";
+                        param1.Value = DateTime.Now;
+                        dbCommand.Parameters.Add(param1);
+
+                        FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
+                        BinaryReader reader = new BinaryReader(fstream);
+
+                        long longLength = fstream.Length;
+                        int intLength;
+                        if(longLength > int.MaxValue)
+                        {
+                            //Log.Logger.error("Package requested is too large.");
                         throw new Bentley.Exceptions.UserFriendlyException("Package requested is too large. Please reduce the size of the order");
                     }
-                    intLength = Convert.ToInt32(longLength);
-                    byte[] fileBytes = new byte[fstream.Length];
-                    fstream.Seek(0, SeekOrigin.Begin);
-                    fstream.Read(fileBytes, 0, intLength);
+                        intLength = Convert.ToInt32(longLength);
+                        byte[] fileBytes = new byte[fstream.Length];
+                        fstream.Seek(0,SeekOrigin.Begin);
+                        fstream.Read(fileBytes, 0, intLength);
 
 
 
@@ -741,35 +736,6 @@ namespace Bentley.ECPluginExamples
                 }
                 sqlConnection.Close();
             }
-        }
-
-        //This is only there to find the id of the osm entry in the database
-        private RequestedEntity CreateOSMRequestedEntity(OperationModule sender, RepositoryConnection connection, QueryModule queryModule)
-        {
-            IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
-
-            ECQuery query = new ECQuery(spatialEntityClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
-
-            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
-
-            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
-
-            if (queriedSpatialEntities.Count() == 0)
-            {
-                //Log.Logger.error("Package creation aborted. There is no OSM entry in the database.");
-                throw new Bentley.EC.Persistence.Operations.OperationFailedException("There is no OSM entry in the database");
-            }
-
-            return new RequestedEntity
-            {
-                ID = queriedSpatialEntities.First().InstanceId,
-                //Type = "OSM"
-            };
-
         }
 
         private List<RealityDataSourceNet> RealityDataPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities)
@@ -825,97 +791,24 @@ namespace Bentley.ECPluginExamples
                 string type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
                 string copyright = firstMetadata.GetPropertyValue("Legal").StringValue;
 
-                RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, 0));
+                string provider = "";
+                UInt64 filesize = 0;
+                string fileInCompound = "";
+                string metadata = "";
+                List<string> sisterFiles = new List<string>();
+
+                RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, provider, filesize, fileInCompound, metadata, sisterFiles));
             }
 
             return RDSNList;
             
         }
 
-        private List<Tuple<UsgsSourceNet,string>> UsgsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
-        {
-            List<Tuple<UsgsSourceNet, string>> usgsSourceNetList = new List<Tuple<UsgsSourceNet,string>>();
-
-            if(usgsRequestedEntities.Count == 0)
-            {
-                return usgsSourceNetList;
-            }
-
-            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
-            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
-            IECClass spatialentityBaseClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBase");
-
-            ECQuery query = new ECQuery(dataSourceClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
-
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            var queriedSpatialDataSources = ExecuteQuery(queryModule, connection, query, null);
-
-            query = new ECQuery(spatialentityBaseClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(spatialentityBaseClass.First(prop => prop.Name == "Classification"));
-            
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
-
-            query = new ECQuery(metadataClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
-
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
-
-            foreach(var entity in queriedSpatialDataSources)
-            {
-                string metadata = entity.GetPropertyValue("Metadata").StringValue;
-                string url = entity.GetPropertyValue("MainURL").StringValue;
-                string type = entity.GetPropertyValue("DataSourceType").StringValue;
-                string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
-                long fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
-                ulong uFileSize = (fileSize > 0) ? (ulong)fileSize : 0;
-                string location = entity.GetPropertyValue("LocationInCompound").StringValue;
-                var classificationPropValue = queriedSpatialEntities.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Classification");
-                string classification = null;
-                if ((classificationPropValue != null) && (!classificationPropValue.IsNull))
-                {
-                    classification = classificationPropValue.StringValue;
-                }
-
-                usgsSourceNetList.Add(new Tuple<UsgsSourceNet, string>(UsgsSourceNet.Create(url,                     // Url
-                                                                                            copyright,               // Data copyright
-                                                                                            uFileSize,               // Data size
-                                                                                            type,                    // Main file type
-                                                                                            location,                // Main file location
-                                                                                            new List<string>(),      // Sister Files 
-                                                                                            metadata),
-                                                                                            classification));              // Metadata location 
-
-            }
-
-            return usgsSourceNetList;
-        }
-
-        private List<WmsSourceNet> IndexPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
+        private List<WmsSourceNet> WmsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
         {
             List<WmsSourceNet> wmsMapInfoList = new List<WmsSourceNet>();
 
-            if(dbRequestedEntities.Count == 0)
+            if (dbRequestedEntities.Count == 0)
             {
                 return wmsMapInfoList;
             }
@@ -1044,7 +937,7 @@ namespace Bentley.ECPluginExamples
             }
 
             // Create WmsSource.
-            
+
             foreach (var mapInfo in mapInfoList)
             {
                 // Extract min/max values for bbox.
@@ -1081,9 +974,14 @@ namespace Bentley.ECPluginExamples
                 if (vendorSpecific.EndsWith("&"))
                     vendorSpecific = vendorSpecific.TrimEnd('&');
 
-                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd ('?'),     // Url
+                List<string> sisterFiles = new List<string>();
+
+                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd('?'),     // Url
                                                        mapInfo.Legal,                       // Copyright
-                                                       0,                                   // Size
+                                                       "",                                  // Provider
+                                                       0,                                   // Filesize
+                                                       "",                                  // Metadata
+                                                       sisterFiles,                         // Sister files
                                                        minX, minY, maxX, maxY,              // Bbox min/max values
                                                        mapInfo.Version,                     // Version
                                                        mapInfo.Layers,                      // Layers (comma-separated list)
@@ -1094,9 +992,149 @@ namespace Bentley.ECPluginExamples
                                                        mapInfo.SelectedFormat,              // Format
                                                        vendorSpecific,                      // Vendor Specific
                                                        true));                              // Transparency
-
             }
             return wmsMapInfoList;
+        }
+
+        private OsmSourceNet OsmPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<double> regionOfInterest)
+        {
+            IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+
+            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
+            IECClass osmSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "OsmSource");
+            RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, osmSourceClass), true);
+            dataSourceRelCrit.SelectAllProperties = false;
+            dataSourceRelCrit.SelectedProperties = new List<IECProperty>();
+            dataSourceRelCrit.SelectedProperties.Add(osmSourceClass.First(prop => prop.Name == "MainURL"));
+            dataSourceRelCrit.SelectedProperties.Add(osmSourceClass.First(prop => prop.Name == "AlternateURL1"));
+            dataSourceRelCrit.SelectedProperties.Add(osmSourceClass.First(prop => prop.Name == "AlternateURL2"));
+
+            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
+            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
+            metadataRelCrit.SelectAllProperties = false;
+            metadataRelCrit.SelectedProperties = new List<IECProperty>();
+            metadataRelCrit.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
+
+            ECQuery query = new ECQuery(spatialEntityClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+            query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
+            query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
+
+            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
+
+            IECInstance spatialEntity = queriedSpatialEntities.First();
+
+            string entityId = spatialEntity.GetPropertyValue("Id").StringValue;
+
+            IECRelationshipInstance relInst = spatialEntity.GetRelationshipInstances().First(x => x.ClassDefinition.Name == "SpatialEntityToSpatialDataSource");
+            IECInstance spatialDataSource = relInst.Target;
+
+            string mainURL = spatialDataSource.GetPropertyValue("MainURL").StringValue;
+            string alternateURL1 = spatialDataSource.GetPropertyValue("AlternateURL1").StringValue;
+            string alternateURL2 = spatialDataSource.GetPropertyValue("AlternateURL2").StringValue;
+
+            relInst = spatialEntity.GetRelationshipInstances().First(x => x.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
+            IECInstance metadata = relInst.Target;
+
+            string legal = metadata.GetPropertyValue("Legal").StringValue;
+
+            List<string> alternateUrls = new List<string>();
+            alternateUrls.Add(alternateURL1);
+            alternateUrls.Add(alternateURL2);
+
+            return OsmSourceNet.Create(mainURL,                     // Url
+                                       legal,               // Data copyright
+                                       "",               // Provider
+                                       0,               // Data size
+                                       "",         // Metadata
+                                       new List<string>(),      // Sister Files 
+                                       regionOfInterest,  // bbox
+                                       alternateUrls);      // Alternate urls        
+        }
+
+        private List<Tuple<RealityDataSourceNet,string>> UsgsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
+        {
+            List<Tuple<RealityDataSourceNet, string>> usgsSourceNetList = new List<Tuple<RealityDataSourceNet, string>>();
+
+            if(usgsRequestedEntities.Count == 0)
+            {
+                return usgsSourceNetList;
+            }
+
+            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
+            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            IECClass spatialentityBaseClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBase");
+
+            ECQuery query = new ECQuery(dataSourceClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
+
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+
+            var queriedSpatialDataSources = ExecuteQuery(queryModule, connection, query, null);
+
+            query = new ECQuery(spatialentityBaseClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(spatialentityBaseClass.First(prop => prop.Name == "Classification"));
+            
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+
+            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
+
+            query = new ECQuery(metadataClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
+
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+
+            var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
+
+            foreach(var entity in queriedSpatialDataSources)
+            {
+                string metadata = entity.GetPropertyValue("Metadata").StringValue;
+                string url = entity.GetPropertyValue("MainURL").StringValue;
+                string type = entity.GetPropertyValue("DataSourceType").StringValue;
+                string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
+                long fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
+                ulong uFileSize = (fileSize > 0) ? (ulong)fileSize : 0;
+                string location = entity.GetPropertyValue("LocationInCompound").StringValue;
+                var classificationPropValue = queriedSpatialEntities.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Classification");
+                string classification = null;
+                if ((classificationPropValue != null) && (!classificationPropValue.IsNull))
+                {
+                    classification = classificationPropValue.StringValue;
+                }
+
+                usgsSourceNetList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(url,                     // Url
+                                                                                            type,                    // Main file type
+                                                                                            copyright,               // Data copyright
+                                                                                            "usgs",                 // Provider
+                                                                                            uFileSize,               // Data size
+                                                                                            location,           // Main file location
+                                                                                            metadata,
+                                                                                            new List<string>()),      // Sister Files ,                                                                                                      
+                                                                                            classification));              // Metadata location 
+
+            }
+
+            return usgsSourceNetList;
         }
 
         private RequestedEntity ECStructToRequestedEntity(IECStructValue structValue)

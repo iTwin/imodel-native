@@ -75,7 +75,7 @@ public:
     typedef bvector<TerrainDataPtr>   TerrainGroup;
     
     //! Create a new empty package.
-    REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(WCharCP name);
+    REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(Utf8CP name);
 
     //! Create an instance from an existing package file.
     //! @param[out] status      Success if the package was opened and parsed successfully.
@@ -89,20 +89,20 @@ public:
     REALITYPACKAGE_EXPORT RealityPackageStatus Write(BeFileNameCR filename);
 
     //! The name of this package file.
-    REALITYPACKAGE_EXPORT WStringCR GetName() const;
-    REALITYPACKAGE_EXPORT void SetName(WCharCP name);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetName() const;
+    REALITYPACKAGE_EXPORT void SetName(Utf8CP name);
 
     //! Package description. Might be empty.
-    REALITYPACKAGE_EXPORT WStringCR GetDescription() const;
-    REALITYPACKAGE_EXPORT void SetDescription(WCharCP description);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetDescription() const;
+    REALITYPACKAGE_EXPORT void SetDescription(Utf8CP description);
 
     //! Copyright information, Might be empty.
-    REALITYPACKAGE_EXPORT WStringCR GetCopyright() const;
-    REALITYPACKAGE_EXPORT void SetCopyright(WCharCP copyright);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
+    REALITYPACKAGE_EXPORT void SetCopyright(Utf8CP copyright);
 
     //! Package tracking Id. Might be empty.
-    REALITYPACKAGE_EXPORT WStringCR GetPackageId() const;
-    REALITYPACKAGE_EXPORT void SetPackageId(WCharCP packageId);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetPackageId() const;
+    REALITYPACKAGE_EXPORT void SetPackageId(Utf8CP packageId);
 
     //! Package creation date. DateTime object might be invalid during creation. 
     REALITYPACKAGE_EXPORT DateTimeCR GetCreationDate() const;
@@ -139,10 +139,10 @@ public:
     
 private:
     RealityDataPackage() = delete;
-    RealityDataPackage(WCharCP name);
+    RealityDataPackage(Utf8CP name);
     ~RealityDataPackage();
 
-    static RealityDataPackagePtr CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, WCharCP defaultName, WStringP pParseError);
+    static RealityDataPackagePtr CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, Utf8CP defaultName, WStringP pParseError);
 
     WString BuildCreationDateUTC();   // May update m_creationDate.
 
@@ -156,10 +156,10 @@ private:
 
     uint32_t m_majorVersion;
     uint32_t m_minorVersion;
-    WString m_name;
-    WString m_description;
-    WString m_copyright;
-    WString m_packageId;
+    Utf8String m_name;
+    Utf8String m_description;
+    Utf8String m_copyright;
+    Utf8String m_packageId;
     DateTime m_creationDate;
     BoundingPolygonPtr m_pBoundingPolygon;
     bool m_hasUnknownElements;
@@ -179,14 +179,6 @@ struct RealityData : public RefCountedBase
 public:      
     REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR();
     REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource() const;
-
-    //! Optional data copyright. Should appear in the package only if known.
-    REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
-    REALITYPACKAGE_EXPORT void SetCopyright(Utf8CP dataCopyright);
-
-    //! Optional data size in kilobytes. Should appear in the package only if known. Default to 0.
-    REALITYPACKAGE_EXPORT uint64_t GetFilesize() const;
-    REALITYPACKAGE_EXPORT void SetFilesize(uint64_t size);
     
 protected:
     explicit RealityData(){}; // for persistence.
@@ -199,8 +191,6 @@ protected:
       
 private:
     RealityDataSourcePtr m_pSource;
-    Utf8String m_copyright;
-    uint64_t m_size;
 };
 
 //=======================================================================================

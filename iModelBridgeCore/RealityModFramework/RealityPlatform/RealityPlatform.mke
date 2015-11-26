@@ -65,7 +65,7 @@ $(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(PublicApiDir)WMSCap
 
 $(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${MultiCompileDepends}
 
-$(o)UsgsSource$(oext) : $(baseDir)UsgsSource.cpp $(PublicApiDir)UsgsSource.h ${MultiCompileDepends}
+$(o)OsmSource$(oext) : $(baseDir)OsmSource.cpp $(PublicApiDir)OsmSource.h ${MultiCompileDepends}
 
 $(o)RealityDataDownload$(oext) : $(baseDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
 

@@ -9,18 +9,20 @@
 #include "BentleyWMSPackageNet.h"
 
 #include <RealityPlatform/WMSSource.h>
-#include <RealityPlatform/UsgsSource.h>
+#include <RealityPlatform/OsmSource.h>
 
 using namespace RealityDataPackageWrapper;
+using namespace System;
 using namespace System::Runtime::InteropServices;
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 6/2015
 //-------------------------------------------------------------------------------------
-void RealityDataPackageNet::Create(System::String^  location,
-                                   System::String^  name,
-                                   System::String^  description,
-                                   System::String^  copyright,
+void RealityDataPackageNet::Create(String^  location,
+                                   String^  name,
+                                   String^  description,
+                                   String^  copyright,
+                                   String^  packageId,
                                    List<double>^    regionOfInterest,
                                    ImageryGroupNet^ imageryGroup,
                                    ModelGroupNet^   modelGroup,
@@ -37,9 +39,17 @@ void RealityDataPackageNet::Create(System::String^  location,
     BeFileName packageFullPath(fullPath.c_str());
 
     // Create package.
-    RealityPackage::RealityDataPackagePtr pDataPackage = RealityDataPackage::Create(static_cast<wchar_t*>(Marshal::StringToHGlobalUni(name).ToPointer()));
-    pDataPackage->SetDescription(static_cast<wchar_t*>(Marshal::StringToHGlobalUni(description).ToPointer()));
-    pDataPackage->SetCopyright(static_cast<wchar_t*>(Marshal::StringToHGlobalUni(copyright).ToPointer()));
+    Utf8String nameUtf8;
+    BeStringUtilities::WCharToUtf8(nameUtf8, nameStr);
+    RealityPackage::RealityDataPackagePtr pDataPackage = RealityDataPackage::Create(nameUtf8.c_str());
+
+    Utf8String descriptionUtf8;
+    BeStringUtilities::WCharToUtf8(descriptionUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(description).ToPointer()));
+    pDataPackage->SetDescription(descriptionUtf8.c_str());
+
+    Utf8String copyrightUtf8;
+    BeStringUtilities::WCharToUtf8(copyrightUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(copyright).ToPointer()));
+    pDataPackage->SetCopyright(copyrightUtf8.c_str());
 
     // Create bounding polygon and it to the package.
     DPoint2d pts[4];
@@ -57,81 +67,102 @@ void RealityDataPackageNet::Create(System::String^  location,
             {
             WmsSourceNet^ wmsSourceNet = dynamic_cast<WmsSourceNet^>(source);
 
-            // Url.
-            Utf8String utf8Url = "";
-            WCharCP temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetUri()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8Url, temp);
+            // Create source with required parameters.
+            Utf8String uri;
+            BeStringUtilities::WCharToUtf8(uri, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetUri()).ToPointer()));
+            RealityPackage::WmsDataSourcePtr pWmsDataSource = RealityPackage::WmsDataSource::Create(uri.c_str());
 
-            // Copyright.
-            Utf8String utf8Copyright = "";
-            temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetCopyright()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8Copyright, temp);
+            // Add optional parameters.
+            if (!String::IsNullOrEmpty(wmsSourceNet->GetCopyright()))
+                {
+                Utf8String copyright;
+                BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetCopyright()).ToPointer()));
+                pWmsDataSource->SetCopyright(copyright.c_str());
+                }
+
+            if (!String::IsNullOrEmpty(wmsSourceNet->GetProvider()))
+                {
+                Utf8String provider;
+                BeStringUtilities::WCharToUtf8(provider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetProvider()).ToPointer()));
+                pWmsDataSource->SetProvider(provider.c_str());
+                }
+
+            if (0 != wmsSourceNet->GetFilesize())
+                {
+                uint64_t filesize = wmsSourceNet->GetFilesize();
+                pWmsDataSource->SetFilesize(filesize);
+                }
+
+            if (!String::IsNullOrEmpty(wmsSourceNet->GetMetadata()))
+                {
+                Utf8String metadata;
+                BeStringUtilities::WCharToUtf8(metadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetMetadata()).ToPointer()));
+                pWmsDataSource->SetMetadata(metadata.c_str());
+                }
+
+            if (0 != wmsSourceNet->GetSisterFiles()->Count)
+                {
+                //List<String^>^ sisterFilesNet = wmsSourceNet->GetSisterFiles();
+
+                bvector<Utf8String> sisterFiles;
+                pWmsDataSource->SetSisterFiles(sisterFiles);
+                }
 
             // Xml Fragment.
-            Utf8String utf8XmlFragment = "";
-            temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetXmlFragment()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8XmlFragment, temp);
-
-            RealityPackage::WmsDataSourcePtr pWmsDataSource = RealityPackage::WmsDataSource::Create(utf8Url.c_str());
-            pWmsDataSource->SetMapInfo(utf8XmlFragment.c_str());
+            Utf8String xmlFragment;
+            BeStringUtilities::WCharToUtf8(xmlFragment, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(wmsSourceNet->GetXmlFragment()).ToPointer()));
+            pWmsDataSource->SetMapSettings(xmlFragment.c_str());
 
             RealityPackage::ImageryDataPtr pImageryData = RealityPackage::ImageryData::Create(*pWmsDataSource, NULL);
-            pImageryData->SetCopyright(utf8Copyright.c_str());
-
-            pImageryData->SetFilesize(wmsSourceNet->GetFilesize());
-
-            pDataPackage->GetImageryGroupR().push_back(pImageryData);
-            }
-        else if ("usgs" == source->GetSourceType())
-            {
-            UsgsSourceNet^ usgsSourceNet = dynamic_cast<UsgsSourceNet^>(source);
-            // System::String^ to Ut8String conversion.
-            // Url.
-            Utf8String utf8Uri = "";
-            WCharCP temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(usgsSourceNet->GetUri()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8Uri, temp);
-            // Xml Fragment.
-            Utf8String utf8XmlFragment = "";
-            temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(usgsSourceNet->GetXmlFragment()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8XmlFragment, temp);
-            // Copyright.
-            Utf8String utf8Copyright = "";
-            temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(usgsSourceNet->GetCopyright()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8Copyright, temp);
-
-
-            RealityPackage::CompoundDataSourcePtr pCompoundDataSource = RealityPackage::CompoundDataSource::Create(utf8Uri.c_str(), L"usgs");
-            pCompoundDataSource->Set(utf8XmlFragment.c_str());
-
-            RealityPackage::ImageryDataPtr pImageryData = RealityPackage::ImageryData::Create(*pCompoundDataSource, NULL);
-            pImageryData->SetCopyright(utf8Copyright.c_str());
-
-            pImageryData->SetFilesize(usgsSourceNet->GetFilesize());
-
             pDataPackage->GetImageryGroupR().push_back(pImageryData);
             }
         else
             {
-            // System::String^ to Ut8String conversion.
-            // Url.
-            Utf8String utf8Uri = "";
-            WCharCP temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8Uri, temp);
-            // Type.
-            WString typeW = L"";
-            typeW = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer());
-            // Copyright.
-            Utf8String utf8Copyright = "";
-            temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8Copyright, temp);
+            // Create source with required parameters.
+            Utf8String uri;
+            BeStringUtilities::WCharToUtf8(uri, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer()));
 
-            RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(utf8Uri.c_str(), typeW.c_str());
+            Utf8String type;
+            BeStringUtilities::WCharToUtf8(type, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer()));
+            RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(uri.c_str(), type.c_str());
+
+            // Add optional parameters.
+            if (!String::IsNullOrEmpty(source->GetCopyright()))
+                {
+                Utf8String copyright;
+                BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer()));
+                pDataSource->SetCopyright(copyright.c_str());
+                }
+
+            if (!String::IsNullOrEmpty(source->GetProvider()))
+                {
+                Utf8String provider;
+                BeStringUtilities::WCharToUtf8(provider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetProvider()).ToPointer()));
+                pDataSource->SetProvider(provider.c_str());
+                }
+
+            if (0 != source->GetFilesize())
+                {
+                uint64_t filesize = source->GetFilesize();
+                pDataSource->SetFilesize(filesize);
+                }
+
+            if (!String::IsNullOrEmpty(source->GetMetadata()))
+                {
+                Utf8String metadata;
+                BeStringUtilities::WCharToUtf8(metadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetMetadata()).ToPointer()));
+                pDataSource->SetMetadata(metadata.c_str());
+                }
+
+            if (0 != source->GetSisterFiles()->Count)
+                {
+                //List<String^>^ sisterFilesNet = source->GetSisterFiles();
+
+                bvector<Utf8String> sisterFiles;
+                pDataSource->SetSisterFiles(sisterFiles);
+                }
 
             RealityPackage::ImageryDataPtr pImageryData = RealityPackage::ImageryData::Create(*pDataSource, NULL);
-            pImageryData->SetCopyright(utf8Copyright.c_str());
-
-            pImageryData->SetFilesize(source->GetFilesize());
-
             pDataPackage->GetImageryGroupR().push_back(pImageryData);
             }
         }
@@ -139,79 +170,238 @@ void RealityDataPackageNet::Create(System::String^  location,
     // Create model data sources and add them to the package.
     for each(RealityDataSourceNet^ source in modelGroup->GetData())
         {
-        // System::String^ to Ut8String conversion.
-        // Url.
-        Utf8String utf8Url = "";
-        WCharCP temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer());
-        BeStringUtilities::WCharToUtf8(utf8Url, temp);
-        // Type.
-        WString typeW = L"";
-        typeW = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer());
-        // Copyright.
-        Utf8String utf8Copyright = "";
-        temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer());
-        BeStringUtilities::WCharToUtf8(utf8Copyright, temp);
+        if ("osm" == source->GetSourceType())
+            {
+            OsmSourceNet^ osmSourceNet = dynamic_cast<OsmSourceNet^>(source);
 
-        RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(utf8Url.c_str(), typeW.c_str());
+            // Find min/max for bbox.
+            double minX = DBL_MAX;
+            double minY = DBL_MAX;
+            double maxX = DBL_MIN;
+            double maxY = DBL_MIN;
 
-        RealityPackage::ModelDataPtr pModelData = RealityPackage::ModelData::Create(*pDataSource);
-        pModelData->SetCopyright(utf8Copyright.c_str());
+            DPoint2dCP bboxPts = boundingPolygon->GetPointCP();
+            for (size_t i = 0; i < boundingPolygon->GetPointCount(); ++i)
+                {
+                if (bboxPts[i].x < minX)
+                    minX = bboxPts[i].x;
+                
+                if (bboxPts[i].x > maxX)
+                    maxX = bboxPts[i].x;
 
-        pModelData->SetFilesize(source->GetFilesize());
+                if (bboxPts[i].y < minY)
+                    minY = bboxPts[i].y;
 
-        pDataPackage->GetModelGroupR().push_back(pModelData);
+                if (bboxPts[i].y > maxY)
+                    maxY = bboxPts[i].y;
+                }
+
+            DRange2d bbox;
+            bbox.InitFrom(minX, minY, maxX, maxY);
+            
+            // Create source with required parameters.
+            Utf8String uri;
+            BeStringUtilities::WCharToUtf8(uri, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(osmSourceNet->GetUri()).ToPointer()));
+            RealityPackage::OsmDataSourcePtr pOsmDataSource = RealityPackage::OsmDataSource::Create(uri.c_str(), &bbox);
+
+            // Add optional parameters.
+            if (!String::IsNullOrEmpty(osmSourceNet->GetCopyright()))
+                {
+                Utf8String copyright;
+                BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(osmSourceNet->GetCopyright()).ToPointer()));
+                pOsmDataSource->SetCopyright(copyright.c_str());
+                }
+
+            if (!String::IsNullOrEmpty(osmSourceNet->GetProvider()))
+                {
+                Utf8String provider;
+                BeStringUtilities::WCharToUtf8(provider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(osmSourceNet->GetProvider()).ToPointer()));
+                pOsmDataSource->SetProvider(provider.c_str());
+                }
+
+            if (0 != osmSourceNet->GetFilesize())
+                {
+                uint64_t filesize = osmSourceNet->GetFilesize();
+                pOsmDataSource->SetFilesize(filesize);
+                }
+
+            if (!String::IsNullOrEmpty(osmSourceNet->GetMetadata()))
+                {
+                Utf8String metadata;
+                BeStringUtilities::WCharToUtf8(metadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(osmSourceNet->GetMetadata()).ToPointer()));
+                pOsmDataSource->SetMetadata(metadata.c_str());
+                }
+
+            if (0 != osmSourceNet->GetSisterFiles()->Count)
+                {
+                //List<String^>^ sisterFilesNet = osmSourceNet->GetSisterFiles();
+
+                bvector<Utf8String> sisterFiles;
+                pOsmDataSource->SetSisterFiles(sisterFiles);
+                }
+
+            // Xml Fragment.
+            Utf8String xmlFragment;
+            BeStringUtilities::WCharToUtf8(xmlFragment, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(osmSourceNet->GetXmlFragment()).ToPointer()));
+            pOsmDataSource->SetOsmResource(xmlFragment.c_str());
+
+            RealityPackage::ModelDataPtr pModelData = RealityPackage::ModelData::Create(*pOsmDataSource);
+            pDataPackage->GetModelGroupR().push_back(pModelData);
+            }
+        else
+            {
+            // Create source with required parameters.
+            Utf8String uri;
+            BeStringUtilities::WCharToUtf8(uri, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer()));
+
+            Utf8String type;
+            BeStringUtilities::WCharToUtf8(type, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer()));
+
+            RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(uri.c_str(), type.c_str());
+
+            // Add optional parameters.
+            if (!String::IsNullOrEmpty(source->GetCopyright()))
+                {
+                Utf8String copyright;
+                BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer()));
+                pDataSource->SetCopyright(copyright.c_str());
+                }
+
+            if (!String::IsNullOrEmpty(source->GetProvider()))
+                {
+                Utf8String provider;
+                BeStringUtilities::WCharToUtf8(provider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetProvider()).ToPointer()));
+                pDataSource->SetProvider(provider.c_str());
+                }
+
+            if (0 != source->GetFilesize())
+                {
+                uint64_t filesize = source->GetFilesize();
+                pDataSource->SetFilesize(filesize);
+                }
+
+            if (!String::IsNullOrEmpty(source->GetMetadata()))
+                {
+                Utf8String metadata;
+                BeStringUtilities::WCharToUtf8(metadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetMetadata()).ToPointer()));
+                pDataSource->SetMetadata(metadata.c_str());
+                }
+
+            if (0 != source->GetSisterFiles()->Count)
+                {
+                //List<String^>^ sisterFilesNet = source->GetSisterFiles();
+
+                bvector<Utf8String> sisterFiles;
+                pDataSource->SetSisterFiles(sisterFiles);
+                }
+
+            RealityPackage::ModelDataPtr pModelData = RealityPackage::ModelData::Create(*pDataSource);
+            pDataPackage->GetModelGroupR().push_back(pModelData);
+            }
         }
 
     // Create pinned data sources and add them to the package.
     for each(RealityDataSourceNet^ source in pinnedGroup->GetData())
         {
-        // System::String^ to Ut8String conversion.
-        // Url.
-        Utf8String utf8Url = "";
-        WCharCP temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer());
-        BeStringUtilities::WCharToUtf8(utf8Url, temp);
-        // Type.
-        WString typeW = L"";
-        typeW = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer());
-        // Copyright.
-        Utf8String utf8Copyright = "";
-        temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer());
-        BeStringUtilities::WCharToUtf8(utf8Copyright, temp);
+        // Create source with required parameters.
+        Utf8String uri;
+        BeStringUtilities::WCharToUtf8(uri, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer()));
 
-        RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(utf8Url.c_str(), typeW.c_str());
+        Utf8String type;
+        BeStringUtilities::WCharToUtf8(type, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer()));
+
+        RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(uri.c_str(), type.c_str());
+
+        // Add optional parameters.
+        if (!String::IsNullOrEmpty(source->GetCopyright()))
+            {
+            Utf8String copyright;
+            BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer()));
+            pDataSource->SetCopyright(copyright.c_str());
+            }
+
+        if (!String::IsNullOrEmpty(source->GetProvider()))
+            {
+            Utf8String provider;
+            BeStringUtilities::WCharToUtf8(provider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetProvider()).ToPointer()));
+            pDataSource->SetProvider(provider.c_str());
+            }
+
+        if (0 != source->GetFilesize())
+            {
+            uint64_t filesize = source->GetFilesize();
+            pDataSource->SetFilesize(filesize);
+            }
+
+        if (!String::IsNullOrEmpty(source->GetMetadata()))
+            {
+            Utf8String metadata;
+            BeStringUtilities::WCharToUtf8(metadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetMetadata()).ToPointer()));
+            pDataSource->SetMetadata(metadata.c_str());
+            }
+
+        if (0 != source->GetSisterFiles()->Count)
+            {
+            //List<String^>^ sisterFilesNet = source->GetSisterFiles();
+
+            bvector<Utf8String> sisterFiles;
+            pDataSource->SetSisterFiles(sisterFiles);
+            }
 
         //&&JFC Implement pinned data longitude and latitude for the wrapper.
         RealityPackage::PinnedDataPtr pPinnedData = RealityPackage::PinnedData::Create(*pDataSource, 0.0, 0.0);
-        pPinnedData->SetCopyright(utf8Copyright.c_str());
-
-        pPinnedData->SetFilesize(source->GetFilesize());
-
         pDataPackage->GetPinnedGroupR().push_back(pPinnedData);
         }
 
     // Create terrain data sources and add them to the package.
     for each(RealityDataSourceNet^ source in terrainGroup->GetData())
         {
-        // System::String^ to Ut8String conversion.
-        // Url.
-        Utf8String utf8Url = "";
-        WCharCP temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer());
-        BeStringUtilities::WCharToUtf8(utf8Url, temp);
-        // Type.
-        WString typeW = L"";
-        typeW = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer());
-        // Copyright.
-        Utf8String utf8Copyright = "";
-        temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer());
-        BeStringUtilities::WCharToUtf8(utf8Copyright, temp);
+        // Create source with required parameters.
+        Utf8String uri;
+        BeStringUtilities::WCharToUtf8(uri, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetUri()).ToPointer()));
 
-        RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(utf8Url.c_str(), typeW.c_str());
+        Utf8String type;
+        BeStringUtilities::WCharToUtf8(type, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetSourceType()).ToPointer()));
+
+        RealityPackage::RealityDataSourcePtr pDataSource = RealityPackage::RealityDataSource::Create(uri.c_str(), type.c_str());
+
+        // Add optional parameters.
+        if (!String::IsNullOrEmpty(source->GetCopyright()))
+            {
+            Utf8String copyright;
+            BeStringUtilities::WCharToUtf8(copyright, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetCopyright()).ToPointer()));
+            pDataSource->SetCopyright(copyright.c_str());
+            }
+
+        if (!String::IsNullOrEmpty(source->GetProvider()))
+            {
+            Utf8String provider;
+            BeStringUtilities::WCharToUtf8(provider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetProvider()).ToPointer()));
+            pDataSource->SetProvider(provider.c_str());
+            }
+
+        if (0 != source->GetFilesize())
+            {
+            uint64_t filesize = source->GetFilesize();
+            pDataSource->SetFilesize(filesize);
+            }
+
+        if (!String::IsNullOrEmpty(source->GetMetadata()))
+            {
+            Utf8String metadata;
+            BeStringUtilities::WCharToUtf8(metadata, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(source->GetMetadata()).ToPointer()));
+            pDataSource->SetMetadata(metadata.c_str());
+            }
+
+        if (0 != source->GetSisterFiles()->Count)
+            {
+            //List<String^>^ sisterFilesNet = source->GetSisterFiles();
+
+            bvector<Utf8String> sisterFiles;
+            pDataSource->SetSisterFiles(sisterFiles);
+            }
 
         RealityPackage::TerrainDataPtr pTerrainData = RealityPackage::TerrainData::Create(*pDataSource);
-        pTerrainData->SetCopyright(utf8Copyright.c_str());
-
-        pTerrainData->SetFilesize(source->GetFilesize());
-
         pDataPackage->GetTerrainGroupR().push_back(pTerrainData);
         }
 
@@ -350,9 +540,13 @@ TerrainGroupNet::~TerrainGroupNet() {}
 RealityDataSourceNet^ RealityDataSourceNet::Create(System::String^ uri, 
                                                    System::String^ type, 
                                                    System::String^ copyright,
-                                                   uint64_t size)
+                                                   System::String^ provider,
+                                                   uint64_t filesize,
+                                                   System::String^ fileInCompound,
+                                                   System::String^ metadata, 
+                                                   List<System::String^>^ sisterFiles)
     {
-    return gcnew RealityDataSourceNet(uri, type, copyright, size);
+    return gcnew RealityDataSourceNet(uri, type, copyright, provider, filesize, fileInCompound, metadata, sisterFiles);
     }
 
 //-------------------------------------------------------------------------------------
@@ -361,11 +555,19 @@ RealityDataSourceNet^ RealityDataSourceNet::Create(System::String^ uri,
 RealityDataSourceNet::RealityDataSourceNet(System::String^ uri,
                                            System::String^ type,
                                            System::String^ copyright,
-                                           uint64_t size)
+                                           System::String^ provider,
+                                           uint64_t filesize,
+                                           System::String^ fileInCompound,
+                                           System::String^ metadata,
+                                           List<System::String^>^ sisterFiles)
     : m_uri(uri),
       m_type(type),
       m_copyright(copyright),
-      m_size(size)
+      m_provider(provider),
+      m_filesize(filesize),
+      m_fileInCompound(fileInCompound),
+      m_metadata(metadata),
+      m_sisterFiles(sisterFiles)
     {}
 
 //-------------------------------------------------------------------------------------
@@ -378,7 +580,10 @@ RealityDataSourceNet::~RealityDataSourceNet() {}
 //-------------------------------------------------------------------------------------
 WmsSourceNet::WmsSourceNet(System::String^ uri,
                            System::String^ copyright,
-                           uint64_t size,
+                           System::String^ provider,
+                           uint64_t filesize,
+                           System::String^ metadata,
+                           List<System::String^>^ sisterFiles,
                            double bboxMinX,
                            double bboxMinY,
                            double bboxMaxX,
@@ -393,67 +598,53 @@ WmsSourceNet::WmsSourceNet(System::String^ uri,
                            System::String^ format,
                            System::String^ vendorSpecific,
                            bool isTransparent)
-    : RealityDataSourceNet(uri, "wms", copyright, size)
+    : RealityDataSourceNet(uri, "wms", copyright, provider, filesize, "", metadata, sisterFiles)
     {
     // Create range from min and max values.
     DRange2d bbox;
     bbox.InitFrom(bboxMinX, bboxMinY, bboxMaxX, bboxMaxY);
 
-    // Create WmsMapInfo with required parameters.
-    WCharCP temp = 0;
+    // Create WmsMapSettings with required parameters.
+    Utf8String uriUtf8;
+    BeStringUtilities::WCharToUtf8(uriUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri).ToPointer()));
 
-    Utf8String utf8Uri = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8Uri, temp);
-
-    Utf8String utf8Version = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(version).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8Version, temp);
-
-    Utf8String utf8Layers = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(layers).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8Layers, temp);
-
-    Utf8String utf8CsType = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(csType).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8CsType, temp);
-
-    Utf8String utf8CsLabel = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(csLabel).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8CsLabel, temp);
-
-    RealityPlatform::WmsMapInfoPtr pMapInfo = RealityPlatform::WmsMapInfo::Create(utf8Uri.c_str(),
-                                                                                  bbox,
-                                                                                  utf8Version.c_str(),
-                                                                                  utf8Layers.c_str(),
-                                                                                  utf8CsType.c_str(),
-                                                                                  utf8CsLabel.c_str());
-
-    //pMapInfo->SetMetaWidth(metaWidth);
-    //pMapInfo->SetMetaHeight(metaHeight);
+    Utf8String versionUtf8;
+    BeStringUtilities::WCharToUtf8(versionUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(version).ToPointer()));
     
-    Utf8String utf8Styles = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(styles).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8Styles, temp);
-    pMapInfo->SetStyles(utf8Styles.c_str());
+    Utf8String layersUtf8;
+    BeStringUtilities::WCharToUtf8(layersUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(layers).ToPointer()));
+
+    Utf8String csTypeUtf8;
+    BeStringUtilities::WCharToUtf8(csTypeUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(csType).ToPointer()));
+
+    Utf8String csLabelUtf8;
+    BeStringUtilities::WCharToUtf8(csLabelUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(csLabel).ToPointer()));
+
+    RealityPlatform::WmsMapSettingsPtr pMapSettings = RealityPlatform::WmsMapSettings::Create(bbox,
+                                                                                              versionUtf8.c_str(),
+                                                                                              layersUtf8.c_str(),
+                                                                                              csTypeUtf8.c_str(),
+                                                                                              csLabelUtf8.c_str());
     
-    Utf8String utf8Format = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(format).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8Format, temp);
-    pMapInfo->SetFormat(utf8Format.c_str());
+    // Optional parameters.
+    Utf8String stylesUtf8;
+    BeStringUtilities::WCharToUtf8(stylesUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(styles).ToPointer()));
+    pMapSettings->SetStyles(stylesUtf8.c_str());
     
-    Utf8String utf8VendorSpecific = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(vendorSpecific).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8VendorSpecific, temp);
-    pMapInfo->SetVendorSpecific(utf8VendorSpecific.c_str());
+    Utf8String formatUtf8;
+    BeStringUtilities::WCharToUtf8(formatUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(format).ToPointer()));
+    pMapSettings->SetFormat(formatUtf8.c_str());
     
-    pMapInfo->SetTransparency(isTransparent);    
+    Utf8String vendorSpecificUtf8;
+    BeStringUtilities::WCharToUtf8(vendorSpecificUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(vendorSpecific).ToPointer()));
+    pMapSettings->SetVendorSpecific(vendorSpecificUtf8.c_str());
+    
+    pMapSettings->SetTransparency(isTransparent);
 
     // Convert to xml fragment and store the info.
     Utf8String xmlFragment;
-    pMapInfo->ToXml(xmlFragment);
+    pMapSettings->ToXml(xmlFragment);
     m_xmlFragment = gcnew System::String(xmlFragment.c_str());
-
     }
 
 //-------------------------------------------------------------------------------------
@@ -466,7 +657,10 @@ WmsSourceNet::~WmsSourceNet() {}
 //-------------------------------------------------------------------------------------
 WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
                                    System::String^ copyright,
-                                   uint64_t size,
+                                   System::String^ provider,
+                                   uint64_t filesize,
+                                   System::String^ metadata,
+                                   List<System::String^>^ sisterFiles,
                                    double bboxMinX,
                                    double bboxMinY,
                                    double bboxMaxX,
@@ -484,7 +678,10 @@ WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
     {
     return gcnew WmsSourceNet(uri,
                               copyright,
-                              size,
+                              provider,
+                              filesize,
+                              metadata,
+                              sisterFiles,
                               bboxMinX,
                               bboxMinY,
                               bboxMaxX,
@@ -502,79 +699,86 @@ WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+// @bsimethod                                   Jean-Francois.Cote         	    11/2015
 //-------------------------------------------------------------------------------------
-UsgsSourceNet::UsgsSourceNet(System::String^ uri,
-                             System::String^ copyright,
-                             uint64_t size,
-                             System::String^ dataType, 
-                             System::String^ dataLocation, 
-                             List<System::String^>^ sisterFiles, 
-                             System::String^ metadata)
-    : RealityDataSourceNet(uri, "usgs", copyright, size)
+OsmSourceNet::OsmSourceNet(System::String^ uri,
+                           System::String^ copyright,
+                           System::String^ provider,
+                           uint64_t filesize,
+                           System::String^ metadata,
+                           List<System::String^>^ sisterFiles,
+                           List<double>^ regionOfInterest,
+                           List<System::String^>^ urls)
+    : RealityDataSourceNet(uri, "osm", copyright, provider, filesize, "", metadata, sisterFiles)
     {
-    // Create Usgs source with required parameters.
-    WCharCP temp = 0;
+    // Create range from min and max values.
+    DPoint2d pts[4];
+    pts[0].x = regionOfInterest[0]; pts[0].y = regionOfInterest[1];
+    pts[1].x = regionOfInterest[2]; pts[1].y = regionOfInterest[3];
+    pts[2].x = regionOfInterest[4]; pts[2].y = regionOfInterest[5];
+    pts[3].x = regionOfInterest[6]; pts[3].y = regionOfInterest[7];
 
-    Utf8String utf8Uri = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(uri).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8Uri, temp);
+    double minX = DBL_MAX;
+    double minY = DBL_MAX;
+    double maxX = DBL_MIN;
+    double maxY = DBL_MIN;
 
-    Utf8String utf8DataType = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(dataType).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8DataType, temp);
-
-    Utf8String utf8Metadata = "";
-    temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(metadata).ToPointer());
-    BeStringUtilities::WCharToUtf8(utf8Metadata, temp);
-
-    RealityPlatform::UsgsSourcePtr pUsgsSource = RealityPlatform::UsgsSource::Create(utf8Uri.c_str(), utf8DataType.c_str(), utf8Metadata.c_str());
-
-    // Optional parameters.
-    if (!System::String::IsNullOrEmpty(dataLocation))
+    for (size_t i = 0; i < 4; ++i)
         {
-        Utf8String utf8Location = "";
-        temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(dataLocation).ToPointer());
-        BeStringUtilities::WCharToUtf8(utf8Location, temp);
-        pUsgsSource->SetDataLocation(utf8Location.c_str());
+        if (pts[i].x < minX)
+            minX = pts[i].x;
+
+        if (pts[i].x > maxX)
+            maxX = pts[i].x;
+
+        if (pts[i].y < minY)
+            minY = pts[i].y;
+
+        if (pts[i].y > maxY)
+            maxY = pts[i].y;
         }
-    
-    if (0 != sisterFiles->Count)
-        {
-        bvector<Utf8String> filenameList;
-        for each(System::String^ filename in sisterFiles)
-            {
-            WCharCP temp = 0;
-            Utf8String utf8Filename = "";
-            temp = static_cast<wchar_t*>(Marshal::StringToHGlobalUni(filename).ToPointer());
-            BeStringUtilities::WCharToUtf8(utf8Filename, temp);
 
-            filenameList.push_back(utf8Filename);
+    DRange2d bbox;
+    bbox.InitFrom(minX, minY, maxX, maxY);
+
+    // Create OsmResource with required parameters.
+    RealityPlatform::OsmResourcePtr pOsmResource = RealityPlatform::OsmResource::Create(bbox);
+
+    // Optional parameters.    
+    if (0 != urls->Count)
+        {
+        bvector<Utf8String> urlList;
+        for each(System::String^ url in urls)
+            {
+            Utf8String urlUtf8;
+            BeStringUtilities::WCharToUtf8(urlUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(url).ToPointer()));
+            urlList.push_back(urlUtf8);
             }
-        pUsgsSource->SetSisterFiles(filenameList);
+        pOsmResource->SetAlternateUrlList(urlList);
         }
 
     // Convert to xml fragment and store the info.
     Utf8String xmlFragment;
-    pUsgsSource->ToXml(xmlFragment);
+    pOsmResource->ToXml(xmlFragment);
     m_xmlFragment = gcnew System::String(xmlFragment.c_str());
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+// @bsimethod                                   Jean-Francois.Cote         	    11/2015
 //-------------------------------------------------------------------------------------
-UsgsSourceNet::~UsgsSourceNet() {}
+OsmSourceNet::~OsmSourceNet() {}
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+// @bsimethod                                   Jean-Francois.Cote         	    11/2015
 //-------------------------------------------------------------------------------------
-UsgsSourceNet^ UsgsSourceNet::Create(System::String^ uri,
-                                     System::String^ copyright,
-                                     uint64_t size,
-                                     System::String^ dataType, 
-                                     System::String^ dataLocation, 
-                                     List<System::String^>^ sisterFiles, 
-                                     System::String^ metadata)
+OsmSourceNet^ OsmSourceNet::Create(System::String^ uri,
+                                   System::String^ copyright,
+                                   System::String^ provider,
+                                   uint64_t filesize,
+                                   System::String^ metadata,
+                                   List<System::String^>^ sisterFiles, 
+                                   List<double>^ regionOfInterest,
+                                   List<System::String^>^ urls)
     {
-    return gcnew UsgsSourceNet(uri, copyright, size, dataType, dataLocation, sisterFiles, metadata);
+    return gcnew OsmSourceNet(uri, copyright, provider, filesize, metadata, sisterFiles, regionOfInterest, urls);
     }

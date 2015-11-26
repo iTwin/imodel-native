@@ -14,15 +14,12 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote               5/2015
 //=====================================================================================
-struct WmsMapInfo : public RefCountedBase
+struct WmsMapSettings : public RefCountedBase
     {
 public:
     //! Create WMS MapRequest info with all the required information. 
-    REALITYDATAPLATFORM_EXPORT static WmsMapInfoPtr Create(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
-
-    //! Get/Set the server url. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUrl() const;
-    REALITYDATAPLATFORM_EXPORT void         SetUrl(Utf8CP url);
+    REALITYDATAPLATFORM_EXPORT static WmsMapSettingsPtr Create(DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
+    REALITYDATAPLATFORM_EXPORT static WmsMapSettingsPtr CreateFromXml(Utf8CP xmlFragment);
 
     //! Get/Set the bounding box.
     REALITYDATAPLATFORM_EXPORT DRange2dCR   GetBBox() const;
@@ -76,11 +73,10 @@ public:
 
     //! Xml fragment.
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR xmlFragment) const;
-    REALITYDATAPLATFORM_EXPORT void FromXml(Utf8CP xmlFragment);
-
+    
 private:
-    WmsMapInfo(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
-    ~WmsMapInfo();
+    WmsMapSettings(DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
+    ~WmsMapSettings();
 
     Utf8String  m_url;                  //! GetMap url. Up to but excluding the query char '?'
 

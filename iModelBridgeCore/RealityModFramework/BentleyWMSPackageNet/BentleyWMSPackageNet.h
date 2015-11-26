@@ -36,6 +36,7 @@ namespace RealityDataPackageWrapper
                                System::String^ name,
                                System::String^ description,
                                System::String^ copyright,
+                               System::String^ packageId,
                                List<double>^ regionOfInterest,
                                ImageryGroupNet^ imageryData,
                                ModelGroupNet^ modelData,
@@ -137,25 +138,45 @@ namespace RealityDataPackageWrapper
             static RealityDataSourceNet^ Create(System::String^ uri,
                                                 System::String^ type,
                                                 System::String^ copyright,
-                                                uint64_t size);             
+                                                System::String^ provider,
+                                                uint64_t filesize,
+                                                System::String^ fileInCompound,
+                                                System::String^ metadata, 
+                                                List<System::String^>^ sisterFiles);
 
             //! Get the source uri. It could be a full URL or a path relative to the package file.
-            System::String^ GetUri() { return m_uri; }
+            System::String^ GetUri() { return m_uri; };
 
             //! Get the source type.
             System::String^ GetSourceType() { return m_type; }
 
-            //! Get the data copyright.
+            //! Get the copyright. Might be empty.
             System::String^ GetCopyright() { return m_copyright; }
 
-            //! Get the data size in kilobytes. 
-            uint64_t GetFilesize() { return m_size; }
+            //! Get the provider. Might be empty.
+            System::String^ GetProvider() { return m_provider; }
+
+            //! Get the size in kilobytes. Default is 0. 
+            uint64_t GetFilesize() { return m_filesize; }
+
+            //! Get main file in compound. Might be empty.
+            System::String^ GetFileInCompound() { return m_fileInCompound; }
+
+            //! Get the metadata. Might be empty.
+            System::String^ GetMetadata() { return m_metadata; }
+
+            //! Get the sister files. Might be empty.
+            List<System::String^>^ GetSisterFiles() { return m_sisterFiles; }
 
         protected:
-            RealityDataSourceNet(System::String^ uri, 
+            RealityDataSourceNet(System::String^ uri,
                                  System::String^ type,
                                  System::String^ copyright,
-                                 uint64_t size);
+                                 System::String^ provider,
+                                 uint64_t filesize,
+                                 System::String^ fileInCompound,
+                                 System::String^ metadata,
+                                 List<System::String^>^ sisterFiles);
 
             ~RealityDataSourceNet();
 
@@ -163,7 +184,11 @@ namespace RealityDataPackageWrapper
             System::String^ m_uri;
             System::String^ m_type;
             System::String^ m_copyright;  
-            uint64_t m_size;
+            System::String^ m_provider;
+            uint64_t m_filesize;
+            System::String^ m_fileInCompound;
+            System::String^ m_metadata;
+            List<System::String^>^ m_sisterFiles;
         };
 
     //=====================================================================================
@@ -174,8 +199,11 @@ namespace RealityDataPackageWrapper
         public:
             //! Create WMS data source.
             static WmsSourceNet^ Create(System::String^ uri,
-                                        System::String^ copyright,     
-                                        uint64_t size,
+                                        System::String^ copyright,
+                                        System::String^ provider,
+                                        uint64_t filesize,
+                                        System::String^ metadata,
+                                        List<System::String^>^ sisterFiles,
                                         double bboxMinX,
                                         double bboxMinY,
                                         double bboxMaxX,
@@ -197,7 +225,10 @@ namespace RealityDataPackageWrapper
         private:
             WmsSourceNet(System::String^ uri,
                          System::String^ copyright,
-                         uint64_t size,
+                         System::String^ provider,
+                         uint64_t filesize,
+                         System::String^ metadata,
+                         List<System::String^>^ sisterFiles,
                          double bboxMinX,
                          double bboxMinY,
                          double bboxMaxX,
@@ -219,34 +250,36 @@ namespace RealityDataPackageWrapper
         };
 
     //=====================================================================================
-    //! @bsiclass                                   Jean-Francois.Cote               9/2015
+    //! @bsiclass                                   Jean-Francois.Cote              11/2015
     //=====================================================================================
-    public ref class UsgsSourceNet : public RealityDataSourceNet
+    public ref class OsmSourceNet : public RealityDataSourceNet
         {
         public:
-            //! Create USGS data source.
-            static UsgsSourceNet^ Create(System::String^ uri,
-                                         System::String^ copyright,         
-                                         uint64_t size,
-                                         System::String^ dataType,
-                                         System::String^ dataLocation,      
-                                         List<System::String^>^ sisterFiles,
-                                         System::String^ metadata);
+            //! Create OSM data source.
+            static OsmSourceNet^ Create(System::String^ uri,
+                                        System::String^ copyright,
+                                        System::String^ provider,
+                                        uint64_t filesize,
+                                        System::String^ metadata,
+                                        List<System::String^>^ sisterFiles,
+                                        List<double>^ regionOfInterest,
+                                        List<System::String^>^ urls);
 
             //! Get XML representation.
             System::String^ GetXmlFragment() { return m_xmlFragment; }
 
         private:
-            UsgsSourceNet(System::String^ uri,
-                          System::String^ copyright,
-                          uint64_t size,
-                          System::String^ dataType,
-                          System::String^ dataLocation,      
-                          List<System::String^>^ sisterFiles,
-                          System::String^ metadata);
+            OsmSourceNet(System::String^ uri,
+                         System::String^ copyright,
+                         System::String^ provider,
+                         uint64_t filesize,
+                         System::String^ metadata,
+                         List<System::String^>^ sisterFiles,
+                         List<double>^ regionOfInterest,
+                         List<System::String^>^ urls);
 
-            ~UsgsSourceNet();
+            ~OsmSourceNet();
 
             System::String^ m_xmlFragment;
-        };    
+        };
     }

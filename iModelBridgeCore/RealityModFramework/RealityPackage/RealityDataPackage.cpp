@@ -149,17 +149,17 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
 //----------------------------------------------------------------------------------------
-WStringCR RealityDataPackage::GetName() const {return m_name;}
-void      RealityDataPackage::SetName(WCharCP name) {BeAssert(!WString::IsNullOrEmpty(name)); m_name = name;}
+Utf8StringCR RealityDataPackage::GetName() const {return m_name;}
+void         RealityDataPackage::SetName(Utf8CP name) { BeAssert(!Utf8String::IsNullOrEmpty(name)); m_name = name; }
 
-WStringCR RealityDataPackage::GetDescription() const {return m_description;}
-void      RealityDataPackage::SetDescription(WCharCP description) {m_description = description;}
+Utf8StringCR RealityDataPackage::GetDescription() const { return m_description; }
+void         RealityDataPackage::SetDescription(Utf8CP description) { m_description = description; }
 
-WStringCR RealityDataPackage::GetCopyright() const {return m_copyright;}
-void      RealityDataPackage::SetCopyright(WCharCP copyright) {m_copyright = copyright;}
+Utf8StringCR RealityDataPackage::GetCopyright() const { return m_copyright; }
+void         RealityDataPackage::SetCopyright(Utf8CP copyright) { m_copyright = copyright; }
 
-WStringCR RealityDataPackage::GetPackageId() const {return m_packageId;}
-void      RealityDataPackage::SetPackageId(WCharCP packageId) {m_packageId = packageId;}
+Utf8StringCR RealityDataPackage::GetPackageId() const { return m_packageId; }
+void         RealityDataPackage::SetPackageId(Utf8CP packageId) { m_packageId = packageId; }
 
 DateTimeCR RealityDataPackage::GetCreationDate() const {return m_creationDate;}
 void       RealityDataPackage::SetCreationDate(DateTimeCR date) {m_creationDate = date;}
@@ -184,14 +184,14 @@ RealityDataPackage::TerrainGroup&       RealityDataPackage::GetTerrainGroupR()  
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataPackage::RealityDataPackage(WCharCP name)
+RealityDataPackage::RealityDataPackage(Utf8CP name)
 :m_majorVersion(PACKAGE_CURRENT_MAJOR_VERSION),
  m_minorVersion(PACKAGE_CURRENT_MINOR_VERSION),
  m_creationDate(),  // create empty in case package doesn't have a creation date. In that case, we want to report an invalid DataTime
  m_pBoundingPolygon(BoundingPolygon::Create()), //empty invalid polygon
  m_hasUnknownElements(false)
     {
-    BeAssert(!WString::IsNullOrEmpty(name));
+    BeAssert(!Utf8String::IsNullOrEmpty(name));
     m_name = name;    
     }
 
@@ -204,9 +204,9 @@ RealityDataPackage::~RealityDataPackage(){}
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataPackagePtr RealityDataPackage::Create(WCharCP name)
+RealityDataPackagePtr RealityDataPackage::Create(Utf8CP name)
     {
-    if(WString::IsNullOrEmpty(name))
+    if (Utf8String::IsNullOrEmpty(name))
         return NULL;
 
     return new RealityDataPackage(name);
@@ -244,7 +244,7 @@ RealityDataPackagePtr RealityDataPackage::CreateFromString(RealityPackageStatus&
         return NULL;
         }
 
-    return RealityDataPackage::CreateFromDom(status, *pXmlDom, L"?"/*defaultName*/, pParseError);
+    return RealityDataPackage::CreateFromDom(status, *pXmlDom, "?"/*defaultName*/, pParseError);
     }
 
 //----------------------------------------------------------------------------------------
@@ -262,13 +262,16 @@ RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& s
         return NULL;
         }
 
-    return RealityDataPackage::CreateFromDom(status, *pXmlDom, filename.GetFileNameWithoutExtension().c_str(), pParseError);
+    Utf8String filenameUtf8;
+    BeStringUtilities::WCharToUtf8(filenameUtf8, filename.GetFileNameWithoutExtension().c_str());
+
+    return RealityDataPackage::CreateFromDom(status, *pXmlDom, filenameUtf8.c_str(), pParseError);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataPackagePtr RealityDataPackage::CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, WCharCP defaultName, WStringP pParseError)
+RealityDataPackagePtr RealityDataPackage::CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, Utf8CP defaultName, WStringP pParseError)
     {
     status = RealityPackageStatus::UnknownError;
 
@@ -349,11 +352,20 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
 
     // Root children
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Name, GetName().c_str());
-    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Description, GetDescription().c_str());
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_CreationDate, BuildCreationDateUTC().c_str());
-    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, GetCopyright().c_str());
-    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_PackageId, GetPackageId().c_str());
-    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_BoundingPolygon, GetBoundingPolygon().ToString().c_str());
+
+    // Optional fields, if empty don't add them to the package.
+    if (!GetDescription().empty())
+        pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Description, GetDescription().c_str());
+    
+    if (!GetCopyright().empty())
+        pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, GetCopyright().c_str());
+
+    if (!GetPackageId().empty())
+        pRootNode->AddElementStringValue(PACKAGE_ELEMENT_PackageId, GetPackageId().c_str());
+
+    if (!GetBoundingPolygon().ToString().empty())
+        pRootNode->AddElementStringValue(PACKAGE_ELEMENT_BoundingPolygon, GetBoundingPolygon().ToString().c_str());
 
     // Data sources
     if(RealityPackageStatus::Success != (status = WriteDataGroup_T(GetImageryGroup(), PACKAGE_ELEMENT_ImageryGroup, *pRootNode)) ||
@@ -455,18 +467,12 @@ WString RealityDataPackage::BuildCreationDateUTC()
 //=======================================================================================
 RealityDataSourceR RealityData::GetSourceR() {return *m_pSource;}
 RealityDataSourceCR RealityData::GetSource() const {return *m_pSource;}
-Utf8StringCR RealityData::GetCopyright() const { return m_copyright; }
-void RealityData::SetCopyright(Utf8CP dataCopyright) { m_copyright = dataCopyright; }
-uint64_t RealityData::GetFilesize() const { return m_size; }
-void RealityData::SetFilesize(uint64_t size) { m_size = size; }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
 RealityData::RealityData(RealityDataSourceR dataSource)
-    : m_pSource(&dataSource),
-      m_copyright(""),          // Default.
-      m_size(0)                 // Default.
+    : m_pSource(&dataSource)
     {}
 
 //----------------------------------------------------------------------------------------
@@ -481,21 +487,15 @@ RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
     {
     RealityPackageStatus status = RealityPackageStatus::MissingDataSource;
 
+    // Source should be the the first child element but we loop over all children to be more flexible.
     for (BeXmlNodeP pChildElement = dataNode.GetFirstChild(); NULL != pChildElement; pChildElement = pChildElement->GetNextSibling())
         {
-        if (pChildElement->IsName(PACKAGE_ELEMENT_Copyright))
-            pChildElement->GetContent(m_copyright);
-        else if (pChildElement->IsName(PACKAGE_ELEMENT_Filesize))
-            pChildElement->GetContentUInt64Value(m_size);
-        else
-            {
-            m_pSource = RealityDataSourceSerializer::Get().Load(status, *pChildElement);
-            if(RealityPackageStatus::UnknownElementType != status)
-                break;  // either we loaded the source or we had an error loading it.
-            }
-        
+        m_pSource = RealityDataSourceSerializer::Get().Load(status, *pChildElement);
+        if (RealityPackageStatus::UnknownElementType != status)
+            break;  // either we loaded the source or we had an error loading it.
+
         status = RealityPackageStatus::MissingDataSource;   // reset status we do not want return UnknownElementType if it's the last iteration.
-        }
+        }       
 
     return status;
     }
@@ -505,24 +505,8 @@ RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus RealityData::_Write(BeXmlNodeR dataNode) const
     {
-    if(!m_pSource.IsValid())
+    if (!m_pSource.IsValid())
         return RealityPackageStatus::MissingDataSource;
-
-    // Optional data copyright.
-    if (!m_copyright.empty())
-        {
-        BeXmlNodeP pCopyrightNode = dataNode.AddElementStringValue(PACKAGE_ELEMENT_Copyright, m_copyright.c_str());
-        if (NULL == pCopyrightNode)
-            return RealityPackageStatus::UnknownError;
-        }
-
-    // Optional data size.
-    if (0 != m_size)
-        {
-        BeXmlNodeP pFilesizeNode = dataNode.AddElementUInt64Value(PACKAGE_ELEMENT_Filesize, m_size);
-        if (NULL == pFilesizeNode)
-            return RealityPackageStatus::UnknownError;
-        }
 
     return RealityDataSourceSerializer::Get().Store(*m_pSource, dataNode);
     }
@@ -687,7 +671,7 @@ RealityPackageStatus ModelData::_Write(BeXmlNodeR dataNode) const
     if(RealityPackageStatus::Success != status)
         return status;
 
-    // Write TerrainObject specific here...
+    // Write ModelData specific here...
     
     return status;
     }
