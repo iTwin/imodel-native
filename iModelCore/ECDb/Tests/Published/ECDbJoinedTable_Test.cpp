@@ -1910,6 +1910,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
         "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='E1' typeName='long'/>"
         "        <ECProperty propertyName='F' typeName='string'/>"
         "    </ECClass>"
         "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
@@ -1924,7 +1925,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
         "    <Target cardinality='(1,1)' polymorphic='True'>"
         "      <Class class = 'Roo' >"
         "           <Key>"
-        "              <Property name='C'/>"
+        "              <Property name='E'/>"
         "           </Key>"
         "      </Class>"
         "    </Target>"
@@ -1936,7 +1937,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
         "    <Target cardinality='(0,N)' polymorphic='True'>"
         "      <Class class = 'Roo' >"
         "           <Key>"
-        "              <Property name='D'/>"
+        "              <Property name='E1'/>"
         "           </Key>"
         "      </Class>"
         "    </Target>"
@@ -1975,8 +1976,10 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
 
     if (!gooHasRooInstanceId1.IsValid ())
         ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+
     }
 
+    db.SaveChanges();
     //Insert 1-N Relationship
     EC::ECInstanceId gooHasManyRooInstanceId1;
     EC::ECInstanceId gooHasManyRooInstanceId2;

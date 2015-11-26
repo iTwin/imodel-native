@@ -939,11 +939,35 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
     if (parentClassMap)
         m_parentMapClassId = parentClassMap->GetClass().GetId();
 
-    auto& pm = mapInfo.GetPropertyMaps(true);
-    if (pm.empty())
+    auto& propertyMapInfos = mapInfo.GetPropertyMaps(true);
+    if (propertyMapInfos.empty())
+        {
         SetTable(const_cast<ECDbSqlTable*>(GetECDbMap().GetSQLManager().GetNullTable()));
+        }
     else
-        SetTable(const_cast<ECDbSqlTable*>(&(pm.front()->GetColumn().GetTable())));
+        {
+        //! Following code determine table for a classMap which could be different from what orignally set. 
+        //! We do not store primary table for a classmap.
+        //! the best shot of getting it right is to look for ECInstanceId table.
+
+        ECDbPropertyMapInfo const* ecInstanceIdPropertyMapInfo = nullptr;
+        for (auto propertyMapInfo : propertyMapInfos)
+            {
+            if (propertyMapInfo->GetColumn().GetKind() == ColumnKind::ECInstanceId)
+                {
+                ecInstanceIdPropertyMapInfo = propertyMapInfo;
+                break;
+                }
+            }
+
+        if (ecInstanceIdPropertyMapInfo == nullptr)
+            {
+            BeAssert(false && "Every class must have ECInstanceId column");
+            SetTable(const_cast<ECDbSqlTable*>(&(propertyMapInfos.front()->GetColumn().GetTable())));
+            }
+        else
+            SetTable(const_cast<ECDbSqlTable*>(&(ecInstanceIdPropertyMapInfo->GetColumn().GetTable())));
+        }
 
     if (GetECInstanceIdPropertyMap() != nullptr)
         return BentleyStatus::ERROR;
