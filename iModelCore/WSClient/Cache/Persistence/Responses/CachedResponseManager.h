@@ -32,18 +32,18 @@ struct CachedResponseManager : public IDeleteHandler
         RelationshipInfoManager*    m_relationshipInfoManager;
         ObjectInfoManager*          m_objectInfoManager;
 
-        ECClassCP               m_cachedQueryInfoClass;
-        ECRelationshipClassCP   m_cachedQueryInfoToResultRelationshipClass;
-        ECRelationshipClassCP   m_cachedQueryInfoToResultWeakRelationshipClass;
-        ECRelationshipClassCP   m_cachedQueryInfoToParentRelationshipClass;
-        ECRelationshipClassCP   m_cachedQueryInfoToHolderRelationshipClass;
-        ECRelationshipClassCP   m_cachedQueryInfoToRelInfoRelationshipClass;
+        ECClassCP               m_responseClass;
+        ECRelationshipClassCP   m_responseToParentClass;
+        ECRelationshipClassCP   m_responseToHolderClass;
+        ECRelationshipClassCP   m_responseToResultClass;
+        ECRelationshipClassCP   m_responseToResultWeakClass;
+        ECRelationshipClassCP   m_responseToRelInfoClass;
 
         ECSqlStatementCache* m_statementCache;
-        ECSqlAdapterLoader<JsonInserter> m_infoInserter;
-        ECSqlAdapterLoader<JsonUpdater>  m_infoUpdater;
+        ECSqlAdapterLoader<JsonInserter> m_responseInserter;
+        ECSqlAdapterLoader<JsonUpdater>  m_responseUpdater;
 
-        bset<ECInstanceKey> m_cachedResponsesToDelete;
+        bset<ECInstanceKey> m_responsesToDelete;
 
     private:
         BentleyStatus RelateResultInstancesToCachedResponseInfo
@@ -107,18 +107,21 @@ struct CachedResponseManager : public IDeleteHandler
             ISelectProviderCR selectProvider,
             const CacheQueryHelper::ReadCallback& readCallback
             );
+
         //! Read keys from response instances.
         BentleyStatus ReadResponseInstanceKeys
             (
             ECInstanceKeyCR cachedQueryInfoDesc,
             ECInstanceKeyMultiMap& keysOut
             );
+
         //! Read ObjectIds from response instances
         BentleyStatus ReadResponseObjectIds
             (
             ECInstanceId cachedResponseInfoId,
             bset<ObjectId>& objectIdsOut
             );
+
         //! Read query results cache tag
         Utf8String ReadResponseCacheTag(ECInstanceKeyCR parent, Utf8StringCR queryName);
         //! Read query results cached date
