@@ -282,7 +282,10 @@ PropertyMapCR PropertyNameExp::GetPropertyMap() const
         {
         auto classNameExp = static_cast<ClassNameExp const*>(GetClassRefExp ());
         auto propertyMap = classNameExp->GetInfo ().GetMap ().GetPropertyMap (GetPropertyPath ().ToString (false).c_str ());
-        BeAssert (propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
+        if (propertyMap == nullptr)
+            {
+            BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
+            }
         return *propertyMap;
         }
 

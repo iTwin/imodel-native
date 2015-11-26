@@ -33,7 +33,7 @@ public:
     typedef std::vector<PropertyMapCP>::const_iterator const_iterator;
 
 private:
-    typedef bmap<Utf8CP, PropertyMapPtr, CompareUtf8> PropertyMapsByAccessString;
+    typedef std::map<Utf8CP, PropertyMapPtr, CompareUtf8> PropertyMapsByAccessString;
 
     PropertyMapsByAccessString m_dictionary;
     std::vector<PropertyMapCP> m_orderedCollection;
@@ -294,7 +294,7 @@ protected:
         {
         for (auto const& protoChild : proto.m_children)
             {
-            m_children.AddPropertyMap(PropertyMap::Clone(*protoChild, primaryTable, this));
+            m_children.AddPropertyMap(protoChild->GetProperty().GetName().c_str(), PropertyMap::Clone(*protoChild, primaryTable, this));
             }
         }
 

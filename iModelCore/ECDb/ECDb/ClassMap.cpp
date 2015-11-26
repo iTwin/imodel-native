@@ -962,7 +962,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
 
         if (ecInstanceIdPropertyMapInfo == nullptr)
             {
-            BeAssert(false && "Every class must have ECInstanceId column");
             SetTable(const_cast<ECDbSqlTable*>(&(propertyMapInfos.front()->GetColumn().GetTable())));
             }
         else
