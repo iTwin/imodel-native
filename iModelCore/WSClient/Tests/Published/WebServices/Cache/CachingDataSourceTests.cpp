@@ -3863,7 +3863,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSupplied_CachesIniti
 
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key)).WillOnce(Return("TestTag"));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CachePartialResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
 
     auto newInstanceKey = StubECInstanceKey(33, 44);
     auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
@@ -3890,7 +3890,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesWithSyncRecursivelyF
 
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key)).WillOnce(Return("TestTag"));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CachePartialResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
 
     auto newInstanceKey = StubECInstanceKey(33, 44);
     auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
@@ -4100,7 +4100,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_AlreadyCachedInstanceReturnedFromQ
     // Second query
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key)).WillOnce(Return(""));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CachePartialResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
 
     auto responseKeys = StubECInstanceKeyMultiMap({instanceKey});
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(DoAll(SetArgReferee<1>(responseKeys), Return(CacheStatus::OK)));
@@ -4128,8 +4128,8 @@ TEST_F(CachingDataSourceTests, SyncCachedData_CachePartialInstancesRejectsInstan
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key)).WillOnce(Return(nullptr));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
-    EXPECT_CALL(*cache, CachePartialResponse(query.key, _, _, query.query.get(), _))
-        .WillOnce(DoAll(SetArgReferee<2>(StubBSet({objectId})), Return(SUCCESS)));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, query.query.get(), _))
+        .WillOnce(DoAll(SetArgPointee<2>(StubBSet({objectId})), Return(SUCCESS)));
 
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(Return(CacheStatus::OK));
 
@@ -4192,7 +4192,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InstanceCachedAsPersistent_GetQuer
 
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key)).WillOnce(Return("TestTag"));
     EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CachePartialResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, query.query.get(), _)).WillOnce(Return(SUCCESS));
 
     auto newInstanceKey = StubECInstanceKey(33, 44);
     auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
@@ -4239,8 +4239,8 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedAndServerErr
     EXPECT_CALL(*client, SendQueryRequest(*a.query, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     EXPECT_CALL(*client, SendQueryRequest(*b.query, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::Id::ServerError))));
     EXPECT_CALL(*client, SendQueryRequest(*c.query, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, CachePartialResponse(a.key, _, _, a.query.get(), _)).WillOnce(Return(SUCCESS));
-    EXPECT_CALL(*cache, CachePartialResponse(c.key, _, _, c.query.get(), _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(a.key, _, _, a.query.get(), _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*cache, CacheResponse(c.key, _, _, c.query.get(), _)).WillOnce(Return(SUCCESS));
 
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(a.key, _)).WillOnce(Return(CacheStatus::OK));
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(c.key, _)).WillOnce(Return(CacheStatus::OK));
