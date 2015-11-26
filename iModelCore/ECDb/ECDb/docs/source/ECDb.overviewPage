@@ -115,6 +115,7 @@
     @li @subpage ECDbECSchemaRules
     @li @subpage ECDbTransactions
     @li @subpage ECDbSchemaMappingCustomization
+    @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
     @li @subpage ECDbCodeSamples
 
@@ -467,7 +468,23 @@
                 </Class>
             </Target>
         </ECRelationshipClass>
+        */
 
-
+    /**
+    @page ECDbFileInfo File-backed ECInstances
+    %ECDb provides basic support for file-backed ECInstances. Every %ECDb file contains the system ECSchema
+    @b ECDb_FileInfo. The ECClass @b FileInfo and its subclasses are used to describe the file to which
+    an ECInstance is associated. The ECClass @b FileInfoOwnership is used to relate a @b FileInfo to its owning
+    ECInstance.
+    
+    With the help of that ECSchema you can just use ECSQL to create or delete FileInfo instances, and 
+    to relate them to its owning ECInstances.
+    
+    @note
+    ECDb does not automatically manage any referential integrity between FileInfos and their owning
+    ECInstances. You can either do that manually by deleting from the FileInfo and FileInfoOwnership ECClasses
+    (via ECSQL DELETE) or you can use the method @ref BentleyApi::BeSQLite::EC::ECDb::Purge "ECDb::Purge" to clean-up 
+    orphaned FileInfo instances.
+    
     @see @ref ECDbOverview
     */

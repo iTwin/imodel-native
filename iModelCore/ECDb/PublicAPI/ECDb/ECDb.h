@@ -39,9 +39,13 @@ enum class ECDbIssueSeverity
 struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
+    //=======================================================================================
+    //! Modes for the ECDb::Purge method.
+    // @bsiclass                                                Krischan.Eberle      11/2015
+    //+===============+===============+===============+===============+===============+======
     enum class PurgeMode
         {
-        OrphanedFileInfos = 1
+        OrphanedFileInfos = 1 //!< Purges orphaned FileInfo instances (see also @ref ECDbFileInfo)
         };
 
     struct Impl;
@@ -126,18 +130,10 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
-    //! Deletes orphan ECInstances left over from operations specified by @p mode.
-    //! 
-    //! ####Purging orphan FileInfo ECInstances (Purge mode @ref ECDb::PurgeMode::OrphanedFileInfos "OrphanedFileInfos")
-    //! The ECDb provides basic support for relating external or embeddeded files to any ECInstance in the ECDb file. 
-    //! For that purpose every ECDb file contains the system ECSchema @b ECDb_FileInfo which allows you to
-    //! use ECSQL to create and delete FileInfo ECInstances and associate them with other ECInstances.
-    //! ECDb, however, does not automatically manage any referential integrity between FileInfos and their owning
-    //! ECInstances. You can either do that manually by deleting from the FileInfo and FileInfoOwnership ECClasses
-    //! or you can use the Purge method which looks for all orphaned file info records and deletes them.
-    //!
+    //! Deletes orphaned ECInstances left over from operations specified by @p mode.
     //! @param[in] mode Purge mode
     //! @return SUCCESS or ERROR
+    //! @see @ref ECDbFileInfo
     ECDB_EXPORT BentleyStatus Purge(PurgeMode mode) const;
 
     //! Adds a listener that listens to issues reported by this ECDb object.
