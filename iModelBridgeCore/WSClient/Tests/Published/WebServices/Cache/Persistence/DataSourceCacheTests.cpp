@@ -15,8 +15,6 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-using std::shared_ptr;
-
 Json::Value ReadInstance(IDataSourceCachePtr cache, ObjectIdCR objectId)
     {
     Json::Value instanceJson;
@@ -224,7 +222,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
 
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     Json::Value instance;
     CacheStatus status = cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance);
@@ -235,7 +233,7 @@ TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullIn
 
 TEST_F(DataSourceCacheTests, GetInstance_LinkedToRoot_ReturnsOk)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
     Json::Value instance;
@@ -269,7 +267,7 @@ void VerifyJsonDisplayDataFormat(JsonValueCR instance)
 
 TEST_F(DataSourceCacheTests, GetInstance_RawFormat_ReturnsPlaceholderInstanceWithExpectedFormat)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
     Json::Value instance;
@@ -280,7 +278,7 @@ TEST_F(DataSourceCacheTests, GetInstance_RawFormat_ReturnsPlaceholderInstanceWit
 
 TEST_F(DataSourceCacheTests, GetInstance_DisplayFormat_ReturnsDisplayInstanceWithExpectedFormat)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
     Json::Value instance;
@@ -301,7 +299,7 @@ TEST_F(DataSourceCacheTests, GetInstance_DisplayFormat_ReturnsDisplayInstanceWit
 
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndInstanceNotCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -316,7 +314,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndIn
 
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
     StubInstances instances;
@@ -333,14 +331,14 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
 
 TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceNotCached_IsFullyCachedIsFalse)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
 TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceCached_IsFullyCachedIsTrue)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -351,7 +349,7 @@ TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceCached_IsFullyCachedIsT
 
 TEST_F(DataSourceCacheTests, RemoveInstance_InstanceNotCached_ReturnsDataNotCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CacheStatus status = cache->RemoveInstance({"TestSchema.TestClass", "Foo"});
 
@@ -360,7 +358,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceNotCached_ReturnsDataNotCach
 
 TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_Deletes)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -374,7 +372,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_Deletes)
 
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryExists_DeletesQueryResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances parentInstance;
     parentInstance.Add({"TestSchema.TestClass", "parent"});
@@ -399,7 +397,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryExists_DeletesQueryResults
 
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultHasOtherParent_DoesNotDeleteResult)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "parentA"});
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "parentB"});
@@ -420,7 +418,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultHasOtherParent_DoesN
 
 TEST_F(DataSourceCacheTests, RemoveInstance_InstanceIsInCachedQueryResults_QueryResultCacheTagIsRemoved)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
@@ -440,7 +438,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceIsInCachedQueryResults_Query
 
 TEST_F(DataSourceCacheTests, RemoveInstance_HasCachedFile_FileIsDeleted)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
     cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
@@ -456,7 +454,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_HasCachedFile_FileIsDeleted)
 
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInRoot_LeavesResultInstanceInCache)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot("parent_root", {"TestSchema.TestClass", "parent"});
     cache->LinkInstanceToRoot("child_root", {"TestSchema.TestClass", "resultInRoot"});
@@ -475,7 +473,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInRoot_Lea
 
 //TEST_F (DataSourceCacheTests, RemoveInstance_UnderlyingTreeHasCyclicHoldingRelationships_StillRemovesAllTree)
 //    {
-//    shared_ptr<DataSourceCache> cache = GetTestCache ();
+//    auto cache = GetTestCache ();
 //    cache->LinkInstanceToRoot ("foo_root", {"TestSchema.TestClass", "parent"});
 //
 //    Json::Value children;
@@ -507,7 +505,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInRoot_Lea
 
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInWeaklyLinkedToRoot_RemovesResultInstanceInCache)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "resultInRoot"});
@@ -526,16 +524,16 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInWeaklyLi
 
 TEST_F(DataSourceCacheTests, FindInstance_NotCachedInstance_Null)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
 TEST_F(DataSourceCacheTests, FindInstance_PassedCachedRelationshipId_ReturnsInvalidAsFindRelationshipShouldBeUsed)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
     cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
@@ -545,7 +543,7 @@ TEST_F(DataSourceCacheTests, FindInstance_PassedCachedRelationshipId_ReturnsInva
 
 TEST_F(DataSourceCacheTests, FindCachedObject_InstanceLinkedToRoot_IsNotNull)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     BentleyStatus status = cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
@@ -555,7 +553,7 @@ TEST_F(DataSourceCacheTests, FindCachedObject_InstanceLinkedToRoot_IsNotNull)
 
 TEST_F(DataSourceCacheTests, LinkInstanceToRoot_NotCachedInstance_HasInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     BentleyStatus status = cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
@@ -565,7 +563,7 @@ TEST_F(DataSourceCacheTests, LinkInstanceToRoot_NotCachedInstance_HasInstance)
 
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedToRoot_InstanceRemoved)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_EQ(SUCCESS, cache->LinkInstanceToRoot("A", {"TestSchema.TestClass", "Foo"}));
 
     EXPECT_EQ(SUCCESS, cache->UnlinkInstanceFromRoot("A", {"TestSchema.TestClass", "Foo"}));
@@ -574,7 +572,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedToRoot
 
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceButLinkedToOtherRoot_InstanceNotRemoved)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_EQ(SUCCESS, cache->LinkInstanceToRoot("A", {"TestSchema.TestClass", "IdA"}));
     EXPECT_EQ(SUCCESS, cache->LinkInstanceToRoot("B", {"TestSchema.TestClass", "IdB"}));
 
@@ -585,7 +583,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceButLinkedToO
 
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedAlsoToOtherRoot_InstanceNotRemoved)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_EQ(SUCCESS, cache->LinkInstanceToRoot("A", {"TestSchema.TestClass", "Foo"}));
     EXPECT_EQ(SUCCESS, cache->LinkInstanceToRoot("B", {"TestSchema.TestClass", "Foo"}));
 
@@ -595,7 +593,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedAlsoTo
 
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NotCachedInstance_Suceeds)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_EQ(SUCCESS, cache->LinkInstanceToRoot("A", {"TestSchema.TestClass", "Foo"}));
 
     EXPECT_EQ(SUCCESS, cache->UnlinkInstanceFromRoot("A", {"TestSchema.TestClass", "NotExistingInstance"}));
@@ -604,7 +602,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NotCachedInstance_Suceeds)
 
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NonExistingRoot_SuceedsAndKeepsInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_EQ(SUCCESS, cache->LinkInstanceToRoot("A", {"TestSchema.TestClass", "Foo"}));
 
     EXPECT_EQ(SUCCESS, cache->UnlinkInstanceFromRoot("NonExistingRoot", {"TestSchema.TestClass", "Foo"}));
@@ -613,7 +611,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NonExistingRoot_SuceedsAndKe
 
 TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_ObjectIdDoesNotMachWSObjectsResponse_ErrorIsReturned)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "DifferentId"});
@@ -627,7 +625,7 @@ TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_ObjectIdDoesNotMachWSObj
 
 TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_WSObjectResultPassed_InstanceInRootAndFullyCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -640,7 +638,7 @@ TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_WSObjectResultPassed_Ins
 
 TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_InstanceJsonPassed_InstanceInRootAndFullyCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     rapidjson::Value instanceJson(rapidjson::kObjectType);
     BentleyStatus status = cache->CacheInstanceAndLinkToRoot({"TestSchema.TestClass", "Foo"}, instanceJson, "CacheTag", "Root");
@@ -652,7 +650,7 @@ TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_InstanceJsonPassed_Insta
 
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstance_InstanceCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -665,7 +663,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstance_InstanceCac
 
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithWeakLink_InstanceCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -677,7 +675,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithWeakLink
 
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithETag_ETagIsCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     ObjectIdCR objectId {"TestSchema.TestClass", "Id"};
@@ -690,7 +688,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithETag_ETa
 
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFromCache)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
     BentleyStatus status = cache->RemoveRoot("foo_root");
@@ -701,7 +699,7 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFro
 
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasWeaklyLinkedInstance_InstanceRemovedFromCache)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -715,7 +713,7 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootHasWeaklyLinkedInstance_InstanceRemo
 
 TEST_F(DataSourceCacheTests, RemoveRoot_InstanceLinkedToSeveralRoots_InstanceNotRemoved)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("root1", {"TestSchema.TestClass", "Foo"});
     cache->LinkInstanceToRoot("root2", {"TestSchema.TestClass", "Foo"});
 
@@ -727,7 +725,7 @@ TEST_F(DataSourceCacheTests, RemoveRoot_InstanceLinkedToSeveralRoots_InstanceNot
 
 TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelationshipToItsParent_QueryResultsAndParentDeleted)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "CyclicParent"});
     auto instanceA = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
@@ -743,14 +741,14 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelatio
 
 TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_NoSuchRoots_ReturnsSuccess)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     BentleyStatus status = cache->RemoveRootsByPrefix("Foo");
     EXPECT_EQ(SUCCESS, status);
     }
 
 TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_RootsWithLinkedInstancesExist_DeletesOnlyPrefixedRootLinkedInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Test", {"TestSchema.TestClass", "A"}));
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("TestFoo", {"TestSchema.TestClass", "B"}));
@@ -768,7 +766,7 @@ TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_RootsWithLinkedInstancesExist_D
 
 TEST_F(DataSourceCacheTests, IsInstanceConnectedToRoot_InstanceIsRootChild_True)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("root", {"TestSchema.TestClass", "Foo"});
 
     EXPECT_TRUE(cache->IsInstanceConnectedToRoot("root", cache->FindInstance({"TestSchema.TestClass", "Foo"})));
@@ -776,7 +774,7 @@ TEST_F(DataSourceCacheTests, IsInstanceConnectedToRoot_InstanceIsRootChild_True)
 
 TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_RootNotUsed_ReturnsSuccessAndNoInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     Json::Value instances;
     BentleyStatus status = cache->ReadInstancesLinkedToRoot("NotUsedRoot", instances);
@@ -787,7 +785,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_RootNotUsed_ReturnsSucces
 
 TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstancesLinkedToRoot_ReturnsInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "A"});
     cache->LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass2", "B"});
@@ -803,7 +801,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstance
 
 TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToFull_LeavesFile)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
     cache->SetupRoot("foo_root", CacheRootPersistence::Full);
     cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
@@ -818,7 +816,7 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSe
 
 TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToPersistent_DeletesFile)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
     cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
     cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
@@ -833,7 +831,7 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSe
 
 TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_ModifiedFileExists_LeavesModifiedFile)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
     cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
     auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
@@ -850,7 +848,7 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_ModifiedFileExist
 TEST_F(DataSourceCacheTests, Reset_InstanceLinkedToRoot_InstanceRemoved)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
     // Act
     ASSERT_EQ(SUCCESS, cache->Reset());
@@ -861,7 +859,7 @@ TEST_F(DataSourceCacheTests, Reset_InstanceLinkedToRoot_InstanceRemoved)
 TEST_F(DataSourceCacheTests, Reset_NullRootRemovedWithNavigationBase_NavigationBaseIsNotInCache)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     // Act
     ASSERT_EQ(SUCCESS, cache->Reset());
     // Assert
@@ -871,7 +869,7 @@ TEST_F(DataSourceCacheTests, Reset_NullRootRemovedWithNavigationBase_NavigationB
 TEST_F(DataSourceCacheTests, Reset_FileCachedBefore_CachesNewFileToSameLocation)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
     cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Temporary);
     BeFileName oldCachedPath = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
@@ -891,14 +889,14 @@ TEST_F(DataSourceCacheTests, Reset_FileCachedBefore_CachesNewFileToSameLocation)
 
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_NonExistingObject_False)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     EXPECT_FALSE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "NonExistant"}));
     }
 
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInFullPersistenceRoot_True)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->SetupRoot("foo_root", CacheRootPersistence::Full);
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
@@ -907,7 +905,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInFullPersistenceRoot_
 
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryPersistenceRoot_False)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
@@ -916,7 +914,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryPersistence
 
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectQueryParentInFullPersistenceRoot_True)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->SetupRoot("foo_root", CacheRootPersistence::Full);
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "parent"});
@@ -932,7 +930,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectQueryParentInFullPersi
 
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryAndFullPersistenceRoots_True)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->SetupRoot("temp_root", CacheRootPersistence::Temporary);
     cache->SetupRoot("full_root", CacheRootPersistence::Full);
     cache->LinkInstanceToRoot("temp_root", {"TestSchema.TestClass", "Foo"});
@@ -943,7 +941,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryAndFullPers
 
 TEST_F(DataSourceCacheTests, SetupRoot_NewRoot_Succeeds)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     EXPECT_EQ(SUCCESS, cache->SetupRoot("foo", CacheRootPersistence::Temporary));
     EXPECT_EQ(SUCCESS, cache->SetupRoot("boo", CacheRootPersistence::Full));
@@ -951,7 +949,7 @@ TEST_F(DataSourceCacheTests, SetupRoot_NewRoot_Succeeds)
 
 TEST_F(DataSourceCacheTests, DoesRootExist_NonExistingRoot_FalseAndRootIsNotCreated)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     EXPECT_FALSE(cache->DoesRootExist("Foo"));
     EXPECT_FALSE(cache->DoesRootExist("Foo"));
@@ -959,7 +957,7 @@ TEST_F(DataSourceCacheTests, DoesRootExist_NonExistingRoot_FalseAndRootIsNotCrea
 
 TEST_F(DataSourceCacheTests, DoesRootExist_ExistingRoot_True)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ASSERT_TRUE(cache->FindOrCreateRoot("Foo").IsValid());
 
     EXPECT_TRUE(cache->DoesRootExist("Foo"));
@@ -967,14 +965,14 @@ TEST_F(DataSourceCacheTests, DoesRootExist_ExistingRoot_True)
 
 TEST_F(DataSourceCacheTests, FindOrCreateRoot_NonExistingRoot_CreatesNewRoot)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     EXPECT_TRUE(cache->FindOrCreateRoot("Foo").IsValid());
     }
 
 TEST_F(DataSourceCacheTests, FindOrCreateRoot_DifferentRoot_CreatesNewRoot)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto rootKeyA = cache->FindOrCreateRoot("A");
     auto rootKeyB = cache->FindOrCreateRoot("B");
@@ -986,7 +984,7 @@ TEST_F(DataSourceCacheTests, FindOrCreateRoot_DifferentRoot_CreatesNewRoot)
 
 TEST_F(DataSourceCacheTests, FindOrCreateRoot_ExistingRoot_ReturnsSameKey)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto rootKey = cache->FindOrCreateRoot("Foo");
     EXPECT_TRUE(rootKey.IsValid());
@@ -1043,7 +1041,7 @@ TEST_F(DataSourceCacheTests, RenameRoot_ExistingRootWithInstanceLinked_RenamedRo
 
 TEST_F(DataSourceCacheTests, UpdateInstances_WSResultNotModified_ReturnsError)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     BeTest::SetFailOnAssert(false);
     BentleyStatus status = cache->UpdateInstances(StubWSObjectsResponseNotModified());
@@ -1054,7 +1052,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_WSResultNotModified_ReturnsError)
 
 TEST_F(DataSourceCacheTests, UpdateInstances_NotExistingInstance_InstanceInsertedIntoRejected)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1072,7 +1070,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_NotExistingInstance_InstanceInserte
 
 TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_Caches)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
@@ -1089,7 +1087,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_Caches)
 
 TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_InsertsIntoCachedInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
 
@@ -1108,7 +1106,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_InsertsIntoCachedI
 
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NewInstnaces_ReturnsCachedInstanceKeys)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
@@ -1126,7 +1124,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NewInstnaces_ReturnsCac
 
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ErrorAndNullJson)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
 
     Json::Value instance(Json::objectValue);
@@ -1136,7 +1134,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ErrorAndNullJso
 
 TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ErrorAndNullJson)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     Json::Value instance(Json::objectValue);
     EXPECT_THAT(cache->ReadInstance(ObjectId("TestSchema.TestClass", "NonExisting"), instance), CacheStatus::DataNotCached);
@@ -1145,7 +1143,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ErrorAndNullJson)
 
 TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsJsonInstanceWithRemoteIdAndValues)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ObjectId id("TestSchema.TestClass", "TestId");
 
     StubInstances instances;
@@ -1161,7 +1159,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsJsonInstanceWi
 
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ReturnsNull)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
 
     auto instance = cache->ReadInstance(ObjectId());
@@ -1170,7 +1168,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ReturnsNull)
 
 TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ReturnsNull)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instance = cache->ReadInstance(ObjectId("TestSchema.TestClass", "NonExisting"));
     EXPECT_THAT(instance.IsNull(), true);
@@ -1178,7 +1176,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ReturnsNull)
 
 TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsECInstanceWithRemoteIdAndValues)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ObjectId id("TestSchema.TestClass", "TestId");
 
     StubInstances instances;
@@ -1195,7 +1193,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsECInstanceWith
 
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseInstanceKey_ReturnsNull)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
 
     auto instanceKey = cache->FindInstance(ObjectId());
@@ -1207,7 +1205,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseInstanceKey_ReturnsNull)
 
 TEST_F(DataSourceCacheTests, ReadInstance_ExistingInstanceKey_ReturnsECInstanceWithRemoteIdAndValues)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ObjectId id("TestSchema.TestClass", "TestId");
 
     StubInstances instances;
@@ -1227,7 +1225,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingInstanceKey_ReturnsECInstanceW
 
 TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIds_ReturnsInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1246,7 +1244,7 @@ TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIds_ReturnsInstances)
 
 TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "NonExisting"}), nullptr);
     EXPECT_NE(0, responseKey.GetParent().GetECClassId());
@@ -1257,7 +1255,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
 
 TEST_F(DataSourceCacheTests, CacheResponse_ParentInCache_ReturnsSuccess)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "parent"});
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "parent"}), nullptr);
 
@@ -1267,9 +1265,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ParentInCache_ReturnsSuccess)
 
 TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFullInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "TestValueA"}});
@@ -1290,9 +1288,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
 
 TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPreviusly_ReplacesOldQueryResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
@@ -1311,7 +1309,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPrevi
 
 TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameButDifferentParentsCachedPreviusly_DoesNotOverrideExistingQuery)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("root1"), "TestQuery");
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("root2"), "TestQuery");
@@ -1331,8 +1329,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameButDifferentParentsC
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewData_RemovesInstanceFromCache)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
@@ -1349,8 +1347,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewData_RemovesInsta
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewDataButIsInRoot_LeavesInstanceInCache)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "Foo"});
 
     StubInstances instances;
@@ -1365,8 +1363,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewDataButIsInRoot_L
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResultsButIsWeaklyLinkedToRoot_RemovesInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1382,7 +1380,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResultsButIsWeakl
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResults_RemovesInstanceChildQueryResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey baseResultsKey(cache->FindOrCreateRoot(nullptr), nullptr);
 
     StubInstances instances;
@@ -1402,8 +1400,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResults_RemovesIn
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1422,8 +1420,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewRes
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceAddedInNewResults_AddsInstanceToCache)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
@@ -1439,7 +1437,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceAddedInNewResults_AddsInstanc
 
 TEST_F(DataSourceCacheTests, CacheResponse_RootAsParent_InstancesRelatedToRootInHoldingRelationships)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1458,9 +1456,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_RootAsParent_InstancesRelatedToRootIn
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultNotModified_LeavesPreviouslyCachedData)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
@@ -1474,9 +1471,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultNotModified_LeavesPreviouslyCac
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_CachesAllRelatedInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     auto instancesRelatedToA = instances.Add({"TestSchema.TestClass", "A"});
@@ -1495,9 +1491,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_Ca
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_CachesRelatedInstancesWithDefinedRelationship)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"})
@@ -1511,9 +1507,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_Ca
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesCyclicRelationship)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"})
@@ -1530,9 +1526,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesCy
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesInstanceOnce)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "CachedValue"}})
@@ -1549,9 +1545,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesIn
 
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithChangedRelationship_RemovesOldRelationship)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
@@ -1575,9 +1571,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithChangedRelationship_Remo
 
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleClassRelationshipsAndNewResultHasNewIntermixedRelationships_LeavesOldRelationshipsAndAddsNew_REGRESSION)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     auto testRelClass1 = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto testRelClass2 = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass2");
@@ -1611,9 +1606,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleClassRelationshipsAndNewResul
 
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelationships_RemovesOldInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
@@ -1630,7 +1624,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelatio
 
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithoutRelationshipButSameRelationshipCachedInOtherQuery_LeavesOldRelationship)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey1(cache->FindOrCreateRoot(nullptr), "TestQuery1");
     CachedResponseKey responseKey2(cache->FindOrCreateRoot(nullptr), "TestQuery2");
@@ -1655,7 +1649,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithoutRelationshipButSameRe
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelationshipWithSameIds_CachesRelationships)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"})
@@ -1678,8 +1672,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelationshipWithSameIds
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceNotCachedPreviouslyAndQueryIsNull_CachesFullInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances partialInstances;
     partialInstances.Add({"TestSchema.TestClass", "Partial"});
@@ -1694,7 +1688,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceNotCachedPreviouslyAndQueryIs
 
 TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanceAndQueryIsNull_OverwritesFullInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances fullInstance;
     fullInstance.Add({"TestSchema.TestClass", "FullyCached"}, {{"TestProperty", "OldValue"}});
@@ -1703,7 +1697,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     cache->SetupRoot("FullRoot", CacheRootPersistence::Default);
 
     // Act
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances partialInstances;
     partialInstances.Add({"TestSchema.TestClass", "FullyCached"}, {{"TestProperty", "NewValue"}});
@@ -1723,7 +1717,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
 TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanceInTemporaryRoot_OverwritesItWithNew)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances fullInstance;
     fullInstance.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "FullValue"}});
@@ -1732,7 +1726,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     cache->SetupRoot("TempRoot", CacheRootPersistence::Temporary);
 
     // Act
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances partialInstances;
     partialInstances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "PartialValue"}});
@@ -1752,7 +1746,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
 
 TEST_F(DataSourceCacheTests, CacheResponse_QueryHasEmptySelectToSelectAllProperties_CachesInstanceAsFull)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1769,7 +1763,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryHasEmptySelectToSelectAllPropert
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsJustIdButFromEmptySchemaAndClass_CachesInstanceAspartial)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1789,7 +1783,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsJustIdButFromEmptySchemaA
 
 TEST_F(DataSourceCacheTests, CacheResponse_QueryPassedButNotRejectedIsNull_Error)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1803,8 +1797,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryPassedButNotRejectedIsNull_Error
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllProperties_CachesInstanceAsFull)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1822,8 +1816,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllProperties_CachesInsta
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllPropertiesWithDifferentSchemaClass_CachesInstanceAsFullAndReturnsNoRejects)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1841,8 +1835,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllPropertiesWithDifferen
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllProperties_CachesInstanceAsPartial)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1861,8 +1855,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllProperties_CachesIn
 
 TEST_F(DataSourceCacheTests, CacheResponse_QueryPolymorphicallySelectsNotAllProperties_CachesInstanceAsPartial)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
@@ -1881,8 +1875,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryPolymorphicallySelectsNotAllProp
 
 TEST_F(DataSourceCacheTests, CacheResponse_QueryDSelectsForwardRelatedInstanceForDifferentSchemaWithAllProperties_CachesInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -1903,8 +1897,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryDSelectsForwardRelatedInstanceFo
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsForwardRelatedInstanceWithAllProperties_CachesInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -1925,8 +1919,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsForwardRelatedInstanceWit
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsBackwardRelatedInstanceWithAllProperties_CachesInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -1947,8 +1941,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsBackwardRelatedInstanceWi
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphicallyWithAllProperties_CachesFullInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -1969,8 +1963,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphi
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphicallyWithAllPropertiesAndResultHasDerived_CachesFullInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -1991,8 +1985,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphi
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphically_CachesFullInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -2013,8 +2007,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphicallyAndResponseHasDerivedRelationshipAndNotAllProperties_CachesRelatedAsPartial)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -2035,8 +2029,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedFullyWithDefaultRelationship_RelatedIsCachedAsPartialAsDefaultRelationshipsAreNotSupported)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -2057,8 +2051,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedFullyWithDefaultRe
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsFull_RejectsRelatedInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "OldValue"}});
 
@@ -2083,8 +2077,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphicallyAndResponseHasDerivedRelationship_CachesFullInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -2105,8 +2099,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithAllPropertiesAndAliases_CachesInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances
@@ -2127,8 +2121,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithAllPro
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithNotAllPropertiesForFullyCachedInstances_RejectsRelatedInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances fullInstances;
     fullInstances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "FullA"}});
@@ -2158,8 +2152,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithNotAll
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWithNotAllPropertiesForFullyCachedInstances_RejectsRelatedInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances fullInstances;
     fullInstances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "FullA"}});
@@ -2198,8 +2192,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWithAllPropertiesForFullyCachedInstances_CachesInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances fullInstances;
     fullInstances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "FullA"}});
@@ -2235,8 +2229,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyCachedInstances_RejectsAllInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances fullInstances;
     fullInstances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "FullA"}});
@@ -2270,8 +2264,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyCachedInstance_RejectsInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances fullInstance;
     fullInstance.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "FullValue"}});
@@ -2295,7 +2289,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelationshipToResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey key(cache->FindOrCreateRoot("Parent"), "TestQuery", ECInstanceKey());
 
     StubInstances instances;
@@ -2314,7 +2308,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelati
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHaveHoldingRelationshipToResultsButHolderDoes)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey key(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder"));
 
     StubInstances instances;
@@ -2335,7 +2329,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHa
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey key(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder"));
 
     StubInstances instances;
@@ -2352,7 +2346,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsR
 
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleNestedResponsesWithHolderAndHolderIsRemoved_RemovesResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     bset<ObjectId> rejected;
 
     StubInstances instances1;
@@ -2384,7 +2378,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleNestedResponsesWithHolderAndH
 
 TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRelationshipProperties)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances
@@ -2410,7 +2404,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_NewResponseOverridesOldOne)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey key(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder"));
 
     StubInstances oldInstances;
@@ -2432,7 +2426,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_Ne
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameParentAndSameNameButDifferentHolders_NewResponseOverridesOldOne)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey key1(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder1"));
     CachedResponseKey key2(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder2"));
 
@@ -2455,7 +2449,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameParentAndSameNameButDiffe
 
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameButDifferentParents_DoesNotOverrideEachOther)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey key1(cache->FindOrCreateRoot("Parent1"), "TestQuery", cache->FindOrCreateRoot("Holder"));
     CachedResponseKey key2(cache->FindOrCreateRoot("Parent2"), "TestQuery", cache->FindOrCreateRoot("Holder"));
 
@@ -2478,7 +2472,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameButDifferent
 
 TEST_F(DataSourceCacheTests, CacheResponse_NotCancelledCancellatioTokenPassed_CachesAndReturnsSuccess)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
     auto token = SimpleCancellationToken::Create(false);
 
@@ -2491,7 +2485,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotCancelledCancellatioTokenPassed_Ca
 
 TEST_F(DataSourceCacheTests, CacheResponse_CancelledCancellatioTokenPassed_ReturnsError)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
     auto token = SimpleCancellationToken::Create(true);
 
@@ -2518,7 +2512,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseNotCachedButParentExists_F
 
 TEST_F(DataSourceCacheTests, IsResponseCached_ResponseCached_True)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "Foo");
 
@@ -2528,7 +2522,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseCached_True)
 
 TEST_F(DataSourceCacheTests, IsResponseCached_ResponseWithHoldererCached_True)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "Foo", cache->FindOrCreateRoot("Holder"));
 
@@ -2539,7 +2533,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseWithHoldererCached_True)
 TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQueryContainsFullyCachedInstanceInTemporaryRoot_SetsInstanceStateToPartial)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey(cache->FindOrCreateRoot("Root"), "TestQuery");
 
@@ -2567,7 +2561,7 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
 TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQueryContainsFullyCachedParentInstanceInTemporaryRoot_SetsInstanceStateToPartial)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     // Same instance is parent and result - will force different weak result relationship in cached query
     cache->LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Foo"});
@@ -2597,7 +2591,7 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
 TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQueryContainsFullyCachedInstanceInFullRoot_LeavesInstanceStateFullyCached)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances fullInstance;
     fullInstance.Add({"TestSchema.TestClass", "FullyCached"}, {{"TestProperty", "FullValue"}});
@@ -2606,7 +2600,7 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
     cache->SetupRoot("FullPersistenceRoot", CacheRootPersistence::Full);
     cache->SetupRoot(nullptr, CacheRootPersistence::Temporary);
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances partialInstances;
     partialInstances.Add({"TestSchema.TestClass", "FullyCached"});
@@ -2623,7 +2617,7 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
 
 TEST_F(DataSourceCacheTests, ReadResponse_NonExistingQuery_ReturnsDataNotCachedAndEmptyArray)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
 
     Json::Value results;
@@ -2635,7 +2629,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_NonExistingQuery_ReturnsDataNotCachedA
 
 TEST_F(DataSourceCacheTests, ReadResponse_NonExistingParent_ReturnsDataNotCachedAndEmptyArray)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECInstanceKey parent = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
     Json::Value results;
@@ -2647,8 +2641,8 @@ TEST_F(DataSourceCacheTests, ReadResponse_NonExistingParent_ReturnsDataNotCached
 
 TEST_F(DataSourceCacheTests, ReadResponse_ZeroResultsCached_ReturnsOkAndEmptyArray)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse());
 
@@ -2662,7 +2656,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_ZeroResultsCached_ReturnsOkAndEmptyArr
 TEST_F(DataSourceCacheTests, ReadResponse_PartialInstanceRejectedWhileCaching_StillReturnsInstanceAsQueryResult)
     {
     // Arrange
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances fullInstance;
     fullInstance.Add({"TestSchema.TestClass", "FullyCached"}, {{"TestProperty", "FullValue"}});
@@ -2670,7 +2664,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_PartialInstanceRejectedWhileCaching_St
     cache->CacheInstanceAndLinkToRoot({"TestSchema.TestClass", "FullyCached"}, fullInstance.ToWSObjectsResponse(), "FullRoot");
     cache->SetupRoot("FullRoot", CacheRootPersistence::Full);
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances partialInstances;
     partialInstances.Add({"TestSchema.TestClass", "FullyCached"});
@@ -2689,8 +2683,8 @@ TEST_F(DataSourceCacheTests, ReadResponse_PartialInstanceRejectedWhileCaching_St
 
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithTwoInstance_ReturnsBothInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
@@ -2708,9 +2702,9 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithTwoInstance_ReturnsBo
 
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeInstancesRelatedToOtherInstance_ReturnsBothInstances)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
@@ -2728,8 +2722,8 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeInstancesRelatedTo
 
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithInstance_ReturnsInstanceProperties)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), nullptr);
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "42"}});
@@ -2745,7 +2739,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithInstance_ReturnsInsta
 
 TEST_F(DataSourceCacheTests, ReadResponse_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("Parent"), nullptr, cache->FindOrCreateRoot("Holder"));
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("Parent"), nullptr);
 
@@ -2763,7 +2757,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedWithKeyWithSeperateHolderButPass
 
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeParent_ReturnsParentAlso)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "A"});
     auto instanceA = cache->FindInstance({"TestSchema.TestClass", "A"});
@@ -2782,7 +2776,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeParent_ReturnsPare
 
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDataNotCachedAndEmptyMap)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey({cache->FindOrCreateRoot(nullptr), "NonExisting"});
 
     ECInstanceKeyMultiMap instances;
@@ -2794,7 +2788,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDa
 
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_TwoInstancesCachedAsResult_ReturnsThemInMap)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey({cache->FindOrCreateRoot(nullptr), "TestQuery"});
 
@@ -2814,7 +2808,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_TwoInstancesCachedAsResult
 
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ResultsContainParent_ReturnsParent)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "A"});
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "A"}), "TestQuery");
@@ -2833,7 +2827,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ResultsContainParent_Retur
 TEST_F(DataSourceCacheTests, DISABLED_ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
     {
     // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto parentInstance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Parent"});
     CachedResponseKey responseKey(parentInstance, nullptr);
@@ -2856,7 +2850,7 @@ TEST_F(DataSourceCacheTests, DISABLED_ReadResponseInstanceKeys_CachedInstanceWit
 TEST_F(DataSourceCacheTests, DISABLED_ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
     {
     // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto parentInstance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
     CachedResponseKey responseKey(parentInstance, nullptr);
@@ -2878,7 +2872,7 @@ TEST_F(DataSourceCacheTests, DISABLED_ReadResponseInstanceKeys_CachedParentInsta
 
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("Parent"), nullptr, cache->FindOrCreateRoot("Holder"));
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("Parent"), nullptr);
 
@@ -2895,7 +2889,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedWithKeyWithSeperateH
 
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingQuery_ReturnsDataNotCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey({cache->FindOrCreateRoot(nullptr), "NonExisting"});
 
     bset<ObjectId> objectIds;
@@ -2906,7 +2900,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingQuery_ReturnsDataN
 
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingParent_ReturnsDataNotCachedAndNoIds)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECInstanceKey parent = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
     CachedResponseKey responseKey(parent, nullptr);
 
@@ -2919,7 +2913,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingParent_ReturnsData
 
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_TwoInstancesCachedAsResult_ReturnsTheirObjectIds)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey({cache->FindOrCreateRoot(nullptr), "TestQuery"});
 
@@ -2939,7 +2933,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_TwoInstancesCachedAsResult_Re
 
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_ResultsContainParent_ReturnsParentObjectId)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "A"});
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "A"}), "TestQuery");
@@ -2958,7 +2952,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_ResultsContainParent_ReturnsP
 
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("Parent"), nullptr, cache->FindOrCreateRoot("Holder"));
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("Parent"), nullptr);
 
@@ -2975,7 +2969,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_CachedWithKeyWithSeperateHold
 
 TEST_F(DataSourceCacheTests, RemoveResponses_NonExistingQuery_ReturnsSuccess)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
 
     BentleyStatus status = cache->RemoveResponse({root, "NonExisting"});
@@ -2985,7 +2979,7 @@ TEST_F(DataSourceCacheTests, RemoveResponses_NonExistingQuery_ReturnsSuccess)
 
 TEST_F(DataSourceCacheTests, RemoveResponses_QuerySharesRelationshipWithOtherQuery_LeavesRelationship)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey1(cache->FindOrCreateRoot(nullptr), "TestQuery1");
     CachedResponseKey responseKey2(cache->FindOrCreateRoot(nullptr), "TestQuery2");
@@ -3009,7 +3003,7 @@ TEST_F(DataSourceCacheTests, RemoveResponses_QuerySharesRelationshipWithOtherQue
 
 TEST_F(DataSourceCacheTests, RemoveCachedQueryResults_QueryWithRelationshipWhenOtherQueryHoldsOnlyInstances_DeletesRelationship)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     CachedResponseKey responseKey1(cache->FindOrCreateRoot(nullptr), "TestQuery1");
     CachedResponseKey responseKey2(cache->FindOrCreateRoot(nullptr), "TestQuery2");
@@ -3038,7 +3032,7 @@ TEST_F(DataSourceCacheTests, RemoveCachedQueryResults_QueryWithRelationshipWhenO
 
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_NonExistingQueryResults_ReturnsEmptyString)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
 
     EXPECT_EQ("", cache->ReadResponseCacheTag({root, "NonExisting"}));
@@ -3046,8 +3040,8 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_NonExistingQueryResults_Return
 
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTag_ReturnsSameTag)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse("FooTag"));
 
@@ -3056,7 +3050,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTag_Return
 
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTagAndHolder_ReturnsSameTag)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery", cache->FindOrCreateRoot("Holder"));
 
     cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse("FooTag"));
@@ -3066,7 +3060,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTagAndHold
 
 TEST_F(DataSourceCacheTests, ReadResponseCacheDate_NonExistingQueryResults_ReturnsInvalidDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
 
     EXPECT_EQ(DateTime(), cache->ReadResponseCachedDate({root, "NonExisting"}));
@@ -3075,8 +3069,8 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheDate_NonExistingQueryResults_Retur
 
 TEST_F(DataSourceCacheTests, ReadResponseCacheDate_PreviouslyCached_ReturnsCorrectCachedDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery");
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
 
     auto before = DateTime::GetCurrentTimeUtc();
     BeThreadUtilities::BeSleep(1); // DateTime persistence introduces rounding error in nano seconds
@@ -3089,7 +3083,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheDate_PreviouslyCached_ReturnsCorre
 
 TEST_F(DataSourceCacheTests, ReadResponseCacheDate_PreviouslyCachedWithHolder_ReturnsCorrectCachedDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery", cache->FindOrCreateRoot("Holder"));
 
     auto before = DateTime::GetCurrentTimeUtc();
@@ -3103,27 +3097,27 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheDate_PreviouslyCachedWithHolder_Re
 
 TEST_F(DataSourceCacheTests, ReadInstanceLabel_EmptyObjectId_ReturnsEmpty)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_EQ("", cache->ReadInstanceLabel({}));
     }
 
 TEST_F(DataSourceCacheTests, ReadInstanceLabel_ClassWithLabelProperty_ReturnsCachedLabel)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->CacheInstanceAndLinkToRoot({"TestSchema.TestLabeledClass", "Foo"}, *ToRapidJson(R"({"Name" : "TestLabel"})"), "", "");
     EXPECT_EQ("TestLabel", cache->ReadInstanceLabel({"TestSchema.TestLabeledClass", "Foo"}));
     }
 
 TEST_F(DataSourceCacheTests, ReadInstanceLabel_DreivedClassWithBaseLabelProperty_ReturnsCachedLabel)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->CacheInstanceAndLinkToRoot({"TestSchema.TestDerivedLabeledClass", "Foo"}, *ToRapidJson(R"({"Name" : "TestLabel"})"), "", "");
     EXPECT_EQ("TestLabel", cache->ReadInstanceLabel({"TestSchema.TestDerivedLabeledClass", "Foo"}));
     }
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_NonExistingInstance_Error)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     Utf8String fileName;
     uint64_t fileSize;
     EXPECT_EQ(ERROR, cache->ReadFileProperties(StubNonExistingInstanceKey(*cache), fileName, fileSize));
@@ -3131,7 +3125,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonExistingInstance_Error)
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyValues)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "TestValue"}});
 
@@ -3146,7 +3140,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyV
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsLabel)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestLabeledClass", "Foo"}, {{"Name", "TestName"}});
 
@@ -3161,7 +3155,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturn
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentProperties_SuccessAndReturnsLabelAndSize)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
 
@@ -3176,7 +3170,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileNameProperty_SuccessAndReturnsLabel)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass2", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
 
@@ -3191,7 +3185,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileSizeProperty_SuccessAndReturnsFileSize)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass3", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
 
@@ -3206,7 +3200,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
 
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsLabel)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass4", "Foo"}, {{"Name", "TestName"}});
 
@@ -3221,14 +3215,14 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
 
 TEST_F(DataSourceCacheTests, CacheFile_ObjectWithSuchIdNotCached_ReturnsError)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto status = cache->CacheFile({"TestSchema.TestClass", "NotExisting"}, WSFileResponse(), FileCache::Persistent);
     EXPECT_EQ(ERROR, status);
     }
 
 TEST_F(DataSourceCacheTests, CacheFile_WSFileResponsePassed_MovesFileToCacheLocation)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3248,7 +3242,7 @@ TEST_F(DataSourceCacheTests, CacheFile_WSFileResponsePassed_MovesFileToCacheLoca
 
 TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_CachedFilePathBeginsWithEnvronmentPath)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3264,7 +3258,7 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_CachedFilePathB
 
 TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_CachedFilePathBeginsWithEnvronmentPath)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3280,7 +3274,7 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_CachedFilePathBe
 
 TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviously_CachesNewFileAndRemovesOld)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3298,7 +3292,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviously_CachesNewFileAndRemo
 
 TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviouslyAndCachingToDifferentLocation_CachesNewFileAndRemovesOld)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3316,7 +3310,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviouslyAndCachingToDifferent
 
 TEST_F(DataSourceCacheTests, CacheFile_WSFileResponseNotModifiedPassed_UpdatesCachedDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3336,7 +3330,7 @@ TEST_F(DataSourceCacheTests, CacheFile_WSFileResponseNotModifiedPassed_UpdatesCa
 
 TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotCached_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
@@ -3346,7 +3340,7 @@ TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotCached_ReturnsInvalid)
 
 TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotOnDiskAnyMore_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
@@ -3358,7 +3352,7 @@ TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotOnDiskAnyMore_ReturnsInva
 
 TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceCached_ReturnsDateWhenCached)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     ObjectIdCR objectId {"TestSchema.TestClass", "Id"};
@@ -3376,14 +3370,14 @@ TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceCached_ReturnsDateWh
 
 TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceNotCached_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ASSERT_THAT(cache->ReadInstanceCachedDate({"TestSchema.TestClass", "NonExisting"}).IsValid(), false);
     }
 
 TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_ExternalFileInfoIsAssociatedWithInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3407,7 +3401,7 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_ExternalFileInf
 
 TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_ExternalFileInfoIsAssociatedWithInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3431,7 +3425,7 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_ExternalFileInfo
 
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_MovesFileToTemporaryEnvironmentLocation)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3449,7 +3443,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_Mo
 
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_MovesFileToPersistentEnvironmentLocation)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3467,7 +3461,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_M
 
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExsitingInstance_ReturnsTemporary)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "NonExisting"};
 
@@ -3477,7 +3471,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExsitingInstance_ReturnsTem
 
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFile_ReturnsTemporary)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3487,7 +3481,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFile_ReturnsTemporary
 
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToTemporary_ReturnsTemporary)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3498,7 +3492,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToTemporary_ReturnsTempo
 
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToPersistent_ReturnsPersistent)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
@@ -3509,7 +3503,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToPersistent_ReturnsPers
 
 TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndObjectIdPassed_ReturnsPath)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot(nullptr, fileId);
@@ -3523,7 +3517,7 @@ TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndObjectIdPassed_ReturnsPat
 
 TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndECInstanceKeyPassed_ReturnsPath)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot(nullptr, fileId);
@@ -3539,7 +3533,7 @@ TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndECInstanceKeyPassed_Retur
 
 TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileButIsDeletedFromDisk_ReturnsEmpty)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, fileId));
@@ -3553,7 +3547,7 @@ TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileButIsDeletedFromDisk_Returns
 
 TEST_F(DataSourceCacheTests, ReadFileCacheTag_NotCachedFile_ReturnsEmpty)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, fileId));
@@ -3563,7 +3557,7 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_NotCachedFile_ReturnsEmpty)
 
 TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFile_ReturnsTag)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, fileId));
@@ -3574,7 +3568,7 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFile_ReturnsTag)
 
 TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_ReturnsEmpty)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, fileId));
@@ -3588,7 +3582,7 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_Ret
 
 TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
@@ -3597,7 +3591,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
 
 TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectId_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ECInstanceKey instanceKey = cache->FindInstance(ObjectId());
     EXPECT_FALSE(instanceKey.IsValid());
@@ -3605,7 +3599,7 @@ TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectId_ReturnsInvalid)
 
 TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectIdAndNavigationBaseLinkedToRoot_ReturnsKeyToNavigationBase)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
 
@@ -3615,7 +3609,7 @@ TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectIdAndNavigationBaseLinkedTo
 
 TEST_F(DataSourceCacheTests, FindInstance_KeyToNavigationBase_ReturnsEmptyObjectId)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
     ECInstanceKey baseKey = cache->FindInstance(ObjectId());
@@ -3626,7 +3620,7 @@ TEST_F(DataSourceCacheTests, FindInstance_KeyToNavigationBase_ReturnsEmptyObject
 
 TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndNotCached_InvalidObjectId)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECClassCP ecClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
 
     ObjectId objectId = cache->FindInstance(ECInstanceKey(ecClass->GetId(), ECInstanceId(1)));
@@ -3636,7 +3630,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndNotCached_InvalidObjec
 
 TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndInCache_ValidKey)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "Foo"});
     Json::Value instance;
     cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance);
@@ -3650,7 +3644,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndInCache_ValidKey)
 
 TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndInCache_ValidObjectId)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "Foo"});
     Json::Value instance;
     cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instance);
@@ -3664,7 +3658,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndInCache_ValidObjectId)
 
 TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndChangeDeleted_ValidKey)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instanceKey));
 
@@ -3676,7 +3670,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndChangeDeleted_ValidKey)
 
 TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndChangeDeleted_ValidObjectId)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instanceKey));
 
@@ -3688,7 +3682,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndChangeDeleted_ValidObj
 
 TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceA = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
     auto instanceB = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
@@ -3701,7 +3695,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_Returns
 
 TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
@@ -3721,7 +3715,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_Ret
 
 TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instanceA = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
     auto instanceB = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
@@ -3734,7 +3728,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_Re
 
 TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
@@ -3749,7 +3743,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRe
 
 TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"});
     cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass2", "B"});
 
@@ -3769,7 +3763,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInsta
 
 TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"});
     cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass2", "B"});
 
@@ -3788,20 +3782,20 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLi
 
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_NoRoot_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_FALSE(cache->ReadRootSyncDate("NonExistingRoot").IsValid());
     }
 
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_ExistingRootButDateNotSet_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"}));
     EXPECT_FALSE(cache->ReadRootSyncDate("Foo").IsValid());
     }
 
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_DateSetAutomatically_ReturnsSameDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto before = DateTime::GetCurrentTimeUtc();
     BeThreadUtilities::BeSleep(1);
@@ -3816,7 +3810,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_DateSetAutomatically_ReturnsSameDa
 
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_SpecificDateSetOnNotExistingRoot_CreatesRootReturnsSameDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     DateTime syncDate(DateTime::Kind::Utc, 1989, 02, 14, 0, 0, 0);
     ASSERT_EQ(SUCCESS, cache->SetRootSyncDate("Foo", syncDate));
@@ -3825,7 +3819,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_SpecificDateSetOnNotExistingRoot_C
 
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_RootRemovedAfterSyncDateWasSet_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"}));
     ASSERT_EQ(SUCCESS, cache->SetRootSyncDate("Foo"));
     ASSERT_EQ(SUCCESS, cache->RemoveRoot("Foo"));
@@ -3835,7 +3829,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_RootRemovedAfterSyncDateWasSet_Ret
 
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_NoResponse_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache, "NonExisting");
 
     EXPECT_THAT(cache->ReadResponseAccessDate(responseKey).IsValid(), false);
@@ -3843,7 +3837,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_NoResponse_ReturnsInvalid)
 
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_CachedResponse_ReturnsInvalid)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
 
@@ -3852,7 +3846,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_CachedResponse_ReturnsInvali
 
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSetAutomatically_ReturnsSameDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
 
@@ -3868,7 +3862,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSetAutomatically_R
 
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSet_ReturnsSameDate)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
 
@@ -3879,7 +3873,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSet_ReturnsSameDat
 
 TEST_F(DataSourceCacheTests, SetResponseAccessDate_ResponseNotCached_ReturnsErrorAndDateNotSet)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
 
     EXPECT_EQ(ERROR, cache->SetResponseAccessDate(responseKey));
@@ -3888,7 +3882,7 @@ TEST_F(DataSourceCacheTests, SetResponseAccessDate_ResponseNotCached_ReturnsErro
 
 TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_NoResponsesWithName_ReturnsSuccess)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey(cache->FindOrCreateRoot("Foo"), "Test");
 
     ASSERT_EQ(SUCCESS, cache->SetupRoot("Foo", CacheRootPersistence::Temporary));
@@ -3901,7 +3895,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_NoResponsesWithName_Return
 
 TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponsesWithSameNameButPersistent_LeavesResponses)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "Test");
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "Test");
     CachedResponseKey responseKey3(cache->FindOrCreateRoot("C"), "Test");
@@ -3927,7 +3921,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponsesWithSameNameButPe
 
 TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLaterThanUsed_LeavesResponse)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "Test");
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "Test");
 
@@ -3947,7 +3941,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLate
 
 TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesResponses)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "Test");
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "Test");
     CachedResponseKey responseKey3(cache->FindOrCreateRoot("C"), "Other");
@@ -3967,7 +3961,7 @@ TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesRespon
 
 TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedData_WorksFine)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache);
 
     auto extendedData = cache->GetExtendedDataAdapter().GetData(instance);
@@ -3980,7 +3974,7 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedData_WorksFine)
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto key = StubCachedResponseKey(*cache);
     StubInstances instances;
@@ -4004,7 +3998,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyM
 
 TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     WSQuery query("TestSchema", "TestClass");
     query.SetSelect("*");
@@ -4035,7 +4029,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
 
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceThatWasLocallyModified_RejectsAndDoesNotUpdateInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     bset<ObjectId> rejected;
     auto key = StubCachedResponseKey(*cache);
@@ -4067,7 +4061,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceThatWasL
 
 TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
@@ -4088,7 +4082,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyDeletedAndRelatedInstance_IgnoresDeletedInstanceAndUpdatesRelatedOne)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto key = StubCachedResponseKey(*cache);
     StubInstances instances;
@@ -4110,7 +4104,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyD
 
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
@@ -4129,7 +4123,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
 
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWasCachedAsPartial_UpdatesInstance)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     bset<ObjectId> rejected;
     auto key = StubCachedResponseKey(*cache);
