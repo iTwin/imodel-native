@@ -35,11 +35,8 @@ namespace ScalableMeshSDKexe
            bool                   ParseFilePaths(WString&                pio_FilePaths,
                                                  WString&                pio_FirstPath) const;
         };
-
-    bool ParseSourceSubNodes(Bentley::MrDTM::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
+    
     bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
     Bentley::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
-                                                  Bentley::MrDTM::DTMSourceDataType importedType);
-    bool AddOptionToSource(Bentley::MrDTM::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode);
-    void GetSourceDataType(Bentley::MrDTM::DTMSourceDataType& dataType, BeXmlNodeP pSourceNode);
+                                                  Bentley::MrDTM::DTMSourceDataType importedType);        
     };

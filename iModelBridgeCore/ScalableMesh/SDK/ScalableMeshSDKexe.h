@@ -65,8 +65,7 @@ namespace ScalableMeshSDKexe
             BentleyStatus Initialize(int argc, WCharP argv[]);
             BentleyStatus OpenScalableMesh(WCharCP path);
             size_t CountPoints();
-            BentleyStatus ParseImportDefinition(BeXmlNodeP pTestNode);
-            BentleyStatus ParseImportDefinitionNew(BeXmlNodeP pTestNode);
+            BentleyStatus ParseImportDefinition(BeXmlNodeP pTestNode);            
             void Start();
             void Import();
 
