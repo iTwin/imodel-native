@@ -88,10 +88,65 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
     </ECClass>
 
     <ECClass typeName="FileInfoOwnership" isDomainClass="True" isStruct="False" isCustomAttributeClass="False">
-        <ECProperty propertyName="OwnerId" typeName="long" />
-        <ECProperty propertyName="OwnerECClassId" typeName="long" />
-        <ECProperty propertyName="FileInfoId" typeName="long" />
-        <ECProperty propertyName="FileInfoECClassId" typeName="long" />
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <!-- The two unique indexes also ensure that there are no duplicate ownerships -->
+                    <DbIndex>
+                        <!-- A file info can only have a single owner -->
+                        <Name>uix_ecdbf_fileinfoownership_fileinfoid_fileinfoecclassid</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>FileInfoId</string>
+                            <string>FileInfoECClassId</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <!-- An owner can have at most one fileinfo -->
+                        <Name>uix_ecdbf_fileinfoownership_ownerid_ownerecclassid</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>OwnerId</string>
+                            <string>OwnerECClassId</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <Name>ix_ecdbf_fileinfoownership_ownerecclassid</Name>
+                        <Properties> <string>OwnerECClassId</string> </Properties>
+                    </DbIndex>
+                </Indexes>                    
+            </ClassMap>
+        </ECCustomAttributes>
+        
+        <ECProperty propertyName="OwnerId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
+        <ECProperty propertyName="OwnerECClassId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
+        <ECProperty propertyName="FileInfoId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
+            
+        <ECProperty propertyName="FileInfoECClassId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
     </ECClass> 
 
 </ECSchema>

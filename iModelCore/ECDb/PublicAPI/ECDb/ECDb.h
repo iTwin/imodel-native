@@ -39,6 +39,11 @@ enum class ECDbIssueSeverity
 struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
+    enum class PurgeMode
+        {
+        OrphanedFileInfos = 1
+        };
+
     struct Impl;
 
     //=======================================================================================
@@ -120,6 +125,20 @@ public:
     //! Gets the ECClass locator for ECClasses whose schemas are stored in this ECDb file.
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
+
+    //! Deletes orphan ECInstances left over from operations specified by @p mode.
+    //! 
+    //! ####Purging orphan FileInfo ECInstances (Purge mode @ref ECDb::PurgeMode::OrphanedFileInfos "OrphanedFileInfos")
+    //! The ECDb provides basic support for relating external or embeddeded files to any ECInstance in the ECDb file. 
+    //! For that purpose every ECDb file contains the system ECSchema @b ECDb_FileInfo which allows you to
+    //! use ECSQL to create and delete FileInfo ECInstances and associate them with other ECInstances.
+    //! ECDb, however, does not automatically manage any referential integrity between FileInfos and their owning
+    //! ECInstances. You can either do that manually by deleting from the FileInfo and FileInfoOwnership ECClasses
+    //! or you can use the Purge method which looks for all orphaned file info records and deletes them.
+    //!
+    //! @param[in] mode Purge mode
+    //! @return SUCCESS or ERROR
+    ECDB_EXPORT BentleyStatus Purge(PurgeMode mode) const;
 
     //! Adds a listener that listens to issues reported by this ECDb object.
     //! @remarks Only one listener can be added at a time.

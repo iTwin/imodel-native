@@ -109,6 +109,9 @@ private:
     BentleyStatus OnAddFunction(DbFunction&) const;
     void OnRemoveFunction(DbFunction&) const;
 
+    BentleyStatus Purge(ECDb::PurgeMode) const;
+    BentleyStatus PurgeFileInfos() const;
+
     BentleyStatus AddIssueListener(IIssueListener const& issueListener) { return m_issueReporter.AddListener(issueListener); }
     void RemoveIssueListener() { m_issueReporter.RemoveListener(); }
 
