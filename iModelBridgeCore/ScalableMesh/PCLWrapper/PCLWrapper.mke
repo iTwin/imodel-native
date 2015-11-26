@@ -7,7 +7,6 @@
 #--------------------------------------------------------------------------------------
 # Lots of problems in a third-party library that we aren't going to fix. 
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
-BUILD_USING_VS2012=1
 
 appName = PCLWrapper
 moduleName = PCLWrapper

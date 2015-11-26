@@ -584,7 +584,8 @@ void InitializeSDK(DgnPlatformLib::Host& host)
         DependencyManager::SetProcessingDisabled(true);
         DgnFileStatus status;
         BeFileName name;
-        assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
+        BeFileNameStatus beStatus = BeFileName::BeGetTempPath(name);
+        assert(BeFileNameStatus::Success == beStatus);
         name.AppendToPath(L"temp.dgn");
         
         docPtr = DgnDocument::CreateForNewFile(status, name.GetName(), NULL, DEFDGNFILE_ID, NULL, DgnDocument::OverwriteMode::Always, DgnDocument::CreateOptions::SupressFailureNotification);

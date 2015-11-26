@@ -254,7 +254,7 @@ class StmStreamingPointExtractorCreator : public InputExtractorCreatorMixinBase<
                                                                                     const Source&                   source,
                                                                                     const ExtractionQuery&         selection) const override
         {        
-        return RawCapacities (100000 *sizeof(DPoint3d));
+        return RawCapacities (500000 *sizeof(DPoint3d));
         }
 
     /*---------------------------------------------------------------------------------**//**

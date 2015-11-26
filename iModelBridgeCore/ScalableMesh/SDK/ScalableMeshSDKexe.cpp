@@ -36,7 +36,7 @@ namespace ScalableMeshSDKexe
             NULL 
             );
         if (m_pipe == NULL || m_pipe == INVALID_HANDLE_VALUE) fwprintf(stderr, L"Error creating pipe\n");
-        //if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
+        if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
         }
 
     BentleyStatus ScalableMeshSDKexe::Initialize(int argc, WCharP argv[])
@@ -133,7 +133,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
 
         
     int WritePointsCallback(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg)
-        {   
+        {           
         TransmittedPointsHeader pointHeader((unsigned int)numPoints, false);
                 
         DWORD  numBytesWritten;        
@@ -151,7 +151,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
                   NULL 
                   );
        
-        return true;
+        return DTM_SUCCESS;
         }
 
     struct TransmittedFeatureHeader : public TransmittedDataHeader
@@ -187,11 +187,11 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
                   NULL 
                   );
 
-        return true;
+        return DTM_SUCCESS;
         }
     
 
-    DRange3d s_importRange; 
+    static DRange3d s_importRange; 
     
     bool StreamPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
         {           
@@ -207,7 +207,8 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
                     }
                 }        
 
-            s_dataPipe.WritePoints(&pointsInRange[0], pointsInRange.size());
+            if (pointsInRange.size() > 0)
+                s_dataPipe.WritePoints(&pointsInRange[0], pointsInRange.size());
             }
 
         return true;
@@ -238,6 +239,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
                 {
                 bool isContained = s_importRange.IsContainedXY(featurePoints[ptInd]);
 
+                //NEEDS_WORK_MST : Add uncutable feature.
                 if (isContained && !wasContained && (ptInd - 1) == 0)
                     {
                     pointsInRange.push_back(featurePoints[ptInd - 1]);                                        
@@ -687,9 +689,9 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
     return SUCCESS;
     }      
 
-    BentleyStatus ChooseCorrectSubResolution(RefCountedPtr<BcDTM>& singleResolutionDtm, const DRange3d& importRange, uint32_t maxNbPointsToImport)
+    BentleyStatus ChooseCorrectSubResolution(RefCountedPtr<BcDTM>& singleResolutionDtm, const DRange3d& importRange, uint32_t maxNbPointsToImport, BeFileName& tempStmFile)
         {
-        IMrDTMPtr mrDtmPtr(IMrDTM::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm", true, true));
+        IMrDTMPtr mrDtmPtr(IMrDTM::GetFor(tempStmFile.c_str(), true, true));
 
         if (mrDtmPtr == 0)
             return ERROR;
@@ -722,7 +724,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             return ERROR;        
         
         mrDtmPtr = 0;
-        statusInt = _wremove(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm");
+        statusInt = _wremove(tempStmFile.c_str());
         assert(statusInt == 0);
                        
         if (statusInt != SUCCESS || singleResolutionDtm == 0)
@@ -755,7 +757,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             DTMFeatureType::BreakVoid,
             DTMFeatureType::Island,
             DTMFeatureType::Hole,
-            DTMFeatureType::Polygon,
+            //DTMFeatureType::Polygon,
             DTMFeatureType::ZeroSlopePolygon,
             DTMFeatureType::SoftBreakline,
             // Removed as it was not supported for now and was causing a memory leak.
@@ -765,8 +767,8 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
           
         for (auto& featureType : featureTypes)
             {
-            DTMStatusInt status = singleResolutionDtm->BrowseFeatures(DTMFeatureType::Spots,
-                                                                      (long)featureType,
+            DTMStatusInt status = singleResolutionDtm->BrowseFeatures(featureType,
+                                                                      MAX_SPOTS,
                                                                       0,
                                                                       WriteFeatureCallback);
 
@@ -778,12 +780,8 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
         }
 
     BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pRootNode)
-        {
-               
-//NEEDS_WORK_MST Remove
-        BeXmlStatus status;
-
-       // s_pPointResultFile = fopen("D:\\MyDoc\\CC - Iteration 6\\YIIDataset\\saltLakeWithCC.xyz", "w+");                
+        {               
+        BeXmlStatus status;       
 
         Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
         s_pipe = m_pipe;
@@ -817,16 +815,32 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 }
             
             GetImportRange(s_importRange, pRootNode);
+
+            WString tempPath;
+            status = pRootNode->GetAttributeStringValue(tempPath, "tempPath");
+            
+            if (status != BEXML_Success)
+                {
+                BeFileName name;
+                assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
+                tempPath = name;
+                }            
                     
             if (ParseSourceSubNodes(importerPtr->EditSources(), pRootNode) == true)
                 {
                 std::thread workingThread;
 
                 workingThread = std::thread(&ImportThread, DgnPlatformLib::QueryHost(), importerPtr);         
-                
-                IMrDTMCreatorPtr mrdtmCreatorPtr(IMrDTMCreator::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm"));
 
-                Bentley::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\dummy.stmstream",
+                BeFileName tempStmFile(tempPath.c_str());
+                tempStmFile.AppendToPath(L"tempScalableMeshSdk.stm");
+                                    
+                IMrDTMCreatorPtr mrdtmCreatorPtr(IMrDTMCreator::GetFor(tempStmFile.c_str()));
+
+                BeFileName tempStmstream(tempPath.c_str());
+                tempStmstream.AppendToPath(L"tempScalableMeshSdk.stmstream");
+
+                Bentley::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(tempStmstream.c_str(),
                                                                            Bentley::MrDTM::DTM_SOURCE_DATA_DTM));
 
                 mrdtmCreatorPtr->EditSources().Add(stmSourcePtr);
@@ -841,9 +855,12 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
 
                 mrdtmCreatorPtr = 0;
 
+                int statusInt = _wremove(tempStmstream.c_str());
+                assert(statusInt == 0);
+                
                 RefCountedPtr<BcDTM> singleResolutionDtm;
 
-                status = ChooseCorrectSubResolution(singleResolutionDtm, s_importRange, maximumNbOfPoints);
+                status = ChooseCorrectSubResolution(singleResolutionDtm, s_importRange, maximumNbOfPoints, tempStmFile);
 
                 if (status != SUCCESS)
                     return ERROR;
@@ -860,97 +877,6 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
 
 
 
-#if 0 
-    //NEEDS_WORK_MST To Remove
-    BentleyStatus ScalableMeshSDKexe::ParseImportDefinitionNew(BeXmlNodeP pRootNode)
-        {
-        BeXmlStatus status;
-
-       // s_pPointResultFile = fopen("D:\\MyDoc\\CC - Iteration 6\\YIIDataset\\saltLakeWithCC.xyz", "w+");                        
-        IMrDTMCreatorPtr mrdtmCreatorPtr(IMrDTMCreator::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm"));
-
-        //Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
-        s_pipe = m_pipe;
-        /*
-        importerPtr->SetFeatureCallback(WriteFeatureCallback);
-        importerPtr->SetPointsCallback(WritePointsCallback);
-        */
-        
-        if (mrdtmCreatorPtr == 0)
-            {
-            printf("ERROR : cannot create importer\r\n");
-            return ERROR;
-            }
-        
-        
-        WString gcsKeyName;            
-        UInt64  maxNbPointsToImport;
-        
-        status = pRootNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
-
-        if (status == BEXML_Success)
-            {
-            BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
-            StatusInt status = mrdtmCreatorPtr->SetBaseGCS(baseGCSPtr);
-            assert(status == SUCCESS);
-            }
-
-        status = pRootNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
-
-        if (status != BEXML_Success)
-            {            
-            maxNbPointsToImport = numeric_limits<UInt64>::max();
-            }
-        /*
-        status = pRootNode->GetAttributeUInt64Value(maxNbPointsToImport, "");
-
-        if (status != BEXML_Success)
-            {            
-            maxNbPointsToImport = numeric_limits<UInt64>::max();
-            }
-            */
-
-        if (ParseSourceSubNodes(mrdtmCreatorPtr->EditSources(), pRootNode) == false)
-            {                
-            return ERROR;
-            }
-
-        if (mrdtmCreatorPtr->Create() != SUCCESS)
-            {
-            return ERROR;
-            }                
-
-        mrdtmCreatorPtr = 0;
-
-        IMrDTMPtr mrDtmPtr(IMrDTM::GetFor(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm", true, true));
-
-        if (mrDtmPtr == 0)
-            return ERROR;
-
-        RefCountedPtr<BcDTM> singleResolutionDtm;
-
-        DRange3d range;
-        std::vector<DPoint3d> regionPoints(8);
-
-        mrDtmPtr->GetRange(range);
-        range.Get8Corners(&regionPoints[0]);
-
-        regionPoints.resize(4);
-                
-        int statusInt = QueryStmFromBestResolution(singleResolutionDtm, mrDtmPtr, regionPoints, maxNbPointsToImport);
-
-        assert(statusInt == SUCCESS);
-
-        mrDtmPtr = 0;
-        statusInt = _wremove(L"D:\\MyDoc\\CC - Iteration 13\\Import terrain STM\\log\\temp.stm");
-        assert(status == 0);
-                       
-        if (statusInt != SUCCESS || singleResolutionDtm == 0)
-            return ERROR;
-                        
-        return SUCCESS;
-        }
-#endif
 
     BentleyStatus ScalableMeshSDKexe::ParseImportDefinitionNew(BeXmlNodeP pRootNode)
         {
