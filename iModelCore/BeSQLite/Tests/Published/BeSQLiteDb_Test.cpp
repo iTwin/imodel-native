@@ -678,3 +678,199 @@ TEST(BeSQLiteDbOpenTest, Expired2)
 
     db.CloseDb();
     }
+
+struct BeSQLiteEmbeddedFileTests : BeSQLiteDbTests
+    {
+protected:
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                     Muhammad Hassan                  5/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    void deleteExistingFile(BeFileName filePath)
+        {
+        if (BeFileName::DoesPathExist(filePath.GetName()))
+            {
+            // Delete any previously exported file
+            BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(filePath.GetName());
+            ASSERT_EQ(BeFileNameStatus::Success, fileDeleteStatus);
+            }
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  12/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteEmbeddedFileTests, ReplaceExistingEmbeddedFile)
+    {
+    SetupDb(L"embeddedfiles.db");
+
+    //test file
+    //  Using a much larger file so I could check that the embedded blobs were removed from the BE_Prop table.
+    Utf8CP testFileNameOld = "Bentley_Standard_CustomAttributes.01.12.ecschema.xml";
+    WString testFileNameOldW(testFileNameOld, BentleyCharEncoding::Utf8);
+
+    BeFileName testFilePathOld;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testFilePathOld);
+    testFilePathOld.AppendToPath(L"ECSchemas");
+    testFilePathOld.AppendToPath(L"Standard");
+    testFilePathOld.AppendToPath(testFileNameOldW.c_str());
+
+    //INSERT scenario
+    DbEmbeddedFileTable& embeddedFileTable = m_db.EmbeddedFiles();
+    DbResult stat = BE_SQLITE_OK;
+    DateTime expectedLastModified = DateTime::GetCurrentTimeUtc();
+
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileNameOld, testFilePathOld.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(embeddedFileId.IsValid());
+
+    BeFileName testFilePath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testFilePath);
+    testFilePath.AppendToPath(L"ECSchemas");
+    testFilePath.AppendToPath(L"Standard");
+    testFilePath.AppendToPath(testFileNameOldW.c_str());
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Replace(testFileNameOld, testFilePath.GetNameUtf8().c_str()));
+
+    //Query to check that embedded blobs were removed form BE_Prop
+    Statement stmt;
+    DbResult dbr = stmt.Prepare(m_db, "SELECT * FROM " BEDB_TABLE_Property " WHERE Id=? AND SubId>0");
+    ASSERT_EQ(BE_SQLITE_OK, dbr);
+    stmt.BindId(1, embeddedFileId);
+    dbr = stmt.Step();
+    ASSERT_EQ(BE_SQLITE_DONE, dbr);
+
+    BeFileName exportFilePath;
+    BeTest::GetHost().GetOutputRoot(exportFilePath);
+    exportFilePath.AppendToPath(testFileNameOldW.c_str());
+    deleteExistingFile(exportFilePath);
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileNameOld));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  12/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteEmbeddedFileTests, ReadAddNewEntrySaveEmbeddedFile)
+    {
+    SetupDb(L"embeddedfiles.db");
+
+    //test file
+    //  Used a fairly large file for this to verify that it correctly handles files that are larger than one blob.
+    Utf8CP testFileName = "Bentley_Standard_CustomAttributes.01.12.ecschema.xml";
+    WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
+
+    BeFileName testFilePath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testFilePath);
+    testFilePath.AppendToPath(L"ECSchemas");
+    testFilePath.AppendToPath(L"Standard");
+    testFilePath.AppendToPath(testFileNameW.c_str());
+
+    //INSERT scenario
+    DbEmbeddedFileTable& embeddedFileTable = m_db.EmbeddedFiles();
+    DbResult stat = BE_SQLITE_OK;
+    DateTime expectedLastModified = DateTime::GetCurrentTimeUtc();
+    double expectedLastModifiedJd = 0.0;
+    ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
+
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(embeddedFileId.IsValid());
+
+    Utf8CP NewFileName = "Copy_Bentley_Standard_CustomAttributes.01.12.ecschema.xml";
+    WString NewFileNameW(NewFileName, BentleyCharEncoding::Utf8);
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(NewFileName, "xml"));
+
+    uint64_t size = 0;
+    ASSERT_EQ(embeddedFileId, embeddedFileTable.QueryFile(testFileName, &size));
+    ASSERT_TRUE(size > 0);
+
+    bvector<Byte> buffer;
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer, testFileName));
+    ASSERT_TRUE(size == buffer.size());
+    //Save the data with compression and than read again to verify that the data is unchanged.
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Save(buffer.data(), size, NewFileName));
+    bvector<Byte> buffer2;
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer2, NewFileName));
+    ASSERT_TRUE(buffer.size() == buffer2.size());
+    ASSERT_EQ(0, memcmp(&buffer[0], &buffer2[0], buffer.size()));
+
+    //Now save data without compression and read it again and read it again to verify that the data is unchanged.
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Save(buffer.data(), size, NewFileName, false));
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer2, NewFileName));
+    ASSERT_TRUE(buffer.size() == buffer2.size());
+    ASSERT_EQ(0, memcmp(&buffer[0], &buffer2[0], buffer.size()));
+
+    BeFileName exportFilePathOld;
+    BeTest::GetHost().GetOutputRoot(exportFilePathOld);
+    exportFilePathOld.AppendToPath(testFileNameW.c_str());
+    deleteExistingFile(exportFilePathOld);
+
+    BeFileName exportFilePath;
+    BeTest::GetHost().GetOutputRoot(exportFilePath);
+    exportFilePath.AppendToPath(NewFileNameW.c_str());
+    deleteExistingFile(exportFilePath);
+
+    //NewFileName now refers to a file that was embedded without compression. Verify that Export works for this file and for the original file aswell.
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePathOld.GetNameUtf8().c_str(), testFileName));
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), NewFileName));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  12/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteEmbeddedFileTests, ImportExportEmptyFile)
+    {
+    SetupDb(L"embeddedfiles.db");
+
+    //test file
+    Utf8CP testFileName = "EmptyFile.txt";
+    BeFileName testFilePath;
+    BeTest::GetHost().GetOutputRoot(testFilePath);
+    testFilePath.AppendToPath(WString(testFileName, BentleyCharEncoding::Utf8).c_str());
+    deleteExistingFile(testFilePath);
+
+    BeFile testFile;
+    ASSERT_EQ(BeFileStatus::Success, testFile.Create(testFilePath.c_str()));
+
+    //INSERT scenario
+    DbEmbeddedFileTable& embeddedFileTable = m_db.EmbeddedFiles();
+    DbResult stat = BE_SQLITE_OK;
+    DateTime expectedLastModified = DateTime::GetCurrentTimeUtc();
+    double expectedLastModifiedJd = 0.0;
+    ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
+
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "txt", nullptr, &expectedLastModified);
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(embeddedFileId.IsValid());
+
+    BeFileName testFileOutPath;
+    BeTest::GetHost().GetOutputRoot(testFileOutPath);
+    testFileOutPath.AppendToPath(L"EmptyFileOut.txt");
+    deleteExistingFile(testFileOutPath);
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(testFileOutPath.GetNameUtf8().c_str(), testFileName));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  12/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteEmbeddedFileTests, EmbedFileWithInvalidPath)
+    {
+    SetupDb(L"embeddedfiles.db");
+
+    //test file
+    Utf8CP testFileName = "StartupCompany.json";
+    WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
+
+    //Test File Path
+    BeFileName testFilePath;
+    testFilePath.AppendToPath(testFileNameW.c_str());
+
+    //INSERT scenario
+    DbEmbeddedFileTable& embeddedFileTable = m_db.EmbeddedFiles();
+    DbResult stat = BE_SQLITE_OK;
+    DateTime expectedLastModified = DateTime::GetCurrentTimeUtc();
+    double expectedLastModifiedJd = 0.0;
+    ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
+
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
+    ASSERT_EQ(BE_SQLITE_ERROR_FileNotFound, stat);
+    ASSERT_FALSE(embeddedFileId.IsValid());
+    }
