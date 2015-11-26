@@ -2402,6 +2402,41 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingCardinality_Error)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    auto instance = instances.Add({"TestSchema.TestClassA", "A"});
+    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"});
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(DataSourceCacheTests, DISABLED_CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneRelationshipClass");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    // Act
+    instances.Clear();
+    instances.Add({"TestSchema.TestClassA", "A"})
+        .AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    // Assert
+    EXPECT_FALSE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "C"}));
+    }
+
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_NewResponseOverridesOldOne)
     {
     auto cache = GetTestCache();
