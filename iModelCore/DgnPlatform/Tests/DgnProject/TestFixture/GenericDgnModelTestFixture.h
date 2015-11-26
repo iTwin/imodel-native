@@ -1,10 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/GenericDgnModelTestFixture.h $
+|  $Source: Tests/DgnProject/TestFixture/GenericDgnModelTestFixture.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once 
+
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
@@ -18,9 +20,9 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 struct GenericDgnModelTestFixture : public testing::Test
 {
 protected:
-bool                     m_is3d;
-Dgn::ScopedDgnHost       m_host;
-DgnDbTestDgnManager      m_testDgnManager;
+    bool                     m_is3d;
+    Dgn::ScopedDgnHost       m_host;
+    DgnDbTestDgnManager      m_testDgnManager;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson     02/2012
@@ -40,11 +42,11 @@ virtual ~GenericDgnModelTestFixture ()
     {
     }
 
-DgnModelP       GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
-DgnDbP          GetDgnProjectP() const {return m_testDgnManager.GetDgnProjectP();}
-void            CloseTestFile() {m_testDgnManager.CloseTestFile();}
-BentleyStatus   ReopenTestFile() {return m_testDgnManager.OpenTestFile ();}
-bool            Is3d() const {return m_is3d;}
+    DgnModelP       GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
+    DgnDbP          GetDgnProjectP() const {return m_testDgnManager.GetDgnProjectP();}
+    void            CloseTestFile() {m_testDgnManager.CloseTestFile();}
+    BentleyStatus   ReopenTestFile() {return m_testDgnManager.OpenTestFile ();}
+    bool            Is3d() const {return m_is3d;}
 };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE
