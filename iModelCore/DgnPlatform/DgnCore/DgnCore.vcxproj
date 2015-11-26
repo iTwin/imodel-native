@@ -39,9 +39,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore  -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore  -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild DgnCore</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild DgnCore  -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild DgnCore</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild DgnCore  -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;BENTLEY_WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(SrcRoot)DgnPlatform\PrivateApi\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

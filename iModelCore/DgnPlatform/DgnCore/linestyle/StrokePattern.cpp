@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnCore/LsLocal.h>
+#include    <DgnPlatform/LsLocal.h>
 
 static const double   s_lsTolerance      = 1.0e-7;
 static const double  TOLERANCE_MitreLimit = -0.86602540378443864676372317075294;            // Limit mitering to 150 degree angle
@@ -182,6 +182,7 @@ LsCapMode       capMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponent::LsStrokePatternComponent (LsLocation const *pLocation) : LsComponent (pLocation)
     {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     m_phaseShift    = 0.0;
     m_autoPhase     = 0.0;
     m_maxCompress   = 0.3;
@@ -199,6 +200,7 @@ LsStrokePatternComponent::LsStrokePatternComponent (LsLocation const *pLocation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponent::LsStrokePatternComponent (LsStrokePatternComponent const* base) : LsComponent (base)
     {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     m_phaseShift    = base->m_phaseShift;
     m_autoPhase     = base->m_autoPhase;
     m_startTangent  = base->m_startTangent;
@@ -1965,5 +1967,72 @@ DPoint3dCP pEndTangent
             joint->m_scale = getPerpScale (&perpVec, &joint->m_dir);
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
+    {
+    LsOkayForTextureGeneration isOkay = _IsOkayForTextureGeneration();
+    BeAssert(LsOkayForTextureGeneration::NotAllowed != isOkay);   //  The caller should have tested for this.
+
+    if (isOkay == LsOkayForTextureGeneration::NoChangeRequired)
+        return const_cast<LsStrokePatternComponentP>(this);
+
+    LsStrokePatternComponentP retval = new LsStrokePatternComponent(this);
+
+    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
+        retval->SetDistancePhase(0.0);
+
+
+    for (size_t i = 0; i < retval->m_nStrokes; ++i)
+        {
+        LsStroke& stroke(*(retval->m_strokes + i));
+
+#if defined(NEEDSWORK_LINESTYLES_CapModeForTextureGen)
+        if (stroke.GetCapMode() != LsCapMode::Open)
+            stroke.SetCapMode(LsCapMode::Closed);
+#endif
+
+        stroke.SetIsStretchable(false);
+        //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
+        //  Since we draw exactly one iteration for generating the texture, corner mode (IsRigid) should not be important.
+        }
+
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration() const 
+    {
+    if (m_okayForTextureGeneration != Dgn::LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
+
+    //  If |IsStretchable() || IsRigid() the iteration limit is ignored.
+    if (HasIterationLimit() && IsStretchable() && !IsRigid())
+        return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
+
+    //  Need to verify that fixed with a distance != 0 is okay.
+    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
+        m_okayForTextureGeneration = LsOkayForTextureGeneration::ChangeRequired;
+
+    for (uint32_t i = 0; i < m_nStrokes; ++i)
+        {
+        LsStroke const& stroke(*(m_strokes+i));
+        
+        if (stroke.IsStretchable() 
+#if defined(NEEDSWORK_LINESTYLES_CapModeForTextureGen)
+                || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open)
+#endif
+            )
+            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, LsOkayForTextureGeneration::ChangeRequired);
+        }
+
+    return m_okayForTextureGeneration;
     }
 

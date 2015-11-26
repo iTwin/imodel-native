@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
-#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -95,7 +95,7 @@ DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationItem::GenerateElementGeometry(GeometricElementR el, GenerateReason reason) const
+void TextAnnotationItem::GenerateElementGeometry(GeometrySourceR source, GenerateReason reason) const
     {
     // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
     if (m_isGeometrySuppressed)
@@ -104,21 +104,10 @@ void TextAnnotationItem::GenerateElementGeometry(GeometricElementR el, GenerateR
     if (!m_annotation.IsValid())
         return;
 
-    ElementGeometryBuilderPtr builder;
-    DgnElement3dCP elem3d = el.ToElement3d();
-    if (nullptr != elem3d)
-        {
-        builder = ElementGeometryBuilder::Create(*el.GetModel(), el.GetCategoryId(), elem3d->GetPlacement().GetOrigin(), elem3d->GetPlacement().GetAngles());
-        }
-    else
-        {
-        DgnElement2dCP elem2d = el.ToElement2d();
-        BeAssert(nullptr != elem2d);
-        builder = ElementGeometryBuilder::Create(*el.GetModel(), el.GetCategoryId(), elem2d->GetPlacement().GetOrigin(), elem2d->GetPlacement().GetAngle());
-        }
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(source);
     
     builder->Append(*m_annotation);
-    builder->SetGeomStreamAndPlacement(el);
+    builder->SetGeomStreamAndPlacement(source);
     }
 
 //---------------------------------------------------------------------------------------
@@ -141,13 +130,13 @@ TextAnnotationItemR PhysicalTextAnnotationElement::GetItemR() { return getItemR(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     10/2015
 //---------------------------------------------------------------------------------------
-static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, GeometricElementR el, TextAnnotationItemCP item, DgnElement::UniqueAspect::GenerateReason reason)
+static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, DgnElementR el, TextAnnotationItemCP item, DgnElement::UniqueAspect::GenerateReason reason)
     {
     if (DgnDbStatus::Success != superStatus)
         return superStatus;
     
-    if (nullptr != item)
-        item->GenerateElementGeometry(el, reason);
+    if (nullptr != item && nullptr != el.ToGeometrySourceP())
+        item->GenerateElementGeometry(*el.ToGeometrySourceP(), reason);
 
     return DgnDbStatus::Success;
     }

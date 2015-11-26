@@ -50,26 +50,4 @@ protected:
     static void LogResultsToFile(bmap<Utf8String, double> results);
     };
 
-
-//=======================================================================================
-// @bsiclass                                                     Krischan.Eberle      06/15
-//=======================================================================================
-struct PerformanceElementTestFixture : public DgnDbTestFixture
-    {
-
-    protected:
-        static const DgnCategoryId s_catId;
-        static const DgnAuthorityId s_codeAuthorityId;
-        static const int s_instanceCount = 100000;
-        static Utf8CP const s_textVal;
-        static const int64_t s_int64Val = 20000000LL;
-        static const double s_doubleVal;
-        static Utf8CP const s_testSchemaXml;
-
-        BentleyStatus ImportTestSchema() const;
-        PhysicalModelPtr CreatePhysicalModel() const;
-        void CommitAndLogTiming(StopWatch& timer, Utf8CP scenario, Utf8String testcaseName, Utf8String testName) const;
-
-    };
-
 END_DGNDB_UNIT_TESTS_NAMESPACE

@@ -24,10 +24,9 @@ struct PointPrimitive;
 struct PointPrimitive2d;
 struct ArcPrimitive;
 struct BRepData;
-struct BeginSubCategory;
 struct GeomPart;
 struct BasicSymbology;
-struct LineStyle;
+struct LineStyleModifiers;
 struct Material;
 struct AreaFill;
 
@@ -195,24 +194,22 @@ MANUALLY_ALIGNED_STRUCT(8) FaceSymbology {
 #pragma clang diagnostic pop
 #endif
   uint32_t color_;
-  int64_t subCategoryId_;
   int64_t materialId_;
   double transparency_;
   DPoint2d uv_;
 
  public:
-  FaceSymbology(uint8_t useColor, uint8_t useMaterial, uint32_t color, int64_t subCategoryId, int64_t materialId, double transparency, const DPoint2d &uv)
-    : useColor_(flatbuffers::EndianScalar(useColor)), useMaterial_(flatbuffers::EndianScalar(useMaterial)), __padding0(0), color_(flatbuffers::EndianScalar(color)), subCategoryId_(flatbuffers::EndianScalar(subCategoryId)), materialId_(flatbuffers::EndianScalar(materialId)), transparency_(flatbuffers::EndianScalar(transparency)), uv_(uv) { (void)__padding0; }
+  FaceSymbology(uint8_t useColor, uint8_t useMaterial, uint32_t color, int64_t materialId, double transparency, const DPoint2d &uv)
+    : useColor_(flatbuffers::EndianScalar(useColor)), useMaterial_(flatbuffers::EndianScalar(useMaterial)), __padding0(0), color_(flatbuffers::EndianScalar(color)), materialId_(flatbuffers::EndianScalar(materialId)), transparency_(flatbuffers::EndianScalar(transparency)), uv_(uv) { (void)__padding0; }
 
   uint8_t useColor() const { return flatbuffers::EndianScalar(useColor_); }
   uint8_t useMaterial() const { return flatbuffers::EndianScalar(useMaterial_); }
   uint32_t color() const { return flatbuffers::EndianScalar(color_); }
-  int64_t subCategoryId() const { return flatbuffers::EndianScalar(subCategoryId_); }
   int64_t materialId() const { return flatbuffers::EndianScalar(materialId_); }
   double transparency() const { return flatbuffers::EndianScalar(transparency_); }
   const DPoint2d &uv() const { return uv_; }
 };
-STRUCT_END(FaceSymbology, 48);
+STRUCT_END(FaceSymbology, 40);
 
 MANUALLY_ALIGNED_STRUCT(4) FaceSymbologyIndex {
  private:
@@ -415,179 +412,234 @@ inline flatbuffers::Offset<BRepData> CreateBRepData(flatbuffers::FlatBufferBuild
   return builder_.Finish();
 }
 
-struct BeginSubCategory : private flatbuffers::Table {
-  int64_t subCategoryId() const { return GetField<int64_t>(4, 0); }
+struct GeomPart : private flatbuffers::Table {
+  int64_t geomPartId() const { return GetField<int64_t>(4, 0); }
   const DPoint3d *origin() const { return GetStruct<const DPoint3d *>(6); }
   double yaw() const { return GetField<double>(8, 0); }
   double pitch() const { return GetField<double>(10, 0); }
   double roll() const { return GetField<double>(12, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int64_t>(verifier, 4 /* subCategoryId */) &&
+           VerifyField<int64_t>(verifier, 4 /* geomPartId */) &&
            VerifyField<DPoint3d>(verifier, 6 /* origin */) &&
            VerifyField<double>(verifier, 8 /* yaw */) &&
            VerifyField<double>(verifier, 10 /* pitch */) &&
            VerifyField<double>(verifier, 12 /* roll */) &&
            verifier.EndTable();
   }
-  bool has_subCategoryId() const { return CheckField(4); }
+  bool has_geomPartId() const { return CheckField(4); }
   bool has_origin() const { return CheckField(6); }
   bool has_yaw() const { return CheckField(8); }
   bool has_pitch() const { return CheckField(10); }
   bool has_roll() const { return CheckField(12); }
 };
 
-struct BeginSubCategoryBuilder {
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_subCategoryId(int64_t subCategoryId) { fbb_.AddElement<int64_t>(4, subCategoryId, 0); }
-  void add_origin(const DPoint3d *origin) { fbb_.AddStruct(6, origin); }
-  void add_yaw(double yaw) { fbb_.AddElement<double>(8, yaw, 0); }
-  void add_pitch(double pitch) { fbb_.AddElement<double>(10, pitch, 0); }
-  void add_roll(double roll) { fbb_.AddElement<double>(12, roll, 0); }
-  BeginSubCategoryBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
-  BeginSubCategoryBuilder &operator=(const BeginSubCategoryBuilder &);
-  flatbuffers::Offset<BeginSubCategory> Finish() {
-    auto o = flatbuffers::Offset<BeginSubCategory>(fbb_.EndTable(start_, 5));
-    return o;
-  }
-};
-
-inline flatbuffers::Offset<BeginSubCategory> CreateBeginSubCategory(flatbuffers::FlatBufferBuilder &_fbb,
-   int64_t subCategoryId = 0,
-   const DPoint3d *origin = 0,
-   double yaw = 0,
-   double pitch = 0,
-   double roll = 0) {
-  BeginSubCategoryBuilder builder_(_fbb);
-  builder_.add_roll(roll);
-  builder_.add_pitch(pitch);
-  builder_.add_yaw(yaw);
-  builder_.add_subCategoryId(subCategoryId);
-  builder_.add_origin(origin);
-  return builder_.Finish();
-}
-
-struct GeomPart : private flatbuffers::Table {
-  int64_t geomPartId() const { return GetField<int64_t>(4, 0); }
-  bool Verify(flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<int64_t>(verifier, 4 /* geomPartId */) &&
-           verifier.EndTable();
-  }
-  bool has_geomPartId() const { return CheckField(4); }
-};
-
 struct GeomPartBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_geomPartId(int64_t geomPartId) { fbb_.AddElement<int64_t>(4, geomPartId, 0); }
+  void add_origin(const DPoint3d *origin) { fbb_.AddStruct(6, origin); }
+  void add_yaw(double yaw) { fbb_.AddElement<double>(8, yaw, 0); }
+  void add_pitch(double pitch) { fbb_.AddElement<double>(10, pitch, 0); }
+  void add_roll(double roll) { fbb_.AddElement<double>(12, roll, 0); }
   GeomPartBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   GeomPartBuilder &operator=(const GeomPartBuilder &);
   flatbuffers::Offset<GeomPart> Finish() {
-    auto o = flatbuffers::Offset<GeomPart>(fbb_.EndTable(start_, 1));
+    auto o = flatbuffers::Offset<GeomPart>(fbb_.EndTable(start_, 5));
     return o;
   }
 };
 
 inline flatbuffers::Offset<GeomPart> CreateGeomPart(flatbuffers::FlatBufferBuilder &_fbb,
-   int64_t geomPartId = 0) {
+   int64_t geomPartId = 0,
+   const DPoint3d *origin = 0,
+   double yaw = 0,
+   double pitch = 0,
+   double roll = 0) {
   GeomPartBuilder builder_(_fbb);
+  builder_.add_roll(roll);
+  builder_.add_pitch(pitch);
+  builder_.add_yaw(yaw);
   builder_.add_geomPartId(geomPartId);
+  builder_.add_origin(origin);
   return builder_.Finish();
 }
 
 struct BasicSymbology : private flatbuffers::Table {
-  uint32_t color() const { return GetField<uint32_t>(4, 0); }
-  uint32_t weight() const { return GetField<uint32_t>(6, 0); }
-  double transparency() const { return GetField<double>(8, 0); }
-  int32_t displayPriority() const { return GetField<int32_t>(10, 0); }
-  uint8_t useColor() const { return GetField<uint8_t>(12, 0); }
-  uint8_t useWeight() const { return GetField<uint8_t>(14, 0); }
+  int64_t subCategoryId() const { return GetField<int64_t>(4, 0); }
+  uint32_t color() const { return GetField<uint32_t>(6, 0); }
+  uint32_t weight() const { return GetField<uint32_t>(8, 0); }
+  int64_t lineStyleId() const { return GetField<int64_t>(10, 0); }
+  double transparency() const { return GetField<double>(12, 0); }
+  int32_t displayPriority() const { return GetField<int32_t>(14, 0); }
   GeometryClass geomClass() const { return static_cast<GeometryClass>(GetField<int8_t>(16, 0)); }
+  uint8_t useColor() const { return GetField<uint8_t>(18, 0); }
+  uint8_t useWeight() const { return GetField<uint8_t>(20, 0); }
+  uint8_t useStyle() const { return GetField<uint8_t>(22, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, 4 /* color */) &&
-           VerifyField<uint32_t>(verifier, 6 /* weight */) &&
-           VerifyField<double>(verifier, 8 /* transparency */) &&
-           VerifyField<int32_t>(verifier, 10 /* displayPriority */) &&
-           VerifyField<uint8_t>(verifier, 12 /* useColor */) &&
-           VerifyField<uint8_t>(verifier, 14 /* useWeight */) &&
+           VerifyField<int64_t>(verifier, 4 /* subCategoryId */) &&
+           VerifyField<uint32_t>(verifier, 6 /* color */) &&
+           VerifyField<uint32_t>(verifier, 8 /* weight */) &&
+           VerifyField<int64_t>(verifier, 10 /* lineStyleId */) &&
+           VerifyField<double>(verifier, 12 /* transparency */) &&
+           VerifyField<int32_t>(verifier, 14 /* displayPriority */) &&
            VerifyField<int8_t>(verifier, 16 /* geomClass */) &&
+           VerifyField<uint8_t>(verifier, 18 /* useColor */) &&
+           VerifyField<uint8_t>(verifier, 20 /* useWeight */) &&
+           VerifyField<uint8_t>(verifier, 22 /* useStyle */) &&
            verifier.EndTable();
   }
-  bool has_color() const { return CheckField(4); }
-  bool has_weight() const { return CheckField(6); }
-  bool has_transparency() const { return CheckField(8); }
-  bool has_displayPriority() const { return CheckField(10); }
-  bool has_useColor() const { return CheckField(12); }
-  bool has_useWeight() const { return CheckField(14); }
+  bool has_subCategoryId() const { return CheckField(4); }
+  bool has_color() const { return CheckField(6); }
+  bool has_weight() const { return CheckField(8); }
+  bool has_lineStyleId() const { return CheckField(10); }
+  bool has_transparency() const { return CheckField(12); }
+  bool has_displayPriority() const { return CheckField(14); }
   bool has_geomClass() const { return CheckField(16); }
+  bool has_useColor() const { return CheckField(18); }
+  bool has_useWeight() const { return CheckField(20); }
+  bool has_useStyle() const { return CheckField(22); }
 };
 
 struct BasicSymbologyBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_color(uint32_t color) { fbb_.AddElement<uint32_t>(4, color, 0); }
-  void add_weight(uint32_t weight) { fbb_.AddElement<uint32_t>(6, weight, 0); }
-  void add_transparency(double transparency) { fbb_.AddElement<double>(8, transparency, 0); }
-  void add_displayPriority(int32_t displayPriority) { fbb_.AddElement<int32_t>(10, displayPriority, 0); }
-  void add_useColor(uint8_t useColor) { fbb_.AddElement<uint8_t>(12, useColor, 0); }
-  void add_useWeight(uint8_t useWeight) { fbb_.AddElement<uint8_t>(14, useWeight, 0); }
+  void add_subCategoryId(int64_t subCategoryId) { fbb_.AddElement<int64_t>(4, subCategoryId, 0); }
+  void add_color(uint32_t color) { fbb_.AddElement<uint32_t>(6, color, 0); }
+  void add_weight(uint32_t weight) { fbb_.AddElement<uint32_t>(8, weight, 0); }
+  void add_lineStyleId(int64_t lineStyleId) { fbb_.AddElement<int64_t>(10, lineStyleId, 0); }
+  void add_transparency(double transparency) { fbb_.AddElement<double>(12, transparency, 0); }
+  void add_displayPriority(int32_t displayPriority) { fbb_.AddElement<int32_t>(14, displayPriority, 0); }
   void add_geomClass(GeometryClass geomClass) { fbb_.AddElement<int8_t>(16, static_cast<int8_t>(geomClass), 0); }
+  void add_useColor(uint8_t useColor) { fbb_.AddElement<uint8_t>(18, useColor, 0); }
+  void add_useWeight(uint8_t useWeight) { fbb_.AddElement<uint8_t>(20, useWeight, 0); }
+  void add_useStyle(uint8_t useStyle) { fbb_.AddElement<uint8_t>(22, useStyle, 0); }
   BasicSymbologyBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   BasicSymbologyBuilder &operator=(const BasicSymbologyBuilder &);
   flatbuffers::Offset<BasicSymbology> Finish() {
-    auto o = flatbuffers::Offset<BasicSymbology>(fbb_.EndTable(start_, 7));
+    auto o = flatbuffers::Offset<BasicSymbology>(fbb_.EndTable(start_, 10));
     return o;
   }
 };
 
 inline flatbuffers::Offset<BasicSymbology> CreateBasicSymbology(flatbuffers::FlatBufferBuilder &_fbb,
+   int64_t subCategoryId = 0,
    uint32_t color = 0,
    uint32_t weight = 0,
+   int64_t lineStyleId = 0,
    double transparency = 0,
    int32_t displayPriority = 0,
+   GeometryClass geomClass = GeometryClass_Primary,
    uint8_t useColor = 0,
    uint8_t useWeight = 0,
-   GeometryClass geomClass = GeometryClass_Primary) {
+   uint8_t useStyle = 0) {
   BasicSymbologyBuilder builder_(_fbb);
   builder_.add_transparency(transparency);
+  builder_.add_lineStyleId(lineStyleId);
+  builder_.add_subCategoryId(subCategoryId);
   builder_.add_displayPriority(displayPriority);
   builder_.add_weight(weight);
   builder_.add_color(color);
-  builder_.add_geomClass(geomClass);
+  builder_.add_useStyle(useStyle);
   builder_.add_useWeight(useWeight);
   builder_.add_useColor(useColor);
+  builder_.add_geomClass(geomClass);
   return builder_.Finish();
 }
 
-struct LineStyle : private flatbuffers::Table {
-  int64_t lineStyleId() const { return GetField<int64_t>(4, 0); }
+struct LineStyleModifiers : private flatbuffers::Table {
+  uint32_t modifiers() const { return GetField<uint32_t>(4, 0); }
+  double scale() const { return GetField<double>(6, 0); }
+  double dashScale() const { return GetField<double>(8, 0); }
+  double gapScale() const { return GetField<double>(10, 0); }
+  double startWidth() const { return GetField<double>(12, 0); }
+  double endWidth() const { return GetField<double>(14, 0); }
+  double distPhase() const { return GetField<double>(16, 0); }
+  double fractPhase() const { return GetField<double>(18, 0); }
+  const DPoint3d *normal() const { return GetStruct<const DPoint3d *>(20); }
+  double yaw() const { return GetField<double>(22, 0); }
+  double pitch() const { return GetField<double>(24, 0); }
+  double roll() const { return GetField<double>(26, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int64_t>(verifier, 4 /* lineStyleId */) &&
+           VerifyField<uint32_t>(verifier, 4 /* modifiers */) &&
+           VerifyField<double>(verifier, 6 /* scale */) &&
+           VerifyField<double>(verifier, 8 /* dashScale */) &&
+           VerifyField<double>(verifier, 10 /* gapScale */) &&
+           VerifyField<double>(verifier, 12 /* startWidth */) &&
+           VerifyField<double>(verifier, 14 /* endWidth */) &&
+           VerifyField<double>(verifier, 16 /* distPhase */) &&
+           VerifyField<double>(verifier, 18 /* fractPhase */) &&
+           VerifyField<DPoint3d>(verifier, 20 /* normal */) &&
+           VerifyField<double>(verifier, 22 /* yaw */) &&
+           VerifyField<double>(verifier, 24 /* pitch */) &&
+           VerifyField<double>(verifier, 26 /* roll */) &&
            verifier.EndTable();
   }
-  bool has_lineStyleId() const { return CheckField(4); }
+  bool has_modifiers() const { return CheckField(4); }
+  bool has_scale() const { return CheckField(6); }
+  bool has_dashScale() const { return CheckField(8); }
+  bool has_gapScale() const { return CheckField(10); }
+  bool has_startWidth() const { return CheckField(12); }
+  bool has_endWidth() const { return CheckField(14); }
+  bool has_distPhase() const { return CheckField(16); }
+  bool has_fractPhase() const { return CheckField(18); }
+  bool has_normal() const { return CheckField(20); }
+  bool has_yaw() const { return CheckField(22); }
+  bool has_pitch() const { return CheckField(24); }
+  bool has_roll() const { return CheckField(26); }
 };
 
-struct LineStyleBuilder {
+struct LineStyleModifiersBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_lineStyleId(int64_t lineStyleId) { fbb_.AddElement<int64_t>(4, lineStyleId, 0); }
-  LineStyleBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
-  LineStyleBuilder &operator=(const LineStyleBuilder &);
-  flatbuffers::Offset<LineStyle> Finish() {
-    auto o = flatbuffers::Offset<LineStyle>(fbb_.EndTable(start_, 1));
+  void add_modifiers(uint32_t modifiers) { fbb_.AddElement<uint32_t>(4, modifiers, 0); }
+  void add_scale(double scale) { fbb_.AddElement<double>(6, scale, 0); }
+  void add_dashScale(double dashScale) { fbb_.AddElement<double>(8, dashScale, 0); }
+  void add_gapScale(double gapScale) { fbb_.AddElement<double>(10, gapScale, 0); }
+  void add_startWidth(double startWidth) { fbb_.AddElement<double>(12, startWidth, 0); }
+  void add_endWidth(double endWidth) { fbb_.AddElement<double>(14, endWidth, 0); }
+  void add_distPhase(double distPhase) { fbb_.AddElement<double>(16, distPhase, 0); }
+  void add_fractPhase(double fractPhase) { fbb_.AddElement<double>(18, fractPhase, 0); }
+  void add_normal(const DPoint3d *normal) { fbb_.AddStruct(20, normal); }
+  void add_yaw(double yaw) { fbb_.AddElement<double>(22, yaw, 0); }
+  void add_pitch(double pitch) { fbb_.AddElement<double>(24, pitch, 0); }
+  void add_roll(double roll) { fbb_.AddElement<double>(26, roll, 0); }
+  LineStyleModifiersBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  LineStyleModifiersBuilder &operator=(const LineStyleModifiersBuilder &);
+  flatbuffers::Offset<LineStyleModifiers> Finish() {
+    auto o = flatbuffers::Offset<LineStyleModifiers>(fbb_.EndTable(start_, 12));
     return o;
   }
 };
 
-inline flatbuffers::Offset<LineStyle> CreateLineStyle(flatbuffers::FlatBufferBuilder &_fbb,
-   int64_t lineStyleId = 0) {
-  LineStyleBuilder builder_(_fbb);
-  builder_.add_lineStyleId(lineStyleId);
+inline flatbuffers::Offset<LineStyleModifiers> CreateLineStyleModifiers(flatbuffers::FlatBufferBuilder &_fbb,
+   uint32_t modifiers = 0,
+   double scale = 0,
+   double dashScale = 0,
+   double gapScale = 0,
+   double startWidth = 0,
+   double endWidth = 0,
+   double distPhase = 0,
+   double fractPhase = 0,
+   const DPoint3d *normal = 0,
+   double yaw = 0,
+   double pitch = 0,
+   double roll = 0) {
+  LineStyleModifiersBuilder builder_(_fbb);
+  builder_.add_roll(roll);
+  builder_.add_pitch(pitch);
+  builder_.add_yaw(yaw);
+  builder_.add_fractPhase(fractPhase);
+  builder_.add_distPhase(distPhase);
+  builder_.add_endWidth(endWidth);
+  builder_.add_startWidth(startWidth);
+  builder_.add_gapScale(gapScale);
+  builder_.add_dashScale(dashScale);
+  builder_.add_scale(scale);
+  builder_.add_normal(normal);
+  builder_.add_modifiers(modifiers);
   return builder_.Finish();
 }
 

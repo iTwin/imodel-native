@@ -222,7 +222,7 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
     {
     DgnCategoryIdList ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code FROM " DGN_SCHEMA(DGN_CLASSNAME_Category) " ORDER BY Code");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code.[Value] FROM " DGN_SCHEMA(DGN_CLASSNAME_Category) " ORDER BY Code.[Value]");
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())
@@ -265,7 +265,7 @@ DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
 DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db)
     {
     CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " WHERE ElementId=?");
     stmt->BindId(1, elemId);
     return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
@@ -275,7 +275,7 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_SetCode(Code const& code)
     {
-    return code.GetNameSpace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
+    return code.GetNamespace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -342,27 +342,21 @@ DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
     if (!DgnCategory::IsValidName(code.GetValue()))
         return DgnDbStatus::InvalidName;
 
-    // all sub-category codes have namespace = category name
-    DgnCategoryCPtr cat = DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb());
-    if (cat.IsNull() || !code.GetNameSpace().Equals(cat->GetCategoryName()))
+    // all sub-category codes have namespace = category ID
+    uint64_t categoryIdVal;
+    if (SUCCESS != BeStringUtilities::ParseUInt64(categoryIdVal, code.GetNamespace().c_str()) || GetCategoryId().GetValue() != categoryIdVal)
         return DgnDbStatus::InvalidName;
 
     if (m_elementId.IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
         {
         // default sub-category has same name as category
-        if ((code.GetValue().Equals(cat->GetCategoryName()) != IsDefaultSubCategory()))
+        DgnCategoryCPtr cat = DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb());
+        if (!cat.IsValid())
+            return DgnDbStatus::InvalidCategory;
+        else if ((code.GetValue().Equals(cat->GetCategoryName()) != IsDefaultSubCategory()))
             return DgnDbStatus::InvalidName;
         }
 
-    return T_Super::_SetCode(code);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::UpdateCode(DgnCategoryCR cat)
-    {
-    auto code = DgnSubCategory::CreateSubCategoryCode(cat, IsDefaultSubCategory() ? cat.GetCategoryName() : GetSubCategoryName());
     return T_Super::_SetCode(code);
     }
 
@@ -382,7 +376,7 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name, db), catId), m_data(app, descr)
+    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), catId), m_data(app, descr)
     {
     //
     }
@@ -412,7 +406,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
+    BeSQLite::wt_OperationForGraphics highPriorityOperationBlock; // See comments on wt_OperationForGraphics
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
@@ -772,6 +766,14 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnImportContext::RemapGeomStreamIds(GeomStreamR geom)
+    {
+    return ElementGeomIO::Import(geom, geom, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnCategory::IsValidName(Utf8StringCR name)
@@ -793,30 +795,6 @@ DgnDbStatus DgnCategory::_OnInsert()
 DgnDbStatus DgnCategory::_OnUpdate(DgnElementCR el)
     {
     return IsValidName(GetCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCategory::_OnUpdated(DgnElementCR original) const
-    {
-    Code myCode = GetCode();
-    Code originalCode = original.GetCode();
-    if (!myCode.GetValue().Equals(originalCode.GetValue()))
-        {
-        // update namespace of sub-categories and name of default sub-category
-        DgnSubCategoryIdSet subcatIds = QuerySubCategories();
-        for (auto const& subcatId : subcatIds)
-            {
-            DgnSubCategoryPtr subcat = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(subcatId);
-            BeAssert(subcat.IsValid());
-            if (subcat.IsValid())
-                {
-                subcat->UpdateCode(*this);
-                subcat->Update();
-                }
-            }
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

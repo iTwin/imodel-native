@@ -521,8 +521,8 @@ bool                LsSymbolReference::GetNoPartial ()    const {return 0 != (m_
 bool                LsSymbolReference::GetClipPartial()   const {return 0 == (m_mod1 & LCPOINT_NOCLIP);}
 bool                LsSymbolReference::GetStretchable()   const {return 0 == (m_mod1 & LCPOINT_NOSCALE);}
 bool                LsSymbolReference::GetDgnDb()       const {return 0 != (m_mod1 & LCPOINT_PROJECT);}
-bool                LsSymbolReference::GetUseElementColor()  const {return 0 != (m_mod1 & LCPOINT_COLOR);}
-bool                LsSymbolReference::GetUseElementWeight() const {return 0 != (m_mod1 & LCPOINT_WEIGHT);}
+bool                LsSymbolReference::GetUseElementColor()  const {return 0 == (m_mod1 & LCPOINT_COLOR);}
+bool                LsSymbolReference::GetUseElementWeight() const {return 0 == (m_mod1 & LCPOINT_WEIGHT);}
 double              LsSymbolReference::GetXOffset()         const {return m_offset.x;}
 double              LsSymbolReference::GetYOffset()         const {return m_offset.y;}
 double              LsSymbolReference::GetAngle()           const {return m_angle;}
@@ -601,7 +601,7 @@ void            LsSymbolReference::SetDgnDb(bool value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetUseElementColor(bool value)
     {
-    uint32_t newValue = value ? LCPOINT_COLOR : 0;
+    uint32_t newValue = value ? 0 : LCPOINT_COLOR;
     m_mod1 = (m_mod1 & ~LCPOINT_COLOR) | newValue;
     }
 
@@ -610,7 +610,7 @@ void            LsSymbolReference::SetUseElementColor(bool value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsSymbolReference::SetUseElementWeight(bool value)
     {
-    uint32_t newValue = value ? LCPOINT_WEIGHT : 0;
+    uint32_t newValue = value ? 0 : LCPOINT_WEIGHT;
     m_mod1 = (m_mod1 & ~LCPOINT_WEIGHT) | newValue;
     }
 

@@ -28,7 +28,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 
@@ -111,7 +111,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
     DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code(),100);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
     TextString textStringElem;
@@ -131,7 +131,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
     DgnElementPtr el2 = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code(),100);
-    DgnElement2dP dgnElement2d= el2->ToElement2dP();
+    GeometrySource2dCP dgnElement2d = el2->ToGeometrySource2d();
     DPoint2d origin = DPoint2d::From(0.0, 0.0);
     ElementGeometryBuilderPtr builder2 = ElementGeometryBuilder::Create(*dgnElement2d, origin);
     }

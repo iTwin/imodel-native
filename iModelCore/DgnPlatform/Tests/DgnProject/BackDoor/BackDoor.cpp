@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/DgnProject/BackDoor.h"
-#include <DgnPlatform/DgnCore/RealityDataCache.h>
+#include <DgnPlatform/RealityDataCache.h>
 #include <Logging/bentleylogging.h>
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
@@ -112,6 +112,20 @@ namespace DirectionParser
             }
 
     }; // RealityData
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsinamespace
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    namespace ILocksManager
+    {
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    Paul.Connelly   11/15
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetLockingEnabled(bool enabled)
+            {
+            Dgn::ILocksManager::BackDoor_SetLockingEnabled(enabled);
+            }
+    };
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -194,8 +208,13 @@ BeFileName DgnDbTestDgnManager::GetWritableTestData (WCharCP fileName, CharCP ca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbTestDgnManager::DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile, BeSQLite::Db::OpenMode omode, DgnInitializeMode imode, bool forceMakeCopy) 
-    : TestDgnManager ((BeSQLite::Db::OpenMode::Readonly==omode) ? GetReadOnlyTestData(dgnfilename,callerSourceFile, forceMakeCopy) : GetWritableTestData(dgnfilename,callerSourceFile), omode, imode) 
+DgnDbTestDgnManager::DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile, BeSQLite::Db::OpenMode omode, bool needBriefcase, DgnInitializeMode imode, bool forceMakeCopy) 
+    : TestDgnManager(
+        (BeSQLite::Db::OpenMode::Readonly==omode) ? GetReadOnlyTestData(dgnfilename,callerSourceFile,forceMakeCopy) : GetWritableTestData(dgnfilename,callerSourceFile), 
+        omode,
+        needBriefcase, 
+        imode 
+        ) 
     {}
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

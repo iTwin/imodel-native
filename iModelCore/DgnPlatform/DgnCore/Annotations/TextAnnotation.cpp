@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationSeedPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextBlockPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationFramePersistence.h>
@@ -33,7 +33,7 @@ TextAnnotation::TextAnnotation(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationPtr TextAnnotation::Create(DgnDbR project, TextAnnotationSeedId seedID)
+TextAnnotationPtr TextAnnotation::Create(DgnDbR project, DgnElementId seedID)
     {
     auto annotation = TextAnnotation::Create(project);
     annotation->ApplySeed(seedID);
@@ -71,9 +71,9 @@ void TextAnnotation::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-void TextAnnotation::ApplySeed(TextAnnotationSeedId value)
+void TextAnnotation::ApplySeed(DgnElementId value)
     {
-    auto seed = TextAnnotationSeed::QuerySeed(value, *m_dgndb);
+    auto seed = TextAnnotationSeed::Get(*m_dgndb, value);
     PRECONDITION(seed.IsValid(), );
     
     if (m_text.IsValid())

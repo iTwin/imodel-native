@@ -3,9 +3,9 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnFontData.h>
-#include <DgnPlatform/DgnCore/DgnRscFontStructures.h>
-#include <DgnPlatform/DgnCore/DgnFont.fb.h>
+#include <DgnPlatform/DgnFontData.h>
+#include <DgnPlatform/DgnRscFontStructures.h>
+#include <DgnPlatform/DgnFont.fb.h>
 
 using namespace flatbuffers;
 

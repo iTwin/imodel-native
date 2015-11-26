@@ -72,6 +72,7 @@ LsCacheR DgnLineStyles::ReloadMap()
     return *GetLsCacheP(true);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    06/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -84,6 +85,15 @@ LsCacheP DgnLineStyles::GetLsCacheP (bool loadIfNull)
         m_lineStyleMap->Load();
 
     return m_lineStyleMap.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+void DgnLineStyles::PrepareToQueryLineStyle(BeSQLite::Statement & stmt, DgnStyleId styleId)
+    {
+    stmt.Prepare(m_dgndb, "SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type = " DGN_STYLE_TYPE_Line " AND Id=?");
+    stmt.BindId(1, styleId);
     }
 
 //---------------------------------------------------------------------------------------

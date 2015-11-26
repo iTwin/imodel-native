@@ -97,7 +97,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnM
     TestElement2dPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode,100);
 
     DgnModelP model = m_db->Models().GetModel(mid).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
 
@@ -127,7 +127,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMod
     DgnElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
 
     DgnModelP model = m_db->Models().GetModel(mid).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
@@ -156,7 +156,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, D
     DgnElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
 
     DgnModelP model = m_db->Models().GetModel(mid).get();
-    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
@@ -174,19 +174,12 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbTestFixture::setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
     {
-    DgnViews::View view;
-
-    view.SetDgnViewType(DgnClassId(dgnDb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalView)), DgnViewType::Physical);
-    view.SetDgnViewSource(DgnViewSource::Generated);
-    view.SetName("TestView");
-    view.SetBaseModelId(model.GetModelId());
-
-    EXPECT_TRUE(BE_SQLITE_OK == dgnDb.Views().Insert(view));
-    EXPECT_TRUE(view.GetId().IsValid());
+    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
+    EXPECT_TRUE(view.Insert().IsValid());
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    PhysicalViewController viewController (dgnDb, view.GetId());
+    PhysicalViewController viewController (dgnDb, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/Annotations.h>
 
 // Republish API:           bb re DgnPlatform:PublishedApi
 // Rebuild API:             bb re DgnPlatformDll
@@ -24,7 +24,7 @@ struct AnnotationLeaderStyleTest : public GenericDgnModelTestFixture
     // @bsimethod                                                   Umar.Hayat     07/15
     //---------------------------------------------------------------------------------------
 public: AnnotationLeaderStyleTest() :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+        GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
         {
         }
 
@@ -85,8 +85,8 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
     ASSERT_TRUE(style.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &style->GetDbR());
-    EXPECT_TRUE(!style->GetStyleId().IsValid()); // Cannot call SetId directly from published API.
+    EXPECT_TRUE(&project == &style->GetDgnDb());
+    EXPECT_TRUE(!style->GetElementId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
@@ -105,7 +105,7 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
     }
 
 //---------------------------------------------------------------------------------------
-// Creates and clones a style.
+// Creates and CreateCopys a style.
 // @bsimethod                                                   Umar.Hayat     07/15
 //---------------------------------------------------------------------------------------
 TEST_F(AnnotationLeaderStyleTest, DeepCopy)
@@ -121,13 +121,13 @@ TEST_F(AnnotationLeaderStyleTest, DeepCopy)
     DECLARE_AND_SET_DATA_1(style);
 
     //.............................................................................................
-    AnnotationLeaderStylePtr clonedStyle = style->Clone();
-    ASSERT_TRUE(clonedStyle.IsValid());
-    ASSERT_TRUE(style.get() != clonedStyle.get());
+    AnnotationLeaderStylePtr CreateCopydStyle = style->CreateCopy();
+    ASSERT_TRUE(CreateCopydStyle.IsValid());
+    ASSERT_TRUE(style.get() != CreateCopydStyle.get());
     
-    EXPECT_TRUE(&project == &clonedStyle->GetDbR());
-    EXPECT_TRUE(style->GetStyleId() == clonedStyle->GetStyleId());
-    VERIFY_DATA_1(clonedStyle);
+    EXPECT_TRUE(&project == &CreateCopydStyle->GetDgnDb());
+    EXPECT_TRUE(style->GetElementId() == CreateCopydStyle->GetElementId());
+    VERIFY_DATA_1(CreateCopydStyle);
     }
 
 //---------------------------------------------------------------------------------------
@@ -150,32 +150,32 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
-    ASSERT_TRUE(testStyle->GetStyleId().IsValid());
+    ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
     EXPECT_EQ(1, AnnotationLeaderStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(AnnotationLeaderStyle::ExistsById(testStyle->GetStyleId(), project));
-    EXPECT_TRUE(AnnotationLeaderStyle::ExistsByName(name, project));
+    EXPECT_TRUE(AnnotationLeaderStyle::Get(project, testStyle->GetElementId()).IsValid());
+    EXPECT_TRUE(AnnotationLeaderStyle::Get(project, name.c_str()).IsValid());
 
-    auto fileStyle = AnnotationLeaderStyle::QueryStyle(testStyle->GetStyleId(), project);
+    auto fileStyle = AnnotationLeaderStyle::Get(project, testStyle->GetElementId());
     ASSERT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = AnnotationLeaderStyle::QueryStyle(name, project);
+    fileStyle = AnnotationLeaderStyle::Get(project, name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+    EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
     // Update
-    AnnotationLeaderStylePtr mutatedStyle = fileStyle->Clone();
+    AnnotationLeaderStylePtr mutatedStyle = fileStyle->CreateCopy();
     ASSERT_TRUE(mutatedStyle.IsValid());
 
     name = "DifferentName"; mutatedStyle->SetName(name.c_str());
@@ -187,11 +187,11 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     EXPECT_EQ(1, AnnotationLeaderStyle::QueryCount(project));
 
-    fileStyle = AnnotationLeaderStyle::QueryStyle(name, project);
+    fileStyle = AnnotationLeaderStyle::Get(project, name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
+    EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
+    EXPECT_TRUE(mutatedStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -201,9 +201,9 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     for (auto const& style : iter1)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-        ASSERT_TRUE(style.GetId().IsValid());
+        ASSERT_TRUE(style.GetElementId().IsValid());
         
-        auto iterStyle = AnnotationLeaderStyle::QueryStyle(style.GetId(), project);
+        auto iterStyle = AnnotationLeaderStyle::Get(project, style.GetElementId());
         ASSERT_TRUE(iterStyle.IsValid());
 
         EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -213,15 +213,15 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     EXPECT_TRUE(1 == numStyles);
 
-    auto iter2 = AnnotationLeaderStyle::MakeOrderedIterator(project);
+    auto iter2 = AnnotationLeaderStyle::MakeIterator(project);
     numStyles = 0;
 
     for (auto const& style : iter2)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
-        ASSERT_TRUE(style.GetId().IsValid());
+        ASSERT_TRUE(style.GetElementId().IsValid());
 
-        auto iterStyle = AnnotationLeaderStyle::QueryStyle(style.GetId(), project);
+        auto iterStyle = AnnotationLeaderStyle::Get(project, style.GetElementId());
         ASSERT_TRUE(iterStyle.IsValid());
 
         EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -233,7 +233,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Delete
-    auto styleToDelete = AnnotationLeaderStyle::QueryStyle(mutatedStyle->GetStyleId(), project);
-    EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
+    auto styleToDelete = AnnotationLeaderStyle::Get(project, mutatedStyle->GetElementId());
+    EXPECT_EQ(DgnDbStatus::DeletionProhibited, project.Elements().Delete(*styleToDelete));
     }
 

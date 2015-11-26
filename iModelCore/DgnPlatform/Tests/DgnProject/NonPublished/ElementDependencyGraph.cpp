@@ -15,7 +15,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
-#include <DgnPlatform/DgnCore/DgnElementDependency.h>
+#include <DgnPlatform/DgnElementDependency.h>
 
 #define LOCALIZED_STR(str) str
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -66,7 +66,7 @@ public:
     ~TransactionManagerTests();
     void CloseDb() {m_db->CloseDb();}
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
+    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     void TwiddleTime(DgnElementCPtr);
 };
@@ -175,7 +175,7 @@ TransactionManagerTests::~TransactionManagerTests()
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
+void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode, bool needBriefcase)
     {
     BeFileName outFileName;
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, projFile, testFile, __FILE__));
@@ -183,6 +183,13 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     m_db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(mode));
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE( result == BE_SQLITE_OK);
+
+    if (needBriefcase)
+        {
+        TestDataManager::MustBeBriefcase(m_db, mode);
+        ASSERT_TRUE(m_db->IsBriefcase());
+        ASSERT_TRUE(m_db->Txns().IsTracking());
+        }
 
     ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
 
@@ -257,8 +264,8 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
     SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
-
-    m_db->Txns().EnableTracking(true);
+    ASSERT_TRUE(m_db->IsBriefcase());
+    ASSERT_TRUE(m_db->Txns().IsTracking());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -18,7 +18,7 @@
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/ForeignFormat/DgnProjectImporter.h>
-#include <DgnPlatform/DgnCore/ColorUtil.h>
+#include <DgnPlatform/ColorUtil.h>
 #include <BeXml/BeXml.h>
 
 using namespace std;

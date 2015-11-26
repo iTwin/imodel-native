@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
-#include <DgnPlatform/DgnCore/GeomPart.h>
-#include <DgnPlatform/DgnCore/ElementGeometry.h>
+#include <DgnPlatform/GeomPart.h>
+#include <DgnPlatform/ElementGeometry.h>
 #include <ECDb/ECDbApi.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -23,6 +23,7 @@ HANDLER_DEFINE_MEMBERS(TestItemHandler)
 #endif
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
+HANDLER_DEFINE_MEMBERS(TestGroupHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
@@ -172,6 +173,17 @@ TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId 
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId categoryId)
+    {
+    DgnClassId classId = db.Domains().GetClassId(TestGroupHandler::GetHandler());
+    TestGroupPtr group = new TestGroup(CreateParams(db, modelId, classId, categoryId, Placement3d()));
+    BeAssert(group.IsValid());
+    return group;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -254,7 +266,11 @@ void TestElementDrivesElementHandler::_OnRootChanged(DgnDbR db, ECInstanceId rel
     {
     if (s_shouldFail)
         db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Warning, "ABC failed"));
+
     m_relIds.push_back(relationshipId);
+
+    if (nullptr != s_callback)
+        s_callback->_OnRootChanged(db, relationshipId, source, target);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -298,6 +314,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
+    RegisterHandler(TestGroupHandler::GetHandler());
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
     RegisterHandler(TestItemHandler::GetHandler());
 #endif
@@ -371,4 +388,6 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
 
     return DgnDbStatus::Success;
     }
+
+TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;
 

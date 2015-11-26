@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include "DgnCoreLog.h"
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnMarkupProject.h>
 #include <BeJpeg/BeJpeg.h>
 
 #define QV_RGBA_FORMAT   0
@@ -73,10 +73,10 @@ BentleyStatus DgnMarkupProject::QueryPropertyAsJson(JsonValueR json, DgnMarkupPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId DgnMarkupProject::GetFirstViewOf(DgnModelId mid)
     {
-    for (auto const& view : Views().MakeIterator())
+    for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
         if (view.GetBaseModelId() == mid)
-            return view.GetDgnViewId();
+            return view.GetId();
         }
     return DgnViewId();
     }
@@ -252,23 +252,17 @@ void PhysicalRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const
     }
 
 #ifdef WIP_RDL_QUERYVIEWS
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) {return m_subjectView.OnHealUpdate(viewport, context, fullHeal);}
-void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) {return m_subjectView.OnFullUpdate(viewport, context, info);}
-void PhysicalRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) {return m_subjectView.OnDynamicUpdate(viewport, context, info);}
-bool PhysicalRedlineViewController::_WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
-void PhysicalRedlineViewController::_OnCategoryChange() {return m_subjectView.OnCategoryChange();}
-void PhysicalRedlineViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff) {return m_subjectView.ChangeModelDisplay(modelId, onOff);}
-void PhysicalRedlineViewController::_DrawView(ViewContextR context) {return m_subjectView.DrawView(context);}
-uint32_t PhysicalRedlineViewController::_GetMaxElementsToLoad() {return GetMaxElementsToLoad();}
-BeSQLite::DbResult PhysicalRedlineViewController::_Load() {return m_subjectView.Load();}
-Utf8String PhysicalRedlineViewController::_GetRTreeMatchSql(DgnViewportR viewport) {return GetRTreeMatchSql(viewport);}
-int32_t PhysicalRedlineViewController::_GetMaxElementFactor() {return GetMaxElementFactor();}
-double PhysicalRedlineViewController::_GetMinimumSizePixels(DrawPurpose updateType) {return GetMinimumSizePixels(updateType);}
-uint64_t PhysicalRedlineViewController::_GetMaxElementMemory() {return GetMaxElementMemory();}
+bool PhysicalRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
+
+bool PhysicalRedlineViewController::_WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return m_subjectView._WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
+uint32_t PhysicalRedlineViewController::_GetMaxElementsToLoad () {return m_subjectView._GetMaxElementsToLoad();}
+Utf8String PhysicalRedlineViewController::_GetRTreeMatchSql (ViewportR viewport) {return m_subjectView._GetRTreeMatchSql(viewport);}
+int32_t PhysicalRedlineViewController::_GetMaxElementFactor() {return m_subjectView._GetMaxElementFactor();}
+double PhysicalRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateType) {return m_subjectView._GetMinimumSizePixels (updateType);}
+uint64_t PhysicalRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
+
+ViewController::FitComplete PhysicalRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
 
 bool PhysicalRedlineViewController::_DrawOverlayDecorations(IndexedViewportR viewport) { return m_subjectView._DrawOverlayDecorations(viewport) || T_Super::_DrawOverlayDecorations(viewport); }
 bool PhysicalRedlineViewController::_DrawZBufferedDecorations(IndexedViewportR viewport) { return m_subjectView._DrawZBufferedDecorations(viewport) || T_Super::_DrawZBufferedDecorations(viewport); }
@@ -278,7 +272,7 @@ void PhysicalRedlineViewController::_DrawZBufferedGraphics(ViewContextR context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void PhysicalRedlineViewController::_DrawElement(ViewContextR context, GeometrySourceCR element)
     {
     if (m_targetModelIsInSubjectView)
         m_subjectView._DrawElement(context, element);
@@ -289,7 +283,7 @@ void PhysicalRedlineViewController::_DrawElement(ViewContextR context, Geometric
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_DrawElementFiltered(ViewContextR context, GeometricElementCR element, DPoint3dCP pts, double size)
+void PhysicalRedlineViewController::_DrawElementFiltered(ViewContextR context, GeometrySourceCR element, DPoint3dCP pts, double size)
     {
     if (m_targetModelIsInSubjectView)
         m_subjectView._DrawElementFiltered(context, element, pts, size);
@@ -332,6 +326,15 @@ void PhysicalRedlineViewController::_RestoreFromSettings(JsonValueCR settings)
     {
     T_Super::_RestoreFromSettings(settings);
     SynchWithSubjectViewController();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.wilson      10/2015
+//---------------------------------------------------------------------------------------
+void PhysicalRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
+    {
+    T_Super::_OnAttachedToViewport(vp);
+    m_subjectView._OnAttachedToViewport(vp);
     }
 
 //---------------------------------------------------------------------------------------
@@ -502,42 +505,31 @@ BentleyStatus DgnMarkupProject::CheckIsOpen()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnDbParams const& params)
+DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, CreateDgnDbParams const& params)
     {
-    // PRE CONDITIONS
-    if (params.m_seedDb.empty())
-        {
-        BeAssert(false && "You must supply a seed file");
-        return BE_SQLITE_ERROR;
-        }
-
-    //  ------------------------------------------------------------------
-    //  Create the .markupdb file
-    //  ------------------------------------------------------------------
-    BeFileName projectFile(fileName);
-
     CreateDgnMarkupProjectParams& mpp = *(CreateDgnMarkupProjectParams*) &params;
 
-    supplyDefaultExtension(projectFile, s_markupDgnDbExt);
-    if (mpp.GetOverwriteExisting() && BeFileName::DoesPathExist(projectFile))
-        {
-        BeFileNameStatus fstatus = BeFileName::BeDeleteFile(projectFile);
+    BeFileName fileName(fileNameIn);
+    supplyDefaultExtension(fileName, s_markupDgnDbExt);
 
-        if (BeFileNameStatus::Success != fstatus)
-            return BE_SQLITE_ERROR;
+    if (true)
+        {
+        if (!mpp.m_seedDb.empty())
+            BeFileName::BeCopyFile(mpp.m_seedDb, fileName, !mpp.GetOverwriteExisting());
+        else
+            {
+            CreateDgnDbParams params;
+            params.SetOverwriteExisting (mpp.GetOverwriteExisting());
+            DgnDb::CreateDgnDb (nullptr, fileName, params);
+            }
         }
 
-    BeFileNameStatus fstatus = BeFileName::BeCopyFile(params.m_seedDb.c_str(), projectFile);
-
-    if (BeFileNameStatus::Success != fstatus)
-        return BE_SQLITE_ERROR;
-
     OpenParams oparams(OpenMode::ReadWrite);
-    DbResult status = DoOpenDgnDb(projectFile, oparams); // open as a DgnDb
+    DbResult status = DoOpenDgnDb(fileName, oparams);
 
     if (BE_SQLITE_OK != status)
         {
-        BeFileName::BeDeleteFile(projectFile);
+        BeFileName::BeDeleteFile(fileName);
         return  status;
         }
 
@@ -550,19 +542,21 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileName, CreateD
     if (mpp.GetPhysicalRedlining())
         {
         SavePropertyString(DgnProjectProperty::IsPhysicalRedline(), "true");
-
         }
 
     //  ------------------------------------------------------------------
     //  Mark all pre-existing models and views as internal. They may be used
     //  as seeds, but they will never be used directly by the app or the user.
     //  ------------------------------------------------------------------
-    if (true)
+    for (auto const& entry : ViewDefinition::MakeIterator(*this))
         {
-        Statement stmt;
-        // *** NEEDS WORK: Missing WHERE Id=?   
-        stmt.Prepare(*this, "UPDATE " DGN_TABLE(DGN_CLASSNAME_View) " SET Source=4");  // DgnViewSource::Private
-        stmt.Step();
+        auto cpView = ViewDefinition::QueryView(entry.GetId(), *this);
+        auto pView = cpView.IsValid() ? cpView->MakeCopy<ViewDefinition>() : nullptr;
+        if (pView.IsValid())
+            {
+            pView->SetSource(DgnViewSource::Private);
+            pView->Update();
+            }
         }
 
     if (true)
@@ -706,7 +700,7 @@ DgnViewAssociationData::CheckResults RedlineModel::CheckAssociation(DgnDbR dgnPr
 
     DgnViewAssociationData::CheckResults viewResults(GetDgnMarkupProject()->CheckAssociation(dgnProject, assocData));
 
-    if (assocData.GetViewId().IsValid() && !dgnProject.Views().QueryView(assocData.GetViewId()).IsValid())
+    if (assocData.GetViewId().IsValid() && !ViewDefinition::QueryView(assocData.GetViewId(), dgnProject).IsValid())
         {
         viewResults.ViewNotFound = true;
         }
@@ -1053,7 +1047,7 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
     DgnModelId closestRedlineModelId;
     DPoint3d closestOrigin;
     double closestDistance = DBL_MAX;
-    for (auto const& view : Views().MakeIterator())
+    for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
         RedlineModelPtr rdlModel = Models().Get<RedlineModel>(view.GetBaseModelId());
         if (rdlModel.IsValid())
@@ -1539,8 +1533,8 @@ ViewController* RedlineViewController::Create(DgnDbR project, DgnViewId viewId)
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
     if (markupProject == NULL)
         return NULL;
-    auto rdlView = markupProject->Views().QueryView(viewId);
-    auto rdlModel = markupProject->OpenRedlineModel(rdlView.GetBaseModelId());
+    auto rdlView = ViewDefinition::QueryView(viewId, *markupProject);
+    auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView->GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
 
@@ -1559,18 +1553,16 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
         return NULL;
         }
 
-    DgnClassId classId(project->Schemas().GetECClassId("dgn","RedlineView"));
-    DgnViews::View view(DgnViewType::Sheet, classId, rdlModel.GetModelId(), rdlModel.GetCode().GetValue().c_str(), NULL, DgnViewSource::Generated);
+    RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str(),
+                ViewDefinition::Data(rdlModel.GetModelId(), DgnViewSource::Generated)));
+    if (!view.Insert().IsValid())
+        return nullptr;
 
-    auto result = rdlModel.GetDgnMarkupProject()->Views().Insert(view);
-    if (BE_SQLITE_OK != result)
-        return NULL;
-
-    auto controller = new RedlineViewController(rdlModel, view.GetId());
+    auto controller = new RedlineViewController(rdlModel, view.GetViewId());
 
     controller->m_enableViewManipulation = true; // *** TRICKY: Normally, RedlineViewController::SetDelta, Origin, Rotation are disabled (to prevent user from changing camera on sheet.)
 
-    auto templateSheet = project->Views().LoadViewController(templateView, DgnViews::FillModels::No);
+    auto templateSheet = ViewDefinition::LoadViewController(templateView, *project, ViewDefinition::FillModels::No);
     if (templateSheet.IsValid())
         {
         controller->SetBackgroundColor(templateSheet->GetBackgroundColor());
@@ -1765,8 +1757,8 @@ ViewControllerPtr PhysicalRedlineViewController::Create(DgnViewType viewType, Ut
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
     if (markupProject == NULL)
         return NULL;
-    auto rdlView = markupProject->Views().QueryView(viewId);
-    auto rdlModel = markupProject->OpenRedlineModel(rdlView.GetBaseModelId());
+    auto rdlView = ViewDefinition::QueryView(viewId, project);
+    auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView.GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
     return new PhysicalRedlineViewController(*rdlModel, subjectViewController);

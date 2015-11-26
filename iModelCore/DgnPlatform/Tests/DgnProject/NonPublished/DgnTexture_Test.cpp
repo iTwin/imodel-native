@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/BlankDgnDbTestFixture.h"
 #include <numeric>
-#include <DgnPlatform/DgnCore/DgnTexture.h>
+#include <DgnPlatform/DgnTexture.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

@@ -7,7 +7,7 @@
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Geom/GeomApi.h>
-#include <DgnPlatform/DgnCore/IGeoCoordServices.h>
+#include <DgnPlatform/IGeoCoordServices.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/GeoCoordErrors.h>
 #include <csmap/cs_map.h>

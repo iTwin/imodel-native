@@ -73,157 +73,137 @@ public:
     ~ChangeStreamFileWriter() {}
 };
 
-//=======================================================================================
-//! Reads the contents of multiple files containing change streams
-// @bsiclass                                                 Ramanujam.Raman   10/15
-//=======================================================================================
-struct ChangeStreamFileReader : ChangeStream
-{
-private:
-    bvector<BeFileName> m_pathnames;
-
-    BeFile m_currentFile;
-    int m_currentFileIndex = -1;
-    uint64_t m_currentTotalBytes = 0;
-    uint64_t m_currentByteIndex = 0;
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    BentleyStatus CloseCurrentFile()
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeStreamFileReader::CloseCurrentFile()
+    {
+    BeAssert(m_currentFileIndex >= 0);
+    if (!m_currentFile.IsOpen())
         {
-        BeAssert(m_currentFileIndex >= 0);
-        if (!m_currentFile.IsOpen())
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        BeFileStatus fileStatus = m_currentFile.Close();
-        if (fileStatus != BeFileStatus::Success)
-            return ERROR;
+        BeAssert(false);
+        return ERROR;
+        }
+    BeFileStatus fileStatus = m_currentFile.Close();
+    if (fileStatus != BeFileStatus::Success)
+        return ERROR;
 
-        m_currentTotalBytes = 0;
-        m_currentByteIndex = 0;
+    m_currentTotalBytes = 0;
+    m_currentByteIndex = 0;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeStreamFileReader::OpenNextFile(bool& completedAllFiles)
+    {
+    m_currentFileIndex++;
+    if (m_currentFileIndex >= (int) m_pathnames.size())
+        {
+        completedAllFiles = true;
         return SUCCESS;
         }
+    completedAllFiles = false;
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    BentleyStatus OpenNextFile(bool& completedAllFiles)
-        {            
-        m_currentFileIndex++;
-        if (m_currentFileIndex >= (int) m_pathnames.size())
-            {
-            completedAllFiles = true;
-            return SUCCESS;
-            }
-        completedAllFiles = false;
-
-        BeFileStatus fileStatus = m_currentFile.Open(m_pathnames[m_currentFileIndex], BeFileAccess::Read);
-        if (fileStatus != BeFileStatus::Success)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        fileStatus = m_currentFile.GetSize(m_currentTotalBytes);
-        if (fileStatus != BeFileStatus::Success)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        m_currentByteIndex = 0;
-        return SUCCESS;
+    BeFileStatus fileStatus = m_currentFile.Open(m_pathnames[m_currentFileIndex], BeFileAccess::Read);
+    if (fileStatus != BeFileStatus::Success)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    fileStatus = m_currentFile.GetSize(m_currentTotalBytes);
+    if (fileStatus != BeFileStatus::Success)
+        {
+        BeAssert(false);
+        return ERROR;
         }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    BentleyStatus ReadNextPage(void *pData, int *pnData)
-        {
-        uint32_t bytesRead;
-        BeFileStatus fileStatus = m_currentFile.Read(pData, &bytesRead, *pnData);
-        if (fileStatus != BeFileStatus::Success)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
+    m_currentByteIndex = 0;
+    return SUCCESS;
+    }
 
-        *pnData = (int) bytesRead;
-        m_currentByteIndex += bytesRead;
-        return SUCCESS;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeStreamFileReader::ReadNextPage(void *pData, int *pnData)
+    {
+    uint32_t bytesRead;
+    BeFileStatus fileStatus = m_currentFile.Read(pData, &bytesRead, *pnData);
+    if (fileStatus != BeFileStatus::Success)
+        {
+        BeAssert(false);
+        return ERROR;
         }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    bool IsCurrentFileComplete() const
-        {
-        return m_currentByteIndex >= m_currentTotalBytes;
-        }
+    *pnData = (int) bytesRead;
+    m_currentByteIndex += bytesRead;
+    return SUCCESS;
+    }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    DbResult _InputPage(void *pData, int *pnData) override
-        {
-        BentleyStatus status;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+bool ChangeStreamFileReader::IsCurrentFileComplete() const
+    {
+    return m_currentByteIndex >= m_currentTotalBytes;
+    }
 
-        if (m_currentFileIndex < 0 || IsCurrentFileComplete())
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+DbResult ChangeStreamFileReader::_InputPage(void *pData, int *pnData)
+    {
+    BentleyStatus status;
+
+    if (m_currentFileIndex < 0 || IsCurrentFileComplete())
+        {
+        if (m_currentFileIndex >= 0)
             {
-            if (m_currentFileIndex >= 0)
-                {
-                status = CloseCurrentFile();
-                if (SUCCESS != status)
-                    return BE_SQLITE_ERROR;
-                }
-                
-            bool completedAllFiles;
-            status = OpenNextFile(completedAllFiles);
+            status = CloseCurrentFile();
             if (SUCCESS != status)
                 return BE_SQLITE_ERROR;
-
-            if (completedAllFiles)
-                {
-                *pnData = 0;
-                return BE_SQLITE_OK;
-                }
             }
 
-        status = ReadNextPage(pData, pnData);
+        bool completedAllFiles;
+        status = OpenNextFile(completedAllFiles);
         if (SUCCESS != status)
             return BE_SQLITE_ERROR;
 
-        return BE_SQLITE_OK;
+        if (completedAllFiles)
+            {
+            *pnData = 0;
+            return BE_SQLITE_OK;
+            }
         }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    void _Reset() override
-        {
-        if (m_currentFile.IsOpen())
-            CloseCurrentFile();
-        m_currentFileIndex = -1;
-        m_currentTotalBytes = 0;
-        m_currentByteIndex = 0;
-        }
+    status = ReadNextPage(pData, pnData);
+    if (SUCCESS != status)
+        return BE_SQLITE_ERROR;
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                Ramanujam.Raman                    10/2015
-    //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause clause, Changes::Change iter)
-        {
-        BeAssert(false);
-        return ChangeSet::ConflictResolution::Abort;
-        }
+    return BE_SQLITE_OK;
+    }
 
-public:
-    ChangeStreamFileReader(bvector<BeFileName> pathnames) : m_pathnames(pathnames) {}
-    ChangeStreamFileReader(BeFileNameCR pathname) {m_pathnames.push_back(pathname);}
-    ~ChangeStreamFileReader() {}
-};
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+void ChangeStreamFileReader::_Reset()
+    {
+    if (m_currentFile.IsOpen())
+        CloseCurrentFile();
+    m_currentFileIndex = -1;
+    m_currentTotalBytes = 0;
+    m_currentByteIndex = 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::ConflictCause clause, Changes::Change iter)
+    {
+    BeAssert(false);
+    return ChangeSet::ConflictResolution::Abort;
+    }
 
 //=======================================================================================
 //! Generates the DgnRevision Id
@@ -306,7 +286,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    static Utf8String GenerateId(Utf8String parentRevId, ChangeGroup const& changeGroup)
+    static Utf8String GenerateId(Utf8String parentRevId, ChangeGroup& changeGroup)
         {
         DgnRevisionIdGenerator idgen;
         idgen.AddIdStringToHash(parentRevId);
@@ -518,7 +498,7 @@ BentleyStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& mer
         return ERROR;
         }
 
-    if (txnMgr.HasChanges())
+    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() before merging");
         return ERROR;
@@ -585,7 +565,7 @@ BentleyStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup const& changeGroup)
+DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup& changeGroup)
     {
     Utf8String parentRevId = GetParentRevisionId();
     Utf8String revId = DgnRevisionIdGenerator::GenerateId(parentRevId, changeGroup);
@@ -604,7 +584,7 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup const& changeGr
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
-BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup const& changeGroup)
+BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup& changeGroup)
     {
     ChangeStreamFileWriter writer(pathname);
     DbResult result = writer.FromChangeGroup(changeGroup);
@@ -623,7 +603,7 @@ BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeG
 DgnRevisionPtr RevisionManager::StartCreateRevision()
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
-    if (txnMgr.HasChanges())
+    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
         return nullptr;

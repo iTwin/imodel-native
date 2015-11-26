@@ -61,7 +61,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
     DgnElementCPtr pE1 = InsertElement(ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
-    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
+    GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
     for (ElementGeometryPtr geom : collection)
@@ -108,8 +108,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     DgnElementId E1id = keyE1->GetElementId ();
     DgnElementCP pE1 = m_db->Elements ().FindElement (E1id);
 
-    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement ());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld (*geomElem);
+    GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection (*geomElem);
 
     for (ElementGeometryPtr geom : collection)
@@ -145,7 +144,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     DgnElementCPtr pE1 = InsertElement( ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
-    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
+    GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
     for (ElementGeometryPtr geom : collection)
@@ -177,7 +176,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
     DgnElementCPtr pE1 = InsertElement( ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
-    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
+    GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
     for (ElementGeometryPtr geom : collection)
@@ -214,7 +213,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     DgnElementCPtr pE1 = InsertElement( ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
-    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
+    GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
     for (ElementGeometryPtr geom : collection)
@@ -251,7 +250,7 @@ TEST_F (ElementDisplayProperties, FillProperties)
     DgnElementCPtr pE1 = InsertElement(ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
-    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
+    GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
     for (ElementGeometryPtr geom : collection)

@@ -550,11 +550,11 @@ static bool DoSnapUsingClosestCurve (SnapContextR snapContext)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool DoSnapUsingClosestCurve (GeometricElementCR element, SnapContextR snapContext)
+static bool DoSnapUsingClosestCurve (GeometrySourceCR source, SnapContextR snapContext)
     {
     SnapGraphicsProcessor processor(snapContext);
 
-    ElementGraphicsOutput::Process(processor, element);
+    ElementGraphicsOutput::Process(processor, source);
 
     if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...
@@ -588,19 +588,20 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
         // Surface w/o curve is interior hit...only nearest should "track" surface...
         if (HitGeomType::Surface == detail.GetGeomType ())
             {
-            GeometricElementCPtr element = snap->GetElement();
+            DgnElementCPtr   element = snap->GetElement();
+            GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-            if (!element.IsValid())
+            if (nullptr == source)
                 return SnapGraphicsProcessor::DoSnapUsingClosestCurve(*this) ? SnapStatus::Success : SnapStatus::NotSnappable;
 
             if (SnapMode::Origin != snapMode)
                 {
                 // NOTE: This is a fairly expensive proposition...but snap to center of range is really useless, so...
-                if (SnapGraphicsProcessor::DoSnapUsingClosestCurve (*element, *this))
+                if (SnapGraphicsProcessor::DoSnapUsingClosestCurve (*source, *this))
                     return SnapStatus::Success;
                 }
 
-            DPoint3d hitPoint = (element->Is3d() ? element->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(element->ToElement2d()->GetPlacement().GetOrigin()));
+            DPoint3d hitPoint = (nullptr != source->ToGeometrySource3d() ? source->ToGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->ToGeometrySource2d()->GetPlacement().GetOrigin()));
 
             SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 
@@ -690,12 +691,13 @@ SnapStatus      SnapContext::DoTextSnap ()
         case SnapMode::Origin:
         case SnapMode::NearestKeypoint:
             {
-            GeometricElementCPtr element = snap->GetElement();
+            DgnElementCPtr   element = snap->GetElement();
+            GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-            if (!element.IsValid())
+            if (nullptr == source)
                 return SnapStatus::NotSnappable;
 
-            DPoint3d hitPoint = (element->Is3d() ? element->ToElement3d()->GetPlacement().GetOrigin() : DPoint3d::From(element->ToElement2d()->GetPlacement().GetOrigin()));
+            DPoint3d hitPoint = (nullptr != source->ToGeometrySource3d() ? source->ToGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->ToGeometrySource2d()->GetPlacement().GetOrigin()));
             
             SetSnapInfo (snapMode, GetSnapSprite (snapMode), hitPoint, false, false);
 

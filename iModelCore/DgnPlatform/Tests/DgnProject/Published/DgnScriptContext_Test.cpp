@@ -8,7 +8,7 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -17,23 +17,23 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static RefCountedCPtr<GeometricElement> insertElement(DgnModelR model)
+static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     {
     DgnDbR db = model.GetDgnDb();
     DgnModelId mid = model.GetModelId();
 
     DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
 
-    GeometricElementPtr gelem;
+    DgnElementPtr gelem;
     if (model.Is3d())
         gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
     else
         gelem = DrawingElement::Create(DrawingElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(*gelem))  // We actually catch 2d3d mismatch in SetGeomStreamAndPlacement
+    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in SetGeomStreamAndPlacement
         return nullptr;
 
     return db.Elements().Insert(*gelem);
@@ -60,7 +60,7 @@ struct JsProg : ScopedDgnHost::FetchScriptCallback
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void checkGeomStream(GeometricElementCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
+static void checkGeomStream(GeometrySourceCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
     {
     //  Verify that item generated a line
     size_t count=0;
@@ -79,22 +79,22 @@ TEST(DgnScriptTest, Test1)
     {
     ScopedDgnHost  autoDgnHost;
 
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     model->FillModel();
 
-    RefCountedPtr<GeometricElement> el;
+    RefCountedPtr<DgnElement> el;
         {
-        RefCountedCPtr<GeometricElement> newel = insertElement(*model);
+        RefCountedCPtr<DgnElement> newel = insertElement(*model);
         ASSERT_TRUE( newel.IsValid() );
 
-        checkGeomStream(*newel->ToGeometricElement(), ElementGeometry::GeometryType::CurvePrimitive, 1);
-        ASSERT_TRUE( (*(ElementGeometryCollection (*newel).begin()))->GetAsICurvePrimitive()->GetLineStringCP() != nullptr ) << "Initial geometry should be a line";
+        checkGeomStream(*newel->ToGeometrySource(), ElementGeometry::GeometryType::CurvePrimitive, 1);
+        ASSERT_TRUE( (*(ElementGeometryCollection (*newel->ToGeometrySource()).begin()))->GetAsICurvePrimitive()->GetLineStringCP() != nullptr ) << "Initial geometry should be a line";
 
-        el = newel->CopyForEdit()->ToGeometricElementP();
+        el = newel->CopyForEdit();
         }
 
     DPoint3d org = DPoint3d::FromZero();
@@ -114,14 +114,14 @@ TEST(DgnScriptTest, Test1)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
-        var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
+        var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params[\"X\"], params[\"Y\"], params[\"Z\"]); \
         builder.SetGeomStreamAndPlacement(element); \
         return 0;\
     } \
     function testEgaBadReturn(element, origin, angles, params) { return 'abc'; }\
-    BentleyApi.Dgn.RegisterEGA('DgnScriptTest.TestEga', testEga); \
-    BentleyApi.Dgn.RegisterEGA('DgnScriptTest.TestEgaBadReturn', testEgaBadReturn); \
+    Bentley.Dgn.RegisterEGA('DgnScriptTest.TestEga', testEga); \
+    Bentley.Dgn.RegisterEGA('DgnScriptTest.TestEgaBadReturn', testEgaBadReturn); \
 })();\
 ";
 
@@ -140,9 +140,9 @@ TEST(DgnScriptTest, Test1)
         ASSERT_EQ( DgnDbStatus::Success , xstatus );
         ASSERT_EQ( 0 , sres );
 
-        checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         DgnBoxDetail box;
-        ASSERT_TRUE( (*(ElementGeometryCollection (*el).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
+        ASSERT_TRUE( (*(ElementGeometryCollection (*el->ToGeometrySource()).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
         ASSERT_EQ( box.m_baseX , parms["X"].asDouble() );
         ASSERT_EQ( box.m_baseY , parms["Y"].asDouble() );
         ASSERT_EQ( box.m_topOrigin.Distance(box.m_baseOrigin) , parms["Z"].asDouble() );
@@ -178,20 +178,19 @@ TEST(DgnScriptTest, Test1)
 /*=================================================================================**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +===============+===============+===============+===============+===============+======*/
-struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
+struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
     {
     void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
-        if (description[0] == ':')// || category == Category::Info)
-            {
-            //GTEST_MESSAGE_ (description, ::testing::TestPartResult::kSuccess);
-            printf ("%s\n", description);
-            BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_INFO, description);
-//                    Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
-            }
-        else
-            FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
+        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
         }
+
+    void _HandleLogMessage(Utf8CP category, DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity sev, Utf8CP msg) override
+        {
+        ScriptNotificationHandler::_HandleLogMessage(category, sev, msg);  // logs it
+        printf ("%s\n", msg);
+        }
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -201,7 +200,7 @@ TEST(DgnScriptTest, RunScripts)
     {
     ScopedDgnHost  autoDgnHost;
 
-    T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
@@ -220,11 +219,11 @@ TEST(DgnScriptTest, CRUD)
     {
     ScopedDgnHost  autoDgnHost;
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
-    T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);

@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/Annotations.h>
 
 template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
 
@@ -22,7 +22,7 @@ AnnotationParagraph::AnnotationParagraph(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, AnnotationTextStyleId styleID)
+AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnElementId styleID)
     {
     auto par = AnnotationParagraph::Create(project);
     par->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -33,7 +33,7 @@ AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, AnnotationTex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, AnnotationTextStyleId styleID, AnnotationRunBaseR run)
+AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnElementId styleID, AnnotationRunBaseR run)
     {
     auto par = AnnotationParagraph::Create(project, styleID);
     par->GetRunsR().push_back(&run);
@@ -59,7 +59,7 @@ void AnnotationParagraph::CopyFrom(AnnotationParagraphCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-void AnnotationParagraph::SetStyleId(AnnotationTextStyleId value, SetAnnotationTextStyleOptions options)
+void AnnotationParagraph::SetStyleId(DgnElementId value, SetAnnotationTextStyleOptions options)
     {
     m_styleID = value;
 

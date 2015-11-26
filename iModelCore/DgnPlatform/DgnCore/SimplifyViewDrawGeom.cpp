@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnRscFontStructures.h>
+#include <DgnPlatform/DgnRscFontStructures.h>
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  12/07
@@ -990,7 +990,7 @@ void SimplifyViewDrawGeom::ClipAndProcessText(TextStringCR text, double* zDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP, bool ignoreColor, bool ignoreWeight)
+void SimplifyViewDrawGeom::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP)
     {
     if (!_DoSymbolGeometry())
         return;

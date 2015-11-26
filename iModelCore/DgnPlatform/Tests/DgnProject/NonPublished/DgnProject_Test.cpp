@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <DgnPlatform/DgnCore/DgnIModel.h>
-#include <DgnPlatform/DgnCore/ColorUtil.h>
+#include <DgnPlatform/DgnIModel.h>
+#include <DgnPlatform/ColorUtil.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_EC
@@ -57,7 +57,7 @@ TEST (DgnDb, Settings)
 
     if (true)
         {
-        DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+        DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
         DgnDbP newProject = tdm.GetDgnProjectP();
         ASSERT_TRUE( newProject != NULL );
     
@@ -107,7 +107,7 @@ TEST (DgnDb, CheckStandardProperties)
     //DbResult rc;
     Utf8String val;
 
-    DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly);
+    DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly, false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
@@ -429,7 +429,7 @@ struct DgnProjectPackageTest : public testing::Test
                 properties.elmCount += (int) model->GetElements().size();
                 properties.modelCount++;
                 }
-            properties.viewCount = project->Views().MakeIterator().QueryCount();
+            properties.viewCount = ViewDefinition::QueryCount(*project);
             properties.categoryCount = DgnCategory::QueryCount(*project);
 #ifdef STYLE_REWRITE_06
             DgnStyles& styleTable = project->Styles();

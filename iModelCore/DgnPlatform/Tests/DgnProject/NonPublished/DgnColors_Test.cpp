@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/DgnTrueColor.h>
+#include <DgnPlatform/DgnTrueColor.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Umar.Hayat   09/15

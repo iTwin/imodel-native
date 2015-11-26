@@ -9,7 +9,7 @@
 
 SrcDgnPlatform              = $(SrcRoot)DgnPlatform/
 DgnPlatformPublicAPISrc     = $(SrcDgnPlatform)PublicAPI/
-DgnHandlersAPISrc           = $(DgnPlatformPublicAPISrc)DgnPlatform/DgnHandlers/
+DgnPlatformAPISrc           = $(DgnPlatformPublicAPISrc)DgnPlatform/
 baseDir                     = $(_makeFilePath)
 
 $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
@@ -18,7 +18,7 @@ $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnHandlersAPISrc)UnitTests/ScopedDgnHost.h
+$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnPlatformAPISrc)UnitTests/ScopedDgnHost.h
     $(LinkFirstDepToFirstTarget)
 
 #   -------------------------------------------------------------------------------------------
@@ -31,11 +31,7 @@ always:
 
 %ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
-%if defined(winNT)
-    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
-%else
-    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node $(BuildContext)SubParts/TypeScript/tsc.js
-%endif
+TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
 
 tsSourceFiles = $[@wildcard $(baseDir)*.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
 

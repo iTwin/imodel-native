@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnHandlers/PickContext.h>
+#include    <DgnPlatform/PickContext.h>
 
 #define     CIRCLE_ClipPoints           60
 #define     fc_cameraPlaneRatio         300.0
@@ -729,7 +729,7 @@ virtual bool    _CheckStop() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP, bool ignoreColor, bool ignoreWeight) override
+virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP) override
     {
     // NOTE: Linestyles aren't drawn for fence accept, but area patterns are...
     //       Completely inside/outside decided by boundary...check symbol geometry to detect interior overlaps...
@@ -758,7 +758,7 @@ virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, Clip
         }
 
     // Check symbol geometry...
-    m_output.ClipAndProcessSymbol(symbolDefP, transP, clipPlaneSetP, ignoreColor, ignoreWeight);
+    m_output.ClipAndProcessSymbol(symbolDefP, transP, clipPlaneSetP);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -825,15 +825,18 @@ virtual QvElem* _DrawCached(IStrokeForCache& stroker) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _VisitElement(GeometricElementCR element) override
+virtual StatusInt _VisitElement(GeometrySourceCR source) override
     {
     if (!m_collectContents)
-        return T_Super::_VisitElement(element);
+        return T_Super::_VisitElement(source);
 
     m_output.OnNewElement(); // Initialize accept status for top-level element...
 
-    if (SUCCESS == T_Super::_VisitElement(element) && m_output.GetCurrentAccept())
-        m_contents.insert(element.GetElementId());
+    if (SUCCESS == T_Super::_VisitElement(source) && m_output.GetCurrentAccept())
+        {
+        if (nullptr != source.ToElement())
+            m_contents.insert(source.ToElement()->GetElementId());
+        }
 
     m_output.OnNewElement(); // Clear abort status and continue checking next top-level element...
 
@@ -855,7 +858,7 @@ virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            AcceptElement(GeometricElementCR element, FenceParamsR fp)
+bool            AcceptElement(GeometrySourceCR element, FenceParamsR fp)
     {
     m_output.SetFenceParams(&fp);
 
@@ -2650,28 +2653,21 @@ static void     calculateSegmentIntersections(FenceParamsR fp, ICurvePrimitive* 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     flushPartialCurve(DgnElementPtrVec* inside, DgnElementPtrVec* outside, CurveVectorR curveVector, GeometricElementCR element, bool isInside)
+static void     flushPartialCurve(bvector<CurveVectorPtr>* inside, bvector<CurveVectorPtr>* outside, CurveVectorR curveVector, bool isInside)
     {
     if (curveVector.empty())
         return;
 
-#if defined (NEEDS_WORK_DGNITEM)
-    EditElementHandle eeh;
-
-    if (SUCCESS == DraftingElementSchema::ToElement(eeh, curveVector, &eh, eh.GetElementCP ()->Is3d(), *eh.GetDgnModelP ()))
+    if (isInside)
         {
-        if (isInside)
-            {
-            if (inside)
-                inside->Insert(eeh);
-            }
-        else
-            {
-            if (outside)
-                outside->Insert(eeh);
-            }
+        if (inside)
+            inside->push_back(&curveVector);
         }
-#endif
+    else
+        {
+        if (outside)
+            outside->push_back(&curveVector);
+        }
 
     curveVector.clear();
     }
@@ -2679,7 +2675,7 @@ static void     flushPartialCurve(DgnElementPtrVec* inside, DgnElementPtrVec* ou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FenceParams::ParseAcceptedElement(DgnElementPtrVec* inside, DgnElementPtrVec* outside, GeometricElementCR element)
+void FenceParams::ParseAcceptedGeometry(bvector<CurveVectorPtr>* inside, bvector<CurveVectorPtr>* outside, GeometrySourceCR source)
     {
     // TODO: Look into pushing the fence clip onto the output and having SimplifyViewDrawGeom do the clipping...
 #if defined (NEEDS_WORK_DGNITEM)
@@ -2707,8 +2703,7 @@ void FenceParams::ParseAcceptedElement(DgnElementPtrVec* inside, DgnElementPtrVe
         if (!context.AcceptCurveVector(*curveVector, &tmpFp))
             return;
 
-        DgnElementPtr copy = element.CopyForEdit();
-        inside->push_back(copy);
+        inside->push_back(curveVector);
         return;
         }
 
@@ -2771,7 +2766,7 @@ void FenceParams::ParseAcceptedElement(DgnElementPtrVec* inside, DgnElementPtrVe
                     }
                 else
                     {
-                    flushPartialCurve(inside, outside, *partialCurve, element, lastInside);
+                    flushPartialCurve(inside, outside, *partialCurve, lastInside);
                     }
                 }
 
@@ -2803,21 +2798,21 @@ void FenceParams::ParseAcceptedElement(DgnElementPtrVec* inside, DgnElementPtrVe
             }
         else
             {
-            flushPartialCurve(inside, outside, *firstPartial, element, firstInside);
+            flushPartialCurve(inside, outside, *firstPartial, firstInside);
             }
         }
 
-    flushPartialCurve(inside, outside, *partialCurve, element, lastInside);
+    flushPartialCurve(inside, outside, *partialCurve, lastInside);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FenceParams::AcceptElement(GeometricElementCR element)
+bool FenceParams::AcceptElement(GeometrySourceCR source)
     {
     FenceAcceptContext context;
 
-    return context.AcceptElement(element, *this);
+    return context.AcceptElement(source, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

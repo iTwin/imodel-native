@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnHandlers/NamedVolume.h>
-#include    <DgnPlatform/DgnCore/QueryView.h>
+#include    <DgnPlatform/NamedVolume.h>
+#include    <DgnPlatform/QueryView.h>
 
 #define DGNEC_SCHEMA_NAME L"dgn"
 #define DGNEC_SCHEMA_MAJOR_VERSION 1
@@ -322,8 +322,13 @@ unique_ptr<FenceParams> NamedVolume::CreateFence(DgnViewportP viewport, bool all
 unique_ptr<DgnViewport> NamedVolume::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
-    DgnViews::Iterator viewIter = project.Views().MakeIterator();
-    DgnViewId viewId = viewIter.begin().GetDgnViewId(); 
+    // TODO: Is it cool to assume the first view found can be used to create a PhysicalViewController?
+    auto viewIter = ViewDefinition::MakeIterator(project);
+    BeAssert(viewIter.begin() != viewIter.end());
+    if (viewIter.begin() == viewIter.end())
+        return nullptr;
+
+    DgnViewId viewId = (*viewIter.begin()).GetId(); 
     PhysicalViewControllerP viewController = new PhysicalViewController (project, viewId);
     viewController->Load();
 #ifdef WIP_NAMED_VOLUME
@@ -378,7 +383,7 @@ DgnDbR dgnDb
         if (!element.IsValid())
             continue;
         
-        GeometricElementCP geomElement = element->ToGeometricElement();
+        GeometrySourceCP geomElement = element->ToGeometrySource();
 
         if (nullptr == geomElement || !fence.AcceptElement (*geomElement))
             continue;
@@ -493,7 +498,7 @@ DgnElementR element,
 bool allowPartialOverlaps /*=true*/
 ) const
     {
-    GeometricElementCP geomElement = element.ToGeometricElement();
+    GeometrySourceCP geomElement = element.ToGeometrySource();
 
     if (nullptr == geomElement)
         return false;

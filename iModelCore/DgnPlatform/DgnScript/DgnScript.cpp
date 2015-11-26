@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeJavaScript/BeJavaScript.h>
-#include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnScript.h>
 #include <Bentley/BeFileListIterator.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -33,8 +33,8 @@ struct DgnScriptContext : BeJsContext
         {
         EvaluateScript(dgnScriptContext_GetBootstrappingSource(), "file:///DgnJsApi.js");
         
-        m_egaRegistry = EvaluateScript("BentleyApi.Dgn.GetEgaRegistry()");
-        m_modelSolverRegistry = EvaluateScript("BentleyApi.Dgn.GetModelSolverRegistry()");
+        m_egaRegistry = EvaluateScript("Bentley.Dgn.GetEgaRegistry()");
+        m_modelSolverRegistry = EvaluateScript("Bentley.Dgn.GetModelSolverRegistry()");
 
         BeAssert(!m_egaRegistry.IsUndefined() && m_egaRegistry.IsObject());
         BeAssert(!m_modelSolverRegistry.IsUndefined() && m_modelSolverRegistry.IsObject());
@@ -207,7 +207,7 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
     m_jsenv = nullptr;
     m_jsContext = nullptr;
-    m_errorHandler = new ScriptErrorHandler;
+    m_notificationHandler = new ScriptNotificationHandler;
     }
 
 //---------------------------------------------------------------------------------------
@@ -242,20 +242,20 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
         return *m_jsContext;
 
     //  *************************************************************
-    //  Bootstrap the BentleyApi.Dgn "namespace"
+    //  Bootstrap the Bentley.Dgn "namespace"
     //  *************************************************************
     //  Initialize the DgnScriptContext
     auto dgnScriptContext = new DgnScriptContext(GetBeJsEnvironment());
     m_jsContext = dgnScriptContext;
 
     // First, register DgnJsApi's projections
-    RegisterScriptLibraryImporter("BentleyApi.Dgn-Core", *new DgnJsApi(*m_jsContext));
-    ImportScriptLibrary("BentleyApi.Dgn-Core");
+    RegisterScriptLibraryImporter("Bentley.Dgn-Core", *new DgnJsApi(*m_jsContext));
+    ImportScriptLibrary("Bentley.Dgn-Core");
 
     // Next, allow DgnScriptContext to do some one-time setup work. This will involve evaluating some JS expressions.
-    // This is a little tricky. We must wait until we have registered the first projection that defines BentleyApi.Dgn 
-    // before we attempt to add more properties to the BentleyApi.Dgn global object. This tricky sequencing is only needed 
-    // here, where we are actually defining BentleyApi.Dgn. Other projections can add to BentleyApi.Dgn and can contain a
+    // This is a little tricky. We must wait until we have registered the first projection that defines Bentley.Dgn 
+    // before we attempt to add more properties to the Bentley.Dgn global object. This tricky sequencing is only needed 
+    // here, where we are actually defining Bentley.Dgn. Other projections can add to Bentley.Dgn and can contain a
     // combination of native code projections and pure TS/JS code without needing any special sequencing.
     dgnScriptContext->Initialize();
 
@@ -263,8 +263,8 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     //  *************************************************************
     //  Register other core projections here
     //  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    RegisterScriptLibraryImporter("BentleyApi.Dgn-Geom", *new GeomJsApi(*m_jsContext));
-    ImportScriptLibrary("BentleyApi.Dgn-Geom");     // we also auto-load the geom types, as they are used everywhere
+    RegisterScriptLibraryImporter("Bentley.Dgn-Geom", *new GeomJsApi(*m_jsContext));
+    ImportScriptLibrary("Bentley.Dgn-Geom");     // we also auto-load the geom types, as they are used everywhere
 
 
     //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -288,7 +288,7 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
     auto ilib = m_importers.find(libName);
     if (ilib == m_importers.end())
         {
-        HandleScriptError(ScriptErrorHandler::Category::Other, "Missing library", libName);
+        HandleScriptError(ScriptNotificationHandler::Category::Other, "Missing library", libName);
         return BSIERROR;
         }
     if (ilib->second.second)
@@ -302,19 +302,37 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description, Utf8CP details)
+void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details)
     {
-    if (nullptr == m_errorHandler)
+    if (nullptr == m_notificationHandler)
         return;
-    m_errorHandler->_HandleScriptError(GetDgnScriptContext(), category, description, details);
+    m_notificationHandler->_HandleScriptError(GetDgnScriptContext(), category, description, details);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler::_HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details)
+void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details)
     {
     NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv("Script error category: %x, description: %s, details: %s", (int)category, description, details);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP message)
+    {
+    if (nullptr == m_notificationHandler)
+        return;
+    m_notificationHandler->_HandleLogMessage(category, sev, message);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleLogMessage(Utf8CP category, LoggingSeverity severity, Utf8CP message)
+    {
+    NativeLogging::LoggingManager::GetLogger(category)->message(ToNativeLoggingSeverity(severity), message);
     }
 
 //---------------------------------------------------------------------------------------
@@ -327,8 +345,8 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
         TERMINATE_HOST_OBJECT(entry.second.first, px);
         }
 
-    if (nullptr != m_errorHandler)
-        TERMINATE_HOST_OBJECT(m_errorHandler, px);
+    if (nullptr != m_notificationHandler)
+        TERMINATE_HOST_OBJECT(m_notificationHandler, px);
 
     delete this;
     }
@@ -354,8 +372,8 @@ void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP scr
     if (BeJsContext::EvaluateStatus::Success != evstatus)
         {
         if (BeJsContext::EvaluateStatus::ParseError==evstatus)
-            HandleScriptError(ScriptErrorHandler::Category::ParseError, "", "");
+            HandleScriptError(ScriptNotificationHandler::Category::ParseError, "", "");
         else
-            HandleScriptError(ScriptErrorHandler::Category::Exception, evexception.message.c_str(), evexception.trace.c_str());
+            HandleScriptError(ScriptNotificationHandler::Category::Exception, evexception.message.c_str(), evexception.trace.c_str());
         }
     }

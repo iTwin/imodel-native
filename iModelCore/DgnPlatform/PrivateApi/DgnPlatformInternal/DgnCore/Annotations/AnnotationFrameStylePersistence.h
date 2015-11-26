@@ -8,7 +8,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
-#include <DgnPlatform/DgnCore/Annotations/AnnotationFrameStyle.h>
+#include <DgnPlatform/Annotations/AnnotationFrameStyle.h>
 #include "Annotations.fb.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -21,22 +21,12 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationFrameStylePersistence : public NonCopyableClass
 {
-    //=======================================================================================
-    // @bsiclass                                                    Jeff.Marker     06/2014
-    //=======================================================================================
-    enum class FlatBufEncodeOptions
-    {
-        ExcludeNonPropertyData = 1 << 0,
-        Default = 0
-    
-    }; // FlatBufEncodeOptions
-
 private:
     AnnotationFrameStylePersistence(){}
 
 public:
     static BentleyStatus EncodeAsFlatBuf(FB::AnnotationFrameStyleSetters&, AnnotationFrameStylePropertyBagCR);
-    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, AnnotationFrameStyleCR, FlatBufEncodeOptions);
+    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, AnnotationFrameStyleCR);
     
     static BentleyStatus DecodeFromFlatBuf(AnnotationFrameStylePropertyBagR, FB::AnnotationFrameStyleSetterVector const&);
     static BentleyStatus DecodeFromFlatBuf(AnnotationFrameStyleR, ByteCP, size_t numBytes);

@@ -10,7 +10,7 @@
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeDirectoryIterator.h>
 
-#include <DgnPlatform/DgnHandlers/UnitTests/ScopedDgnHost.h>
+#include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
@@ -91,6 +91,26 @@ struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
 };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ProxyLocksAdmin : Dgn::DgnPlatformLib::Host::LocksAdmin
+{
+    DEFINE_T_SUPER(LocksAdmin);
+
+    LocksAdmin* m_impl;
+
+    ProxyLocksAdmin() : m_impl(nullptr) { }
+    virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const override
+        {
+        return nullptr != m_impl ? m_impl->_CreateLocksManager(db) : T_Super::_CreateLocksManager(db);
+        }
+    virtual ILocksServerP _GetLocksServer(DgnDbR db) const override
+        {
+        return nullptr != m_impl ? m_impl->_GetLocksServer(db) : T_Super::_GetLocksServer(db);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
 * Here is the real implementation of ScopeDgnHost. Registers itself as a DgnHost in its
 * constructor. Supplies key admins that direct DgnPlatform to the files in the 
 * directories delivered with the unit test framework.
@@ -107,11 +127,12 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     NotificationAdmin& _SupplyNotificationAdmin () override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     ScriptAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
+    LocksAdmin& _SupplyLocksAdmin() override {return *new ProxyLocksAdmin();}
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
-    
+    void SetLocksAdmin(DgnPlatformLib::Host::LocksAdmin* admin) {((ProxyLocksAdmin*)m_locksAdmin)->m_impl = admin;}
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -137,6 +158,14 @@ ScopedDgnHost::~ScopedDgnHost()
 void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
     {
     m_pimpl->SetFetchScriptCallback(cb);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedDgnHost::SetLocksAdmin(DgnPlatformLib::Host::LocksAdmin* admin)
+    {
+    m_pimpl->SetLocksAdmin(admin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -206,9 +235,27 @@ static DgnModelPtr getAndFill(DgnDbR db, DgnModelId modelID, bool fillCache)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestDataManager::MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
+    {
+    if (db->IsBriefcase())
+        return;
+
+    BeFileName name(db->GetFileName());
+
+    db->ChangeBriefcaseId(BeBriefcaseId(1));
+    db->SaveChanges();
+    db->CloseDb();
+
+    DbResult result = BE_SQLITE_OK;
+    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   TestDataManager::OpenTestFile ()
+BentleyStatus   TestDataManager::OpenTestFile (bool needBriefcase)
     {
     DbResult stat;
     DgnDb::OpenParams params(m_openMode);
@@ -228,6 +275,8 @@ BentleyStatus   TestDataManager::OpenTestFile ()
         return ERROR;
         }
 
+    if (needBriefcase)
+        MustBeBriefcase(m_dgndb, m_openMode);
 
     for (auto const& entry : m_dgndb->Models().MakeIterator())
         {
@@ -258,14 +307,14 @@ void    TestDataManager::CloseTestFile ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool fill)
+TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool needBriefcase, bool fill)
     {
     m_model     = NULL;
     m_fileName  = fullFileName;
     m_openMode  = dbOpenMode;
     m_fill      = fill;
 
-    OpenTestFile ();
+    OpenTestFile (needBriefcase);
     }
 
 /*---------------------------------------------------------------------------------**//**

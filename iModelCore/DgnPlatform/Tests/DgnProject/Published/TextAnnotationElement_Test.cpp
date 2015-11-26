@@ -4,20 +4,20 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
-#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-static AnnotationTextStyleId ensureAnnotationTextStyle1(DgnDbR db)
+static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
     {
-    static const CharCP STYLE_NAME = "AnnotationTextStyle1";
-    AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::QueryStyle(STYLE_NAME, db);
+    static const Utf8CP STYLE_NAME = "AnnotationTextStyle1";
+    AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::Get(db, STYLE_NAME);
     if (existingStyle.IsValid())
-        return existingStyle->GetStyleId();
+        return existingStyle->GetElementId();
     
     AnnotationTextStyle style(db);
     style.SetColorType(AnnotationColorType::RGBA);
@@ -28,7 +28,7 @@ static AnnotationTextStyleId ensureAnnotationTextStyle1(DgnDbR db)
 
     style.Insert();
     
-    return style.GetStyleId();
+    return style.GetElementId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", L"TextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
-    AnnotationTextStyleId textStyleId;
+    DgnElementId textStyleId;
     DgnElementId insertedElementId;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
@@ -92,18 +92,13 @@ TEST(TextAnnotationElementTest, BasicCrud)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DgnViews::View view;
-        view.SetDgnViewType(DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingView")), DgnViewType::Drawing);
-        view.SetDgnViewSource(DgnViewSource::Generated);
-        view.SetName("TextAnnotationElementTest-BasicCrud");
-        view.SetBaseModelId(modelId);
-
-        EXPECT_TRUE(BE_SQLITE_OK == db->Views().Insert(view));
-        EXPECT_TRUE(view.GetId().IsValid());
+        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotationElementTest-BasicCrud",
+                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        DrawingViewController viewController(*db, view.GetId());
+        DrawingViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
@@ -209,7 +204,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"PhysicalTextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
-    AnnotationTextStyleId textStyleId;
+    DgnElementId textStyleId;
     DgnElementId insertedElementId;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
@@ -256,18 +251,13 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DgnViews::View view;
-        view.SetDgnViewType(DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalView")), DgnViewType::Physical);
-        view.SetDgnViewSource(DgnViewSource::Generated);
-        view.SetName("PhysicalTextAnnotationElementTest-BasicCrud");
-        view.SetBaseModelId(modelId);
-
-        EXPECT_TRUE(BE_SQLITE_OK == db->Views().Insert(view));
-        EXPECT_TRUE(view.GetId().IsValid());
+        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "PhysicalTextAnnotationElementTest-BasicCrud",
+                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        PhysicalViewController viewController(*db, view.GetId());
+        PhysicalViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);

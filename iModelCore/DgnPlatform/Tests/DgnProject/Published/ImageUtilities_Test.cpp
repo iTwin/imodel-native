@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/ImageUtilities.h>
+#include <DgnPlatform/ImageUtilities.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      04/2013

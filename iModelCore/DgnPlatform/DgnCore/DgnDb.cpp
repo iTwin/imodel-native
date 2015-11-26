@@ -38,10 +38,11 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_styles(*this), m_views(*this),
+DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_styles(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr)
     {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,11 +92,17 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    Txns(); // make sure txnmanager is allocated
     Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
 
     m_units.Load();
-    return Domains().OnDbOpened();
+    
+    if (BE_SQLITE_OK != (rc = Domains().OnDbOpened()))
+        return rc;
+
+    if (BE_SQLITE_OK != (rc = Txns().InitializeTableHandlers())) // make sure txnmanager is allocated and that all txn-related temp tables are created. 
+        return rc;                                               // NB: InitializeTableHandlers calls SaveChanges!
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,6 +114,22 @@ TxnManagerR DgnDb::Txns()
         m_txnManager = new TxnManager(*this);
 
     return *m_txnManager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ILocksManagerR DgnDb::Locks()
+    {
+    // This is here rather than in the constructor because _CreateLocksManager() requires briefcase ID, which is obtained from m_dbFile,
+    // which is not initialized in constructor.
+    if (m_locksManager.IsNull())
+        {
+        m_locksManager = T_HOST.GetLocksAdmin()._CreateLocksManager(*this);
+        BeAssert(m_locksManager.IsValid());
+        }
+
+    return *m_locksManager;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +448,14 @@ void DgnImportContext::ComputeGcsAdjustment()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+DgnCloneContext::DgnCloneContext()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAdjustment();
     }

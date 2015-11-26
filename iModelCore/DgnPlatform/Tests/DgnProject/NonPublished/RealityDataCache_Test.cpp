@@ -9,7 +9,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeDebugLog.h>
-#include <DgnPlatform/DgnCore/RealityDataCache.h>
+#include <DgnPlatform/RealityDataCache.h>
 
 #include <functional>
 #include <memory>
@@ -57,6 +57,7 @@ TEST (ThreadSafeQueue, Clear)
     ASSERT_FALSE (queue.Pop (num));
     }
 
+typedef RefCountedPtr<struct TestWork> TestWorkPtr;
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
@@ -64,28 +65,25 @@ struct TestWork : RefCounted<RealityDataWork>
     {
     BeConditionVariable&     m_cv;
     std::function<void (void)> m_work;
-    static int               s_nCalls;
-    static bvector<intptr_t> s_threadIds;
+    int                     m_nCalls;
+    bvector<intptr_t>       m_threadIds;
     
     TestWork (BeConditionVariable& cv, std::function<void (void)> const& work)
-        : m_cv (cv), m_work (work)
+        : m_cv(cv), m_work(work), m_nCalls(0)
         { }
 
     virtual void _DoWork () override 
         {
+        BeMutexHolder lock (m_cv.GetMutex());
         if (NULL != m_work)
             m_work();
-
-        BeMutexHolder lock (m_cv.GetMutex());
-        s_nCalls++;
-        s_threadIds.push_back (BeThreadUtilities::GetCurrentThreadId ());
+        m_nCalls++;
+        m_threadIds.push_back (BeThreadUtilities::GetCurrentThreadId ());
         m_cv.notify_all();
         }
 
-    static RefCountedPtr<TestWork> Create (BeConditionVariable& cv, std::function<void (void)> const& work = nullptr) { return new TestWork (cv, work); }
+    static TestWorkPtr Create (BeConditionVariable& cv, std::function<void (void)> const& work = nullptr) { return new TestWork (cv, work); }
     };
-int TestWork::s_nCalls = 0;
-bvector<intptr_t> TestWork::s_threadIds;
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            10/2014
@@ -93,14 +91,17 @@ bvector<intptr_t> TestWork::s_threadIds;
 struct WorkItemsCountPredicate : IConditionVariablePredicate
     {
     int m_expectedWorkItemsCount;
-    WorkItemsCountPredicate (int expectedWorkItemsCount) : m_expectedWorkItemsCount (expectedWorkItemsCount) 
-        {
-        TestWork::s_nCalls = 0;
-        TestWork::s_threadIds.clear ();
-        }
+    TestWork const* m_work;
+    unsigned const* m_itemsCount;
+    WorkItemsCountPredicate (TestWork const& work, int expectedWorkItemsCount) : m_work(&work), m_itemsCount(nullptr), m_expectedWorkItemsCount(expectedWorkItemsCount) {}
+    WorkItemsCountPredicate (unsigned const& itemsCount, int expectedWorkItemsCount) : m_work(nullptr), m_itemsCount(&itemsCount), m_expectedWorkItemsCount(expectedWorkItemsCount) {}
     virtual bool _TestCondition (BeConditionVariable &cv) override 
         {
-        return m_expectedWorkItemsCount == TestWork::s_nCalls;
+        if (nullptr != m_work)
+            return m_expectedWorkItemsCount == m_work->m_nCalls;
+        if (nullptr != m_itemsCount)
+            return m_expectedWorkItemsCount == *m_itemsCount;
+        return false;
         }
     };
 
@@ -111,14 +112,17 @@ TEST (RealityDataWorkerThread, DoWork)
     {
     auto currentThreadId = BeThreadUtilities::GetCurrentThreadId ();
     BeConditionVariable cv;
+    TestWorkPtr work = TestWork::Create(cv);
+    WorkItemsCountPredicate predicate (*work, 1);
+
     auto thread = RealityDataWorkerThread::Create ();
     thread->Start ();
-    WorkItemsCountPredicate predicate (1);
-    thread->DoWork (*TestWork::Create (cv));
+    thread->DoWork (*work);
+
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));    // no timeout
-    ASSERT_EQ (1, TestWork::s_nCalls);                      // work item executed
-    ASSERT_EQ (1, TestWork::s_threadIds.size ());           // work item executed on one thread
-    ASSERT_NE (currentThreadId, TestWork::s_threadIds[0]);  // work item executed on a separate thread
+    ASSERT_EQ (1, work->m_nCalls);                      // work item executed
+    ASSERT_EQ (1, work->m_threadIds.size());           // work item executed on one thread
+    ASSERT_NE (currentThreadId, work->m_threadIds[0]);  // work item executed on a separate thread
     thread->Terminate ();
     }
 
@@ -129,13 +133,15 @@ TEST (RealityDataWorkerThread, IsIdle)
     {
     uint64_t idleTime;
     BeConditionVariable cv;
-    auto   thread      = RealityDataWorkerThread::Create ();
+    TestWorkPtr work = TestWork::Create(cv);
+    WorkItemsCountPredicate predicate (*work, 1);
+
+    auto   thread = RealityDataWorkerThread::Create ();
     thread->Start ();
-    WorkItemsCountPredicate predicate (1);
-   
-    thread->DoWork (*TestWork::Create (cv));
+    thread->DoWork (*work);
+
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));    // no timeout
-    ASSERT_EQ (1, TestWork::s_nCalls);                      // work item executed
+    ASSERT_EQ (1, work->m_nCalls);                      // work item executed
     
     // Work is done, thread is created and idling
     while (!thread->IsIdle (&idleTime))
@@ -150,21 +156,22 @@ TEST (RealityDataWorkerThread, IsIdle)
 //---------------------------------------------------------------------------------------
 TEST (RealityDataWorkerThread, IsBusy)
     {
+    BeAtomic<bool> stop(false);
     uint64_t workingTime;
-    auto   thread = RealityDataWorkerThread::Create ();
-    thread->Start ();
     BeConditionVariable cv;
-    WorkItemsCountPredicate predicate (1);
-
-    BeAtomic<bool> stop (false);
-    thread->DoWork (*TestWork::Create (cv, [&stop] ()
+    TestWorkPtr work = TestWork::Create(cv, [&stop] ()
         {
         while (!stop);
-        }));
+        });
+    WorkItemsCountPredicate predicate (*work, 1);
+    
+    auto   thread = RealityDataWorkerThread::Create ();
+    thread->Start ();
+    thread->DoWork (*work);
     ASSERT_TRUE (thread->IsBusy (&workingTime));        // Thread is busy with task
     stop = true;
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
-    ASSERT_EQ   (1, TestWork::s_nCalls);                // work item executed
+    ASSERT_EQ   (1, work->m_nCalls);                // work item executed
     thread->Terminate ();
     }
 
@@ -173,17 +180,17 @@ TEST (RealityDataWorkerThread, IsBusy)
 //---------------------------------------------------------------------------------------
 TEST (RealityDataWorkerThread, Terminate)
     {
+    BeConditionVariable cv;
+    TestWorkPtr work = TestWork::Create(cv);
+    WorkItemsCountPredicate predicate (*work, 1);
+
     auto thread = RealityDataWorkerThread::Create ();
     thread->Start ();
-    BeConditionVariable cv;
-    WorkItemsCountPredicate predicate (1);
-
-    TestWork::s_nCalls = 0;
     thread->Terminate ();
-    thread->DoWork (*TestWork::Create (cv));
+    thread->DoWork (*work);
 
     ASSERT_FALSE (cv.WaitOnCondition (&predicate, 100));
-    ASSERT_NE    (1, TestWork::s_nCalls);       // work item not executed after termination
+    ASSERT_NE    (1, work->m_nCalls);       // work item not executed after termination
     }
 
 //---------------------------------------------------------------------------------------
@@ -192,11 +199,14 @@ TEST (RealityDataWorkerThread, Terminate)
 TEST (RealityDataThreadPool, QueueWork_1_Item)
     {
     BeConditionVariable cv;
+    TestWorkPtr work = TestWork::Create(cv);
+    WorkItemsCountPredicate predicate (*work, 1);
+
     auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
-    WorkItemsCountPredicate predicate (1);
-    pool->QueueWork (*TestWork::Create (cv));
+    pool->QueueWork (*work);
+
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
-    ASSERT_EQ (1, TestWork::s_nCalls);                  // work item executed
+    ASSERT_EQ (1, work->m_nCalls);                  // work item executed
     pool->Terminate();
     }
 
@@ -206,15 +216,20 @@ TEST (RealityDataThreadPool, QueueWork_1_Item)
 TEST (RealityDataThreadPool, QueueWork_Many_Items)
     {
     static int workItemsCount = 1000;
+    unsigned nCalls = 0;
 
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
-    WorkItemsCountPredicate predicate (workItemsCount);
-    for (int i = 0; i < workItemsCount; i++)
-        pool->QueueWork (*TestWork::Create (cv));
 
+    auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
+    for (int i = 0; i < workItemsCount; i++)
+        {
+        TestWorkPtr work = TestWork::Create(cv, [&nCalls](){nCalls++;});
+        pool->QueueWork(*work);
+        }
+
+    WorkItemsCountPredicate predicate (nCalls, workItemsCount);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
-    ASSERT_EQ (workItemsCount, TestWork::s_nCalls);     // all work items executed
+    ASSERT_EQ (workItemsCount, nCalls);     // all work items executed
     pool->Terminate();
     }
 
@@ -224,28 +239,32 @@ TEST (RealityDataThreadPool, QueueWork_Many_Items)
 TEST (RealityDataThreadPool, Queueing)
     {
     static int workItemsCount = 5;
-
-    BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
-    WorkItemsCountPredicate predicate (workItemsCount);
-
     BeAtomic<bool> block(true);
-    pool->QueueWork (*TestWork::Create (cv, [&block] ()
+    unsigned nCalls = 0;
+    BeConditionVariable cv;    
+
+    auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
+    pool->QueueWork(*TestWork::Create(cv, [&block, &nCalls] ()
         {
-        while (block)
-            ;
+        while (block);
+        nCalls++;
         }));
 
     // queueing additional work should not wait for the first work to be finished
     for (int i = 0; i < workItemsCount - 1; i++)
         {
-        pool->QueueWork (*TestWork::Create (cv));
+        pool->QueueWork(*TestWork::Create(cv, [&block, &nCalls] ()
+            {
+            while (block);
+            nCalls++;
+            }));
         }
 
     block = false;
 
+    WorkItemsCountPredicate predicate(nCalls, workItemsCount);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
-    ASSERT_EQ (workItemsCount, TestWork::s_nCalls);     // all work items executed
+    ASSERT_EQ (workItemsCount, nCalls);     // all work items executed
     pool->Terminate();
     }
 
@@ -289,29 +308,34 @@ TEST (RealityDataThreadPool, SpawnsThreads)
     static int workItemsCount = 15;
     static int maxThreads = 10;
     static int maxIdleThreads = 10;
-
-    BeAtomic<bool> block(true);
+    
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (10, 10, SchedulingMethod::FIFO);
-    WorkItemsCountPredicate predicate (workItemsCount);
+    BeAtomic<bool> block(true);
+    unsigned nCalls = 0;
+    bvector<intptr_t> threadIds;
 
+    auto pool = RealityDataThreadPool::Create (10, 10, SchedulingMethod::FIFO);
     for (int i = 0; i < workItemsCount; i++)
         {
-        pool->QueueWork (*TestWork::Create (cv, [&block]()
+        pool->QueueWork(*TestWork::Create (cv, [&block, &nCalls, &threadIds]()
             {
             while(block);
+            nCalls++;
+            threadIds.push_back (BeThreadUtilities::GetCurrentThreadId ());
             }));
         }
     
     block = false;
+
+    WorkItemsCountPredicate predicate (nCalls, workItemsCount);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));    // no timeout
-    ASSERT_EQ (workItemsCount, TestWork::s_nCalls);         // all work items executed
+    ASSERT_EQ (workItemsCount, nCalls);         // all work items executed
     ASSERT_EQ (maxIdleThreads, pool->GetThreadsCount ());   // total threads count after the threads finished their work
     
     // make sure each work item executed on a separate thread
-    ASSERT_EQ (workItemsCount, TestWork::s_threadIds.size ());
-    ASSERT_EQ (maxThreads, CountUniqueItems (TestWork::s_threadIds));
-    AssertNoItemsMatch (TestWork::s_threadIds, BeThreadUtilities::GetCurrentThreadId ());
+    ASSERT_EQ (workItemsCount, threadIds.size());
+    ASSERT_EQ (maxThreads, CountUniqueItems (threadIds));
+    AssertNoItemsMatch (threadIds, BeThreadUtilities::GetCurrentThreadId ());
     pool->Terminate();
     }
 
@@ -323,20 +347,30 @@ TEST (RealityDataThreadPool, TerminatesSpawnedThreads)
     static int workItemsCount = 15;
     static int maxThreads = 10;
     static int maxIdleThreads = 0;
-
+    
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (maxThreads, maxIdleThreads, SchedulingMethod::FIFO);
-    WorkItemsCountPredicate predicate (workItemsCount);
-
     BeAtomic<bool> block(true);
+    unsigned nCalls = 0;
+    bvector<intptr_t> threadIds;
+
+    auto pool = RealityDataThreadPool::Create (maxThreads, maxIdleThreads, SchedulingMethod::FIFO);
     for (int i = 0; i < workItemsCount; i++)
-        pool->QueueWork (*TestWork::Create (cv, [&block](){while (block);}));
+        {
+        pool->QueueWork(*TestWork::Create(cv, [&block, &nCalls, &threadIds]()
+            {
+            while (block);
+            nCalls++;
+            threadIds.push_back (BeThreadUtilities::GetCurrentThreadId ());
+            }));
+        }
     
     block = false;
+
+    WorkItemsCountPredicate predicate (nCalls, workItemsCount);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));                // no timeout
-    ASSERT_EQ (workItemsCount, TestWork::s_nCalls);                     // all work items executed
-    ASSERT_EQ (workItemsCount, TestWork::s_threadIds.size ());          // 10 thread IDs in the list
-    ASSERT_EQ (maxThreads, CountUniqueItems (TestWork::s_threadIds));   // all thread IDs are different
+    ASSERT_EQ (workItemsCount, nCalls);                     // all work items executed
+    ASSERT_EQ (workItemsCount, threadIds.size());          // 10 thread IDs in the list
+    ASSERT_EQ (maxThreads, CountUniqueItems (threadIds));   // all thread IDs are different
 
     pool->WaitUntilAllThreadsIdle ();
     ASSERT_EQ (maxIdleThreads, pool->GetThreadsCount ());               // only maxIdleThreads are left active

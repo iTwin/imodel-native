@@ -4,7 +4,7 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/Annotations.h>
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
@@ -14,8 +14,8 @@ class AnnotationTestFixture : public GenericDgnModelTestFixture
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     05/2014
     //---------------------------------------------------------------------------------------
-    public: AnnotationTestFixture (char const* sourcefile, bool is3d) :
-        GenericDgnModelTestFixture (sourcefile, is3d)
+    public: AnnotationTestFixture (char const* sourcefile, bool is3d, bool needBriefcase) :
+        GenericDgnModelTestFixture (sourcefile, is3d, needBriefcase)
         {
         }
 public:

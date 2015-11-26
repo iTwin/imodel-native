@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //=======================================================================================
 struct TextStringTest : public GenericDgnModelTestFixture
 {
-    TextStringTest() : GenericDgnModelTestFixture (__FILE__, true /*3D*/) { }
+    TextStringTest() : GenericDgnModelTestFixture (__FILE__, true /*3D*/, false /*needsBriefcase*/) { }
     DgnDbR GetProjectR() { return *m_testDgnManager.GetDgnProjectP(); }
     DgnModelR GetModelR() { return *GetDgnModelP(); }
 };

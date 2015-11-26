@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "../TestFixture/DgnDbTestFixtures.h"
-#include <DgnPlatform/DgnCore/DgnFontData.h>
+#include <DgnPlatform/DgnFontData.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing DgnFonts

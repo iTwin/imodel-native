@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
-#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnHandlersAPI.h>
+#include <DgnPlatform/DgnMarkupProject.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
@@ -52,8 +52,8 @@ TEST(NamedVolume, CrudTest)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdmSeed (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly);
-    DgnDbTestDgnManager tdm (L"79_Main.i.idgndb", __FILE__, Db::OpenMode::Readonly);
+    DgnDbTestDgnManager tdmSeed (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly, false);
+    DgnDbTestDgnManager tdm (L"79_Main.i.idgndb", __FILE__, Db::OpenMode::Readonly, false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE (project != nullptr);
 
