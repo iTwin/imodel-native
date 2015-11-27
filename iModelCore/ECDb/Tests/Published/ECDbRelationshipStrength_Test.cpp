@@ -319,162 +319,6 @@ TEST_F(RelationshipStrength, BackwardHoldingForwardEmbedding)
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RelationshipStrength, AnyClass)
-    {
-    ECDbR ecDb = SetupECDb ("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
-
-    /*
-     *          Create the following relationship hierarchy
-     * 
-     * GrandParent1                                      GrandParent2
-     *     |__________________________________________________|
-     *                             | 
-     *                             | ParentsHaveAnyChildren (HOLDING)
-     *                             |
-     *                         SingleParent
-     *                             | 
-     *                             | ParentHasAnyChild (EMBEDDING)
-     *      _______________________|__________________________ 
-     *     |                                                  |
-     *   Child1                                             Child2
-     * 
-     */
-
-    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-    IECInstancePtr grandParent1 = CreatePerson (*personClass, "First", "GrandParent");
-    InsertInstance (ecDb, *personClass, *grandParent1);
-    IECInstancePtr grandParent2 = CreatePerson (*personClass, "Second", "GrandParent");
-    InsertInstance (ecDb, *personClass, *grandParent2);
-    IECInstancePtr singleParent = CreatePerson (*personClass, "Only", "SingleParent");
-    InsertInstance (ecDb, *personClass, *singleParent);
-    IECInstancePtr child1 = CreatePerson (*personClass, "First", "Child");
-    InsertInstance (ecDb, *personClass, *child1);
-    IECInstancePtr child2 = CreatePerson (*personClass, "Second", "Child");
-    InsertInstance (ecDb, *personClass, *child2);
-
-    // Holding relationship (GrandParent1, GrandParent2 -> SingleParent)
-    ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr grandParent1HasSingleParent;
-    grandParent1HasSingleParent = CreateRelationship (*parentsHaveAnyChildren, *grandParent1, *singleParent);
-    InsertInstance (ecDb, *parentsHaveAnyChildren, *grandParent1HasSingleParent);
-    IECRelationshipInstancePtr grandParent2HasSingleParent;
-    grandParent2HasSingleParent = CreateRelationship (*parentsHaveAnyChildren, *grandParent2, *singleParent);
-    InsertInstance (ecDb, *parentsHaveAnyChildren, *grandParent2HasSingleParent);
-
-    // Embedding relationship (SingleParent -> Child1, Child2)
-    ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr singleParentHasChild1;
-    singleParentHasChild1 = CreateRelationship (*parentHasAnyChild, *singleParent, *child1);
-    InsertInstance (ecDb, *parentHasAnyChild, *singleParentHasChild1);
-    IECRelationshipInstancePtr singleParentHasChild2;
-    singleParentHasChild2 = CreateRelationship (*parentHasAnyChild, *singleParent, *child2);
-    InsertInstance (ecDb, *parentHasAnyChild, *singleParentHasChild2);
-
-    ecDb.SaveChanges();
-
-    /*
-     * Test 1: Delete GrandParent1
-     * Validate grandParent1HasSingleParent have been deleted (orphaned relationships)
-     * Validate singleParent is still around (holding relationship with one parent remaining)
-     */
-    /*int numDeleted =*/ DeleteInstance (*grandParent1, ecDb);
-    //ASSERT_EQ (2, numDeleted);
-
-    ASSERT_FALSE (HasInstance (*grandParent1, ecDb));
-    ASSERT_FALSE (HasInstance (*grandParent1HasSingleParent, ecDb));
-    ASSERT_TRUE (HasInstance (*singleParent, ecDb));
-    
-    /*
-     * Test 2: Delete GrandParent2
-     * Validate grandParent2HasSingleParent has been deleted (orphaned relationship)
-     * Validate singeParent has been deleted (held instance with no parents remaining)
-     */
-    /*numDeleted =*/ DeleteInstance (*grandParent2, ecDb);
-    //ASSERT_EQ (7, numDeleted);
-
-    ASSERT_FALSE (HasInstance (*grandParent2, ecDb));
-    ASSERT_FALSE (HasInstance (*grandParent2HasSingleParent, ecDb));
-    ASSERT_FALSE (HasInstance (*singleParent, ecDb));
-    ASSERT_FALSE (HasInstance (*singleParentHasChild1, ecDb));
-    ASSERT_FALSE (HasInstance (*singleParentHasChild2, ecDb));
-    ASSERT_FALSE (HasInstance (*child1, ecDb));
-    ASSERT_FALSE (HasInstance (*child2, ecDb));
-    }
-
-//---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  10/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipStrength, AnyClassBackwardHoldingBackwardEmbedding)
-{
-    ECDbR ecdbr = SetupECDb("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
-
-    /*
-    *          Create the following relationship hierarchy
-    *
-    * GrandParent1                                      GrandParent2
-    *     |__________________________________________________|
-    *                             |
-    *                             | AnyChildrenHaveParents (0:N Backward HOLDING)
-    *                             |
-    *                         SingleParent
-    *                             |
-    *                             | AnyChildHasParent (N:1 Backward EMBEDDING)
-    *      _______________________|__________________________
-    *     |                                                  |
-    *   Child1                                             Child2
-    *
-    */
-
-    ECClassCP personClass = ecdbr.Schemas().GetECClass("RelationshipStrengthBackwardTest", "Person");
-    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-    InsertInstance(ecdbr, *personClass, *child1);
-    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-    InsertInstance(ecdbr, *personClass, *child2);
-    IECInstancePtr singleParent = CreatePerson(*personClass, "Only", "singleParent");
-    InsertInstance(ecdbr, *personClass, *singleParent);
-    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-    InsertInstance(ecdbr, *personClass, *grandParent1);
-    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-    InsertInstance(ecdbr, *personClass, *grandParent2);
-
-    //Backward Holding relationship (GrandParent1, GrandParent2 <- SingleParent)
-    ECRelationshipClassCP AnyChildrenHaveParents = ecdbr.Schemas().GetECClass("RelationshipStrengthBackwardTest", "AnyChildrenHaveParents")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr singleParentHasGrandParent1;
-    singleParentHasGrandParent1 = CreateRelationship(*AnyChildrenHaveParents, *singleParent, *grandParent1);
-    InsertInstance(ecdbr, *AnyChildrenHaveParents, *singleParentHasGrandParent1);
-    IECRelationshipInstancePtr singleParentHasGrandParent2;
-    singleParentHasGrandParent2 = CreateRelationship(*AnyChildrenHaveParents, *singleParent, *grandParent2);
-    InsertInstance(ecdbr, *AnyChildrenHaveParents, *singleParentHasGrandParent2);
-
-    // Embedding relationship (SingleParent <- Child1, Child2)
-    ECRelationshipClassCP AnyChildHasParent = ecdbr.Schemas().GetECClass("RelationshipStrengthBackwardTest", "AnyChildHasParent")->GetRelationshipClassCP();
-    IECRelationshipInstancePtr child1HasSingleParent;
-    child1HasSingleParent = CreateRelationship(*AnyChildHasParent, *child1, *singleParent);
-    InsertInstance(ecdbr, *AnyChildHasParent, *child1HasSingleParent);
-    IECRelationshipInstancePtr child2HasSingleParent;
-    child2HasSingleParent = CreateRelationship(*AnyChildHasParent, *child2, *singleParent);
-    InsertInstance(ecdbr, *AnyChildHasParent, *child2HasSingleParent);
-
-    ecdbr.SaveChanges();
-
-    /*
-    * Test 1: Delete singleParent
-    * Validate grandParent1 and grandParent2 are still around (all others deleted)
-    */
-    /*int numDeleted = */DeleteInstance(*singleParent, ecdbr);
-    //ASSERT_EQ(7, numDeleted);
-    ASSERT_FALSE (HasInstance(*child1HasSingleParent, ecdbr));
-    ASSERT_FALSE (HasInstance(*child2HasSingleParent, ecdbr));
-    ASSERT_FALSE (HasInstance(*singleParentHasGrandParent1, ecdbr));
-    ASSERT_FALSE (HasInstance(*singleParentHasGrandParent2, ecdbr));
-    ASSERT_TRUE (HasInstance(*grandParent1, ecdbr));
-    ASSERT_TRUE(HasInstance(*grandParent2, ecdbr));
-    ASSERT_FALSE (HasInstance(*child2, ecdbr));
-    ASSERT_FALSE(HasInstance(*child1, ecdbr));
-}
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, ForwardHoldingByMultipleDeleteTest)
@@ -570,6 +414,7 @@ TEST_F(RelationshipStrength, ForwardHoldingByMultipleDeleteTest)
     ASSERT_FALSE(HasInstance(*Parent1, ecDb));
 
 }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -665,6 +510,7 @@ TEST_F(RelationshipStrength, ForwardHoldingMultipleLinkedObjectDeleteTest)
     ASSERT_TRUE(HasInstance(*grandParent1, ecDb));
 
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -864,8 +710,8 @@ TEST_F(RelationshipStrength, ForwardEmbeddingMultipleLinkedObjectPathDeleteTest)
             AnyChildHasParent (EMBEDDING)					ParentsHaveAnyChildren (HOLDING)
             ↓                                                   ↓
             Pet1                                               Pet2
-*/
-/*---------------------------------------------------------------------------------**//**
+
+/*---------------------------------------------------------------------------------/**
  * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, DirectEmbeddedChildDeleteTest)
@@ -971,6 +817,7 @@ TEST_F(RelationshipStrength, DirectEmbeddedChildDeleteTest)
     ASSERT_FALSE(HasInstance(*pet2, ecDb));
 
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1169,6 +1016,7 @@ TEST_F(RelationshipStrength, ForwardEmbedDeleteThirdLevelParentWithTwoLinks)
 
     ASSERT_TRUE(HasInstance(*child1, ecDb));
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1265,6 +1113,7 @@ TEST_F(RelationshipStrength, DeleteInstanceOfMultipleRelationsPath)
     ASSERT_TRUE(HasInstance(*Parent1, ecDb));
     ASSERT_TRUE(HasInstance(*Parent2, ecDb));
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1361,5 +1210,6 @@ TEST_F(RelationshipStrength, ForwardEmbeddingWithMultipleLevelChildrens)
     ASSERT_FALSE(HasInstance(*child1, ecDb));
     ASSERT_FALSE(HasInstance(*pet1, ecDb));
 }
+
 END_ECDBUNITTESTS_NAMESPACE
 
