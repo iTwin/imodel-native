@@ -98,14 +98,14 @@ RealityPackageStatus RealityDataSource::_Read(BeXmlNodeR dataSourceNode)
         }
 
     // Optional fields.
-    dataSourceNode.GetContent(m_copyright, PACKAGE_ELEMENT_Copyright);
-    dataSourceNode.GetContent(m_provider, PACKAGE_ELEMENT_Provider);
-    dataSourceNode.GetContentUInt64Value(m_filesize, PACKAGE_ELEMENT_Filesize);
-    dataSourceNode.GetContent(m_metadata, PACKAGE_ELEMENT_Metadata);
+    dataSourceNode.GetContent(m_copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright);
+    dataSourceNode.GetContent(m_provider, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Provider);
+    dataSourceNode.GetContentUInt64Value(m_filesize, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Filesize);
+    dataSourceNode.GetContent(m_metadata, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Metadata);
 
     // Create bvector from comma-separated list.
     Utf8String sisterFilesAsString;
-    dataSourceNode.GetAttributeStringValue(sisterFilesAsString, PACKAGE_ELEMENT_SisterFiles);
+    dataSourceNode.GetContent(sisterFilesAsString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SisterFiles);
 
 
     return RealityPackageStatus::Success;
