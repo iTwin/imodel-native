@@ -43,6 +43,21 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(ElemDisplayParamsCR ep, DgnModelI
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId)
+    {
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
+
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
+
+    TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+    return m_db->Elements().Insert(*el);
+     }
+
+/*---------------------------------------------------------------------------------**//**
 * Set up method that opens an existing .dgndb project file after copying it to out
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
@@ -55,6 +70,10 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
     m_db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(mode));
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE(result == BE_SQLITE_OK);
+
+    TestDataManager::MustBeBriefcase(m_db, mode);
+    ASSERT_TRUE(m_db->IsBriefcase());
+    ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
 
     auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_TRUE(DgnDbStatus::Success == status);

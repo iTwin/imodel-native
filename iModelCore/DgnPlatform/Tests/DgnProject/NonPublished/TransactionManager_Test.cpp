@@ -42,13 +42,25 @@ struct TxnMonitorVerifier : TxnMonitor
 +===============+===============+===============+===============+===============+======*/
 struct TransactionManagerTests : public DgnDbTestFixture
 {
+    DEFINE_T_SUPER(DgnDbTestFixture);
 public:
     ~TransactionManagerTests();
     void TwiddleTime(DgnElementCPtr);
+    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
 };
 
 END_UNNAMED_NAMESPACE
-
+/*---------------------------------------------------------------------------------**//**
+* set up method that opens an existing .dgndb project file after copying it to out
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
+    {
+    T_Super::SetupProject(projFile,testFile,mode);
+    TestDataManager::MustBeBriefcase(m_db, mode);
+    ASSERT_TRUE(m_db->IsBriefcase());
+    ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
+    }
 /*---------------------------------------------------------------------------------**//**
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
@@ -157,10 +169,10 @@ TEST_F(TransactionManagerTests, CRUD)
     //  -------------------------------------------------------------
     //  Test adds
     //  -------------------------------------------------------------
-    auto key1 = InsertElement();
+    auto key1 = InsertElement("E1");
     ASSERT_TRUE( key1->GetElementId().IsValid() );
 
-    auto key2 = InsertElement();
+    auto key2 = InsertElement("E2");
     ASSERT_TRUE( key2->GetElementId().IsValid() );
 
     m_db->SaveChanges();
@@ -680,8 +692,8 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
-    auto keyE1 = InsertElement(m1id);
-    auto keyE2 = InsertElement(m1id);
+    auto keyE1 = InsertElement("E1", m1id);
+    auto keyE2 = InsertElement("E2", m1id);
     m_db->SaveChanges("changeSet2");
 
     DgnElementId e1id = keyE1->GetElementId();
@@ -736,7 +748,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
-    auto keyE1 = InsertElement(m1id);
+    auto keyE1 = InsertElement("E1", m1id);
     m_db->SaveChanges("changeSet2");
 
     DgnElementId e1id = keyE1->GetElementId();
@@ -896,7 +908,7 @@ struct DynamicTxnsTest : TransactionManagerTests
         {
         static char s_code = 'A';
         Utf8PrintfString code("%c", s_code++);
-        DgnElementCPtr elem = T_Super::InsertElement(code);
+        DgnElementCPtr elem = DgnDbTestFixture::InsertElement(code);
         EXPECT_TRUE(elem.IsValid());
         if (saveIfNotInDynamics && !m_db->Txns().IsInDynamics())
             EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges());

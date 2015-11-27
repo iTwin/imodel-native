@@ -27,10 +27,10 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson     02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericDgnModelTestFixture (char const* sourcefile, bool is3d)
+GenericDgnModelTestFixture (char const* sourcefile, bool is3d, bool needBriefcase)
     :
     m_is3d(is3d),
-    m_testDgnManager (is3d? L"3dMetricGeneral.idgndb": L"2dMetricGeneral.idgndb", sourcefile)
+    m_testDgnManager (is3d? L"3dMetricGeneral.idgndb": L"2dMetricGeneral.idgndb", sourcefile, BeSQLite::Db::OpenMode::ReadWrite, needBriefcase)
     {
     BeAssert( NULL != GetDgnModelP() );
     }
@@ -42,11 +42,11 @@ virtual ~GenericDgnModelTestFixture ()
     {
     }
 
-    DgnModelP       GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
-    DgnDbP          GetDgnProjectP() const {return m_testDgnManager.GetDgnProjectP();}
+    DgnModelP GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
+    DgnDbP  GetDgnDb() const {return m_testDgnManager.GetDgnProjectP();}
     void            CloseTestFile() {m_testDgnManager.CloseTestFile();}
-    BentleyStatus   ReopenTestFile() {return m_testDgnManager.OpenTestFile ();}
-    bool            Is3d() const {return m_is3d;}
+    BentleyStatus   ReopenTestFile() {return m_testDgnManager.OpenTestFile (false);}
+    bool      Is3d() const {return m_is3d;}
 };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

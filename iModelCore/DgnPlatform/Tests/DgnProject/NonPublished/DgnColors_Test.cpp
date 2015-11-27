@@ -13,7 +13,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgnColorTests : public GenericDgnModelTestFixture
 {
-public: DgnColorTests() : GenericDgnModelTestFixture(__FILE__, false /*2D*/) {}
+public: DgnColorTests() : GenericDgnModelTestFixture(__FILE__, false /*2D*/, false) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,7 +22,7 @@ public: DgnColorTests() : GenericDgnModelTestFixture(__FILE__, false /*2D*/) {}
 TEST_F(DgnColorTests, TrueColors)
     {
     //SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbR db = *GetDgnProjectP();
+    DgnDbR db = *GetDgnDb();
 
     DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
     EXPECT_TRUE(color1.Insert().IsValid());
