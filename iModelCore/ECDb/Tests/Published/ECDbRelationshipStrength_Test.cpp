@@ -59,7 +59,7 @@ bool HasInstance (IECInstanceCR instance, ECDbR ecDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipStrength, BackwardEmbedding)
     {
-    ECDbR ecdbr = SetupECDb("BackwardRelationshipStrengthTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
+    ECDbR ecdbr = SetupECDb("BackwardRelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthBackwardTest.01.00.ecschema.xml"));
     /*
     *                         SingleParent
     *                             |
@@ -109,7 +109,7 @@ TEST_F(RelationshipStrength, BackwardEmbedding)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, Test)
     {
-    ECDbR ecDb = SetupECDb("RelationshipStrengthTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthBackwardTest.01.00.ecschema.xml"));
 
     /*
      *          Create the following relationship hierarchy
@@ -208,7 +208,7 @@ TEST_F(RelationshipStrength, Test)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipStrength, BackwardHoldingForwardEmbedding)
 {
-    ECDbR ecdbr = SetupECDb("BackwardRelationshipStrengthTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
+    ECDbR ecdbr = SetupECDb("BackwardRelationshipStrengthTest.ecdb", BeFileName(L"RelationshipStrengthBackwardTest.01.00.ecschema.xml"));
 
     /*
     *          Create the following relationship hierarchy
@@ -323,7 +323,7 @@ TEST_F(RelationshipStrength, BackwardHoldingForwardEmbedding)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, AnyClass)
     {
-    ECDbR ecDb = SetupECDb ("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb ("RelationshipStrengthAnyClassTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     /*
      *          Create the following relationship hierarchy
@@ -408,7 +408,7 @@ TEST_F(RelationshipStrength, AnyClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipStrength, AnyClassBackwardHoldingBackwardEmbedding)
 {
-    ECDbR ecdbr = SetupECDb("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
+    ECDbR ecdbr = SetupECDb("RelationshipStrengthAnyClassTest.ecdb", BeFileName(L"RelationshipStrengthBackwardTest.01.00.ecschema.xml"));
 
     /*
     *          Create the following relationship hierarchy
@@ -498,7 +498,7 @@ TEST_F(RelationshipStrength, ForwardHoldingByMultipleDeleteTest)
 
     //int numDeleted = 0;
     bool InsertionStatus;
-    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -594,7 +594,7 @@ TEST_F(RelationshipStrength, ForwardHoldingMultipleLinkedObjectDeleteTest)
 
     //int numDeleted = 0;
     bool InsertionStatus;
-    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -672,7 +672,7 @@ TEST_F(RelationshipStrength, ForwardEmbeddingByMultiplePathDeleteTest)
     {
     //int numDeleted = 0;
     bool InsertionStatus;
-    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -728,11 +728,8 @@ TEST_F(RelationshipStrength, ForwardEmbeddingByMultiplePathDeleteTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, ForwardEmbeddingMiddleInstancePathDeleteTest)
     {
-    //int numDeleted = 0;
     bool InsertionStatus;
-    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
-    ECDbTestProject testProject;
-    ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -792,9 +789,8 @@ TEST_F(RelationshipStrength, ForwardEmbeddingMiddleInstancePathDeleteTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, ForwardEmbeddingMultipleLinkedObjectPathDeleteTest)
     {
-    //int numDeleted = 0;
     bool InsertionStatus;
-    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -870,11 +866,8 @@ TEST_F(RelationshipStrength, ForwardEmbeddingMultipleLinkedObjectPathDeleteTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, DirectEmbeddedChildDeleteTest)
 {
-    //int numDeleted = 0;
     bool InsertionStatus;
-    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
-	ECDbTestProject testProject;
-	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -976,11 +969,8 @@ TEST_F(RelationshipStrength, DirectEmbeddedChildDeleteTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, HoldingDeleteRuleTest)
 {
-    //int numDeleted = 0;
     bool InsertionStatus;
-    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
-	ECDbTestProject testProject;
-	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -1085,7 +1075,7 @@ TEST_F(RelationshipStrength, ForwardEmbedDeleteThirdLevelParentWithTwoLinks)
 {
     //int numDeleted = 0;
     bool InsertionStatus;
-    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -1176,7 +1166,7 @@ TEST_F(RelationshipStrength, DeleteInstanceOfMultipleRelationsPath)
 {
     /*int numDeleted = 0;*/
     bool InsertionStatus;
-    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -1270,11 +1260,8 @@ TEST_F(RelationshipStrength, DeleteInstanceOfMultipleRelationsPath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelationshipStrength, ForwardEmbeddingWithMultipleLevelChildrens)
 {
-    //int numDeleted = 0;
     bool InsertionStatus;
-    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
-	ECDbTestProject testProject;
-	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", BeFileName(L"RelationshipStrengthTest.01.00.ecschema.xml"));
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");

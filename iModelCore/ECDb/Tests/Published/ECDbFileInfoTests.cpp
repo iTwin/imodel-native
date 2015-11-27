@@ -13,6 +13,9 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 #define ECDB_FILEINFO_SCHEMA_NAME "ECDb_FileInfo"
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbFileInfoTests : ECDbTestFixture
     {
     protected:
@@ -445,7 +448,9 @@ TEST_F(ECDbFileInfoTests, Purge)
     //Scenario 1: Delete owners and purge
     //Purge which should delete file infos created as orphans by setup of test
     //->ownerships remains unchanged, but file info class is purged
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECDbFileInfo Purge> START");
     ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECDbFileInfo Purge> END");
     expectedFileInfos.clear();
     expectedFileInfos.push_back(fooExternalFileInfoKey);
     expectedFileInfos.push_back(gooExternalFileInfoKey);

@@ -168,7 +168,7 @@ void ECSqlTestFrameworkFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlA
 //virtual
 void ECSqlSelectTestFramework::SetUp()
     {
-    SetupECDb("ecsqlselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), PerClassRowCount);
+    SetupECDb("ecsqlselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), PerClassRowCount);
     }
 
 
@@ -192,7 +192,7 @@ void ECSqlSelectTestFramework::RunTest(ECSqlTestDataset const& dataset) const
 //virtual
 void ECSqlNonSelectTestFrameworkFixture::SetUp()
     {
-    SetupECDb("ecsqlnonselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::ReadWrite), PerClassRowCount);
+    SetupECDb("ecsqlnonselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), PerClassRowCount);
     }
 
 //---------------------------------------------------------------------------------------

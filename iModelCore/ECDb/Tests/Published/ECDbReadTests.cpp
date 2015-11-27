@@ -85,7 +85,7 @@ size_t CountInstancesOfClass (ECDbR db, ECClassCR ecClass, bool isPolymorphic)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReadTests, ReadPolymorphic)
     {
-    ECDb& db = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
 
     /*
      * Test retrieval when parent and children are all in the same table (TablePerHierarchy)
@@ -169,7 +169,7 @@ IECInstancePtr CreatePerson (ECClassCR ecClass, Utf8CP firstName, Utf8CP lastNam
 TEST_F(ReadTests, OrderBy)
     {
     // Create StartupCompany 
-    ECDbR db = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     // Add some employees
     ECClassCP employeeClass = db.Schemas().GetECClass("StartupCompany", "Employee");
@@ -224,7 +224,7 @@ TEST_F(ReadTests, OrderBy)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ReadTests, LimitOffset)
     {
-    ECDbR db = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbR db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     // Populate 100 instances
     ECClassCP ecClass = db.Schemas().GetECClass("StartupCompany", "ClassWithPrimitiveProperties");
@@ -269,7 +269,7 @@ TEST_F(ReadTests, LimitOffset)
     }
 TEST_F(ReadTests, WriteCalculatedECProperty)
 {
-    ECDbR db = SetupECDb("SimpleCompany.ecdb", L"SimpleCompany.01.00.ecschema.xml", false);
+    ECDbR db = SetupECDb("SimpleCompany.ecdb", BeFileName(L"SimpleCompany.01.00.ecschema.xml"));
     Utf8String instanceXml = "<Manager xmlns = \"SimpleCompany.01.00\" >"
         "<FirstName>StRiNg - 10002</FirstName>"
         "<LastName>StRiNg - 10002</LastName>"
@@ -329,15 +329,14 @@ TEST_F(ReadTests, WriteCalculatedECProperty)
         IECInstancePtr newInstance = adapter.GetInstance();
         ASSERT_TRUE(ECDbTestUtility::CompareECInstances(*newInstance, *instance));
     }
-
-   
 }
+
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ReadTests, createECDbWithArbitraryNumberOfECInstances)
 {
-    ECDbR ecdbr = SetupECDb("ecdbWithArbitratyInstances.ecdb", L"SimpleCompany.01.00.ecschema.xml", true);
+    ECDbR ecdbr = SetupECDb("ecdbWithArbitratyInstances.ecdb", BeFileName(L"SimpleCompany.01.00.ecschema.xml"), 3);
     ECSchemaCP ecschemap = ecdbr. Schemas ().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (ecschemap != nullptr);
     ECClassCP employee = ecschemap->GetClassCP("Employee");

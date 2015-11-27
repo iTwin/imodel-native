@@ -979,8 +979,7 @@ TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
                           "    </ECClass>"
                           "</ECSchema>");
 
-
-    ECDb& ecdb = SetupECDb("ecdbgeometrytypes.ecdb", testSchema, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    ECDb& ecdb = SetupECDb("ecdbgeometrytypes.ecdb", testSchema);
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECClassCP cl = ecdb.Schemas().GetECClass("TestSchema", "Foo");
