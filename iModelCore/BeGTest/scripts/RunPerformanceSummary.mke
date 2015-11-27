@@ -1,0 +1,27 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: scripts/RunPerformanceSummary.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+%ifndef GTEST_OUTPUT_DIR
+    %error Define GTEST_OUTPUT_DIR to the directory where logs, etc. should go
+%endif
+
+%ifndef PERFORMANCE_BENCHMARK_FILE
+    %error Define PERFORMANCE_BENCHMARK_FILE to point to the benchmark csv file in shared shell.
+%endif
+
+runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
+perDir=$(runDir)Output/PerformanceTestResults/
+analysisFile=$(perDir)Analysis.xlsx
+
+always:
+    python  $(_MakeFilePath)PerformanceTestSummary.py --current=$(perDir)PerformanceResults.csv --benchmark=$(PERFORMANCE_BENCHMARK_FILE) --output=$(analysisFile)
+	
+%message .
+%message The report is at $(analysisFile) .
+%message .
