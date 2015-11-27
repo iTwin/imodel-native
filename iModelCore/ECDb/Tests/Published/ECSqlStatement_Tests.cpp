@@ -629,41 +629,41 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
-	{
-	ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-	ECSqlStatement statement;
-	ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(10, 100*5, true, 100+1+GetECClassId(), 'Chair')"));
-	ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-	statement.Finalize();
-	ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(11, 1000/5, false, 100+2+GetECClassId(), 'Table')"));
-	ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-	statement.Finalize();
-	ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(12, 1000+100*5, true, 100+3+GetECClassId(), 'LCD')"));
-	ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-	statement.Finalize();
+TEST_F (ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
+    {
+    ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(10, 100*5, true, 100+1+GetECClassId(), 'Chair')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(11, 1000/5, false, 100+2+GetECClassId(), 'Table')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(12, 1000+100*5, true, 100+3+GetECClassId(), 'LCD')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
 
-	ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Price FROM ECST.Products WHERE ProductId=100+2+GetECClassId()"));
-	ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-	ASSERT_TRUE(200 == statement.GetValueInt(0));
-	statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price FROM ECST.Products WHERE ProductId=100+2+GetECClassId()"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (200 == statement.GetValueInt (0));
+    statement.Finalize ();
 
-	ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Price FROM ECST.Products WHERE ProductId>100+2+GetECClassId()"));
-	ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-	ASSERT_TRUE(1500 == statement.GetValueInt(0));
-	statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price FROM ECST.Products WHERE ProductId>100+2+GetECClassId()"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (1500 == statement.GetValueInt (0));
+    statement.Finalize ();
 
-	ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() AND Price=1000+100*5"));
-	ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-	ASSERT_TRUE(statement.GetValueBoolean(0));
-	statement.Finalize();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() AND Price=1000+100*5"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (statement.GetValueBoolean (0));
+    statement.Finalize ();
 
-	ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Price, ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() ORDER BY ECInstanceId"));
-	ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-	ASSERT_TRUE(1500 == statement.GetValueInt(0));
-	ASSERT_TRUE(statement.GetValueBoolean(1));
-	statement.Finalize();
-	}
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price, ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() ORDER BY ECInstanceId"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (1500 == statement.GetValueInt (0));
+    ASSERT_TRUE (statement.GetValueBoolean (1));
+    statement.Finalize ();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14

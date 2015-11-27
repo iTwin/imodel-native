@@ -1386,6 +1386,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
 
     if (!fooHasFooInstanceId1.IsValid ())
         ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    savePoint.Commit ();
     }
 
     //Insert 1-N Relationship
@@ -1663,7 +1664,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
     gooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200001, 'Class Goo Instance 1')");
     gooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200002, 'Class Goo Instance 2')");
 
-    if (!fooInstanceId1.IsValid () || !gooInstanceId1.IsValid () || !gooInstanceId2.IsValid())
+    if (!fooInstanceId1.IsValid () || !gooInstanceId1.IsValid () || !gooInstanceId2.IsValid ())
         ASSERT_TRUE (false) << "Instance Id's not valid";
     savePoint.Commit ();
     }
@@ -1678,6 +1679,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
 
     if (!fooHasGooInstanceId1.IsValid ())
         ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    savePoint.Commit ();
     }
 
     //Insert 1-N Relationship
@@ -1817,6 +1819,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClasses)
 
     if (!gooHasRooInstanceId1.IsValid ())
         ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    savePoint.Commit ();
     }
 
     //Insert 1-N Relationship
@@ -1976,10 +1979,9 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyPro
 
     if (!gooHasRooInstanceId1.IsValid ())
         ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
-
+    savePoint.Commit ();
     }
 
-    db.SaveChanges();
     //Insert 1-N Relationship
     EC::ECInstanceId gooHasManyRooInstanceId1;
     EC::ECInstanceId gooHasManyRooInstanceId2;
