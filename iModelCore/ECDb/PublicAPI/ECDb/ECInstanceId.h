@@ -47,13 +47,11 @@ public:
     bool operator < (ECInstanceKey const& other) const
         {
         if (m_ecClassId < other.m_ecClassId)
-            {
             return true;
-            }
+
         if (m_ecClassId > other.m_ecClassId)
-            {
             return false;
-            }
+
         return m_ecInstanceId < other.m_ecInstanceId;
         }
 
