@@ -124,6 +124,129 @@ void DgnChangeSummary::GetChangedElements(DgnElementIdSet& elementIds, ChangeSum
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnChangeSummary::ModelIterator::ModelIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
+    : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model), opcodes)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnChangeSummary::ElementIterator::ElementIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
+    : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), opcodes)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DgnChangeSummary::ElementEntry::GetModelId(bool old) const
+    {
+    auto instance = GetImpl().GetInstance();
+    DgnModelId modelId;
+    if (instance.ContainsValue("ModelId"))
+        {
+        DbDupValue value = (old ? instance.GetOldValue("ModelId") : instance.GetNewValue("ModelId"));
+        if (value.IsValid())
+            modelId = value.GetValueId<DgnModelId>();
+        }
+    else if (DbOpcode::Delete != GetDbOpcode())
+        {
+        static const Utf8CP s_selectModelId { "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?" };
+        DgnDbR dgndb = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
+        CachedStatementPtr stmt = dgndb.Elements().GetStatement(s_selectModelId);
+        stmt->BindId(1, instance.GetInstanceId());
+        if (BE_SQLITE_ROW == stmt->Step())
+            modelId = stmt->GetValueId<DgnModelId>(0);
+        }
+
+    return modelId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, DbOpcode op)
+    {
+    AuthorityIssuedCode code, currentCode;
+    switch (op)
+        {
+        case DbOpcode::Insert:
+            return code; // no original code...
+        case DbOpcode::Update:
+            currentCode = entry.GetCurrentCode();
+            break;
+        }
+
+    auto instance = entry.GetImpl().GetInstance();
+    DbDupValue oldAuthId = instance.GetOldValue("Code.AuthorityId"),
+               oldNamespace = instance.GetOldValue("Code.NameSpace"),
+               oldValue = instance.GetOldValue("Code.Value");
+
+    if (DbOpcode::Delete == op)
+        {
+        if (oldAuthId.IsValid() && oldNamespace.IsValid() && oldValue.IsValid())
+            code.From(oldAuthId.GetValueId<DgnAuthorityId>(), oldValue.GetValueText(), oldNamespace.GetValueText());
+        }
+    else
+        {
+        if (oldAuthId.IsValid() || oldNamespace.IsValid() || oldValue.IsValid())
+            {
+            DgnAuthorityId authId = oldAuthId.IsValid() ? oldAuthId.GetValueId<DgnAuthorityId>() : currentCode.GetAuthority();
+            Utf8String nameSpace = oldNamespace.IsValid() ? oldNamespace.GetValueText() : currentCode.GetNamespace();
+            Utf8String value = oldValue.IsValid() ? oldValue.GetValueText() : currentCode.GetValue();
+            code.From(authId, value, nameSpace);
+            }
+        else
+            {
+            code = currentCode;
+            }
+        }
+
+    return code;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AuthorityIssuedCode DgnChangeSummary::ElementEntry::GetCode(bool old) const
+    {
+    auto op = GetDbOpcode();
+    if (old)
+        return getOriginalCode(*this, op);
+
+    if (DbOpcode::Delete == op)
+        return AuthorityIssuedCode(); // no new code...
+
+    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
+    auto elem = db.Elements().GetElement(GetElementId());
+    BeAssert(elem.IsValid());
+    return elem.IsValid() ? elem->GetCode() : AuthorityIssuedCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+AuthorityIssuedCode DgnChangeSummary::ModelEntry::GetCode(bool old) const
+    {
+    auto op = GetDbOpcode();
+    if (old)
+        return getOriginalCode(*this, op);
+
+    if (DbOpcode::Delete == op)
+        return AuthorityIssuedCode();
+
+    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
+    auto model = db.Models().GetModel(GetModelId());
+    BeAssert(model.IsValid());
+    return model.IsValid() ? model->GetCode() : AuthorityIssuedCode();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    09/2015
 //---------------------------------------------------------------------------------------
@@ -206,20 +329,20 @@ BentleyStatus DgnChangeSummary::GetElementsWithAspectUpdates(DgnElementIdSet& el
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementIds)
     {
-    // GeometricElement -> ElementOwnsGeom -> ElementGeom
-    BentleyStatus status = GetElementsWithAspectUpdates(elementIds, "dgn.GeometricElement", "dgn.ElementOwnsGeom", "dgn.ElementGeom");
+    // Element -> ElementOwnsGeom -> ElementGeom
+    BentleyStatus status = GetElementsWithAspectUpdates(elementIds, "dgn.Element", "dgn.ElementOwnsGeom", "dgn.ElementGeom");
     BeAssert(status == SUCCESS);
 
     // ElementGeomUsesParts
     ECInstanceIdSet changedGeomUsesPartEnds;
     FindChangedRelationshipEndIds(changedGeomUsesPartEnds, "dgn", "ElementGeomUsesParts", ECRelationshipEnd_Source);
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE InVirtualSet(?, elg.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE InVirtualSet(?, elg.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, changedGeomUsesPartEnds);
 
     // GeomPart
     ECInstanceIdSet updatedGeomParts;
     FindUpdatedInstanceIds(updatedGeomParts, "dgn", "GeomPart");
-    ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
+    ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, updatedGeomParts);
     }
 

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnChangeSummary.h>
 
 static const BeInt64Id s_dbId((uint64_t)1);
 
@@ -110,12 +111,84 @@ void LockRequest::Remove(LockableId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t LockRequest::Subtract(LockRequestCR rhs)
+    {
+    size_t nRemoved = 0;
+    for (auto const& lock : rhs)
+        {
+        auto found = m_locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
+        if (m_locks.end() != found)
+            {
+            m_locks.erase(found);
+            ++nRemoved;
+            }
+        }
+
+    return nRemoved;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db)
+    {
+    Clear();
+
+    DgnChangeSummary summary(db);
+    if (SUCCESS != summary.FromChangeSet(changes))
+        return DgnDbStatus::BadArg;
+
+    for (auto const& entry : summary.MakeElementIterator())
+        {
+        if (entry.IsIndirectChange())
+            continue;   // ###TODO: Allow iterator options to specify exclusion of indirect changes
+
+        DgnModelId modelId;
+        switch (entry.GetDbOpcode())
+            {
+            case DbOpcode::Insert:  modelId = entry.GetCurrentModelId(); break;
+            case DbOpcode::Delete:  modelId = entry.GetOriginalModelId(); break;
+            case DbOpcode::Update:
+                {
+                modelId = entry.GetCurrentModelId();
+                auto oldModelId = entry.GetOriginalModelId();
+                if (oldModelId != modelId)
+                    InsertLock(LockableId(oldModelId), LockLevel::Shared);
+
+                break;
+                }
+            }
+
+        BeAssert(modelId.IsValid());
+        InsertLock(LockableId(modelId), LockLevel::Shared);
+        InsertLock(LockableId(entry.GetElementId()), LockLevel::Exclusive);
+        }
+
+    // Any models directly changed?
+    ECClassId classId = db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
+    DgnChangeSummary::InstanceIterator::Options options(classId);
+    for (auto const& entry : summary.MakeInstanceIterator(options))
+        {
+        if (!entry.GetIndirect())
+            InsertLock(LockableId(LockableType::Model, entry.GetInstanceId()), LockLevel::Exclusive);
+        }
+
+    // Anything changed at all?
+    if (!IsEmpty())
+        Insert(db, LockLevel::Shared);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Defined here because we don't want them called externally...
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ILocksManager::OnElementInserted(DgnElementId id) { _OnElementInserted(id); }
 void ILocksManager::OnModelInserted(DgnModelId id) { _OnModelInserted(id); }
-LockStatus ILocksManager::LockElement(DgnElementCR el, LockLevel lvl) { return _LockElement(el, lvl); }
+LockStatus ILocksManager::LockElement(DgnElementCR el, LockLevel lvl, DgnModelId originalModelId) { return _LockElement(el, lvl, originalModelId); }
 LockStatus ILocksManager::LockModel(DgnModelCR model, LockLevel lvl) { return _LockModel(model, lvl); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,7 +205,7 @@ BeFileName ILocksManager::GetLockTableFileName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level)
+LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId)
     {
     // We don't acquire locks for indirect or dynamic changes.
     if (GetDgnDb().Txns().IsInDynamics() || TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
@@ -140,6 +213,14 @@ LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level)
 
     LockRequest request;
     request.Insert(el, level);
+    if (LockLevel::None != level && originalModelId.IsValid() && originalModelId != el.GetModelId())
+        {
+        // An update operation which moved an element from one model to another...
+        DgnModelPtr originalModel = GetDgnDb().Models().GetModel(originalModelId);
+        if (originalModel.IsValid())
+            request.Insert(*originalModel, LockLevel::Shared);
+        }
+
     return AcquireLocks(request);
     }
 
@@ -182,7 +263,7 @@ private:
     virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
     virtual void _OnModelInserted(DgnModelId) override { }
-    virtual LockStatus _LockElement(DgnElementCR, LockLevel) override { return LockStatus::Success; }
+    virtual LockStatus _LockElement(DgnElementCR, LockLevel, DgnModelId) override { return LockStatus::Success; }
     virtual LockStatus _LockModel(DgnModelCR, LockLevel) override { return LockStatus::Success; }
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId, bool) override { level = LockLevel::Exclusive; return LockStatus::Success; }
     virtual LockStatus _RefreshLocks() override { return LockStatus::Success; }
@@ -571,8 +652,8 @@ bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly)
         return false;
 
     Cull(locks);
-    if (localOnly || locks.Empty())
-        return locks.Empty();
+    if (localOnly || locks.IsEmpty())
+        return locks.IsEmpty();
 
     auto server = GetLocksServer();
     return nullptr != server && server->QueryLocksHeld(locks, GetDgnDb());
@@ -587,7 +668,7 @@ LockStatus LocalLocksManager::_AcquireLocks(LockRequestR locks)
         return LockStatus::SyncError;
 
     Cull(locks);
-    if (locks.Empty())
+    if (locks.IsEmpty())
         return LockStatus::Success;
 
     auto server = GetLocksServer();

@@ -33,8 +33,8 @@ struct DgnScriptContext : BeJsContext
         {
         EvaluateScript(dgnScriptContext_GetBootstrappingSource(), "file:///DgnJsApi.js");
         
-        m_egaRegistry = EvaluateScript("BentleyApi.Dgn.GetEgaRegistry()");
-        m_modelSolverRegistry = EvaluateScript("BentleyApi.Dgn.GetModelSolverRegistry()");
+        m_egaRegistry = EvaluateScript("Bentley.Dgn.GetEgaRegistry()");
+        m_modelSolverRegistry = EvaluateScript("Bentley.Dgn.GetModelSolverRegistry()");
 
         BeAssert(!m_egaRegistry.IsUndefined() && m_egaRegistry.IsObject());
         BeAssert(!m_modelSolverRegistry.IsUndefined() && m_modelSolverRegistry.IsObject());
@@ -242,20 +242,20 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
         return *m_jsContext;
 
     //  *************************************************************
-    //  Bootstrap the BentleyApi.Dgn "namespace"
+    //  Bootstrap the Bentley.Dgn "namespace"
     //  *************************************************************
     //  Initialize the DgnScriptContext
     auto dgnScriptContext = new DgnScriptContext(GetBeJsEnvironment());
     m_jsContext = dgnScriptContext;
 
     // First, register DgnJsApi's projections
-    RegisterScriptLibraryImporter("BentleyApi.Dgn-Core", *new DgnJsApi(*m_jsContext));
-    ImportScriptLibrary("BentleyApi.Dgn-Core");
+    RegisterScriptLibraryImporter("Bentley.Dgn-Core", *new DgnJsApi(*m_jsContext));
+    ImportScriptLibrary("Bentley.Dgn-Core");
 
     // Next, allow DgnScriptContext to do some one-time setup work. This will involve evaluating some JS expressions.
-    // This is a little tricky. We must wait until we have registered the first projection that defines BentleyApi.Dgn 
-    // before we attempt to add more properties to the BentleyApi.Dgn global object. This tricky sequencing is only needed 
-    // here, where we are actually defining BentleyApi.Dgn. Other projections can add to BentleyApi.Dgn and can contain a
+    // This is a little tricky. We must wait until we have registered the first projection that defines Bentley.Dgn 
+    // before we attempt to add more properties to the Bentley.Dgn global object. This tricky sequencing is only needed 
+    // here, where we are actually defining Bentley.Dgn. Other projections can add to Bentley.Dgn and can contain a
     // combination of native code projections and pure TS/JS code without needing any special sequencing.
     dgnScriptContext->Initialize();
 
@@ -263,8 +263,8 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     //  *************************************************************
     //  Register other core projections here
     //  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    RegisterScriptLibraryImporter("BentleyApi.Dgn-Geom", *new GeomJsApi(*m_jsContext));
-    ImportScriptLibrary("BentleyApi.Dgn-Geom");     // we also auto-load the geom types, as they are used everywhere
+    RegisterScriptLibraryImporter("Bentley.Dgn-Geom", *new GeomJsApi(*m_jsContext));
+    ImportScriptLibrary("Bentley.Dgn-Geom");     // we also auto-load the geom types, as they are used everywhere
 
 
     //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

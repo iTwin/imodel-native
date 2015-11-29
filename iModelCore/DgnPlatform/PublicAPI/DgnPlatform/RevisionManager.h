@@ -88,6 +88,36 @@ public:
 };
 
 //=======================================================================================
+//! Streams the contents of multiple files containing serialized change streams
+// @bsiclass                                                 Ramanujam.Raman   10/15
+//=======================================================================================
+struct ChangeStreamFileReader : BeSQLite::ChangeStream
+{
+private:
+    bvector<BeFileName> m_pathnames;
+
+    BeFile m_currentFile;
+    int m_currentFileIndex = -1;
+    uint64_t m_currentTotalBytes = 0;
+    uint64_t m_currentByteIndex = 0;
+
+    BentleyStatus CloseCurrentFile();
+    BentleyStatus OpenNextFile(bool& completedAllFiles);
+    BentleyStatus ReadNextPage(void *pData, int *pnData);
+
+    bool IsCurrentFileComplete() const;
+
+    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
+    DGNPLATFORM_EXPORT virtual void _Reset() override;
+    DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
+
+public:
+    ChangeStreamFileReader(bvector<BeFileName> pathnames) : m_pathnames(pathnames) {}
+    ChangeStreamFileReader(BeFileNameCR pathname) { m_pathnames.push_back(pathname); }
+    ~ChangeStreamFileReader() {}
+};
+
+//=======================================================================================
 //! Utility to download and upload revisions of changes to/from the DgnDb. 
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
@@ -107,8 +137,8 @@ private:
     BentleyStatus UpdateInitialParentRevisionId();
 
     BentleyStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
-    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup const& changeGroup);
-    static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup const& changeGroup);
+    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup& changeGroup);
+    static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
 public:
     //! Constructor

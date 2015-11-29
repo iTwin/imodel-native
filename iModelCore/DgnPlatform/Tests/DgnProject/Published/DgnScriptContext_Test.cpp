@@ -114,14 +114,14 @@ TEST(DgnScriptTest, Test1)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
-        var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
+        var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params[\"X\"], params[\"Y\"], params[\"Z\"]); \
         builder.SetGeomStreamAndPlacement(element); \
         return 0;\
     } \
     function testEgaBadReturn(element, origin, angles, params) { return 'abc'; }\
-    BentleyApi.Dgn.RegisterEGA('DgnScriptTest.TestEga', testEga); \
-    BentleyApi.Dgn.RegisterEGA('DgnScriptTest.TestEgaBadReturn', testEgaBadReturn); \
+    Bentley.Dgn.RegisterEGA('DgnScriptTest.TestEga', testEga); \
+    Bentley.Dgn.RegisterEGA('DgnScriptTest.TestEgaBadReturn', testEgaBadReturn); \
 })();\
 ";
 

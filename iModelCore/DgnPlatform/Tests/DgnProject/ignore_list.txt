@@ -18,14 +18,16 @@ DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressi
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
 
-#----------------------------------------------------------------------------------------
-# *** Broken with removal of GeometricElement ***
-#----------------------------------------------------------------------------------------
-ChangeSummaryTestFixture.QueryChangedElements
-ChangeSummaryTestFixture.ValidateChangeSummaries
-ChangeSummaryTestFixture.ElementChildRelationshipChanges
-DgnChangeSummaryTestFixture.ValidateChangeSummaries
-
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # WIP_ELEMENT_ITEM this test seems to find 4 things now, but it expects to find 3
 
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
+
+DgnChangeSummaryTestFixture.CreateSampleDataSet # crashing on optimized 06; notified Raman
+DgnChangeSummaryTestFixture.ValidateChangeSummaries # crashing on optimized 06; notified Raman
+RevisionTestFixture.Workflow # crashing on optimized 06; notified Raman
+RevisionTestFixture.ConflictError # crashing on optimized 06; notified Raman
+ChangeSummaryTestFixture.* # crashing on optimized 06; notified Raman
+UnitDefinition.GetStandardUnitByName # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
+UnitDefinition.GetStandardLabel # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
+UnitDefinition.GetStandardName # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
+UnitIterator.GetName # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh

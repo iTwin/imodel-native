@@ -27,8 +27,8 @@ private:
 
 bool                m_useColor:1;       //!< true - color does not follow sub-category appearance.
 bool                m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
-DgnCategoryId       m_categoryId;
-DgnSubCategoryId    m_subCategoryId;
+DgnCategoryId       m_categoryId;       //!< in memory only, can't change from element...
+DgnSubCategoryId    m_subCategoryId;    //!< in memory only, can't change per-face...
 ColorDef            m_color;
 double              m_transparency;
 DgnMaterialId       m_material;
@@ -39,7 +39,7 @@ public:
 DGNPLATFORM_EXPORT FaceAttachment ();
 DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR);
 
-//! Input ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams for anything other than sub-category, color, transparency, material.
+//! Input ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams for anything other than color, transparency, material.
 DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; 
 
 //! @private For QvOutput use only, other callers should use ToElemDisplayParams.

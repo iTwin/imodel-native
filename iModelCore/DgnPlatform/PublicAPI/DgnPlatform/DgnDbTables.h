@@ -118,9 +118,6 @@ private:
     Utf8String      m_nameSpace;
 
     friend struct DgnAuthority;
-    friend struct DgnElements;
-    friend struct DgnModel;
-    friend struct DgnModels;
     friend struct SystemAuthority;
 
     AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
@@ -141,10 +138,12 @@ public:
     Utf8StringCR GetValue() const {return m_value;}
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
     //! Get the namespace for this Code
-    Utf8StringCR GetNameSpace() const {return m_nameSpace;}
+    Utf8StringCR GetNamespace() const {return m_nameSpace;}
     //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
     DgnAuthorityId GetAuthority() const {return m_authority;}
     void RelocateToDestinationDb(DgnImportContext&);
+
+    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace); //!< @private DO NOT EXPORT
 };
 
 //=======================================================================================
@@ -263,7 +262,7 @@ public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
             DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-            DGNPLATFORM_EXPORT Utf8CP GetCodeNameSpace() const;
+            DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;

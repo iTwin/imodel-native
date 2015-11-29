@@ -135,7 +135,7 @@ void CloseComponentDb() {m_componentDb->CloseDb(); m_componentDb=nullptr;}
 void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode);}
 void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Client_ImportCM(Utf8CP componentName);
-void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8StringCR);
 
 void PlaceInstances(int ninstances, int boxCount, DPoint3d boxSize);
 void PlaceElements(int ninstances, int boxCount, DPoint3d boxSize);
@@ -208,19 +208,19 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 "(function () { \
     function makeBoxes(model, params, options) { \
         model.DeleteAllElements();\
-        var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
+        var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
         for (var i = 0; i < params.box_count; i++)\
             {\
             var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
-            var origin = new BentleyApi.Dgn.JsDPoint3d(i,i,i);\
-            var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
+            var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
+            var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
             builder.AppendBox(params.H, params.W, params.D); \
             builder.SetGeomStreamAndPlacement(element); \
             element.Insert(); \
             }\
         return 0;\
     } \
-    BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Boxes" "', makeBoxes); \
+    Bentley.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Boxes" "', makeBoxes); \
 })();\
 ");
     ASSERT_TRUE( wcm.IsValid() );
@@ -272,7 +272,7 @@ void ComponentModelPerfTest::Client_ImportCM(Utf8CP componentName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelPerfTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
+void ComponentModelPerfTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8StringCR ciname)
     {
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
@@ -288,8 +288,8 @@ void ComponentModelPerfTest::Client_SolveAndCapture(PhysicalElementCPtr& catalog
         }
 
     DgnDbStatus status;
-    catalogItem = componentModel->GetSolution(&status, catalogModel, newParameterValues);
-    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::GetSolution failed with error %x", status);
+    catalogItem = componentModel->CaptureSolution(&status, catalogModel, newParameterValues, ciname);
+    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::CaptureSolution failed with error %x", status);
     }
 
 //---------------------------------------------------------------------------------------
@@ -347,7 +347,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     parameters["box_count"] = boxCount;
     DgnElementId w1;
     PhysicalElementCPtr catalogItem;
-    Client_SolveAndCapture(catalogItem, *catalogModel, TEST_BOXES_COMPONENT_NAME, parameters, false);
+    Client_SolveAndCapture(catalogItem, *catalogModel, TEST_BOXES_COMPONENT_NAME, parameters, "catalog_item_name");
 
     DgnDbStatus status;
     YawPitchRollAngles placementAngles;
@@ -355,8 +355,9 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     //  Place instances of this solution
     for (int i=0; i<ninstances; ++i)
         {
-        DPoint3d placementOrigin = DPoint3d::From(-i,-i,-i);
-        ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem, placementOrigin, placementAngles, DgnElement::Code());
+        Placement3d placement;
+        placement.GetOriginR() = DPoint3d::From(-i,-i,-i);
+        ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem, placement);
         }
     timer.Stop();
     NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
