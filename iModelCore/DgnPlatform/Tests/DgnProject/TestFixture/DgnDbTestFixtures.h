@@ -57,11 +57,11 @@ public:
     DgnElementCPtr InsertElement(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnDbStatus* result = nullptr, DgnElement::Code elementCode = DgnElement::Code());
     DgnElementCPtr InsertElement(ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
-    DgnElementKey InsertElement2d(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementId InsertElement2d(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
 
-    DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
-    DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
-    DgnElementKey InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementId InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementId InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementId InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
 
     void setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
 };
