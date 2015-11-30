@@ -234,6 +234,45 @@ TEST_F (SchemaTest, ExpectReadOnly)
     ASSERT_TRUE (PropertyOfCustomAttribute != NULL);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaTest, RemoveBaseClassFromGrandChild)
+    {
+    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" version=\"01.00\" displayLabel=\"TestSchema\" description=\"Test Schema\" nameSpacePrefix=\"ts\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" >"
+        "    <ECClass typeName=\"GrandParent\" description=\"The base class\" displayLabel=\"GrandParent\" isDomainClass=\"True\">"
+        "       <ECProperty propertyName=\"PropA\" typeName=\"string\" displayLabel=\"PropA\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"Parent\" isDomainClass=\"True\">"
+        "        <BaseClass>GrandParent</BaseClass>"
+        "       <ECProperty propertyName=\"PropA\" typeName=\"string\" displayLabel=\"PropA\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"Child\" isDomainClass=\"True\">"
+        "        <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName=\"PropA\" typeName=\"string\" displayLabel=\"PropA\" />"
+        "    </ECClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECClassP child = schema->GetClassP("Child");
+    ECPropertyP prop = child->GetPropertyP("PropA", false);
+    ASSERT_TRUE(nullptr != prop);
+    prop = child->GetPropertyP("PropA", true);
+    ASSERT_TRUE(nullptr != prop);
+
+    ECClassP parent = schema->GetClassP("Parent");
+    child->RemoveBaseClass(*parent);
+    ECBaseClassesList baseClasses = child->GetBaseClasses();
+    ASSERT_TRUE(baseClasses.empty());
+    prop = child->GetPropertyP("PropA", false);
+    ASSERT_TRUE(nullptr != prop);
+    ASSERT_TRUE(nullptr == prop->GetBaseProperty());  // This shouldn't fail!
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -942,6 +981,24 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
 
     SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"test.xml").c_str ());
     EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenReferencingNonExistingUnitAttributesSchema)
+    {
+    Utf8CP schemaXML = "<ECSchema schemaName=\"ReferencesUnits\" nameSpacePrefix=\"ru\" Description=\"Schema that references the unavailable U_A.1.1 schema\" "
+        "version=\"1.1\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECSchemaReference name=\"Unit_Attributes\" version=\"01.01\" prefix=\"ua\" />"
+        "</ECSchema>";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
     }
 
 #if defined (NEEDSWORK_LIBXML)
@@ -2454,6 +2511,13 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECNameValidationTest, DisplayLabels)
     {
+    // Chinese chars...see TFS#298776...we are stuck with UTF-16 persistent encoding from long ago, should round-trip correctly with UTF-8
+    static const unsigned char s_chineseUtf8[] = { 0xE8, 0x88, 0xAC, 
+                                     0xE6, 0xA8, 0xA1,
+                                     0xE5, 0x9E, 0x8B,
+                                     '\0' };
+    // UTF-16: 822C 6A21 578B
+
     static const Utf8CP s_testValues[] =
         {
         "NothingSpecial", "NothingSpecial",
@@ -2466,6 +2530,7 @@ TEST_F (ECNameValidationTest, DisplayLabels)
         "__xNotAChar__", "__xNotAChar__",
         "__xTTTT__", "__xTTTT__",
         "__x####__", "__x__x0023____x0023____x0023____x0023____",
+        (Utf8CP)s_chineseUtf8, "__x822C____x6A21____x578B__",
         NULL, NULL
         };
 

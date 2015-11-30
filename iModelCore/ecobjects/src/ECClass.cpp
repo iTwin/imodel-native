@@ -287,7 +287,10 @@ void ECClass::OnBaseClassPropertyRemoved (ECPropertyCR baseProperty)
     InvalidateDefaultStandaloneEnabler();
     auto found = std::find_if (m_propertyList.begin(), m_propertyList.end(), [&baseProperty](ECPropertyCP arg) { return arg->GetBaseProperty() == &baseProperty; });
     if (m_propertyList.end() != found)
-        (*found)->SetBaseProperty (baseProperty.GetBaseProperty());
+        {
+        if (ECOBJECTS_STATUS_Success != (*found)->SetBaseProperty (baseProperty.GetBaseProperty()))
+            (*found)->SetBaseProperty(nullptr); // see comments in SetBaseProperty()
+        }
     else
         {
         for (ECClassP derivedClass : m_derivedClasses)
@@ -539,7 +542,7 @@ bool copyCustomAttributes
     if (sourceProperty->GetIsDisplayLabelDefined())
         destProperty->SetDisplayLabel(sourceProperty->GetInvariantDisplayLabel());
     destProperty->SetName(sourceProperty->GetName());
-    destProperty->SetIsReadOnly(sourceProperty->GetIsReadOnly());
+    destProperty->SetIsReadOnly(sourceProperty->IsReadOnlyFlagSet());
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
 
@@ -989,10 +992,12 @@ struct DuplicateInheritanceDetector
     static bool HasDuplicateInheritance(ECClassCP thisClass, const void* arg)
         {
         DuplicateInheritanceDetector const& det = *reinterpret_cast<DuplicateInheritanceDetector const*>(arg);
-        if (det.m_baseClassFound)
-            return true;
-        else if (ECClass::ClassesAreEqualByName(thisClass, &det.m_baseClass))
+        if (ECClass::ClassesAreEqualByName(thisClass, &det.m_baseClass))
+            {
+            if (det.m_baseClassFound)
+                return true;
             det.m_baseClassFound = true;
+            }
 
         return false;
         }
