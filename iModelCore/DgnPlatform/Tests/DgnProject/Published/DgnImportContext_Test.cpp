@@ -8,6 +8,7 @@
 #include "DgnHandlersTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/NullContext.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DgnTexture.h>
 

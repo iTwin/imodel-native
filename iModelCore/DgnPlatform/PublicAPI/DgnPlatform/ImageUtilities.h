@@ -87,7 +87,7 @@ struct ImageUtilities
     //! @param[in] quality     The image quality to preserve. A value in the range 0-100, inclusive. 100 is loss-less. Any value less than 100 is lossy. 
     //! @return non-zero if the image could not be written.
     //! @note the data in \a rgbBuffer must be in RGB format, have no alpha, and be in bottom-up row order. No other format is currently supported.
-    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToJpgBuffer(ByteStream& jpegData, ByteStream const& rgbBuffer, RgbImageInfo const& info, int quality);
+    DGNPLATFORM_EXPORT static BentleyStatus WriteImageToJpgBuffer(bvector<uint8_t>& jpegData, ByteStream const& rgbBuffer, RgbImageInfo const& info, int quality);
 /** @} */
 };
 

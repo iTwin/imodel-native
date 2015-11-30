@@ -347,16 +347,14 @@ static size_t computeBytesPerPixel (ImageUtilities::RgbImageInfo const& infoIn)
     return infoIn.hasAlpha? 4: 3;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus ImageUtilities::WriteImageToJpgBuffer (ByteStream& jpegData, ByteStream const& imageData, RgbImageInfo const& info, int quality)
+BentleyStatus ImageUtilities::WriteImageToJpgBuffer (bvector<uint8_t>& jpegData, ByteStream const& imageData, RgbImageInfo const& info, int quality)
     {
     BeJpegCompressor writer;
     return writer.Compress (jpegData, imageData.GetData(), info.width, info.height, computePixelFormat(info), quality);
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2013

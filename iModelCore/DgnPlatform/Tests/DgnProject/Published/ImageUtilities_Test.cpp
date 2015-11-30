@@ -35,19 +35,19 @@ TEST (ImageUtilities_Tests, Png)
         }
 
     BeFileName pngFileName;
-    BeTest::GetHost().GetOutputRoot (pngFileName);
-    pngFileName.AppendToPath (L"ImageUtilities_Tests.png");
+    BeTest::GetHost().GetOutputRoot(pngFileName);
+    pngFileName.AppendToPath(L"ImageUtilities_Tests.png");
     BeFile pngFile;
-    ASSERT_TRUE( pngFile.Create (pngFileName, /*createAlways*/true) == BeFileStatus::Success );
+    ASSERT_TRUE( pngFile.Create(pngFileName, /*createAlways*/true) == BeFileStatus::Success );
 
-    ASSERT_TRUE( ImageUtilities::WriteImageToPngFile (pngFile, testImage, info) == BSISUCCESS);
+    ASSERT_TRUE( ImageUtilities::WriteImageToPngFile(pngFile, testImage, info) == BSISUCCESS);
 
     ByteStream imageRead;
     ImageUtilities::RgbImageInfo infoRead;
-    memset (&infoRead, 0, sizeof(infoRead));
+    memset(&infoRead, 0, sizeof(infoRead));
     pngFile.Close();
-    ASSERT_TRUE( pngFile.Open (pngFileName, BeFileAccess::Read) == BeFileStatus::Success );
-    ASSERT_TRUE( ImageUtilities::ReadImageFromPngFile (imageRead, infoRead, pngFile) == BSISUCCESS );
+    ASSERT_TRUE( pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success );
+    ASSERT_TRUE( ImageUtilities::ReadImageFromPngFile(imageRead, infoRead, pngFile) == BSISUCCESS );
     ASSERT_EQ( infoRead.width, info.width );
     ASSERT_EQ( infoRead.height, info.height );
     ASSERT_EQ( infoRead.hasAlpha, info.hasAlpha );
@@ -59,37 +59,40 @@ TEST (ImageUtilities_Tests, Png)
 //---------------------------------------------------------------------------------------
 TEST (ImageUtilities_Tests, PngReadFromBuffer)
     {
-    bvector<uint8_t> testImage;
+    ByteStream testImage;
     ImageUtilities::RgbImageInfo info;
     info.isBGR = false;
     info.hasAlpha = true;
     info.isTopDown = true;
     info.width = 100;
     info.height = 200;
+
+    testImage.ReserveMemory(info.height * info.width * 4);
+    Byte* p=testImage.GetDataP();
     for (uint8_t y = 0; y<info.height; ++y)
         {
         for (uint8_t x = 0; x<info.width; ++x)
             {
-            testImage.push_back (y%256); // R
-            testImage.push_back (x%256); // G
-            testImage.push_back (0xff);  // B
-            testImage.push_back (0xff);  // A
+            *p++ = (y%256); // R
+            *p++ = (x%256); // G
+            *p++ = (0xff);  // B
+            *p++ = (0xff);  // A
             }
         }
 
     BeFileName pngFileName;
-    BeTest::GetHost().GetOutputRoot (pngFileName);
-    pngFileName.AppendToPath (L"ImageUtilities_Tests.png");
+    BeTest::GetHost().GetOutputRoot(pngFileName);
+    pngFileName.AppendToPath(L"ImageUtilities_Tests.png");
     BeFile pngFile;
-    ASSERT_TRUE( pngFile.Create (pngFileName, /*createAlways*/true) == BeFileStatus::Success );
+    ASSERT_TRUE( pngFile.Create(pngFileName, /*createAlways*/true) == BeFileStatus::Success );
 
-    ASSERT_TRUE( ImageUtilities::WriteImageToPngFile (pngFile, testImage, info) == BSISUCCESS);
+    ASSERT_TRUE( ImageUtilities::WriteImageToPngFile(pngFile, testImage, info) == BSISUCCESS);
 
-    bvector<uint8_t> imageRead;
+    ByteStream imageRead;
     ImageUtilities::RgbImageInfo infoRead;
-    memset (&infoRead, 0, sizeof(infoRead));
+    memset(&infoRead, 0, sizeof(infoRead));
     pngFile.Close();
-    ASSERT_TRUE( pngFile.Open (pngFileName, BeFileAccess::Read) == BeFileStatus::Success );
+    ASSERT_TRUE( pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success );
     bvector<Byte> readBuffer;
     ASSERT_TRUE(BeFileStatus::Success == pngFile.ReadEntireFile(readBuffer));
     ASSERT_TRUE(0 != readBuffer.size());
@@ -98,14 +101,14 @@ TEST (ImageUtilities_Tests, PngReadFromBuffer)
     ASSERT_EQ( infoRead.height, info.height );
     ASSERT_EQ( infoRead.hasAlpha, info.hasAlpha );
     ASSERT_TRUE( infoRead.isTopDown ); // PNG is always top-down
-    ASSERT_TRUE( imageRead == testImage ); // Since our input was RGBA, there was no transformation on the way out to the file.
+    ASSERT_TRUE( 0==memcmp(imageRead.GetDataP(), testImage.GetDataP(), imageRead.GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Umar.Hayat      11/2015
 //---------------------------------------------------------------------------------------
 TEST (ImageUtilities_Tests, JPG)
     {
-    bvector<uint8_t> testImage;
+    ByteStream testImage;
     ImageUtilities::RgbImageInfo info;
     info.isBGR = false;
     info.hasAlpha = false;
@@ -113,29 +116,32 @@ TEST (ImageUtilities_Tests, JPG)
     info.width = 100;
     info.height = 200;
 
+    testImage.ReserveMemory(info.height * info.width * 3);
+    Byte* p=testImage.GetDataP();
+
     for (uint8_t y = 0; y<info.height; ++y)
         {
         for (uint8_t x = 0; x<info.width; ++x)
             {
-            testImage.push_back (255-y%256); // R
-            testImage.push_back((x % 256) ^ 0xFF ); // G
-            testImage.push_back(0xff);  // B
+            *p++ =  (255-y%256); // R
+            *p++ = ((x % 256) ^ 0xFF ); // G
+            *p++ = (0xff);  // B
             }
         }
 
     BeFileName pngFileName;
-    BeTest::GetHost().GetOutputRoot (pngFileName);
-    pngFileName.AppendToPath (L"ImageUtilities_JPGTests.jpg");
+    BeTest::GetHost().GetOutputRoot(pngFileName);
+    pngFileName.AppendToPath(L"ImageUtilities_JPGTests.jpg");
     BeFile pngFile;
-    ASSERT_TRUE( pngFile.Create (pngFileName, /*createAlways*/true) == BeFileStatus::Success );
+    ASSERT_TRUE( pngFile.Create(pngFileName, /*createAlways*/true) == BeFileStatus::Success );
     
-    bvector<Byte> jpegData;
+    bvector<uint8_t> jpegData;
     ASSERT_TRUE(SUCCESS == ImageUtilities::WriteImageToJpgBuffer(jpegData, testImage, info, 100));
     ASSERT_TRUE(BeFileStatus::Success == pngFile.Write(NULL, &jpegData[0], (uint32_t)jpegData.size()));
 
-    bvector<uint8_t> imageRead;
+    ByteStream imageRead;
     ImageUtilities::RgbImageInfo infoRead;
-    memset (&infoRead, 0, sizeof(infoRead));
+    memset(&infoRead, 0, sizeof(infoRead));
     pngFile.Close();
     ASSERT_TRUE(pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success);
     bvector<Byte> readBuffer;
@@ -146,7 +152,7 @@ TEST (ImageUtilities_Tests, JPG)
     ASSERT_EQ(infoRead.height, info.height);
     ASSERT_EQ(infoRead.hasAlpha, info.hasAlpha);
     ASSERT_TRUE(infoRead.isTopDown); // PNG is always top-down
-    EXPECT_EQ(imageRead.size(), testImage.size());
+    EXPECT_EQ(imageRead.GetSize(), testImage.GetSize());
     // Why image is not same , qaulity was 100 so it should transform or change any thing
     //ASSERT_TRUE(imageRead == testImage); // Since our input was RGBA, there was no transformation on the way out to the file.
     }
