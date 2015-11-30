@@ -22,9 +22,16 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
     {
 public:
     DgnDbServerError() {}
-    DgnDbServerError(WebServices::WSErrorCR error) {}
-    DgnDbServerError(BeSQLite::DbResult error) {}
-    DgnDbServerError(BentleyStatus status) {}
+    DgnDbServerError(Utf8CP message)
+        {
+        m_message = message;
+        }
+
+    DgnDbServerError(WebServices::WSErrorCR error)
+        {
+        m_message = error.GetMessage();
+        m_description = error.GetDescription();
+        }
     };
 template<typename AnyValue> using DgnDbServerResult = DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>;
 template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>;

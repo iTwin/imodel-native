@@ -19,14 +19,14 @@ Utf8CP SCHEMA_ExtendedData_XML = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECClass typeName="ExtendedData" isDomainClass="True">
         <ECProperty propertyName="Content" typeName="string" />
     </ECClass>
-    <ECRelationshipClass typeName="ExtendedDataRelationship" isDomainClass="True" strength="embedding" strengthDirection="forward">
+<!-- WIP_ANYCLASS_REFACTORING   <ECRelationshipClass typeName="ExtendedDataRelationship" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <Source cardinality="(1,1)" polymorphic="True">
             <Class class="bsm:AnyClass" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="True">
             <Class class="ExtendedData" />
         </Target>
-    </ECRelationshipClass>
+    </ECRelationshipClass> -->
 </ECSchema>)xml";
 
 #define SCHEMA_ExtendedData                         "ExtendedData"
