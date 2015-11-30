@@ -46,6 +46,7 @@ struct SchemaXmlWriter
     protected:
         SchemaWriteStatus                   WriteSchemaReferences ();
         SchemaWriteStatus                   WriteClass (ECClassCR ecClass);
+        SchemaWriteStatus                   WriteEnumeration(ECEnumerationCR ecEnumeration);
         SchemaWriteStatus                   WriteCustomAttributeDependencies (IECCustomAttributeContainerCR container);
         SchemaWriteStatus                   WritePropertyDependencies (ECClassCR ecClass);
 

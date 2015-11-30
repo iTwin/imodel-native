@@ -1314,9 +1314,13 @@ TEST_F (SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     ECEntityClassP anotherBase;
     ECEntityClassP gadget;
     ECEntityClassP bolt;
+    ECEnumerationP enumeration;
     schema->CreateEntityClass (class1, "TestClass");
     schema->CreateEntityClass(gadget, "Gadget");
     schema->CreateEntityClass(bolt, "Bolt");
+    schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    enumeration->SetDisplayLabel("This is a display label.");
+    enumeration->SetDescription("This is a description.");
     schema2->CreateEntityClass(baseClass, "BaseClass");
     schema3->CreateEntityClass(anotherBase, "AnotherBase");
 

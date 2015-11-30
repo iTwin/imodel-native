@@ -149,6 +149,27 @@ ECObjectsStatus ECEnumeration::SetDescription (Utf8StringCR description)
     return ECObjectsStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                  11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECEnumeration::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+    {
+    Utf8CP elementName = EC_ENUMERATION_ELEMENT;
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+    
+    xmlWriter.WriteElementStart(elementName);
+    
+    xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
+    Utf8String backingTypeName = ECXml::GetPrimitiveTypeName(this->GetType());
+    xmlWriter.WriteAttribute(BACKING_TYPE_NAME_ATTRIBUTE, backingTypeName.c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
+    if (GetIsDisplayLabelDefined())
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+    
+    //WriteCustomAttributes (xmlWriter);
+    xmlWriter.WriteElementEnd();
+    return status;
+    }
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 

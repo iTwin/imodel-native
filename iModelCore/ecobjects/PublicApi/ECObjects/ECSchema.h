@@ -1328,6 +1328,8 @@ struct ECEnumeration
     {
     //__PUBLISH_SECTION_END__
 friend struct ECSchema;
+friend struct SchemaXmlWriter;
+friend struct SchemaXmlReader;
 
     private:
         ECSchemaCR  m_schema;
@@ -1345,6 +1347,7 @@ friend struct ECSchema;
         // schemas index enumeration by name so publicly name can not be reset
         ECObjectsStatus                     SetName(Utf8StringCR name);
 
+        SchemaWriteStatus                   _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     //__PUBLISH_SECTION_START__
     public:
         //! The ECSchema that this enumeration is defined in

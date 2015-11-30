@@ -677,10 +677,23 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
     WritePropertyDependencies(ecClass);
     WriteCustomAttributeDependencies(ecClass);
 
-    ecClass._WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
-
-    return status;
+    return ecClass._WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus SchemaXmlWriter::WriteEnumeration(ECEnumerationCR ecEnumeration)
+    {
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+    // don't write any enumerations that aren't in the schema we're writing.
+    if (&(ecEnumeration.GetSchema()) != &m_ecSchema)
+        return status;
+
+    //WriteCustomAttributeDependencies(ecEnumeration);
+    return ecEnumeration._WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -729,6 +742,17 @@ SchemaWriteStatus SchemaXmlWriter::Serialize()
 
     WriteCustomAttributeDependencies(m_ecSchema);
     m_ecSchema.WriteCustomAttributes(m_xmlWriter);
+
+    for (ECEnumerationCP pEnum : m_ecSchema.GetEnumerations())
+        {
+        if (NULL == pEnum)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            WriteEnumeration(*pEnum);
+        }
 
     std::list<ECClassP> sortedClasses;
     // sort the classes by name so the order in which they are written is predictable.
