@@ -993,12 +993,12 @@ class DgnPlatformTestRunner:
 
         # 3. Strip results to report only important information.
         if shouldTruncateResults:
-            result = self.TruncateResults (True, False, True, self.m_testRunningType)      # Don't print results right now print them after we do everything else.
+            result = self.TruncateResults (False, False, True, self.m_testRunningType)      # Don't print results right now print them after we do everything else.
         else:
             result = self.PrintResultsAndUnfinishedTests (resultsLocation, fileWithAllTests)
 
         if not self.m_waitToSum:
-            result = self.TruncateResults (True, True, True, self.m_testRunningType)
+            result = self.TruncateResults (False, True, True, self.m_testRunningType)
 
         if (0 != result and 0 == testReturnCode) or (0 == result and 0 != testReturnCode):
             Log ("Error : Inconsistency in return codes of the tests being run and the process that checks the result.\n")
