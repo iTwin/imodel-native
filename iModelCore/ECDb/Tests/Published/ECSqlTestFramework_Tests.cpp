@@ -341,15 +341,6 @@ TEST_F (ECSqlSelectTestFramework, WhereRelationshipWithAdditionalPropsTests)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlSelectTestFramework, WhereRelationshipWithAnyClassConstraintTests)
-    {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFramework, WhereStructTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
@@ -454,15 +445,6 @@ TEST_F (ECSqlInsertTestFramework, RelationshipEndTableMappingTests)
 TEST_F (ECSqlInsertTestFramework, RelationshipLinkTableMappingTests)
     {
     auto dataset = ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (GetECDb());
-    RunTest (dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  12/13
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlInsertTestFramework, RelationshipWithAnyClassConstraintTests)
-    {
-    auto dataset = ECSqlInsertTestDataset::RelationshipWithAnyClassConstraintTests (GetECDb());
     RunTest (dataset);
     }
 
@@ -598,15 +580,6 @@ TEST_F (ECSqlUpdateTestFramework, RelationshipLinkTableMappingTests)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, RelationshipWithAnyClassConstraintTests)
-    {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipWithAnyClassConstraintTests (PerClassRowCount);
-    RunTest (dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFramework, RelationshipWithAdditionalPropsTests)
     {
     auto dataset = ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (GetECDb(), PerClassRowCount);
@@ -709,15 +682,6 @@ TEST_F (ECSqlUpdateTestFramework, WhereRelationshipLinkTableMappingTests)
 TEST_F (ECSqlUpdateTestFramework, WhereRelationshipWithAdditionalPropsTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlUpdateTestFramework, WhereRelationshipWithAnyClassConstraintTests)
-    {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -855,15 +819,6 @@ TEST_F (ECSqlDeleteTestFramework, WhereRelationshipLinkTableMappingTests)
 TEST_F (ECSqlDeleteTestFramework, WhereRelationshipWithAdditionalPropsTests)
     {
     auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
-    RunTest (dataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlDeleteTestFramework, WhereRelationshipWithAnyClassConstraintTests)
-    {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 

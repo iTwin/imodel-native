@@ -9,10 +9,12 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <vector>
+#include <bitset>      
 #include "Exp.h"
 #include "OptionsExp.h"
 #include "ECSqlPreparedStatement.h"
 #include "NativeSqlBuilder.h"
+ 
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -303,6 +305,12 @@ public:
     //+===============+===============+===============+===============+===============+======
     struct ExpScope
         {
+        enum class ExtendOptions
+            {
+            SkipTableAliasWhenPreparingDeleteWhereClause = 0,
+            Unused1 = 1,
+            Unused2 = 2,
+            };
     private:
         ExpCR m_exp;
         ECSqlType m_ecsqlType;
@@ -310,13 +318,21 @@ public:
         OptionsExp const* m_options;
         int m_nativeSqlSelectClauseColumnCount;
         ECSqlType DetermineECSqlType (ExpCR exp) const;
+        std::bitset<3> m_extendOptions;
     public:
         ExpScope (ExpCR exp, ExpScope const* parent, OptionsExp const* options);
 
         ExpScope const* GetParent() const { return m_parent; }
         ExpCR GetExp() const { return m_exp; }
         OptionsExp const* GetOptions() const { return m_options; }
-
+        void SetExtendedOption(ExtendOptions option, bool value)
+            {
+            m_extendOptions[static_cast<int>(option)] = value;
+            }
+        bool GetExtendedOption(ExtendOptions option) const
+            {
+            return m_extendOptions[static_cast<int>(option)];
+            }
         bool IsRootScope() const { return m_parent == nullptr; }
         //SELECT only
         void IncrementNativeSqlSelectClauseColumnCount (size_t value);

@@ -247,7 +247,7 @@ TEST_F(ECDbInstances, DeleteECInstances)
 
 TEST_F(ECDbInstances, QuoteTest)
     {
-    ECDb& ecdb = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDb& ecdb = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     ECSqlStatement stmt1;
     ASSERT_TRUE (stmt1.Prepare (ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')") == ECSqlStatus::Success);
@@ -364,7 +364,7 @@ Utf8CP nonNullPropertyName
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
     {
-    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
+    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     Utf8CP const testClassName = "PSA";
     Utf8CP const nonNullPropertyName = "I";
@@ -411,7 +411,7 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
     {
-    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
+    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     Utf8CP const testClassName = "PSA";
     Utf8CP const nonNullPropertyName = "I";
@@ -627,7 +627,7 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbInstances, UpdateArrayProperty)
     {
-    ECDb&db = SetupECDb ("updateArrayProperty.ecdb", L"KitchenSink.01.00.ecschema.xml", false);
+    ECDb&db = SetupECDb ("updateArrayProperty.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
 
     ECN::ECClassCP testClass = db.Schemas ().GetECClass ("KitchenSink", "TestClass");
     ASSERT_TRUE (testClass != nullptr);
@@ -836,13 +836,13 @@ TEST_F(ECDbInstances, UpdateECInstances)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, FindECInstances)
     {
-    ECDb& db = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDb& db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
 
-    IECInstancePtr   resultInstance;
-    ECValue          v;
-    int              rows;
+    IECInstancePtr resultInstance = nullptr;
+    ECValue v;
+    int rows;
 
-    ECClassKeys    classKeys;
+    ECClassKeys classKeys;
     db.Schemas().GetECClassKeys (classKeys, "StartupCompany");
     for (ECClassKey ecClassKey : classKeys)
         {
@@ -916,7 +916,7 @@ TEST_F(ECDbInstances, FindECInstances)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     {
-    ECDb& ecdb = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDb& ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
 
     bvector<IECInstancePtr> instances;
     ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Foo"));
@@ -981,7 +981,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, SelectClause)
     {
-    ECDb& db = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDb& db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
 
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
     ASSERT_TRUE (employee != nullptr);
@@ -1125,7 +1125,7 @@ TEST_F (ECDbInstances, DeleteWithRelationshipBetweenStructs)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     {
-    ECDb& db = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
 
     //Get two classes and create instance of second
@@ -1187,7 +1187,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbInstances, DomainCustomAttributeStructCombinations)
 {
-    ECDb& db = SetupECDb("ClassCombinations.ecdb", L"TryClassCombinations.01.00.ecschema.xml", false);
+    ECDb& db = SetupECDb("ClassCombinations.ecdb", BeFileName(L"TryClassCombinations.01.00.ecschema.xml"));
 
     
     //Trying all combinations where IsDomain is True. IsDomain False are Abstract classes and are not instantiated.
@@ -1324,5 +1324,96 @@ TEST_F(ECDbInstances, UpdateRelationshipProperty)
     actualLabel = GetLabelPropertyFromRelation(db, relKey.GetECInstanceId());
     ASSERT_STREQ(expectedLabel.c_str(), actualLabel.c_str());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValidateCGPoint(JsonValueCR expectedValue, JsonValueCR actualValue)
+    {
+    ASSERT_TRUE(!expectedValue.isNull());
+
+    for (int ii = 0; ii < 3; ii++)
+        {
+        double expectedCoord = expectedValue[ii].asDouble();
+        double actualCoord = actualValue[ii].asDouble();
+        ASSERT_EQ(expectedCoord, actualCoord);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValidateCGPointArray(JsonValueCR expectedValue, JsonValueCR actualValue)
+    {
+    ASSERT_TRUE(!expectedValue.isNull());
+    ASSERT_TRUE(expectedValue.isArray());
+    ASSERT_TRUE(expectedValue.size() == actualValue.size());
+
+    for (int ii = 0; ii < (int) expectedValue.size(); ii++)
+        ValidateCGPoint(expectedValue[ii], actualValue[ii]);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValidateSpatialInstance(ECDbR db, ECInstanceKey spatialInstanceKey, JsonValueCR expectedJsonValue)
+    {
+    JsonReader reader(db, spatialInstanceKey.GetECClassId());
+    Json::Value actualJsonValue;
+    BentleyStatus status = reader.ReadInstance(actualJsonValue, spatialInstanceKey.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    ASSERT_EQ(SUCCESS, status);
+
+    //Utf8String expectedStrValue = Json::StyledWriter().write(expectedJsonValue);
+    //Utf8String actualStrValue = Json::StyledWriter().write(actualJsonValue);
+    //ASSERT_STREQ(expectedStrValue.c_str(), actualStrValue.c_str());
+
+    ValidateCGPoint(expectedJsonValue["Center"]["Coordinate"]["xyz"], actualJsonValue["Center"]["Coordinate"]["xyz"]);
+    ValidateCGPoint(expectedJsonValue["LLP"]["Coordinate"]["xyz"], actualJsonValue["LLP"]["Coordinate"]["xyz"]);
+    ValidateCGPoint(expectedJsonValue["URP"]["Coordinate"]["xyz"], actualJsonValue["URP"]["Coordinate"]["xyz"]);
+
+    ValidateCGPointArray(expectedJsonValue["Location"]["Polygon"]["Point"], actualJsonValue["Location"]["Polygon"]["Point"]);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                              Ramanujam.Raman                   10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP_MERGE
+TEST(ECDbInstances, CommonGeometryJsonSerialization)
+    {
+    ECDbTestProject saveTestProject;
+    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+
+    ECDb db;
+    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn_Yes));
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+
+    BeFileName pathname;
+    BeTest::GetHost().GetDocumentsRoot(pathname);
+    pathname.AppendToPath(L"DgnDb");
+    pathname.AppendToPath(L"CommonGeometry.json");
+
+    rapidjson::Document expectedRapidJsonValue;
+    ReadJsonInputFromFile(expectedRapidJsonValue, pathname);
+
+    Json::Value expectedJsonCppValue;
+    ReadJsonInputFromFile(expectedJsonCppValue, pathname);
+
+    ECClassCP spatialClass = db.GetEC().GetClassLocater().LocateClass(L"StartupCompany", L"SpatialLocation");
+    ASSERT_NE(nullptr, spatialClass);
+
+    // Insert using RapidJson API
+    JsonInserter inserter(db, *spatialClass);
+    ECInstanceKey rapidJsonInstanceKey;
+    ASSERT_EQ(SUCCESS, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
+
+    // Insert using JsonCpp API
+    ECInstanceKey jsonCppInstanceKey;
+    ASSERT_EQ(SUCCESS, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
+
+    // Validate
+    ValidateSpatialInstance(db, rapidJsonInstanceKey, expectedJsonCppValue);
+    ValidateSpatialInstance(db, jsonCppInstanceKey, expectedJsonCppValue);
+    }
+#endif
 
 END_ECDBUNITTESTS_NAMESPACE

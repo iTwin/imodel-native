@@ -51,37 +51,59 @@
 
     @section ECSqlStatementDiagnostics ECSqlStatement Diagnostics
 
+    ### How to enable the diagnostics
+    - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
+    - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the specified names below
+    and assign it the log severity @c @b DEBUG.
+
     ### ECSQL Preparation Diagnostics
+    Logger name: <b>Diagnostics.ECSqlStatement.Prepare</b>
+
     Preparing an @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" can be expensive. So applications should always consider to reuse
     ECSqlStatements where applicable.
 
     In order to help applications analyze which statements to reuse and which not, applications can turn on
-    ECSqlStatement preparation diagnostics:
-    - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
-    - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the
-    name <b>Diagnostics.ECSqlStatement.Prepare</b> and assign it the log severity @c @b TRACE.
-    With that enabled, %ECDb logs all prepared ECSQL statements (i.e. all calls to BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare). For each call
-    the ECSQL string and the preparation time (in @b milliseconds) is logged.
+    ECSqlStatement preparation diagnostics. With that enabled, %ECDb logs all prepared ECSQL statements (i.e. all calls to 
+    BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare). For each call  the ECSQL string and the preparation time 
+    (in @b milliseconds) is logged.
     The log output can then be analyzed for repetition patterns.
+
+    ### ECSqlStatementCache Diagnostics
+    Logger name: <b>Diagnostics.ECSqlStatement.Cache</b>
+
+    The @ref BentleyApi::BeSQLite::EC::ECSqlStatementCache "ECSqlStatementCache" helps prevent unnecessary repreparations of ECSQL. However, 
+    the cache has to remove statements from the cache if the cache size is exceeded, leading to repreparations. This diagnostics
+    captures the activity in the cache.
 
     #### Example log4cxx config snippet
 
     @code{.html}
     ...
     <appender name="ECSqlStatementPrepareDiagnostics" class="org.apache.log4j.FileAppender">
-    <param name="File" value="${LOCALAPPDATA}\\MyApp\\Logs\\ecsqlstatement_prepare_diagnostics.log"/>
-    <param name="createpath" value="true"/>
-    <layout class="org.apache.log4j.PatternLayout">
-    <param name="ConversionPattern" value="%m%n"/>
-    </layout>
-    <param name="Append" value="false"/>
+       <param name="File" value="${LOCALAPPDATA}\\MyApp\\Logs\\ecsqlstatement_prepare_diagnostics.log"/>
+       <param name="createpath" value="true"/>
+       <layout class="org.apache.log4j.PatternLayout"> <param name="ConversionPattern" value="%m%n"/> </layout>
+       <param name="Append" value="false"/>
+    </appender>
+
+    <appender name="ECSqlStatementCacheDiagnostics" class="org.apache.log4j.FileAppender">
+       <param name="File" value="${LOCALAPPDATA}\\MyApp\\Logs\\ecsqlstatement_cache_diagnostics.log"/>
+       <param name="createpath" value="true"/>
+       <layout class="org.apache.log4j.PatternLayout"> <param name="ConversionPattern" value="%m%n"/> </layout>
+       <param name="Append" value="false"/>
     </appender>
     ...
     <logger name="Diagnostics.ECSqlStatement.Prepare">
-    <priority value="trace" />
-    <appender-ref ref="ECSqlStatementPrepareDiagnostics"/>
+       <priority value="debug" />
+       <appender-ref ref="ECSqlStatementPrepareDiagnostics"/>
+    </logger>
+
+    <logger name="Diagnostics.ECSqlStatement.Cache" additivity="false">
+       <priority value="debug" />
+       <appender-ref ref="ECSqlStatementCacheDiagnostics"/>
     </logger>
     ...
+
     @endcode
 
     */

@@ -145,9 +145,6 @@
     <ClCompile Include="Published\JsonUpdaterTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlStatementTestFixture.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
@@ -175,8 +172,20 @@
     <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECDbJoinedTable_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
     <ClCompile Include="Published\ECDbSql_Test.cpp">
       <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceJoinedTableTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceSharedTableTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECDbFileInfoTests.cpp">
+      <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

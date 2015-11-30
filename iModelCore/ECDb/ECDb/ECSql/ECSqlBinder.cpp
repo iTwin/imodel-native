@@ -131,7 +131,8 @@ Statement::MakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy 
 //---------------------------------------------------------------------------------------
 bool ECSqlParameterMap::Contains (int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const
     {
-    return ecsqlParameterIndex = GetIndexForName (ecsqlParameterName) > 0;
+    ecsqlParameterIndex = GetIndexForName(ecsqlParameterName);
+    return ecsqlParameterIndex > 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -188,12 +189,19 @@ int ECSqlParameterMap::GetIndexForName (Utf8CP ecsqlParameterName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder)
+ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8CP parameterName)
     {
     BeAssert(ecsqlParameterIndex != 0);
     if (ecsqlParameterIndex == 0)
         return nullptr;
-    
+
+    ECSqlBinder* binderExist = nullptr;
+    if (!Utf8String::IsNullOrEmpty(parameterName) && TryGetBinder(binderExist, parameterName))
+        {
+        BeAssert(false && "Binder with name already exist");
+        return nullptr;
+        }
+
     m_binders.insert(m_binders.begin() + (ecsqlParameterIndex - 1), &binder);
     for (auto& binder : m_nameToIndexMapping)
         {
@@ -202,6 +210,9 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
             binder.second = binder.second + 1;
             }
         }
+
+    if (!Utf8String::IsNullOrEmpty(parameterName))
+        m_nameToIndexMapping[parameterName] = ecsqlParameterIndex ;
 
     return &binder;
     }
@@ -222,7 +233,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
 
     auto& baseParameterMap = baseStmt->GetPreparedStatementP()->GetParameterMapR();
     auto& primaryMap = joinInfo->GetParameterMap().GetPrimary();
-    for (auto oi = primaryMap.First(); oi != primaryMap.Last(); oi++)
+    for (auto oi = primaryMap.First(); oi <= primaryMap.Last(); oi++)
         {
         auto param = primaryMap.Find(oi);
         if (auto orignalParam = param->GetOrignalParameter())
@@ -280,9 +291,31 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
                     return st;
                     }
 
-                AddProxyBinder(static_cast<int>(orignalParam->GetIndex()), *binder);
+                AddProxyBinder(static_cast<int>(orignalParam->GetIndex()), *binder, orignalParam->GetName());
                 }
             }
+        }
+
+    auto& orignalMap = joinInfo->GetParameterMap().GetOrignal();
+    for (auto oi = orignalMap.First(); oi <= orignalMap.Last(); oi++)
+        {
+        auto param = orignalMap.Find(oi);
+        if (!param  || !param->IsNamed())
+            continue;
+
+        ECSqlBinder* abinder = nullptr;
+        ECSqlBinder* bbinder = nullptr;
+
+        baseParameterMap.TryGetBinder(abinder, param->GetName());        
+        TryGetBinder(bbinder, param->GetName());
+
+        if (abinder == nullptr && bbinder == nullptr)
+            {
+            BeAssert(false && "Binding is not valid for joined table");
+            return ECSqlStatus::Error;
+            }
+        if (abinder != nullptr && bbinder == nullptr)
+            AddProxyBinder(static_cast<int>(param->GetIndex()), *abinder, param->GetName());
         }
 
     return st;

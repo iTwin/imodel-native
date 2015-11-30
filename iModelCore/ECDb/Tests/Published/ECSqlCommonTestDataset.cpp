@@ -142,6 +142,36 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ecsql.Sprintf ("%s WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
+        ecsql.Sprintf("%s WHERE 8 %% 3 = 2", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE 8 %% 2 = 0", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE (I&1)=1 AND ~(I|2=I)", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 5 + (4&1) = 5", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 5 + 4 & 1 = 1", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 5 + 4 | 1 = 9", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 4|1&1 = 5", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE (4|1)&1 = 1", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 4^1 = 0", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
+        ecsql.Sprintf("%s WHERE 5^4 = 4", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::NotYetSupported);
+
         //unary predicates
         ecsql.Sprintf("%s WHERE True", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
@@ -362,6 +392,47 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (DateTime (2012,1,1))));
         }
 
+        ecsql.Sprintf("%s WHERE GetX(P2D) >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE GetY(P2D) >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE GetZ(P2D) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+        
+        ecsql.Sprintf("%s WHERE GetX(P3D) >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE GetY(P3D) >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE GetZ(P3D) >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE GetX(P2D) >= GetX(P3D) AND GetY(P2D) >= GetY(P3D)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE GetX(?) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE GetY(?) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE GetZ(?) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE GetX(NULL) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE GetX(Bi) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE GetX(D) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE GetX(S) >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
         }
 
     return dataset;
@@ -601,146 +672,6 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
         ecsql.Sprintf ("%s WHERE ECInstanceId > %lld", relClassECSqlStub.c_str (), ecInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-        }
-
-    return dataset;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  01/14
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType ecsqlType, ECDbR ecdb, int rowCountPerClass)
-    {
-    ECSqlTestDataset dataset;
-
-    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
-
-    ECInstanceId pECInstanceId;
-    ECInstanceId psaECInstanceId (1000LL); //can be fictitious as it is not checked by ECDb
-    ECInstanceId psaHasAnyClassECInstanceId;
-    ECInstanceId anyClassHasPECInstanceId;
-    {
-    Savepoint savepoint (ecdb, "Inserting test instances");
-    pECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'test instance')");
-
-    Utf8String ecsql;
-    ecsql.Sprintf ("INSERT INTO ecsql.PSAHasAnyClass_0N (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, 200, %lld)", psaECInstanceId.GetValue(), pClassId);
-    psaHasAnyClassECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsql.c_str ());
-
-    //this is an end-table mapping. Therefore the source ecinstanceid must match the end table's row
-    ecsql.Sprintf ("INSERT INTO ecsql.AnyClassHasP_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %lld, %lld)", psaECInstanceId.GetValue(), psaClassId, pECInstanceId.GetValue());
-    anyClassHasPECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsql.c_str ());
-
-    if (!pECInstanceId.IsValid () || !psaHasAnyClassECInstanceId.IsValid () || !anyClassHasPECInstanceId.IsValid ())
-        {
-        savepoint.Cancel ();
-        return dataset;
-        }
-
-    savepoint.Commit ();
-    }
-
-    //******* AnyClass on Target end ***********
-    auto psaHasAnyClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSAHasAnyClass_0N");
-    Utf8String psaHasAnyClassECSqlStub;
-    if (ToECSql (psaHasAnyClassECSqlStub, ecsqlType, *psaHasAnyClass, false))
-        {
-        Utf8String ecsql;
-
-        //no where clause
-        AddTestItem (dataset, ecsqlType, psaHasAnyClassECSqlStub.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld", psaHasAnyClassECSqlStub.c_str (), psaECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld + 1", psaHasAnyClassECSqlStub.c_str (), psaECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = 200", psaHasAnyClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = 201", psaHasAnyClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE ECInstanceId = %lld", psaHasAnyClassECSqlStub.c_str (), psaHasAnyClassECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE ECInstanceId <> %lld", psaHasAnyClassECSqlStub.c_str (), psaHasAnyClassECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld", psaHasAnyClassECSqlStub.c_str (), psaClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        //source ecclass is PSA, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld", psaHasAnyClassECSqlStub.c_str (), pClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        //source ecclass is PSA, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE SourceECClassId = 99999999999", psaHasAnyClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE TargetECClassId = %lld", psaHasAnyClassECSqlStub.c_str (), pClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        //target ecclass for the test instance is P, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE TargetECClassId = %lld", psaHasAnyClassECSqlStub.c_str (), psaClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        //target ecclass for the test instance is P, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE TargetECClassId = 99999999999", psaHasAnyClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-        }
-
-    //******* AnyClass on Source end ***********
-    auto anyHasPClass = ecdb.Schemas().GetECClass("ECSqlTest", "AnyClassHasP_0N");
-    Utf8String anyHasPClassECSqlStub;
-    if (ToECSql (anyHasPClassECSqlStub, ecsqlType, *anyHasPClass, false))
-        {
-        Utf8String ecsql;
-
-        //empty where clause
-        AddTestItem (dataset, ecsqlType, anyHasPClassECSqlStub.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld", anyHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId <> %lld", anyHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %lld", anyHasPClassECSqlStub.c_str (), pECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %lld + 1", anyHasPClassECSqlStub.c_str (), pECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE ECInstanceId = %lld", anyHasPClassECSqlStub.c_str (), anyClassHasPECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        ecsql.Sprintf ("%s WHERE ECInstanceId <> %lld", anyHasPClassECSqlStub.c_str (), anyClassHasPECInstanceId.GetValue ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld", anyHasPClassECSqlStub.c_str (), psaClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        //source ecclass for the test instance is PSA, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld", anyHasPClassECSqlStub.c_str (), pClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        //source ecclass for the test instance is PSA, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE SourceECClassId = 99999999999", anyHasPClassECSqlStub.c_str ());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        ecsql.Sprintf ("%s WHERE TargetECClassId = %lld", anyHasPClassECSqlStub.c_str (), pClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
-
-        //target ecclass is P, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE TargetECClassId = %lld", anyHasPClassECSqlStub.c_str (), psaClassId);
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
-        //target ecclass is P, so any other class id should result in 0 deletes
-        ecsql.Sprintf ("%s WHERE TargetECClassId = 99999999999", anyHasPClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 

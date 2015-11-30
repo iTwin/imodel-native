@@ -248,7 +248,7 @@ bool IClassMap::IsParentOfJoinedTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::FindRootOfJoinedTable() const
+IClassMap const* IClassMap::FindParentOfJoinedTable() const
     {
     auto current = this;
     if (!current->IsJoinedTable())
@@ -331,6 +331,56 @@ Utf8String IClassMap::ToString() const
 
     return str;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus IClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR ecclass, Utf8CP tablePrefix)
+    {
+    if (!Utf8String::IsNullOrEmpty(tablePrefix))
+        tableName.assign(tablePrefix);
+    else
+        {
+        if (SUCCESS != DetermineTablePrefix(tableName, ecclass))
+            return ERROR;
+        }
+
+    tableName.append("_").append(ecclass.GetName());
+
+    if (IsMapToSecondaryTableStrategy(ecclass))
+        tableName.append(TABLESUFFIX_STRUCTARRAY);
+    
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
+    {
+    ECSchemaCR schema = ecclass.GetSchema();
+    ECDbSchemaMap customSchemaMap;
+
+    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
+        {
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECOBJECTS_STATUS_Success)
+            return ERROR;
+        }
+
+    if (tablePrefix.empty())
+        {
+        Utf8StringCR namespacePrefix = schema.GetNamespacePrefix();
+        if (!namespacePrefix.empty())
+            tablePrefix = namespacePrefix;
+        else
+            tablePrefix = schema.GetName();
+        }
+
+    return SUCCESS;
+    }
+
 
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
@@ -467,35 +517,37 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, C
     if (isJoinedTable)
         {
         PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
-        auto primaryKeyColumn = parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        auto foreignKeyColumn = GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        PRECONDITION(primaryKeyColumn != nullptr, MapStatus::Error);
-        PRECONDITION(foreignKeyColumn != nullptr, MapStatus::Error);
-        bool createFKConstraint = true;
-        for (auto constraint : GetTable().GetConstraints())
+        if (&parentClassMap->GetTable() != &GetTable())
             {
-            if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
+            auto primaryKeyColumn = parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            auto foreignKeyColumn = GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            PRECONDITION(primaryKeyColumn != nullptr, MapStatus::Error);
+            PRECONDITION(foreignKeyColumn != nullptr, MapStatus::Error);
+            bool createFKConstraint = true;
+            for (auto constraint : GetTable().GetConstraints())
                 {
-                auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
-                if (&fk->GetTargetTable() == &parentClassMap->GetTable())
+                if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
                     {
-                    if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
+                    auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
+                    if (&fk->GetTargetTable() == &parentClassMap->GetTable())
                         {
-                        createFKConstraint = false;
-                        break;
+                        if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
+                            {
+                            createFKConstraint = false;
+                            break;
+                            }
                         }
                     }
                 }
-            }
 
-        if (createFKConstraint)
-            {
-            auto fkConstraint = GetTable().CreateForeignKeyConstraint(parentClassMap->GetTable());
-            fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
-            fkConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+            if (createFKConstraint)
+                {
+                auto fkConstraint = GetTable().CreateForeignKeyConstraint(parentClassMap->GetTable());
+                fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
+                fkConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                }
             }
         }
-		
 	if (schemaImportContext != nullptr)
         return ProcessStandardKeySpecifications(*schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
 
@@ -641,6 +693,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
         std::vector<ECDbSqlColumn const*> totalColumns;
         NativeSqlBuilder whereExpression;
 
+        bset<ECDbSqlTable const*> involvedTables;
         for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
             PropertyMapCP propertyMap = GetPropertyMap(propertyAccessString.c_str());
@@ -670,7 +723,6 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            totalColumns.insert(totalColumns.end(), columns.begin(), columns.end());
             for (ECDbSqlColumn const* column : columns)
                 {
                 if (column->GetPersistenceType() == PersistenceType::Virtual)
@@ -682,6 +734,32 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                     return ERROR;
                     }
 
+                ECDbSqlTable const& table = column->GetTable();
+                if (!involvedTables.empty() && involvedTables.find(&table) == involvedTables.end())
+                    {
+                    if (Enum::Intersects(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
+                        {
+                        issues.Report(ECDbIssueSeverity::Error,
+                                      "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
+                                      "The properties that make up the index are mapped to different tables because the MapStrategy option '" USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS 
+                                      "' or '" USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES "'  is applied to this class hierarchy.",
+                                      i, GetClass().GetFullName());
+                        }
+                    else
+                        {
+                        issues.Report(ECDbIssueSeverity::Error,
+                                      "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
+                                      "The properties that make up the index are mapped to different tables.",
+                                      i, GetClass().GetFullName());
+
+                        BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable MapStrategy option is not applied.");
+                        }
+
+                    return ERROR;
+                    }
+
+                involvedTables.insert(&table);
+                totalColumns.push_back(column);
                 switch (indexInfo->GetWhere())
                     {
                         case EC::ClassIndexInfo::WhereConstraint::NotNull:
@@ -705,7 +783,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 }
             }
 
-        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), *m_table, indexInfo->GetName(), indexInfo->GetIsUnique(),
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), GetRootTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, whereExpression.ToString(),
                                                                       false, GetClass().GetId()))
             {
@@ -858,11 +936,37 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
-    auto& pm = mapInfo.GetPropertyMaps(false);
-    if (pm.empty())
+    if (parentClassMap)
+        m_parentMapClassId = parentClassMap->GetClass().GetId();
+
+    auto& propertyMapInfos = mapInfo.GetPropertyMaps(true);
+    if (propertyMapInfos.empty())
+        {
         SetTable(const_cast<ECDbSqlTable*>(GetECDbMap().GetSQLManager().GetNullTable()));
+        }
     else
-        SetTable(const_cast<ECDbSqlTable*>(&(pm.front()->GetColumn().GetTable())));
+        {
+        //! Following code determine table for a classMap which could be different from what orignally set. 
+        //! We do not store primary table for a classmap.
+        //! the best shot of getting it right is to look for ECInstanceId table.
+
+        ECDbPropertyMapInfo const* ecInstanceIdPropertyMapInfo = nullptr;
+        for (auto propertyMapInfo : propertyMapInfos)
+            {
+            if (propertyMapInfo->GetColumn().GetKind() == ColumnKind::ECInstanceId)
+                {
+                ecInstanceIdPropertyMapInfo = propertyMapInfo;
+                break;
+                }
+            }
+
+        if (ecInstanceIdPropertyMapInfo == nullptr)
+            {
+            SetTable(const_cast<ECDbSqlTable*>(&(propertyMapInfos.front()->GetColumn().GetTable())));
+            }
+        else
+            SetTable(const_cast<ECDbSqlTable*>(&(ecInstanceIdPropertyMapInfo->GetColumn().GetTable())));
+        }
 
     if (GetECInstanceIdPropertyMap() != nullptr)
         return BentleyStatus::ERROR;

@@ -60,10 +60,11 @@ private:
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
 
-    bool ValidateChildStrategy(UserECDbMapStrategy const& rootUserStrategy, UserECDbMapStrategy const& childStrategy) const;
+    bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
 
     BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, Utf8CP customAttributeName);
-    static Utf8String ResolveTablePrefix (ECN::ECClassCR ecClass);
+
+    BentleyStatus DetermineJoinedTableName(ECN::ECClassCR rootClassOfJoinedTable);
 
 protected:
     virtual BentleyStatus _InitializeFromSchema();

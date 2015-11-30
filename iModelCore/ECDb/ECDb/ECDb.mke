@@ -462,7 +462,7 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
 #----------------------------------------------------------------------
 # Deploy ECSchemas clients can use/import if they want
 #----------------------------------------------------------------------
-$(BuildContext)ECSchemas/ECDb/ECDb_FileInfo.01.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDb_FileInfo.01.00.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDb_FileInfo.02.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDb_FileInfo.02.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------

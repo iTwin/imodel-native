@@ -9,6 +9,12 @@
 //_BENTLEY_INTERNAL_ONLY_
 #include "ECDbInternalTypes.h"
 
+#define USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNS "SharedColumns"
+#define USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES "SharedColumnsForSubclasses"
+#define USERMAPSTRATEGY_OPTIONS_DISABLESHAREDCOLUMNS "DisableSharedColumns"
+#define USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS "JoinedTablePerDirectSubclass"
+#define USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES "SingleJoinedTableForSubclasses"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
@@ -38,24 +44,22 @@ public:
         SharedColumns = 1,
         SharedColumnsForSubclasses = 2,
         DisableSharedColumns = 4,
-        JoinedTableForSubclasses = 8,
+        JoinedTablePerDirectSubclass = 8,
+        SingleJoinedTableForSubclasses = 16
         };
 
 private:
     Strategy m_strategy;
     Options m_options;
     bool m_appliesToSubclasses;
-    UserECDbMapStrategy const* m_root;
 
     BentleyStatus Assign(Strategy strategy, Options, bool appliesToSubclasses);
     static BentleyStatus TryParse(Strategy&, Utf8CP str);
     static BentleyStatus TryParse(Options& option, Utf8CP str);
 
 public:
-    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_appliesToSubclasses(false), m_root(nullptr) {}
+    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_appliesToSubclasses(false) {}
     ~UserECDbMapStrategy() {}
-
-    UserECDbMapStrategy const& AssignRoot(UserECDbMapStrategy const& parent);
 
     bool IsValid() const;
 
@@ -67,9 +71,11 @@ public:
     bool IsUnset() const { return m_strategy == Strategy::None && m_options == Options::None && !m_appliesToSubclasses; }
 
     Utf8String ToString() const;
-
+    static Utf8String ToString(Options);
     static BentleyStatus TryParse(UserECDbMapStrategy&, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute);
     };
+
+ENUM_IS_FLAGS(UserECDbMapStrategy::Options);
 
 //======================================================================================
 // @bsiclass                                 Affan.Khan                02/2015
@@ -130,8 +136,10 @@ public:
     //Helper
     bool IsNotMapped() const { return m_strategy == Strategy::NotMapped; }
     bool IsForeignKeyMapping() const { return m_strategy == Strategy::ForeignKeyRelationshipInSourceTable || m_strategy == Strategy::ForeignKeyRelationshipInTargetTable; }
-
+ 
     Utf8String ToString() const;
     };
+
+ENUM_IS_FLAGS(ECDbMapStrategy::Options);
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -149,17 +149,17 @@ Utf8CP ExpHelper::ToString(BinarySqlOperator op)
         //Arthimatics
         case BinarySqlOperator::Divide:        return "/";
         case BinarySqlOperator::Minus:         return "-";
-        case BinarySqlOperator::Modulo:       return "%";
+        case BinarySqlOperator::Modulo:        return "%";
         case BinarySqlOperator::Multiply:      return "*";
         case BinarySqlOperator::Plus:          return "+";
-        //string concatination
+        //string concatenation
         case BinarySqlOperator::Concat:        return "||";
         //Bitwise
         case BinarySqlOperator::ShiftLeft:    return "<<";
         case BinarySqlOperator::ShiftRight:   return ">>";
-        case BinarySqlOperator::BitwiseAnd:   return "&"; //Alternate BITWISE_OR(op1, op2) 
-        case BinarySqlOperator::BitwiseOr:    return "|"; //Alternate BITWISE_AND(op1, op2)  
-        case BinarySqlOperator::BitwiseXOr:   return "^"; //Alternate BITWISE_XOR(op1, op2)              
+        case BinarySqlOperator::BitwiseAnd:   return "&";
+        case BinarySqlOperator::BitwiseOr:    return "|";
+        case BinarySqlOperator::BitwiseXOr:   return "^";
         }
     BeAssert(false && "case not handled");
     return nullptr;

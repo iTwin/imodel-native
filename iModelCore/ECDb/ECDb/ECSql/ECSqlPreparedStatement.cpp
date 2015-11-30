@@ -367,7 +367,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             //this can only happen in a specific case with inserting an end table relationship, as there inserting really
             //means to update a row in the end table.
             GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship (%s). Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.", GetECSql());
-            return BE_SQLITE_ERROR;
+            return BE_SQLITE_CONSTRAINT_UNIQUE;
             }
 
         instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
@@ -431,15 +431,19 @@ DbResult ECSqlUpdatePreparedStatement::Step()
         if (BE_SQLITE_OK != status)
             return status;
 
-        if (auto baseStmt = GetBaseECSqlStatement())
-            {
-            auto r = baseStmt->Step();
-            if (r != DbResult::BE_SQLITE_DONE)
-                return r;
-            }
-
         if (!IsNothingToUpdate())
-            return DoStep();
+            {
+            status = DoStep();
+            if (auto baseStmt = GetBaseECSqlStatement())
+                {
+                auto baseStatus = baseStmt->Step();
+                BeAssert(baseStatus == status && "base and child status must return same status");
+                if (baseStatus == status)
+                    return baseStatus;
+                }
+
+            return status;
+            }
         }
 
     return BE_SQLITE_DONE;

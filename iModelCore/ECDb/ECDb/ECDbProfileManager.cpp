@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 4, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 5, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -442,7 +442,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECClass
 Db& db
 )
     {
-    auto stat = db.ExecuteSql(
+    DbResult stat = db.ExecuteSql(
         "CREATE TABLE ec_Class "
         "("
         "Id INTEGER PRIMARY KEY, "
@@ -461,7 +461,11 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE INDEX ix_ec_Class_Name ON ec_Class(Name);");
+    stat = db.ExecuteSql("CREATE INDEX ix_ec_Class_Name ON ec_Class(Name);");
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return db.ExecuteSql("CREATE INDEX ix_ec_Class_SchemaId ON ec_Class(SchemaId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -689,11 +693,16 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableSchemaReferences
 Db& db
 )
     {
-    return db.ExecuteSql(
+    DbResult stat = db.ExecuteSql(
         "CREATE TABLE ec_SchemaReference ("
         "SchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE, "
         "ReferencedSchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE"
         ");");
+
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    return db.ExecuteSql("CREATE INDEX ix_ec_SchemaReference_SchemaId ON ec_SchemaReference(SchemaId);");
     }
 
 //-----------------------------------------------------------------------------------------

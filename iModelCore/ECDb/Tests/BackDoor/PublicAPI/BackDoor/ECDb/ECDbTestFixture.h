@@ -19,14 +19,16 @@ public:
     //+---------------+---------------+---------------+---------------+---------------+------
     struct SchemaItem
         {
+        Utf8String m_name;
         std::vector<Utf8String> m_schemaXmlList;
         bool m_expectedToSucceed;
         Utf8String m_assertMessage;
 
-        explicit SchemaItem(Utf8CP schemaXml) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(true) {}
+        explicit SchemaItem(Utf8CP schemaXml) : SchemaItem("", schemaXml) {}
+        SchemaItem(Utf8CP name, Utf8CP schemaXml) : m_name(name), m_expectedToSucceed(true) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
+        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
+        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_expectedToSucceed(expectedToSucceeed) { m_schemaXmlList.push_back(Utf8String(schemaXml)); }
         SchemaItem(std::vector<Utf8String> const& schemaXmlList, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList(schemaXmlList), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
-        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
-        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXmlList({Utf8String(schemaXml)}), m_expectedToSucceed(expectedToSucceeed) {}
         };
 
 private:
@@ -35,20 +37,23 @@ private:
 
     static bool s_isInitialized;
 
+    static BentleyStatus CreateECDb(BeFileNameR filePath, Utf8CP fileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0);
+    static BentleyStatus CreateECDb(BeFileNameR filePath, Utf8CP fileName, SchemaItem const&, int perClassRowCount = 0);
+    static DbResult CreateECDb(ECDbR, Utf8CP ecdbFileName);
+
+    static BentleyStatus Populate(ECDbCR, ECN::ECSchemaCR, int instanceCountPerClass);
+
 protected:
+    ECDb& SetupECDb(Utf8CP ecdbFileName);
+    ECDb& SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    ECDb& SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, int perClassRowCount = 0, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) const;
+
+    static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+
     ECDb& GetECDb() const { return m_ecdb; }
     BentleyStatus GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
 
-    ECDb& SetupECDb(Utf8CP ecdbFileName);
-    ECDb& SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
-    ECDb& SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, bool importArbitraryNumberECInstances, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    ECDb& SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) const;
 
-    static DbResult CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
-    static BentleyStatus CreateSeedECDb(BeFileNameR seedFilePath, Utf8CP seedFileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0);
-    static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-
-    static DbResult CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName);
 
 public:
     ECDbTestFixture() : ::testing::Test() {}

@@ -154,6 +154,14 @@ ECN::IECClassLocaterR ECDb::GetClassLocater () const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2015
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Purge(PurgeMode mode) const
+    {
+    return m_pimpl->Purge(mode);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2015
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::AddIssueListener(IIssueListener const& issueListener)
@@ -168,7 +176,6 @@ void ECDb::RemoveIssueListener()
     {
     m_pimpl->RemoveIssueListener();
     }
-
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012

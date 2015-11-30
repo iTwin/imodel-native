@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="ECDb_FileInfo" nameSpacePrefix="ecdbf" version="1.0" description="ECDb FileInfo" 
+<ECSchema schemaName="ECDb_FileInfo" nameSpacePrefix="ecdbf" version="2.0" description="ECDb FileInfo" 
 displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
@@ -10,7 +10,7 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
     <ECCustomAttributes>
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.10"/>
     </ECCustomAttributes>
-       
+   
     <ECClass typeName="FileInfo" isDomainClass="False" isStruct="False" isCustomAttributeClass="False" description="Abstract base class for holding attributes of a file" >
         <ECProperty propertyName="Name" typeName="string" description="File name" />
         <ECProperty propertyName="Size" typeName="long" description="File size" />
@@ -26,7 +26,7 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
 
     <ECClass typeName="ExternalFileInfo" displayLabel="External File Info" isDomainClass="True" isStruct="False" isCustomAttributeClass="False" description="Attributes of a file stored external to the repository." >
         <BaseClass>FileInfo</BaseClass>
-        <ECProperty propertyName="RootFolder" typeName="int" description="Discrete set of root folders defined by the application. The MobileDgn's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders.">
+        <ECProperty propertyName="RootFolder" typeName="int" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders.">
             <ECCustomAttributes>
                 <StandardValues xmlns="EditorCustomAttributes.01.00">
                     <MustBeFromList>False</MustBeFromList>
@@ -86,14 +86,67 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
         </ECProperty>
         <ECProperty propertyName="Type" typeName="string" description="File type"/>
     </ECClass>
-    
-    <ECRelationshipClass typeName="InstanceHasFileInfo" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source polymorphic="False" cardinality="(1,1)">
-            <Class class="bsc:AnyClass"/>
-        </Source>
-        <Target polymorphic="True" cardinality="(0,1)">
-            <Class class="FileInfo"/>
-        </Target>
-    </ECRelationshipClass>
-    
+
+    <ECClass typeName="FileInfoOwnership" isDomainClass="True" isStruct="False" isCustomAttributeClass="False">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <!-- The two unique indexes also ensure that there are no duplicate ownerships -->
+                    <DbIndex>
+                        <!-- A file info can only have a single owner -->
+                        <Name>uix_ecdbf_fileinfoownership_fileinfoid_fileinfoecclassid</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>FileInfoId</string>
+                            <string>FileInfoECClassId</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <!-- An owner can have at most one fileinfo -->
+                        <Name>uix_ecdbf_fileinfoownership_ownerid_ownerecclassid</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>OwnerId</string>
+                            <string>OwnerECClassId</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <Name>ix_ecdbf_fileinfoownership_ownerecclassid</Name>
+                        <Properties> <string>OwnerECClassId</string> </Properties>
+                    </DbIndex>
+                </Indexes>                    
+            </ClassMap>
+        </ECCustomAttributes>
+        
+        <ECProperty propertyName="OwnerId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
+        <ECProperty propertyName="OwnerECClassId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
+        <ECProperty propertyName="FileInfoId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
+            
+        <ECProperty propertyName="FileInfoECClassId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>   
+    </ECClass> 
+
 </ECSchema>

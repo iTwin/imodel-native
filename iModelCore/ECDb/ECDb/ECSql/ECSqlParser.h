@@ -89,7 +89,11 @@ private:
     mutable std::unique_ptr<ECSqlParseContext> m_context;
 
     //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
-
+    static connectivity::OSQLParser* GetSharedParser()
+        {
+        static std::unique_ptr<connectivity::OSQLParser> s_parser = std::unique_ptr<connectivity::OSQLParser>(new connectivity::OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
+        return s_parser.get();
+        }
     //root nodes
     BentleyStatus parse_select_statement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_insert_statement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const*) const;
@@ -126,11 +130,13 @@ private:
     BentleyStatus parse_ecclassid_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_ecsqloption(std::unique_ptr<OptionExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_factor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_functionarg(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus parse_fold(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
+    BentleyStatus parse_getpointcoordinate_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
     BentleyStatus parse_general_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_group_by_clause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 

@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="ECSqlTest" nameSpacePrefix="ecsql" version="1.0" description="ECSQL test schema" displayLabel="ECSQL test schema" xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="ecschema ECSchema.xsd" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.11" prefix="bsca" />
-    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
     
     <ECCustomAttributes>
@@ -135,15 +134,6 @@
         </ECProperty>
     </ECClass>
 
-    <ECRelationshipClass typeName="AnyClassHasP_0N" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <!-- End table mapping -->
-        <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="bsm:AnyClass" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="P" />
-        </Target>
-    </ECRelationshipClass>
     <!-- ************* For DateTimeInfo tests ************************** -->
     <ECClass typeName="DateTimeStruct" isStruct="True" isDomainClass="True">
         <ECProperty propertyName="nodatetimeinfo" typeName="dateTime" />
@@ -370,15 +360,6 @@
         <ECStructProperty propertyName="structwithdatetimes" typeName="DateTimeStruct" />
         <ECArrayProperty propertyName="arrayofstructwithdatetimes" typeName="DateTimeStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>
-    <ECRelationshipClass typeName="PSAHasAnyClass_0N" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <!-- Link table mapping (because of AnyClass constraint) -->
-        <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="PSA" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="bsm:AnyClass" />
-        </Target>
-    </ECRelationshipClass>
     <!-- Following is used with ONLY to see if ViewGeneration works for TablePerHierarchy-->
     <ECClass typeName="THBase" isDomainClass="True">
         <ECCustomAttributes>

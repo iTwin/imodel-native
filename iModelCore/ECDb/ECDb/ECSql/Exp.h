@@ -122,6 +122,7 @@ public:
         FromClause,
         FunctionCall,
         ECClassIdFunction,
+        GetPointCoordinateFunction,
         GroupBy,
         Having,
         Insert,

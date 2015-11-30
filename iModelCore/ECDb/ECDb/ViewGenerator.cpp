@@ -234,7 +234,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
 // @bsimethod                                    Affan.Khan                      09/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQuery, ECDbR ecdb, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
-    {
+    {    
     for (auto const& propMapPair : viewPropMaps)
         {
         auto basePropMap = propMapPair.first;
@@ -243,8 +243,9 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQue
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-        bool isInstanceId = actualPropMap->GetFirstColumn()->GetKind() == ColumnKind::ECInstanceId;
-        auto colSqlSnippets = actualPropMap->ToNativeSql(isInstanceId? table.GetName().c_str() : nullptr, ECSqlType::Select, false);
+        //bool isInstanceId = actualPropMap->GetFirstColumn()->GetKind() == ColumnKind::ECInstanceId;
+        auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
+        auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
 
         const size_t snippetCount = colSqlSnippets.size();
         if (aliasSqlSnippets.size() != snippetCount)
@@ -259,10 +260,12 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQue
             auto const& aliasSqlSnippet = aliasSqlSnippets[i];
             if (forNullView)
                 viewQuery.Append("NULL ");
-            else
-                viewQuery.Append(colSqlSnippets[i]).AppendSpace();
-
-            viewQuery.Append(aliasSqlSnippet);
+            else 
+                {
+                viewQuery.Append(colSqlSnippets[i]);
+                }
+            if (strcmp(colSqlSnippetsWithoutTableNames[i].ToString(), aliasSqlSnippet.ToString()) != 0 || forNullView) //do not add alias if column name is same as alias.
+                viewQuery.AppendSpace().Append(aliasSqlSnippet);
             }
         }
 
@@ -334,7 +337,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
     if (classIdColumn != nullptr)
         {
             auto tableP = &table;
-            if (auto rootOfJoinedTable = firstChildClassMap->FindRootOfJoinedTable())
+            if (auto rootOfJoinedTable = firstChildClassMap->FindParentOfJoinedTable())
                 {
                 tableP = &rootOfJoinedTable->GetTable();
                 }

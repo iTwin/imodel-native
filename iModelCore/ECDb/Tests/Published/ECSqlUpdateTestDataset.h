@@ -28,7 +28,6 @@ public:
     static ECSqlTestDataset PolymorphicTests (int rowCountPerClass);
     static ECSqlTestDataset RelationshipEndTableMappingTests (int rowCountPerClass);
     static ECSqlTestDataset RelationshipLinkTableMappingTests (int rowCountPerClass);
-    static ECSqlTestDataset RelationshipWithAnyClassConstraintTests (int rowCountPerClass);
     static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbR, int rowCountPerClass);
     static ECSqlTestDataset StructTests (int rowCountPerClass);
     static ECSqlTestDataset TargetClassTests (int rowCountPerClass);

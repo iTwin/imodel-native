@@ -50,7 +50,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
+MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation)
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -58,9 +58,12 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
+    if (mapSchemas.empty())
+        return MapStatus::Success;
+
     m_schemaImportContext = &schemaImportContext;
 
-    auto stat = DoMapSchemas (mapSchemas, forceMapStrategyReevaluation);
+    auto stat = DoMapSchemas(mapSchemas, forceMapStrategyReevaluation);
     if (MapStatus::Success != stat)
         {
         m_schemaImportContext = nullptr;
@@ -69,7 +72,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
 
     if (SUCCESS != CreateOrUpdateRequiredTables())
         {
-        ClearCache ();
+        ClearCache();
         m_schemaImportContext = nullptr;
         return MapStatus::Error;
         }
@@ -90,65 +93,27 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
-    std::set<ClassMap const*> classMaps;
-    for (auto& key : m_classMapDictionary)
+    ECDbMapAnalyser mapAnalyser(*this);
+    if (mapAnalyser.Analyse(true /*apply changes*/) != BentleyStatus::SUCCESS)
         {
-        if (!key.second->GetMapStrategy ().IsNotMapped ())
-            classMaps.insert (key.second.get ());
-        }
-    ECDbMapAnalyser mapAnalyser (*this);
-    if (mapAnalyser.Analyser (true /*apply changes*/) != BentleyStatus::SUCCESS)
+        m_schemaImportContext = nullptr;
         return MapStatus::Error;
+        }
 
     m_schemaImportContext = nullptr;
     return MapStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan         06/2015
-//---------------------------------------------------------------------------------------
-ClassMapCP  ECDbMap::GetClassMapCP (ECN::ECClassId classId) const
-    {
 
-    auto ecClass = GetECDbR ().Schemas ().GetECClass (classId);
-    if (ecClass == nullptr)
-        {
-        BeDataAssert (false && "Failed to find classmap with given ecclassid");
-        return nullptr;
-        }
-
-    return static_cast<RelationshipClassMapCP>(GetClassMap (*ecClass));;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan         06/2015
-//---------------------------------------------------------------------------------------
-RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const
-    {
-    auto ecClass = GetECDbR ().Schemas ().GetECClass (ecRelationshipClassId);
-    if (ecClass == nullptr)
-        {
-        BeDataAssert (false && "Failed to find classmap with given ecclassid");
-        return nullptr;
-        }
-
-    if (ecClass->GetRelationshipClassCP() == nullptr)
-        {
-        BeDataAssert (false && "Failed to find relationship classmap with given ecclassid");
-        return nullptr;
-        }
-
-    return static_cast<RelationshipClassMapCP>(GetClassMap (*ecClass));;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
-MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
+MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation)
     {
-    if (AssertIfIsNotImportingSchema ())
+    if (AssertIfIsNotImportingSchema())
         return MapStatus::Error;
 
-    StopWatch timer (true);
+    StopWatch timer(true);
 
 
     // Identify root classes/relationship-classes
@@ -161,15 +126,15 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         if (schema->IsSupplementalSchema())
             continue; // Don't map any supplemental schemas
 
-        for (ECClassCP ecClass : schema->GetClasses ())
+        for (ECClassCP ecClass : schema->GetClasses())
             {
-            ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP ();
-            if (ecClass->GetBaseClasses ().size () == 0)
+            ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP();
+            if (ecClass->GetBaseClasses().size() == 0)
                 {
                 if (nullptr == relationshipClass)
-                    rootClasses.push_back (ecClass);
+                    rootClasses.push_back(ecClass);
                 else
-                    rootRelationships.push_back (relationshipClass);
+                    rootRelationships.push_back(relationshipClass);
                 }
 
             if (relationshipClass)
@@ -180,43 +145,43 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         }
 
     if (forceMapStrategyReevaluation)
-        ClearCache ();
+        ClearCache();
 
     // Starting with the root, recursively map the entire class hierarchy. 
     MapStatus status = MapStatus::Success;
     for (ECClassCP rootClass : rootClasses)
         {
-        status = MapClass (*rootClass, forceMapStrategyReevaluation);
+        status = MapClass(*rootClass, forceMapStrategyReevaluation);
         if (status == MapStatus::Error)
             return status;
         }
 
-    if (!FinishTableDefinition ())
+    if (!FinishTableDefinition())
         return MapStatus::Error;
 
-    BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
+    BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
         {
-        status = MapClass (*rootRelationshipClass, forceMapStrategyReevaluation);
+        status = MapClass(*rootRelationshipClass, forceMapStrategyReevaluation);
         if (status == MapStatus::Error)
             return status;
         }
 
-    BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
+    BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
         {
         if (SUCCESS != kvpair.first->CreateUserProvidedIndices(*GetSchemaImportContext(), *kvpair.second))
             return MapStatus::Error;
         }
 
-    if (!FinishTableDefinition ())
+    if (!FinishTableDefinition())
         return MapStatus::Error;
-     
-    timer.Stop ();
-    if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
 
-        LOG.debugv ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
-        mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
+    timer.Stop();
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+
+        LOG.debugv("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
+                   mapSchemas.size(), nClasses, nRelationshipClasses, timer.GetElapsedSeconds());
 
     return MapStatus::Success;
     }
@@ -237,7 +202,6 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
             return nullptr;
             }
         }
-
 
     auto classMapPtr = ClassMapFactory::Load (mapStatus, ecClass, *this);
     if (classMapPtr != nullptr)
@@ -302,7 +266,6 @@ MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrate
         if (status == MapStatus::Error)
             return status;
         }
-
 
     for (ECClassP childClass : ecClass.GetDerivedClasses())
         {
@@ -378,6 +341,21 @@ ClassMapCP ECDbMap::GetClassMapCP (ECN::ECClassCR ecClass, bool loadIfNotFound) 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         06/2015
+//---------------------------------------------------------------------------------------
+ClassMapCP ECDbMap::GetClassMapCP(ECN::ECClassId classId) const
+    {
+    ECClassCP ecClass = GetECDbR().Schemas().GetECClass(classId);
+    if (ecClass == nullptr)
+        {
+        BeAssert(false && "Failed to find classmap for given ecclassid");
+        return nullptr;
+        }
+
+    return GetClassMapCP(*ecClass);
+    }
+
+//---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Krischan.Eberle   02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapP ECDbMap::GetClassMapP (ECN::ECClassCR ecClass, bool loadIfNotFound) const
@@ -391,6 +369,28 @@ ClassMapP ECDbMap::GetClassMapP (ECN::ECClassCR ecClass, bool loadIfNotFound) co
 
     return nullptr;
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         06/2015
+//---------------------------------------------------------------------------------------
+RelationshipClassMapCP ECDbMap::GetRelationshipClassMap(ECN::ECClassId ecRelationshipClassId) const
+    {
+    ClassMapCP classMap = GetClassMapCP(ecRelationshipClassId);
+    if (classMap == nullptr)
+        {
+        BeAssert(false && "Failed to find classmap for given ecclassid");
+        return nullptr;
+        }
+
+    const IClassMap::Type classMapType = classMap->GetClassMapType();
+    if (classMapType == IClassMap::Type::RelationshipEndTable || classMapType == IClassMap::Type::RelationshipLinkTable)
+        return static_cast<RelationshipClassMapCP>(classMap);
+
+    BeAssert(false && "Can only call this method if class id is referring to a relationship class");
+    return nullptr;
+    }
+
 
 //---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Krischan.Eberle   02/2014
@@ -689,14 +689,17 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (ECClassCP ecClass : classes)
         {
-        if (ClassMap::IsAnyClass (*ecClass))
+        if (ClassMap::IsAnyClass(*ecClass))
             return SIZE_MAX;
 
-        IClassMap const* classMap = GetClassMap (*ecClass, false);
-        if (classMap->GetMapStrategy ().IsNotMapped ())
+        IClassMap const* classMap = GetClassMap(*ecClass, false);
+        if (classMap->GetMapStrategy().IsNotMapped())
             continue;
 
-        tables.insert(&classMap->GetTable());
+        if (auto rootMap = classMap->FindParentOfJoinedTable())
+            tables.insert(&rootMap->GetTable());
+        else
+            tables.insert(&classMap->GetTable());
         }
 
     return tables.size();
@@ -790,15 +793,14 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable () const
         return;
 
     Utf8CP sql0 =
-        "SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName "
-        "     FROM ec_PropertyMap  "
-        "         JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
-        "         JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "         JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "         JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "         JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "     WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-        "    GROUP BY  ec_Table.Id, ec_Class.Id ";
+        "SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
+        "GROUP BY  ec_Table.Id, ec_Class.Id";
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     ECDbTableId currentTableId = -1;
@@ -830,11 +832,8 @@ void ECDbMap::LightweightCache::LoadAnyClassRelationships () const
         return;
 
     Utf8CP sql1 =
-        " SELECT"
-        "       RCC.RelationshipClassId,"
-        "       RCC.RelationshipEnd"
-        " FROM ec_RelationshipConstraintClass RCC"
-        " WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
+        "SELECT RCC.RelationshipClassId, RCC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC "
+        "WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
 
     auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
     while (stmt1->Step () == BE_SQLITE_ROW)
@@ -863,15 +862,14 @@ void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
         return;
 
     Utf8CP sql1 =
-        "SELECT ec_Class.Id "
-        "  FROM ec_PropertyMap "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "SELECT ec_Class.Id  FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
 		"WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
-        "GROUP BY ec_Class.Id ";
+        "GROUP BY ec_Class.Id";
 
 
     auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
@@ -892,29 +890,14 @@ void ECDbMap::LightweightCache::LoadRelationshipCache () const
         return;
 
     Utf8CP sql0 =
-        "WITH RECURSIVE "
-        "  DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
-        "  AS ( "
-        "      SELECT "
-        "            RCC.RelationshipClassId, "
-        "            RCC.RelationshipEnd, "
-        "            RC.IsPolymorphic, "
-        "            RCC.ClassId, "
-        "            RCC.ClassId "
-        "      FROM ec_RelationshipConstraintClass RCC "
-        "      INNER JOIN ec_RelationshipConstraint RC "
-        "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
-        "    UNION "
-        "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
-        "            FROM DerivedClassList DCL "
-        "        INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
-        "        WHERE IsPolymorphic = 1 "
-        "  ) "
-        "  SELECT DerivedClassId, "
-        "         RelationshipClassId, "
-        "         RelationshipEnd "
-        "  FROM DerivedClassList ";
-
+        "WITH RECURSIVE DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
+        "AS (SELECT RCC.RelationshipClassId,RCC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
+        "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
+        "UNION "
+        "SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
+        "FROM DerivedClassList DCL INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
+        "WHERE IsPolymorphic = 1) "
+        "SELECT DerivedClassId, RelationshipClassId, RelationshipEnd FROM DerivedClassList";
 
     auto stmt0 = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt0->Step () == BE_SQLITE_ROW)
@@ -987,15 +970,14 @@ void ECDbMap::LightweightCache::LoadVerticalPartitions()  const
         return;
 
     Utf8CP sql0 =
-        "SELECT  ec_Class.Id ClassId, ec_Table.Name "
-        "    FROM ec_PropertyMap "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
-        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "    WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-        "    GROUP BY ec_Class.Id, ec_Table.Name ";
+        "SELECT ec_Class.Id ClassId, ec_Table.Name FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
+        "GROUP BY ec_Class.Id, ec_Table.Name";
 
     CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql0);
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -1019,29 +1001,22 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
 
     auto anyClassId = GetAnyClassId ();
     Utf8CP sql0 =
-        "WITH RECURSIVE  "
-        "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
-        "   AS ( "
-        "       SELECT Id, Id, Id FROM ec_Class "
-        "   UNION  "
-        "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
-        "           FROM DerivedClassList DCL  "
-        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
-        "   ), "
-        "   TableMapInfo "
-        "   AS ( "
-        "   SELECT  ec_Class.Id ClassId, ec_Table.Name TableName "
-        "   FROM ec_PropertyMap  "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
-        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "   WHERE ec_ClassMap.MapStrategy NOT IN (100, 101)  AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
-        "  GROUP BY  ec_Class.Id , ec_Table.Name "
-        "   )  "
-        "SELECT  DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL  "
-        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
+        "WITH RECURSIVE DerivedClassList(RootClassId,CurrentClassId,DerivedClassId) "
+        "AS (SELECT Id, Id, Id FROM ec_Class "
+        "UNION "
+        "SELECT RootClassId, BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
+        "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
+        "TableMapInfo AS ("
+        "SELECT  ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
+        "GROUP BY ec_Class.Id, ec_Table.Name) "
+        "SELECT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
+        "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
 
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)
@@ -1075,17 +1050,16 @@ void ECDbMap::LightweightCache::LoadRelationshipByTable ()  const
         return;
 
     Utf8CP sql0 =
-        " SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy"
-        "    FROM ec_Column"
-        "        INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "        INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id"
-        "        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
-        "        INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
-        "        INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
-        "        INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
-        "    WHERE ec_ClassMap.MapStrategy  <> 0 AND" 
-        "       (ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = 0) AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) AND"
-        "        ec_Class.IsRelationship = 1 AND ec_Table.IsVirtual = 0";
+        "SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy FROM ec_Column "
+        "INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id "
+        "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+        "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
+        "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "WHERE ec_ClassMap.MapStrategy  <> 0 AND " 
+        "(ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = 0) AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) AND "
+        "ec_Class.IsRelationship = 1 AND ec_Table.IsVirtual = 0";
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)
@@ -1309,13 +1283,21 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
     if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
 
+
     HorizontalPartition const* partition = GetHorizontalPartition(table);
     if (partition == nullptr)
         {
-        BeAssert(false && "Should always find a partition for the given table");
-        return ERROR;
-        }
+        if (!GetVerticalPartitions().empty())
+            {
+            partition = GetHorizontalPartition(GetVerticalPartitions().back().GetTable());
+            }
 
+        if (partition == nullptr)
+            {
+            BeAssert(false && "Should always find a partition for the given table");
+            return ERROR;
+            }
+        }
     NativeSqlBuilder classIdColSql;
     if (fullyQualifyColumnName)
         {
