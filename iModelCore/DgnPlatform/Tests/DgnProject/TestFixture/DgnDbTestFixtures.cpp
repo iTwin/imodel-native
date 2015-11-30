@@ -138,7 +138,7 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, CharCP testFile, BeSQL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -146,15 +146,15 @@ DgnElementKey DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId ca
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    DgnElementPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode,100);
+    DgnElementPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode, 100);
 
-    return m_db->Elements().Insert(*el)->GetElementKey();
+    return m_db->Elements().Insert(*el)->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -162,7 +162,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnM
     if (!categoryId.IsValid())
         categoryId = m_defaultCategoryId;
 
-    TestElement2dPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode,100);
+    TestElement2dPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode, 100);
 
     DgnModelP model = m_db->Models().GetModel(mid).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
@@ -173,18 +173,18 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnM
     EXPECT_TRUE(existingPartId.IsValid());
 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
-        return DgnElementKey();
+        return DgnElementId();
 
     if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
-        return DgnElementKey();
+        return DgnElementId();
 
-    return m_db->Elements().Insert(*el)->GetElementKey();
+    return m_db->Elements().Insert(*el)->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -203,17 +203,17 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMod
     EXPECT_TRUE(existingPartId.IsValid());
 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
-        return DgnElementKey();
+        return DgnElementId();
 
     if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
-        return DgnElementKey();
+        return DgnElementId();
 
-    return m_db->Elements().Insert(*el)->GetElementKey();
+    return m_db->Elements().Insert(*el)->GetElementId();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -229,12 +229,12 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, D
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
     if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
-        return DgnElementKey();
+        return DgnElementId();
 
     if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
-        return DgnElementKey();
+        return DgnElementId();
 
-    return m_db->Elements().Insert(*el)->GetElementKey();
+    return m_db->Elements().Insert(*el)->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
