@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmtrifnc.h                                           aec    08-Feb-1994   */
@@ -30,7 +30,7 @@ int aecDTM_triangulate /* <= TRUE if error                 */
   double *maxTriangleLengthP,          /* => max. tri length (or NULL)        */
   byte *extDataChecksP,                /* => TRUE, FALSE (or NULL)            */
   double *ftrFilterToleranceP,         /* => feature filter tol. (or NULL)    */
-  struct CIVdistri *distriP,           /* => triangle display pars (or NULL)  */
+  void *distriP,           /* => triangle display pars (or NULL)  */
   boolean useAltMoveMethod = FALSE     /* => user alternate move to 0,0,0 method */
 );
 

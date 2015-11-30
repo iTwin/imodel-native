@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmedt.h                                            aec    08-Feb-1994     */
@@ -18,7 +18,6 @@
 using namespace std;
 
 #include <dtmstr.h>
-#include <dtmdis.h>
 
 
 /*----------------------------------------------------------------------------*/
@@ -65,8 +64,6 @@ typedef struct CIVpntedt
     struct CIVdtmpnt *pnt;             /* added point                         */
     struct CIVdtmtin *tin;             /* working triangle                    */
     DPoint3d loc;                      /* location                            */
-    struct CIVdiscon discon;           /* contour params.                     */
-    struct CIVdistri distri;           /* triangle params.                    */
     long npnt;                         /* # points in dtm                     */
     long ntin;                         /* # tins in dtm                       */
     long ntinlst;                      /* # tins in list                      */
