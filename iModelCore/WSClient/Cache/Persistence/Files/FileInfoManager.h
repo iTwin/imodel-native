@@ -13,6 +13,7 @@
 
 #include "../Instances/ObjectInfoManager.h"
 #include "../Hierarchy/IDeleteHandler.h"
+#include "FileStorage.h"
 #include "FileInfo.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -27,10 +28,10 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
     protected:
         ECDbAdapter*            m_dbAdapter;
         ECSqlStatementCache*    m_statementCache;
+        FileStorage*            m_fileStorage;
 
         HierarchyManager*       m_hierarchyManager;
         ObjectInfoManager*      m_objectInfoManager;
-        CacheEnvironment        m_environment;
 
         ECClassCP               m_infoClass;
         ECRelationshipClassCP   m_infoRelationshipClass;
@@ -52,9 +53,9 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
             (
             ECDbAdapter& dbAdapter,
             ECSqlStatementCache& statementCache,
+            FileStorage& fileStorage,
             ObjectInfoManager& objectInfoManager,
-            HierarchyManager& hierarchyManager,
-            CacheEnvironmentCR environment
+            HierarchyManager& hierarchyManager
             );
 
         ECClassCP GetInfoClass() const;
@@ -66,12 +67,9 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
 
         BentleyStatus SaveInfo(FileInfoR info);
 
-        BentleyStatus CleanupCachedFile(FileInfoCR info);
         BentleyStatus DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances);
 
         BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const override;
-
-        BentleyStatus RemoveContainingFolder(BeFileNameCR filePath);
 
         BeFileName ReadFilePath(ECInstanceKeyCR instance);
 

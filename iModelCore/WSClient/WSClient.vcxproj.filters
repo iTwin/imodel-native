@@ -156,7 +156,7 @@
     <ClCompile Include="Cache\Persistence\Core\SchemaManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Cache\Persistence\Files\FileCacheManager.cpp">
+    <ClCompile Include="Cache\Persistence\Files\FileStorage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Cache\Persistence\Files\FileInfo.cpp">
@@ -521,7 +521,7 @@
     <ClInclude Include="Cache\Persistence\Core\SchemaManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cache\Persistence\Files\FileCacheManager.h">
+    <ClInclude Include="Cache\Persistence\Files\FileStorage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Files\FileInfo.h">

@@ -22,9 +22,17 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct JsonDiff
     {
+    public:
+        enum Flags
+            {
+            Default         = 0,        // No flags
+            DoNotCopyValues = 1 << 0,   // Dont copying values and just reference original JSON values
+            FindDeletions   = 1 << 1    // Find deletions in change and present them as nulls
+            };
+
     private:
-        bool m_copyValues;
-        bool m_ignoreDeletedProperties;
+        bool m_avoidCopies;
+        bool m_findDeletions;
 
     private:
         void AddMember(RapidJsonValueR parent, RapidJsonValueR name, RapidJsonValueR value, rapidjson::Value::AllocatorType& allocator);
@@ -32,14 +40,10 @@ struct JsonDiff
 
         void CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapidjson::Value::AllocatorType& allocator);
 
-        static bool StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-        static bool ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-        static bool ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-
         static RapidJsonValueCR ValidateObject(RapidJsonValueCR value);
 
     public:
-        WSCACHE_EXPORT JsonDiff(bool copyValues = true, bool ignoreDeletedProperties = true);
+        WSCACHE_EXPORT JsonDiff(int flags = Flags::Default);
         WSCACHE_EXPORT virtual ~JsonDiff();
         
         //! Get changes between JSON objects
@@ -67,9 +71,6 @@ struct JsonDiff
             RapidJsonValueR jsonOut,
             rapidjson::Value::AllocatorType& allocator
             );
-
-        //! Check if values are equal
-        WSCACHE_EXPORT static bool ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

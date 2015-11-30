@@ -148,6 +148,7 @@
     <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\JsonUtilTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -311,6 +312,7 @@
     <ClCompile Include="Published\Utils\WebServicesTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
     <ClCompile Include="Published\Utils\MockTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />

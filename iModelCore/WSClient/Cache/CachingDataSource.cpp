@@ -718,7 +718,7 @@ ICancellationTokenPtr cancellationToken
             if (objectsResult.IsSuccess())
                 {
                 bset<ObjectId> rejected;
-                if (SUCCESS != txn.GetCache().CachePartialResponse(responseKey, objectsResult.GetValue(), rejected, &query, cancellationToken))
+                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, objectsResult.GetValue(), &rejected, &query, cancellationToken))
                     {
                     result->SetError({ICachingDataSource::Status::InternalCacheError, cancellationToken});
                     return;

@@ -11,5 +11,4 @@
 #include "../../Utils/WebServicesTestsHelper.h"
 
 class WSErrorTests : public WSClientBaseTest
-    {
-    };
+    {};
