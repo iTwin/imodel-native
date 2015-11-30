@@ -520,7 +520,15 @@ bool copyCustomAttributes
         PrimitiveECPropertyP destPrimitive;
         PrimitiveECPropertyCP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
         destPrimitive = new PrimitiveECProperty(*this);
-        destPrimitive->SetType(sourcePrimitive->GetType());
+        ECEnumerationCP enumeration = sourcePrimitive->GetEnumeration();
+        if (enumeration != nullptr)
+            {
+            destPrimitive->SetType(enumeration);
+            }
+        else
+            {
+            destPrimitive->SetType(sourcePrimitive->GetType());
+            }
 
         destProperty = destPrimitive;
         }
