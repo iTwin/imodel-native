@@ -2948,3 +2948,12 @@ size_t BeStringUtilities::ComputeByteOffsetOfLogicalChar(Utf8CP str, size_t numL
 //---------------------------------------------------------------------------------------
 void BentleyApi::UnalignedMemcpy(void*dest, void const*source, size_t num) { memcpy(dest, source, num); }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+bool BeStringUtilities::IsInvalidUtf8Sequence(Utf8CP str)
+    {
+    UErrorCode icuError = U_ZERO_ERROR;
+    u_strFromUTF8(NULL, 0, NULL, str, (int32_t)strlen(str), &icuError);
+    return (U_INVALID_CHAR_FOUND == icuError);
+    }
