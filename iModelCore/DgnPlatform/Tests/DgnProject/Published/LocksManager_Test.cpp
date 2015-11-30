@@ -68,6 +68,7 @@ private:
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
+    virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
@@ -216,6 +217,46 @@ bool LocksServer::_QueryLocksHeld(LockRequestCR inputReqs, DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus LocksServer::_QueryOwnership(DgnLockOwnershipR ownership, LockableId inputLockId)
+    {
+    ownership.Reset();
+    if (m_offline)
+        return LockStatus::ServerUnavailable;
+
+    // Simulating serialization and deserialization of server request...
+    Json::Value lockIdJson;
+    inputLockId.ToJson(lockIdJson);
+    LockableId lockId;
+    EXPECT_TRUE(lockId.FromJson(lockIdJson));
+    EXPECT_EQ(lockId, inputLockId);
+
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT" SERVER_Exclusive "," SERVER_BcId " FROM " SERVER_Table " WHERE " SERVER_LockType "=? AND " SERVER_LockId "=?");
+    stmt.BindInt(1, static_cast<int32_t>(lockId.GetType()));
+    stmt.BindId(2, lockId.GetId());
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        auto owner = stmt.GetValueId<BeBriefcaseId>(1);
+        bool exclusive = 0 != stmt.GetValueInt(0);
+        if (exclusive)
+            {
+            EXPECT_EQ(LockLevel::None, ownership.GetLockLevel());
+            ownership.SetExclusiveOwner(owner);
+            }
+        else
+            {
+            EXPECT_NE(LockLevel::Exclusive, ownership.GetLockLevel());
+            ownership.AddSharedOwner(owner);
+            }
+        }
+
+    return LockStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus LocksServer::_QueryLocks(DgnLockSet& locks, DgnDbR db)
@@ -274,8 +315,10 @@ void LocksServer::GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefc
         auto level = (0 != stmt.GetValueInt(2)) ? LockLevel::Exclusive : LockLevel::Shared;
         DgnLock lock(id, level);
         auto inserted = locks.insert(lock);
-        if (!inserted.second && LockLevel::Exclusive == level)
-            *inserted.first = lock; // ensure highest lock level recorded for each lock...
+        if (LockLevel::Exclusive == level)
+            EXPECT_TRUE(inserted.second);   // If the server has granted an exclusive lock, it should not have any shared locks for same object.
+        else if (!inserted.second)
+            EXPECT_EQ(LockLevel::Shared, inserted.first->GetLevel()); // If more than one lock exists for the same object, they should all be shared locks.
         }
     }
 

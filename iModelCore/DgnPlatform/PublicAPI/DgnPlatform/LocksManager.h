@@ -12,6 +12,7 @@
 
 DGNPLATFORM_TYPEDEFS(LockRequest);
 DGNPLATFORM_TYPEDEFS(DgnLock);
+DGNPLATFORM_TYPEDEFS(DgnLockOwnership);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -54,6 +55,12 @@ public:
         {
         return m_type != rhs.m_type ? m_type < rhs.m_type : m_id < rhs.m_id;
         }
+
+    //! Compare two LockableIds for equality
+    bool operator==(LockableId const& rhs) const { return m_type == rhs.m_type && m_id == rhs.m_id; }
+
+    //! Compare two LockableIds for inequality
+    bool operator!=(LockableId const& rhs) const { return !(*this == rhs); }
 
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
@@ -133,28 +140,47 @@ public:
 typedef bset<DgnLock, DgnLock::IdentityComparator> DgnLockSet;
 
 //=======================================================================================
-//! Identifies a lockable object owned by a briefcase.
+//! Describes the ownership of a lockable object
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct DgnHeldLock : DgnLock
+struct DgnLockOwnership
 {
+    struct BriefcaseIdComparator
+    {
+        bool operator()(BeSQLite::BeBriefcaseId const& lhs, BeSQLite::BeBriefcaseId const& rhs) const
+            {
+            return lhs.GetValue() < rhs.GetValue();
+            }
+    };
+
+    typedef bset<BeSQLite::BeBriefcaseId, BriefcaseIdComparator> BeBriefcaseIdSet;
 private:
-    BeSQLite::BeBriefcaseId m_owner;
+    BeSQLite::BeBriefcaseId m_exclusiveOwner;
+    BeBriefcaseIdSet m_sharedOwners;
 public:
-    DgnHeldLock() { } //!< Constructs a lock with an invalid ID.
+    //! Constructs with the specified (or no) exclusive owner and no shared owners
+    explicit DgnLockOwnership(BeSQLite::BeBriefcaseId exclusiveOwner=BeSQLite::BeBriefcaseId()) : m_exclusiveOwner(exclusiveOwner) { }
 
-    //! Constructs a lock held at the specified level by the specified briefcase
-    DgnHeldLock(LockableId id, LockLevel level, BeSQLite::BeBriefcaseId owner) : DgnLock(id, level), m_owner(owner) { }
+    //! Sets exclusive ownership to the specified owner
+    void SetExclusiveOwner(BeSQLite::BeBriefcaseId owner) { BeAssert(owner.IsValid()); m_sharedOwners.clear(); m_exclusiveOwner = owner; }
 
-    BeSQLite::BeBriefcaseId GetOwner() const { return m_owner; } //!< Returns the ID of the owning briefcase
+    //! Adds a shared owner
+    void AddSharedOwner(BeSQLite::BeBriefcaseId owner) { BeAssert(owner.IsValid()); m_exclusiveOwner.Invalidate(); m_sharedOwners.insert(owner); }
 
-    void Invalidate() { DgnLock::Invalidate(); m_owner.Invalidate(); } //!< Invalidate this lock
+    //! Returns the level at which the object is locked
+    LockLevel GetLockLevel() const
+        {
+        return m_exclusiveOwner.IsValid() ? LockLevel::Exclusive : m_sharedOwners.empty() ? LockLevel::None : LockLevel::Shared;
+        }
+
+    BeBriefcaseIdSet const& GetSharedOwners() const { return m_sharedOwners; } //<! Returns the set of shared owners
+    BeSQLite::BeBriefcaseId GetExclusiveOwner() const { return m_exclusiveOwner; } //<! Returns the exclusive owner
+
+    void Reset() { m_exclusiveOwner.Invalidate(); m_sharedOwners.clear(); } //!< Resets to no ownership
+
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
-
-//! A set of held locks compared by identity, ignoring lock level and owning briefcase ID
-typedef bset<DgnHeldLock, DgnLock::IdentityComparator> DgnHeldLockSet;
 
 //=======================================================================================
 //! Specifies a request for one or more locks.
@@ -370,6 +396,7 @@ protected:
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
+    virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
 public:
     //! Returns true if all specified locks are held at or above the specified levels by the specified briefcase
     bool QueryLocksHeld(LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(locks, db); }
@@ -385,6 +412,9 @@ public:
 
     //! Attempts to retrieve the set of all locks held by a given briefcase
     LockStatus QueryLocks(DgnLockSet& locks, DgnDbR db) { return _QueryLocks(locks, db); }
+
+    //! Queries the ownership of a lockable object
+    LockStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) { return _QueryOwnership(ownership, lockId); }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

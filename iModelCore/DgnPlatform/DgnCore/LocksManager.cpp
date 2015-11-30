@@ -761,6 +761,8 @@ ILocksServerP ILocksManager::GetLocksServer() const
 #define JSON_Owner "Owner"              // BeBriefcaseId
 #define JSON_DeniedLocks "DeniedLocks"  // list of DgnLock. Only supplied if AllAcquired=false
 #define JSON_Options "Options"          // LockRequest::ResponseOptions
+#define JSON_ExclusiveOwner "Exclusive" // BeBriefcaseId
+#define JSON_SharedOwners "Shared"      // list of BeBriefcaseId
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -771,6 +773,18 @@ static bool idFromJson(BeInt64Id& id, JsonValueCR value)
         return false;
 
     id = BeInt64Id(value.asInt64());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool briefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
+    {
+    if (!value.isConvertibleTo(Json::uintValue))
+        return false;
+
+    bcId = BeBriefcaseId(value.asUInt());
     return true;
     }
 
@@ -875,26 +889,71 @@ bool DgnLock::FromJson(JsonValueCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnHeldLock::ToJson(JsonValueR value) const
+void DgnLockOwnership::ToJson(JsonValueR value) const
     {
-    DgnLock::ToJson(value);
-    value[JSON_Owner] = m_owner.GetValue();
+    auto level = GetLockLevel();
+    value[JSON_LockLevel] = static_cast<uint32_t>(level);
+    switch (level)
+        {
+        case LockLevel::Exclusive:
+            value[JSON_ExclusiveOwner] = GetExclusiveOwner().GetValue();
+            break;
+        case LockLevel::Shared:
+            {
+            uint32_t nOwners = static_cast<uint32_t>(m_sharedOwners.size());
+            Json::Value owners(Json::arrayValue);
+            owners.resize(nOwners);
+
+            uint32_t i = 0;
+            for (auto const& owner : m_sharedOwners)
+                owners[i++] = owner.GetValue();
+
+            value[JSON_SharedOwners] = owners;
+            break;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnHeldLock::FromJson(JsonValueCR value)
+bool DgnLockOwnership::FromJson(JsonValueCR value)
     {
-    auto const& ownerValue = value[JSON_Owner];
-    if (!ownerValue.isConvertibleTo(Json::uintValue) || !DgnLock::FromJson(value))
-        {
-        Invalidate();
+    Reset();
+    LockLevel level;
+    if (!lockLevelFromJson(level, value[JSON_LockLevel]))
         return false;
-        }
 
-    m_owner = BeBriefcaseId(ownerValue.asUInt());
-    return true;
+    switch (level)
+        {
+        case LockLevel::None:
+            return true;
+        case LockLevel::Exclusive:
+            return briefcaseIdFromJson(m_exclusiveOwner, value[JSON_ExclusiveOwner]);
+        case LockLevel::Shared:
+            {
+            JsonValueCR owners = value[JSON_SharedOwners];
+            if (!owners.isArray())
+                return false;
+
+            BeBriefcaseId owner;
+            uint32_t nOwners = owners.size();
+            for (uint32_t i = 0; i < nOwners; i++)
+                {
+                if (!briefcaseIdFromJson(owner, value[i]))
+                    {
+                    Reset();
+                    return false;
+                    }
+
+                AddSharedOwner(owner);
+                }
+
+            return true;
+            }
+        default:
+            return false;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
