@@ -70,7 +70,7 @@ public:
 Base class for all PresentationRules.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PresentationRule : public PresentationKey
+struct EXPORT_VTABLE_ATTRIBUTE PresentationRule : public PresentationKey
     {
 //__PUBLISH_SECTION_END__
 private:
