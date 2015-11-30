@@ -40,6 +40,7 @@ static bool                                     s_assertHandlerCanBeChanged=true
 static bvector<BeTest::T_BeAssertListener*>     s_assertListeners;                  // MT: s_bentleyCS
 static bool                                     s_failOnAssert[(int)BeAssertFunctions::AssertType::TypeCount]; // MT: Problem! If one thread sets this, it will affect assertions that fail on other threads. *** WIP_MT make this thread-local?
 static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization 
+static bool                                     s_hadAssert;
 static bool                                     s_hadAssertOnAnotherThread;         // MT: s_bentleyCS
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
 bool BeTest::s_loop = true;
@@ -181,6 +182,7 @@ void BentleyApi::BeAssertFunctions::PerformBeAssert (WCharCP message, WCharCP fi
     {
     s_bentleyCS.lock();
     T_BeAssertHandler* host = s_assertHandler;
+    s_hadAssert = true;
     s_bentleyCS.unlock();
 
     if (NULL != host)
@@ -207,6 +209,7 @@ void BentleyApi::BeAssertFunctions::PerformBeDataAssert (WCharCP message, WCharC
     
     s_bentleyCS.lock();
     T_BeAssertHandler* host = s_assertHandler;
+    s_hadAssert = true;
     s_bentleyCS.unlock();
 
     if (NULL != host)
@@ -238,6 +241,15 @@ void BentleyApi::BeAssertFunctions::SetBeTestAssertHandler (T_BeAssertHandler* h
     s_assertHandlerCanBeChanged = false;
     s_assertHandler = h;
     s_bentleyCS.unlock();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeTest::GetAssertionFailed()
+    {
+    BeMutexHolder lock(s_bentleyCS);
+    return s_hadAssert;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -955,6 +967,7 @@ void testing::Test::Run()
     size_t e = BeTest::GetErrorCount();
     
     s_bentleyCS.lock();
+    s_hadAssert = false;
     s_hadAssertOnAnotherThread = false;
     s_bentleyCS.unlock();
     
