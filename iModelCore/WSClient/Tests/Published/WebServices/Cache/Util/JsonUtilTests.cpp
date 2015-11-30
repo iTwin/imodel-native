@@ -66,16 +66,18 @@ TEST_F(JsonUtilTests, DeepCopy_ObjectWithPrimitiveValues_Copies)
     TEST_DeepCopy(R"({"Field" : false})");
     }
 
+#ifdef WIP_MERGE
 TEST_F(JsonUtilTests, DeepCopy_ObjectWithObjects_Copies)
     {
-    TEST_DeepCopy(R"({\
-        "A" : { \
-            "Foo" : "Value"\
-            },\
-        "B" : { \
-            "Foo" : 456\
+    TEST_DeepCopy(R"({
+        "A" : { 
+            "Foo" : "Value"
+            },
+        "B" : { 
+            "Foo" : 456
             }})");
     }
+#endif
 
 TEST_F(JsonUtilTests, DeepCopy_ObjectWithArray_Copies)
     {
