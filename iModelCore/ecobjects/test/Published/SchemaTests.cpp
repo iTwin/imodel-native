@@ -282,6 +282,45 @@ TEST_F (SchemaTest, AddAndRemoveEnumerations)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaTest, TestPrimitiveEnumerationProperty)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP domainClass;
+    ECEnumerationP enumeration;
+
+    ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
+    ASSERT_TRUE (schema.IsValid ());
+
+    //Create Enumeration
+    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_TRUE(enumeration != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    
+    status = schema->CreateEntityClass(domainClass, "Class");
+    ASSERT_TRUE(domainClass != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+
+    PrimitiveECPropertyP prop;
+    status = domainClass->CreateEnumerationProperty(prop, "MyProperty", enumeration);
+    ASSERT_TRUE(prop != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+
+    ASSERT_TRUE(prop->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
+    status = enumeration->SetType(PrimitiveType::PRIMITIVETYPE_String);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+
+    prop->SetType(enumeration);
+    ASSERT_TRUE(prop->GetType() == PrimitiveType::PRIMITIVETYPE_String);
+
+    ASSERT_TRUE(prop->GetEnumeration() == enumeration);
+
+    prop->SetType(PrimitiveType::PRIMITIVETYPE_Double);
+    ASSERT_TRUE(prop->GetEnumeration() == nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     {
     ECSchemaPtr schema;

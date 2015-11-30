@@ -457,8 +457,18 @@ PrimitiveType PrimitiveECProperty::GetType () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationCP PrimitiveECProperty::GetEnumeration() const
+    {
+    return m_enumeration;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
-    {        
+    {
+    m_enumeration = nullptr;
+
     if (m_primitiveType != primitiveType)
         {
         m_primitiveType = primitiveType;        
@@ -468,6 +478,28 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 
     return ECObjectsStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCP enumerationType)
+    {        
+    if (enumerationType == nullptr)
+        return ECObjectsStatus::NullPointerValue;
+    
+    auto primitiveType = enumerationType->GetType();
+    if (m_primitiveType != primitiveType)
+        {
+        m_primitiveType = primitiveType;        
+        SetCachedTypeAdapter (NULL);
+        InvalidateClassLayout();
+        }
+
+    m_enumeration = enumerationType;
+
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/

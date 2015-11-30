@@ -782,6 +782,24 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
         }
     return ECObjectsStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCP enumerationType)
+    {
+    ecProperty = new PrimitiveECProperty(*this);
+    ecProperty->SetType(enumerationType);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECObjectsStatus::Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
+        return status;
+        }
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

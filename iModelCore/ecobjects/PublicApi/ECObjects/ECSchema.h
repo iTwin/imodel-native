@@ -752,6 +752,7 @@ struct PrimitiveECProperty : public ECProperty
 friend struct ECClass;
 private:
     PrimitiveType                               m_primitiveType;
+    ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
 
     PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass) {};
@@ -773,6 +774,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
     //! Gets the PrimitiveType of this ECProperty
     ECOBJECTS_EXPORT PrimitiveType GetType() const;
+    //! Sets an ECEnumeration as type of this ECProperty.
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCP value);
+    //! Gets the Enumeration of this ECProperty or nullptr if none used.
+    ECOBJECTS_EXPORT ECEnumerationCP GetEnumeration() const;
 };
 
 //=======================================================================================
@@ -1250,6 +1255,9 @@ public:
 
     //! If the given name is valid, creates an array property object using the specified class as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCP structType);
+
+    //! If the given name is valid, creates a primitive property object with the given enumeration type
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCP enumerationType);
 
     //! Remove the named property
     //! @param[in] name The name of the property to be removed
