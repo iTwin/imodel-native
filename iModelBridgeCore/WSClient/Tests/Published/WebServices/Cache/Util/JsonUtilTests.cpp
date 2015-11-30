@@ -68,12 +68,12 @@ TEST_F(JsonUtilTests, DeepCopy_ObjectWithPrimitiveValues_Copies)
 
 TEST_F(JsonUtilTests, DeepCopy_ObjectWithObjects_Copies)
     {
-    TEST_DeepCopy(R"({
-        "A" : { 
-            "Foo" : "Value"
-            },
-        "B" : { 
-            "Foo" : 456
+    TEST_DeepCopy(R"({\
+        "A" : { \
+            "Foo" : "Value"\
+            },\
+        "B" : { \
+            "Foo" : 456\
             }})");
     }
 
