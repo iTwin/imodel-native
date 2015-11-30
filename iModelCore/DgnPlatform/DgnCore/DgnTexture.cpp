@@ -157,7 +157,7 @@ Render::ImagePtr DgnTexture::ExtractImage() const
     ImageUtilities::RgbImageInfo imageInfo;
     memset(&imageInfo, 0, sizeof (imageInfo));
 
-    Render::ImagePtr image = new Render::Image(m_data.m_width, m_data.m_height);
+    Render::ImagePtr image = new Render::Image(m_data.m_width, m_data.m_height, Render::Image::Format::Rgba);
     switch (m_data.GetFormat())
         {
         case DgnTexture::Format::RAW:

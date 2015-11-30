@@ -568,6 +568,7 @@ public:
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT void CheckForChanges();
+    DGNPLATFORM_EXPORT void Initialize(ViewControllerR);
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
@@ -782,7 +783,7 @@ public:
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
     //! been initialized and connected to an output device.
     //! @return true if the DgnViewport is active.
-    bool IsActive() const {return m_renderTarget.IsValid();}
+    bool IsActive() const {return m_viewController.IsValid();}
 
     //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
     //! if the WorldToView transform contains a perspective transformation.

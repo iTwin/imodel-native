@@ -12,7 +12,6 @@
 #include "DgnCategory.h"
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
-#include <list>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -67,7 +66,7 @@ struct RenderManager
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
-struct Task : IRefCounted, NonCopyableClass
+struct Task : RefCounted<NonCopyableClass>
 {
     virtual Target& _GetTarget() = 0;
     virtual void _Render() = 0;
@@ -108,7 +107,7 @@ protected:
     ByteStream m_image;
 
 public:
-    Image(uint32_t width, uint32_t height, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_image(data, size) {}
+    Image(uint32_t width, uint32_t height, Format format, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_format(format), m_image(data, size) {}
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}

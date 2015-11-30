@@ -54,6 +54,15 @@ DgnViewport::DgnViewport(Render::Target* target) : m_renderTarget(target)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::Initialize(ViewControllerR viewController)
+    {
+    m_viewController = &viewController;
+    viewController._OnAttachedToViewport(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
@@ -1537,21 +1546,34 @@ void DgnViewport::_CallDecorators(bool& stopFlag)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::ClearUndo()
+    {
+    m_currentBaseline.clear();
+    m_forwardStack.clear();
+    m_backStack.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    // first discard the current ViewController.
     // save undo state.
     bool undoActive = IsUndoActive();
-
-    // first discard the current ViewController.
     _Destroy();
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _Initialize(viewController);
 #endif
 
-    // set undo state for this viewport
-    SetUndoActive(undoActive);
+    ClearUndo();
+
+    m_viewController = &viewController;
+    viewController._OnAttachedToViewport(*this);
+
     SetupFromViewController();
     }
 
