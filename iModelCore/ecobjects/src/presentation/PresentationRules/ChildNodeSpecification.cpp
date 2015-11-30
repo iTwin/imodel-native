@@ -6,9 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-
-#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -147,7 +146,7 @@ void ChildNodeSpecification::SetHideNodesInHierarchy (bool value) { m_hideNodesI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::GetHideIfNoChildren (void)
+bool ChildNodeSpecification::GetHideIfNoChildren (void) const
     {
     return m_hideIfNoChildren;
     }
@@ -160,7 +159,7 @@ void ChildNodeSpecification::SetHideIfNoChildren (bool value) { m_hideIfNoChildr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ChildNodeSpecification::GetExtendedData (void)
+WStringCR ChildNodeSpecification::GetExtendedData (void) const
     {
     return m_extendedData;
     }
@@ -176,7 +175,7 @@ void ChildNodeSpecification::SetExtendedData (WStringCR extendedData)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::GetDoNotSort (void)
+bool ChildNodeSpecification::GetDoNotSort (void) const
     {
     return m_doNotSort;
     }

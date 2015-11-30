@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/DisplayRelatedItemsSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 Specification for including related items into display commands.
 * @bsiclass                                    dmitrijus.tiazlovas                11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DisplayRelatedItemsSpecification
+struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
@@ -26,6 +26,9 @@ struct DisplayRelatedItemsSpecification
 
     /*__PUBLISH_SECTION_START__*/
     public:
+        //! Allows the visitor to visit this specification.
+        ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
+
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT bool        ReadXml (BeXmlNodeP xmlNode);
 

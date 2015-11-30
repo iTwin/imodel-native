@@ -2291,17 +2291,17 @@ public:
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
     //! @returns The ECSchema if it is contained in the cache, NULL otherwise
     //! @remarks This will do an Identical match type for the requested schema
-    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key);
+    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key) const;
 
     //! Get the requested schema from the cache
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
     //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
     //! @returns The ECSchema if it is contained in the cache, NULL otherwise
-    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType) const;
 
     ECOBJECTS_EXPORT virtual ~ECSchemaCache (); //!< Destructor
     ECOBJECTS_EXPORT static  ECSchemaCachePtr Create (); //!< Creates an ECSchemaCachePtr
-    ECOBJECTS_EXPORT int     GetCount(); //!< Returns the number of schemas currently in the cache
+    ECOBJECTS_EXPORT int     GetCount() const; //!< Returns the number of schemas currently in the cache
     ECOBJECTS_EXPORT void    Clear(); //!< Removes all schemas from the cache
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater(); //!< Returns the SchemaCache as an IECSchemaLocater
     ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;

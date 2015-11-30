@@ -28,6 +28,9 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
         bool     m_onlyIfNotHandled;
 
     protected:
+        //! Allows the visitor to visit this specification.
+        ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
+
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
 

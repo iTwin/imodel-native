@@ -9,6 +9,7 @@
 
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentationRules/SpecificationVisitor.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -16,7 +17,7 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 AllInstanceNodesSpecification::AllInstanceNodesSpecification ()
-    : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_supportedSchemas (L"")
+    : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_supportedSchemas ("")
     {
     }
 
@@ -31,11 +32,16 @@ bool      hideNodesInHierarchy,
 bool      hideIfNoChildren,
 bool      groupByClass,
 bool      groupByLabel,
-WStringCR supportedSchemas
+Utf8StringCR supportedSchemas
 ) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
     m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_supportedSchemas (supportedSchemas)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -58,7 +64,7 @@ bool AllInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         m_groupByLabel = true;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        m_supportedSchemas = L"";
+        m_supportedSchemas = "";
 
     return true;
     }
@@ -96,9 +102,9 @@ void AllInstanceNodesSpecification::SetGroupByLabel (bool value) { m_groupByLabe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR AllInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }
+Utf8StringCR AllInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AllInstanceNodesSpecification::SetSupportedSchemas (WString value) { m_supportedSchemas = value; }
+void AllInstanceNodesSpecification::SetSupportedSchemas (Utf8StringCR value) { m_supportedSchemas = value; }

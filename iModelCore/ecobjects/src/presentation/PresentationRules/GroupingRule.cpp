@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -78,11 +78,11 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp (child->GetName (), CLASS_GROUP_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<ClassGroup, GroupList> (child, m_groups);
+            CommonTools::LoadSpecificationFromXmlNode<ClassGroup, GroupList> (child, m_groups);
         else if (0 == BeStringUtilities::Stricmp (child->GetName (), PROPERTY_GROUP_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<PropertyGroup, GroupList> (child, m_groups);
+            CommonTools::LoadSpecificationFromXmlNode<PropertyGroup, GroupList> (child, m_groups);
         else if (0 == BeStringUtilities::Stricmp (child->GetName (), SAMEL_LABEL_INSTANCE_GROUP_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups);
+            CommonTools::LoadSpecificationFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups);
         }
 
     return PresentationRule::_ReadXml (xmlNode);
@@ -137,7 +137,8 @@ Utf8StringCR GroupingRule::GetSettingsId (void) const              { return m_se
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupList& GroupingRule::GetGroups (void)                       { return m_groups; }
+GroupList const& GroupingRule::GetGroups (void) const            { return m_groups; }
+GroupList& GroupingRule::GetGroupsR (void)                       { return m_groups; }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,6 +154,11 @@ GroupSpecification::GroupSpecification () : m_contextMenuLabel ("")
 GroupSpecification::GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel) : m_contextMenuLabel (contextMenuLabel), m_defaultLabel (defaultLabel)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void GroupSpecification::Accept(GroupingRuleSpecificationVisitor& visitor) const {_Accept(visitor);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
@@ -205,6 +211,11 @@ SameLabelInstanceGroup::SameLabelInstanceGroup (Utf8StringCR contextMenuLabel) :
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SameLabelInstanceGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 CharCP SameLabelInstanceGroup::_GetXmlElementName ()
@@ -244,6 +255,11 @@ ClassGroup::ClassGroup (Utf8StringCR contextMenuLabel, bool createGroupForSingle
     : GroupSpecification (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
@@ -322,6 +338,11 @@ PropertyGroup::~PropertyGroup (void)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PropertyGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 CharCP PropertyGroup::_GetXmlElementName ()
@@ -349,7 +370,7 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
         m_createGroupForSingleItem = false;
 
     //Load Ranges
-    CommonTools::LoadRulesFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
 
     return true;
     }
@@ -383,7 +404,8 @@ Utf8StringCR PropertyGroup::GetPropertyName (void) const        { return m_prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyRangeGroupList& PropertyGroup::GetRanges (void)         { return m_ranges;    }
+PropertyRangeGroupList const& PropertyGroup::GetRanges (void) const { return m_ranges;    }
+PropertyRangeGroupList& PropertyGroup::GetRangesR (void)        { return m_ranges;    }
 
 
 /*---------------------------------------------------------------------------------**//**

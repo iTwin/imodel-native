@@ -23,6 +23,23 @@ typedef bvector<GroupSpecificationP>              GroupList;
 typedef bvector<PropertyRangeGroupSpecificationP> PropertyRangeGroupList;
 
 /*---------------------------------------------------------------------------------**//**
+* Interface for grouping rule specification visitor.
+* @bsiclass                                     Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct GroupingRuleSpecificationVisitor
+{
+    friend struct SameLabelInstanceGroup;
+    friend struct ClassGroup;
+    friend struct PropertyGroup;
+
+protected:
+    virtual ~GroupingRuleSpecificationVisitor() {}
+    virtual void _Visit(SameLabelInstanceGroup const& specification) {}
+    virtual void _Visit(ClassGroup const& specification) {}
+    virtual void _Visit(PropertyGroup const& specification) {}
+};
+
+/*---------------------------------------------------------------------------------**//**
 Presentation rule for child nodes advanced grouping in the hierarchy.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -81,7 +98,8 @@ struct GroupingRule : public PresentationRule
         ECOBJECTS_EXPORT Utf8StringCR        GetSettingsId (void) const;
 
         //! Returns a list of GroupSpecifications.
-        ECOBJECTS_EXPORT GroupList&          GetGroups (void);
+        ECOBJECTS_EXPORT GroupList const&     GetGroups (void) const;
+        ECOBJECTS_EXPORT GroupList&           GetGroupsR (void);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,19 +121,26 @@ protected:
     ECOBJECTS_EXPORT GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel = NULL);
 
     //! Returns XmlElement name that is used to read/save this rule information.
-    ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () = 0;
+    virtual CharCP _GetXmlElementName () = 0;
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) = 0;
+    virtual bool _ReadXml (BeXmlNodeP xmlNode) = 0;
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) = 0;
+    virtual void _WriteXml (BeXmlNodeP xmlNode) = 0;
+    
+    //! Allows the visitor to visit this group specification.
+    virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const = 0;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Virtual destructor.
     virtual ~GroupSpecification(){}
+
+public:
+    //! Allows the visitor to visit this group specification.
+    ECOBJECTS_EXPORT void Accept(GroupingRuleSpecificationVisitor& visitor) const;
     
     //! Reads group specification from xml node.
     ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
@@ -147,6 +172,9 @@ struct SameLabelInstanceGroup : public GroupSpecification
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+        
+        //! Allows the visitor to visit this group specification.
+        ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
 
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -179,6 +207,9 @@ struct ClassGroup : public GroupSpecification
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+        
+        //! Allows the visitor to visit this group specification.
+        ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
 
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -221,6 +252,9 @@ struct PropertyGroup : public GroupSpecification
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+        
+        //! Allows the visitor to visit this group specification.
+        ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
 
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -243,7 +277,8 @@ struct PropertyGroup : public GroupSpecification
         ECOBJECTS_EXPORT Utf8StringCR             GetPropertyName (void) const;
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
-        ECOBJECTS_EXPORT PropertyRangeGroupList&  GetRanges (void);
+        ECOBJECTS_EXPORT PropertyRangeGroupList const&  GetRanges (void) const;
+        ECOBJECTS_EXPORT PropertyRangeGroupList&  GetRangesR (void);
     };
 
 /*---------------------------------------------------------------------------------**//**

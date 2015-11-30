@@ -120,22 +120,22 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
     EXPECT_STREQ ("Supplemental", ruleSet->GetSupplementationPurpose ().c_str ());
     EXPECT_EQ    (1, ruleSet->GetVersionMajor ());
     EXPECT_EQ    (0, ruleSet->GetVersionMinor ());
+   
+    ruleSet->AddPresentationRule(*rootNodeRule1);
+    ruleSet->AddPresentationRule(*rootNodeRule2);
+    ruleSet->AddPresentationRule(*rootNodeRule3);
 
-    ruleSet->GetRootNodesRules ().push_back (rootNodeRule1);
-    ruleSet->GetRootNodesRules ().push_back (rootNodeRule2);
-    ruleSet->GetRootNodesRules ().push_back (rootNodeRule3);
+    ruleSet->AddPresentationRule(*childNodeRule1);
+    ruleSet->AddPresentationRule(*childNodeRule2);
+    ruleSet->AddPresentationRule(*childNodeRule3);
 
-    ruleSet->GetChildNodesRules ().push_back (childNodeRule1);
-    ruleSet->GetChildNodesRules ().push_back (childNodeRule2);
-    ruleSet->GetChildNodesRules ().push_back (childNodeRule3);
+    ruleSet->AddPresentationRule(*contentRule1);
+    ruleSet->AddPresentationRule(*contentRule2);
+    ruleSet->AddPresentationRule(*contentRule3);
 
-    ruleSet->GetContentRules ().push_back (contentRule1);
-    ruleSet->GetContentRules ().push_back (contentRule2);
-    ruleSet->GetContentRules ().push_back (contentRule3);
-
-    ruleSet->GetImageIdOverrides ().push_back (imageIdOverride1);
-    ruleSet->GetImageIdOverrides ().push_back (imageIdOverride2);
-    ruleSet->GetImageIdOverrides ().push_back (imageIdOverride3);
+    ruleSet->AddPresentationRule(*imageIdOverride1);
+    ruleSet->AddPresentationRule(*imageIdOverride2);
+    ruleSet->AddPresentationRule(*imageIdOverride3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,26 +239,26 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance ("TestRuleSet", 2, 1, true, "Supplemental", "DummySchemaName", "MyImage", true);
     
     RootNodeRuleP rootNodeRule = new RootNodeRule ("TestCondition1", 1, true, TargetTree_Both, false);
-    ruleSet->GetRootNodesRules ().push_back (rootNodeRule);
+    ruleSet->AddPresentationRule(*rootNodeRule);
 
     ChildNodeRuleP childNodeRule = new ChildNodeRule ("TestCondition2", 2, true, TargetTree_Both);
-    ruleSet->GetChildNodesRules ().push_back (childNodeRule);
+    ruleSet->AddPresentationRule(*childNodeRule);
 
     ContentRuleP contentRule = new ContentRule ("TestCondition3", 3, true);
-    ruleSet->GetContentRules ().push_back (contentRule);
-
-    ruleSet->GetImageIdOverrides ().push_back (new ImageIdOverride ("TestCondition4", 4, "ImageIdOverrideTestValue"));
-    ruleSet->GetLabelOverrides ().push_back (new LabelOverride ("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
-    ruleSet->GetStyleOverrides ().push_back (new StyleOverride ("TestCondition6", 6, "Blue", "Red", "Bold"));
-    ruleSet->GetLocalizationResourceKeyDefinitions ().push_back (new LocalizationResourceKeyDefinition (7, "UniqueId:)", "LocalizedStringAccessKey", "ThisIsTheValueIfItFails"));
+    ruleSet->AddPresentationRule(*contentRule);
+    
+    ruleSet->AddPresentationRule(*new ImageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue"));
+    ruleSet->AddPresentationRule(*new LabelOverride("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
+    ruleSet->AddPresentationRule(*new StyleOverride("TestCondition6", 6, "Blue", "Red", "Bold"));
+    ruleSet->AddPresentationRule(*new LocalizationResourceKeyDefinition(7, "UniqueId:)", "LocalizedStringAccessKey", "ThisIsTheValueIfItFails"));
     
     GroupingRuleP groupingRule = new GroupingRule ("TestCondition7", 7, true, "DummySchemaName", "DummyClassName", "ContextMenuCondition", "ContextMenuLabel", "SettingsId");
     ClassGroupP classGroup = new ClassGroup ("ContextMenuLabel", true, "SchemaName", "BaseClassName");
-    groupingRule->GetGroups ().push_back (classGroup);
+    groupingRule->GetGroupsR ().push_back (classGroup);
     PropertyGroupP propertyGroup = new PropertyGroup ("ImageId", "ContextMenuLabel", true, "PropertyName");
-    propertyGroup->GetRanges ().push_back (new PropertyRangeGroupSpecification ("Label", "ImageId", "FromValue", "ToValue"));
-    groupingRule->GetGroups ().push_back (propertyGroup);
-    ruleSet->GetGroupingRules ().push_back (groupingRule);
+    propertyGroup->GetRangesR ().push_back (new PropertyRangeGroupSpecification ("Label", "ImageId", "FromValue", "ToValue"));
+    groupingRule->GetGroupsR ().push_back (propertyGroup);
+    ruleSet->AddPresentationRule(*groupingRule);
 
     //Serialize RuleSet to string and deserialize from the same string.
     Utf8String serializedRuleSet = ruleSet->WriteToXmlString ();
@@ -336,6 +336,48 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
         ValidateLocalizationResourceKeyDefinition (**iter, 7, "UniqueId:)", "LocalizedStringAccessKey", "ThisIsTheValueIfItFails");
         }
     EXPECT_EQ (1, localizationResourceKeyDefinitionCount);
+    }
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, AddPresentationRule_SortsByPriority)
+    {
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 1, 0, false, "", "", "", true);
+    EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
+
+    RootNodeRuleP rootNodeRule = new RootNodeRule ("TestCondition1", 1, true, TargetTree_Both, false);
+    ruleSet->AddPresentationRule(*rootNodeRule);
+    EXPECT_EQ(1, ruleSet->GetRootNodesRules().size());
+
+    rootNodeRule = new RootNodeRule("TestCondition2", 1, true, TargetTree_Both, false);
+    ruleSet->AddPresentationRule(*rootNodeRule);
+    EXPECT_EQ(2, ruleSet->GetRootNodesRules().size());
+    EXPECT_STREQ("TestCondition1", ruleSet->GetRootNodesRules()[0]->GetCondition().c_str());
+    EXPECT_STREQ("TestCondition2", ruleSet->GetRootNodesRules()[1]->GetCondition().c_str());
+
+    rootNodeRule = new RootNodeRule("TestCondition3", 2, true, TargetTree_Both, false);
+    ruleSet->AddPresentationRule(*rootNodeRule);
+    EXPECT_EQ(3, ruleSet->GetRootNodesRules().size());
+    EXPECT_STREQ("TestCondition3", ruleSet->GetRootNodesRules()[0]->GetCondition().c_str());
+    EXPECT_STREQ("TestCondition1", ruleSet->GetRootNodesRules()[1]->GetCondition().c_str());
+    EXPECT_STREQ("TestCondition2", ruleSet->GetRootNodesRules()[2]->GetCondition().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, RemovePresentationRule)
+    {
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 1, 0, false, "", "", "", true);
+    EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
+
+    RootNodeRuleP rootNodeRule = new RootNodeRule("TestCondition1", 1, true, TargetTree_Both, false);
+    ruleSet->AddPresentationRule(*rootNodeRule);
+    EXPECT_EQ(1, ruleSet->GetRootNodesRules().size());
+
+    ruleSet->RemovePresentationRule(*rootNodeRule);
+    EXPECT_EQ(0, ruleSet->GetRootNodesRules().size());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

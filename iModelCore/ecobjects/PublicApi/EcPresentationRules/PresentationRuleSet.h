@@ -10,6 +10,7 @@
 /*__PUBLISH_SECTION_START__*/
 /** @cond BENTLEY_SDK_Internal */
 
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRulesTypes.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -49,9 +50,6 @@ struct PresentationRuleSet : public RefCountedBase
 
     private:
         //Private constructor. This class instance should be creates using static helper methods.
-        PresentationRuleSet (void);
-
-        //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet
             (
             Utf8StringCR ruleSetId,
@@ -70,10 +68,17 @@ struct PresentationRuleSet : public RefCountedBase
         //Writes PresentationRuleSet to XML.
         void                                            WriteXml (BeXmlDomR xmlDom);
 
-        //Private destructor.
-                                                        ~PresentationRuleSet (void);
-
     /*__PUBLISH_SECTION_START__*/
+    private:
+        //Private constructor. This class instance should be creates using static helper methods.
+        PresentationRuleSet (void);
+
+        //Private destructor.
+        ~PresentationRuleSet (void);
+
+        //! The generic implementation of GetRules. See below for function specializations
+        template<typename RuleType> bvector<RuleType*>* GetRules() {BeAssert(false); return nullptr;}
+
     public:
         //! Creates an instance of PresentationRuleSet.
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  CreateInstance 
@@ -87,6 +92,22 @@ struct PresentationRuleSet : public RefCountedBase
             Utf8StringCR preferredImage,
             bool         isSearchEnabled
             );
+
+        //! Adds a presentation rule to this rule set.
+        template<typename RuleType> void AddPresentationRule(RuleType& rule)
+            {
+            bvector<RuleType*>* list = GetRules<RuleType>();
+            if (nullptr != list)
+                CommonTools::AddToListByPriority(*list, rule);
+            }
+
+        //! Removes the presentation rule from this rule set.
+        template<typename RuleType> void RemovePresentationRule(RuleType& rule)
+            {
+            bvector<RuleType*>* list = GetRules<RuleType>();
+            if (nullptr != list)
+                CommonTools::RemoveFromList(*list, rule);
+            }
 
         //! Reads PresentationRuleSet from XmlString.
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (Utf8CP xmlString);
@@ -140,41 +161,89 @@ struct PresentationRuleSet : public RefCountedBase
         ECOBJECTS_EXPORT void                           SetExtendedData (Utf8StringCR extendedData);
 
         //! Collection of rules, which should be used when root nodes needs to be populated.
-        ECOBJECTS_EXPORT RootNodeRuleList&              GetRootNodesRules (void);
+        ECOBJECTS_EXPORT RootNodeRuleList const&        GetRootNodesRules (void) const;
 
         //! Collection of rules, which should be used when child nodes needs to be populated.
-        ECOBJECTS_EXPORT ChildNodeRuleList&             GetChildNodesRules (void);
+        ECOBJECTS_EXPORT ChildNodeRuleList const&       GetChildNodesRules (void) const;
 
         //! Collection of rules, which should be used when content for selected nodes needs to be populated.
-        ECOBJECTS_EXPORT ContentRuleList&               GetContentRules (void);
+        ECOBJECTS_EXPORT ContentRuleList const&         GetContentRules (void) const;
 
         //! Collection of rules, which should be used when default ImageId for nodes should be overridden.
-        ECOBJECTS_EXPORT ImageIdOverrideList&           GetImageIdOverrides (void);
+        ECOBJECTS_EXPORT ImageIdOverrideList const&     GetImageIdOverrides (void) const;
 
         //! Collection of rules, which should be used when default Label or Description for nodes should be overridden.
-        ECOBJECTS_EXPORT LabelOverrideList&             GetLabelOverrides (void);
+        ECOBJECTS_EXPORT LabelOverrideList const&       GetLabelOverrides (void) const;
 
         //! Collection of rules, which should be used when default style for nodes should be overridden.
-        ECOBJECTS_EXPORT StyleOverrideList&             GetStyleOverrides (void);
+        ECOBJECTS_EXPORT StyleOverrideList const&       GetStyleOverrides (void) const;
 
         //! Collection of rules, which should be used when advanced grouping should be applied for particular classes.
-        ECOBJECTS_EXPORT GroupingRuleList&              GetGroupingRules (void);
+        ECOBJECTS_EXPORT GroupingRuleList const&        GetGroupingRules (void) const;
 
         //! Collection of rules, which should be used when localization resource key definition is predefined.
-        ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList&  GetLocalizationResourceKeyDefinitions (void);
+        ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList const& GetLocalizationResourceKeyDefinitions (void) const;
 
         //! Collection of user settings definitions, that can affect behavior of the hierarchy. These settings will be shown in UserSettingsDialog.
-        ECOBJECTS_EXPORT UserSettingsGroupList&         GetUserSettings (void);
+        ECOBJECTS_EXPORT UserSettingsGroupList const&   GetUserSettings (void) const;
 
         //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
-        ECOBJECTS_EXPORT CheckBoxRuleList&              GetCheckBoxRules (void);
+        ECOBJECTS_EXPORT CheckBoxRuleList const&        GetCheckBoxRules (void) const;
 
         //! Collection of rules, which should be used when particular nodes can be renamed.
-        ECOBJECTS_EXPORT RenameNodeRuleList&            GetRenameNodeRules (void);
+        ECOBJECTS_EXPORT RenameNodeRuleList const&      GetRenameNodeRules (void) const;
 
         //! Collection of rules, which should be used for configuring sorting of ECInstances.
-        ECOBJECTS_EXPORT SortingRuleList&               GetSortingRules (void);
+        ECOBJECTS_EXPORT SortingRuleList const&         GetSortingRules (void) const;
     };
+
+//! Template specialization for root node rules.
+template<> RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
+template ECOBJECTS_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
+
+//! Template specialization for child node rules.
+template<> ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>();
+template ECOBJECTS_EXPORT ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>();
+
+//! Template specialization for content rules.
+template<> ContentRuleList* PresentationRuleSet::GetRules<ContentRule>();
+template ECOBJECTS_EXPORT ContentRuleList* PresentationRuleSet::GetRules<ContentRule>();
+
+//! Template specialization for image id overrides.
+template<> ImageIdOverrideList* PresentationRuleSet::GetRules<ImageIdOverride>();
+template ECOBJECTS_EXPORT ImageIdOverrideList* PresentationRuleSet::GetRules<ImageIdOverride>();
+
+//! Template specialization for label overrides.
+template<> LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>();
+template ECOBJECTS_EXPORT LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>();
+
+//! Template specialization for style overrides.
+template<> StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
+template ECOBJECTS_EXPORT StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
+
+//! Template specialization for grouping rules.
+template<> GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
+template ECOBJECTS_EXPORT GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
+
+//! Template specialization for check box rules.
+template<> CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
+template ECOBJECTS_EXPORT CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
+
+//! Template specialization for rename node rules.
+template<> RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
+template ECOBJECTS_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
+
+//! Template specialization for sorting rules.
+template<> SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
+template ECOBJECTS_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
+
+//! Template specialization for user settings group rules.
+template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
+template ECOBJECTS_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
+
+//! Template specialization for localization resource key definitions.
+template<> LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
+template ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

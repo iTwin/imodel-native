@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRules.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,6 +12,7 @@
 
 #include <ECObjects/ECObjectsAPI.h>
 
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRule.h>
 #include <ECPresentationRules/ChildNodeRule.h>
 #include <ECPresentationRules/ChildNodeSpecification.h>
@@ -31,7 +32,6 @@
 #include <ECPresentationRules/AllRelatedInstanceNodesSpecification.h>
 #include <ECPresentationRules/CustomNodeSpecification.h>
 #include <ECPresentationRules/InstanceNodesOfSpecificClassesSpecification.h>
-#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
 #include <ECPresentationRules/SearchResultInstanceNodesSpecification.h>
 #include <ECPresentationRules/ContentSpecification.h>
 #include <ECPresentationRules/RelatedPropertiesSpecification.h>

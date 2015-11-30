@@ -47,8 +47,11 @@ EC_TYPEDEFS (RelatedPropertiesSpecification);
 EC_TYPEDEFS (ContentInstancesOfSpecificClassesSpecification);
 EC_TYPEDEFS (ContentRelatedInstancesSpecification);
 EC_TYPEDEFS (SelectedNodeInstancesSpecification);
+EC_TYPEDEFS (PresentationRuleSpecificationVisitor);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+enum RequiredRelationDirection : unsigned; 
 
 typedef RefCountedPtr<PresentationRuleSet>    		PresentationRuleSetPtr;
 typedef bvector<RootNodeRuleP>                      RootNodeRuleList;

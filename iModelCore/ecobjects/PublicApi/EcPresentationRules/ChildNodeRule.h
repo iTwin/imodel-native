@@ -27,7 +27,7 @@ struct SubCondition
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString                    m_condition;
+        Utf8String                 m_condition;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
 
@@ -37,7 +37,7 @@ struct SubCondition
         ECOBJECTS_EXPORT SubCondition ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SubCondition (WStringCR condition);
+        ECOBJECTS_EXPORT SubCondition (Utf8StringCR condition);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~SubCondition (void);
@@ -49,13 +49,15 @@ struct SubCondition
         ECOBJECTS_EXPORT void                           WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Returns sub-condition string.
-        ECOBJECTS_EXPORT WStringCR                      GetCondition (void);
+        ECOBJECTS_EXPORT Utf8StringCR                   GetCondition (void);
 
         //! Collection of sub-conditions that can be used to separate specifications.
-        ECOBJECTS_EXPORT SubConditionList&              GetSubConditions (void);
+        ECOBJECTS_EXPORT SubConditionList const&        GetSubConditions (void) const;
+        ECOBJECTS_EXPORT SubConditionList&              GetSubConditionsR (void);
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-        ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecifications (void);
+        ECOBJECTS_EXPORT ChildNodeSpecificationList const& GetSpecifications (void) const;
+        ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecificationsR (void);
 
     };
 
@@ -94,13 +96,15 @@ struct ChildNodeRule : public PresentationRule
         ECOBJECTS_EXPORT                                ~ChildNodeRule (void);
 
         //! Returns target tree for which rule should be applied.
-        ECOBJECTS_EXPORT RuleTargetTree                 GetTargetTree (void);
+        ECOBJECTS_EXPORT RuleTargetTree                 GetTargetTree (void) const;
 
         //! Collection of sub-conditions that can be used to separate specifications.
-        ECOBJECTS_EXPORT SubConditionList&              GetSubConditions (void);
+        ECOBJECTS_EXPORT SubConditionList&              GetSubConditionsR (void);
+        ECOBJECTS_EXPORT SubConditionList const&        GetSubConditions (void) const;
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-        ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecifications (void);
+        ECOBJECTS_EXPORT ChildNodeSpecificationList&        GetSpecificationsR (void);
+        ECOBJECTS_EXPORT ChildNodeSpecificationList const&  GetSpecifications (void) const;
 
         //! If this flag is set, this rule will stop any further processing of rules.
         //! This helps in cases when recursion suppression is needed.
@@ -109,7 +113,7 @@ struct ChildNodeRule : public PresentationRule
         ECOBJECTS_EXPORT void                           SetStopFurtherProcessing (bool stopFurtherProcessing);
 
         //! If this flag is set, this rule will stop any further processing of rules.
-        ECOBJECTS_EXPORT bool                           GetStopFurtherProcessing (void);
+        ECOBJECTS_EXPORT bool                           GetStopFurtherProcessing (void) const;
 
     };
 
@@ -142,7 +146,7 @@ struct RootNodeRule : public ChildNodeRule
         ECOBJECTS_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand);
 
         //! Returns flag which determines if nodes have to be automatically expanded.
-        ECOBJECTS_EXPORT bool                           GetAutoExpand (void);
+        ECOBJECTS_EXPORT bool                           GetAutoExpand (void) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
