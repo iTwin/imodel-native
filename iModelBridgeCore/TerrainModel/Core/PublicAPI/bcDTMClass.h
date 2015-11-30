@@ -373,9 +373,11 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             (
             BcDTMDrapedLinePtr&     drapedLinePP,
             DPoint3dCP              pointsP,
-            const double            *distTabP,
+            const double*           distTabP,
             int                     nbPt
             );
+
+        virtual DTMStatusInt _DrapeLinearPoints(bvector<DTMDrapePoint>& drapedPts, DPoint3dCP pointsP, int nbPt, bool getFeatures);
 
         virtual DTMStatusInt _ShotVector
             (
@@ -733,11 +735,11 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual bool _IntersectVector (DPoint3dR interscetionPoint, DPoint3dCR startPoint, DPoint3dCR endPoint);
 
 
-        virtual StatusInt _Clean ();
-        virtual StatusInt _AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, const DtmVectorString& features, DTMUserTag   userTag, DTMFeatureId *featureIdP);
-        virtual StatusInt _ReplaceFeatureWithMultipleSegments (const DtmVectorString& features, DTMFeatureId featureId);
+        virtual DTMStatusInt _Clean ();
+        virtual DTMStatusInt _AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, const DtmVectorString& features, DTMUserTag   userTag, DTMFeatureId *featureIdP);
+        virtual DTMStatusInt _ReplaceFeatureWithMultipleSegments (const DtmVectorString& features, DTMFeatureId featureId);
         virtual bool _GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
-        virtual StatusInt _FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter);
+        virtual DTMStatusInt _FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter);
 
         // Inline transformation.
         virtual TMTransformHelperP _GetTransformHelper ()
@@ -927,6 +929,9 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             int                 nbPt
             );
         //__PUBLISH_SECTION_END__
+
+        BENTLEYDTM_EXPORT  DTMStatusInt DrapeLinearPoints(bvector<DTMDrapePoint>& drapedPts, DPoint3dCP pointsP, int nbPt, bool getFeatures);
+
 
         BENTLEYDTM_EXPORT  DTMStatusInt ShotVector
             (
@@ -1295,12 +1300,12 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         BENTLEYDTM_EXPORT TMTransformHelperP GetTransformHelper();
 
-        BENTLEYDTM_EXPORT StatusInt Clean ();
-        BENTLEYDTM_EXPORT StatusInt AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, const DtmVectorString& features, DTMUserTag   userTag, DTMFeatureId *featureIdP);
-        BENTLEYDTM_EXPORT StatusInt ReplaceFeatureWithMultipleSegments (const DtmVectorString& features, DTMFeatureId featureId);
-        BENTLEYDTM_EXPORT StatusInt BulkDeleteByFeatureType (DTMFeatureType dtmFeatureType);
+        BENTLEYDTM_EXPORT DTMStatusInt Clean ();
+        BENTLEYDTM_EXPORT DTMStatusInt AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, const DtmVectorString& features, DTMUserTag   userTag, DTMFeatureId *featureIdP);
+        BENTLEYDTM_EXPORT DTMStatusInt ReplaceFeatureWithMultipleSegments (const DtmVectorString& features, DTMFeatureId featureId);
+        BENTLEYDTM_EXPORT DTMStatusInt BulkDeleteByFeatureType (DTMFeatureType dtmFeatureType);
         BENTLEYDTM_EXPORT bool GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
-        BENTLEYDTM_EXPORT StatusInt FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter);
+        BENTLEYDTM_EXPORT DTMStatusInt FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter);
 
 //__PUBLISH_SECTION_START__
     };

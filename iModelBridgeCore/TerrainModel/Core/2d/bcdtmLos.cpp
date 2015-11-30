@@ -590,7 +590,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
 */
  stringPts[0].x = Xe ; stringPts[0].y = Ye ; stringPts[0].z = Ze ;
  stringPts[1].x = Xp ; stringPts[1].y = Yp ; stringPts[1].z = Zp ;
- if( bcdtmDrape_stringDtmObject(dtmP,stringPts,2,FALSE,drapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,stringPts,2,false,drapePts)) goto errexit ;
  drapePtsP = drapePts.data();
  numDrapePts = (long)drapePts.size();
 /*
@@ -1443,7 +1443,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 /*
 **  Drape Radial On Tin Surface
 */
-    if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE,drapePts)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,radial,2,false,drapePts)) goto errexit ;
     drapePtsP = drapePts.data();
     numDrapePts = (long)drapePts.size();
 /*
@@ -2412,7 +2412,7 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
 /*
 **  Drape Radial On Tin Surface
 */
- if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE, drapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,radial,2,false, drapePts)) goto errexit ;
  drapePtsP = drapePts.data();
  numDrapePts = (long)drapePts.size();
 /*
@@ -5045,7 +5045,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
 **  Drape Radial On Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Draping Radial On Tin") ;
- if( bcdtmDrape_stringDtmObject(dtmP,radialPts,2,FALSE,drapePts)) goto errexit  ;
+ if( bcdtmDrape_stringDtmObject(dtmP,radialPts,2,false,drapePts)) goto errexit  ;
  drapePtsP = drapePts.data();
  numDrapePts = (long)drapePts.size();
 /*

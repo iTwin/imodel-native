@@ -2169,7 +2169,7 @@ BENTLEYDTM_EXPORT int  bcdtmMath_calculatesSlopeAtGivenAngleFromPointDtmObject(B
 ** Drape Line String On DTMFeatureState::Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Draping String") ;
- if( bcdtmDrape_stringDtmObject(dtmP,LinePts,2,FALSE,drapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,LinePts,2,false,drapePts)) goto errexit ;
  drapePtsP = drapePts.data();
  numDrapePts = (long)drapePts.size();
  if( dbg )

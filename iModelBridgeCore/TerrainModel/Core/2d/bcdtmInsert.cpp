@@ -8940,7 +8940,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullDtmObject
 /*
 ** Drape Feature On DTM
 */
- if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,FALSE,drapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,false,drapePts)) goto errexit ;
  drapePtsP = drapePts.data();
  numDrapePts = (long)drapePts.size();
 
@@ -9051,7 +9051,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullMrDtmObject
 /*
 ** Drape Feature On DTM
 */
- if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,FALSE,drapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,false,drapePts)) goto errexit ;
  drapePtsP = drapePts.data();
  numDrapePts = (long)drapePts.size();
 

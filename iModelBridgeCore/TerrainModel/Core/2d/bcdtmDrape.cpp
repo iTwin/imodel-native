@@ -217,10 +217,10 @@ BENTLEYDTM_Private int bcdtmDrape_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,
 *===============================================================================*/
 BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 (
- BC_DTM_OBJ      *dtmP,              /* ==> Pointer To DTM Object                                        */
- DPoint3d             *stringPtsP,        /* ==> Pointer To String Points                                     */ 
- long            numStringPts,       /* ==> Number Of String Points                                      */
- long            dtmFeatureOption,   /* ==> Optionally Return Dtm Features For Drape Points <TRUE,FALSE> */ 
+ BC_DTM_OBJ*             dtmP,              /* ==> Pointer To DTM Object                                        */
+ DPoint3dCP              stringPtsP,        /* ==> Pointer To String Points                                     */ 
+ long                    numStringPts,       /* ==> Number Of String Points                                      */
+ bool                    dtmFeatureOption,   /* ==> Optionally Return Dtm Features For Drape Points <TRUE,FALSE> */ 
  bvector<DTMDrapePoint>& drapePts       /* <== Pointer To Drape Points                                      */
 )
 /*
@@ -240,7 +240,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
  long    p1,p2,p3,np1,np2,np3,fndType,processDrape ;
  long    drapeType,lineNum,onLine ;
  double  nd,dz,xi,yi,zi,xls,yls,zls,xle,yle  ;
- DPoint3d     *p3dP ;
+ DPoint3dCP p3dP ;
  DTMDrapePoint *dpP=NULL ;
  DTM_DAT_OBJ     *dataP=NULL ;
  DPoint3d   *pnt1P,*pnt2P ;
@@ -2254,7 +2254,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_spiralOnDtmObject (BC_DTM_OBJ *dtmP, double R1,
 /*
 **  Drape Stroked Spiral Points On Tin
 */
- if( bcdtmDrape_stringDtmObject(dtmP,spiralPtsP,numSpiralPts,FALSE,drapePtsP)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,spiralPtsP,numSpiralPts,false,drapePtsP)) goto errexit ;
  numDrapePts = (long)drapePtsP.size();
 /*
 ** Allocate Memory For Return Arrays
@@ -2517,7 +2517,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 /*
 **  Drape Stroked Arc Points On Tin
 */
- if( bcdtmDrape_stringDtmObject(dtmP,arcPtsP,numArcPts,FALSE,drapePtsP)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,arcPtsP,numArcPts,false,drapePtsP)) goto errexit ;
  numDrapePts = (long)drapePtsP.size();
 /*
 ** Allocate Memory For Return Arrays
@@ -3411,7 +3411,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
       {
        drapeLine[1].x  = surfacePoint.x + snapTolerance * cos(drapeAngle) ;
        drapeLine[1].y  = surfacePoint.y + snapTolerance * sin(drapeAngle) ;
-       if( bcdtmDrape_stringDtmObject(dtmP,drapeLine,2,FALSE,drapePts)) goto errexit ;
+       if( bcdtmDrape_stringDtmObject(dtmP,drapeLine,2,false,drapePts)) goto errexit ;
        numDrapePts = (long)drapePts.size();
        drapePtsP = drapePts.data();
 /*

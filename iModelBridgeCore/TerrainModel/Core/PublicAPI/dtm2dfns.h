@@ -502,7 +502,7 @@ BENTLEYDTM_EXPORT                      int bcdtmDrape_pointWithOffHullToleranceD
 BENTLEYDTM_EXPORT                      int bcdtmDrape_spiralOnDtmFile (WCharCP dtmFileP, double R1, double R2, double SpiralLength, double Offset, double Xs, double Ys, double Xe, double Ye, double Xi, double Yi, DTMDrapedLineCode **SpiralPointType, DPoint3d **SpiralPoints, long *NumSpiralPoints);
 BENTLEYDTM_EXPORT                      int bcdtmDrape_spiralOnDtmObject (BC_DTM_OBJ *dtmP, double R1, double R2, double SpiralLength, double Offset, double Xs, double Ys, double Xe, double Ye, double Xi, double Yi, DTMDrapedLineCode **SpiralPointType, DPoint3d **SpiralPoints, long *NumSpiralPoints);
 BENTLEYDTM_Private                     int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(BC_DTM_OBJ *dtmP, long lineNum, long drapeType, double x, double y, double z, long pnt1, long pnt2, long pnt3, long dtmFeatureOption, bvector<DTMDrapePoint>& drapePts);
-BENTLEYDTM_EXPORT                      int bcdtmDrape_stringDtmObject (BC_DTM_OBJ *dtmP, DPoint3d *stringPtsP, long numStringPts, long dtmFeatureOption, bvector<DTMDrapePoint>& drapePts); 
+BENTLEYDTM_EXPORT                      int bcdtmDrape_stringDtmObject (BC_DTM_OBJ *dtmP, DPoint3dCP stringPtsP, long numStringPts, bool dtmFeatureOption, bvector<DTMDrapePoint>& drapePts); 
 BENTLEYDTM_Public                      int bcdtmDrape_traverseIgds (double p1y, double p1x, double dist, double ang, double *ptr_p2y, double *ptr_p2x); 
 
 ///////// bcdtmEdit/////////

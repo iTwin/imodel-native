@@ -620,7 +620,7 @@ BENTLEYDTM_EXPORT  int digitalTM_getDrapedPoints
     BC_START ();
 
     if (dtmHandleP == nullptr) BC_RETURN_ERRSTATUS (DTM_ERROR);
-    status = bcdtmDrape_stringDtmObject (dtmHandleP, (DPoint3d*)lineStringP, nPts , TRUE, drapedPts);
+    status = bcdtmDrape_stringDtmObject (dtmHandleP, (DPoint3d*)lineStringP, nPts, true, drapedPts);
     if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS(DTM_ERROR);
 
     // Create a digital TM profile with readjustment of the distances along
@@ -4347,7 +4347,7 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
     }
 
 
-StatusInt BcDTM::_Clean ()
+DTMStatusInt BcDTM::_Clean ()
     {
     if (SetMemoryAccess (DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -4357,18 +4357,18 @@ StatusInt BcDTM::_Clean ()
 
     BC_DTM_OBJ* bcDTM = GetTinHandle ();
 
-    int status = DTM_SUCCESS;
+    DTMStatusInt status = DTM_SUCCESS;
     if (bcDTM->dtmState == DTMState::Tin)
-        status = bcdtmList_cleanDtmObject (bcDTM);
+        status = (DTMStatusInt)bcdtmList_cleanDtmObject(bcDTM);
     else if (bcDTM->dtmState == DTMState::Data)
-        status = bcdtmData_compactUntriangulatedFeatureTableDtmObject (bcDTM);
+        status = (DTMStatusInt)bcdtmData_compactUntriangulatedFeatureTableDtmObject(bcDTM);
     return status;
     }
 
 //=======================================================================================
 //
 //+===============+===============+===============+===============+===============+======
-StatusInt BcDTM::_AddFeatureWithMultipleSegments
+DTMStatusInt BcDTM::_AddFeatureWithMultipleSegments
 (
 DTMFeatureType dtmFeatureType,   // =>
 const DtmVectorString& features, // =>
@@ -4383,7 +4383,7 @@ DTMFeatureId *featureIdP       // <=
         bcdtmWrite_message (1, 0, 0, "DTM is readonly");
         return DTM_ERROR;
         }
-    int sts = DTM_SUCCESS;
+    DTMStatusInt sts = DTM_SUCCESS;
 
     TMTransformHelperP helper = GetTransformHelper ();
     // Store the feature in the DTM
@@ -4391,12 +4391,12 @@ DTMFeatureId *featureIdP       // <=
         {
         if (helper)
             {
-            if ((sts = bcdtmObject_storeDtmFeatureInDtmObject (GetTinHandle(), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, helper->copyPointsToDTM (features[i].data (), (int)features[i].size ()), (int)features[i].size ())) != DTM_SUCCESS)
+            if ((sts = (DTMStatusInt)bcdtmObject_storeDtmFeatureInDtmObject(GetTinHandle(), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, helper->copyPointsToDTM(features[i].data(), (int)features[i].size()), (int)features[i].size())) != DTM_SUCCESS)
                 return sts;
             }
         else
             {
-            if ((sts = bcdtmObject_storeDtmFeatureInDtmObject (GetTinHandle (), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, features[i].data (), (int)features[i].size ())) != DTM_SUCCESS)
+            if ((sts = (DTMStatusInt)bcdtmObject_storeDtmFeatureInDtmObject(GetTinHandle(), dtmFeatureType, userTag, i == 0 ? 3 : 2, featureIdP, features[i].data(), (int)features[i].size())) != DTM_SUCCESS)
                 return sts;
             }
         }
@@ -4407,7 +4407,7 @@ DTMFeatureId *featureIdP       // <=
 //=======================================================================================
 //
 //+===============+===============+===============+===============+===============+======
-StatusInt BcDTM::_ReplaceFeatureWithMultipleSegments
+DTMStatusInt BcDTM::_ReplaceFeatureWithMultipleSegments
 (
 const DtmVectorString& features, // =>
 DTMFeatureId featureId       // <=
@@ -4428,9 +4428,9 @@ DTMFeatureId featureId       // <=
         {
         DtmVectorString transformedfeatures = features;
         helper->convertDtmStringVectorToDTM (transformedfeatures);
-        return bcdtmData_replaceDtmFeaturePointsMultipleDtmObject (GetTinHandle (), (DTMFeatureId)featureId, transformedfeatures);
+        return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsMultipleDtmObject(GetTinHandle(), (DTMFeatureId)featureId, transformedfeatures);
         }
-    return bcdtmData_replaceDtmFeaturePointsMultipleDtmObject (GetTinHandle (), (DTMFeatureId)featureId, features);
+    return (DTMStatusInt)bcdtmData_replaceDtmFeaturePointsMultipleDtmObject(GetTinHandle(), (DTMFeatureId)featureId, features);
     }
 
 bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
@@ -4504,7 +4504,7 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
     return true;
     }
 
-StatusInt BcDTM::_FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter)
+DTMStatusInt BcDTM::_FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter)
     {
     if (SetMemoryAccess (DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -4512,7 +4512,28 @@ StatusInt BcDTM::_FilterPoints (long numPointsToRemove, double percentageToRemov
         return DTM_ERROR;
         }
 
-    return bcdtmFilter_tileDecimateRandomSpotsDtmObject (GetTinHandle (), numPointsToRemove, percentageToRemove, pointsBefore, pointsAfter);
+    return (DTMStatusInt)bcdtmFilter_tileDecimateRandomSpotsDtmObject(GetTinHandle(), numPointsToRemove, percentageToRemove, pointsBefore, pointsAfter);
+    }
+
+DTMStatusInt BcDTM::_DrapeLinearPoints(bvector<DTMDrapePoint>& drapedPts, DPoint3dCP pointsP, int nPts, bool getFeatures)
+    {
+    DTMStatusInt status = DTM_SUCCESS;
+    
+    drapedPts.clear();
+    if (_dtmTransformHelper.IsValid())
+        {
+        status = (DTMStatusInt)bcdtmDrape_stringDtmObject(_GetTinHandle(), _dtmTransformHelper->copyPointsToDTM(pointsP, nPts), nPts, getFeatures, drapedPts);
+        if (SUCCESS == status)
+            {
+            for (auto& pt : drapedPts)
+                {
+                _dtmTransformHelper->convertPointToDTM(pt.drapePt);
+                }
+            }
+        }
+    else
+        status = (DTMStatusInt)bcdtmDrape_stringDtmObject(_GetTinHandle(), pointsP, nPts, getFeatures, drapedPts);
+    return status;
     }
 
 
@@ -5321,7 +5342,7 @@ bool BcDTM::IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint,
 ///*---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Daryl.Holmwood  07/15
 //+---------------+---------------+---------------+---------------+---------------+------*
-StatusInt BcDTM::Clean ()
+DTMStatusInt BcDTM::Clean ()
     {
     return _Clean ();
     }
@@ -5329,7 +5350,7 @@ StatusInt BcDTM::Clean ()
 ///*---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Daryl.Holmwood  07/15
 //+---------------+---------------+---------------+---------------+---------------+------*
-StatusInt BcDTM::AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, const DtmVectorString& features, DTMUserTag   userTag, DTMFeatureId *featureIdP)
+DTMStatusInt BcDTM::AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, const DtmVectorString& features, DTMUserTag   userTag, DTMFeatureId *featureIdP)
     {
     return _AddFeatureWithMultipleSegments (dtmFeatureType, features, userTag, featureIdP);
     }
@@ -5337,7 +5358,7 @@ StatusInt BcDTM::AddFeatureWithMultipleSegments (DTMFeatureType dtmFeatureType, 
 ///*---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Daryl.Holmwood  07/15
 //+---------------+---------------+---------------+---------------+---------------+------*
-StatusInt BcDTM::ReplaceFeatureWithMultipleSegments (const DtmVectorString& features, DTMFeatureId featureId)
+DTMStatusInt BcDTM::ReplaceFeatureWithMultipleSegments (const DtmVectorString& features, DTMFeatureId featureId)
     {
     return _ReplaceFeatureWithMultipleSegments (features, featureId);
     }
@@ -5350,9 +5371,14 @@ bool BcDTM::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DP
     return _GetProjectedPointOnDTM (pointOnDTM, w2vMap, testPoint);
     }
 
-StatusInt BcDTM::FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter)
+DTMStatusInt BcDTM::FilterPoints (long numPointsToRemove, double percentageToRemove, long& pointsBefore, long& pointsAfter)
     {
     return _FilterPoints (numPointsToRemove, percentageToRemove, pointsBefore, pointsAfter);
+    }
+
+DTMStatusInt BcDTM::DrapeLinearPoints(bvector<DTMDrapePoint>& drapedPts, DPoint3dCP pointsP, int nPts, bool getFeatures)
+    {
+    return _DrapeLinearPoints(drapedPts, pointsP, nPts, getFeatures);
     }
 
 #pragma endregion
