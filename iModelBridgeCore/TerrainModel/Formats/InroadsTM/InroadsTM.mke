@@ -6,7 +6,7 @@
 #       $Date: 2012/11/15 20:19:18 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -128,8 +128,6 @@ $(o)filuti$(oext) : $(InroadsDTMSource)filuti.cpp  ${MultiCompileDepends}
 
 $(o)fixtol$(oext) : $(InroadsDTMSource)fixtol.cpp  ${MultiCompileDepends}
 
-$(o)fncpnt$(oext) : $(InroadsDTMSource)fncpnt.cpp  ${MultiCompileDepends}
-
 $(o)fndfil$(oext) : $(InroadsDTMSource)fndfil.cpp  ${MultiCompileDepends}
 
 $(o)fndftr$(oext) : $(InroadsDTMSource)fndftr.cpp  ${MultiCompileDepends}
@@ -157,8 +155,6 @@ $(o)insbnd$(oext) : $(InroadsDTMSource)insbnd.cpp  ${MultiCompileDepends}
 $(o)intsct$(oext) : $(InroadsDTMSource)intsct.cpp  ${MultiCompileDepends}
 
 $(o)intuti$(oext) : $(InroadsDTMSource)intuti.cpp  ${MultiCompileDepends}
-
-$(o)jonuti$(oext) : $(InroadsDTMSource)jonuti.cpp  ${MultiCompileDepends}
 
 $(o)lcluti$(oext) : $(InroadsDTMSource)lcluti.cpp  ${MultiCompileDepends}
 
@@ -196,7 +192,7 @@ $(o)rnguti$(oext) : $(InroadsDTMSource)rnguti.cpp  ${MultiCompileDepends}
 
 $(o)rotpnt$(oext) : $(InroadsDTMSource)rotpnt.cpp  ${MultiCompileDepends}
 
-$(o)savdtm$(oext) : $(InroadsDTMSource)savdtm.cpp  ${MultiCompileDepends}
+#$(o)savdtm$(oext) : $(InroadsDTMSource)savdtm.cpp  ${MultiCompileDepends}
 
 $(o)srfflg$(oext) : $(InroadsDTMSource)srfflg.cpp  ${MultiCompileDepends}
 

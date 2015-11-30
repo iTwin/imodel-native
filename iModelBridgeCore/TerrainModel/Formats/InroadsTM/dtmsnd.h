@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmsnd.h                                          aec    07-Feb-1994       */
@@ -28,19 +28,6 @@ int aecDTM_sendAllPoints    /* <= TRUE if error                    */
   int (*usrfncP)(void *,int,long,      /* => your function                    */
        DPoint3d *,struct CIVdtmpnt *),
   void *datP                           /* => your data                        */
-);
-
-int aecDTM_sendAllPointsInPolygon /* <= TRUE if error              */
-(
-  void *mdlDescP,                      /* => mdl app descriptor (or NULL)     */
-  struct CIVdtmsrf *srfP,              /* => surface to use                   */
-  int opt,                             /* => options                          */
-  int typmsk,                          /* => point type (or zero for all)     */
-  void (*usrfncP)(void *,int,long,     /* => your function                    */
-    DPoint3d *,struct CIVdtmpnt *),
-  void *usrdatP,                       /* => your user data                   */
-  long nvrt,                           /* => # verts in polygon               */
-  DPoint3d *vrtP                       /* => polygon vertices                 */
 );
 
 int aecDTM_sendAllPointsHonoringFence /* <= TRUE if error          */
