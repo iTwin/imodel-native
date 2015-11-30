@@ -103,9 +103,6 @@ using namespace Bentley;
 
 #define DEFAULT_OBJECT_NAME DEFAULT_PREFERENCE_NAME
 
-#define USERDATAPTRGET( hWnd ) (( hWnd ) ? GetWindowLong(( hWnd ), GWLP_USERDATA ) : NULL )
-#define USERDATAPTRSET(hWnd, pUserData) ( (hWnd) ? (boolean) SetWindowLong ( (hWnd), GWLP_USERDATA, (long)(pUserData) ) : FALSE )
-
 // ------------- DH Added -------------------
 #ifndef _AFXDLL
 typedef short WORD;

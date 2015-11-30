@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #pragma once
 
@@ -10,119 +10,6 @@ using namespace std;
 #include "aecuti.h"
 #include "dtmstr.h"
 #include "FeatureDefs.h"
-
-// Information needed for feature annotation
-#define ANN_PNT_NAME        0x1     // actually id/index
-#define ANN_PNT_NORTHING    0x2
-#define ANN_PNT_EASTING     0x4
-#define ANN_PNT_ELEVATION   0x8
-#define ANN_PNT_DESCRIPTION 0x10
-#define ANN_PNT_STYLE       0x20
-#define ANN_PNT_STATION     0x40
-#define ANN_PNT_OFFSET      0x80
-#define ANN_PNT_FTR_NAME    0x100
-#define ANN_PNT_FTRSTATION  0x200
-#define ANN_PNT_ITEMS       10       // number in the above list
-
-#define ANN_SEG_NAME         0x1     // actually id/index
-#define ANN_SEG_LENGTH       0x2
-#define ANN_SEG_BEARING      0x4
-#define ANN_SEG_SLOPE        0x8
-#define ANN_SEG_DESCRIPTION  0x10
-#define ANN_SEG_STYLE        0x20
-#define ANN_SEG_FTR_NAME     0x40
-#define ANN_SEG_SLOPELENGTH  0x80
-#define ANN_SEG_ITEMS        8       // number in the above list
-
-
-typedef struct featureAnnotationSettings
-{
-    BOOL m_displayPnt;
-    BOOL m_displaySeg;
-    BOOL m_displaySlope;
-    BOOL m_displayCrests;
-    BOOL m_displaySags;
-
-    int m_pntLocation;
-    int m_pntInfo;
-    int m_pntPos[ANN_PNT_ITEMS][2];
-    int m_pntNorthingPrecision;
-    int m_pntEastingPrecision;
-    int m_pntElevationPrecision;
-    int m_pntStationPrecision;
-    int m_pntFtrStationPrecision;
-    int m_pntOffsetPrecision;
-    int m_pntStationFormat;
-    int m_pntFtrStationFormat;
-    double m_pntPointInterval;
-    double m_pntStartStation;
-    double m_pntStopStation;
-    int m_pntAlongFeature;
-    BOOL m_pntIncludeVertices;
-    BOOL m_pntDropEquation;
-    void *m_pntHalg;
-
-    int m_segLocation;
-    int m_segInfo;
-    int m_segPos[ANN_SEG_ITEMS][2];
-    int m_segLengthPrecision;
-    int m_segBearingPrecision;
-    int m_segSlopePrecision;
-    int m_segBearingFormat;
-    int m_segSlopeFormat;
-    int m_segSlopeLength;
-    int m_segSlopeLengthPrecision;
-
-    CString m_slopeCellName;
-    double m_slopeInterval;
-    double m_slopeOffset;
-    int m_slopeSegment;
-
-    CString m_strCrestsCellName;
-    CString m_strSagsCellName;
-
-    double m_crestsOffset;
-    double m_sagsOffset;
-
-    CString m_strIndexPrefixPTS;
-    CString m_strNorthingPrefixPTS;
-    CString m_strEastingPrefixPTS;
-    CString m_strElevationPrefixPTS;
-    CString m_strFeatureNamePrefixPTS;
-    CString m_strDescriptionPrefixPTS;
-    CString m_strStylePrefixPTS;
-    CString m_strStationPrefixPTS;
-    CString m_strFtrStationPrefixPTS;
-    CString m_strOffsetPrefixPTS;
-    CString m_strIndexSuffixPTS;
-    CString m_strNorthingSuffixPTS;
-    CString m_strEastingSuffixPTS;
-    CString m_strElevationSuffixPTS;
-    CString m_strFeatureNameSuffixPTS;
-    CString m_strDescriptionSuffixPTS;
-    CString m_strStyleSuffixPTS;
-    CString m_strStationSuffixPTS;
-    CString m_strFtrStationSuffixPTS;
-    CString m_strOffsetSuffixPTS;
-
-    CString m_strIndexPrefixSEG;
-    CString m_strLengthPrefixSEG;
-    CString m_strBearingPrefixSEG;
-    CString m_strSlopeLengthPrefixSEG;
-    CString m_strSlopePrefixSEG;
-    CString m_strFeatureNamePrefixSEG;
-    CString m_strDescriptionPrefixSEG;
-    CString m_strStylePrefixSEG;
-    CString m_strIndexSuffixSEG;
-    CString m_strLengthSuffixSEG;
-    CString m_strBearingSuffixSEG;
-    CString m_strSlopeLengthSuffixSEG;
-    CString m_strSlopeSuffixSEG;
-    CString m_strFeatureNameSuffixSEG;
-    CString m_strDescriptionSuffixSEG;
-    CString m_strStyleSuffixSEG;
-}	FeatureAnnotationSettings;
-
 
 //---------------------------------------------------------------------------
 // DESC: CFeature declaration
