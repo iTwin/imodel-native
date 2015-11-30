@@ -147,7 +147,7 @@ struct ToBoolStrSqlFunction : ScalarFunction
 TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
     {
     const auto perClassRowCount = 3;
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
     PowSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
@@ -165,7 +165,7 @@ TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
 TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
     {
     const auto perClassRowCount = 3;
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
     Utf8CP ecsql = "SELECT I,POW(I,2) FROM ecsql.P";
 
@@ -185,7 +185,7 @@ TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
 TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
     {
     const int perClassRowCount = 3;
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     //insert one more test row which has a NULL column
         {
@@ -271,7 +271,7 @@ TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
 TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
     {
     const int perClassRowCount = 3;
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
     ToBoolStrSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
@@ -294,7 +294,7 @@ TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
 TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
     {
     const int perClassRowCount = 3;
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     //insert one more test row which has a NULL column
         {
@@ -356,7 +356,7 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
      SumOfSquares func;
      ECSqlStatement stmt;
      const int perClassRowCount = 3;
-     ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+     ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
      ASSERT_EQ (ECSqlStatus::InvalidECSql, stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to fail with unregistered ECSql function";
      stmt.Finalize ();
