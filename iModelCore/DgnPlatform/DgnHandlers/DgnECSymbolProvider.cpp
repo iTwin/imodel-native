@@ -86,6 +86,18 @@ ECValue DgnElementExpressionContext::GetFullClassName() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  11/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnElementExpressionContext::HasGeometry() const
+    {
+    GeometrySourceCP geometrySource = m_element.ToGeometrySource();
+    if (nullptr == geometrySource)
+        return ECValue(false);
+
+    return ECValue(geometrySource->HasGeometry());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
 DgnElementCR DgnElementExpressionContext::GetElement() const
@@ -102,6 +114,7 @@ DgnElementExpressionContext::DgnElementExpressionContext(DgnElementCR element) :
 
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("ClassName", *this, &DgnElementExpressionContext::GetClassName));
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("FullClassName", *this, &DgnElementExpressionContext::GetFullClassName));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("HasGeometry", *this, &DgnElementExpressionContext::HasGeometry));
 
     AddSymbol(*ContextSymbol::CreateContextSymbol("element", *methodContext));
     }

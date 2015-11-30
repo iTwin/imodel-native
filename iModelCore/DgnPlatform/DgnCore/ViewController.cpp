@@ -314,7 +314,7 @@ DbResult ViewController::SaveAs(Utf8CP newName)
     if (cpView.IsNull())
         return BE_SQLITE_INTERNAL;
 
-    DgnElement::CreateParams params(cpView->GetDgnDb(), cpView->GetModelId(), cpView->GetElementClassId(), ViewDefinition::CreateCode(newName), DgnElementId());
+    DgnElement::CreateParams params(cpView->GetDgnDb(), cpView->GetModelId(), cpView->GetElementClassId(), ViewDefinition::CreateCode(newName));
     ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(cpView->Clone(nullptr, &params).get());
     BeAssert(newView.IsValid());
     if (newView.IsNull() || newView->Insert().IsNull())

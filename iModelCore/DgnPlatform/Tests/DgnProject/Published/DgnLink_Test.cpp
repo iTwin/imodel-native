@@ -58,7 +58,7 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
 
     EXPECT_TRUE(DgnLinkType::Url == link1->GetType());
     EXPECT_FALSE(link1->GetId().IsValid());
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementKey(), *link1));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *link1));
     ASSERT_TRUE(link1->GetId().IsValid());
 
     DgnLinkPtr link1b = db.Links().QueryById(link1->GetId());
@@ -96,7 +96,7 @@ TEST_F(DgnLinkTest, Iterator)
     DrawingElementPtr elementPtr = DrawingElement::Create(DrawingElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
     DgnElementCPtr result = db.Elements().Insert(*elementPtr);
-    ASSERT_TRUE(result->GetElementKey().IsValid());
+    ASSERT_TRUE(result->GetElementId().IsValid());
     
     //.............................................................................................
     static const size_t NUM_LINKS = 5;
@@ -113,12 +113,12 @@ TEST_F(DgnLinkTest, Iterator)
 
     //.............................................................................................
     EXPECT_TRUE(0 == db.Links().MakeIterator().QueryCount());
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementKey(), *links[0]));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *links[0]));
     EXPECT_TRUE(1 == db.Links().MakeIterator().QueryCount());
 
     //.............................................................................................
     for (size_t iLink = 1; iLink < NUM_LINKS; ++iLink)
-        ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementKey(), *links[iLink]));
+        ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *links[iLink]));
 
     EXPECT_TRUE(NUM_LINKS == db.Links().MakeIterator().QueryCount());
 
@@ -134,7 +134,7 @@ TEST_F(DgnLinkTest, Iterator)
     EXPECT_TRUE(1 == numFoundLinks);
     
     //.............................................................................................
-    db.Links().DeleteFromElement(result->GetElementKey(), links[0]->GetId());
+    db.Links().DeleteFromElement(result->GetElementId(), links[0]->GetId());
     EXPECT_TRUE(NUM_LINKS == db.Links().MakeIterator().QueryCount());
 
     db.Links().PurgeUnused();
@@ -189,19 +189,19 @@ TEST_F(DgnLinkTest, OtherIterators)
     DgnLinkPtr link3 = DgnLink::Create(db); link3->SetDisplayLabel("link3"); link3->SetEmbeddedDocumentName("EmbeddedDocumentName3");
     DgnLinkPtr link4 = DgnLink::Create(db); link4->SetDisplayLabel("link4"); link4->SetEmbeddedDocumentName("EmbeddedDocumentName4");
 
-    DgnElementKey key1 = result1->GetElementKey();
-    DgnElementKey key2 = result2->GetElementKey();
+    DgnElementId elementId1 = result1->GetElementId();
+    DgnElementId elementId2 = result2->GetElementId();
 
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(key1, *link1));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(key1, *link2));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(key2, link2->GetId()));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(key2, *link3));
-    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(key2, *link4));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementId1, *link1));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementId1, *link2));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementId2, link2->GetId()));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementId2, *link3));
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(elementId2, *link4));
 
     checkIteratorCount(db.Links().MakeIterator(), 4);
     
-    checkIteratorCount(db.Links().MakeOnElementIterator(key1), 2);
-    checkIteratorCount(db.Links().MakeOnElementIterator(key2), 3);
+    checkIteratorCount(db.Links().MakeOnElementIterator(elementId1), 2);
+    checkIteratorCount(db.Links().MakeOnElementIterator(elementId2), 3);
 
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link1->GetId()), 1);
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link2->GetId()), 2);

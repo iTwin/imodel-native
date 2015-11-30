@@ -11,6 +11,8 @@
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DgnTexture.h>
 
+USING_NAMESPACE_BENTLEY_DPTEST
+
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry Builder
 * @bsimethod                                                    Umar.Hayat      07/15

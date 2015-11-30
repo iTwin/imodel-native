@@ -402,7 +402,8 @@ public:
 };
 
 //=======================================================================================
-//! The key (classId,instanceId) of a DgnElement.
+//! DEPRECATED: Use DgnElementId (preferred) or ECInstanceKey (for ECRelationships) instead
+//! @private
 //=======================================================================================
 struct DgnElementKey : BeSQLite::EC::ECInstanceKey
 {
@@ -418,7 +419,7 @@ struct DgnElementKey : BeSQLite::EC::ECInstanceKey
     DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
 };
 
-typedef DgnElementKey const& DgnElementKeyCR;
+typedef DgnElementKey const& DgnElementKeyCR; //!< @private
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================

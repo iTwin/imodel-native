@@ -1071,8 +1071,8 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,Code_Value=2,ParentId=3,Code_AuthorityId=4,Code_Namespace=5};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code_Value,ParentId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     _SetFilled();
@@ -1092,12 +1092,15 @@ void DgnModel::_FillModel()
 
         DgnElement::Code code;
         code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
-        elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
+        DgnElement::CreateParams createParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             code,
-            id,
-            stmt.GetValueId<DgnElementId>(Column::ParentId)),
-            true);
+            stmt.GetValueText(Column::Label),
+            stmt.GetValueId<DgnElementId>(Column::ParentId));
+
+        createParams.SetElementId(id);
+
+        elements.LoadElement(createParams, true);
         }
 
     CallAppData(FilledCaller());
@@ -1605,11 +1608,22 @@ static StatusInt deleteComponentViews(DgnDbR db, DgnModelId mid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::_OnDelete()
     {
+    // If any instance exists, then block the deletion. Tricky: unique/singleton elements are both types and instances -- they are instances of themselves.
+    bvector<DgnElementId> types;
+    QuerySolutions(types);
+    for (auto teid : types)
+        {
+        bvector<DgnElementId> instances;
+        QueryInstances(instances, teid);
+        for (auto ieid : instances)
+            {
+            if (GetDgnDb().Elements().GetElement(ieid).IsValid())
+                return DgnDbStatus::IdExists; // *** WIP_COMPONENT_MODEL need more appropriate error code
+            }
+        }
+
     deleteComponentViews(GetDgnDb(), GetModelId());
     deleteAllSolutionsOfComponentRelationships(GetDgnDb(), GetModelId());
-
-    // *** WIP_COMPONENT_MODEL - Deleting a ComponentModel turns existing catalog items and unique/singleton solutions into orphans.
-    // ***                          Maybe we should refuse to delete a ComponentModel in the case where it is still referenced by instances??
 
     return DgnDbStatus::Success;
     }
@@ -1856,7 +1870,7 @@ void ComponentModel::QueryInstances(bvector<DgnElementId>& instances, DgnElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName, Placement3dCR placement, DgnElement::Code code)
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName, Placement3dCR placement, DgnElement::Code code, bool isSingleton)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -1893,7 +1907,20 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
     if (DgnDbStatus::Success != (status = Solve(parameters)))
         return nullptr;
 
-    return HarvestSolution(status, catalogModel, catalogItemName, icode, placement);
+    PhysicalElementCPtr el = HarvestSolution(status, catalogModel, catalogItemName, icode, placement);
+
+    if (isSingleton)
+        createInstanceOfTemplateRelationship(*el, *el);
+
+    return el;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName)
+    {
+    return CaptureSolution(statusOut, catalogModel, parameters, catalogItemName, Placement3d(), DgnElement::Code(), /*isSingleton*/false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2142,6 +2169,21 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
     BeAssert(queryTemplateItemFromInstance(db, inst->GetElementId()) == catalogItem.GetElementId());
 
     return inst;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, PhysicalModelR targetModel, 
+                                                Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, 
+                                                Placement3dCR placement, DgnElement::Code const& code)
+    {
+    PhysicalElementCPtr typeElem;
+    ModelSolverDef::ParameterSet typeParams;
+    if ((DgnDbStatus::Success != QuerySolutionByName(typeElem, typeParams, capturedSolutionName)) || (params != typeParams))
+        return CaptureSolution(statusOut, targetModel, params, "", placement, DgnElement::Code(), true);
+
+    return MakeInstanceOfSolution(statusOut, targetModel, *typeElem, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**

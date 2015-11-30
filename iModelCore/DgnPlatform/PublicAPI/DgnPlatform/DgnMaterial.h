@@ -60,9 +60,9 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR value="", Utf8StringCR descr="") : T_Super(params), m_data(value, descr) { }
 
         //! Constructs parameters for a material with the specified values. Primarily for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id = DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr,
                      DgnElementId parent = DgnElementId(), Utf8StringCR value="", Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, code, id, parent), m_data(value, descr) { }
+            : T_Super(db, modelId, classId, code, label, parent), m_data(value, descr) { }
 
         //! Constructs parameters for creating a material.
         //! @param[in]      db               The DgnDb in which the material will reside

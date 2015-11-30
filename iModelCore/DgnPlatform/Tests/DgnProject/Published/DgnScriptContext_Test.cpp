@@ -71,14 +71,18 @@ static void checkGeomStream(GeometrySourceCR gel, ElementGeometry::GeometryType 
         }
     ASSERT_EQ( expectedCount , count );
     }
-    
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct DgnScriptTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnScriptTest, Test1)
+TEST_F(DgnScriptTest, Test1)
     {
-    ScopedDgnHost  autoDgnHost;
-
     DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
@@ -196,10 +200,8 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnScriptTest, RunScripts)
+TEST_F(DgnScriptTest, RunScripts)
     {
-    ScopedDgnHost  autoDgnHost;
-
     T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
 
     BeFileName jsFileName;
@@ -215,9 +217,8 @@ TEST(DgnScriptTest, RunScripts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnScriptTest, CRUD)
+TEST_F(DgnScriptTest, CRUD)
     {
-    ScopedDgnHost  autoDgnHost;
 
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();

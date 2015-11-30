@@ -228,12 +228,18 @@ static void    vp_doParseAngleTestWithMode(AngleParserTestDataWithMode const& te
     }
 #endif
 
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct AngleParserTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple)
+TEST_F (AngleParserTest, ParseSimple)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"30",  vp_createAngleValueFromMDS (30, 0, 0)}, // not sure if this is valid
@@ -261,13 +267,18 @@ TEST (AngleParser, ParseSimple)
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
         vp_doParseAngleTest (AngleMode::DegMinSec, testDataArray[iTest]);
     }
-
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct DirectionParserTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionParser, ParseSimple)
+TEST_F (DirectionParserTest, ParseSimple)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionParserTestData testDataArray[] = 
         {
         { L"north",  vp_createAngleValueFromMDS (90, 0, 0)},
@@ -312,9 +323,8 @@ TEST (DirectionParser, ParseSimple)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionParser, ParseSimpleTrueNorth)
+TEST_F (DirectionParserTest, ParseSimpleTrueNorth)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionParserTestData testDataArray[] = 
         {
         { L"north",  vp_createAngleValueFromMDS (91, 0, 0)},
@@ -348,9 +358,8 @@ TEST (DirectionParser, ParseSimpleTrueNorth)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionParser, ParseErrors)
+TEST_F (DirectionParserTest, ParseErrors)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionParserTestData testDataArray[] = 
         {
         { L"nrth",  0.0 },
@@ -366,9 +375,8 @@ TEST (DirectionParser, ParseErrors)
 * I made parsers ignore leading whitespace. Old API would not do that.
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionParser, ParseSimple_LegacyErrors)
+TEST_F (DirectionParserTest, ParseSimple_LegacyErrors)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionParserTestData testDataArray[] = 
         {
         { L"east",  0.0},       // this returns success.
@@ -386,9 +394,8 @@ TEST (DirectionParser, ParseSimple_LegacyErrors)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionParser, ParseSimpleAnglesOnly)
+TEST_F (DirectionParserTest, ParseSimpleAnglesOnly)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionParserTestData testDataArray[] = 
         {
         { L"30^",  vp_createAngleValueFromMDS (30, 0, 0)},
@@ -420,9 +427,8 @@ TEST (DirectionParser, ParseSimpleAnglesOnly)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple_Whitespace)
+TEST_F (AngleParserTest, ParseSimple_Whitespace)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"  30",  vp_createAngleValueFromMDS (30, 0, 0)}, // not sure if this is valid
@@ -439,9 +445,8 @@ TEST (AngleParser, ParseSimple_Whitespace)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseDecimalsInvolved)
+TEST_F (AngleParserTest, ParseDecimalsInvolved)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"30.5",  vp_createAngleValueFromMDS (30, 30, 0)}, // not sure if this is valid
@@ -464,9 +469,8 @@ TEST (AngleParser, ParseDecimalsInvolved)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseFractions)
+TEST_F (AngleParserTest, ParseFractions)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"1/2^2\"",  vp_createAngleValueFromMDS (0, 30, 2)},
@@ -482,9 +486,8 @@ TEST (AngleParser, ParseFractions)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple_Radians)
+TEST_F (AngleParserTest, ParseSimple_Radians)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
@@ -500,9 +503,8 @@ TEST (AngleParser, ParseSimple_Radians)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple_Radians_Fractions)
+TEST_F (AngleParserTest, ParseSimple_Radians_Fractions)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
@@ -516,9 +518,8 @@ TEST (AngleParser, ParseSimple_Radians_Fractions)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple_Gradians)
+TEST_F (AngleParserTest, ParseSimple_Gradians)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
@@ -534,9 +535,8 @@ TEST (AngleParser, ParseSimple_Gradians)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple_Radians_Equations)
+TEST_F (AngleParserTest, ParseSimple_Radians_Equations)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
@@ -552,9 +552,8 @@ TEST (AngleParser, ParseSimple_Radians_Equations)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple_Inconsistency)
+TEST_F (AngleParserTest, ParseSimple_Inconsistency)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L"30d20m10s",    vp_createAngleValueFromMDS (30, 20, 10)}, // The s is not interpreted as seconds but instead as South - therefore the whole value gets negated.
@@ -572,9 +571,8 @@ TEST (AngleParser, ParseSimple_Inconsistency)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseWithWrongTypes_Expected)
+TEST_F (AngleParserTest, ParseWithWrongTypes_Expected)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataWithMode testDataArray[] = 
         {
         { L"0",                 vp_createAngleValueFromMDS (0, 0, 0),           AngleMode::Radians, SUCCESS}, 
@@ -590,9 +588,8 @@ TEST (AngleParser, ParseWithWrongTypes_Expected)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimpleWhiteSpaceInBetween)
+TEST_F (AngleParserTest, ParseSimpleWhiteSpaceInBetween)
     {
-    ScopedDgnHost autoDgnHost;
     AngleParserTestDataSimple testDataArray[] = 
         {
         { L" 30^ 20' ",  vp_createAngleValueFromMDS (30, 0, 0)}, // This shows that the 20' gets disregarded because of the white space.
@@ -607,9 +604,8 @@ TEST (AngleParser, ParseSimpleWhiteSpaceInBetween)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleParser, ParseSimple_DegreeSymbol)
+TEST_F (AngleParserTest, ParseSimple_DegreeSymbol)
     {
-    ScopedDgnHost autoDgnHost;
     WString deg1 = L"30";
     deg1 += 0x00b0 /* Unicode code point for degree*/;
     deg1 += L"20'10\"";
@@ -627,12 +623,18 @@ TEST (AngleParser, ParseSimple_DegreeSymbol)
         vp_doParseAngleTest (AngleMode::DegMin, testDataArray[iTest]);
     }
 
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct DistanceParserTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceParser, ParseSimple)
+TEST_F (DistanceParserTest, ParseSimple)
     {
-    ScopedDgnHost autoDgnHost;
     DistanceParserTestDataSimple testDataArray[] = 
         {
         { L"112",   vp_createUnitValue (112, 0, 0),            3},
@@ -655,9 +657,8 @@ TEST (DistanceParser, ParseSimple)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceParser, ParseSimple_Inconsistency)
+TEST_F (DistanceParserTest, ParseSimple_Inconsistency)
     {
-    ScopedDgnHost autoDgnHost;
     DistanceParserTestDataSimple testDataArray[] = 
         {
         { L" 1m     -10mm",   vp_createUnitValue (1, 10, 0),        -1},  // this is accepted - but it is not ok - inconsistent with all the other ways that white space is treated.
@@ -673,9 +674,8 @@ TEST (DistanceParser, ParseSimple_Inconsistency)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceParser, ParseScientific)
+TEST_F (DistanceParserTest, ParseScientific)
     {
-    ScopedDgnHost autoDgnHost;
     DistanceParserTestDataSimple testDataArray[] = 
         {
         { L" 1.5E0  ",   vp_createUnitValue (1.5, 0, 0), 6},
@@ -693,9 +693,8 @@ TEST (DistanceParser, ParseScientific)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceParser, ParseSimple_ShowingFailing)
+TEST_F (DistanceParserTest, ParseSimple_ShowingFailing)
     {
-    ScopedDgnHost autoDgnHost;
     DistanceParserTestDataSimple testDataArray[] = 
         {
         { L"1M10MM",    vp_createUnitValue (1, 10, 0), 6}, 
@@ -710,12 +709,18 @@ TEST (DistanceParser, ParseSimple_ShowingFailing)
     }
 #endif
 
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct PointParserTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (PointParser, ParseSimple)
+TEST_F (PointParserTest, ParseSimple)
     {
-    ScopedDgnHost autoDgnHost;
     PointParserTestDataSimple testDataArray[] = 
         {
         { L"0m0mm,0m0mm,0m0mm",    vp_createParsedPointValue  (0.0, 0.0, 0.0),     true, true, 1.0}, 
@@ -732,9 +737,8 @@ TEST (PointParser, ParseSimple)
 * Legacy version expected only 2 units passed in. It would consider everything after the first ',' the y value.
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (PointParser, ParseSimple2dLegacy)
+TEST_F (PointParserTest, ParseSimple2dLegacy)
     {
-    ScopedDgnHost autoDgnHost;
     PointParserTestDataSimple testDataArray[] = 
         {
         { L"0m0mm,0m0mm",    vp_createParsedPointValue (0.0, 0.0, 0.0),      true, false, 1.0}, 
@@ -750,9 +754,8 @@ TEST (PointParser, ParseSimple2dLegacy)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (PointParser, ParseSimple2d)
+TEST_F (PointParserTest, ParseSimple2d)
     {
-    ScopedDgnHost autoDgnHost;
     PointParserTestDataSimple testDataArray[] = 
         {
         { L"0m0mm,0m0mm,0m0mm",     vp_createParsedPointValue (0.0, 0.0, 0.0),    true, false, 1.0}, 
@@ -769,9 +772,8 @@ TEST (PointParser, ParseSimple2d)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (PointParser, TestCoordSplitting)
+TEST_F (PointParserTest, TestCoordSplitting)
     {
-    ScopedDgnHost autoDgnHost;
     PointParserTestDataSimple testDataArray[] = 
         {
         // In String,       Expected Point                                          Expect Success, Is3d,   Scale
@@ -792,9 +794,8 @@ TEST (PointParser, TestCoordSplitting)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (PointParser, TestUnusualInputs)
+TEST_F (PointParserTest, TestUnusualInputs)
     {
-    ScopedDgnHost autoDgnHost;
     PointParserTestDataSimple testDataArray[] = 
         {
         // In String,       Expected Point                                          Expect Success, Is3d,   Scale
@@ -816,9 +817,8 @@ TEST (PointParser, TestUnusualInputs)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (PointParser, TestUnusualInputs2d)
+TEST_F (PointParserTest, TestUnusualInputs2d)
     {
-    ScopedDgnHost autoDgnHost;
     PointParserTestDataSimple testDataArray[] = 
         {
         // In String,       Expected Point                                          Expect Success, Is3d,   Scale
