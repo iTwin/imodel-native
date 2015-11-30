@@ -66,6 +66,9 @@ public:
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
+//! A set of identifiers for lockable objects
+typedef bset<LockableId> LockableIdSet;
+
 //=======================================================================================
 //! Enumerates the possible levels of ownership granted to a briefcase by a lock.
 //! Shared locks can be acquired by any number of briefcases, as long as no briefcase holds

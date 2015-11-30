@@ -233,13 +233,13 @@ LockStatus LocksServer::_QueryOwnership(DgnLockOwnershipR ownership, LockableId 
     EXPECT_EQ(lockId, inputLockId);
 
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT" SERVER_Exclusive "," SERVER_BcId " FROM " SERVER_Table " WHERE " SERVER_LockType "=? AND " SERVER_LockId "=?");
+    stmt.Prepare(m_db, "SELECT " SERVER_Exclusive "," SERVER_BcId " FROM " SERVER_Table " WHERE " SERVER_LockType "=? AND " SERVER_LockId "=?");
     stmt.BindInt(1, static_cast<int32_t>(lockId.GetType()));
     stmt.BindId(2, lockId.GetId());
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        auto owner = stmt.GetValueId<BeBriefcaseId>(1);
+        auto owner = BeBriefcaseId(static_cast<uint32_t>(stmt.GetValueInt(1)));
         bool exclusive = 0 != stmt.GetValueInt(0);
         if (exclusive)
             {
@@ -529,19 +529,19 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     template<typename T> static DgnDbR ExtractDgnDb(T const& obj) { return obj.GetDgnDb(); }
 
-    template<typename T> LockRequest::Response AcquireResponse(T const& obj, LockLevel level)
+    LockRequest::Response AcquireResponse(LockRequestR req, DgnDbR db)
         {
         m_server.Dump("Before acquiring locks");
+        auto response = db.Locks().AcquireLocks(req);
+        m_server.Dump("After acquiring locks");
+        return response;
+        }
 
+    template<typename T> LockRequest::Response AcquireResponse(T const& obj, LockLevel level)
+        {
         LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
         req.Insert(obj, level);
-        DgnDbR db = ExtractDgnDb(obj);
-
-        auto reponse = db.Locks().AcquireLocks(req);
-
-        m_server.Dump("After acquiring locks");
-
-        return response;
+        return AcquireResponse(req, ExtractDgnDb(obj));
         }
 
     template<typename T> LockStatus Acquire(T const& obj, LockLevel level)
@@ -559,7 +559,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
         EXPECT_EQ(LockStatus::AlreadyHeld, Acquire(obj, level));
         }
 
-    template<typename T> void ExpectInDeniedSet(T const& lockedObj, LockLevel level, LockRequest::Response const& response)
+    template<typename T> void ExpectInDeniedSet(T const& lockedObj, LockLevel level, LockRequest::Response const& response, DgnDbR requestor)
         {
         // Test that locked obj is in response
         auto lockableId = MakeLockableId(lockedObj);
@@ -571,7 +571,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
         // Test that response matches direct ownership query
         DgnLockOwnership ownership;
-        EXPECT_EQ(LockStatus::Success, T_HOST.GetLocksAdmin()._GetLocksServer()->QueryOwnership(ownership, lockableId));
+        EXPECT_EQ(LockStatus::Success, T_HOST.GetLocksAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
         EXPECT_EQ(level, ownership.GetLockLevel());
         auto owningBcId = ExtractDgnDb(lockedObj).GetBriefcaseId();
         switch (level)
@@ -1076,6 +1076,8 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
     DgnElementCPtr elemA2d2 = GetElement(dbA, Elem2dId2());
     DgnElementCPtr elemB2d2 = GetElement(dbB, Elem2dId2());
 
+    LockableId dbLockId = MakeLockableId(dbB);
+
     // Model: Locked exclusively
         {
         ExpectAcquire(*modelA2d, LockLevel::Exclusive);
@@ -1083,12 +1085,13 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
         EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
         EXPECT_EQ(1, response.GetDeniedLocks().size());
 
-        ExpectInDeniedSet(*modelA2d, LockLevel::Exclusive, response);
+        ExpectInDeniedSet(*modelA2d, LockLevel::Exclusive, response, dbB);
         // Reformulate request => remove request for model
         LockRequest request;
-        request.Insert(*modelB2, LockLevel::Shared);
+        request.Insert(*modelB2d, LockLevel::Shared);
         dbB.Locks().ReformulateRequest(request, response.GetDeniedLocks());
-        EXPECT_TRUE(request.IsEmpty());
+        EXPECT_EQ(1, request.Size());
+        EXPECT_TRUE(request.Contains(dbLockId));
         }
 
     RelinquishAll();
@@ -1097,16 +1100,17 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
         {
         ExpectAcquire(*modelA2d, LockLevel::Shared);
         ExpectAcquire(*modelB2d, LockLevel::Shared);
+
         // Try to lock exclusively
         auto response = AcquireResponse(*modelB2d, LockLevel::Exclusive);
         EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
         EXPECT_EQ(1, response.GetDeniedLocks().size());
-        ExpectInDeniedSet(*modelA2d, LockLevel::Shared, response);
+        ExpectInDeniedSet(*modelA2d, LockLevel::Shared, response, dbB);
 
         // Expect two shared owners
         DgnLockOwnership ownership;
         auto modelLockId = MakeLockableId(*modelA2d);
-        EXPECT_EQ(LockStatus::Success, T_HOST.GetLocksAdmin()._GetLocksServer()->QueryOwnership(ownership, modelLockId));
+        EXPECT_EQ(LockStatus::Success, _GetLocksServer(dbB)->QueryOwnership(ownership, modelLockId));
         EXPECT_EQ(LockLevel::Shared, ownership.GetLockLevel());
         auto const& sharedOwners = ownership.GetSharedOwners();
         EXPECT_EQ(2, sharedOwners.size());
@@ -1114,11 +1118,59 @@ TEST_F(DoubleBriefcaseTest, ReformulateRequest)
         EXPECT_TRUE(sharedOwners.find(dbB.GetBriefcaseId()) != sharedOwners.end());
 
         // Reformulate request => demote exclusive to shared
-        EXPECT_EQ(1, request.Size());
+        LockRequest request;
+        request.Insert(*modelB2d, LockLevel::Exclusive);
+        dbB.Locks().ReformulateRequest(request, response.GetDeniedLocks());
+        EXPECT_EQ(2, request.Size());
         EXPECT_EQ(LockLevel::Shared, request.GetLockLevel(modelLockId));
+        EXPECT_TRUE(request.Contains(dbLockId));
+        EXPECT_EQ(LockStatus::Success, dbB.Locks().AcquireLocks(request).GetStatus());
         }
 
     RelinquishAll();
+
+    // One element locked, one not
+        {
+        ExpectAcquire(*elemA2d2, LockLevel::Exclusive);
+
+        // Try to lock both elems
+        DgnElementCPtr elemB2d1 = GetElement(dbB, Elem2dId1());
+        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        req.Insert(*elemB2d2, LockLevel::Exclusive);
+        req.Insert(*elemB2d1, LockLevel::Exclusive);
+        auto response = AcquireResponse(req, dbB);
+        EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
+
+        // Reformulate request => remove one element
+        dbB.Locks().ReformulateRequest(req, response.GetDeniedLocks());
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(MakeLockableId(*elemB2d1)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(MakeLockableId(*elemB2d2)));
+        EXPECT_EQ(LockStatus::Success, dbB.Locks().AcquireLocks(req).GetStatus());
+        }
+
+    RelinquishAll();
+
+    // One model exclusively locked, one not
+        {
+        DgnModelPtr modelA3d = GetModel(dbA, false);
+        ExpectAcquire(*modelA2d, LockLevel::Exclusive);
+
+        // Try to lock one elem from each model
+        DgnElementCPtr elemB3d2 = GetElement(dbB, Elem3dId2());
+        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        req.Insert(*elemB2d2, LockLevel::Exclusive);
+        req.Insert(*elemB3d2, LockLevel::Exclusive);
+        auto response = AcquireResponse(req, dbB);
+        EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
+
+        // Reformulate request => remove element in locked model
+        dbB.Locks().ReformulateRequest(req, response.GetDeniedLocks());
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(MakeLockableId(*elemB3d2)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(MakeLockableId(*elemB2d2)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(MakeLockableId(*modelA3d)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(MakeLockableId(*modelB2d)));
+        EXPECT_EQ(LockStatus::Success, dbB.Locks().AcquireLocks(req).GetStatus());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
