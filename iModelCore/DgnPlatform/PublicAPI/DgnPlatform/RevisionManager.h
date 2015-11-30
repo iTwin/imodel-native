@@ -91,7 +91,7 @@ public:
 //! Streams the contents of multiple files containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeStreamFileReader : BeSQLite::ChangeStream
+struct EXPORT_VTABLE_ATTRIBUTE ChangeStreamFileReader : BeSQLite::ChangeStream
 {
 private:
     bvector<BeFileName> m_pathnames;
