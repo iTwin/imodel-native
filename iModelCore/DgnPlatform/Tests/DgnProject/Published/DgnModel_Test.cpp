@@ -5,42 +5,10 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName copyDb (WCharCP inputFileName, WCharCP outputFileName)
-    {
-    BeFileName fullInputFileName;
-    BeTest::GetHost().GetDocumentsRoot (fullInputFileName);
-    fullInputFileName.AppendToPath (inputFileName);
-
-    BeFileName fullOutputFileName;
-    BeTest::GetHost().GetOutputRoot(fullOutputFileName);
-    fullOutputFileName.AppendToPath(outputFileName);
-
-    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
-        return BeFileName();
-
-    return fullOutputFileName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
-    {
-    DbResult result = BE_SQLITE_OK;
-    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
-    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
-    ASSERT_EQ( BE_SQLITE_OK , result );
-    TestDataManager::MustBeBriefcase(db, mode);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
@@ -48,7 +16,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMode mode, bool importDummySchemaFirst = true)
     {
     DgnDbPtr db2;
-    openDb(db2, copyDb(sourceName, destName), mode);
+    DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(sourceName, destName), mode);
     if (!db2.IsValid())
         return nullptr;
     if (importDummySchemaFirst)
@@ -60,27 +28,21 @@ static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMo
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
 //----------------------------------------------------------------------------------------
-struct DgnModelTests : public testing::Test
+struct DgnModelTests : public DgnDbTestFixture
 {
-    ScopedDgnHost m_autoDgnHost;
-    DgnDbPtr m_dgndb;    
     DgnModelPtr m_model;
-
-    DgnModelTests()
-        {
-        // Must register my domain whenever I initialize a host
-        DgnPlatformTestDomain::Register(); 
-        }
-
+    
     void SetUp() override
         {
-        DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
-        m_dgndb = tdm.GetDgnProjectP();
+        //DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
+        //SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+
+        //m_db = tdm.GetDgnProjectP();
         }
 
     void LoadModel(Utf8CP name)
         {
-        DgnModels& modelTable =  m_dgndb->Models();
+        DgnModels& modelTable =  m_db->Models();
         DgnModelId id = modelTable.QueryModelId(DgnModel::CreateModelCode(name));
         m_model =  modelTable.GetModel(id);
         if (m_model.IsValid())
@@ -117,6 +79,7 @@ public:
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetGraphicElements)
     {
+    SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
@@ -135,13 +98,14 @@ TEST_F(DgnModelTests, GetGraphicElements)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetName)
     {
+    SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     Utf8String name = m_model->GetCode().GetValue();
     EXPECT_TRUE(name.CompareTo("Splines")==0);
     Utf8String newName("New Long model name Longer than expectedNew Long model name Longer"
         " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
     DgnDbStatus status;
-    DgnModels& modelTable =  m_dgndb->Models();
+    DgnModels& modelTable =  m_db->Models();
     DgnModelPtr seedModel = modelTable.GetModel(m_model->GetModelId());
     DgnModelPtr newModel = seedModel->Clone(DgnModel::CreateModelCode(newName));
     status = newModel->Insert();
@@ -158,6 +122,7 @@ TEST_F(DgnModelTests, GetName)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, EmptyList)
     {
+    SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     ASSERT_TRUE(0 != m_model->GetElements().size());
     m_model->EmptyModel();
@@ -171,8 +136,7 @@ TEST_F(DgnModelTests, EmptyList)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRange)
     {
-    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    m_dgndb = tdm.GetDgnProjectP();
+    SetupProject(L"ModelRangeTest.idgndb", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("RangeTest");
 
     AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
@@ -189,8 +153,7 @@ TEST_F(DgnModelTests, GetRange)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    m_dgndb = tdm.GetDgnProjectP();
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Default");
 
     AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
@@ -243,7 +206,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, SheetModelCRUD)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
 
     static Utf8CP s_sheet1Name = "Sheet1";
     static Utf8CP s_sheet1NameUPPER = "SHEET1";
@@ -253,7 +216,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     BeFileName dbFileName;
     if (true)
         {
-        DgnDbPtr db = tdm.GetDgnProjectP();
+        DgnDbPtr db = m_db;
 
         ASSERT_EQ( 0 , countSheets(*db) );
 
@@ -348,13 +311,11 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, WorkWithDgnModelTable)
-{
-    DgnDbTestDgnManager tdm(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OpenMode::Readonly, false);
-    DgnDbP project = tdm.GetDgnProjectP();
-    ASSERT_TRUE(project != NULL);
+    {
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OpenMode::ReadWrite);
 
     //Iterating through the models
-    DgnModels& modelTable = project->Models();
+    DgnModels& modelTable = m_db->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
     ASSERT_EQ(3, iter.QueryCount()); // including dictionary model...
 
@@ -384,8 +345,8 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, DictionaryModel)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    DgnDbR db = *tdm.GetDgnProjectP();
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_db;
 
     DgnModelPtr model = db.Models().GetModel(DgnModel::DictionaryId());
     EXPECT_TRUE(model.IsValid());
@@ -418,39 +379,38 @@ TEST_F(DgnModelTests, DictionaryModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ModelsIterator)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    DgnDbP db = tdm.GetDgnProjectP ();
-    ASSERT_TRUE (db != nullptr);
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_db;
 
-    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
     seedModel->FillModel ();
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts models
     DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
     M1->Insert ("Test Model 1");
-    db->SaveChanges ("changeSet1");
+    db.SaveChanges ("changeSet1");
 
     DgnModelPtr M2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
     M2->Insert ("Test Model 2", true);
 
     DgnModelPtr M3 = seedModel->Clone (DgnModel::CreateModelCode("Model3"));
     M3->Insert ("Test Model 3", true);
-    db->SaveChanges ("changeSet1");
+    db.SaveChanges ("changeSet1");
 
-    EXPECT_TRUE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
-    EXPECT_TRUE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model2")).IsValid ());
-    EXPECT_TRUE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model3")).IsValid ());
+    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model2")).IsValid ());
+    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model3")).IsValid ());
 
-    DgnModelId m1id = db->Models ().QueryModelId (DgnModel::CreateModelCode("Model1"));
-    DgnModelId m2id = db->Models ().QueryModelId (DgnModel::CreateModelCode("Model2"));
-    DgnModelId m3id = db->Models ().QueryModelId (DgnModel::CreateModelCode("Model3"));
+    DgnModelId m1id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1"));
+    DgnModelId m2id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model2"));
+    DgnModelId m3id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model3"));
 
     DgnModel::Code m1_code;
-    BentleyStatus ModelName = db->Models ().GetModelCode (m1_code, m1id);
+    BentleyStatus ModelName = db.Models ().GetModelCode (m1_code, m1id);
     EXPECT_EQ (0, ModelName);
 
-    DgnModels& models = db->Models ();
+    DgnModels& models = db.Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
     EXPECT_EQ (5, iter.QueryCount ()); // including the dictionary model...
     DgnModels::Iterator::Entry entry = iter.begin ();
@@ -488,11 +448,10 @@ TEST_F (DgnModelTests, ModelsIterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AbandonChanges)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    DgnDbP db = tdm.GetDgnProjectP ();
-    ASSERT_TRUE (db != nullptr);
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_db;
 
-    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
     seedModel->FillModel ();
     EXPECT_TRUE (seedModel != nullptr);
 
@@ -500,20 +459,20 @@ TEST_F (DgnModelTests, AbandonChanges)
     DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
     M1->Insert ("Test Model 1");
     EXPECT_TRUE (M1 != nullptr);
-    db->SaveChanges ("changeSet1");
+    db.SaveChanges ("changeSet1");
 
-    EXPECT_TRUE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
     M1->Delete ();
-    EXPECT_FALSE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_FALSE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
 
     DgnModelPtr model2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
     model2->Insert ();
 
     //Model 1 should be back. Model 2 shouldnt be in the db anymore.
-    DbResult rzlt = db->AbandonChanges ();
+    DbResult rzlt = db.AbandonChanges ();
     EXPECT_TRUE (rzlt == 0);
-    EXPECT_TRUE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
-    EXPECT_FALSE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model2")).IsValid ());
+    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_FALSE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model2")).IsValid ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -535,11 +494,10 @@ struct TestAppData : DgnModel::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AddAppData)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    DgnDbP db = tdm.GetDgnProjectP ();
-    ASSERT_TRUE (db != nullptr);
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_db;
 
-    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
     seedModel->FillModel ();
     EXPECT_TRUE (seedModel != nullptr);
 
@@ -547,7 +505,7 @@ TEST_F (DgnModelTests, AddAppData)
     DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
     M1->Insert ("Test Model 1");
     EXPECT_TRUE (M1 != nullptr);
-    EXPECT_TRUE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
 
     static DgnModel::AppData::Key m_key;
     TestAppData *m_AppData = new TestAppData ();
@@ -563,11 +521,10 @@ TEST_F (DgnModelTests, AddAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, DropAppData)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    DgnDbP db = tdm.GetDgnProjectP ();
-    ASSERT_TRUE (db != nullptr);
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_db;
 
-    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
     seedModel->FillModel ();
     EXPECT_TRUE (seedModel != nullptr);
 
@@ -575,7 +532,7 @@ TEST_F (DgnModelTests, DropAppData)
     DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
     M1->Insert ("Test Model 1");
     EXPECT_TRUE (M1 != nullptr);
-    EXPECT_TRUE (db->Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
+    EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
 
     static DgnModel::AppData::Key m_key;
     TestAppData *m_AppData = new TestAppData ();
@@ -592,9 +549,7 @@ TEST_F (DgnModelTests, DropAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ReplaceInvalidCharacter)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
-    DgnDbP db = tdm.GetDgnProjectP ();
-    ASSERT_TRUE (db != nullptr);
+    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
 
     Utf8String name = "Invalid*Name";
     Utf8CP InvalidChar = "*";

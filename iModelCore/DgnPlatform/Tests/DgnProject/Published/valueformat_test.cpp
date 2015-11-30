@@ -48,13 +48,18 @@ void    doFormatDoubleTest (DoubleFormatTestData const& testData)
 
     ASSERT_STREQ (testData.m_expectedString, WString(outputStr.c_str(), BentleyCharEncoding::Utf8).c_str());
     }
-
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct DoubleFormatterTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DoubleFormatter, FormatDecimal_TestPrecision)
+TEST_F (DoubleFormatterTest, FormatDecimal_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     DoubleFormatTestData testDataArray[] =
         {
         // expected         value           precision                        leadingZero, trailingZero, useThousandsSep, decSep, thousandsSep},
@@ -76,9 +81,8 @@ TEST (DoubleFormatter, FormatDecimal_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DoubleFormatter, FormatDecimal_TestRounding)
+TEST_F (DoubleFormatterTest, FormatDecimal_TestRounding)
     {
-    ScopedDgnHost autoDgnHost;
     DoubleFormatTestData testDataArray[] =
         {
         // expected         value           precision                        leadingZero, trailingZero, useThousandsSep, decSep, thousandsSep},
@@ -99,9 +103,8 @@ TEST (DoubleFormatter, FormatDecimal_TestRounding)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DoubleFormatter, FormatDecimal_TestZeros)
+TEST_F (DoubleFormatterTest, FormatDecimal_TestZeros)
     {
-    ScopedDgnHost autoDgnHost;
     DoubleFormatTestData testDataArray[] =
         {
         // expected         value           precision                        leadingZero, trailingZero, useThousandsSep, decSep, thousandsSep},
@@ -122,9 +125,8 @@ TEST (DoubleFormatter, FormatDecimal_TestZeros)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DoubleFormatter, FormatDecimal_TestSeparators)
+TEST_F (DoubleFormatterTest, FormatDecimal_TestSeparators)
     {
-    ScopedDgnHost autoDgnHost;
     DoubleFormatTestData testDataArray[] =
         {
         // expected         value           precision                        leadingZero, trailingZero, useThousandsSep, decSep, thousandsSep},
@@ -151,9 +153,8 @@ TEST (DoubleFormatter, FormatDecimal_TestSeparators)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DoubleFormatter, FormatFractional_TestPrecision)
+TEST_F (DoubleFormatterTest, FormatFractional_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     DoubleFormatTestData testDataArray[] =
         {
         // expected         value           precision                               leadingZero, trailingZero, useThousandsSep, decSep, thousandsSep},
@@ -175,9 +176,8 @@ TEST (DoubleFormatter, FormatFractional_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DoubleFormatter, FormatFractional_TestRounding)
+TEST_F (DoubleFormatterTest, FormatFractional_TestRounding)
     {
-    ScopedDgnHost autoDgnHost;
     DoubleFormatTestData testDataArray[] =
         {
         // expected         value           precision                               leadingZero, trailingZero, useThousandsSep, decSep, thousandsSep},
@@ -198,9 +198,8 @@ TEST (DoubleFormatter, FormatFractional_TestRounding)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DoubleFormatter, FormatScientific_TestPrecision)
+TEST_F (DoubleFormatterTest, FormatScientific_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     DoubleFormatTestData testDataArray[] =
         {
         // expected         value            precision                           leadingZero, trailingZero, useThousandsSep, decSep, thousandsSep},
@@ -231,7 +230,7 @@ TEST (DoubleFormatter, FormatScientific_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Julija.Suboc    09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DoubleFormatter, MakeClone)
+TEST_F (DoubleFormatterTest, MakeClone)
     {
     DoubleFormatterPtr formatter1 = DoubleFormatter::Create();
     DoubleFormatterPtr formatter2 = formatter1->Clone();
@@ -275,7 +274,7 @@ TEST(DoubleFormatter, MakeClone)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Julija.Suboc    09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DoubleFormatter, SetAndGetPrecision)
+TEST_F (DoubleFormatterTest, SetAndGetPrecision)
     {
     DoubleFormatterPtr formatter = DoubleFormatter::Create();
     bvector<PrecisionFormat> precisionTypes;
@@ -314,7 +313,7 @@ TEST(DoubleFormatter, SetAndGetPrecision)
         precisionTypes.pop_back();
         }
     }
-	
+    
 WChar const DEGREE_PLACEHOLDER = L'^';
 
 /*---------------------------------------------------------------------------------**//**
@@ -376,13 +375,18 @@ void    doFormatAngleTest (AngleFormatTestData const& testData)
 #define SEC_TO_DEG  (1.0 / 3600)
 #define GRAD_TO_DEG (90.0 / 100)
 #define RAD_TO_DEG  (180.0 / 3.141592653589793238462643)
-
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct AngleFormatterTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatDegree_TestPrecision)
+TEST_F (AngleFormatterTest, FormatDegree_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"35^",          35.123456789, AngleMode::Degrees, AnglePrecision::Whole,   true, true, true},
@@ -403,9 +407,8 @@ TEST (AngleFormatter, FormatDegree_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatDegree_TestFullCircle)
+TEST_F (AngleFormatterTest, FormatDegree_TestFullCircle)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         {   L"0.00^",     0.0, AngleMode::Degrees, AnglePrecision::Use2Places, true, true, true},
@@ -430,9 +433,8 @@ TEST (AngleFormatter, FormatDegree_TestFullCircle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatDegMin_TestPrecision)
+TEST_F (AngleFormatterTest, FormatDegMin_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"35^35'",           35 + 35.123456789 * MIN_TO_DEG, AngleMode::DegMin, AnglePrecision::Whole,   true, true, true},
@@ -453,9 +455,8 @@ TEST (AngleFormatter, FormatDegMin_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatDegMinSec_TestPrecision)
+TEST_F (AngleFormatterTest, FormatDegMinSec_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"35^00'35\"",           35 + 35.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Whole,   true, true, true},
@@ -476,9 +477,8 @@ TEST (AngleFormatter, FormatDegMinSec_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatCentesimal_TestPrecision)
+TEST_F (AngleFormatterTest, FormatCentesimal_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"50g",          50.123456789 * GRAD_TO_DEG, AngleMode::Centesimal, AnglePrecision::Whole,   true, true, true},
@@ -499,9 +499,8 @@ TEST (AngleFormatter, FormatCentesimal_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatCentesimal_TestFullCircle)
+TEST_F (AngleFormatterTest, FormatCentesimal_TestFullCircle)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         {   L"0.00g",     0.0 * GRAD_TO_DEG, AngleMode::Centesimal, AnglePrecision::Use2Places, true, true, true},
@@ -530,9 +529,8 @@ TEST (AngleFormatter, FormatCentesimal_TestFullCircle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatRadians_TestPrecision)
+TEST_F (AngleFormatterTest, FormatRadians_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"2r",          2.123456789 * RAD_TO_DEG, AngleMode::Radians, AnglePrecision::Whole,   true, true, true},
@@ -553,9 +551,8 @@ TEST (AngleFormatter, FormatRadians_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatDegree_TestZeros)
+TEST_F (AngleFormatterTest, FormatDegree_TestZeros)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"0^",         0.0, AngleMode::Degrees, AnglePrecision::Whole,   true,  true,  true},
@@ -591,9 +588,8 @@ TEST (AngleFormatter, FormatDegree_TestZeros)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatDegMin_TestZeros)
+TEST_F (AngleFormatterTest, FormatDegMin_TestZeros)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"00^00'",       0.0, AngleMode::DegMin, AnglePrecision::Whole,   true,  true,  true},
@@ -629,9 +625,8 @@ TEST (AngleFormatter, FormatDegMin_TestZeros)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (AngleFormatter, FormatDegMinSec_TestZeros)
+TEST_F (AngleFormatterTest, FormatDegMinSec_TestZeros)
     {
-    ScopedDgnHost autoDgnHost;
     AngleFormatTestData testDataArray[] =
         {
         { L"00^00'00\"",      0.0,                  AngleMode::DegMinSec, AnglePrecision::Whole,   true,  true,  true},
@@ -699,12 +694,18 @@ void    doFormatDirectionTest (DirectionFormatTestData const& testData)
     ASSERT_STREQ (expectStr.c_str(), outputStr.c_str());
     }
 
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct DirectionFormatterTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionFormatter, FormatAzimuth_TestFullCircle1)
+TEST_F (DirectionFormatterTest, FormatAzimuth_TestFullCircle1)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionFormatTestData testDataArray[] =
         {
         {  L"00^00'00\"",       0.0,   DirectionMode::Azimuth, 0.0, false},
@@ -729,9 +730,8 @@ TEST (DirectionFormatter, FormatAzimuth_TestFullCircle1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionFormatter, FormatAzimuth_TestFullCircle2)
+TEST_F (DirectionFormatterTest, FormatAzimuth_TestFullCircle2)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionFormatTestData testDataArray[] =
         {
         {  L"90^00'00\"",       0.0,   DirectionMode::Azimuth, 90.0, true},
@@ -756,9 +756,8 @@ TEST (DirectionFormatter, FormatAzimuth_TestFullCircle2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionFormatter, FormatBearing_TestFullCircle1)
+TEST_F (DirectionFormatterTest, FormatBearing_TestFullCircle1)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionFormatTestData testDataArray[] =
         {
         { L"N90^00'00\"E",       0.0,   DirectionMode::Bearing, 0.0, false},
@@ -783,9 +782,8 @@ TEST (DirectionFormatter, FormatBearing_TestFullCircle1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DirectionFormatter, FormatBearing_TestFullCircle2)
+TEST_F (DirectionFormatterTest, FormatBearing_TestFullCircle2)
     {
-    ScopedDgnHost autoDgnHost;
     DirectionFormatTestData testDataArray[] =
         {
         { L"N90^00'00\"E",       0.0,   DirectionMode::Bearing, 90.0, true},
@@ -867,13 +865,18 @@ void    doFormatDistanceTest (DistanceFormatTestData const& testData)
     ASSERT_STREQ (testData.m_base.m_expectedString, outputStr.c_str());
     }
 #define MM_TO_METERS(a) (a/1000.)
-
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct DistanceFormatterTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestGeneral)
+TEST_F (DistanceFormatterTest, Format_TestGeneral)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -902,9 +905,8 @@ TEST (DistanceFormatter, Format_TestGeneral)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestUnitLabelFlag)
+TEST_F (DistanceFormatterTest, Format_TestUnitLabelFlag)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -924,9 +926,8 @@ TEST (DistanceFormatter, Format_TestUnitLabelFlag)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestPrecision)
+TEST_F (DistanceFormatterTest, Format_TestPrecision)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -959,9 +960,8 @@ TEST (DistanceFormatter, Format_TestPrecision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestLeadingTrailingZeros)
+TEST_F (DistanceFormatterTest, Format_TestLeadingTrailingZeros)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -980,9 +980,8 @@ TEST (DistanceFormatter, Format_TestLeadingTrailingZeros)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestThousandsDecimalSeparator)
+TEST_F (DistanceFormatterTest, Format_TestThousandsDecimalSeparator)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -1006,9 +1005,8 @@ TEST (DistanceFormatter, Format_TestThousandsDecimalSeparator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestSuppressZeroMasterSubUnits)
+TEST_F (DistanceFormatterTest, Format_TestSuppressZeroMasterSubUnits)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -1029,9 +1027,8 @@ TEST (DistanceFormatter, Format_TestSuppressZeroMasterSubUnits)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestScientific)
+TEST_F (DistanceFormatterTest, Format_TestScientific)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -1052,9 +1049,8 @@ TEST (DistanceFormatter, Format_TestScientific)
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestFractions)
+TEST_F (DistanceFormatterTest, Format_TestFractions)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -1076,9 +1072,8 @@ TEST (DistanceFormatter, Format_TestFractions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   JoeZbuchalski    03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DistanceFormatter, Format_TestScaleFactor)
+TEST_F (DistanceFormatterTest, Format_TestScaleFactor)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition masterUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     UnitDefinition subUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters);
     UnitDefinition storageUnits = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
@@ -1151,8 +1146,8 @@ TEST (PointFormatter, Format_TestGeneral)
     PointFormatTestData testDataArray[] =
         {
         //point             value             precision                         unitflag  leadingzero  trailingzero  insertthousands  thousandssep  decimalsep  suppresszeromaster  suppresszerosub  scalefactor format            masterunits   subunits    storageunis   
-        { {0,0,0},          L"0, 0",        PrecisionFormat::DecimalWhole,    false,    true,        true,         false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MU,   masterUnits,  subUnits,   storageUnits },	
-        { {100,500,0},    L"0.100, 0.500",  PrecisionFormat::Decimal3Places,  false,    true,        true,         false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MU,   masterUnits,  subUnits,   storageUnits },	
+        { {0,0,0},          L"0, 0",        PrecisionFormat::DecimalWhole,    false,    true,        true,         false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MU,   masterUnits,  subUnits,   storageUnits },
+        { {100,500,0},    L"0.100, 0.500",  PrecisionFormat::Decimal3Places,  false,    true,        true,         false,           ',',          '.',        false,              false,           0.0,        DgnUnitFormat::MU,   masterUnits,  subUnits,   storageUnits },
         };
 
     for (int iTest = 0; iTest < _countof(testDataArray); iTest++)

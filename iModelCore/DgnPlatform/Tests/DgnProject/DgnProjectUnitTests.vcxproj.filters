@@ -43,9 +43,6 @@
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\ElementCreateHelpers.cpp">
-      <Filter>BackDoor</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -211,18 +208,45 @@
     <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="BackDoor\DgnDbUtilities.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationTable_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ChangeTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnImportContext_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FullTextSearch_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\LocksManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MemoryManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Revision_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementDependencyGraph.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\MissingHandler_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\GenericDgnModelTestFixture.h">
-      <Filter>Published</Filter>
-    </ClInclude>
     <ClInclude Include="NonPublished\DgnHandlersTests.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
     <ClInclude Include="Performance\DgnECPerformanceTests.h">
@@ -238,9 +262,6 @@
       <Filter>BackDoor</Filter>
     </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h">
-      <Filter>BackDoor</Filter>
-    </ClInclude>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\ElementCreateHelpers.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h">
@@ -260,6 +281,21 @@
     </ClInclude>
     <ClInclude Include="Performance\PerformanceElementsCRUDTests.h">
       <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnDbUtilities.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ChangeTestFixture.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -284,5 +320,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
+    <None Include="Published\DgnScriptTest.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_Checker.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_GeometryA.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_GeometryB.ts">
+      <Filter>Published</Filter>
+    </None>
   </ItemGroup>
 </Project>
