@@ -9,6 +9,7 @@
 #include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/GeomPart.h>
 #include <DgnPlatform/ElementGeometry.h>
+#include <ECDb/ECDbApi.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -101,6 +102,156 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
         return nullptr;
 
     return testElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin    06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementPtr TestElement::Create(Dgn::DgnDbR db, Dgn::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize)
+    {
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
+
+    //  Add some hard-wired geometry
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
+    EXPECT_TRUE(builder->Append(ep));
+    EXPECT_TRUE(builder->Append(*computeShape(shapeSize)));
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+        return nullptr;
+
+    return testElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementPtr TestElement::CreateWithoutGeometry(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId)
+    {
+    return new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), DgnElement::Code()));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_InsertInDb()
+{
+    DgnDbStatus stat = T_Super::_InsertInDb();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+    CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," DPTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
+    insertStmt->BindId(1, GetElementId());
+    insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_DONE != insertStmt->Step())
+        return DgnDbStatus::WriteError;
+#endif
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        m_testElemProperty = stmt.GetValueText(params.GetSelectIndex(DPTEST_TEST_ELEMENT_TestElementProperty));
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementHandler::_GetClassParams(ECSqlClassParams& params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(DPTEST_TEST_ELEMENT_TestElementProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_BindInsertParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindText(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_BindUpdateParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindUpdateParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindText(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_UpdateInDb()
+{
+    DgnDbStatus status = T_Super::_UpdateInDb();
+    if (DgnDbStatus::Success != status)
+        return status;
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+    Utf8String stmt("UPDATE " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ITEM_CLASS_NAME);
+    stmt.append(" SET " DPTEST_TEST_ITEM_TestItemProperty "=? WHERE ECInstanceId = ?;");
+
+    CachedECSqlStatementPtr upStmt = GetDgnDb().GetPreparedECSqlStatement(stmt.c_str());
+    if (upStmt.IsNull())
+        return DgnDbStatus::SQLiteError;
+    if (upStmt->BindId(2, GetElementId()) != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+    if (upStmt->BindText(1, ECN::ECValue(m_testItemProperty.c_str()).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+    if (upStmt->Step() != BE_SQLITE_DONE)
+        return DgnDbStatus::WriteError;
+#endif
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_DeleteInDb() const
+{
+    DgnDbStatus status = T_Super::_DeleteInDb();
+    if (DgnDbStatus::Success != status)
+        return status;
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+    Utf8String stmt("DELETE FROM " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ITEM_CLASS_NAME);
+    stmt.append(" WHERE ECInstanceId = ?;");
+
+    CachedECSqlStatementPtr delStmt = GetDgnDb().GetPreparedECSqlStatement(stmt.c_str());
+    if (delStmt.IsNull())
+        return DgnDbStatus::SQLiteError;
+    if (delStmt->BindId(1, GetElementId()) != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+    if (delStmt->Step() != BE_SQLITE_DONE)
+        return DgnDbStatus::WriteError;
+#endif
+    return DgnDbStatus::Success;
+
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto testEl = dynamic_cast<TestElement const*>(&el);
+    if (nullptr != testEl)
+        {
+        m_testElemProperty = testEl->m_testElemProperty;
+        m_testItemProperty = testEl->m_testItemProperty;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

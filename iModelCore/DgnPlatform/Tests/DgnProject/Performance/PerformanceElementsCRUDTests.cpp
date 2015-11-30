@@ -1657,7 +1657,7 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool as
     BeSQLite::Statement stmt;
     Utf8String selectSql;
     GetSelectSql (className, selectSql, asTranslatedByECSql, omitClassIdFilter);
-    printf ("\n Select Sql %s : %s \n", className, selectSql.c_str ());
+    //printf ("\n Select Sql %s : %s \n", className, selectSql.c_str ());
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 

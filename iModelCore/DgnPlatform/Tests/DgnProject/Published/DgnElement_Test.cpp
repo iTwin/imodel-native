@@ -7,13 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
 
+USING_NAMESPACE_BENTLEY_DPTEST
+
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
 //----------------------------------------------------------------------------------------
 struct DgnElementTests : public DgnDbTestFixture
     {
     };
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      08/15
@@ -37,12 +38,12 @@ TEST_F (DgnElementTests, ResetStatistics)
     EXPECT_TRUE (M1id.IsValid());
 
     //Inserts 2 elements.
-    auto keyE1 = InsertElement(DgnElement::Code(), M1id);
+    auto keyE1 = InsertElement(M1id);
     DgnElementId E1id = keyE1->GetElementId();
     DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
     EXPECT_TRUE (E1 != nullptr);
 
-    auto keyE2 = InsertElement(DgnElement::Code(), M1id);
+    auto keyE2 = InsertElement(M1id);
     DgnElementId E2id = keyE2->GetElementId();
     DgnElementCPtr E2 = m_db->Elements().GetElement(E2id);
     EXPECT_TRUE (E2 != nullptr);
@@ -112,11 +113,12 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
-    auto keyE1 = InsertElement(DgnElement::Code(), m1id);
+    auto keyE1 = InsertElement(m1id);
     DgnElementId e1id = keyE1->GetElementId();
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
     //Creating a copy of element to edit.
     DgnElementPtr e1Copy = e1->CopyForEdit();
     dynamic_cast<TestElement*>(e1Copy.get())->SetTestElementProperty("Updated Test Element");
@@ -124,6 +126,7 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnElementCPtr updatedElement = e1Copy->Update();
 
     EXPECT_STREQ("Updated Test Element", dynamic_cast<TestElement const*>(updatedElement.get())->GetTestElementProperty().c_str());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
