@@ -85,13 +85,13 @@ TEST_F(ElementGeomPartTests, CreateElements)
     DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode());
     EXPECT_TRUE(existingPartId.IsValid());
 
-    auto key1 = InsertElementUsingGeomPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key1 = InsertElementUsingGeomPart(geomPartPtr->GetCode());
     EXPECT_TRUE(key1.GetElementId().IsValid());
     
-    auto key2 = InsertElementUsingGeomPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key2 = InsertElementUsingGeomPart(geomPartPtr->GetCode());
     EXPECT_TRUE(key2.GetElementId().IsValid());
 
-    auto key3 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
+    auto key3 = InsertElement()->GetElementKey();
     EXPECT_TRUE(key3.GetElementId().IsValid());
     }
 /*---------------------------------------------------------------------------------**//**
@@ -115,13 +115,13 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
     DgnGeomPartId existingPartId = geomPartPtr->GetId();
     EXPECT_TRUE(existingPartId.IsValid());
 
-    auto key1 = InsertElementUsingGeomPart(existingPartId, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key1 = InsertElementUsingGeomPart(existingPartId);
     EXPECT_TRUE(key1.GetElementId().IsValid());
     
-    auto key2 = InsertElementUsingGeomPart(existingPartId, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key2 = InsertElementUsingGeomPart(existingPartId);
     EXPECT_TRUE(key2.GetElementId().IsValid());
 
-    auto key3 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
+    auto key3 = InsertElement()->GetElementKey();
     EXPECT_TRUE(key3.GetElementId().IsValid());
     }
 /*---------------------------------------------------------------------------------**//**
@@ -144,14 +144,14 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
     DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("TestGeomPart");
     EXPECT_TRUE(existingPartId.IsValid());
 
-    auto key1 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
+    auto key1 = InsertElement()->GetElementKey();
     EXPECT_TRUE(key1.GetElementId().IsValid());
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(key1.GetElementId(), existingPartId) );
     DgnElementCPtr elem = m_db->Elements().GetElement(key1.GetElementId());
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK ,stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1,stmt.GetValueInt(0));
     ASSERT_EQ(key1.GetElementId().GetValue(), (int64_t)stmt.GetValueInt(1));
@@ -178,7 +178,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("TestGeomPart");
     EXPECT_TRUE(existingPartId.IsValid());
 
-    auto key1 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
+    auto key1 = InsertElement()->GetElementKey();
     EXPECT_TRUE(key1.GetElementId().IsValid());
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(key1.GetElementId(), existingPartId) );
@@ -211,7 +211,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("TestGeomPart");
     EXPECT_TRUE(existingPartId.IsValid());
 
-    auto key1 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
+    auto key1 = InsertElement()->GetElementKey();
     EXPECT_TRUE(key1.GetElementId().IsValid());
 
 
@@ -247,13 +247,13 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     EXPECT_TRUE(existingPartId.IsValid());
 
     //Add two elements using this GeomPart
-    auto key1 = InsertElementUsingGeomPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key1 = InsertElementUsingGeomPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
     EXPECT_TRUE(key1.GetElementId().IsValid());
 
-    auto key2 = InsertElementUsingGeomPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key2 = InsertElementUsingGeomPart(geomPartPtr->GetCode());
     EXPECT_TRUE(key2.GetElementId().IsValid());
 
-    auto key3 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
+    auto key3 = InsertElement()->GetElementKey();
     EXPECT_TRUE(key3.GetElementId().IsValid());
 
     // Delete Geom Part
@@ -285,12 +285,12 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     EXPECT_TRUE(existingPartId.IsValid());
 
     //Add two elements using this GeomPart
-    auto key1 = InsertElementUsingGeomPart2d( geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key1 = InsertElementUsingGeomPart2d(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
     EXPECT_TRUE(key1.GetElementId().IsValid());
 
-    auto key2 = InsertElementUsingGeomPart2d( geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key2 = InsertElementUsingGeomPart2d(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
     EXPECT_TRUE(key2.GetElementId().IsValid());
 
-    auto key3 = InsertElement2d( m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    auto key3 = InsertElement2d(m_defaultModelId, m_defaultCategoryId);
     EXPECT_TRUE(key3.GetElementId().IsValid());
     }

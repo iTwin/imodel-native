@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "../TestFixture/BlankDgnDbTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -14,29 +14,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnAuthoritiesTest : public ::testing::Test
+struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
     {
-private:
-    ScopedDgnHost       m_host;
-    DgnDbPtr            m_db;
-protected:
-    void SetupProject()
-        {
-        BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath (L"authorities.idgndb");
-        BeFileName::BeDeleteFile (filename);
-
-        CreateDgnDbParams params;
-        params.SetOverwriteExisting (false);
-        DbResult status;
-        m_db = DgnDb::CreateDgnDb (&status, filename, params);
-        ASSERT_TRUE (m_db != nullptr);
-        ASSERT_EQ (BE_SQLITE_OK, status) << status;
-        }
-
-    DgnDbR      GetDb()
-        {
-        return *m_db;
-        }
 
     void Compare(DgnAuthorityId id, Utf8CP name)
         {
@@ -68,7 +47,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnAuthoritiesTest, Authorities)
     {
-    SetupProject();
+    SetupProject(L"authorities.idgndb");
 
     // Create some new authorities
     auto auth1Id = Create("Auth1")->GetAuthorityId();
