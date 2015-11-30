@@ -162,192 +162,210 @@ errexit :
 +-----------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
 (
- BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
- long       firstPnt,            /* ==> First Tin Point              */
- long       lastPnt,             /* ==> Last  Tin Point              */
- long       drapeOption,         /* ==> Drape Option                 */
- long       insertOption         /* ==> InsertOption                 */
- )
- /*
- ** This Function Inserts A Line Between Two Points In Dtm Object
- **
- ** drapeOption  = 1   Insert As Drape Line
-**              = 2   Insert As Break Line
- ** insertOption = 1   Move Tin Lines That Are Not Linear Features
- **              = 2   Intersect Tin Lines
+BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
+long       firstPnt,            /* ==> First Tin Point              */
+long       lastPnt,             /* ==> Last  Tin Point              */
+long       drapeOption,         /* ==> Drape Option                 */
+long       insertOption,        /* ==> InsertOption                 */
+DTMInsertPointCallback insertPointCallback
+)
+/*
+** This Function Inserts A Line Between Two Points In Dtm Object
 **
- ** RobC  -  Rob Cormack -  rob.cormack@bentley.com
- **
- ** Modified 03/05/2007  To Take Account Of Latest Precision Fixing Algorithm
- **
- ** If insertOption == 1  Will Firstly Try To Swap Tin Lines That Are Not Linear Features
- */
+** drapeOption  = 1   Insert As Drape Line
+**              = 2   Insert As Break Line
+** insertOption = 1   Move Tin Lines That Are Not Linear Features
+**              = 2   Intersect Tin Lines
+**
+** RobC  -  Rob Cormack -  rob.cormack@bentley.com
+**
+** Modified 03/05/2007  To Take Account Of Latest Precision Fixing Algorithm
+**
+** If insertOption == 1  Will Firstly Try To Swap Tin Lines That Are Not Linear Features
+*/
     {
- int    ret=DTM_SUCCESS,bkp,dbg=DTM_TRACE_VALUE(0) ;
-    long   p1=0,p2,p3,p4,startPnt,endPnt,insertLine,fixType,precisionError ;
-    double intPntX,intPntY,intPntZ=0.0 ;
+    int    ret = DTM_SUCCESS, bkp, dbg = DTM_TRACE_VALUE(0);
+    long   p1 = 0, p2, p3, p4, startPnt, endPnt, insertLine, fixType, precisionError;
+    double intPntX, intPntY, intPntZ = 0.0;
     /*
     ** Write Entry Message
     */
-    if( dbg )
+    if (dbg)
         {
-        bcdtmWrite_message(0,0,0,"Inserting Line Between Points") ;
-        bcdtmWrite_message(0,0,0,"firstPnt     = %8ld",firstPnt) ;
-        bcdtmWrite_message(0,0,0,"lastPnt      = %8ld",lastPnt) ;
-        bcdtmWrite_message(0,0,0,"drapeOption  = %8ld",drapeOption) ;
-        bcdtmWrite_message(0,0,0,"insertOption = %8ld",insertOption) ;
+        bcdtmWrite_message(0, 0, 0, "Inserting Line Between Points");
+        bcdtmWrite_message(0, 0, 0, "firstPnt     = %8ld", firstPnt);
+        bcdtmWrite_message(0, 0, 0, "lastPnt      = %8ld", lastPnt);
+        bcdtmWrite_message(0, 0, 0, "drapeOption  = %8ld", drapeOption);
+        bcdtmWrite_message(0, 0, 0, "insertOption = %8ld", insertOption);
         }
     /*
     ** Initialise
     */
- p1 = dtmP->nullPnt ;
-    p2 = dtmP->nullPnt ;
-    p3 = dtmP->nullPnt ;
-    startPnt = firstPnt ;
-    endPnt   = lastPnt ;
+    p1 = dtmP->nullPnt;
+    p2 = dtmP->nullPnt;
+    p3 = dtmP->nullPnt;
+    startPnt = firstPnt;
+    endPnt = lastPnt;
     /*
     ** Write additional diagnostics
     */
-    if( dbg == 2 )
-   {
-    bcdtmWrite_message(0,0,0,"startPnt = %6ld tPtr = %9ld ** %12.5lf %12.5lf",startPnt,nodeAddrP(dtmP,startPnt)->tPtr,pointAddrP(dtmP,startPnt)->x,pointAddrP(dtmP,startPnt)->y) ;
-    bcdtmWrite_message(0,0,0,"endPnt   = %6ld tPtr = %9ld ** %12.5lf %12.5lf",endPnt,nodeAddrP(dtmP,endPnt)->tPtr,pointAddrP(dtmP,endPnt)->x,pointAddrP(dtmP,endPnt)->y) ;
-        if(   bcdtmList_testLineDtmObject(dtmP,firstPnt,lastPnt)) bcdtmWrite_message(0,0,0,"Points %6ld %6ld Connected",firstPnt,lastPnt) ;
-        else                                                      bcdtmWrite_message(0,0,0,"Points %6ld %6ld Not Connected",firstPnt,lastPnt) ;
-        bcdtmList_writeCircularListForPointDtmObject(dtmP,firstPnt) ;
-        bcdtmList_writeCircularListForPointDtmObject(dtmP,lastPnt) ;
-        if(nodeAddrP(dtmP,firstPnt)->tPtr != dtmP->nullPnt ) bcdtmList_writeCircularListForPointDtmObject(dtmP,nodeAddrP(dtmP,firstPnt)->tPtr) ;
-        if(nodeAddrP(dtmP,endPnt)->tPtr   != dtmP->nullPnt ) bcdtmList_writeCircularListForPointDtmObject(dtmP,nodeAddrP(dtmP,endPnt)->tPtr) ;
+    if (dbg == 2)
+        {
+        bcdtmWrite_message(0, 0, 0, "startPnt = %6ld tPtr = %9ld ** %12.5lf %12.5lf", startPnt, nodeAddrP(dtmP, startPnt)->tPtr, pointAddrP(dtmP, startPnt)->x, pointAddrP(dtmP, startPnt)->y);
+        bcdtmWrite_message(0, 0, 0, "endPnt   = %6ld tPtr = %9ld ** %12.5lf %12.5lf", endPnt, nodeAddrP(dtmP, endPnt)->tPtr, pointAddrP(dtmP, endPnt)->x, pointAddrP(dtmP, endPnt)->y);
+        if (bcdtmList_testLineDtmObject(dtmP, firstPnt, lastPnt)) bcdtmWrite_message(0, 0, 0, "Points %6ld %6ld Connected", firstPnt, lastPnt);
+        else                                                      bcdtmWrite_message(0, 0, 0, "Points %6ld %6ld Not Connected", firstPnt, lastPnt);
+        bcdtmList_writeCircularListForPointDtmObject(dtmP, firstPnt);
+        bcdtmList_writeCircularListForPointDtmObject(dtmP, lastPnt);
+        if (nodeAddrP(dtmP, firstPnt)->tPtr != dtmP->nullPnt) bcdtmList_writeCircularListForPointDtmObject(dtmP, nodeAddrP(dtmP, firstPnt)->tPtr);
+        if (nodeAddrP(dtmP, endPnt)->tPtr != dtmP->nullPnt) bcdtmList_writeCircularListForPointDtmObject(dtmP, nodeAddrP(dtmP, endPnt)->tPtr);
         }
     /*
 ** Insert And Swap Tin Lines
-    */
-    if( insertOption == 1 )
+*/
+    if (insertOption == 1)
         {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Swapping Tin Lines") ;
-        if( bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject(dtmP,firstPnt,lastPnt)) // Was bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
-      {
-            bcdtmWrite_message(1,0,0,"Error Swapping Lines firstPnt = %6ld lastPnt = %6ld",firstPnt,lastPnt) ;
-       return(0) ;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Swapping Tin Lines");
+        if (bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject(dtmP, firstPnt, lastPnt)) // Was bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject
+            {
+            bcdtmWrite_message(1, 0, 0, "Error Swapping Lines firstPnt = %6ld lastPnt = %6ld", firstPnt, lastPnt);
+            return(0);
             }
-   }
+        }
     /*
     ** Insert Line Into Tin
     */
-    while ( firstPnt != lastPnt )
+    while (firstPnt != lastPnt)
         {
         /*
         **   Check For Start Knot If So Return
         */
-    if( nodeAddrP(dtmP,firstPnt)->tPtr != dtmP->nullPnt )
+        if (nodeAddrP(dtmP, firstPnt)->tPtr != dtmP->nullPnt)
             {
-            if( dbg == 1 )
-         {
-                bcdtmWrite_message(0,0,0,"Start Knot Detected") ;
-          bcdtmWrite_message(0,0,0,"firstPnt = %6ld hPtr = %9ld tPtr = %9ld ** %10.4lf %10.4lf %10.4lf",firstPnt,nodeAddrP(dtmP,firstPnt)->hPtr,nodeAddrP(dtmP,firstPnt)->tPtr,pointAddrP(dtmP,firstPnt)->x,pointAddrP(dtmP,firstPnt)->y,pointAddrP(dtmP,firstPnt)->z) ;
-          bcdtmWrite_message(0,0,0,"lastPnt  = %6ld hPtr = %9ld tPtr = %9ld ** %10.4lf %10.4lf %10.4lf",lastPnt,nodeAddrP(dtmP,endPnt)->hPtr,nodeAddrP(dtmP,endPnt)->tPtr,pointAddrP(dtmP,lastPnt)->x,pointAddrP(dtmP,lastPnt)->y,pointAddrP(dtmP,lastPnt)->z) ;
-          bcdtmWrite_message(0,0,0,"Insert Line startPnt = %6ld tPtr = %9ld ** %12.5lf %12.5lf",startPnt,nodeAddrP(dtmP,startPnt)->tPtr,pointAddrP(dtmP,startPnt)->x,pointAddrP(dtmP,startPnt)->y) ;
-         }
-            return(10) ;
+            if (dbg == 1)
+                {
+                bcdtmWrite_message(0, 0, 0, "Start Knot Detected");
+                bcdtmWrite_message(0, 0, 0, "firstPnt = %6ld hPtr = %9ld tPtr = %9ld ** %10.4lf %10.4lf %10.4lf", firstPnt, nodeAddrP(dtmP, firstPnt)->hPtr, nodeAddrP(dtmP, firstPnt)->tPtr, pointAddrP(dtmP, firstPnt)->x, pointAddrP(dtmP, firstPnt)->y, pointAddrP(dtmP, firstPnt)->z);
+                bcdtmWrite_message(0, 0, 0, "lastPnt  = %6ld hPtr = %9ld tPtr = %9ld ** %10.4lf %10.4lf %10.4lf", lastPnt, nodeAddrP(dtmP, endPnt)->hPtr, nodeAddrP(dtmP, endPnt)->tPtr, pointAddrP(dtmP, lastPnt)->x, pointAddrP(dtmP, lastPnt)->y, pointAddrP(dtmP, lastPnt)->z);
+                bcdtmWrite_message(0, 0, 0, "Insert Line startPnt = %6ld tPtr = %9ld ** %12.5lf %12.5lf", startPnt, nodeAddrP(dtmP, startPnt)->tPtr, pointAddrP(dtmP, startPnt)->x, pointAddrP(dtmP, startPnt)->y);
+                }
+            return(10);
             }
         /*
         **  Get Next Intersect Point
         */
-    if( dbg ) bcdtmWrite_message(0,0,0,"firstPnt = %8ld lastPnt = %8ld angle = %18.16lf distance = %12.5lf",firstPnt,lastPnt,bcdtmMath_getPointAngleDtmObject(dtmP,firstPnt,lastPnt),bcdtmMath_pointDistanceDtmObject(dtmP,firstPnt,lastPnt));
-        bkp = bcdtmInsert_getIntersectPointDtmObject(dtmP,firstPnt,lastPnt,p3,&insertLine,&p1,&p2,&p3,&intPntX,&intPntY) ;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "firstPnt = %8ld lastPnt = %8ld angle = %18.16lf distance = %12.5lf", firstPnt, lastPnt, bcdtmMath_getPointAngleDtmObject(dtmP, firstPnt, lastPnt), bcdtmMath_pointDistanceDtmObject(dtmP, firstPnt, lastPnt));
+        bkp = bcdtmInsert_getIntersectPointDtmObject(dtmP, firstPnt, lastPnt, p3, &insertLine, &p1, &p2, &p3, &intPntX, &intPntY);
 
-        if( dbg ) bcdtmWrite_message(0,0,0,"bkp = %6ld P1 = %6ld P2 = %9ld P3 = %9ld",bkp,p1,p2,p3)  ;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "bkp = %6ld P1 = %6ld P2 = %9ld P3 = %9ld", bkp, p1, p2, p3);
         /*
         **  Check For System Error
         */
-        if ( bkp == 0 ) goto errexit ;
+        if (bkp == 0) goto errexit;
         /*
         **  Check For Intersect Knot
         */
-    if( bkp == 8 )
+        if (bkp == 8)
             {
-            if( dbg ) bcdtmWrite_message(0,0,0,"Intersect Knot Detected") ;
-            return(12) ;
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Intersect Knot Detected");
+            return(12);
             }
         /*
         **  Check For Intersect Precision Problem With Internal Line
         */
-        if( bkp == 2 )
-      {
-            if( bcdtmInsert_checkPointQuadrilateralPrecisionDtmObject(dtmP,firstPnt,p1,p3,p2,intPntX,intPntY,&precisionError)) goto errexit ;
-       if( precisionError )
+        if (bkp == 2)
+            {
+            if (bcdtmInsert_checkPointQuadrilateralPrecisionDtmObject(dtmP, firstPnt, p1, p3, p2, intPntX, intPntY, &precisionError)) goto errexit;
+            if (precisionError)
                 {
-                ++numPrecisionError ;
-                if( dbg ) bcdtmWrite_message(0,0,0,"Precision Error Detected While Inserting Line") ;
-                if( bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP,firstPnt,p1,p3,p2,intPntX,intPntY,&intPntX,&intPntY,&fixType)) goto errexit ;
-                if( fixType == 0 ) goto errexit ;
+                ++numPrecisionError;
+                if (dbg) bcdtmWrite_message(0, 0, 0, "Precision Error Detected While Inserting Line");
+                if (bcdtmInsert_fixPointQuadrilateralPrecisionDtmObject(dtmP, firstPnt, p1, p3, p2, intPntX, intPntY, &intPntX, &intPntY, &fixType)) goto errexit;
+                if (fixType == 0) goto errexit;
                 else
                     {
-             if( fixType == 1 )   bkp = 1 ;
-                    if( fixType == 2 ) { bkp = 1 ; p1 = p2 ; }
+                    if (fixType == 1)   bkp = 1;
+                    if (fixType == 2)
+                        {
+                        bkp = 1; p1 = p2;
+                        }
                     }
                 }
             }
         /*
 **  Get Z Value Of Intersect Point
-        */
-        if( bkp == 1 || bkp == 2 || bkp == 3 )
+*/
+        if (bkp == 1 || bkp == 2 || bkp == 3)
             {
-       if( bkp == 1 ) { intPntX = pointAddrP(dtmP,p1)->x ; intPntY = pointAddrP(dtmP,p1)->y ; }
-            if( drapeOption == 1 ) bcdtmInsert_getZvalueDtmObject(dtmP,p1,p2,intPntX,intPntY,&intPntZ) ;
-            else                   bcdtmInsert_getZvalueDtmObject(dtmP,startPnt,endPnt,intPntX,intPntY,&intPntZ) ;
+            if (bkp == 1)
+                {
+                intPntX = pointAddrP(dtmP, p1)->x; intPntY = pointAddrP(dtmP, p1)->y;
+                }
+            if (drapeOption == 1) bcdtmInsert_getZvalueDtmObject(dtmP, p1, p2, intPntX, intPntY, &intPntZ);
+            else                  bcdtmInsert_getZvalueDtmObject(dtmP, startPnt, endPnt, intPntX, intPntY, &intPntZ);
             }
         /*
         **  Passes Through Tin Point
-*/
-    if( bkp == 1 )
-      {
-       nodeAddrP(dtmP,firstPnt)->tPtr = p1 ;
-       pointAddrP(dtmP,p1)->z = intPntZ ;
-       firstPnt = p1 ;
+        */
+        if (bkp == 1)
+            {
+            nodeAddrP(dtmP, firstPnt)->tPtr = p1;
+            pointAddrP(dtmP, p1)->z = intPntZ;
+            firstPnt = p1;
             }
         /*
         **  Intersects Internal Line
         */
-        else if( bkp == 2 || bkp == 3 )
+        else if (bkp == 2 || bkp == 3)
             {
             /*
             **     Check For Knot If So Return
             */
-       if( nodeAddrP(dtmP,p1)->tPtr == p2 || nodeAddrP(dtmP,p2)->tPtr == p1  )
-         {
-                bcdtmWrite_message(0,0,0,"Knot Detected p1 = %6ld p2 = %6ld",p1,p2) ;
-          bcdtmWrite_message(0,0,0,"p1 = %6ld tPtr = %6ld ** %10.4lf %10.4lf %10.4lf",p1,nodeAddrP(dtmP,p1)->tPtr,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p1)->z) ;
-          bcdtmWrite_message(0,0,0,"p2 = %6ld tPtr = %6ld ** %10.4lf %10.4lf %10.4lf",p2,nodeAddrP(dtmP,p2)->tPtr,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z) ;
-                return(2) ;
-         }
+            if (nodeAddrP(dtmP, p1)->tPtr == p2 || nodeAddrP(dtmP, p2)->tPtr == p1)
+                {
+                bcdtmWrite_message(0, 0, 0, "Knot Detected p1 = %6ld p2 = %6ld", p1, p2);
+                bcdtmWrite_message(0, 0, 0, "p1 = %6ld tPtr = %6ld ** %10.4lf %10.4lf %10.4lf", p1, nodeAddrP(dtmP, p1)->tPtr, pointAddrP(dtmP, p1)->x, pointAddrP(dtmP, p1)->y, pointAddrP(dtmP, p1)->z);
+                bcdtmWrite_message(0, 0, 0, "p2 = %6ld tPtr = %6ld ** %10.4lf %10.4lf %10.4lf", p2, nodeAddrP(dtmP, p2)->tPtr, pointAddrP(dtmP, p2)->x, pointAddrP(dtmP, p2)->y, pointAddrP(dtmP, p2)->z);
+                return(2);
+                }
             /*
             **    Add Point To Tin
             */
-            if (bcdtmInsert_addPointAndFixFeaturesToDtmObject(dtmP, firstPnt, p1, p2, p3, bkp, intPntX, intPntY, intPntZ, insertLine, &p4) ) goto errexit;
+            if (bcdtmInsert_addPointAndFixFeaturesToDtmObject(dtmP, firstPnt, p1, p2, p3, bkp, intPntX, intPntY, intPntZ, insertLine, &p4)) goto errexit;
+            if (insertPointCallback)
+                {
+                DPoint3dR pt = *pointAddrP(dtmP, p4);
+                int pts[4];
+                pts[0] = p1;
+                pts[1] = p2;
+                pts[2] = firstPnt;
+                pts[3] = p3;
+
+                insertPointCallback(p4, pt, pt.z, true, pts);
+                }
             /*
             **     Update Temporary Pointer  Array
             */
-       nodeAddrP(dtmP,firstPnt)->tPtr = p4 ;
-       firstPnt = p4 ;
+            nodeAddrP(dtmP, firstPnt)->tPtr = p4;
+            firstPnt = p4;
             }
         }
-        /*
-        ** Clean Up
-        */
-cleanup :
-        /*
-        ** Job Completed
-        */
-        if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Line Between Points %8ld %8ld Completed",startPnt,lastPnt) ;
-        if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Line Between Points %8ld %8ld Completed",startPnt,lastPnt) ;
-        return(ret) ;
-        /*
-        ** Error Exit
-        */
-errexit :
-        if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
-        goto cleanup ;
+    /*
+    ** Clean Up
+    */
+cleanup:
+    /*
+    ** Job Completed
+    */
+    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Inserting Line Between Points %8ld %8ld Completed", startPnt, lastPnt);
+    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Inserting Line Between Points %8ld %8ld Completed", startPnt, lastPnt);
+    return(ret);
+    /*
+    ** Error Exit
+    */
+errexit:
+    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
+    goto cleanup;
     }
 /*-----------------------------------------------------------+
 |                                                            |
@@ -3991,7 +4009,8 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
  long insertOption,       /* ==> Insert Option             */
  DPoint3d *stringPtsP,         /* ==> Pointer To String Points  */
  long numStringPts,       /* ==> Number Of String Points   */
- long *startPntP          /* <== Start Point Of Tptr List  */
+ long *startPntP,         /* <== Start Point Of Tptr List  */
+ DTMInsertPointCallback insertPointCallback
 )
 /*
 **
@@ -4053,7 +4072,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
  for( p3d = stringPtsP ; p3d < stringPtsP + numStringPts ; ++p3d )
    {
     if( dbg == 1 )  bcdtmWrite_message(0,0,0,"Inserting Point[%4ld] ** %10.4lf %10.4lf %8.4lf",(long)(p3d-stringPtsP),p3d->x,p3d->y,p3d->z) ;
-    if( bcdtmInsert_storePointInDtmObject(dtmP,drapeOption,insertOption,p3d->x,p3d->y,p3d->z,&dtmPntNum)) goto errexit ;
+    if (bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, insertOption, p3d->x, p3d->y, p3d->z, &dtmPntNum, insertPointCallback)) goto errexit;
     if( dtmP->numPoints - dtmP->numSortedPoints > 1500 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Resorting Points") ;
@@ -4127,7 +4146,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
     if( *(pntP-1) != *pntP )
       {
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Inserting Segment %6ld of %6ld ** From %8ld %8ld",(long)(pntP-pointNumP),numStringPts-1,*(pntP-1),*pntP) ;
-       if( ( insert = bcdtmInsert_lineBetweenPointsDtmObject(dtmP,*(pntP-1),*pntP,drapeOption,insertOption)) != DTM_SUCCESS )
+       if( ( insert = bcdtmInsert_lineBetweenPointsDtmObject(dtmP,*(pntP-1),*pntP,drapeOption,insertOption, insertPointCallback)) != DTM_SUCCESS )
          {
           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Insert Line = %8ld %8ld Insert Error = %6ld",*(pntP-1),*pntP,insert) ;
           ret = 2 ;
@@ -4196,7 +4215,8 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
  double x,
  double y,
  double z,
- long *dtmPointNumP
+ long *dtmPointNumP,
+ DTMInsertPointCallback insertPointCallback
 )
 /*
 ** This Function Stores A Point In The Tin Object
@@ -4374,6 +4394,31 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
  if( findType > 1 ) { if( bcdtmInsert_addPointToDtmObject(dtmP,x,y,z,&dtmPoint)) goto errexit ; }
  else               dtmPoint = pnt1 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Insert Point = %8ld",dtmPoint) ;
+
+ if (insertPointCallback && findType > 1)
+     {
+     DPoint3dR pt = *pointAddrP(dtmP, dtmPoint);
+     int pts[4];
+     pts[0] = pnt1;
+     pts[1] = pnt2;
+     switch (findType)
+         {
+         case  2:      /* Coincident With Internal Tin Line  */
+             if ((pts[2] = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2)) < 0) goto errexit;
+             if ((pts[3] = bcdtmList_nextClkDtmObject(dtmP, pnt1, pnt2)) < 0) goto errexit;
+             break;
+         case  3:      /* Coincident With External Tin Line  */
+             if ((pts[2] = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2)) < 0) goto errexit;
+             pts[3] = dtmP->nullPnt;
+             break;
+         case  4:   /* In Triangle                      */
+             pts[2] = pnt3;
+             pts[3] = dtmP->nullPnt;
+             break;
+         }
+
+     insertPointCallback(dtmPoint, pt, pt.z, findType != 4, pts);
+     }
 /*
 ** Null Void Point
 */
@@ -8635,7 +8680,8 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
  DTMFeatureId **featureIdPP,     // <== Assigned Feature Id's
  long *numFeatureIdsP,             // <== Number Of Assigned Feature Ids
  DPoint3d *featurePtsP,                 // ==> Feature Points
- long numFeaturePts                // ==> Number Of Feature Points
+ long numFeaturePts,               // ==> Number Of Feature Points
+ DTMInsertPointCallback insertPointCallback
 )
 /*
 ** This Function Inserts A DTM Feature Into A Triangulated DTM
@@ -8815,7 +8861,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
 **     Insert Feature Into Tin As A Tptr Polygon
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Dtm Feature") ;
-       insert = bcdtmInsert_internalStringIntoDtmObject(dtmP,drapeOption,insertOption,(*pArrayPP)->pointsP,(*pArrayPP)->numPoints,&startPnt)  ;
+       insert = bcdtmInsert_internalStringIntoDtmObject(dtmP, drapeOption, insertOption, (*pArrayPP)->pointsP, (*pArrayPP)->numPoints, &startPnt, insertPointCallback);
        if( insert == 1 ) goto errexit ;
        if( insert == 2 )
          {
@@ -8866,6 +8912,27 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
+(
+BC_DTM_OBJ *dtmP,                 // ==> Dtm Object
+DTMFeatureType dtmFeatureType,              // ==> Dtm Feature Type
+long drapeOption,                 // ==> < 1 Drape,2 Break >
+long insertOption,                // ==> < 1 Move Tin Lines That Are Not Linear Features,2 Intersect Tin Lines >
+DTMUserTag userTag,             // ==> User Tag
+DTMFeatureId **featureIdPP,     // <== Assigned Feature Id's
+long *numFeatureIdsP,             // <== Number Of Assigned Feature Ids
+DPoint3d *featurePtsP,                 // ==> Feature Points
+long numFeaturePts                // ==> Number Of Feature Points
+)
+    {
+    return bcdtmInsert_internalDtmFeatureMrDtmObject(dtmP, dtmFeatureType, drapeOption, insertOption, userTag, featureIdPP,
+        numFeatureIdsP, featurePtsP, numFeaturePts, nullptr);
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -9350,6 +9417,57 @@ BENTLEYDTM_Private int bcdtmMath_testForColinearPoints2d(double x1,double y1,dou
  if( cosAngle == 1.0 || cosAngle == -1.0 ) return(1) ;
  else                                      return(0) ;
 }
-
-
-
+#ifdef NOTNEEDED
+// Binary compatible wrappers.
+/*-----------------------------------------------------------+
+|                                                            |
+|                                                            |
+|                                                            |
++-----------------------------------------------------------*/
+BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
+(
+BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
+long       firstPnt,            /* ==> First Tin Point              */
+long       lastPnt,             /* ==> Last  Tin Point              */
+long       drapeOption,         /* ==> Drape Option                 */
+long       insertOption         /* ==> InsertOption                 */
+)
+    {
+    return bcdtmInsert_lineBetweenPointsDtmObject(dtmP, firstPnt, lastPnt, drapeOption, insertOption, nullptr);
+    }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
+(
+BC_DTM_OBJ *dtmP,        /* ==> Pointer To DTM Object     */
+long drapeOption,        /* ==> Drape Option              */
+long insertOption,       /* ==> Insert Option             */
+DPoint3d *stringPtsP,         /* ==> Pointer To String Points  */
+long numStringPts,       /* ==> Number Of String Points   */
+long *startPntP          /* <== Start Point Of Tptr List  */
+)
+    {
+    return bcdtmInsert_internalStringIntoDtmObject(dtmP, drapeOption, insertOption, stringPtsP, numStringPts, startPntP, nullptr);
+    }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
+(
+BC_DTM_OBJ *dtmP,
+long drapeOption,
+long internalPoint,
+double x,
+double y,
+double z,
+long *dtmPointNumP
+)
+    {
+    return bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, internalPoint, x, y, z, dtmPointNumP, nullptr);
+    }
+#endif
