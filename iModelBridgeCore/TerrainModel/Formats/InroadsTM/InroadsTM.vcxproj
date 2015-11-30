@@ -119,7 +119,6 @@
     <ClCompile Include="intuti.cpp" />
     <ClCompile Include="jonuti.cpp" />
     <ClCompile Include="lcluti.cpp" />
-    <ClCompile Include="linlst.cpp" />
     <ClCompile Include="load.cpp" />
     <ClCompile Include="loddtm.cpp" />
     <ClCompile Include="mrkuti.cpp" />
@@ -150,7 +149,6 @@
     <ClCompile Include="tinuti.cpp" />
     <ClCompile Include="trisrf.cpp" />
     <ClCompile Include="vecuti.cpp" />
-    <ClCompile Include="xngchk.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

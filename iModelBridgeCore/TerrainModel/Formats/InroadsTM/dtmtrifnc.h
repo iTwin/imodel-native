@@ -20,20 +20,6 @@
 /* Function prototypes                                                        */
 /*----------------------------------------------------------------------------*/
 
-int aecDTM_triangulate /* <= TRUE if error                 */
-(
-  long *numPointsP,                    /* <= # points triangulated (or NULL)  */
-  long *numTrianglesP,                 /* <= # triangles generated (or NULL)  */
-  long *timeP,                         /* <= triang. time (secs) (or NULL)    */
-  struct CIVdtmsrf *srfP,              /* => surface to triangulate           */
-  int options,                         /* => options                          */
-  double *maxTriangleLengthP,          /* => max. tri length (or NULL)        */
-  byte *extDataChecksP,                /* => TRUE, FALSE (or NULL)            */
-  double *ftrFilterToleranceP,         /* => feature filter tol. (or NULL)    */
-  void *distriP,           /* => triangle display pars (or NULL)  */
-  boolean useAltMoveMethod = FALSE     /* => user alternate move to 0,0,0 method */
-);
-
 int aecDTM_patch            /* <= TRUE if error                    */
 (
   struct CIVdtmsrf *srfP,              /* => surface to use                   */
@@ -120,20 +106,6 @@ int aecDTM_triangulatePoint /* <= TRUE if error                    */
   struct CIVdtmtin **tinPP,            /* => triangle to start process in     */
   long *ntinstkP,                      /* => # triangles on triangle stack    */
   long **tinstkPP                      /* => pointer to triangles on stack    */
-);
-
-int aecDTM_triangulateLinear /* <= TRUE if error                   */
-(
-  void *tmp,                           /* => triangulate data structure       */
-  int typ,                             /* => type of input points             */
-  long np,                             /* => # points in string               */
-  DPoint3d *p,                         /* => array of point coordinates       */
-  struct CIVdtmpnt *pnt                /* => pointer to first linear point    */
-);
-
-int aecDTM_triangulateLinearFree /* <= TRUE if error               */
-(
-  struct CIVtinLineData *dat           /* => internal data structure          */
 );
 
 void aecDTM_triangulateClearErrorPoint

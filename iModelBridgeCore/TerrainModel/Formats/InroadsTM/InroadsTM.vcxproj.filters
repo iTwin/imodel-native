@@ -160,9 +160,6 @@
     <ClCompile Include="lcluti.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="linlst.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="load.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -251,9 +248,6 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="vecuti.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="xngchk.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>

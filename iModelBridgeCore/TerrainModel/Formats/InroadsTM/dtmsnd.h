@@ -51,28 +51,6 @@ int aecDTM_sendAllTriangles /* <= TRUE if error                    */
   void *datP                           /* => your data                        */
 );
 
-int aecDTM_sendTrianglesAlongLine /* <= TRUE if error              */
-(
-  void *mdlDescP,                      /* => mdl app descriptor (or NULL)     */
-  struct CIVdtmsrf *srfP,              /* => pointer to surface               */
-  DPoint3d *p0P,                       /* => first end point of line          */
-  DPoint3d *p1P,                       /* => second end point of line         */
-  struct CIVdtmtin *startTinP,         /* => starting triangle                */
-  struct CIVdtmtin *endTinP,           /* => ending triangle                  */
-  int (*userFncP)(                     /* => your function                    */
-     struct CIVdtmtin *, DPoint3d *,DPoint3d *,int,int,void *),
-  void *userDatP                       /* => your data                        */
-);
-
-int aecDTM_sendTrianglesAlongLineFirst /* <= TRUE if error         */
-(
-  struct CIVdtmtin **tinPP,            /* <= exiting triangle                 */
-  struct CIVdtmtin **neiPP,            /* <= neighbor to exiting tin          */
-  struct CIVdtmsrf *srfP,              /* => surface to use                   */
-  struct CIVdtmpnt *startPntP,         /* => starting point                   */
-  struct CIVdtmpnt *endPntP            /* => ending point                     */
-);
-
 int aecDTM_sendAllFeatures  /* <= TRUE if error                    */
 (
   void *mdlDescP,                      /* => mdl app desc. (or NULL)          */

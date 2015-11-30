@@ -158,8 +158,6 @@ $(o)intuti$(oext) : $(InroadsDTMSource)intuti.cpp  ${MultiCompileDepends}
 
 $(o)lcluti$(oext) : $(InroadsDTMSource)lcluti.cpp  ${MultiCompileDepends}
 
-$(o)linlst$(oext) : $(InroadsDTMSource)linlst.cpp  ${MultiCompileDepends}
-
 $(o)load$(oext) : $(InroadsDTMSource)load.cpp  ${MultiCompileDepends}
 
 $(o)loddtm$(oext) : $(InroadsDTMSource)loddtm.cpp  ${MultiCompileDepends}
@@ -213,8 +211,6 @@ $(o)tinuti$(oext) : $(InroadsDTMSource)tinuti.cpp  ${MultiCompileDepends}
 $(o)trisrf$(oext) : $(InroadsDTMSource)trisrf.cpp  ${MultiCompileDepends}
 
 $(o)vecuti$(oext) : $(InroadsDTMSource)vecuti.cpp  ${MultiCompileDepends}
-
-$(o)xngchk$(oext) : $(InroadsDTMSource)xngchk.cpp  ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
