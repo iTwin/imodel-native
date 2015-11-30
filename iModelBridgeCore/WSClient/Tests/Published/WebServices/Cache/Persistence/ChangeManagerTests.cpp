@@ -52,20 +52,23 @@ TEST_F(ChangeManagerTests, CreateObject_SyncSetToActive_Success)
     EXPECT_TRUE(instance.IsValid());
     }
 
-TEST_F(ChangeManagerTests, ModifyObject_SyncSetToActiveAndModifyingModifiedObject_Error)
+TEST_F(ChangeManagerTests, ModifyObject_SyncSetToActiveAndModifyingModifiedObject_Success)
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, Json::objectValue));
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldValue"}});
     // Act
+    Json::Value properties;
+    properties["TestProperty"] = "NewValue";
     cache->GetChangeManager().SetSyncActive(true);
-    BeTest::SetFailOnAssert(false);
-    auto status = cache->GetChangeManager().ModifyObject(instance, Json::objectValue);
-    BeTest::SetFailOnAssert(true);
+    auto status = cache->GetChangeManager().ModifyObject(instance, properties);
     cache->GetChangeManager().SetSyncActive(false);
     // Assert
-    EXPECT_EQ(ERROR, status);
+    ASSERT_EQ(SUCCESS, status);
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+    Json::Value instanceJson;
+    cache->GetAdapter().GetJsonInstance(instanceJson, instance);
+    EXPECT_EQ("NewValue", instanceJson["TestProperty"].asString());
     }
 
 TEST_F(ChangeManagerTests, DeleteObject_SyncSetToActiveAndDeletingCreatedObject_Error)
@@ -2451,6 +2454,76 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedInstance_BackupInstanc
     EXPECT_EQ(0, CountClassInstances(*cache, "DSCacheSchema.InstanceBackup"));
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
+    }
+
+TEST_F(ChangeManagerTests, RevertModifiedObject_NonExistingInstance_Error)
+    {
+    auto cache = GetTestCache();
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().RevertModifiedObject(StubECInstanceKey()));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(ChangeManagerTests, RevertModifiedObject_NonModifiedInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().RevertModifiedObject(instance));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(ChangeManagerTests, RevertModifiedObject_CreatedInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubCreatedObjectInCache(*cache);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().RevertModifiedObject(instance));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(ChangeManagerTests, RevertModifiedObject_DeletedInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().RevertModifiedObject(instance));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstance_RevertsToCachedState)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})")));
+
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().RevertModifiedObject(instance));
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+    Json::Value properties;
+    cache->GetAdapter().GetJsonInstance(properties, instance);
+    EXPECT_EQ("A", properties["TestProperty"].asString());
+    EXPECT_EQ("B", properties["TestProperty2"].asString());
+    }
+
+TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})")));
+
+    cache->GetChangeManager().SetSyncActive(true);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().RevertModifiedObject(instance));
+    BeTest::SetFailOnAssert(true);
+    cache->GetChangeManager().SetSyncActive(false);
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
+    Json::Value properties;
+    cache->GetAdapter().GetJsonInstance(properties, instance);
+    EXPECT_EQ("A1", properties["TestProperty"].asString());
+    EXPECT_EQ("B1", properties["TestProperty2"].asString());
     }
 
 #endif
