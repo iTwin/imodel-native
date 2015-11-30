@@ -24,11 +24,9 @@ TEST_F(ElementGeometryTests, Create)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementGeometryTests_CreateElement3d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
-
 
     // CurvePrimitive
     //
@@ -96,6 +94,5 @@ TEST_F(ElementGeometryTests, Create)
     TextStringPtr getAsTexTString = elmGeom6->GetAsTextString();
     EXPECT_TRUE(getAsTexTString.IsValid());
     EXPECT_STREQ(text->GetText().c_str(), getAsTexTString->GetText().c_str());
-
 
     }

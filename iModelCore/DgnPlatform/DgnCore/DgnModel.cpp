@@ -8,6 +8,8 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnDbTables.h>
 
+static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnModelId cmid);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1602,22 +1604,50 @@ bool ComponentModel::IsValid() const
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      090/2015
+//---------------------------------------------------------------------------------------
+static StatusInt deleteComponentViews(DgnDbR db, DgnModelId mid)
+    {
+    // construct an iterator using the criteria from the request message
+    auto viewIterator = ViewDefinition::MakeIterator(db, ViewDefinition::Iterator::Options(mid));
+
+    bvector<DgnViewId> tbd;
+
+    for (auto const& viewEntry : viewIterator)
+        tbd.push_back(viewEntry.GetId());
+
+    for (auto vid : tbd)
+        {
+        auto viewElem = db.Elements().GetElement(vid);
+        viewElem->Delete();
+        }
+
+    return BSISUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::_OnDelete()
     {
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-        //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
-    Statement delSolutions;
+    // If any instance exists, then block the deletion. Tricky: unique/singleton elements are both types and instances -- they are instances of themselves.
+    bvector<DgnElementId> types;
+    QuerySolutions(types);
+    for (auto teid : types)
+        {
+        bvector<DgnElementId> instances;
+        QueryInstances(instances, teid);
+        for (auto ieid : instances)
+            {
+            if (GetDgnDb().Elements().GetElement(ieid).IsValid())
+                return DgnDbStatus::IdExists; // *** WIP_COMPONENT_MODEL need more appropriate error code
+            }
+        }
 
-    delSolutions.Prepare(GetDgnDb(), "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=?");
-    delSolutions.BindText(1, GetModelName(), Statement::MakeCopy::No);
-    delSolutions.Step();
+    deleteComponentViews(GetDgnDb(), GetModelId());
+    deleteAllSolutionsOfComponentRelationships(GetDgnDb(), GetModelId());
 
-    // *** NEEDS WORK: I should kill off all of the GeomParts referenced by the geomstreams in the rows of ComponentSolution 
-
-#endif
     return DgnDbStatus::Success;
     }
 
@@ -1685,6 +1715,20 @@ static DgnDbStatus deleteSolutionOfComponentRelationship(DgnElementCR inst)
         return DgnDbStatus::BadRequest;
 
     statement->BindId(1, inst.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnModelId cmid)
+    {
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE (TargetECInstanceId=?)");
+
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, cmid);
     return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
@@ -1833,9 +1877,23 @@ void ComponentModel::QuerySolutions(bvector<DgnElementId>& solutions)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::QueryInstances(bvector<DgnElementId>& instances, DgnElementId solutionId)
+    {
+    EC::ECSqlStatement selectCatalogItems;
+    selectCatalogItems.Prepare(GetDgnDb(), "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate) " WHERE(TargetECInstanceId=?)");
+    selectCatalogItems.BindId(1, solutionId);
+    while (BE_SQLITE_ROW == selectCatalogItems.Step())
+        {
+        instances.push_back(selectCatalogItems.GetValueId<DgnElementId>(0));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName, Placement3dCR placement, DgnElement::Code code)
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName, Placement3dCR placement, DgnElement::Code code, bool isSingleton)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -1852,7 +1910,7 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
         {
         if (!catalogItemName.empty()) // catalogItemName wilil be blank when we are creating a unique solution, rather than a catalog item.
             {
-            icode = CreateCatalogItemCode(catalogItemName);
+            icode = CreateCapturedSolutionCode(catalogItemName);
             if (!icode.IsValid())
                 {
                 BeAssert(false && "could not generate a code for a catalog item??");
@@ -1872,24 +1930,20 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
     if (DgnDbStatus::Success != (status = Solve(parameters)))
         return nullptr;
 
-    return HarvestSolution(status, catalogModel, catalogItemName, icode, placement);
+    PhysicalElementCPtr el = HarvestSolution(status, catalogModel, catalogItemName, icode, placement);
+
+    if (isSingleton)
+        createInstanceOfTemplateRelationship(*el, *el);
+
+    return el;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::QuerySolutionByName(Utf8StringCR catalogItemName)
+PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName)
     {
-    DgnElement::Code icode = CreateCatalogItemCode(catalogItemName);
-    if (!icode.IsValid())
-        return nullptr;
-
-    //  Check to see if this solution has already been captured.
-    DgnElementId existingCatalogItemId = GetDgnDb().Elements().QueryElementIdByCode(icode);
-    if (!existingCatalogItemId.IsValid())
-        return nullptr;
-
-    return GetDgnDb().Elements().Get<PhysicalElement>(existingCatalogItemId);
+    return CaptureSolution(statusOut, catalogModel, parameters, catalogItemName, Placement3d(), DgnElement::Code(), /*isSingleton*/false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1897,6 +1951,9 @@ PhysicalElementCPtr ComponentModel::QuerySolutionByName(Utf8StringCR catalogItem
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::DeleteSolution(PhysicalElementCR catalogItem)
     {
+    // *** WIP_COMPONENT_MODELS - Deleting a captured solution makes orphans of all instances of that solution. 
+    // ***                          Maybe we should refuse to delete the captured solution in this case?
+
     DgnDbStatus status = deleteSolutionOfComponentRelationship(catalogItem);
     if (DgnDbStatus::Success != status)
         {
@@ -2140,25 +2197,68 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::QuerySolutionSource(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
+PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, PhysicalModelR targetModel, 
+                                                Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, 
+                                                Placement3dCR placement, DgnElement::Code const& code)
     {
-    if (BE_SQLITE_OK != queryComponentModelFromSolution(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))
-        return DgnDbStatus::BadArg;
+    PhysicalElementCPtr typeElem;
+    ModelSolverDef::ParameterSet typeParams;
+    if ((DgnDbStatus::Success != QuerySolutionByName(typeElem, typeParams, capturedSolutionName)) || (params != typeParams))
+        return CaptureSolution(statusOut, targetModel, params, "", placement, DgnElement::Code(), true);
 
-    return DgnDbStatus::Success;
+    return MakeInstanceOfSolution(statusOut, targetModel, *typeElem, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentModel::AreParmetersEqual(ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
+DgnDbStatus ComponentModel::QuerySolutionInfo(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
+    {
+    return (BE_SQLITE_OK == queryComponentModelFromSolution(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::QuerySolutionInfo(ModelSolverDef::ParameterSet& params, PhysicalElementCR catalogItem)
     {
     DgnModelId cmid;
-    ModelSolverDef::ParameterSet ciparms;
-    if (BE_SQLITE_OK != queryComponentModelFromSolution(cmid, ciparms, catalogItem.GetDgnDb(), catalogItem.GetElementId()))
-        return false;
+    DgnDbStatus status = QuerySolutionInfo(cmid, params, catalogItem);
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    return ciparms == params;
+    if (GetModelId() != cmid)
+        return DgnDbStatus::WrongModel;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::QuerySolutionById(PhysicalElementCPtr& ele, ModelSolverDef::ParameterSet& params, DgnElementId solutionId)
+    {
+    ele = GetDgnDb().Elements().Get<PhysicalElement>(solutionId);
+    if (!ele.IsValid())
+        return DgnDbStatus::NotFound;
+
+    return QuerySolutionInfo(params, *ele);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::QuerySolutionByName(PhysicalElementCPtr& ele, ModelSolverDef::ParameterSet& params, Utf8StringCR capturedSolutionName)
+    {
+    DgnElement::Code icode = CreateCapturedSolutionCode(capturedSolutionName);
+    if (!icode.IsValid())
+        return DgnDbStatus::NotFound;
+
+    ele = GetDgnDb().Elements().Get<PhysicalElement>(GetDgnDb().Elements().QueryElementIdByCode(icode));
+    if (!ele.IsValid())
+        return DgnDbStatus::NotFound;
+
+    return QuerySolutionInfo(params, *ele);
     }
 
 /*---------------------------------------------------------------------------------**//**

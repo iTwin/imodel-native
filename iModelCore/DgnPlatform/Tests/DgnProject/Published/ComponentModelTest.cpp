@@ -522,14 +522,16 @@ void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetM
 
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
-    PhysicalElementCPtr solution = componentModel->QuerySolutionByName(ciname);
+    PhysicalElementCPtr catalogItem;
+    ModelSolverDef::ParameterSet cmparams;
+    componentModel->QuerySolutionByName(catalogItem, cmparams, ciname);
     if (!expectToFindSolution)
         {
-        ASSERT_FALSE(solution.IsValid());
+        ASSERT_FALSE(catalogItem.IsValid());
         return;
         }
-    ASSERT_TRUE(solution.IsValid());
-    Client_PlaceInstanceOfSolution(ieid, targetModelName, *solution);
+    ASSERT_TRUE(catalogItem.IsValid());
+    Client_PlaceInstanceOfSolution(ieid, targetModelName, *catalogItem);
     }
 
 /*---------------------------------------------------------------------------------**//**
