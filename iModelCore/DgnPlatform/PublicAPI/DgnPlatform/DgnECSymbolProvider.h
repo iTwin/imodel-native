@@ -102,6 +102,7 @@ struct DgnElementExpressionContext : DgnDbExpressionContext
 
         ECN::ECValue  GetClassName() const;
         ECN::ECValue  GetFullClassName() const;
+        ECN::ECValue  HasGeometry() const;
 
     protected:
         // Create an ECExpression context that allows access to DgnDb.
