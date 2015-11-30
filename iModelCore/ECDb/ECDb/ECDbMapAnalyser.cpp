@@ -1363,7 +1363,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
         .Append (classMap->GetClass ().GetName ().c_str ());
 
     NativeSqlBuilder::List selects;
-    HorizontalPartition const* root = &storageDescription.GetRootHorizontalPartition ();
+    Partition const* root = &storageDescription.GetRootHorizontalPartition ();
     if (root->GetTable ().GetPersistenceType () == PersistenceType::Virtual)
         root = nullptr;
 

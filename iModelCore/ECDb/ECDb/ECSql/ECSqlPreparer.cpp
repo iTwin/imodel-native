@@ -472,7 +472,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 }
 
 
-            HorizontalPartition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
+            Partition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
             table = &partition->GetTable();
             }
         //BeAssert(desc.HasNonVirtualPartitions() || table->GetPersistenceType() == PersistenceType::Virtual);

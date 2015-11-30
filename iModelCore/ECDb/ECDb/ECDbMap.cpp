@@ -818,6 +818,7 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable () const
             }
 
         m_classIdsPerTable[currentTable].push_back (id);
+        m_tablesPerClassId[id].insert(currentTable);
         }
 
     m_loadedFlags.m_classIdsPerTableIsLoaded = true;
@@ -961,36 +962,7 @@ void ECDbMap::LightweightCache::LoadRelationshipCache () const
     m_loadedFlags.m_relationshipCacheIsLoaded = true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadVerticalPartitions()  const
-    {
-    if (m_loadedFlags.m_verticalPartitionsIsLoaded)
-        return;
 
-    Utf8CP sql0 =
-        "SELECT ec_Class.Id ClassId, ec_Table.Name FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-        "GROUP BY ec_Class.Id, ec_Table.Name";
-
-    CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql0);
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        auto classId = stmt->GetValueInt64(0);
-        Utf8CP tableName = stmt->GetValueText(1);
-        auto table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
-        BeAssert(table != nullptr);
-        m_verticalPartitions[classId].insert(table);
-        }
-
-    m_loadedFlags.m_verticalPartitionsIsLoaded = true;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1167,8 +1139,8 @@ std::vector<ECClassId> const& ECDbMap::LightweightCache::GetAnyClassReplacements
 //---------------------------------------------------------------------------------------
 bset<ECDbSqlTable const*> const& ECDbMap::LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
     {
-    LoadVerticalPartitions();
-    return m_verticalPartitions[classId];
+    LoadClassIdsPerTable();
+    return m_tablesPerClassId[classId];
     }
 
 //---------------------------------------------------------------------------------------
@@ -1193,7 +1165,6 @@ void ECDbMap::LightweightCache::Load(bool forceReload)
     LoadClassIdsPerTable();
     LoadHorizontalPartitions();
     LoadAnyClassReplacements();
-    LoadVerticalPartitions();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1204,7 +1175,6 @@ void ECDbMap::LightweightCache::Reset ()
     m_loadedFlags.m_classIdsPerTableIsLoaded = 
         m_loadedFlags.m_relationshipPerTableLoaded =
         m_loadedFlags.m_horizontalPartitionsIsLoaded =
-        m_loadedFlags.m_verticalPartitionsIsLoaded =
         m_loadedFlags.m_relationshipCacheIsLoaded =
         m_loadedFlags.m_anyClassReplacementsLoaded = 
         m_loadedFlags.m_anyClassRelationshipsIsLoaded = false;
@@ -1219,7 +1189,7 @@ void ECDbMap::LightweightCache::Reset ()
     m_anyClassReplacements.clear ();
     m_storageDescriptions.clear ();
     m_relationshipPerTable.clear ();   
-    m_verticalPartitions.clear();
+    m_tablesPerClassId.clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1283,13 +1253,12 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
     if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
 
-
-    HorizontalPartition const* partition = GetHorizontalPartition(table);
+    Partition const* partition = GetHorizontalPartition(table);
     if (partition == nullptr)
         {
         if (!GetVerticalPartitions().empty())
             {
-            partition = GetHorizontalPartition(GetVerticalPartitions().back().GetTable());
+            partition = GetVerticalPartition(table);
             }
 
         if (partition == nullptr)
@@ -1298,6 +1267,7 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
             return ERROR;
             }
         }
+
     NativeSqlBuilder classIdColSql;
     if (fullyQualifyColumnName)
         {
@@ -1329,14 +1299,14 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
     {
     const ECClassId classId = classMap.GetClass().GetId();
     std::unique_ptr<StorageDescription> storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
-
+    std::set<ECClassId> derviedClassSet;
     if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
         ECDbSqlTable const& endTable = relClassMap.GetTable();
         const ECDbMap::LightweightCache::RelationshipEnd thisEnd = relClassMap.GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
 
-        HorizontalPartition* hp = storageDescription->AddHorizontalPartition(endTable, true);
+        Partition* hp = storageDescription->AddHorizontalPartition(endTable, true);
 
         for (bpair<ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationship(classId))
             {
@@ -1356,10 +1326,11 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
             auto table = kp.first;
 
             auto& deriveClassList = kp.second;
+            derviedClassSet.insert(deriveClassList.begin(), deriveClassList.end());
             if (deriveClassList.empty())
                 continue;
 
-            HorizontalPartition* hp = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
+            Partition* hp = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
             for (ECClassId ecClassId : deriveClassList)
                 {
                 hp->AddClassId(ecClassId);
@@ -1369,9 +1340,18 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
             }
         }
     //add vertical partitions
-    for (auto verticalPartitionTable : lwmc.GetVerticalPartitionsForClass(classId))
-        {
-        storageDescription->m_verticalPartitions.push_back(VerticalPartition(*verticalPartitionTable));
+    for (auto table : lwmc.GetVerticalPartitionsForClass(classId))
+        {                    
+        if (table->GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
+        Partition* vp = storageDescription->AddVerticalPartition(*table, storageDescription->GetHorizontalPartition(*table) != nullptr);
+        for (ECClassId ecClassId : derviedClassSet)
+            {
+            vp->AddClassId(ecClassId);
+            }
+
+        vp->GenerateClassIdFilter(lwmc.GetClassesForTable(*table));
         }
 
     return std::move(storageDescription);
@@ -1381,7 +1361,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition const* StorageDescription::GetHorizontalPartition(bool polymorphic) const
+Partition const* StorageDescription::GetHorizontalPartition(bool polymorphic) const
     {
     if (!polymorphic || !HasNonVirtualPartitions())
         return &GetRootHorizontalPartition();
@@ -1398,9 +1378,9 @@ HorizontalPartition const* StorageDescription::GetHorizontalPartition(bool polym
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition const* StorageDescription::GetHorizontalPartition(ECDbSqlTable const& table) const
+Partition const* StorageDescription::GetHorizontalPartition(ECDbSqlTable const& table) const
     {
-    for (HorizontalPartition const& part : m_horizontalPartitions)
+    for (Partition const& part : m_horizontalPartitions)
         {
         if (&part.GetTable() == &table)
             return &part;
@@ -1408,23 +1388,43 @@ HorizontalPartition const* StorageDescription::GetHorizontalPartition(ECDbSqlTab
 
     return nullptr;
     }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.KHan    11 / 2015
+//------------------------------------------------------------------------------------------
+Partition const* StorageDescription::GetVerticalPartition(ECDbSqlTable const& table) const
+    {
+    for (Partition const& part : m_veritcalPartitions)
+        {
+        if (&part.GetTable() == &table)
+            return &part;
+        }
 
+    return nullptr;
+    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition const& StorageDescription::GetRootHorizontalPartition() const
+Partition const& StorageDescription::GetRootHorizontalPartition() const
     {
     BeAssert(m_rootHorizontalPartitionIndex < m_horizontalPartitions.size());
     return m_horizontalPartitions[m_rootHorizontalPartitionIndex];
     }
 
 //------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan    11 / 2015
+//------------------------------------------------------------------------------------------
+Partition const& StorageDescription::GetRootVerticalPartition() const
+    {
+    BeAssert(m_rootVerticalPartitionIndex < m_veritcalPartitions.size());
+    return m_veritcalPartitions[m_rootVerticalPartitionIndex];
+    }
+//------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition* StorageDescription::AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition)
+Partition* StorageDescription::AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition)
     {
     const bool isVirtual = table.GetPersistenceType() == PersistenceType::Virtual;
-    m_horizontalPartitions.push_back(HorizontalPartition(table));
+    m_horizontalPartitions.push_back(Partition(table));
 
     const size_t indexOfAddedPartition = m_horizontalPartitions.size() - 1;
     if (!isVirtual)
@@ -1436,51 +1436,36 @@ HorizontalPartition* StorageDescription::AddHorizontalPartition(ECDbSqlTable con
     return &m_horizontalPartitions[indexOfAddedPartition];
     }
 
-//****************************************************************************************
-// VerticalPartition
-//****************************************************************************************
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//@bsimethod                                                    Affan.Khan    11 / 2015
 //------------------------------------------------------------------------------------------
-VerticalPartition::VerticalPartition(VerticalPartition&& rhs)
-    : m_table(std::move(rhs.m_table))    
+Partition* StorageDescription::AddVerticalPartition(ECDbSqlTable const& table, bool isRootPartition)
     {
-    //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-    //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
-    //this method is safe.
-    rhs.m_table = nullptr;
-    }
+    BeAssert(table.GetPersistenceType() == PersistenceType::Persisted);
+    if (table.GetPersistenceType() == PersistenceType::Virtual)
+        return nullptr;
 
+    m_veritcalPartitions.push_back(Partition(table));
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-VerticalPartition& VerticalPartition::operator=(VerticalPartition&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_table = std::move(rhs.m_table);
-        //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-        //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
-        //this method is safe.
-        rhs.m_table = nullptr;
-        }
+    const size_t indexOfAddedPartition = m_veritcalPartitions.size() - 1;
+    if (isRootPartition)
+        m_rootVerticalPartitionIndex = indexOfAddedPartition;
 
-    return *this;
+    return &m_veritcalPartitions[indexOfAddedPartition];
     }
 
 //****************************************************************************************
-// HorizontalPartition
+// Partition
 //****************************************************************************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition::HorizontalPartition(HorizontalPartition&& rhs)
+Partition::Partition(Partition&& rhs)
     : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)),
     m_inversedPartitionClassIds(std::move(rhs.m_inversedPartitionClassIds)), m_hasInversedPartitionClassIds(std::move(rhs.m_hasInversedPartitionClassIds))
     {
     //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-    //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
+    //free the table (as it is now owned by Partition). If the ownership ever changes,
     //this method is safe.
     rhs.m_table = nullptr;
     }
@@ -1489,7 +1474,7 @@ HorizontalPartition::HorizontalPartition(HorizontalPartition&& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
+Partition& Partition::operator=(Partition&& rhs)
     {
     if (this != &rhs)
         {
@@ -1499,7 +1484,7 @@ HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
         m_hasInversedPartitionClassIds = std::move(rhs.m_hasInversedPartitionClassIds);
 
         //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-        //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
+        //free the table (as it is now owned by Partition). If the ownership ever changes,
         //this method is safe.
         rhs.m_table = nullptr;
         }
@@ -1509,7 +1494,7 @@ HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds)
+void Partition::GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds)
     {
     BeAssert(!m_partitionClassIds.empty());
     m_hasInversedPartitionClassIds = m_partitionClassIds.size() > tableClassIds.size() / 2;
@@ -1532,7 +1517,7 @@ void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> cons
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-bool HorizontalPartition::NeedsECClassIdFilter() const
+bool Partition::NeedsECClassIdFilter() const
     {
     BeAssert(!m_partitionClassIds.empty());
     //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.
@@ -1544,7 +1529,7 @@ bool HorizontalPartition::NeedsECClassIdFilter() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-void HorizontalPartition::AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder& sqlBuilder) const
+void Partition::AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder& sqlBuilder) const
     {
     BeAssert(!m_partitionClassIds.empty());
 

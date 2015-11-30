@@ -60,7 +60,7 @@ struct ECDbMap :NonCopyableClass
                 mutable ECN::ECClassId m_anyClassId;
                 mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
                 mutable RelationshipPerTable m_relationshipPerTable;
-                mutable bmap<ECN::ECClassId, bset<ECDbSqlTable const*>> m_verticalPartitions;
+                mutable bmap<ECN::ECClassId, bset<ECDbSqlTable const*>> m_tablesPerClassId;
                 mutable struct
                     {
                     bool m_horizontalPartitionsIsLoaded : 1;
@@ -69,7 +69,6 @@ struct ECDbMap :NonCopyableClass
                     bool m_anyClassRelationshipsIsLoaded : 4;
                     bool m_anyClassReplacementsLoaded : 5;
                     bool m_relationshipPerTableLoaded : 6;
-                    bool m_verticalPartitionsIsLoaded : 7;
                     } m_loadedFlags;
 
                 ECDbMapCR m_map;
@@ -79,7 +78,6 @@ struct ECDbMap :NonCopyableClass
                 void LoadAnyClassRelationships () const;
                 void LoadRelationshipCache () const;
                 void LoadAnyClassReplacements () const;
-                void LoadVerticalPartitions() const;
             public:
                 explicit LightweightCache (ECDbMapCR map);
                 ~LightweightCache () {}
@@ -186,7 +184,7 @@ public:
     //! Hold detail about how table partition is described for this class
     // @bsiclass                                               Affan.Khan           05/2015
     //+===============+===============+===============+===============+===============+======
-    struct HorizontalPartition : NonCopyableClass
+    struct Partition : NonCopyableClass
         {
     friend struct StorageDescription;
 
@@ -202,10 +200,10 @@ public:
         void GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds);
 
     public:
-        explicit HorizontalPartition (ECDbSqlTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
-        ~HorizontalPartition () {}
-        HorizontalPartition (HorizontalPartition&& rhs);
-        HorizontalPartition& operator=(HorizontalPartition&& rhs);
+        explicit Partition (ECDbSqlTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
+        ~Partition () {}
+        Partition (Partition&& rhs);
+        Partition& operator=(Partition&& rhs);
 
         ECDbSqlTable const& GetTable () const { return *m_table; }
         std::vector<ECN::ECClassId> const& GetClassIds () const { return m_partitionClassIds; }
@@ -213,22 +211,7 @@ public:
         void AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder&) const;
         };
 
-    //=======================================================================================
-    //! Hold detail about how table partition is described for this class
-    // @bsiclass                                               Affan.Khan           05/2015
-    //+===============+===============+===============+===============+===============+======
-    struct VerticalPartition: NonCopyableClass
-        {
-        private:
-            ECDbSqlTable const* m_table;
 
-        public:
-            explicit VerticalPartition(ECDbSqlTable const& table): m_table(&table) {}
-            ~VerticalPartition() {}
-            VerticalPartition(VerticalPartition&& rhs);
-            VerticalPartition& operator=(VerticalPartition&& rhs);
-            ECDbSqlTable const& GetTable() const { return *m_table; }
-        };
     //=======================================================================================
     //! Represents storage description for a given class map and its derived classes for polymorphic queries
     // @bsiclass                                               Affan.Khan           05/2015
@@ -237,32 +220,37 @@ public:
         {
     private:
         ECN::ECClassId m_classId;
-        std::vector<HorizontalPartition> m_horizontalPartitions;
+        std::vector<Partition> m_horizontalPartitions;
         std::vector<size_t> m_nonVirtualHorizontalPartitionIndices;
-        std::vector<VerticalPartition> m_verticalPartitions;
+        std::vector<Partition> m_veritcalPartitions;
         size_t m_rootHorizontalPartitionIndex;
+        size_t m_rootVerticalPartitionIndex;
 
         explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0) {}
 
-        HorizontalPartition* AddHorizontalPartition(ECDbSqlTable const&, bool isRootPartition);
+        Partition* AddHorizontalPartition(ECDbSqlTable const&, bool isRootPartition);
+        Partition* AddVerticalPartition(ECDbSqlTable const&, bool isRootPartition);
 
-        HorizontalPartition const* GetHorizontalPartition(ECDbSqlTable const&) const;
+        Partition const* GetHorizontalPartition(ECDbSqlTable const&) const;
+        Partition const* GetVerticalPartition(ECDbSqlTable const&) const;
 
     public:
         ~StorageDescription (){}
         StorageDescription (StorageDescription&&);
         StorageDescription& operator=(StorageDescription&&);
-        std::vector<VerticalPartition> const& GetVerticalPartitions() const 
+        std::vector<Partition> const& GetVerticalPartitions() const
             {
-            return m_verticalPartitions;
+            return m_veritcalPartitions;
             }
 
         //! Returns nullptr, if more than one non-virtual partitions exist.
         //! If polymorphic is true or has no non-virtual partitions, gets root horizontal partition.
         //! If has a single non-virtual partition returns that.
-        HorizontalPartition const* GetHorizontalPartition(bool polymorphic) const;
-        HorizontalPartition const& GetRootHorizontalPartition() const;
-        std::vector<HorizontalPartition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
+        Partition const* GetHorizontalPartition(bool polymorphic) const;
+        Partition const& GetRootHorizontalPartition() const;
+        Partition const& GetRootVerticalPartition() const;
+
+        std::vector<Partition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId () const { return m_classId; }

@@ -783,7 +783,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 }
             }
 
-        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), GetRootTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), GetTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, whereExpression.ToString(),
                                                                       false, GetClass().GetId()))
             {
