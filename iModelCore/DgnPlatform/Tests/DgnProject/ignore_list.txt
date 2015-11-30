@@ -31,3 +31,7 @@ UnitDefinition.GetStandardUnitByName # fails randomonly on 06Dev; will have to f
 UnitDefinition.GetStandardLabel # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitDefinition.GetStandardName # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitIterator.GetName # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
+
+ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementation merge and test clean up
+ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
+

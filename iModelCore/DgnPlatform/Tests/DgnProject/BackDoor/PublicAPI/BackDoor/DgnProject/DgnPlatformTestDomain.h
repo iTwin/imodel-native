@@ -60,6 +60,19 @@ struct TestElement : Dgn::PhysicalElement
 
     TestElement(CreateParams const& params) : T_Super(params) {} 
 
+protected:
+    Utf8String m_testItemProperty;
+    Utf8String m_testElemProperty;
+
+    virtual Dgn::DgnDbStatus _InsertInDb() override;
+    virtual Dgn::DgnDbStatus _UpdateInDb() override;
+    virtual Dgn::DgnDbStatus _DeleteInDb() const override;
+
+    virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    virtual void _CopyFrom(Dgn::DgnElementCR el) override;
+
 public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
     static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
@@ -77,6 +90,10 @@ public:
 
     // Change the shape size
     void ChangeElement(double shapeSize);
+
+    // Set get property value
+    Utf8StringCR GetTestElementProperty() const { return m_testElemProperty; }
+    void SetTestElementProperty(Utf8StringCR value) { m_testElemProperty = value; }
 };
 
 typedef RefCountedPtr<TestElement> TestElementPtr;
@@ -90,6 +107,8 @@ typedef TestElement const& TestElementCR;
 struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
+protected: 
+    virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };
 
 //=======================================================================================

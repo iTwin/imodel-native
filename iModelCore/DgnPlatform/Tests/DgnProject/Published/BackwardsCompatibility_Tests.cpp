@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 #if defined (WIP_COMPATIBILITY)
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass								Adeel.Shoukat
+* @bsiclass                                Adeel.Shoukat
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BackwardsCompatibilityTests : public testing::Test
 {
@@ -22,7 +22,7 @@ struct BackwardsCompatibilityTests : public testing::Test
         void verifyElements(DgnFileP dgnFile,DgnDbR project,BeFileName name )
             {
              bset<ElementId> elements;
-			// FileOpenMode f = 2;
+            // FileOpenMode f = 2;
 
         dgnFile->FillDictionaryModel();
         FOR_EACH(PersistentDgnElementP ref, dgnFile->GetDictionaryModel()->GetElementsCollection())
@@ -113,8 +113,8 @@ TEST_F(BackwardsCompatibilityTests, openGraphite05In0501)
 /*---------------------------------------------------------------------------------------
 * Open Graphite04 files in current tree
 * @bsimethod                                                    Adeel.Shoukat   04/2014
-+---------------+---------------+---------------+---------------+---------------+------*/	
-	TEST_F(BackwardsCompatibilityTests, openGraphite04In0501)
++---------------+---------------+---------------+---------------+---------------+------*/    
+    TEST_F(BackwardsCompatibilityTests, openGraphite04In0501)
     {
      ScopedDgnHost host;
     BeFileName fullFileName (getenv("CompatibilityRoot"));
@@ -141,5 +141,5 @@ TEST_F(BackwardsCompatibilityTests, openGraphite05In0501)
         DgnDbR project = dgnFile->GetDgnDb();
         verifyElements(dgnFile,project,name);
         }
-    } 	
+    }     
 #endif

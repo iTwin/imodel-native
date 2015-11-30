@@ -214,12 +214,36 @@
     <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
+    <ClCompile Include="Published\AnnotationTable_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ChangeTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnImportContext_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FullTextSearch_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\LocksManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MemoryManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Revision_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementDependencyGraph.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\MissingHandler_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
-      <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\GenericDgnModelTestFixture.h">
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="NonPublished\DgnHandlersTests.h">
@@ -270,6 +294,9 @@
     <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h">
       <Filter>TestFixture</Filter>
     </ClInclude>
+    <ClInclude Include="Published\ChangeTestFixture.h">
+      <Filter>Published</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">
@@ -293,5 +320,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
+    <None Include="Published\DgnScriptTest.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_Checker.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_GeometryA.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_GeometryB.ts">
+      <Filter>Published</Filter>
+    </None>
   </ItemGroup>
 </Project>

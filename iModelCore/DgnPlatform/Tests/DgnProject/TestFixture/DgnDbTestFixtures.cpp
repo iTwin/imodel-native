@@ -58,22 +58,53 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId mi
      }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName DgnDbTestFixture::CopyDb(WCharCP inputFileName, WCharCP outputFileName)
+    {
+    BeFileName fullInputFileName;
+    BeTest::GetHost().GetDocumentsRoot (fullInputFileName);
+    fullInputFileName.AppendToPath (inputFileName);
+
+    BeFileName fullOutputFileName;
+    BeTest::GetHost().GetOutputRoot(fullOutputFileName);
+    fullOutputFileName.AppendToPath(outputFileName);
+
+    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
+        return BeFileName();
+
+    return fullOutputFileName;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase)
+    {
+    DbResult result = BE_SQLITE_OK;
+    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
+    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
+    ASSERT_EQ( BE_SQLITE_OK , result );
+    if (needBriefcase)
+        TestDataManager::MustBeBriefcase(db, mode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Set up method that opens an existing .dgndb project file after copying it to out
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode)
+void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase)
 {
     BeFileName outFileName;
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseProjFile, testProjFile, __FILE__));
-    DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(mode));
-    ASSERT_TRUE(m_db.IsValid());
-    ASSERT_TRUE(result == BE_SQLITE_OK);
+    
+    OpenDb(m_db, outFileName, mode, needBriefcase);
 
-    TestDataManager::MustBeBriefcase(m_db, mode);
-    ASSERT_TRUE(m_db->IsBriefcase());
-    ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
+    if (needBriefcase)
+        {
+        ASSERT_TRUE(m_db->IsBriefcase());
+        ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
+        }
 
     auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_TRUE(DgnDbStatus::Success == status);
@@ -85,12 +116,30 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
 
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
 }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Umar.Hayat                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode, bool needBriefcase)
+    {
+    DgnDbTestDgnManager tdm(baseProjFile, testFile, mode, needBriefcase);
+    m_db = tdm.GetDgnProjectP();
+
+    auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_TRUE(DgnDbStatus::Success == status);
+
+    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
+    ASSERT_TRUE(m_defaultModelP.IsValid());
+    m_defaultModelP->FillModel();
+
+    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementKey DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
-{
+    {
     if (!mid.IsValid())
         mid = m_defaultModelId;
 
@@ -100,13 +149,13 @@ DgnElementKey DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId ca
     DgnElementPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode,100);
 
     return m_db->Elements().Insert(*el)->GetElementKey();
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
-{
+    {
     if (!mid.IsValid())
         mid = m_defaultModelId;
 
@@ -130,7 +179,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnM
         return DgnElementKey();
 
     return m_db->Elements().Insert(*el)->GetElementKey();
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15

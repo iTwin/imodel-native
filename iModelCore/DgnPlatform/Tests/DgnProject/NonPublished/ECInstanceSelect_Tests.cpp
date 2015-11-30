@@ -19,7 +19,7 @@ struct ECInstanceSelectTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
     {
-    SetupProject(L"04_Plant.i.idgndb", L"SelectQueriesOnDbGeneratedDuringBuild_04Plant.idgndb", BeSQLite::Db::OpenMode::Readonly);
+    SetupProject(L"04_Plant.i.idgndb", L"SelectQueriesOnDbGeneratedDuringBuild_04Plant.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT TAG FROM appdw.EquipmentElementItem WHERE EQUIP_NO='50P-104B'"));
