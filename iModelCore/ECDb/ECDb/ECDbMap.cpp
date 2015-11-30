@@ -1225,7 +1225,8 @@ StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (ICla
 StorageDescription::StorageDescription(StorageDescription&& rhs)
     : m_classId(std::move(rhs.m_classId)), m_horizontalPartitions(std::move(rhs.m_horizontalPartitions)),
     m_nonVirtualHorizontalPartitionIndices(std::move(rhs.m_nonVirtualHorizontalPartitionIndices)),
-    m_rootHorizontalPartitionIndex(std::move(rhs.m_rootHorizontalPartitionIndex))
+    m_rootHorizontalPartitionIndex(std::move(rhs.m_rootHorizontalPartitionIndex)),
+    m_rootVerticalPartitionIndex(std::move(rhs.m_rootVerticalPartitionIndex)), m_veritcalPartitions(std::move(rhs.m_veritcalPartitions))
     {}
 
 //------------------------------------------------------------------------------------------
@@ -1239,6 +1240,8 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
         m_horizontalPartitions = std::move(rhs.m_horizontalPartitions);
         m_nonVirtualHorizontalPartitionIndices = std::move(rhs.m_nonVirtualHorizontalPartitionIndices);
         m_rootHorizontalPartitionIndex = std::move(rhs.m_rootHorizontalPartitionIndex);
+        m_rootVerticalPartitionIndex = std::move(rhs.m_rootVerticalPartitionIndex);
+        m_veritcalPartitions = std::move(rhs.m_veritcalPartitions);
         }
 
     return *this;

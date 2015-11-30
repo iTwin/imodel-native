@@ -945,19 +945,33 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         }
 
     storage.GetClassesR ().insert (ptr);
-    for (auto& part : classMap.GetStorageDescription ().GetHorizontalPartitions ())
+    if (classMap.IsJoinedTable())
         {
-        auto& storage = GetStorage (part.GetTable ().GetName ().c_str ());
-        for (auto id : part.GetClassIds ())
+        auto& storage = GetStorage(classMap.GetTable().GetName().c_str());
+        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetTable())->GetClassIds())
             {
-            auto refClassMap = GetClassMap (id);
-            BeAssert (refClassMap != nullptr);
-            auto classM = &(GetClass (*refClassMap));
-            BeAssert (classM != nullptr);
-            ptr->GetPartitionsR ()[&storage].insert (classM);
+            auto refClassMap = GetClassMap(id);
+            BeAssert(refClassMap != nullptr);
+            auto classM = &(GetClass(*refClassMap));
+            BeAssert(classM != nullptr);
+            ptr->GetPartitionsR()[&storage].insert(classM);
             }
         }
-
+    else
+        {
+        for (auto& part : classMap.GetStorageDescription().GetHorizontalPartitions())
+            {
+            auto& storage = GetStorage(part.GetTable().GetName().c_str());
+            for (auto id : part.GetClassIds())
+                {
+                auto refClassMap = GetClassMap(id);
+                BeAssert(refClassMap != nullptr);
+                auto classM = &(GetClass(*refClassMap));
+                BeAssert(classM != nullptr);
+                ptr->GetPartitionsR()[&storage].insert(classM);
+                }
+            }
+        }
     return *ptr;
     }
 

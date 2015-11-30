@@ -226,13 +226,11 @@ public:
         size_t m_rootHorizontalPartitionIndex;
         size_t m_rootVerticalPartitionIndex;
 
-        explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0) {}
+        explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0), m_rootVerticalPartitionIndex(0) {}
 
         Partition* AddHorizontalPartition(ECDbSqlTable const&, bool isRootPartition);
         Partition* AddVerticalPartition(ECDbSqlTable const&, bool isRootPartition);
 
-        Partition const* GetHorizontalPartition(ECDbSqlTable const&) const;
-        Partition const* GetVerticalPartition(ECDbSqlTable const&) const;
 
     public:
         ~StorageDescription (){}
@@ -249,6 +247,8 @@ public:
         Partition const* GetHorizontalPartition(bool polymorphic) const;
         Partition const& GetRootHorizontalPartition() const;
         Partition const& GetRootVerticalPartition() const;
+        Partition const* GetVerticalPartition(ECDbSqlTable const&) const;
+        Partition const* GetHorizontalPartition(ECDbSqlTable const&) const;
 
         std::vector<Partition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
