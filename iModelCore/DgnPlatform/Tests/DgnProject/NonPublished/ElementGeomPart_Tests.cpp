@@ -179,10 +179,10 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("TestGeomPart");
     EXPECT_TRUE(existingPartId.IsValid());
 
-    DgnElementId elementId = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementId();
+    DgnElementId elementId = InsertElement()->GetElementId();
     EXPECT_TRUE(elementId.IsValid());
 
-    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(elementId, existingPartId) );
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(elementId, existingPartId));
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
 
     // Delete Geom Part
