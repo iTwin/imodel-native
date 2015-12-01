@@ -11,6 +11,7 @@
 #include <ECDb/ECDbTypes.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+#if !defined (DOCUMENTATION_GENERATOR)
 
 //=======================================================================================
 //! For a JOIN USING clause the values of this enum specify which end of the relationship
@@ -33,7 +34,6 @@ enum class JoinDirection
     Reverse = 2 //!< JOIN expression goes from target to source constraint of the ECN::ECRelationshipClass.
     };
 
-#if !defined (DOCUMENTATION_GENERATOR)
 //**************** ClassClause **************************************************
 
 //=======================================================================================
@@ -65,13 +65,6 @@ public:
 
     Utf8String ToString () const;
     Utf8String ToString (bool ignoreIsPolymorphic) const;
-
-    //! Builds the ECSQL snippet from the specified ECClass.
-    //! @remarks Only does the pure conversion from the class to
-    //! the direct ECSQL snippet without applyingr polymorphism or aliases
-    //! @param[in] ecClass ECClass to create the ECSQL snippet for
-    //! @return ECSQL class snippet
-    static Utf8String ToString (ECN::ECClassCR ecClass);
     };
 
 //=======================================================================================
@@ -209,8 +202,6 @@ public:
     Utf8String ToString () const;
     };
 
-#endif // DOCUMENTATION_GENERATOR
-
 //**************** ECSqlBuilder **************************************************
 struct ECSqlBuilder;
 typedef ECSqlBuilder& ECSqlBuilderR;
@@ -219,6 +210,8 @@ typedef ECSqlBuilder* ECSqlBuilderP;
 typedef ECSqlBuilder const* ECSqlBuilderCP;
 
 //=======================================================================================
+//! @deprecated Use regular string manipulation APIs to build the ECSQL. The builder is neither
+//! optimized for performance nor for memory consumption.
 //! An ECSqlBuilder is used to conveniently build an @ref ECSQLOverview statement.
 //! @see ECSqlSelectBuilder, ECSqlInsertBuilder, ECSqlUpdateBuilder, ECSqlDeleteBuilder, ECSqlStatement, @ref ECDbOverview, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup
@@ -226,7 +219,6 @@ typedef ECSqlBuilder const* ECSqlBuilderCP;
 //+===============+===============+===============+===============+===============+======
 struct ECSqlBuilder 
     {
-#if !defined (DOCUMENTATION_GENERATOR)
 public:
     //=======================================================================================    
     //! Statement types that can be built with an ECSqlBuilder
@@ -239,7 +231,6 @@ public:
         Update,
         Delete
         };
-#endif
 
 public:
     //! The name of the ECInstanceId system property used to reference the primary key of an ECClass in an ECSQL statement.
@@ -264,7 +255,6 @@ private:
     //! @return text representation of this builder
     virtual Utf8String _ToString () const = 0;
 
-#if !defined (DOCUMENTATION_GENERATOR)
  protected:
     //! Initializes a new instance of the ECSqlBuilder class.
     //! @remarks Derived classes *must* call this constructor in
@@ -277,7 +267,6 @@ private:
     ECSqlBuilder (ECSqlBuilder&& rhs);
     ECSqlBuilderR operator= (ECSqlBuilder&& rhs);
 
-#endif
 
  public:
     virtual ~ECSqlBuilder () {}
@@ -305,7 +294,6 @@ private:
     //! @return ECSQL class snippet
     ECDB_EXPORT static Utf8String ToECSqlSnippet (ECN::ECClassCR ecClass);
 
-#if !defined (DOCUMENTATION_GENERATOR)
     //! Clones this builder.
     //! @remarks The caller is responsible for freeing the clone.
     //! @return Clone of this builder. The caller is responsible for freeing the clone.
@@ -314,7 +302,6 @@ private:
     //! Gets the statement type of this builder.
     //! @return Statement type
     StatementType GetType () const;
-#endif
     };
 
 
@@ -325,6 +312,8 @@ typedef ECSqlSelectBuilder& ECSqlSelectBuilderR;
 typedef ECSqlSelectBuilder const& ECSqlSelectBuilderCR;
 
 //=======================================================================================
+//! @deprecated Use regular string manipulation APIs to build the ECSQL. The builder is neither
+//! optimized for performance nor for memory consumption.
 //! The ECSqlSelectBuilder is used to build ECSQL Select statements.
 //! 
 //! The API supports a [fluent interface style API] (http://en.wikipedia.org/wiki/Fluent_interface)
@@ -453,7 +442,6 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlSelectBuilderR Limit (Utf8CP limitClause, Utf8CP offsetClause = nullptr);
 
-#if !defined (DOCUMENTATION_GENERATOR)
     SelectClause const& GetSelectClause () const {return m_select;}
     ClassClause const& GetFromClause () const {return m_from;}
     ClassClause const& GetJoinClause () const { return m_join; }
@@ -461,7 +449,6 @@ public:
     WhereClause const& GetWhereClause () const { return m_where; }
     Utf8StringCR GetOrderByClause () const {return m_orderBy;}
     LimitClause const& GetLimitClause () const {return m_limit;}
-#endif
     };
 
 
@@ -472,6 +459,8 @@ typedef ECSqlInsertBuilder& ECSqlInsertBuilderR;
 typedef ECSqlInsertBuilder const& ECSqlInsertBuilderCR;
 
 //=======================================================================================
+//! @deprecated Use regular string manipulation APIs to build the ECSQL. The builder is neither
+//! optimized for performance nor for memory consumption.
 //! The ECSqlInsertBuilder is used to build ECSQL Insert statements.
 //! 
 //! The API supports a [fluent interface style API] (http://en.wikipedia.org/wiki/Fluent_interface)
@@ -520,12 +509,10 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlInsertBuilderR AddValue (Utf8CP targetProperty, Utf8CP targetValue);
 
-#if !defined (DOCUMENTATION_GENERATOR)
     ClassClause const& GetTargetClass () const;
     bvector<Utf8String> const& GetTargetPropertiesClause () const;
     bvector<Utf8String> const& GetValuesClause () const;
     bool TryFindECInstanceIdProperty (int& propertyIndex) const;
-#endif
     };
 
 //**************** ECSqlUpdateBuilder **************************************************
@@ -534,6 +521,8 @@ typedef ECSqlUpdateBuilder& ECSqlUpdateBuilderR;
 typedef ECSqlUpdateBuilder const& ECSqlUpdateBuilderCR;
 
 //=======================================================================================
+//! @deprecated Use regular string manipulation APIs to build the ECSQL. The builder is neither
+//! optimized for performance nor for memory consumption.
 //! The ECSqlUpdateBuilder is used to build ECSQL Update statements.
 //! 
 //! The API supports a [fluent interface style API] (http://en.wikipedia.org/wiki/Fluent_interface)
@@ -544,11 +533,9 @@ typedef ECSqlUpdateBuilder const& ECSqlUpdateBuilderCR;
 //+===============+===============+===============+===============+===============+======
 struct EXPORT_VTABLE_ATTRIBUTE ECSqlUpdateBuilder : public ECSqlBuilder
     {
-#if !defined (DOCUMENTATION_GENERATOR)
 public:
     typedef bpair<Utf8String, Utf8String> SetClauseItem;
     typedef bvector<SetClauseItem > SetClause;
-#endif
 
 private:
     ClassClause m_targetClass;
@@ -597,11 +584,9 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlUpdateBuilderR Where (Utf8CP whereClause);
 
-#if !defined (DOCUMENTATION_GENERATOR)
     ClassClause const& GetTargetClass () const;
     SetClause const& GetSetClause () const;
     WhereClause const& GetWhereClause () const;
-#endif
     };
 
 //**************** ECSqlDeleteBuilder **************************************************
@@ -610,6 +595,8 @@ typedef ECSqlDeleteBuilder& ECSqlDeleteBuilderR;
 typedef ECSqlDeleteBuilder const& ECSqlDeleteBuilderCR;
 
 //=======================================================================================
+//! @deprecated Use regular string manipulation APIs to build the ECSQL. The builder is neither
+//! optimized for performance nor for memory consumption.
 //! The ECSqlDeleteBuilder is used to build ECSQL Delete statements.
 //! 
 //! The API supports a [fluent interface style API] (http://en.wikipedia.org/wiki/Fluent_interface)
@@ -652,10 +639,10 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlDeleteBuilderR Where (Utf8CP whereClause);
 
-#if !defined (DOCUMENTATION_GENERATOR)
     ClassClause const& GetTargetClass () const;
     WhereClause const& GetWhereClause () const;
-#endif
     };
+
+#endif // DOCUMENTATION_GENERATOR
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -119,7 +119,7 @@ Utf8String ECSqlBuilder::ToString () const
 //static
 Utf8String ECSqlBuilder::ToECSqlSnippet (ECN::ECClassCR ecClass)
     {
-    return ClassClause::ToString (ecClass);
+    return Utf8String(ecClass.GetECSqlName());
     }
 
 

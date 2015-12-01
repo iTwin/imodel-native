@@ -37,9 +37,6 @@
     as the primary key of the table that corresponds to the domain @ref BentleyApi::ECN::ECClass "ECClasses".
     Furthermore it is <b>unique across the entire @ref ECDbFile "ECDb file"</b>.
 
-    You can use @ref BentleyApi::BeSQLite::EC::ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY "ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY"
-    instead of the hardcoded string literal @c ECInstanceId when building an ECSQL statement programmatically.
-
     @e Details
     @li If not specified in the ECSQL INSERT statement, %ECDb generates the ECInstanceId automatically. In that case, the ECInstanceId
     is a @ref BentleyApi::BeSQLite::BeBriefcaseBasedId "briefcase based id" and is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file").

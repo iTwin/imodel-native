@@ -286,8 +286,6 @@ struct ECDbSqlColumn : NonCopyableClass
         };
 
     private:
-        static const std::map<ColumnKind, Utf8CP> s_columnKindNames;
-
         Type m_type;
         ECDbSqlTable& m_ownerTable;
         Constraint m_constraints;

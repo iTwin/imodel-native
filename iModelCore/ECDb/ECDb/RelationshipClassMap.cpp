@@ -874,37 +874,36 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
     if (constraintClasses.size() == 0)
         return SUCCESS;
 
-    bvector<bpair<ECClassCP, Utf8CP>> keyPropAccessStrings;
+    ECDbSqlColumn const* keyPropCol = nullptr;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
         bvector<Utf8String> const& keys = constraintClass->GetKeys();
         const size_t keyCount = keys.size();
         if (keyCount == 0)
-            continue;
-
-        if (keyCount > 1 || keys[0].empty())
             {
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support multiple or empty Key properties.",
+            if (keyPropCol == nullptr)
+                continue;
+            
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECRelationshipConstraint Key properties must be specified on all classes of the constraint or on none.",
                                          relClass, constraintEnd);
             return ERROR;
             }
-        keyPropAccessStrings.push_back(bpair<ECClassCP, Utf8CP> (&constraintClass->GetClass(), keys[0].c_str()));
-        }
-
-    if (keyPropAccessStrings.empty())
-        return SUCCESS;
-
-    ECDbSqlColumn const* keyPropCol = nullptr;
-    for (bpair<ECClassCP, Utf8CP> const& pair : keyPropAccessStrings)
-        {
-        IClassMap const* classMap = GetECDbMap().GetClassMap(*pair.first);
+            
+        if (keyCount > 1 || keys[0].empty())
+            {
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys that are empty or made up of multiple properties.",
+                                         relClass, constraintEnd);
+            return ERROR;
+            }
+      
+        IClassMap const* classMap = GetECDbMap().GetClassMap(constraintClass->GetClass());
         if (classMap == nullptr || classMap->GetMapStrategy().IsNotMapped())
             {
             BeAssert(false && "Class on relationship end is not mapped. This should have been caught before.");
             return ERROR;
             }
 
-        Utf8CP keyPropAccessString = pair.second;
+        Utf8CP keyPropAccessString = keys[0].c_str();
         PropertyMap const* keyPropertyMap = classMap->GetPropertyMap(keyPropAccessString);
         if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
             {
@@ -935,11 +934,10 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
             keyPropCol = columns[0];
         else if (keyPropCol != columns[0])
             {
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "If a Key property is defined for multiple classes in an ECRelationshipClassConstraint, they must all point to the same property.",
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "All ECRelationshipConstraint Keys must point to the same property for a given constraint.",
                                          relClass, constraintEnd);
             return ERROR;
             }
-
         }
 
     keyPropertyColumn = keyPropCol;
