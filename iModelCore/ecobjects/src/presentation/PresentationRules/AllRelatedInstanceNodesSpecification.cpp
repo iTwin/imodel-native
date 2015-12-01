@@ -6,10 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-
-#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentationRules/SpecificationVisitor.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -41,6 +41,11 @@ Utf8StringCR supportedSchemas
     m_skipRelatedLevel (skipRelatedLevel), m_supportedSchemas (supportedSchemas), m_requiredDirection (RequiredRelationDirection_Both)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

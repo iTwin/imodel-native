@@ -6,9 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-
-#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
+#include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -16,14 +15,14 @@ USING_NAMESPACE_BENTLEY_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubCondition::SubCondition () : m_condition (L"")
+SubCondition::SubCondition () : m_condition ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubCondition::SubCondition (WStringCR condition) : m_condition (condition)
+SubCondition::SubCondition (Utf8StringCR condition) : m_condition (condition)
     {
     }
 
@@ -42,9 +41,9 @@ SubCondition::~SubCondition ()
 bool SubCondition::ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
-        m_condition = L"";
+        m_condition = "";
 
-    CommonTools::LoadRulesFromXmlNode <SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
 
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
@@ -81,18 +80,19 @@ void SubCondition::WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SubCondition::GetCondition (void) { return m_condition;  }
+Utf8StringCR SubCondition::GetCondition (void) { return m_condition;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubConditionList& SubCondition::GetSubConditions (void) { return m_subConditions;  }
+SubConditionList& SubCondition::GetSubConditionsR (void) { return m_subConditions;  }
+SubConditionList const& SubCondition::GetSubConditions (void) const { return m_subConditions;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeSpecificationList& SubCondition::GetSpecifications (void) { return m_specifications; }
-
+ChildNodeSpecificationList& SubCondition::GetSpecificationsR (void) { return m_specifications; }
+ChildNodeSpecificationList const& SubCondition::GetSpecifications (void) const { return m_specifications; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -139,7 +139,7 @@ bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_stopFurtherProcessing, COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING))
         m_stopFurtherProcessing = false;
 
-    CommonTools::LoadRulesFromXmlNode <SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
 
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
@@ -176,17 +176,19 @@ void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RuleTargetTree ChildNodeRule::GetTargetTree (void) { return m_targetTree; }
+RuleTargetTree ChildNodeRule::GetTargetTree (void) const { return m_targetTree; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubConditionList& ChildNodeRule::GetSubConditions (void) { return m_subConditions;  }
+SubConditionList const& ChildNodeRule::GetSubConditions (void) const { return m_subConditions;  }
+SubConditionList& ChildNodeRule::GetSubConditionsR (void) { return m_subConditions;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeSpecificationList& ChildNodeRule::GetSpecifications (void) { return m_specifications; }
+ChildNodeSpecificationList const& ChildNodeRule::GetSpecifications (void) const { return m_specifications; }
+ChildNodeSpecificationList& ChildNodeRule::GetSpecificationsR (void) { return m_specifications; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               03/2014
@@ -196,7 +198,7 @@ void ChildNodeRule::SetStopFurtherProcessing (bool stopFurtherProcessing) { m_st
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeRule::GetStopFurtherProcessing (void) { return m_stopFurtherProcessing; }
+bool ChildNodeRule::GetStopFurtherProcessing (void) const { return m_stopFurtherProcessing; }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -245,4 +247,4 @@ void RootNodeRule::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas             04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootNodeRule::GetAutoExpand (void) { return m_autoExpand; }
+bool RootNodeRule::GetAutoExpand (void) const { return m_autoExpand; }

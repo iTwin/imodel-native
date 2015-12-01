@@ -20,7 +20,7 @@ typedef bvector<struct ChildNodeRule*> ChildNodeRuleList;
 Base class for all ChildNodeSpecifications.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification
+struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecification
     {
 //__PUBLISH_SECTION_END__
     private:
@@ -87,20 +87,20 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification
 
         //! If this property is set, it will not show nodes in the hierarchy that doesn't contain children.
         //! Important: Setting this to true may affect tree performance.
-        ECOBJECTS_EXPORT bool                         GetHideIfNoChildren (void);
+        ECOBJECTS_EXPORT bool                         GetHideIfNoChildren (void) const;
 
          //! Sets the HideIfNoChildren value. Can be boolean.
         ECOBJECTS_EXPORT void                         SetHideIfNoChildren (bool value);
 
         //! Returns a string that represents extended data that will be passed to ECQuery for this particular specification.
-        ECOBJECTS_EXPORT WStringCR                    GetExtendedData (void);
+        ECOBJECTS_EXPORT WStringCR                    GetExtendedData (void) const;
 
         //! Sets a string that represents extended data that will be passed to ECQuery for this particular specification.
         ECOBJECTS_EXPORT void                         SetExtendedData (WStringCR extendedData);
 
         //! Identifies whether ECInstances sort or not returned by specification. If true, then ECInstances will be listed
         //! in the order they were stored, or the order PersistenceProvider returns them.
-        ECOBJECTS_EXPORT bool                         GetDoNotSort (void);
+        ECOBJECTS_EXPORT bool                         GetDoNotSort (void) const;
 
         //! Identifies whether ECInstances sort or not returned by specification. If true, then ECInstances will be listed
         //! in the order they were stored, or the order PersistenceProvider returns them.

@@ -9,6 +9,7 @@
 
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
+#include <ECPresentationRules/SpecificationVisitor.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -23,11 +24,16 @@ CustomNodeSpecification::CustomNodeSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChildren, WStringCR type, WStringCR label, WStringCR description, WStringCR imageId)
+CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChildren, Utf8StringCR type, Utf8StringCR label, Utf8StringCR description, Utf8StringCR imageId)
     : ChildNodeSpecification (priority, true, false, hideIfNoChildren), 
     m_type (type), m_label (label), m_description (description), m_imageId (imageId)
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void CustomNodeSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -44,16 +50,16 @@ bool CustomNodeSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_type, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_TYPE))
-        m_type = L"";
+        m_type = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL))
-        m_label = L"";
+        m_label = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_description, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_DESCRIPTION))
-        m_description = L"";
+        m_description = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageId, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_IMAGEID))
-        m_imageId = L"";
+        m_imageId = "";
 
     return true;
     }
@@ -72,39 +78,39 @@ void CustomNodeSpecification::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR CustomNodeSpecification::GetNodeType (void) const { return m_type; }
+Utf8StringCR CustomNodeSpecification::GetNodeType (void) const { return m_type; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodeSpecification::SetNodeType (WString value) { m_type = value; }
+void CustomNodeSpecification::SetNodeType (Utf8StringCR value) { m_type = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR CustomNodeSpecification::GetLabel (void) const { return m_label; }
+Utf8StringCR CustomNodeSpecification::GetLabel (void) const { return m_label; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodeSpecification::SetLabel (WString value) { m_label = value; }
+void CustomNodeSpecification::SetLabel (Utf8StringCR value) { m_label = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR CustomNodeSpecification::GetDescription (void) const { return m_description; }
+Utf8StringCR CustomNodeSpecification::GetDescription (void) const { return m_description; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodeSpecification::SetDescription (WString value) { m_description = value; }
+void CustomNodeSpecification::SetDescription (Utf8StringCR value) { m_description = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR CustomNodeSpecification::GetImageId (void) const { return m_imageId; }
+Utf8StringCR CustomNodeSpecification::GetImageId (void) const { return m_imageId; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodeSpecification::SetImageId (WString value) { m_imageId = value; }
+void CustomNodeSpecification::SetImageId (Utf8StringCR value) { m_imageId = value; }

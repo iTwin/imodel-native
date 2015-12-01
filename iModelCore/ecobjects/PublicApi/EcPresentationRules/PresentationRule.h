@@ -70,7 +70,7 @@ public:
 Base class for all PresentationRules.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PresentationRule : public PresentationKey
+struct EXPORT_VTABLE_ATTRIBUTE PresentationRule : public PresentationKey
     {
 //__PUBLISH_SECTION_END__
 private:
@@ -102,6 +102,21 @@ public:
     //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
     ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const;
     };
+
+struct PresentationRuleSpecificationVisitor;
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PresentationRuleSpecification
+{
+protected:
+    virtual ~PresentationRuleSpecification() {}
+    virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const {}
+
+public:
+    //! Allows the visitor to visit this specification.
+    ECOBJECTS_EXPORT void Accept(PresentationRuleSpecificationVisitor& visitor) const;
+};
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
