@@ -71,7 +71,8 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
     DgnScriptType sTypePreferred = DgnScriptType::JavaScript;
     DgnScriptType sTypeFound;
     Utf8String jsprog;
-    DgnDbStatus status = T_HOST.GetScriptAdmin()._FetchScript(jsprog, sTypeFound, db, jsProgramName.c_str(), sTypePreferred);
+    DateTime lastModifiedTime;
+    DgnDbStatus status = T_HOST.GetScriptAdmin()._FetchScript(jsprog, sTypeFound, lastModifiedTime, db, jsProgramName.c_str(), sTypePreferred);
     if (DgnDbStatus::Success != status)
         {
         NativeLogging::LoggingManager::GetLogger("DgnScript")->infov ("Script program %s is not registered in the script library", jsProgramName.c_str());
@@ -354,10 +355,10 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
+DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
     DgnScriptLibrary jslib(db);
-    return jslib.QueryScript(sText, stypeFound, sName, stypePreferred);
+    return jslib.QueryScript(sText, stypeFound, lastModifiedTime, sName, stypePreferred);
     }
 
 //---------------------------------------------------------------------------------------

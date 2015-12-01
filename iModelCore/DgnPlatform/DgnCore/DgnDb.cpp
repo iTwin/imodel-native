@@ -299,10 +299,10 @@ DgnLineStyles& DgnStyles::LineStyles() {if (NULL == m_lineStyles) m_lineStyles =
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
+DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, DateTime const& lastModifiedTime, bool updateExisting)
     {
     DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
-    DbResult res = files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts");
+    DbResult res = files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts", nullptr, &lastModifiedTime);
     if (BE_SQLITE_OK != res)
         {
         if (!BeSQLiteLib::IsConstraintDbResult(res) || !updateExisting)
@@ -320,12 +320,12 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred)
+DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, Utf8CP sName, DgnScriptType stypePreferred)
     {
     DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
     uint64_t size;
     Utf8String ftype;
-    auto id = files.QueryFile(sName, &size, nullptr, nullptr, &ftype, nullptr);
+    auto id = files.QueryFile(sName, &size, nullptr, nullptr, &ftype, &lastModifiedTime);
     if (!id.IsValid())
         return DgnDbStatus::NotFound;
 
