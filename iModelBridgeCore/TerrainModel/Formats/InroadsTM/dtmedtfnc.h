@@ -124,14 +124,6 @@ int aecDTM_pointDelete      /* <= TRUE if error                    */
   struct CIVpntedt *pntdelP            /* => point edit data structure        */
 );
 
-void aecDTM_pointDeleteCleanup
-(
-  struct CIVdtmsrf *srfP,              /* => surface your using               */
-  struct CIVdtmpnt *pntP,              /* => point we deleted                 */
-  long nnewlst,                        /* => # tins in affected list          */
-  long *newlstP                        /* => array of ptrs to triangle list   */
-);
-
 void aecDTM_deleteTriangle
 (
   struct CIVdtmsrf *srfP,              /* => surface containing tin           */
