@@ -859,6 +859,8 @@ struct EdgeRuns : bvector<AnnotationTableEdgeRun>
 {
 DGNPLATFORM_EXPORT Utf8String   ToString() const;
 
+void                            CopyFrom (EdgeRunsCR source, AnnotationTableElementR element);
+
 DGNPLATFORM_EXPORT iterator     CreateGap (EdgeRunsP removedRuns, uint32_t startIndex, uint32_t span);
 DGNPLATFORM_EXPORT void         CloseSpan (EdgeRunsP removedRuns, uint32_t startIndex, uint32_t span);
 DGNPLATFORM_EXPORT void         Insert (AnnotationTableEdgeRunCR newEdgeRun);
@@ -1524,6 +1526,7 @@ private:
 
     void                            Initialize (bool isNewTable);
     TableHeaderAspect&              GetHeaderAspect() { return m_tableHeader; }
+    BentleyStatus                   ValidateAllAspectTablePointers();
 
     void                            Clear();
     void                            LoadCells();

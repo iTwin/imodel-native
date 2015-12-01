@@ -218,7 +218,7 @@ protected:
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     DgnElement::Hilited     m_hiliteState;
-    IElemTopologyPtr        m_currElemTopo;
+    IElemTopologyCPtr       m_currElemTopo;
     GeomStreamEntryId       m_currGeomStreamEntryId;
     double                  m_levelOfDetail;
     double                  m_minLOD;             // minimum size of default level-of-detail test.
@@ -554,7 +554,7 @@ public:
 
     //! Set the current IElementTopology.
     //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
-    void SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
+    DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyCP topo);
 
     //! Query the current GeomStreamEntryId.
     GeomStreamEntryId GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}

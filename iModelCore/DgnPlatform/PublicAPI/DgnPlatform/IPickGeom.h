@@ -10,6 +10,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 #include "HitDetail.h"
+#include "IManipulator.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

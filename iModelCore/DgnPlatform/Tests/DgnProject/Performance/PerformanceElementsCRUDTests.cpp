@@ -1287,10 +1287,8 @@ void PerformanceElementsCRUDTestFixture::GetInsertECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
-
     insertECSql = Utf8String ("INSERT INTO ");
-    insertECSql.append (ecClassName).append (" ([ECInstanceId], ");
+    insertECSql.append (ecClass->GetECSqlName()).append (" ([ECInstanceId], ");
     Utf8String insertValuesSql (") VALUES (:[ECInstanceId], ");
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
@@ -1320,7 +1318,6 @@ void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     selectECSql = "SELECT ";
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
@@ -1333,7 +1330,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8S
         isFirstItem = false;
         }
 
-    selectECSql.append(" FROM ").append(ecClassName).append(" WHERE ECInstanceId = ?");
+    selectECSql.append(" FROM ").append(ecClass->GetECSqlName()).append(" WHERE ECInstanceId = ?");
     if(omitClassIdFilter)
         selectECSql.append(" ECSQLOPTIONS NoECClassIdFilter");
     }
@@ -1346,9 +1343,8 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     updateECSql = "UPDATE ";
-    updateECSql.append (ecClassName).append (" SET ");
+    updateECSql.append (ecClass->GetECSqlName()).append (" SET ");
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
@@ -1376,9 +1372,8 @@ void PerformanceElementsCRUDTestFixture::GetDeleteECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     deleteECSql = "DELETE FROM ONLY ";
-    deleteECSql.append (ecClassName).append (" WHERE ").append ("ECInstanceId = ?");
+    deleteECSql.append (ecClass->GetECSqlName()).append (" WHERE ").append ("ECInstanceId = ?");
 
     if (omitClassIdFilter)
         deleteECSql.append(" ECSQLOPTIONS NoECClassIdFilter");

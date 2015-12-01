@@ -3239,6 +3239,20 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 void GeometrySource::_Stroke(ViewContextR context) const
     {
     ElementGeomIO::Collection(GetGeomStream().GetData(), GetGeomStream().GetSize()).Draw(context, GetCategoryId(), context.GetViewFlags());
+        {
+        // NEEDSWORK: Temporary - Continous rendering DgnGraphic will allow this to be cached...
+        Transform   placementTrans = GetPlacementTransform();
+        ViewFlags   viewFlags;
+
+        if (nullptr != context.GetViewFlags())
+            viewFlags = *context.GetViewFlags();
+        else
+            viewFlags.InitDefaults();
+
+        context.PushTransform(placementTrans);
+        ElementGeomIO::Collection(GetGeomStream().GetData(), GetGeomStream().GetSize()).Draw(context, GetCategoryId(), viewFlags);
+        context.PopTransformClip();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
