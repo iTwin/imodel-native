@@ -935,9 +935,11 @@ void PickOutput::_DrawGraphic(Graphic* qvElem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-PickContext::PickContext(LocateOptions const& options, StopLocateTest* stopTester) : m_options(options), m_stopTester(stopTester), m_graphic(*this)
+PickContext::PickContext(LocateOptions const& options, StopLocateTest* stopTester) : m_options(options), m_stopTester(stopTester)
     {
-    m_hitList               = NULL;
+    m_graphic = new PickOutput(*this);
+
+    m_hitList               = nullptr;
     m_hitPriorityOverride   = HitPriority::Highest;
     m_unusableLStyleHit     = false;
     m_testingLStyle         = TEST_LSTYLE_None;

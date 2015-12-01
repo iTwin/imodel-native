@@ -682,7 +682,8 @@ struct FenceAcceptContext : public ViewContext
 {
     DEFINE_T_SUPER(ViewContext)
 private:
-    FenceAcceptOutput*  m_graphic;
+    RefCountedPtr<FenceAcceptOutput> m_graphic;
+
     DgnElementIdSet     m_contents;
     bool                m_collectContents;  // true for GetContents, false for AcceptElement...
     DgnViewportP        m_nonVisibleViewport;
@@ -693,8 +694,9 @@ public:
         {
         m_purpose            = DrawPurpose::FenceAccept;
         m_collectContents    = false;
-        m_nonVisibleViewport = NULL;
+        m_nonVisibleViewport = nullptr;
         m_ignoreViewRange    = true;
+
         m_graphic = new FenceAcceptOutput();
         }
 

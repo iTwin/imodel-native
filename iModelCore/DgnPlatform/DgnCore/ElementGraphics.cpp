@@ -186,7 +186,8 @@ struct ElementGraphicsContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
-    ElementGraphicsDrawGeom* m_graphic;
+    RefCountedPtr<ElementGraphicsDrawGeom> m_graphic;
+
     ElementGraphicsContext() {}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_graphic;}
 
@@ -197,7 +198,7 @@ public:
         m_wantMaterials = true; // Setup material in GeometryParams in case IElementGraphicsProcessor needs it...
 
         m_graphic = new ElementGraphicsDrawGeom(this, dropObj);
-        m_currGraphic = m_graphic;
+        m_currGraphic = m_graphic; // Because _OutputElement may not be called...
 
         dropObj._AnnounceContext(*this);
         }

@@ -63,7 +63,8 @@ struct PickContext : ViewContext, IPickGeom
 private:
     friend struct PickOutput;
 
-    PickOutput        m_graphic;
+    RefCountedPtr<PickOutput> m_graphic;
+
     bool              m_doneSearching;
     bool              m_unusableLStyleHit;
     bool              m_doLocateSilhouettes;
@@ -91,7 +92,7 @@ private:
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
     virtual void  _OnPreDrawTransient() override;
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return &m_graphic;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_graphic;}
 
     bool TestPoint(DPoint3dCR localPt, HitPriority priority);
     bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority);
