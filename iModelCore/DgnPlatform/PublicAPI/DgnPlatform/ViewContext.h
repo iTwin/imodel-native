@@ -13,6 +13,7 @@
 #include "TransformClipStack.h"
 #include "Render.h"
 #include "ScanCriteria.h"
+#include "IPickGeom.h"
 
 #define FOCAL_LENGTH_RATIO 0.023584905
 
@@ -101,21 +102,6 @@ struct  ILineStyle
     virtual bool _IsSnappable() const = 0;
 };
 
-//=======================================================================================
-//! Interface to supply additional topology information that describes the subsequent geometry.
-//! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
-//! when picking. Can be used to make transient geometry locatable; set context.SetElemTopology
-//! before drawing the geometry (ex. IViewTransients) and implement ITransientGeometryHandler.
-//! @note Always call context.SetElemTopology(nullptr) after drawing geometry.
-//=======================================================================================
-struct IElemTopology : IRefCounted
-{
-    virtual IElemTopologyP _Clone() const = 0; //!< Create a deep copy of this object.
-    virtual bool _IsEqual (IElemTopologyCR) const = 0; //!< Compare objects and return true if they should be considered the same.
-    virtual ITransientGeometryHandlerP _GetTransientGeometryHandler() const = 0; //!< Return an object for handling requests related to locate of transient geometry where we don't have an element handler.
-};
-
-typedef RefCountedPtr<IElemTopology> IElemTopologyPtr; //!< Reference counted type to manage the life-cycle of the IElemTopology.
 
 //=======================================================================================
 // @bsiclass
@@ -145,6 +131,34 @@ public:
     //! return true to abort the current operation.
     //! @note Overrides MUST call SetAborted or use AddAbortTest since WasAborted may be directly tested!
     virtual bool _CheckStop() {return m_aborted;}
+};
+
+struct IElemTopology;
+struct IEditManipulator;
+DEFINE_REF_COUNTED_PTR(IElemTopology)
+DEFINE_REF_COUNTED_PTR(IEditManipulator)
+
+//=======================================================================================
+//! Interface to supply additional topology information that describes the subsequent geometry.
+//! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
+//! when picking. Can be used to make transient geometry locatable; set context.SetElemTopology
+//! before drawing the geometry (ex. IViewTransients) and implement ITransientGeometryHandler.
+//! @note Always call context.SetElemTopology(nullptr) after drawing geometry.
+//=======================================================================================
+struct IElemTopology : IRefCounted
+{
+    //! Create a deep copy of this object.
+    virtual IElemTopologyP _Clone() const = 0;
+
+    //! Compare objects and return true if they should be considered the same.
+    virtual bool _IsEqual (IElemTopologyCR) const = 0;
+
+    //! Return GeometrySource to handle requests related to transient geometry (like locate) where we don't have an DgnElement.
+    virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
+
+    //! Return IEditManipulator for interacting with transient geometry.
+    //! @note Implementor is expected to check hit.GetDgnDb().IsReadonly().
+    virtual IEditManipulatorPtr _GetTransientManipulator (HitDetailCR) const {return nullptr;}
 };
 
 //=======================================================================================
@@ -554,7 +568,7 @@ public:
 
     //! Set the current IElementTopology.
     //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
-    DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyCP topo);
+    void SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
 
     //! Query the current GeomStreamEntryId.
     GeomStreamEntryId GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
