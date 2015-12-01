@@ -505,42 +505,31 @@ BentleyStatus DgnMarkupProject::CheckIsOpen()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnDbParams const& params)
+DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, CreateDgnDbParams const& params)
     {
-    // PRE CONDITIONS
-    if (params.m_seedDb.empty())
-        {
-        BeAssert(false && "You must supply a seed file");
-        return BE_SQLITE_ERROR;
-        }
-
-    //  ------------------------------------------------------------------
-    //  Create the .markupdb file
-    //  ------------------------------------------------------------------
-    BeFileName projectFile(fileName);
-
     CreateDgnMarkupProjectParams& mpp = *(CreateDgnMarkupProjectParams*) &params;
 
-    supplyDefaultExtension(projectFile, s_markupDgnDbExt);
-    if (mpp.GetOverwriteExisting() && BeFileName::DoesPathExist(projectFile))
-        {
-        BeFileNameStatus fstatus = BeFileName::BeDeleteFile(projectFile);
+    BeFileName fileName(fileNameIn);
+    supplyDefaultExtension(fileName, s_markupDgnDbExt);
 
-        if (BeFileNameStatus::Success != fstatus)
-            return BE_SQLITE_ERROR;
+    if (true)
+        {
+        if (!mpp.m_seedDb.empty())
+            BeFileName::BeCopyFile(mpp.m_seedDb, fileName, !mpp.GetOverwriteExisting());
+        else
+            {
+            CreateDgnDbParams params;
+            params.SetOverwriteExisting (mpp.GetOverwriteExisting());
+            DgnDb::CreateDgnDb (nullptr, fileName, params);
+            }
         }
 
-    BeFileNameStatus fstatus = BeFileName::BeCopyFile(params.m_seedDb.c_str(), projectFile);
-
-    if (BeFileNameStatus::Success != fstatus)
-        return BE_SQLITE_ERROR;
-
     OpenParams oparams(OpenMode::ReadWrite);
-    DbResult status = DoOpenDgnDb(projectFile, oparams); // open as a DgnDb
+    DbResult status = DoOpenDgnDb(fileName, oparams);
 
     if (BE_SQLITE_OK != status)
         {
-        BeFileName::BeDeleteFile(projectFile);
+        BeFileName::BeDeleteFile(fileName);
         return  status;
         }
 
@@ -553,7 +542,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileName, CreateD
     if (mpp.GetPhysicalRedlining())
         {
         SavePropertyString(DgnProjectProperty::IsPhysicalRedline(), "true");
-
         }
 
     //  ------------------------------------------------------------------
@@ -1141,7 +1129,7 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
         return;
 
     Utf8String ecsql ("INSERT INTO ");
-    ecsql.append (ECSqlBuilder::ToECSqlSnippet (*ecclass)).append (" (RedlineModelId, [Name], CreateDate) VALUES (?, ?, ?)");
+    ecsql.append (ecclass->GetECSqlName()).append (" (RedlineModelId, [Name], CreateDate) VALUES (?, ?, ?)");
     
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (*this, ecsql.c_str ());

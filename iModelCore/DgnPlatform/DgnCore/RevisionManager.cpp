@@ -71,6 +71,19 @@ public:
     //---------------------------------------------------------------------------------------
     ChangeStreamFileWriter(BeFileNameCR pathname) : m_pathname(pathname) {}
     ~ChangeStreamFileWriter() {}
+
+    // NEEDSWORK_MAYBE? If the change group is empty, the output callback is never invoked, therefore file never created
+    BentleyStatus EnsureFileExists()
+        {
+        if (!m_pathname.DoesPathExist())
+            {
+            BeFile file;
+            if (BeFileStatus::Success != file.Create(m_pathname.c_str(), true))
+                return ERROR;
+            }
+
+        return SUCCESS;
+        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -594,7 +607,8 @@ BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeG
         return ERROR;
         }
 
-    return SUCCESS;
+    // NEEDSWORK_MAYBE? If the change group is empty, the output callback is never invoked, therefore file never created
+    return writer.EnsureFileExists();
     }
 
 //---------------------------------------------------------------------------------------
@@ -682,4 +696,12 @@ void RevisionManager::AbandonCreateRevision()
 
     m_currentRevisionEndTxnId = TxnManager::TxnId(); // Invalid id
     m_currentRevision = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::TxnId RevisionManager::GetCurrentRevisionEndTxnId() const
+    {
+    return m_currentRevisionEndTxnId;
     }

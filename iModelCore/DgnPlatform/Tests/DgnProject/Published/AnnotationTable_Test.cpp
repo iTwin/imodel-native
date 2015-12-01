@@ -183,7 +183,7 @@ void SetUp () override
     T_Super::SetUp();
 
     // Create a category
-    DgnCategory category(DgnCategory::CreateParams(*GetDgnProjectP(), m_categoryName, DgnCategory::Scope::Physical));
+    DgnCategory category(DgnCategory::CreateParams(GetDgnDb(), m_categoryName, DgnCategory::Scope::Physical));
     DgnSubCategory::Appearance appearance;
     category.Insert(appearance);
 
@@ -191,27 +191,27 @@ void SetUp () override
     ASSERT_TRUE(m_categoryId.IsValid());
 
     // Create a text style
-    AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(*GetDgnProjectP());
+    AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(GetDgnDb());
     textStyle->SetName(GetTextStyleName());
     textStyle->SetHeight(GetTextStyleHeight());
-    textStyle->SetFontId(GetDgnProjectP()->Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
+    textStyle->SetFontId(GetDgnDb().Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     textStyle->Insert();
 
     m_textStyleId = textStyle->GetElementId();
     ASSERT_TRUE(m_textStyleId.IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*GetDgnProjectP(), DgnClassId(GetDgnProjectP()->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), DgnModel::CreateModelCode(m_modelName)));
+    DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), DgnModel::CreateModelCode(m_modelName)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     m_modelId = model->GetModelId();
     ASSERT_TRUE(m_modelId.IsValid());
     }
 
-DgnDbR                  GetDgnDb()              { return *GetDgnProjectP(); }
+DgnDbR                  GetDgnDb()              { return *T_Super::GetDgnDb(); }
 DgnModelId              GetModelId()            { return m_modelId; }
 DgnCategoryId           GetCategoryId()         { return m_categoryId; }
-DgnElementId   GetTextStyleId()        { return m_textStyleId; }
+DgnElementId            GetTextStyleId()        { return m_textStyleId; }
 Utf8CP                  GetTextStyleName()      { return "TextStyleForTable"; }
 double                  GetTextStyleHeight()    { return 0.25; }
 
