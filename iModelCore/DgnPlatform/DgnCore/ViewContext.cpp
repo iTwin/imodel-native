@@ -539,15 +539,20 @@ void ViewContext::_OutputElement(GeometrySourceCR source)
     DPoint3d origin;
     placementTrans.GetTranslation(origin);
 
-    DgnViewportCR vp = *GetViewport();
-    double pixelSize = vp.GetPixelSizeAtPoint(&origin);
+    DgnViewportCP vp = GetViewport();
+    double pixelSize = (nullptr != vp ? vp->GetPixelSizeAtPoint(&origin) : 0.0);
 
     m_currGraphic = _GetCachedGraphic(pixelSize);
     if (m_currGraphic.IsValid())
         return;
 
-    m_currGraphic = _BeginGraphic(Graphic::CreateParams(&vp, placementTrans, pixelSize));
-    vp.GetViewControllerR()._StrokeGeometry(*this, source);
+    m_currGraphic = _BeginGraphic(Graphic::CreateParams(vp, placementTrans, pixelSize));
+
+    if (nullptr != vp)
+        vp->GetViewControllerR()._StrokeGeometry(*this, source);
+    else
+        source.Stroke(*this);
+
     _SaveGraphic();
     }
 
