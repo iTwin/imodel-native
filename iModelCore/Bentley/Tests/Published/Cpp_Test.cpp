@@ -524,6 +524,10 @@ void test_initiailzerLists ()
     Object o = {0.43f, 10};
     Object oArray[] = {{13.4f, 3}, {43.28f, 29}, {5.934f, 17}};
     std::vector<int> vec = {1,2,3};
+
+    UNUSED_VARIABLE(o);
+    UNUSED_VARIABLE(oArray);
+    UNUSED_VARIABLE(vec);
     }
 
 //  ---------------------------------------------------------------------
