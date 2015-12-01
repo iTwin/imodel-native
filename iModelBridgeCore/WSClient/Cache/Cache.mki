@@ -68,7 +68,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Core/ECDbFileInfoSchema.h               \
     $(CacheMkiSourceDir)Persistence/Core/SchemaContext.h                    \
     $(CacheMkiSourceDir)Persistence/Core/SchemaManager.h                    \
-    $(CacheMkiSourceDir)Persistence/Files/FileCacheManager.h                \
+    $(CacheMkiSourceDir)Persistence/Files/FileStorage.h                     \
     $(CacheMkiSourceDir)Persistence/Files/FileInfo.h                        \
     $(CacheMkiSourceDir)Persistence/Files/FileInfoManager.h                 \
     $(CacheMkiSourceDir)Persistence/Hierarchy/HierarchyManager.h            \
@@ -164,7 +164,7 @@ $(o)SchemaContext$(oext)                        : $(CacheMkiSourceDir)Persistenc
 $(o)SchemaManager$(oext)                        : $(CacheMkiSourceDir)Persistence/Core/SchemaManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 
-$(o)FileCacheManager$(oext)                     : $(CacheMkiSourceDir)Persistence/Files/FileCacheManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+$(o)FileStorage$(oext)                          : $(CacheMkiSourceDir)Persistence/Files/FileStorage.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)FileInfo$(oext)                             : $(CacheMkiSourceDir)Persistence/Files/FileInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

@@ -394,7 +394,7 @@ bool retrievingFullData
 
     if (retrievingFullData)
         {
-        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), GetCancellationToken()))
+        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), nullptr, nullptr, GetCancellationToken()))
             {
             SetError({CachingDataSource::Status::InternalCacheError, GetCancellationToken()});
             return;
@@ -403,7 +403,12 @@ bool retrievingFullData
     else
         {
         bset<ObjectId> rejected;
-        if (SUCCESS != txn.GetCache().CachePartialResponse(responseKey, result.GetValue(), rejected, nullptr, GetCancellationToken()))
+
+        // Force partial caching
+        WSQuery query("", "");
+        query.SetSelect("$id");
+
+        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), &rejected, &query, GetCancellationToken()))
             {
             SetError({CachingDataSource::Status::InternalCacheError, GetCancellationToken()});
             return;
