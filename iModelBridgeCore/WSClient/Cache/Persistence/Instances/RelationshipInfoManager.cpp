@@ -228,7 +228,7 @@ ECInstanceKeyR targetOut
             "FROM ONLY %s rel "
             "WHERE rel.[ECInstanceId] = ? "
             "LIMIT 1 ",
-            ECSqlBuilder::ToECSqlSnippet(*relationshipClass).c_str()
+            relationshipClass->GetECSqlName()
             );
         });
 
