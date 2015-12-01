@@ -1054,9 +1054,9 @@ public:
     // schemas index class by name so publicly name can not be reset
     //! The name of this ECClass
     ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
-    //! <SchemaName>:<ClassName> The pointer will remain valid as long as the ECClass exists.
+    //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
-    //! Formats the class name for use in an ECSQL statement. ([<SchemaName>].[<ClassName>])
+    //! Formats the class name for use in an ECSQL statement. ([{SchemaName}].[{ClassName}])
     //! @remarks The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8CP             GetECSqlName() const;
     //! Whether the display label is explicitly defined or not
