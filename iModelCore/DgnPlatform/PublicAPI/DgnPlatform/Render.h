@@ -99,9 +99,9 @@ struct Image : RefCounted<NonCopyableClass>
         }
 
 protected:
-    uint32_t m_width;
-    uint32_t m_height;
-    Format   m_format;
+    uint32_t   m_width;
+    uint32_t   m_height;
+    Format     m_format;
     ByteStream m_image;
 
 public:
@@ -743,7 +743,7 @@ protected:
     DgnViewportCP m_vp;
     double        m_pixelSize;
 
-    virtual StatusInt _FinishDrawing() {return SUCCESS;}
+    virtual StatusInt _Close() {return SUCCESS;}
     virtual void _ActivateMatSymb(GraphicParamsCP matSymb) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
@@ -775,7 +775,7 @@ protected:
     virtual ~Graphic() {}
 
 public:
-    StatusInt FinishDrawing() {return _FinishDrawing();}
+    StatusInt Close() {return _Close();}
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize) {}
 
     bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
@@ -1044,7 +1044,6 @@ private:
     bool          m_accumulateDirty;
     bool          m_showTransparent;
     bool          m_progressiveDisplay;
-    mutable bool  m_lockVp;
 
 public:
     PaintOptions(DgnDrawBuffer buffer=DgnDrawBuffer::None, BSIRectCP subRect=nullptr) : m_buffer(buffer), m_subRect(subRect)
@@ -1057,7 +1056,6 @@ public:
         m_synchToScreen = false;
         m_showTransparent = true;
         m_progressiveDisplay = false;
-        m_lockVp = false;
         }
     DgnDrawBuffer GetDrawBuffer() const{return m_buffer;}
     DgnDrawMode GetDrawMode() const {return m_drawMode;}
@@ -1065,7 +1063,6 @@ public:
     bool WantEraseBefore() const {return m_eraseBefore;}
     bool WantSynchFromBackingStore() const {return m_synchDrawingFromBs;}
     bool WantAccumulateDirty() const {return m_accumulateDirty;}
-    bool WantLockVp() const {return m_lockVp;}
     bool WantSynchToScreen() const {return m_synchToScreen;}
     bool WantDrawDecorations() const {return m_drawDecorations;}
     bool WantShowTransparent() const {return m_showTransparent;}
@@ -1076,7 +1073,6 @@ public:
     void SetEraseBefore(bool val) {m_eraseBefore = val;}
     void SetSynchFromBackingStore(bool val) {m_synchDrawingFromBs = val;}
     void SetAccumulateDirty(bool val) {m_accumulateDirty = val;}
-    void SetLockVp(bool val) const {m_lockVp = val;}
     void SetSynchToScreen(bool val) {m_synchToScreen = val;}
     void SetDrawDecorations(bool val) {m_drawDecorations = val;}
     void SetShowTransparent(bool val) {m_showTransparent = val;}
@@ -1085,15 +1081,7 @@ public:
     bool IsEraseMode() const {return (m_drawMode == DgnDrawMode::Erase);}
 };
 
-enum class AntiAliasPref {Detect = 0, On = 1, Off = 2};
-
-enum class DrawExportFlags
-{
-    UseDefault          = 0,
-    ClipToFrustum       = 1,
-    LinesAsPolys        = 2,
-    DeferTransparent    = 4,
-};
+enum class AntiAliasPref {Detect=0, On=1, Off=2};
 
 //=======================================================================================
 //! The "system context" is the main window for the rendering system.

@@ -52,13 +52,7 @@ Render::Graphic* CreateSceneContext::_GetCachedGraphic(double pixelSize)
 StatusInt CreateSceneContext::_InitContextForView()
     {
     m_viewport->InitViewSettings(true);
-
-    if (SUCCESS != T_Super::_InitContextForView())
-        return ERROR;
-
-//    InitializeRendering(true); // init rendering for whole view, including lights
-
-    return SUCCESS;
+    return T_Super::_InitContextForView();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,7 +63,7 @@ void CreateSceneContext::_SaveGraphic()
     if (!m_currGraphic.IsValid())
         return;
 
-    m_currGraphic->FinishDrawing(); // save the graphic on the element, even if this fails so we don't attempt to stroke it again.
+    m_currGraphic->Close(); // save the graphic on the element, even if this fails so we don't attempt to stroke it again.
     m_currentGeomSource->Graphics().Save(*m_currGraphic);
     }
 
