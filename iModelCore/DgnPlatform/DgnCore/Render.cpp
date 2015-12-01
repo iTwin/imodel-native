@@ -95,13 +95,3 @@ bool CreateSceneContext::CreateScene(DgnViewportR vp)
     return WasAborted();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RenderManager::AddTask(Task& task)
-    {
-    BeMutexHolder lock(m_cv.GetMutex());
-    m_tasks.push_back(&task);
-
-    m_cv.notify_all();
-    }
