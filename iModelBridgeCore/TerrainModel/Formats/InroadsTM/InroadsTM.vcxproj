@@ -72,7 +72,6 @@
     <ClCompile Include="actprj.cpp" />
     <ClCompile Include="addftr.cpp" />
     <ClCompile Include="addpnt.cpp" />
-    <ClCompile Include="addtin.cpp" />
     <ClCompile Include="allftr.cpp" />
     <ClCompile Include="allocs.cpp" />
     <ClCompile Include="allpnt.cpp" />
@@ -89,7 +88,6 @@
     <ClCompile Include="counts.cpp" />
     <ClCompile Include="crtsrf.cpp" />
     <ClCompile Include="dalloc.cpp" />
-    <ClCompile Include="delany.cpp" />
     <ClCompile Include="delftr.cpp" />
     <ClCompile Include="delpnt.cpp" />
     <ClCompile Include="delsrf.cpp" />
@@ -125,7 +123,6 @@
     <ClCompile Include="msguti.cpp" />
     <ClCompile Include="MXTinToDTM.cpp" />
     <ClCompile Include="paruti.cpp" />
-    <ClCompile Include="patch.cpp" />
     <ClCompile Include="plyuti.cpp" />
     <ClCompile Include="pntadd.cpp" />
     <ClCompile Include="pntdel.cpp" />
@@ -144,7 +141,6 @@
     <ClCompile Include="tbluti.cpp" />
     <ClCompile Include="tckuti.cpp" />
     <ClCompile Include="TimeStampUtils.cpp" />
-    <ClCompile Include="tinstk.cpp" />
     <ClCompile Include="TinToDTM.cpp" />
     <ClCompile Include="tinuti.cpp" />
     <ClCompile Include="trisrf.cpp" />

@@ -19,9 +19,6 @@
     <ClCompile Include="addpnt.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="addtin.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="allftr.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -68,9 +65,6 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="dalloc.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="delany.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="delftr.cpp">
@@ -178,9 +172,6 @@
     <ClCompile Include="paruti.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="patch.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="plyuti.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -233,9 +224,6 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="TimeStampUtils.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="tinstk.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="TinToDTM.cpp">

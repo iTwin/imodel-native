@@ -127,34 +127,7 @@ static int aecDTM_pointAddAffected
   struct CIVpntedt *pntadd
 )
 {
-  struct CIVpntedt tmp;
-  int sts = SUCCESS, sam = ( pntadd->ntinlst == 0 ) ? 0 : 1;
-  long i, j;
-
-  sts = aecDTM_findAffectedTriangles ( &pntadd->tin, &tmp.ntinlst, &tmp.tinlst, pntadd->srf, &pntadd->loc );
-  for ( i = 0; i < pntadd->ntinlst  &&  sam; i++ )
-  {
-    for ( j = 0; j < tmp.ntinlst; j++ )
-      if ( tmp.tinlst[j] == pntadd->tinlst[i] )
-        break;
-    if ( j == tmp.ntinlst ) sam = 0;
-  }
-  for ( i = 0; i < tmp.ntinlst  &&  sam; i++ )
-  {
-    for ( j = 0; j < pntadd->ntinlst; j++ )
-      if ( pntadd->tinlst[j] == tmp.tinlst[i] )
-        break;
-    if ( j == pntadd->ntinlst ) sam = 0;
-  }
-
-  if ( ! sam )
-  {
-  }
-
-  sts = aecDTM_pointAddFree ( pntadd );
-  sts = aecDTM_pointAddFree ( &tmp );
-
-  return ( sts );
+  return (SUCCESS);
 }
 
 
@@ -173,19 +146,7 @@ static int aecDTM_pointAddCreate
   struct CIVpntedt *pntadd
 )
 {
-  int sts = SUCCESS, rpt;
-
-  if ( pntadd->ntin > 0L )
-    if ( aecDTM_findTriangle ( &pntadd->tin, 0, &rpt, 0, pntadd->srf, &pntadd->loc ) == SUCCESS  &&  rpt != -1 )
-      sts = aecDTM_findAffectedTriangles ( &pntadd->tin, &pntadd->ntinlst, &pntadd->tinlst, pntadd->srf, &pntadd->loc );
-    else
-    {
-      aecDTM_updateSurfaceRange ( pntadd->srf, pntadd->pnt );
-      if ( ( sts = aecDTM_triangulatePoint ( pntadd->srf, pntadd->srf->regf, pntadd->pnt, &pntadd->tin, &pntadd->ntinlst, &pntadd->tinlst ) ) == SUCCESS )
-        aecDTM_pointDeleteCleanup ( pntadd->srf, pntadd->pnt, pntadd->ntinlst, pntadd->tinlst );
-    }
-
-  return ( sts );
+  return (SUCCESS);
 }
 
 
@@ -203,24 +164,7 @@ static int aecDTM_pointAddRestore
   struct CIVpntedt *pntadd
 )
 {
-  int sts = SUCCESS;
-  long i, npntlst = 0, *pntlst = NULL, nnbrlst, *nbrlst = NULL;
-
-  for ( i = 0; i < pntadd->ntinlst  &&  sts == SUCCESS; i++ )
-    sts = aecDTM_triangleStackPut ( pntadd->srf, (struct CIVdtmtin *)pntadd->tinlst[i], -1 );
-
-  if ( sts == SUCCESS )
-    if ( ( sts = aecDTM_pointAddFree ( pntadd ) ) == SUCCESS )
-      if ( ( sts = aecDTM_getPointNeighbors ( &npntlst, &pntlst, (long *)0, (long **)0, &nnbrlst, &nbrlst, pntadd->srf, pntadd->pnt, (struct CIVdtmtin *)0, 0 ) ) == SUCCESS )
-        if ( ( sts = aecDTM_patch ( pntadd->srf, npntlst, pntlst, nbrlst, &pntadd->ntinlst, &pntadd->tinlst ) ) == SUCCESS )
-          aecDTM_pointDeleteCleanup ( pntadd->srf, pntadd->pnt, pntadd->ntinlst, pntadd->tinlst );
-
-  if ( npntlst > 0L )
-      free ( pntlst );
-  if ( npntlst > 1L )
-      free ( nbrlst );
-
-  return ( sts );
+  return (SUCCESS);
 }
 
 

@@ -76,8 +76,6 @@ $(o)addftr$(oext) : $(InroadsDTMSource)addftr.cpp  ${MultiCompileDepends}
 
 $(o)addpnt$(oext) : $(InroadsDTMSource)addpnt.cpp  ${MultiCompileDepends}
 
-$(o)addtin$(oext) : $(InroadsDTMSource)addtin.cpp  ${MultiCompileDepends}
-
 $(o)allftr$(oext) : $(InroadsDTMSource)allftr.cpp  ${MultiCompileDepends}
 
 $(o)allocs$(oext) : $(InroadsDTMSource)allocs.cpp  ${MultiCompileDepends}
@@ -107,8 +105,6 @@ $(o)counts$(oext) : $(InroadsDTMSource)counts.cpp  ${MultiCompileDepends}
 $(o)crtsrf$(oext) : $(InroadsDTMSource)crtsrf.cpp  ${MultiCompileDepends}
 
 $(o)dalloc$(oext) : $(InroadsDTMSource)dalloc.cpp  ${MultiCompileDepends}
-
-$(o)delany$(oext) : $(InroadsDTMSource)delany.cpp  ${MultiCompileDepends}
 
 $(o)delftr$(oext) : $(InroadsDTMSource)delftr.cpp  ${MultiCompileDepends}
 
@@ -168,8 +164,6 @@ $(o)msguti$(oext) : $(InroadsDTMSource)msguti.cpp  ${MultiCompileDepends}
 
 $(o)paruti$(oext) : $(InroadsDTMSource)paruti.cpp  ${MultiCompileDepends}
 
-$(o)patch$(oext) : $(InroadsDTMSource)patch.cpp  ${MultiCompileDepends}
-
 $(o)plyuti$(oext) : $(InroadsDTMSource)plyuti.cpp  ${MultiCompileDepends}
 
 $(o)pntadd$(oext) : $(InroadsDTMSource)pntadd.cpp  ${MultiCompileDepends}
@@ -203,8 +197,6 @@ $(o)tbluti$(oext) : $(InroadsDTMSource)tbluti.cpp  ${MultiCompileDepends}
 $(o)tckuti$(oext) : $(InroadsDTMSource)tckuti.cpp  ${MultiCompileDepends}
 
 $(o)TimeStampUtils$(oext) : $(InroadsDTMSource)TimeStampUtils.cpp ${MultiCompileDepends}
-
-$(o)tinstk$(oext) : $(InroadsDTMSource)tinstk.cpp  ${MultiCompileDepends}
 
 $(o)tinuti$(oext) : $(InroadsDTMSource)tinuti.cpp  ${MultiCompileDepends}
 

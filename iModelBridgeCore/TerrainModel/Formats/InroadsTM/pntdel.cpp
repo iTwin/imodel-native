@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* pntdel.c                                              tmi    17-Oct-1990   */
@@ -75,46 +75,7 @@ static int aecDTM_pointDeleteProcess
   struct CIVpntedt *pntdel
 )
 {
-  struct CIVdtmfil *fil = (struct CIVdtmfil *)0;
-  int sts = SUCCESS;
-  long i, npntlst, *pntlst, ntinlst, *tinlst, nnbrlst, *nbrlst;
-
-  if ( !(pntdel->opt & PNTEDT_NOTRI) )
-    if ( pntdel->ntin > 0L )
-      if ( ( sts = aecDTM_getPointNeighbors ( &npntlst, &pntlst, &ntinlst, &tinlst, &nnbrlst, &nbrlst, pntdel->srf, pntdel->pnt, pntdel->tin, 0 ) ) == SUCCESS )
-      {
-        if ( !(pntdel->opt & PNTEDT_NOPATCH) )
-        {
-          for ( i = 0; i < ntinlst  &&  sts == SUCCESS; i++ )
-            sts = aecDTM_triangleStackPut ( pntdel->srf, (struct CIVdtmtin *) tinlst[i], -1 );
-
-          if ( ntinlst > 0L )
-              free ( (void*)tinlst );
-
-          if ( sts == SUCCESS )
-            if ( ( sts = aecDTM_patch ( pntdel->srf, npntlst, pntlst, nbrlst, &ntinlst, &tinlst ) ) == SUCCESS )
-            {
-              aecDTM_pointDeleteCleanup ( pntdel->srf, pntdel->pnt, ntinlst, tinlst );
-              sts = aecDTM_findPointFile ( &fil, pntdel->srf, pntdel->pnt );
-            }
-        }
-        else
-        {
-            for ( i = 0; i < ntinlst; i++ )
-                aecDTM_deleteTriangle ( pntdel->srf, (struct CIVdtmtin *)tinlst[i], -1 );
-        }
-
-        if ( npntlst > 0L )
-            free ( (void *)pntlst );
-        if ( nnbrlst > 0L )
-            free ( (void *)nbrlst );
-        if ( ntinlst > 0L )
-            free ( (void *)tinlst );
-      }
-
-  aecDTM_deletePoint ( pntdel->srf, fil, pntdel->pnt );
-
-  return ( sts );
+  return (SUCCESS);
 }
 
 

@@ -90,15 +90,6 @@ int aecDTM_findFirstTriangle /* <= TRUE if error                   */
   struct CIVdtmsrf *srfP               /* => surface to use                   */
 );
 
-int aecDTM_findAffectedTriangles /* <= TRUE if error               */
-(
-  struct CIVdtmtin **triPP,            /* <=> starting/first triangle         */
-  long *ntinlstP,                      /* <=  # tins in list                  */
-  long **tinlstPP,                     /* <=  array of tin addresses          */
-  struct CIVdtmsrf *srfP,              /*  => surface to use                  */
-  DPoint3d *locP                       /*  => loc. of pnt to be added         */
-);
-
 int aecDTM_findOutsideTriangle /* <= TRUE if error                 */
 (
   struct CIVdtmtin **tinPP,            /* <= found triangle                   */

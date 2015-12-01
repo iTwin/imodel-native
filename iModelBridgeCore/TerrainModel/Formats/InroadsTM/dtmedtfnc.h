@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmedtfnc.h                                           aec    08-Feb-1994   */
@@ -107,18 +107,6 @@ int aecDTM_addFeaturePointsToFile /* <= TRUE if error              */
   long nPntsAlc                         /* => # pnts to allocate              */
 );
 
-int aecDTM_addTriangle      /* <= TRUE if error                    */
-(
-  struct CIVdtmtin **tinPP,            /* <= ptr pointing to new triangle     */
-  struct CIVdtmsrf *srfP,              /* => surface where tin is added       */
-  struct CIVdtmpnt *p1P,               /* => ptr to first vertice point.      */
-  struct CIVdtmpnt *p2P,               /* => ptr to second vertice point.     */
-  struct CIVdtmpnt *p3P,               /* => ptr to third vertice point.      */
-  struct CIVdtmtin *n12P,              /* => ptr to tri neigh. side 1-2       */
-  struct CIVdtmtin *n23P,              /* => ptr to tri neigh. side 2-3       */
-  struct CIVdtmtin *n31P               /* => ptr to tri neigh. side 3-1       */
-);
-
 int aecDTM_pointAdd         /* <= TRUE if error                    */
 (
   struct CIVpntedt *pntaddP            /* => point add data structure         */
@@ -167,20 +155,6 @@ int aecDTM_rotateAroundPoint /* <= TRUE if error                   */
   struct CIVdtmpnt *pntP,              /* => point to rotate about            */
   struct CIVdtmtin *tinP,              /* => current triangle                 */
   int dir                              /* => 0: rotate clock,  1: ctr-clock.  */
-);
-
-int aecDTM_getPointNeighbors /* <= TRUE if error                   */
-(
-  long *npntlstP,                      /* <= # point neigh. (or NULL)         */
-  long **pntlstPP,                     /* <= list of neigh. points (or NULL)  */
-  long *ntinlstP,                      /* <= # triangle neigh. (or NULL)      */
-  long **tinlstPP,                     /* <= list of neigh. tri. (or NULL)    */
-  long *nnbrlstP,                      /* <= # tri. neigh. tri. (or NULL)     */
-  long **nbrlstPP,                     /* <= list of tri. neigh. tri. (or NULL) */
-  struct CIVdtmsrf *srfP,              /* => surface to use                   */
-  struct CIVdtmpnt *pntP,              /* => point to rotate about            */
-  struct CIVdtmtin *inptinP,           /* => current triangle                 */
-  int dir                              /* => 0: rotate clock, 1: ctr-clock.   */
 );
 
 int aecDTM_deleteFeatureByGUID /* <= TRUE if error                 */
