@@ -515,7 +515,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
 
 
-    //! A wrapper for a polyface visitor
+    //! A wrapper for a bspline curve
     class BsplineCurve implements IDisposable, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsBsplineCurve ***/ 
@@ -552,6 +552,10 @@ class CurvePrimitive implements IDisposable
     }
 
     type CurvePrimitiveP = cxx_pointer<CurvePrimitive>;
+
+
+
+
 
 
 //! A wrapper for a polyface mesh !!!
@@ -606,7 +610,7 @@ class PolyfaceMesh implements IDisposable
     type PolyfaceMeshP = cxx_pointer<PolyfaceMesh>;
 
 
-    //! A wrapper for a polyface visitor
+//! A wrapper for a polyface visitor
 class PolyfaceVisitor implements IDisposable
     {
     /*** NATIVE_TYPE_NAME = JsPolyfaceVisitor ***/ 
@@ -624,6 +628,63 @@ class PolyfaceVisitor implements IDisposable
 }
 
 type PolyfaceVisitorP = cxx_pointer<PolyfaceVisitor>;
+
+
+    //! A wrapper for BentleyApi::JsDgnConeDetail
+    class DgnConeDetail implements IDisposable {
+    /*** NATIVE_TYPE_NAME = JsDgnConeDetail ***/ 
+        constructor();
+
+    static CreateCircularCone(
+            centerA: DPoint3dP,
+            centerB: DPoint3dP,
+            radiusA: cxx_double,
+            radiusB: cxx_double,
+            capped: cxx_bool
+        ): DgnConeDetailP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type DgnConeDetailP = cxx_pointer<DgnConeDetail>;
+
+    //! A wrapper for BentleyApi::JsDgnSphereDetail
+    class DgnSphereDetail implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDgnSphereDetail ***/
+        constructor();
+
+        static CreateSphere(
+            center: DPoint3dP,
+            radius: cxx_double
+            ): DgnSphereDetailP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type DgnSphereDetailP = cxx_pointer<DgnSphereDetail>;
+
+
+
+
+    //! A wrapper for BentleyApi::JsCurvePrimitive
+    class SolidPrimitive implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
+        Clone(): SolidPrimitiveP;
+        constructor();
+        static CreateDgnCone(detail: DgnConeDetailP): SolidPrimitiveP;
+        static CreateDgnSphere      (detail: DgnSphereDetailP): SolidPrimitiveP;
+        //!static CreateDgnBox         (detail: DgnBoxDetailP): SolidPrimitiveP;
+        //!static CreateDgnTorusPipe   (detail: DgnTorusPipeDetailP): SolidPrimitiveP;
+        SolidPrimitiveType(): cxx_double;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
+
 
 
 

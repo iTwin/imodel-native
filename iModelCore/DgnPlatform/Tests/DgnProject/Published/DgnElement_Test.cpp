@@ -118,8 +118,6 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
 
-    DgnClassId classId = e1->QueryClassId(*m_db);
-    EXPECT_TRUE(classId.IsValid());
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
     //Creating a copy of element to edit.
     DgnElementPtr e1Copy = e1->CopyForEdit();
