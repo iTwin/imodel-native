@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 This specification returns customly defined nodes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CustomNodeSpecification : public ChildNodeSpecification
+struct EXPORT_VTABLE_ATTRIBUTE CustomNodeSpecification : public ChildNodeSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:

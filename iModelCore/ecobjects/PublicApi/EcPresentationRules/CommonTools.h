@@ -10,6 +10,7 @@
 /*__PUBLISH_SECTION_START__*/
 #include <ECPresentationRules/PresentationRulesTypes.h>
 #include <ECPresentationRules/PresentationRule.h>
+#include <BeXml/BeXml.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

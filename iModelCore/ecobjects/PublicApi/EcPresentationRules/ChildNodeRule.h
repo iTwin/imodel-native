@@ -65,7 +65,7 @@ struct SubCondition
 ChildNodeRule defines rules for generating child nodes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ChildNodeRule : public PresentationRule
+struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
     {
     /*__PUBLISH_SECTION_END__*/
     private:
@@ -121,7 +121,7 @@ struct ChildNodeRule : public PresentationRule
 RootNodeRule defines rules for generating root nodes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RootNodeRule : public ChildNodeRule
+struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
     {
     /*__PUBLISH_SECTION_END__*/
     private:

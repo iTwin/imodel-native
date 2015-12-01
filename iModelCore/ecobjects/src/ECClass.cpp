@@ -74,12 +74,23 @@ ECClassId ECClass::GetId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ECClass::GetFullName () const
     {
-    if (m_fullName.size() == 0)
+    if (m_fullName.empty())
         m_fullName = GetSchema().GetName() + ":" + GetName();
         
     return m_fullName.c_str();
     }
-    
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP ECClass::GetECSqlName() const
+    {
+    if (m_ecsqlName.empty())
+        m_ecsqlName.append("[").append(GetSchema().GetName()).append("].[").append(GetName()).append("]");
+
+    return m_ecsqlName.c_str();
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
