@@ -59,6 +59,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ISelectProviderTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\JsonDiffTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\JsonUtilTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapter.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbSchemaChangeListener.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapter.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ISelectProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\JsonDiffTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />

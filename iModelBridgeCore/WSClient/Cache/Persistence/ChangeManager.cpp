@@ -13,7 +13,7 @@
 #include "Changes/ChangeInfoManager.h"
 #include "Core/CacheSchema.h"
 #include "Core/SchemaManager.h"
-#include "Files/FileCacheManager.h"
+#include "Files/FileStorage.h"
 #include "Files/FileInfoManager.h"
 #include "Hierarchy/HierarchyManager.h"
 #include "Hierarchy/RootManager.h"
@@ -40,7 +40,7 @@ ObjectInfoManager& objectInfoManager,
 RelationshipInfoManager& relationshipInfoManager,
 FileInfoManager& fileInfoManager,
 ChangeInfoManager& changeInfoManager,
-FileCacheManager& fileManager,
+FileStorage& fileStorage,
 RootManager& rootManager
 ) :
 m_dbAdapter(&dbAdapter),
@@ -51,7 +51,7 @@ m_objectInfoManager(&objectInfoManager),
 m_relationshipInfoManager(&relationshipInfoManager),
 m_fileInfoManager(&fileInfoManager),
 m_changeInfoManager(&changeInfoManager),
-m_fileManager(&fileManager),
+m_fileStorage(&fileStorage),
 m_rootManager(&rootManager),
 m_isSyncActive(false)
     {}
@@ -163,12 +163,6 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
-        {
-        BeAssert(false && "Cannot modify object while syncing");
-        return ERROR;
-        }
-
     if (info.GetChangeStatus() == ChangeStatus::Deleted)
         {
         BeAssert(false && "Cannot modify object that is deleted");
@@ -202,6 +196,36 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
 
     if (SUCCESS != m_instanceHelper->UpdateExistingInstanceData(info, propertiesRapidJson))
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::RevertModifiedObject(ECInstanceKeyCR instance)
+    {
+    ObjectInfo info = m_objectInfoManager->ReadInfo(instance);
+    if (info.GetChangeStatus() != ChangeStatus::Modified)
+        {
+        BeAssert(false && "Cannot revert non-modified instance");
+        return ERROR;
+        }
+
+    if (IsSyncActive())
+        {
+        BeAssert(false && "Change reverting while syncing is not implemented");
+        return ERROR;
+        }
+
+    info.ClearChangeInfo();
+
+    rapidjson::Document instanceJson;
+    if (SUCCESS != m_changeInfoManager->ReadBackupInstance(info, instanceJson) ||
+        SUCCESS != m_instanceHelper->UpdateExistingInstanceData(info, instanceJson))
         {
         return ERROR;
         }
@@ -281,13 +305,8 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
     info.SetChangeStatus(ChangeStatus::Modified);
     info.SetSyncStatus(syncStatus);
 
-    if (SUCCESS != m_fileInfoManager->SaveInfo(info))
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    if (SUCCESS != m_fileManager->CacheFile(instanceKey, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile))
+    if (SUCCESS != m_fileStorage->CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile) ||
+        SUCCESS != m_fileInfoManager->SaveInfo(info))
         {
         BeAssert(false);
         return ERROR;
@@ -899,8 +918,8 @@ BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
         }
 
     info.ClearChangeInfo();
-    if (SUCCESS != m_fileInfoManager->SaveInfo(info) ||
-        SUCCESS != m_fileManager->SetFileCacheLocation(info.GetInstanceKey(), FileCache::Temporary))
+    if (SUCCESS != m_fileStorage->SetFileCacheLocation(info, FileCache::Temporary) ||
+        SUCCESS != m_fileInfoManager->SaveInfo(info))
         {
         return ERROR;
         }

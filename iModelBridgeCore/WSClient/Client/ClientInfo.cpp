@@ -14,6 +14,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 Utf8CP ClientInfo::DefaultLanguage = "en";
 
+#define HEADER_MasUuid      "Mas-Uuid"
+#define HEADER_MasAppGuid   "Mas-App-Guid"
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -233,8 +236,8 @@ void ClientInfo::FillHttpRequestHeaders(HttpRequestHeaders& headers) const
         m_headers->SetAcceptLanguage(GetAcceptLanguage());
 
         // WSG feature usage tracking
-        m_headers->SetUuid(m_deviceId);
-        m_headers->SetAppGuid(m_applicationGUID);
+        m_headers->SetValue(HEADER_MasUuid, m_deviceId);
+        m_headers->SetValue(HEADER_MasAppGuid, m_applicationGUID);
         }
 
     if (nullptr != m_primaryHeaderProvider)

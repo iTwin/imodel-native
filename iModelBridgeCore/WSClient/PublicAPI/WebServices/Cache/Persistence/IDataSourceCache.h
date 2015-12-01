@@ -111,26 +111,16 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Saves query response to cache
         //! @param[in] responseKey - key used to store response data
         //! @param[in] response - contains information about instances
+        //! @param[out] rejectedOut - returns ObjectIds that are protected by full persistence and were not updated with partial instances. 
+        //! Required when specifying query.
+        //! @param[in] query - when specified, is used to determine instances that are partial and thus not overriding already fully 
+        //! cached instances. Null results in all instances treated as full that overrides existing data.
         //! @param[in] cancellationToken - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
         virtual BentleyStatus CacheResponse
             (
             CachedResponseKeyCR responseKey,
             WSObjectsResponseCR response,
-            ICancellationTokenPtr cancellationToken = nullptr
-            ) = 0;
-
-        //! Saves query response to cache that include instances with subset of properties
-        //! @param[in] responseKey - key used to store response data
-        //! @param[in] response - contains information about instances
-        //! @param[out] rejectedOut - returns ObjectIds that are protected by full persistence and were not updated with partial instances.
-        //! @param[in] query - when specified, is used to determine instances that are partial. Null results in all instances treated as partial.
-        //! @param[in] cancellationToken - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
-        //! ATTENTION: when response.IsModified() == false, MarkTemporaryInstancesAsPartial should be called
-        virtual BentleyStatus CachePartialResponse
-            (
-            CachedResponseKeyCR responseKey,
-            WSObjectsResponseCR response,
-            bset<ObjectId>& rejectedOut,
+            bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) = 0;
@@ -374,8 +364,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //  Cached file managment
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        // Change or prepare instances file cache location. Will move file if location changed.
-        virtual BentleyStatus SetFileCacheLocation(const bvector<ObjectId>& ids, FileCache cacheLocation) = 0;
         // Change or prepare instance file cache location. Will move file if location changed.
         virtual BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation) = 0;
         // Returns FileCache location that is setup for given instasnce - Temporary or Persistent

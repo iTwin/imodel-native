@@ -19,7 +19,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct MockServerInfoListener : public IWSClient::IServerInfoListener
     {
     public:
-        MOCK_METHOD1 (OnServerInfoReceived, void (WSInfoCR info));
+        MOCK_METHOD1(OnServerInfoReceived, void(WSInfoCR info));
     };
 #endif
 
