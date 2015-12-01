@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* loddtm.c                                         tmi    24-Apr-1990        */
@@ -914,12 +914,12 @@ struct CIVdtmsrf *srf,
                         sts = DTM_M_RDFILF;
                     else
                         {
-                        t[blk->use].p1 = (CIVdtmpnt*)t[blk->use].op1;
-                        t[blk->use].p2 = (CIVdtmpnt*)t[blk->use].op2;
-                        t[blk->use].p3 = (CIVdtmpnt*)t[blk->use].op3;
-                        t[blk->use].n12 = (CIVdtmtin*)t[blk->use].on12;
-                        t[blk->use].n23 = (CIVdtmtin*)t[blk->use].on23;
-                        t[blk->use].n31 = (CIVdtmtin*)t[blk->use].on31;
+                        t[blk->use].p1 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op1;
+                        t[blk->use].p2 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op2;
+                        t[blk->use].p3 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op3;
+                        t[blk->use].n12 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on12;
+                        t[blk->use].n23 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on23;
+                        t[blk->use].n31 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on31;
                         numRead++;
                         }
                     }
@@ -1002,9 +1002,9 @@ struct CIVdtmsrf *srf,
                                     }
                                 else
                                     {
-                                    f[blk->use].p1 = (CIVdtmpnt*)f[blk->use].p[0];
-                                    f[blk->use].s1 = (CIVdtmsty*)f[blk->use].p[1];
-                                    f[blk->use].pay = (CIVdtmpay*)f[blk->use].p[2];
+                                    f[blk->use].p1 = (CIVdtmpnt*) (unsigned __int64) f[blk->use].p[0];
+                                    f[blk->use].s1 = (CIVdtmsty*) (unsigned __int64) f[blk->use].p[1];
+                                    f[blk->use].pay = (CIVdtmpay*) (unsigned __int64) f[blk->use].p[2];
                                     }
                                 }
                             else if ( srf->version > 7 )
