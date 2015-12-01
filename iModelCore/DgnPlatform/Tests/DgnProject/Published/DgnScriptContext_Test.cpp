@@ -216,6 +216,18 @@ TEST_F(DgnScriptTest, RunScripts)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool areDateTimesEqual(DateTime const& d1, DateTime const& d2)
+    {
+    // TRICKY: avoid problems with rounding.
+    double jd1, jd2;
+    d1.ToJulianDay(jd1);
+    d2.ToJulianDay(jd2);
+    return jd1 == jd2;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, CRUD)
@@ -258,19 +270,19 @@ TEST_F(DgnScriptTest, CRUD)
     EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestJsScript", DgnScriptType::JavaScript));
     EXPECT_TRUE(jsProgram.Equals(outText));
     EXPECT_TRUE(DgnScriptType::JavaScript == outType);
-    EXPECT_TRUE(queryLastModifiedTime.Equals(scriptLastModifiedTime));
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     // Query TS with wrong type
     EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestTsScript", DgnScriptType::JavaScript));
     EXPECT_TRUE(tsProgram.Equals(outText));
     EXPECT_TRUE(DgnScriptType::TypeScript == outType);
-    EXPECT_TRUE(queryLastModifiedTime.Equals(scriptLastModifiedTime));
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     // Query Annonyous
     EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "", DgnScriptType::TypeScript));
     EXPECT_TRUE(tsProgram.Equals(outText));
     EXPECT_TRUE(DgnScriptType::TypeScript == outType);
-    EXPECT_TRUE(queryLastModifiedTime.Equals(scriptLastModifiedTime));
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     // Update
     Utf8String updatedScript("<script>Updated One </script>");
@@ -278,12 +290,12 @@ TEST_F(DgnScriptTest, CRUD)
     EXPECT_TRUE(DgnDbStatus::Success != scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, scriptLastModifiedTime, false));
     EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestTsScript", DgnScriptType::TypeScript));
     EXPECT_TRUE(tsProgram.Equals(outText));
-    EXPECT_TRUE(queryLastModifiedTime.Equals(scriptLastModifiedTime));
+    EXPECT_TRUE(!areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, scriptLastModifiedTime, true));
     EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestTsScript", DgnScriptType::TypeScript));
     EXPECT_TRUE(updatedScript.Equals(outText));
-    EXPECT_TRUE(queryLastModifiedTime.Equals(scriptLastModifiedTime));
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     }
 

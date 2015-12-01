@@ -311,7 +311,7 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
             }
         }
 
-    if (BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, true))
+    if (BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, &lastModifiedTime, true))
         return DgnDbStatus::SQLiteError;
     
     return DgnDbStatus::Success;
