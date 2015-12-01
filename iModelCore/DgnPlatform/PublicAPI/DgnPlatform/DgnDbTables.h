@@ -591,17 +591,19 @@ public:
     //! Register the specified script in the DgnDb's script library.
     //! @param sName    The name to assign to the script in the library
     //! @param sText    The content of the script program
+    //! @param lastModifiedTime The last modified time to record. This will be used to track versions.
     //! @param updateExisting If true, programs already registered are updated from soruce found in \a jsDir
     //! @see QueryScript
-    DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, bool updateExisting);
+    DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, DateTime const& lastModifiedTime, bool updateExisting);
 
     //! Look up an imported script program by the specified name.
     //! @param[out] sText           The text of the script that was found in the library
     //! @param[out] stypeFound      The type of script actually found in the library
+    //! @param[out] lastModifiedTime The last modified time recorded.
     //! @param[in] sName            Identifies the script in the library
     //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
     //! @see RegisterScript
-    DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred);
+    DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, Utf8CP sName, DgnScriptType stypePreferred);
 
     //! Utility function to read the text of the specified file
     //! @param contents[out]    The content of the file
