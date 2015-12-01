@@ -5,18 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnPlatformLib.h>
-#include <Bentley/BeTest.h>
-#include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECDbApi.h>
 #include "PerformanceTestFixture.h"
-
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_DGNDB_UNIT_TESTS_NAMESPACE
+#include "PerformanceElementsCRUDTests.h"
 
 //=======================================================================================
 // @bsiclass                                                     Krischan.Eberle      06/15
@@ -150,7 +140,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ModelId,CategoryId,Code.AuthorityId,Code.[Value],Code.[NameSpace],"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace],"
                                                                               "Prop1_1,Prop1_2,Prop1_3,"
                                                                               "Prop2_1,Prop2_2,Prop2_3,"
                                                                               "Prop3_1,Prop3_2,Prop3_3,"
@@ -159,8 +149,9 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
         ASSERT_TRUE (insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
-        stmt.BindId (1, modelId);
-        stmt.BindId (2, s_catId);
+        const ECInstanceId id (i+10);
+        stmt.BindId (1, id);
+        stmt.BindId (2, modelId);
         stmt.BindId (3, s_codeAuthorityId);
         code.Sprintf ("Id-%d", i);
         stmt.BindText (4, code.c_str (), IECSqlBinder::MakeCopy::No);
@@ -211,7 +202,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ModelId,CategoryId,Code.AuthorityId,Code.[Value],Code.[Namespace]) VALUES (?,?,?,?,'')");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace]) VALUES (?,?,?,?,'')");
         ASSERT_TRUE (insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -231,8 +222,9 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
         ASSERT_TRUE (updateStmt != nullptr);
         updateStmts.push_back (updateStmt);
 
-        insertStmt->BindId (1, modelId);
-        insertStmt->BindId (2, s_catId);
+        const ECInstanceId id (i + 10);
+        insertStmt->BindId (1, id);
+        insertStmt->BindId (2, modelId);
         insertStmt->BindId (3, s_codeAuthorityId);
         code.Sprintf ("Id-%d", i);
         insertStmt->BindText (4, code.c_str (), IECSqlBinder::MakeCopy::No);
@@ -241,6 +233,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
         ASSERT_EQ (BE_SQLITE_DONE, insertStmt->Step (newKey));
         insertStmt->Reset ();
         insertStmt->ClearBindings ();
+        m_db->SaveChanges ();//Save changes to Db otherwise Update operations will simply be performed In-Memory
 
         for (CachedECSqlStatementPtr& updateStmt : updateStmts)
             {
@@ -276,12 +269,12 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ModelId,CategoryId,Code.AuthorityId,Code.[Value],Code.[Namespace],"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement ("INSERT INTO ts.Element4 (ECInstanceId,ModelId,Code.AuthorityId,Code.[Value],Code.[Namespace],"
                                                                               "Prop1_1,Prop1_2,Prop1_3,"
                                                                               "Prop2_1,Prop2_2,Prop2_3,"
                                                                               "Prop3_1,Prop3_2,Prop3_3,"
                                                                               "Prop4_1,Prop4_2,Prop4_3) "
-                                                                              "VALUES (:modelid,:catid,:authorityid,:code,'',"
+                                                                              "VALUES (:ecinstanceid,:modelid,:authorityid,:code,'',"
                                                                               ":p11,:p12,:p13,"
                                                                               ":p21,:p22,:p23,"
                                                                               ":p31,:p32,:p33,"
@@ -290,8 +283,9 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
 
         CachedECSqlStatement& stmt = *insertStmt;
 
+        const ECInstanceId id (i + 10);
+        stmt.BindId (stmt.GetParameterIndex ("ecinstanceid"), id);
         stmt.BindId (stmt.GetParameterIndex ("modelid"), modelId);
-        stmt.BindId (stmt.GetParameterIndex ("catid"), s_catId);
         stmt.BindId (stmt.GetParameterIndex ("authorityid"), s_codeAuthorityId);
         code.Sprintf ("Id-%d", i);
         stmt.BindText (stmt.GetParameterIndex ("code"), code.c_str (), IECSqlBinder::MakeCopy::No);
@@ -320,4 +314,284 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
 
     timer.Stop ();
     LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), "Single Insert (named parameters)", s_instanceCount);
+    }
+
+struct PerformanceElemetsTests : PerformanceElementsCRUDTestFixture
+    {
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElemetsTests, ElementsInsert)
+    {
+    int initInstanceCount = 10000;
+    int insertCount = 1000;
+    int opCount;
+
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 100000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 1000000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElemetsTests, ElementsRead)
+    {
+    int initInstanceCount = 10000;
+    int insertCount = 1000;
+    int opCount;
+
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL*/, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 100000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 1000000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+        SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElemetsTests, ElementsUpdate)
+    {
+    int initInstanceCount = 10000;
+    int insertCount = 1000;
+    int opCount;
+
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 100000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 1000000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElemetsTests, ElementsDelete)
+    {
+    int initInstanceCount = 10000;
+    int insertCount = 1000;
+    int opCount;
+
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 100000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
+
+    initInstanceCount = 1000000;
+    for (int i = 1; i <= 3; i++)
+        {
+        opCount = insertCount*i;
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+        ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        }
     }

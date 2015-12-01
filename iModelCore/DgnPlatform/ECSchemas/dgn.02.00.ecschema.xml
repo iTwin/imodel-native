@@ -63,12 +63,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECClass>
-    <ECClass typeName="ComponentAuthority" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECClass>
 
     <ECClass typeName="AuthorityIssuedCode" isStruct="True">
         <ECProperty propertyName="AuthorityId" typeName="long">
@@ -90,6 +84,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Value" typeName="string">
+            <!-- Note: use Code.[Value] in ECSql since "Value" is a reserved word -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable>
@@ -322,6 +317,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                             <string>ModelId</string>
                         </Properties>
                     </DbIndex>
+                    <DbIndex>
+                        <!-- Index on Label -->
+                        <Name>idx_dgn_Element_Label</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>Label</string>
+                        </Properties>
+                        <Where>ECDB_NOTNULL</Where>
+                    </DbIndex>
                 </Indexes>
             </ClassMap>
             <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -347,6 +351,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode" />
+        <ECProperty propertyName="Label" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -356,19 +369,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
-    <ECClass typeName="GeometrySource" isDomainClass="False">
+    <ECClass typeName="GeometrySource" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- abstract - interface adopted by Elements which have geometry
              Note this is intended to serve as a relationship endpoint, but ECDb doesn't support an abstract relationship endpoint (needs primary key)... -->
     </ECClass>
 
-    <ECClass typeName="DictionaryElement" isDomainClass="False">
+    <ECClass typeName="DictionaryElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <BaseClass>Element</BaseClass>
     </ECClass>
-    <ECClass typeName="Element3d" isDomainClass="False">
+    <ECClass typeName="Element3d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
-    <ECClass typeName="Element2d" isDomainClass="False">
+    <ECClass typeName="Element2d"  isCustomAttributeClass="False" isStruct="False" isDomainClass="False">
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
@@ -406,11 +419,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="AnnotationTableElement" isDomainClass="True">
-        <!-- An AnnotationTableElement is a physical element that displays a grid containing text and or graphics -->
+        <!-- An AnnotationTableElement is a drawing element that displays a grid containing text and or graphics -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalElement</BaseClass>
+        <BaseClass>DrawingElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="AnnotationTableHeader" isDomainClass="True">
@@ -418,7 +431,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="RowCount"                     typeName="int"/>
         <ECProperty propertyName="ColumnCount"                  typeName="int"/>
-        <ECProperty propertyName="TextStyleId"                  typeName="int"/>
+        <ECProperty propertyName="TextStyleId"                  typeName="long"/>
         <ECProperty propertyName="TitleRowCount"                typeName="int"/>
         <ECProperty propertyName="HeaderRowCount"               typeName="int"/>
         <ECProperty propertyName="FooterRowCount"               typeName="int"/>
@@ -440,19 +453,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="DefaultCellOrientation"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyOddRow"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyEvenRow"      typeName="int"/>
-        <ECProperty propertyName="TitleRowTextStyle"            typeName="int"/>
-        <ECProperty propertyName="HeaderRowTextStyle"           typeName="int"/>
-        <ECProperty propertyName="FooterRowTextStyle"           typeName="int"/>
-        <ECProperty propertyName="HeaderColumnTextStyle"        typeName="int"/>
-        <ECProperty propertyName="FooterColumnTextStyle"        typeName="int"/>
+        <ECProperty propertyName="TitleRowTextStyle"            typeName="long"/>
+        <ECProperty propertyName="HeaderRowTextStyle"           typeName="long"/>
+        <ECProperty propertyName="FooterRowTextStyle"           typeName="long"/>
+        <ECProperty propertyName="HeaderColumnTextStyle"        typeName="long"/>
+        <ECProperty propertyName="FooterColumnTextStyle"        typeName="long"/>
         <ECProperty propertyName="BackupTextHeight"             typeName="double"/>
-        <ECProperty propertyName="DataSourceProviderId"         typeName="int"/>
+        <ECProperty propertyName="DataSourceProviderId"         typeName="long"/>
         <ECProperty propertyName="BodyTextHeight"               typeName="double"/>
         <ECProperty propertyName="TitleRowTextHeight"           typeName="double"/>
         <ECProperty propertyName="HeaderRowTextHeight"          typeName="double"/>
         <ECProperty propertyName="FooterRowTextHeight"          typeName="double"/>
         <ECProperty propertyName="HeaderColumnTextHeight"       typeName="double"/>
         <ECProperty propertyName="FooterColumnTextHeight"       typeName="double"/>
+        <ECProperty propertyName="TextSymbKey"                  typeName="int"/>
     </ECClass>
 
     <ECClass typeName="AnnotationTableRow" isDomainClass="True">
@@ -516,6 +530,38 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECStructProperty propertyName="RootCell"               typeName="AnnotationTableCellIndex"/>
         <ECProperty propertyName="RowSpan"                      typeName="int"/>
         <ECProperty propertyName="ColumnSpan"                   typeName="int"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableSymbology" isDomainClass="True">
+        <!-- The aspect that holds properties describing symbology in an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="SymbologyKey"                 typeName="int"/>
+        <ECProperty propertyName="Visible"                      typeName="boolean"/>
+        <ECProperty propertyName="Color"                        typeName="int"/>
+        <ECProperty propertyName="Weight"                       typeName="int"/>
+        <ECProperty propertyName="LineStyleId"                  typeName="long"/>
+        <ECProperty propertyName="LineStyleScale"               typeName="double"/>
+        <ECProperty propertyName="FillColor"                    typeName="int"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableEdgeRun" isDomainClass="True">
+        <!-- The aspect that holds properties describing edges in an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="HostType"                     typeName="int"/>
+        <ECProperty propertyName="Host"                         typeName="int"/>
+        <ECProperty propertyName="Start"                        typeName="int"/>
+        <ECProperty propertyName="Span"                         typeName="int"/>
+        <ECProperty propertyName="SymbologyKey"                 typeName="int"/>
     </ECClass>
 
     <!-- An Item in (a catalog/template model) can hold a soultion of a ComponentModel. 
@@ -764,41 +810,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="ElementLabel" isDomainClass="True" >
-        <!-- The aspect that holds a user-defined label for an element -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- The ECInstanceId for ElementLabel is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Label" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECRelationshipClass typeName="ElementOwnsLabel" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="ElementLabel">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
     <ECClass typeName="ElementDescription" isDomainClass="True" >
         <!-- The aspect that holds a descriptions of an element -->
         <BaseClass>ElementUniqueAspect</BaseClass>
@@ -991,7 +1002,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Value" displayLabel="" typeName="string" />
     </ECClass>
 
-    <ECClass typeName="ViewDefinition" isDomainClass="False">
+    <ECClass typeName="ViewDefinition" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- abstract -->
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
@@ -1035,7 +1046,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="ViewDefinition2d" isDomainClass="False">
+    <ECClass typeName="ViewDefinition2d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- abstract -->
         <BaseClass>ViewDefinition</BaseClass>
     </ECClass>

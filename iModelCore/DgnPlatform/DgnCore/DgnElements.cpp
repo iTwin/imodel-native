@@ -984,7 +984,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-    m_code(params.m_code), m_parentId(params.m_parentId)
+    m_code(params.m_code), m_label(params.m_label), m_parentId(params.m_parentId)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1096,22 +1096,26 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,Code_Value=2,ParentId=3,Code_AuthorityId=4,Code_Namespace=5};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code_Value,ParentId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int {ClassId=0,ModelId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnElement::Code code(stmt->GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt->GetValueText(Column::Code_Value), stmt->GetValueText(Column::Code_Namespace));
+    DgnElement::Code code;
+    code.From(stmt->GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt->GetValueText(Column::Code_Value), stmt->GetValueText(Column::Code_Namespace));
 
-    return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
+    DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     code,
-                    elementId, 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId)),
-                    makePersistent);
+                    stmt->GetValueText(Column::Label), 
+                    stmt->GetValueId<DgnElementId>(Column::ParentId));
+
+    createParams.SetElementId(elementId);
+
+    return LoadElement(createParams, makePersistent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1127,16 +1131,6 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     BeDbMutexHolder _v(m_mutex);
     DgnElementCP element = FindElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                  05/15
-//+---------------+---------------+---------------+---------------+---------------+------
-DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
-    {
-    CachedStatementPtr stmt =GetStatement("SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    stmt->BindInt64(1, elementId.GetValueUnchecked());
-    return BE_SQLITE_ROW == stmt->Step() ? DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId) : DgnElementKey();
     }
 
 /*---------------------------------------------------------------------------------**//**

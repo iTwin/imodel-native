@@ -19,23 +19,59 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //#define DUMP_SERVER 1
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectLocksEqual(DgnLockCR a, DgnLockCR b)
+    {
+    EXPECT_EQ(a.GetLevel(), b.GetLevel());
+    EXPECT_EQ(a.GetType(), b.GetType());
+    EXPECT_EQ(a.GetId(), b.GetId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectLockSetsEqual(DgnLockSet const& a, DgnLockSet const& b)
+    {
+    EXPECT_EQ(a.size(), b.size());
+    if (a.size() != b.size())
+        return;
+
+    auto iterA = a.begin(), iterB = b.begin();
+    while (iterA != a.end())
+        ExpectLocksEqual(*iterA++, *iterB++);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectRequestsEqual(LockRequestCR a, LockRequestCR b)
+    {
+    EXPECT_EQ(a.GetOptions(), b.GetOptions());
+    ExpectLockSetsEqual(a.GetLockSet(), b.GetLockSet());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Mock server, since we currently lack a real server.
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LocksServer : ILocksServer
 {
 private:
+    typedef LockRequest::ResponseOptions ResponseOptions;
+
     Db m_db;
     bool m_offline;
 
-
     virtual bool _QueryLocksHeld(LockRequestCR reqs, DgnDbR db) override;
-    virtual LockStatus _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
+    virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
+    virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
+    void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
     void Reset();
 
     int32_t QueryLockCount(BeBriefcaseId bc);
@@ -153,10 +189,17 @@ LockStatus LocksServer::_RelinquishLocks(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocksServer::_QueryLocksHeld(LockRequestCR reqs, DgnDbR db)
+bool LocksServer::_QueryLocksHeld(LockRequestCR inputReqs, DgnDbR db)
     {
     if (m_offline)
         return false;
+
+    // Simulating serialization and deserialization of server request...
+    Json::Value reqJson;
+    inputReqs.ToJson(reqJson);
+    LockRequest reqs;
+    EXPECT_TRUE(reqs.FromJson(reqJson));
+    ExpectRequestsEqual(inputReqs, reqs);
 
     Statement stmt;
     stmt.Prepare(m_db, "SELECT count(*) FROM " SERVER_Table
@@ -171,6 +214,46 @@ bool LocksServer::_QueryLocksHeld(LockRequestCR reqs, DgnDbR db)
         return false;
 
     return stmt.GetValueInt(0) == reqs.Size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus LocksServer::_QueryOwnership(DgnLockOwnershipR ownership, LockableId inputLockId)
+    {
+    ownership.Reset();
+    if (m_offline)
+        return LockStatus::ServerUnavailable;
+
+    // Simulating serialization and deserialization of server request...
+    Json::Value lockIdJson;
+    inputLockId.ToJson(lockIdJson);
+    LockableId lockId;
+    EXPECT_TRUE(lockId.FromJson(lockIdJson));
+    EXPECT_EQ(lockId, inputLockId);
+
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " SERVER_Exclusive "," SERVER_BcId " FROM " SERVER_Table " WHERE " SERVER_LockType "=? AND " SERVER_LockId "=?");
+    stmt.BindInt(1, static_cast<int32_t>(lockId.GetType()));
+    stmt.BindId(2, lockId.GetId());
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        auto owner = BeBriefcaseId(static_cast<uint32_t>(stmt.GetValueInt(1)));
+        bool exclusive = 0 != stmt.GetValueInt(0);
+        if (exclusive)
+            {
+            EXPECT_EQ(LockLevel::None, ownership.GetLockLevel());
+            ownership.SetExclusiveOwner(owner);
+            }
+        else
+            {
+            EXPECT_NE(LockLevel::Exclusive, ownership.GetLockLevel());
+            ownership.AddSharedOwner(owner);
+            }
+        }
+
+    return LockStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,6 +297,32 @@ bool LocksServer::AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId bcId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LocksServer::GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId)
+    {
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " SERVER_LockType "," SERVER_LockId "," SERVER_Exclusive
+                       " FROM " SERVER_Table " WHERE " SERVER_BcId " != ?" " AND InVirtualSet(@vset," SERVER_LockType "," SERVER_LockId "," SERVER_Exclusive ")");
+
+    RequestConflictsVirtualSet vset(reqs);
+    bindBcId(stmt, 1, bcId);
+    stmt.BindVirtualSet(2, vset);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        LockableId id(static_cast<LockableType>(stmt.GetValueInt(0)), stmt.GetValueId<BeInt64Id>(1));
+        auto level = (0 != stmt.GetValueInt(2)) ? LockLevel::Exclusive : LockLevel::Shared;
+        DgnLock lock(id, level);
+        auto inserted = locks.insert(lock);
+        if (LockLevel::Exclusive == level)
+            EXPECT_TRUE(inserted.second);   // If the server has granted an exclusive lock, it should not have any shared locks for same object.
+        else if (!inserted.second)
+            EXPECT_EQ(LockLevel::Shared, inserted.first->GetLevel()); // If more than one lock exists for the same object, they should all be shared locks.
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus LocksServer::_QueryLockLevel(LockLevel& level, LockableId id, DgnDbR db)
@@ -249,10 +358,23 @@ void LocksServer::Reset()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocksServer::_AcquireLocks(LockRequestCR reqs, DgnDbR db)
+LockRequest::Response LocksServer::_AcquireLocks(LockRequestCR inputReqs, DgnDbR db)
     {
+    // Simulating serialization and deserialization of server request...
+    Json::Value reqJson;
+    inputReqs.ToJson(reqJson);
+    LockRequest reqs;
+    EXPECT_TRUE(reqs.FromJson(reqJson));
+    ExpectRequestsEqual(inputReqs, reqs);
+
     if (!AreLocksAvailable(reqs, db.GetBriefcaseId()))
-        return LockStatus::AlreadyHeld;
+        {
+        LockRequest::Response response(LockStatus::AlreadyHeld);
+        if (ResponseOptions::None != (ResponseOptions::DeniedLocks & reqs.GetOptions()))
+            GetDeniedLocks(response.GetDeniedLocks(), reqs, db.GetBriefcaseId());
+
+        return response;
+        }
 
     for (auto const& req : reqs)
         {
@@ -300,7 +422,7 @@ LockStatus LocksServer::_AcquireLocks(LockRequestCR reqs, DgnDbR db)
             }
         }
 
-    return LockStatus::Success;
+    return LockRequest::Response(LockStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -407,18 +529,24 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     template<typename T> static DgnDbR ExtractDgnDb(T const& obj) { return obj.GetDgnDb(); }
 
-    template<typename T> LockStatus Acquire(T const& obj, LockLevel level)
+    LockRequest::Response AcquireResponse(LockRequestR req, DgnDbR db)
         {
         m_server.Dump("Before acquiring locks");
-
-        LockRequest req;
-        req.Insert(obj, level);
-        DgnDbR db = ExtractDgnDb(obj);
-        LockStatus status = db.Locks().AcquireLocks(req);
-
+        auto response = db.Locks().AcquireLocks(req);
         m_server.Dump("After acquiring locks");
+        return response;
+        }
 
-        return status;
+    template<typename T> LockRequest::Response AcquireResponse(T const& obj, LockLevel level)
+        {
+        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        req.Insert(obj, level);
+        return AcquireResponse(req, ExtractDgnDb(obj));
+        }
+
+    template<typename T> LockStatus Acquire(T const& obj, LockLevel level)
+        {
+        return AcquireResponse(obj, level).GetStatus();
         }
 
     template<typename T> void ExpectAcquire(T const& obj, LockLevel level)
@@ -429,6 +557,32 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
     template<typename T> void ExpectDenied(T const& obj, LockLevel level)
         {
         EXPECT_EQ(LockStatus::AlreadyHeld, Acquire(obj, level));
+        }
+
+    template<typename T> void ExpectInDeniedSet(T const& lockedObj, LockLevel level, LockRequest::Response const& response, DgnDbR requestor)
+        {
+        // Test that locked obj is in response
+        auto lockableId = MakeLockableId(lockedObj);
+        DgnLock lock(lockableId, level);
+        auto found = response.GetDeniedLocks().find(lock);
+        EXPECT_FALSE(found == response.GetDeniedLocks().end());
+        if (response.GetDeniedLocks().end() != found)
+            EXPECT_EQ(found->GetLevel(), level);
+
+        // Test that response matches direct ownership query
+        DgnLockOwnership ownership;
+        EXPECT_EQ(LockStatus::Success, T_HOST.GetLocksAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
+        EXPECT_EQ(level, ownership.GetLockLevel());
+        auto owningBcId = ExtractDgnDb(lockedObj).GetBriefcaseId();
+        switch (level)
+            {
+            case LockLevel::Exclusive:
+                EXPECT_EQ(owningBcId, ownership.GetExclusiveOwner());
+                break;
+            case LockLevel::Shared:
+                EXPECT_TRUE(ownership.GetSharedOwners().end() != ownership.GetSharedOwners().find(owningBcId));
+                break;
+            }
         }
 
     DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
@@ -458,7 +612,8 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
     DgnElementPtr Create2dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        return DrawingElement::Create(DrawingElement::CreateParams(db, model.GetModelId(), DrawingElement::QueryClassId(db), DgnCategory::QueryHighestCategoryId(db)));
+        DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
+        return DrawingElement::Create(DrawingElement::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
         }
 };
 
@@ -709,6 +864,12 @@ struct DoubleBriefcaseTest : LocksManagerTest
         m_modelIds[0] = model3d;
         m_modelIds[1] = model2d;
         }
+
+    void RelinquishAll()
+        {
+        EXPECT_EQ(LockStatus::Success, m_dbA->Locks().RelinquishLocks());
+        EXPECT_EQ(LockStatus::Success, m_dbB->Locks().RelinquishLocks());
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -897,5 +1058,218 @@ TEST_F(DoubleBriefcaseTest, Dynamics)
     ExpectLevel(*modelA, LockLevel::Exclusive);
     ExpectLevel(*elemB, LockLevel::None);
     ExpectLevel(*elemA, LockLevel::Exclusive);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that:
+*   - Reponse from AcquireLocks() includes set of denied locks (if option specified in request)
+*   - QueryOwnership response matches that set of denied locks
+*   - ReformulateRequest produces a set of locks which are not in denied set
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DoubleBriefcaseTest, ReformulateRequest)
+    {
+    SetupDbs();
+    DgnDbR dbA = *m_dbA;
+    DgnDbR dbB = *m_dbB;
+    DgnModelPtr modelA2d = GetModel(dbA, true);
+    DgnModelPtr modelB2d = GetModel(dbB, true);
+    DgnElementCPtr elemA2d2 = GetElement(dbA, Elem2dId2());
+    DgnElementCPtr elemB2d2 = GetElement(dbB, Elem2dId2());
+
+    LockableId dbLockId = MakeLockableId(dbB);
+
+    // Model: Locked exclusively
+        {
+        ExpectAcquire(*modelA2d, LockLevel::Exclusive);
+        auto response = AcquireResponse(*modelB2d, LockLevel::Shared);
+        EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
+        EXPECT_EQ(1, response.GetDeniedLocks().size());
+
+        ExpectInDeniedSet(*modelA2d, LockLevel::Exclusive, response, dbB);
+        // Reformulate request => remove request for model
+        LockRequest request;
+        request.Insert(*modelB2d, LockLevel::Shared);
+        dbB.Locks().ReformulateRequest(request, response.GetDeniedLocks());
+        EXPECT_EQ(1, request.Size());
+        EXPECT_TRUE(request.Contains(dbLockId));
+        }
+
+    RelinquishAll();
+
+    // Model: Locked shared by both
+        {
+        ExpectAcquire(*modelA2d, LockLevel::Shared);
+        ExpectAcquire(*modelB2d, LockLevel::Shared);
+
+        // Try to lock exclusively
+        auto response = AcquireResponse(*modelB2d, LockLevel::Exclusive);
+        EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
+        EXPECT_EQ(1, response.GetDeniedLocks().size());
+        ExpectInDeniedSet(*modelA2d, LockLevel::Shared, response, dbB);
+
+        // Expect two shared owners
+        DgnLockOwnership ownership;
+        auto modelLockId = MakeLockableId(*modelA2d);
+        EXPECT_EQ(LockStatus::Success, _GetLocksServer(dbB)->QueryOwnership(ownership, modelLockId));
+        EXPECT_EQ(LockLevel::Shared, ownership.GetLockLevel());
+        auto const& sharedOwners = ownership.GetSharedOwners();
+        EXPECT_EQ(2, sharedOwners.size());
+        EXPECT_TRUE(sharedOwners.find(dbA.GetBriefcaseId()) != sharedOwners.end());
+        EXPECT_TRUE(sharedOwners.find(dbB.GetBriefcaseId()) != sharedOwners.end());
+
+        // Reformulate request => demote exclusive to shared
+        LockRequest request;
+        request.Insert(*modelB2d, LockLevel::Exclusive);
+        dbB.Locks().ReformulateRequest(request, response.GetDeniedLocks());
+        EXPECT_EQ(2, request.Size());
+        EXPECT_EQ(LockLevel::Shared, request.GetLockLevel(modelLockId));
+        EXPECT_TRUE(request.Contains(dbLockId));
+        EXPECT_EQ(LockStatus::Success, dbB.Locks().AcquireLocks(request).GetStatus());
+        }
+
+    RelinquishAll();
+
+    // One element locked, one not
+        {
+        ExpectAcquire(*elemA2d2, LockLevel::Exclusive);
+
+        // Try to lock both elems
+        DgnElementCPtr elemB2d1 = GetElement(dbB, Elem2dId1());
+        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        req.Insert(*elemB2d2, LockLevel::Exclusive);
+        req.Insert(*elemB2d1, LockLevel::Exclusive);
+        auto response = AcquireResponse(req, dbB);
+        EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
+
+        // Reformulate request => remove one element
+        dbB.Locks().ReformulateRequest(req, response.GetDeniedLocks());
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(MakeLockableId(*elemB2d1)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(MakeLockableId(*elemB2d2)));
+        EXPECT_EQ(LockStatus::Success, dbB.Locks().AcquireLocks(req).GetStatus());
+        }
+
+    RelinquishAll();
+
+    // One model exclusively locked, one not
+        {
+        DgnModelPtr modelA3d = GetModel(dbA, false);
+        ExpectAcquire(*modelA2d, LockLevel::Exclusive);
+
+        // Try to lock one elem from each model
+        DgnElementCPtr elemB3d2 = GetElement(dbB, Elem3dId2());
+        LockRequest req(LockRequest::ResponseOptions::DeniedLocks);
+        req.Insert(*elemB2d2, LockLevel::Exclusive);
+        req.Insert(*elemB3d2, LockLevel::Exclusive);
+        auto response = AcquireResponse(req, dbB);
+        EXPECT_EQ(LockStatus::AlreadyHeld, response.GetStatus());
+
+        // Reformulate request => remove element in locked model
+        dbB.Locks().ReformulateRequest(req, response.GetDeniedLocks());
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(MakeLockableId(*elemB3d2)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(MakeLockableId(*elemB2d2)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(MakeLockableId(*modelA3d)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(MakeLockableId(*modelB2d)));
+        EXPECT_EQ(LockStatus::Success, dbB.Locks().AcquireLocks(req).GetStatus());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ExtractLocksTest : SingleBriefcaseLocksTest
+{
+    DgnDbStatus ExtractLocks(LockRequestR req)
+        {
+        if (BE_SQLITE_OK != m_db->SaveChanges())
+            return DgnDbStatus::WriteError;
+
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision();
+        if (rev.IsNull())
+            return DgnDbStatus::BadRequest;
+
+        ChangeStreamFileReader stream(rev->GetChangeStreamFile());
+        DgnDbStatus status = req.FromChangeSet(stream, *m_db);
+
+        m_db->Revisions().AbandonCreateRevision();
+
+        return status;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Test functions which query the set of locks which are required by the changes actually
+* made in the briefcase. (Excluding locks obtained but not actually used).
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ExtractLocksTest, UsedLocks)
+    {
+    struct AssertScope
+    {
+        AssertScope() { BeTest::SetFailOnAssert(false); }
+        ~AssertScope() { BeTest::SetFailOnAssert(true); }
+    };
+
+    struct UndoScope
+    {
+        DgnDbR m_db;
+        TxnManager::TxnId m_id;
+        UndoScope(DgnDbR db) : m_db(db), m_id(db.Txns().GetCurrentTxnId()) { }
+        ~UndoScope() { m_db.Txns().ReverseTo(m_id); }
+    };
+
+    AssertScope V_V_V_Asserts;
+    m_db = SetupDb(L"UsedLocks.dgndb", m_bcId);
+
+    DgnDbR db = *m_db;
+    DgnModelR model = *db.Models().GetModel(m_modelId);
+    DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+
+    LockRequest req;
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Modify an elem (it's a DgnCategory...)
+        {
+        UndoScope V_V_V_Undo(db);
+        auto pEl = cpEl->CopyForEdit();
+        DgnElement::Code newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+        EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
+        cpEl = pEl->Update();
+        ASSERT_TRUE(cpEl.IsValid());
+
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        EXPECT_FALSE(req.IsEmpty());
+        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(model)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*pEl)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Create a new model
+    DgnModelPtr newModel = CreateModel("NewModel");
+    DgnElementCPtr newElem = CreateElement(*newModel);
+
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_EQ(3, req.Size());
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+
+    // Delete the new element
+    EXPECT_EQ(DgnDbStatus::Success, newElem->Delete());
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_EQ(2, req.Size());
+    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
+    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+
+    // Delete the new model
+    EXPECT_EQ(DgnDbStatus::Success, newModel->Delete());
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
     }
 

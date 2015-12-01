@@ -279,9 +279,9 @@ public:
             : T_Super(params), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for a category. Chiefly for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId(),
                 Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, code, id, parent), m_data(scope, rank, descr) { }
+            : T_Super(db, modelId, classId, code, label, parent), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for creating a category.
         //! @param[in]      db    The DgnDb in which the category resides
