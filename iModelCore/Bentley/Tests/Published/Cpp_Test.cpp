@@ -518,12 +518,14 @@ void function_name(std::initializer_list<float> list)
 
 void test_initiailzerLists ()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     SequenceClass some_var = {1, 4, 5, 6};
     function_name ({1.0f, -3.45f, -0.4f});
 
     Object o = {0.43f, 10};
     Object oArray[] = {{13.4f, 3}, {43.28f, 29}, {5.934f, 17}};
     std::vector<int> vec = {1,2,3};
+#endif
     }
 
 //  ---------------------------------------------------------------------
