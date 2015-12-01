@@ -850,3 +850,21 @@ DgnDbStatus ComponentModel::QuerySolutionByName(PhysicalElementCPtr& ele, ModelS
 
     return QuerySolutionInfo(params, *ele);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::QuerySolutionByParameters(PhysicalElementCPtr& ele, ModelSolverDef::ParameterSet const& params)
+    {
+    bvector<DgnElementId> types;
+    QuerySolutions(types);
+    for (auto teid : types)
+        {
+        PhysicalElementCPtr thisType;
+        ModelSolverDef::ParameterSet thisParams;
+        QuerySolutionById(thisType, thisParams, teid);
+        if (thisParams == params)
+            return DgnDbStatus::Success;
+        }
+    return DgnDbStatus::NotFound;
+    }

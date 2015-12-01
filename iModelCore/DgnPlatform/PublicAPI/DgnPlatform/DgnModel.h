@@ -1048,6 +1048,12 @@ public:
     //! @see CaptureSolution, QuerySolutionById, QuerySolutionInfo
     DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionByName(PhysicalElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet& params, Utf8StringCR capturedSolutionName);
 
+    //! Try to find a captured solution for this component model with the specified parameters.
+    //! @param[out] capturedSolutionElement The element that captures the solution
+    //! @param[int] params      A set of parameters 
+    //! @return non-zero error status if no captured solution can be found for the specified parameters.
+    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionByParameters(PhysicalElementCPtr& ele, ModelSolverDef::ParameterSet const& params);
+
     //! Get the ComponentModel and parameters that were used to generate the specified captured solution element
     //! @param[out] params      The parameters that were used to generate the specified captured solution element
     //! @param[in] capturedSolutionElement  The captured solution element that is to be queried
