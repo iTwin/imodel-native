@@ -375,7 +375,7 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
     ASSERT_EQ (SUCCESS, setupState);
 
     Utf8String ecsql ("SELECT * FROM ");
-    ecsql.append (ECSqlBuilder::ToECSqlSnippet (*testClass)).append (" WHERE ECInstanceId = ?");
+    ecsql.append (testClass->GetECSqlName()).append (" WHERE ECInstanceId = ?");
     
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsql.c_str ());
@@ -422,7 +422,7 @@ TEST_F(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
     ASSERT_EQ (SUCCESS, setupState);
 
     Utf8String ecsql ("SELECT * FROM ");
-    ecsql.append (ECSqlBuilder::ToECSqlSnippet (*testClass)).append (" WHERE ECInstanceId = ?");
+    ecsql.append (testClass->GetECSqlName()).append (" WHERE ECInstanceId = ?");
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsql.c_str ());
