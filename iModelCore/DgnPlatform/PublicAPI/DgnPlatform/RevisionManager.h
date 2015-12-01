@@ -184,6 +184,8 @@ public:
     //! Abandon creating a new revision
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT void AbandonCreateRevision();
+
+    TxnManager::TxnId GetCurrentRevisionEndTxnId() const; //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
