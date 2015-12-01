@@ -10,5 +10,4 @@
 #include "../../Utils/WebServicesTestsHelper.h"
 
 class ChunkedUploadRequestTests : public BaseMockHttpHandlerTest
-    {
-    };
+    {};

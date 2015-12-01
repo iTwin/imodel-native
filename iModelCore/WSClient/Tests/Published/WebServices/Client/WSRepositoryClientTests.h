@@ -11,5 +11,4 @@
 #include "../../Utils/WebServicesTestsHelper.h"
 
 class WSRepositoryClientTests : public BaseMockHttpHandlerTest
-    {
-    };
+    {};

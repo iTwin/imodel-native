@@ -77,7 +77,7 @@
     <ClCompile Include="Cache\Persistence\Core\SchemaManager.cpp" />
     <ClCompile Include="Cache\Persistence\DataReadOptions.cpp" />
     <ClCompile Include="Cache\Persistence\DataSourceCache.cpp" />
-    <ClCompile Include="Cache\Persistence\Files\FileCacheManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Files\FileStorage.cpp" />
     <ClCompile Include="Cache\Persistence\Files\FileInfo.cpp" />
     <ClCompile Include="Cache\Persistence\Files\FileInfoManager.cpp" />
     <ClCompile Include="Cache\Persistence\Hierarchy\HierarchyManager.cpp" />
@@ -183,7 +183,7 @@
     <ClInclude Include="Cache\Persistence\Core\SchemaContext.h" />
     <ClInclude Include="Cache\Persistence\Core\SchemaManager.h" />
     <ClInclude Include="Cache\Persistence\Core\Version.h" />
-    <ClInclude Include="Cache\Persistence\Files\FileCacheManager.h" />
+    <ClInclude Include="Cache\Persistence\Files\FileStorage.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfo.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfoManager.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\HierarchyManager.h" />

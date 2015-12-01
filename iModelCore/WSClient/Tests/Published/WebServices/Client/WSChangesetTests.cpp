@@ -647,16 +647,16 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_TwoCreatedInstances_CallsHand
     changeset.AddInstance({"TestSchemaB.TestClassB","B"}, WSChangeset::Created, nullptr);
 
     auto response = ToRapidJson(R"({
-        "changedInstances" : 
+        "changedInstances" :
             [{
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "NewIdA",
                 "className" : "NewClassA",
                 "schemaName" : "NewSchemaA"
                 }
             },{
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "NewIdB",
                 "className" : "NewClassB",
@@ -692,16 +692,16 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_ModifiedDeletedInstances_Does
     changeset.AddInstance({"TestSchemaB.TestClassB","B"}, WSChangeset::Deleted, nullptr);
 
     auto response = ToRapidJson(R"({
-        "changedInstances" : 
+        "changedInstances" :
             [{
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "NewIdA",
                 "className" : "NewClassA",
                 "schemaName" : "NewSchemaA"
                 }
             },{
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "NewIdB",
                 "className" : "NewClassB",
@@ -728,19 +728,19 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_ExistingRelationshipAndModifi
         {"TestSchemaC.TestClassC","C"}, WSChangeset::Modified, nullptr);
 
     auto response = ToRapidJson(R"({
-        "changedInstances" : 
+        "changedInstances" :
             [{
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "NewIdA",
                 "className" : "NewClassA",
                 "schemaName" : "NewSchemaA",
-                "relationshipInstances" : 
+                "relationshipInstances" :
                     [{
                     "instanceId" : "NewIdB",
                     "className" : "NewClassB",
                     "schemaName" : "NewSchemaB",
-                    "relatedInstance" : 
+                    "relatedInstance" :
                         {
                         "instanceId" : "NewIdC",
                         "className" : "NewClassC",
@@ -769,19 +769,19 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelatedInstances_Calls
         {"TestSchemaC.TestClassC","C"}, WSChangeset::Created, nullptr);
 
     auto response = ToRapidJson(R"({
-        "changedInstances" : 
+        "changedInstances" :
             [{
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "NewIdA",
                 "className" : "NewClassA",
                 "schemaName" : "NewSchemaA",
-                "relationshipInstances" : 
+                "relationshipInstances" :
                     [{
                     "instanceId" : "NewIdB",
                     "className" : "NewClassB",
                     "schemaName" : "NewSchemaB",
-                    "relatedInstance" : 
+                    "relatedInstance" :
                         {
                         "instanceId" : "NewIdC",
                         "className" : "NewClassC",
@@ -819,26 +819,26 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelatedInstances_Calls
 
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_SingleInstanceChangesetCreatedRelatedInstances_CallsHandleOnEachCreatedInstance)
     {
-    WSChangeset changeset (WSChangeset::SingeInstance);
+    WSChangeset changeset(WSChangeset::SingeInstance);
     changeset
         .AddInstance({"TestSchemaA.TestClassA","A"}, WSChangeset::Created, nullptr)
         .AddRelatedInstance({"TestSchemaB.TestClassB","B"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
         {"TestSchemaC.TestClassC","C"}, WSChangeset::Created, nullptr);
 
     auto response = ToRapidJson(R"({
-        "changedInstance" : 
+        "changedInstance" :
             {
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "NewIdA",
                 "className" : "NewClassA",
                 "schemaName" : "NewSchemaA",
-                "relationshipInstances" : 
+                "relationshipInstances" :
                     [{
                     "instanceId" : "NewIdB",
                     "className" : "NewClassB",
                     "schemaName" : "NewSchemaB",
-                    "relatedInstance" : 
+                    "relatedInstance" :
                         {
                         "instanceId" : "NewIdC",
                         "className" : "NewClassC",
@@ -883,19 +883,19 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelationship_CallsHand
         {"TestSchemaC.TestClassC","C"}, WSChangeset::Existing, nullptr);
 
     auto response = ToRapidJson(R"({
-        "changedInstances" : 
+        "changedInstances" :
             [{
-            "instanceAfterChange" : 
+            "instanceAfterChange" :
                 {
                 "instanceId" : "ExistingIdA",
                 "className" : "ExistingClassA",
                 "schemaName" : "ExistingSchemaA",
-                "relationshipInstances" : 
+                "relationshipInstances" :
                     [{
                     "instanceId" : "NewIdB",
                     "className" : "NewClassB",
                     "schemaName" : "NewSchemaB",
-                    "relatedInstance" : 
+                    "relatedInstance" :
                         {
                         "instanceId" : "ExistingIdC",
                         "className" : "ExistingClassC",
@@ -921,10 +921,10 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
     {
     auto testProperties = std::make_shared<Json::Value>(ToJson(R"(
         {
-        "Test1":"A - Nullam lobortis sollicitudin massa, ultricies euismod enim tempor vitae. Cum.", 
-        "Test2":"B - Nulla id ultrices nibh. Morbi rhoncus leo in euismod finibus.", 
-        "Test3":"C - Donec lacinia vitae nunc auctor sodales. Duis in massa consectetur.", 
-        "Test4":"D - Quisque nec est semper, congue felis at, lacinia ante. Mauris.", 
+        "Test1":"A - Nullam lobortis sollicitudin massa, ultricies euismod enim tempor vitae. Cum.",
+        "Test2":"B - Nulla id ultrices nibh. Morbi rhoncus leo in euismod finibus.",
+        "Test3":"C - Donec lacinia vitae nunc auctor sodales. Duis in massa consectetur.",
+        "Test4":"D - Quisque nec est semper, congue felis at, lacinia ante. Mauris.",
         "Test5":"E - Ut maximus elit sit amet molestie faucibus. Duis pharetra, urna."
         })"));
     ObjectId testId("SomeTestSchema", "SomeTestClass", "TestId");

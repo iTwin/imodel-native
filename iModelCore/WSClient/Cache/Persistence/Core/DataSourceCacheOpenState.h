@@ -18,7 +18,7 @@
 
 #include "../Changes/ChangeInfoManager.h"
 #include "../Files/FileInfoManager.h"
-#include "../Files/FileCacheManager.h"
+#include "../Files/FileStorage.h"
 #include "../Hierarchy/HierarchyManager.h"
 #include "../Hierarchy/RootManager.h"
 #include "../Instances/NavigationBaseManager.h"
@@ -52,7 +52,7 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
             InstanceCacheHelper         m_instanceHelper;
             ChangeInfoManager           m_changeInfoManager;
             ChangeManager               m_changeManager;
-            FileCacheManager            m_fileCacheManager;
+            FileStorage                 m_fileStorage;
 
             ECSchemaCP                  m_cacheSchema;
 
@@ -108,9 +108,9 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
             {
             return GetCore().m_cachedQueryManager;
             }
-        FileCacheManager& GetFileCacheManager()
+        FileStorage& GetFileStorage()
             {
-            return GetCore().m_fileCacheManager;
+            return GetCore().m_fileStorage;
             }
         NavigationBaseManager& GetNavigationBaseManager()
             {

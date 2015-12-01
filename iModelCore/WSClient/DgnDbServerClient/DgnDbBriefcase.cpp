@@ -8,69 +8,132 @@
 #include <DgnPlatform/TxnManager.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
 #include <DgnPlatform/RevisionManager.h>
+#include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define DGNDBSERVER_LOCAL_LAST_REVISION "dgndbserver_lastRevisionId"
-
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
 DgnDbBriefcase::DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection)
     {
     m_db = db;
     m_repositoryConnection = connection;
-    m_briefcaseId = db->GetBriefcaseId();
-    db->QueryBriefcaseLocalValue(DGNDBSERVER_LOCAL_LAST_REVISION, m_lastRevisionId);
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
 DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection)
     {
     return DgnDbBriefcasePtr(new DgnDbBriefcase(db, connection));
     }
 
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::Sync(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
     {
-    return m_repositoryConnection->Pull(m_lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbRevisionsResult& result)
+    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        {
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbNotFound));
+        }
+    if (!m_repositoryConnection)
+        {
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::ConnectionNotFound));
+        }
+    if (m_db->IsReadonly())
+        {
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbReadOnly));
+        }
+    Utf8String lastRevisionId;
+    m_db->QueryBriefcaseLocalValue(Db::Local::LastRevision, lastRevisionId);
+    return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbRevisionsResult& result)
         {
         if (result.IsSuccess())
             {
-            BentleyStatus status = m_db->Revisions().MergeRevisions(result.GetValue());
-            if (BentleyStatus::SUCCESS == status)
+            bvector<DgnRevisionPtr> revisions = result.GetValue();
+            BentleyStatus mergeStatus = BentleyStatus::SUCCESS;
+            if (!revisions.empty())
+                {
+                Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+                mergeStatus = m_db->Revisions().MergeRevisions(revisions);
+                Dgn::DgnPlatformLib::ForgetHost();
+                }
+            if (BentleyStatus::SUCCESS == mergeStatus)
                 return DgnDbResult::Success();
             else
-                return DgnDbResult::Error(status);
+                return DgnDbResult::Error(Error::RevisionsMerge);
             }
         else
             return DgnDbResult::Error(result.GetError());
         });
     }
 
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::SyncAndPush(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR downloadCallback, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR uploadCallback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
     {
-    std::shared_ptr<DgnDbResult> finalResult = std::shared_ptr<DgnDbResult>();
-    return Sync(callback, cancellationToken)->Then([=] (const DgnDbResult& result)
+    BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        {
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbNotFound));
+        }
+    if (!m_repositoryConnection)
+        {
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::ConnectionNotFound));
+        }
+    if (m_db->IsReadonly())
+        {
+        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbReadOnly));
+        }
+    std::shared_ptr<DgnDbResult> finalResult = std::make_shared<DgnDbResult>();
+    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (const DgnDbResult& result)
         {
         if (result.IsSuccess())
             {
-            DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
-            BeFileName revisionFile(m_db->GetDbFileName());
-            m_repositoryConnection->Push(revision, callback, cancellationToken)->Then([=] (const DgnDbResult& pushResult)
+            Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+            BeAssert(m_db.IsValid());
+            if (!m_db->Txns().IsUndoPossible())
                 {
-                if (pushResult.IsSuccess())
+                Dgn::DgnPlatformLib::ForgetHost();
+                finalResult->SetSuccess();
+                }
+            else
+                {
+                DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
+                Dgn::DgnPlatformLib::ForgetHost();
+                Utf8String revisionId = revision->GetId();
+                BeFileName revisionFile(m_db->GetDbFileName());
+                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then([=] (const DgnDbResult& pushResult)
                     {
-                    BentleyStatus status = m_db->Revisions().FinishCreateRevision();
-                    if (BentleyStatus::SUCCESS == status)
-                        finalResult->SetSuccess();
+                    if (pushResult.IsSuccess())
+                        {
+                        Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+                        BentleyStatus status = m_db->Revisions().FinishCreateRevision();
+                        m_db->SaveChanges();
+                        Dgn::DgnPlatformLib::ForgetHost();
+                        if (BentleyStatus::SUCCESS == status)
+                            {
+                            finalResult->SetSuccess();
+                            }
+                        else
+                            finalResult->SetError(Error::RevisionsFinish);
+                        }
                     else
-                        finalResult->SetError(status);
-                    }
-                else
-                    {
-                    m_db->Revisions().AbandonCreateRevision();
-                    finalResult->SetError(pushResult.GetError());
-                    }
-                });
+                        {
+                        Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+                        m_db->Revisions().AbandonCreateRevision();
+                        Dgn::DgnPlatformLib::ForgetHost();
+                        finalResult->SetError(pushResult.GetError());
+                        }
+                    });
+                }
             }
         else
             finalResult->SetError(result.GetError());
@@ -80,21 +143,17 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::SyncAndPush(DgnClientFx::Utils::HttpRe
         });
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
 Dgn::DgnDbR DgnDbBriefcase::GetDgnDb()
     {
     return *m_db;
     }
 
-const BeBriefcaseId& DgnDbBriefcase::GetBriefcaseId()
-    {
-    return m_briefcaseId;
-    }
-
-Utf8StringCR DgnDbBriefcase::GetLastRevisionId()
-    {
-    return m_lastRevisionId;
-    }
-
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
 DgnDbRepositoryConnectionPtr DgnDbBriefcase::GetRepositoryConnection()
     {
     return m_repositoryConnection;

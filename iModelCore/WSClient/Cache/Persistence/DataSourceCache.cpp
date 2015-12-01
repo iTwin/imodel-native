@@ -255,7 +255,7 @@ BentleyStatus DataSourceCache::ExecuteWithinTransaction(std::function<BentleySta
 void DataSourceCache::SetupOpenState(CacheEnvironmentCR environment)
     {
     BeFileName cachePath(m_db.GetDbFileName());
-    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, FileCacheManager::CreateCacheEnvironment(cachePath, environment));
+    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, FileStorage::CreateCacheEnvironment(cachePath, environment));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -322,7 +322,7 @@ BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<ECSchemaPtr>& sch
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::DeleteCacheFromDisk(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment)
     {
-    if (SUCCESS != FileCacheManager::DeleteFileCacheDirectories(FileCacheManager::CreateCacheEnvironment(cacheFilePath, environment)))
+    if (SUCCESS != FileStorage::DeleteFileCacheDirectories(FileStorage::CreateCacheEnvironment(cacheFilePath, environment)))
         {
         return ERROR;
         }
@@ -343,7 +343,7 @@ BentleyStatus DataSourceCache::Reset()
     {
     LogCacheDataForMethod();
 
-    if (SUCCESS != FileCacheManager::DeleteFileCacheDirectories(m_state->GetFileCacheEnvironment()))
+    if (SUCCESS != FileStorage::DeleteFileCacheDirectories(m_state->GetFileCacheEnvironment()))
         {
         return ERROR;
         }
@@ -949,7 +949,7 @@ BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
         return SUCCESS;
         }
 
-    if (SUCCESS != m_state->GetFileInfoManager().CleanupCachedFile(fileInfo))
+    if (SUCCESS != m_state->GetFileStorage().CleanupCachedFile(fileInfo.GetFilePath()))
         {
         return ERROR;
         }
@@ -1292,39 +1292,17 @@ BentleyStatus DataSourceCache::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocation(const bvector<ObjectId>& ids, FileCache cacheLocation)
-    {
-    LogCacheDataForMethod();
-    for (ObjectIdCR objectId : ids)
-        {
-        if (SUCCESS != SetFileCacheLocationWithoutSaving(objectId, cacheLocation))
-            {
-            return ERROR;
-            }
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation)
     {
+    //! TODO: remove FileCache parameter and auotmaically use Root persistence instead
     LogCacheDataForMethod();
-    if (SUCCESS != SetFileCacheLocationWithoutSaving(objectId, cacheLocation))
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
+    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation) ||
+        SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
         {
         return ERROR;
         }
     return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocationWithoutSaving(ObjectIdCR objectId, FileCache cacheLocation)
-    {
-    ECInstanceKey instance = m_state->GetObjectInfoManager().FindCachedInstance(objectId);
-    return m_state->GetFileCacheManager().SetFileCacheLocation(instance, cacheLocation);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1347,37 +1325,38 @@ FileCache cacheLocation
 )
     {
     LogCacheDataForMethod();
+
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
+    if (!info.GetInstanceKey().IsValid())
+        {
+        return ERROR;
+        }
+
     if (!fileResult.IsModified())
         {
-        FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
         if (!info.IsInCache())
             {
             return ERROR;
             }
 
         info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
-
-        if (SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
-            {
-            return ERROR;
-            }
         }
     else
         {
-        ECInstanceKey instance = m_state->GetObjectInfoManager().FindCachedInstance(objectId);
-        if (SUCCESS != m_state->GetFileCacheManager().CacheFile
-            (
-            instance,
-            fileResult.GetFilePath(),
-            fileResult.GetETag().c_str(),
-            cacheLocation,
-            DateTime::GetCurrentTimeUtc(),
-            false
-            ))
+        auto path = fileResult.GetFilePath();
+        auto eTag = fileResult.GetETag();
+        auto time = DateTime::GetCurrentTimeUtc();
+        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, time, false))
             {
             return ERROR;
             }
         }
+
+    if (SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
+        {
+        return ERROR;
+        }
+
     return SUCCESS;
     }
 
@@ -1465,37 +1444,7 @@ BentleyStatus DataSourceCache::CacheResponse
 (
 CachedResponseKeyCR responseKey,
 WSObjectsResponseCR response,
-ICancellationTokenPtr cancellationToken
-)
-    {
-    bset<ObjectId> rejected;
-    return CacheResponse(responseKey, response, false, rejected, nullptr, cancellationToken);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::CachePartialResponse
-(
-CachedResponseKeyCR responseKey,
-WSObjectsResponseCR response,
-bset<ObjectId>& rejectedOut,
-const WSQuery* query,
-ICancellationTokenPtr cancellationToken
-)
-    {
-    return CacheResponse(responseKey, response, true, rejectedOut, query, cancellationToken);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::CacheResponse
-(
-CachedResponseKeyCR responseKey,
-WSObjectsResponseCR response,
-bool partialProperties,
-bset<ObjectId>& rejectedOut,
+bset<ObjectId>* rejectedOut,
 const WSQuery* query,
 ICancellationTokenPtr ct
 )
@@ -1513,8 +1462,13 @@ ICancellationTokenPtr ct
         ECInstanceKeyMultiMap fullyPersistedInstances;
         std::shared_ptr<InstanceCacheHelper::PartialCachingState> partialCachingState;
 
-        if (partialProperties)
+        if (nullptr != query)
             {
+            if (nullptr == rejectedOut)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
             if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
                 {
                 return ERROR;
@@ -1524,7 +1478,7 @@ ICancellationTokenPtr ct
                 m_state->GetECDbAdapter(),
                 query,
                 fullyPersistedInstances,
-                rejectedOut
+                *rejectedOut
                 );
             }
 

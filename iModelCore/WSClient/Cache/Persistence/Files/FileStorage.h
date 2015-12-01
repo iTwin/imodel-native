@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: Cache/Persistence/Files/FileCacheManager.h $
+ |     $Source: Cache/Persistence/Files/FileStorage.h $
  |
  |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
  |
@@ -10,38 +10,35 @@
 
 #include <WebServices/Cache/Util/ValueIncrementor.h>
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
-
-#include "FileInfoManager.h"
+#include <WebServices/Cache/Persistence/IDataSourceCache.h>
+#include "FileInfo.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct FileCacheManager
+struct FileStorage
     {
     private:
         CacheEnvironment m_environment;
-        FileInfoManager* m_fileInfoManager;
         std::shared_ptr<ValueIncrementor> m_folderNameIncrementor;
 
     private:
         BeFileName CreateNewRelativeCachedFilePath(BeFileNameCR currentFilePath, bool isPersistent);
-        BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
+
+        static BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
+        static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
+        static BentleyStatus GetIsFilePersistent(bool& isPersistent, FileCache cacheLocation, FileInfoCR existingFileInfo);
+        static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
+        static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
 
     public:
-        FileCacheManager
-            (
-            ECDbAdapter& dbAdapter,
-            ECSqlStatementCache& statementCache,
-            CacheEnvironmentCR environment,
-            FileInfoManager& fileInfoManager
-            );
+        FileStorage(ECDbAdapter& dbAdapter, ECSqlStatementCache& statementCache, CacheEnvironmentCR environment);
 
-        BentleyStatus SetFileCacheLocation(ECInstanceKeyCR instance, FileCache cacheLocation);
-        BentleyStatus CacheFile
-            (
-            ECInstanceKeyCR instance,
+        BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache cacheLocation);
+        BentleyStatus CacheFile(
+            FileInfo& info,
             BeFileNameCR suppliedFilePath,
             Utf8CP cacheTag,
             FileCache cacheLocation,
@@ -51,6 +48,10 @@ struct FileCacheManager
 
         static BentleyStatus DeleteFileCacheDirectories(CacheEnvironmentCR fullEnvironment);
         static CacheEnvironment CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR inputEnvironment);
+
+        BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath);
+        BentleyStatus RemoveContainingFolder(BeFileNameCR filePath);
+        BentleyStatus CleanupCachedFile(BeFileNameCR filePath);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
