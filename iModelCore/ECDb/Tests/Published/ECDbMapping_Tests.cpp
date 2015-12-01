@@ -1648,6 +1648,252 @@ TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
+    {
+            {
+            SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                                "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                                "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                                "  <ECClass typeName='Parent' >"
+                                "    <ECProperty propertyName='Name' typeName='string' />"
+                                "  </ECClass>"
+                                "  <ECClass typeName='Child' >"
+                                "    <ECCustomAttributes>"
+                                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                                "                <MapStrategy>"
+                                "                   <Strategy>SharedTable</Strategy>"
+                                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                "                </MapStrategy>"
+                                "        </ClassMap>"
+                                "    </ECCustomAttributes>"
+                                "    <ECProperty propertyName='ParentId' typeName='long' />"
+                                "    <ECProperty propertyName='ChildName' typeName='string' />"
+                                "  </ECClass>"
+                                "  <ECClass typeName='Child2' >"
+                                "    <BaseClass>Child</BaseClass>"
+                                "    <ECProperty propertyName='Child2Name' typeName='string' />"
+                                "  </ECClass>"
+                                "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+                                "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                "      <Class class = 'Parent' />"
+                                "    </Source>"
+                                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                "      <Class class = 'Child' >"
+                                "           <Key>"
+                                "              <Property name='ParentId'/>"
+                                "           </Key>"
+                                "      </Class>"
+                                "      <Class class = 'Child2' />"
+                                "    </Target>"
+                                "  </ECRelationshipClass>"
+                                "</ECSchema>");
+
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, testItem, "ecrelationshipkeyproperties.ecdb");
+            ASSERT_FALSE(asserted);
+
+            Utf8CP childTableName = "ts_Child";
+            ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+            bvector<Utf8String> columns;
+            ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+            ASSERT_EQ(5, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+            auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+            auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+            ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+            }
+
+            {
+            SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                                "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                                "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                                "  <ECClass typeName='Parent' >"
+                                "    <ECProperty propertyName='Name' typeName='string' />"
+                                "  </ECClass>"
+                                "  <ECClass typeName='Child' >"
+                                "    <ECCustomAttributes>"
+                                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                                "                <MapStrategy>"
+                                "                   <Strategy>SharedTable</Strategy>"
+                                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                "                </MapStrategy>"
+                                "        </ClassMap>"
+                                "    </ECCustomAttributes>"
+                                "    <ECProperty propertyName='ParentId' typeName='long' />"
+                                "    <ECProperty propertyName='ChildName' typeName='string' />"
+                                "  </ECClass>"
+                                "  <ECClass typeName='Child2' >"
+                                "    <BaseClass>Child</BaseClass>"
+                                "    <ECProperty propertyName='Child2Name' typeName='string' />"
+                                "  </ECClass>"
+                                "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+                                "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                "      <Class class = 'Parent' />"
+                                "    </Source>"
+                                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                "      <Class class = 'Child' >"
+                                "           <Key>"
+                                "              <Property name='ParentId'/>"
+                                "           </Key>"
+                                "      </Class>"
+                                "      <Class class = 'Child2' >"
+                                "           <Key>"
+                                "              <Property name='ParentId'/>"
+                                "           </Key>"
+                                "      </Class>"
+                                "    </Target>"
+                                "  </ECRelationshipClass>"
+                                "</ECSchema>");
+
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, testItem, "ecrelationshipkeyproperties.ecdb");
+            ASSERT_FALSE(asserted);
+
+            Utf8CP childTableName = "ts_Child";
+
+            ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+            bvector<Utf8String> columns;
+            ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+            ASSERT_EQ(5, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+            auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+            auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+            ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+            }
+
+            std::vector<SchemaItem> testSchemas;
+            testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                                             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                                             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                                             "  <ECClass typeName='Parent' >"
+                                             "    <ECProperty propertyName='Name' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECClass typeName='Child' >"
+                                             "    <ECCustomAttributes>"
+                                             "        <ClassMap xmlns='ECDbMap.01.00'>"
+                                             "                <MapStrategy>"
+                                             "                   <Strategy>SharedTable</Strategy>"
+                                             "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                             "                </MapStrategy>"
+                                             "        </ClassMap>"
+                                             "    </ECCustomAttributes>"
+                                             "    <ECProperty propertyName='ParentId' typeName='long' />"
+                                             "    <ECProperty propertyName='ChildName' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECClass typeName='Child2' >"
+                                             "    <BaseClass>Child</BaseClass>"
+                                             "    <ECProperty propertyName='Child2Name' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+                                             "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                             "      <Class class = 'Parent' />"
+                                             "    </Source>"
+                                             "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                             "      <Class class = 'Child' >"
+                                             "           <Key>"
+                                             "              <Property name='ParentId'/>"
+                                             "           </Key>"
+                                             "      </Class>"
+                                             "      <Class class = 'Child2' >"
+                                             "           <Key>"
+                                             "              <Property name='ParentId'/>"
+                                             "              <Property name='ChildName'/>"
+                                             "           </Key>"
+                                             "      </Class>"
+                                             "    </Target>"
+                                             "  </ECRelationshipClass>"
+                                             "</ECSchema>", false, "Relationship Key property made up of multiple properties is not supported"));
+
+            testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                                             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                                             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                                             "  <ECClass typeName='Parent' >"
+                                             "    <ECProperty propertyName='Name' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECClass typeName='Child' >"
+                                             "    <ECCustomAttributes>"
+                                             "        <ClassMap xmlns='ECDbMap.01.00'>"
+                                             "                <MapStrategy>"
+                                             "                   <Strategy>SharedTable</Strategy>"
+                                             "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                             "                </MapStrategy>"
+                                             "        </ClassMap>"
+                                             "    </ECCustomAttributes>"
+                                             "    <ECProperty propertyName='ParentId' typeName='long' />"
+                                             "    <ECProperty propertyName='ChildName' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECClass typeName='Child2' >"
+                                             "    <BaseClass>Child</BaseClass>"
+                                             "    <ECProperty propertyName='Child2Name' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+                                             "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                             "      <Class class = 'Parent' />"
+                                             "    </Source>"
+                                             "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                             "      <Class class = 'Child' >"
+                                             "           <Key>"
+                                             "              <Property name='ParentId'/>"
+                                             "           </Key>"
+                                             "      </Class>"
+                                             "      <Class class = 'Child2' >"
+                                             "           <Key>"
+                                             "              <Property name='ParentId'/>"
+                                             "           </Key>"
+                                             "      </Class>"
+                                             "    </Target>"
+                                             "  </ECRelationshipClass>"
+                                             "</ECSchema>", true, "Multiple Key properties pointing to the same property is expected to work"));
+
+            testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                                             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                                             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                                             "  <ECClass typeName='Parent' >"
+                                             "    <ECProperty propertyName='Name' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECClass typeName='Child' >"
+                                             "    <ECCustomAttributes>"
+                                             "        <ClassMap xmlns='ECDbMap.01.00'>"
+                                             "                <MapStrategy>"
+                                             "                   <Strategy>SharedTable</Strategy>"
+                                             "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                             "                </MapStrategy>"
+                                             "        </ClassMap>"
+                                             "    </ECCustomAttributes>"
+                                             "    <ECProperty propertyName='ParentId' typeName='long' />"
+                                             "    <ECProperty propertyName='ChildName' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECClass typeName='Child2' >"
+                                             "    <BaseClass>Child</BaseClass>"
+                                             "    <ECProperty propertyName='Child2Name' typeName='string' />"
+                                             "  </ECClass>"
+                                             "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+                                             "    <Source cardinality='(1,1)' polymorphic='True'>"
+                                             "      <Class class = 'Parent' />"
+                                             "    </Source>"
+                                             "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                             "      <Class class = 'Child' >"
+                                             "           <Key>"
+                                             "              <Property name='ParentId'/>"
+                                             "           </Key>"
+                                             "      </Class>"
+                                             "      <Class class = 'Child2' >"
+                                             "           <Key>"
+                                             "              <Property name='ECInstanceId'/>"
+                                             "           </Key>"
+                                             "      </Class>"
+                                             "    </Target>"
+                                             "  </ECRelationshipClass>"
+                                             "</ECSchema>", false, "Multiple Key properties not pointing to the same property is not expected to work"));
+
+    AssertSchemaImport(testSchemas, "relationshipkeyproperties.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
@@ -4301,43 +4547,6 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
                  "  <ECClass typeName='Child' >"
-                 "    <ECCustomAttributes>"
-                 "        <ClassMap xmlns='ECDbMap.01.00'>"
-                 "                <MapStrategy>"
-                 "                   <Strategy>SharedTable</Strategy>"
-                 "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                 "                </MapStrategy>"
-                 "        </ClassMap>"
-                 "    </ECCustomAttributes>"
-                 "    <ECProperty propertyName='ParentId' typeName='long' />"
-                 "    <ECProperty propertyName='ChildName' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECClass typeName='Child2' >"
-                 "    <BaseClass>Child</BaseClass>"
-                 "    <ECProperty propertyName='Child2Name' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
-                 "    <Source cardinality='(1,1)' polymorphic='True'>"
-                 "      <Class class = 'Parent' />"
-                 "    </Source>"
-                 "    <Target cardinality='(0,N)' polymorphic='True'>"
-                 "      <Class class = 'Child' >"
-                 "           <Key>"
-                 "              <Property name='ParentId'/>"
-                 "           </Key>"
-                 "      </Class>"
-                 "      <Class class = 'Child2' />"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "</ECSchema>", false, "Only one constraint class supported by ECDb if key properties are defined."),
-
-        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                 "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                 "  <ECClass typeName='Parent' >"
-                 "    <ECProperty propertyName='Name' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECClass typeName='Child' >"
                  "    <ECProperty propertyName='ParentId' typeName='long' />"
                  "    <ECProperty propertyName='ChildName' typeName='string' />"
                  "  </ECClass>"
@@ -4547,6 +4756,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
 
         AssertForeignKey(true, ecdb, "ts_Element", "Code_AuthorityId");
         }
+
     }
 
 //---------------------------------------------------------------------------------------
