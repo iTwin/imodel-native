@@ -1094,11 +1094,6 @@ bool PhysicalViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status,
     return true;
     }
 
-// Temporary hack to make this work properly. The first rotation I receive from CM seems
-// to always be the reference frame - using that at best causes the camera to skip for a frame,
-// and at worst causes it to be permanently wrong (RelativeHeading).  Will remove and clean
-// up alongside s_defaultForward/s_defaultUp.
-static bool s_isFirstMotion = false;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
@@ -1106,7 +1101,6 @@ static bool s_isFirstMotion = false;
 void ViewController::ResetDeviceOrientation()
     {
     m_defaultDeviceOrientationValid = false;
-    s_isFirstMotion = true;
     }
 
 static DVec3d s_defaultForward, s_defaultUp;
@@ -1114,13 +1108,16 @@ static DVec3d s_defaultForward, s_defaultUp;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui)
+bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
     if (!m_defaultDeviceOrientationValid)
         {
-        if (s_isFirstMotion)
+        if (nEventsSinceEnabled < 2)
             {
-            s_isFirstMotion = false;
+            // Hack to make this work properly. The first rotation received from CM seems
+            // to always be the reference frame - using that at best causes the camera to skip for a frame,
+            // and at worst causes it to be permanently wrong (RelativeHeading).  Someone should remove and clean
+            // up alongside s_defaultForward/s_defaultUp.
             return false;
             }
         m_defaultDeviceOrientation = matrix;
@@ -1879,21 +1876,20 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
     if (nullptr == geom)
         {
         IElemTopologyCP elemTopo = hit.GetElemTopology();
-        ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
 
-        if (nullptr == transientHandler)
+        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
             return ERROR;
-
-        transientHandler->_DrawTransient(hit, context);
-        return SUCCESS;
         }
 
-    if (&GetDgnDb() != &element->GetDgnDb() || !IsModelViewed(element->GetModelId()))
-        return SUCCESS;
+    if (&GetDgnDb() != &geom->GetSourceDgnDb())
+        return ERROR;
+
+    if (element.IsValid() && !IsModelViewed(element->GetModelId()))
+        return ERROR;
 
     ViewContext::ContextMark mark(&context);
 
-    // Allow element sub-class involvement for flashing sub-entities...
+    // Allow sub-class involvement for flashing sub-entities...
     if (geom->DrawHit(hit, context))
         return SUCCESS;
 
