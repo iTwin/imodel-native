@@ -1084,8 +1084,8 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,Code_Value=2,ParentId=3,Code_AuthorityId=4,Code_Namespace=5};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code_Value,ParentId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     _SetFilled();
@@ -1105,12 +1105,15 @@ void DgnModel::_FillModel()
 
         DgnElement::Code code;
         code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
-        elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
+        DgnElement::CreateParams createParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             code,
-            id,
-            stmt.GetValueId<DgnElementId>(Column::ParentId)),
-            true);
+            stmt.GetValueText(Column::Label),
+            stmt.GetValueId<DgnElementId>(Column::ParentId));
+
+        createParams.SetElementId(id);
+
+        elements.LoadElement(createParams, true);
         }
 
     CallAppData(FilledCaller());

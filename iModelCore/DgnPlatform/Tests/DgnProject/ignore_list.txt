@@ -36,3 +36,4 @@ UnitIterator.GetName                                    # fails randomonly on 06
 ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementation merge and test clean up
 ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
 
+AnnotationTableActionTest.* # notified Josh
