@@ -799,8 +799,9 @@ void    AnnotationTableRow::CopyDataFrom (AnnotationTableRowCR rhs)
     m_heightLock        = rhs.m_heightLock;
     m_height            = rhs.m_height;
     m_cells             = rhs.m_cells;
-    m_edgeRuns          = rhs.m_edgeRuns;
     m_fillRuns          = rhs.m_fillRuns;
+
+    m_edgeRuns.CopyFrom (rhs.m_edgeRuns, GetTable());
     }
 
 //---------------------------------------------------------------------------------------
@@ -3062,7 +3063,8 @@ void    AnnotationTableColumn::CopyDataFrom (AnnotationTableColumnCR rhs)
     m_index             = rhs.m_index;
     m_widthLock         = rhs.m_widthLock;
     m_width             = rhs.m_width;
-    m_edgeRuns          = rhs.m_edgeRuns;
+
+    m_edgeRuns.CopyFrom (rhs.m_edgeRuns, GetTable());
     }
 
 //---------------------------------------------------------------------------------------
@@ -8286,6 +8288,67 @@ void AnnotationTableElement::Clear()
     m_textStyles.clear();
     }
 
+#define VALIDATE_TABLE_POINTER(__aspect__) \
+    if (UNEXPECTED_CONDITION (this != &__aspect__.GetTable())) \
+        return ERROR;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus AnnotationTableElement::ValidateAllAspectTablePointers()
+    {
+    VALIDATE_TABLE_POINTER (m_tableHeader)
+
+    for (AnnotationTableEdgeRunCR edgeRun : m_topEdgeRuns)
+        VALIDATE_TABLE_POINTER (edgeRun)
+
+    for (AnnotationTableEdgeRunCR edgeRun : m_leftEdgeRuns)
+        VALIDATE_TABLE_POINTER (edgeRun)
+
+    for (AnnotationTableColumnCR column : m_columns)
+        {
+        VALIDATE_TABLE_POINTER (column)
+
+        for (AnnotationTableEdgeRunCR edgeRun : column.m_edgeRuns)
+            VALIDATE_TABLE_POINTER (edgeRun)
+        }
+
+    for (AnnotationTableRowCR row : m_rows)
+        {
+        VALIDATE_TABLE_POINTER (row)
+
+        for (AnnotationTableCellCR cell : row.m_cells)
+            VALIDATE_TABLE_POINTER (cell)
+
+        for (AnnotationTableEdgeRunCR edgeRun : row.m_edgeRuns)
+            VALIDATE_TABLE_POINTER (edgeRun)
+        }
+
+    for (auto symbEntry : m_symbologyDictionary)
+        VALIDATE_TABLE_POINTER (symbEntry.second)
+    
+    for (auto mergeEntry : m_mergeDictionary)
+        VALIDATE_TABLE_POINTER (mergeEntry.second)
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   11/2015
+//---------------------------------------------------------------------------------------
+void EdgeRuns::CopyFrom (EdgeRunsCR rhs, AnnotationTableElementR element)
+    {
+    clear();
+
+    for (AnnotationTableEdgeRunCR rhsEdgeRun : rhs)
+        {
+        AnnotationTableEdgeRun  newEdgeRun (element);
+        newEdgeRun = rhsEdgeRun;
+
+        push_back (newEdgeRun);
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   08/2015
 //---------------------------------------------------------------------------------------
@@ -8303,6 +8366,20 @@ void AnnotationTableElement::_CopyFrom(DgnElementCR rhsElement)
 
     Initialize (false);
 
+    // Tricky:  For every AnnotationTableAspect the assignment operator is written to overwrite
+    //          all the data while preserving the reference to the host table.  But the copy
+    //          constructor does copy the host table reference.  In this method, we need to
+    //          avoid the copy constructor at all costs.
+    //
+    //          This means that a statement like m_symbologyDictionary = rhs.m_symbologyDictionary
+    //          cannot be used.  For each entry we need to first construct it with the proper
+    //          host table reference and then assign the data over.  This same pattern holds for
+    //          the merge dictionary and all the edge runs.  That pattern is NOT needed for
+    //          rows, columns and cells since those collections are already populated by the
+    //          call to AnnotationTableElement::Initialize above.
+    //
+    //          TextStyles and Fill Runs are not aspects so those are not affected.
+
     for (bpair<AnnotationTableRegion, AnnotationTextStyleCPtr> const& entry : rhs->m_textStyles)
         m_textStyles[entry.first] = entry.second->CreateCopy();
 
@@ -8312,11 +8389,28 @@ void AnnotationTableElement::_CopyFrom(DgnElementCR rhsElement)
     for (AnnotationTableRowCR rhsRow : rhs->m_rows)
         m_rows[rhsRow.GetIndex()] = rhsRow;
 
-    m_topEdgeRuns  = rhs->m_topEdgeRuns;
-    m_leftEdgeRuns = rhs->m_leftEdgeRuns;
+    m_topEdgeRuns.CopyFrom (rhs->m_topEdgeRuns, *this);
+    m_leftEdgeRuns.CopyFrom (rhs->m_leftEdgeRuns, *this);
 
-    m_symbologyDictionary = rhs->m_symbologyDictionary;
-    m_mergeDictionary = rhs->m_mergeDictionary;
+    m_symbologyDictionary.clear();
+    for (auto rhsSymb : rhs->m_symbologyDictionary)
+        {
+        SymbologyEntry  newSymbology (*this, rhsSymb.first);
+        newSymbology = rhsSymb.second;
+
+        EXPECTED_CONDITION (SUCCESS == m_symbologyDictionary.AddSymbology (newSymbology));
+        }
+
+    m_mergeDictionary.clear();
+    for (auto rhsMerge : rhs->m_mergeDictionary)
+        {
+        MergeEntry  newMerge (*this, rhsMerge.first);
+        newMerge = rhsMerge.second;
+
+        EXPECTED_CONDITION (SUCCESS == m_mergeDictionary.AddMerge (newMerge));
+        }
+
+    BeAssert (SUCCESS == ValidateAllAspectTablePointers ());
     }
 
 //---------------------------------------------------------------------------------------

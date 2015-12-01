@@ -186,7 +186,7 @@ public:
 };
 
 //=======================================================================================
-//! Specifies a request for one or more locks.
+//! Specifies a request to acquire one or more locks.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
 struct LockRequest
@@ -300,6 +300,8 @@ public:
         DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
+
+    DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db, bool stopOnFirst); //!< @private
 };
 
 ENUM_IS_FLAGS(LockRequest::ResponseOptions);
@@ -329,6 +331,7 @@ protected:
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
+    virtual LockStatus _ReleaseLocks(DgnLockSet& locks) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
     virtual LockStatus _RefreshLocks() = 0;
 
@@ -351,6 +354,14 @@ public:
 
     //! Relinquishes all locks held by the DgnDb.
     LockStatus RelinquishLocks() { return _RelinquishLocks(); }
+
+    //! Attempts to release the specified locks, or reduce the level at which the lock is held.
+    //! Note this function may modify the contents of the DgnLockSet object.
+    //! This method will fail if:
+    //!  - Any pending/dynamics transactions exist in the managed DgnDb. They must first be committed or abandoned
+    //!  - Any lock being released is required for changes made in the managed DgnDb. e.g., you cannot release a lock on an element you have modified.
+    //! If this method succeeds, the undo/redo history will be reset for the managed DgnDb.
+    LockStatus ReleaseLocks(DgnLockSet& locks) { return _ReleaseLocks(locks); }
 
     //! Refreshes any local cache of owned locks by re-querying the server
     LockStatus RefreshLocks() { return _RefreshLocks(); }
@@ -397,6 +408,7 @@ protected:
     virtual bool _QueryLocksHeld(LockRequestCR locks, DgnDbR db) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
+    virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
@@ -409,6 +421,9 @@ public:
 
     //! Relinquishes all locks owned by a briefcase
     LockStatus RelinquishLocks(DgnDbR db) { return _RelinquishLocks(db); }
+
+    //! Reduces the level at which a briefcase owns a set of locks.
+    LockStatus ReleaseLocks(DgnLockSet const& locks, DgnDbR db) { return _ReleaseLocks(locks, db); }
 
     //! Queries the briefcase's level of ownership over the specified lockable object.
     LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) { return _QueryLockLevel(level, lockId, db); }
