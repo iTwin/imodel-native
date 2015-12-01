@@ -169,7 +169,7 @@ std::shared_ptr<ECSqlStatement> ChangeInfoManager::GetPreparedStatementForGetCha
             "SELECT info.* FROM ONLY %s info "
             "WHERE (info.[" CLASS_ChangeInfo_PROPERTY_ChangeStatus "] IS NOT NULL "
             "   AND info.[" CLASS_ChangeInfo_PROPERTY_ChangeStatus "] != %d) %s ",
-            ECSqlBuilder::ToECSqlSnippet(*infoClass).c_str(),
+            infoClass->GetECSqlName(),
             IChangeManager::ChangeStatus::NoChange,
             syncStatusCriteria.c_str()
             );
