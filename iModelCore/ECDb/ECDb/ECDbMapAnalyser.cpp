@@ -945,19 +945,33 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         }
 
     storage.GetClassesR ().insert (ptr);
-    for (auto& part : classMap.GetStorageDescription ().GetHorizontalPartitions ())
+    if (classMap.IsJoinedTable())
         {
-        auto& storage = GetStorage (part.GetTable ().GetName ().c_str ());
-        for (auto id : part.GetClassIds ())
+        auto& storage = GetStorage(classMap.GetTable().GetName().c_str());
+        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetTable())->GetClassIds())
             {
-            auto refClassMap = GetClassMap (id);
-            BeAssert (refClassMap != nullptr);
-            auto classM = &(GetClass (*refClassMap));
-            BeAssert (classM != nullptr);
-            ptr->GetPartitionsR ()[&storage].insert (classM);
+            auto refClassMap = GetClassMap(id);
+            BeAssert(refClassMap != nullptr);
+            auto classM = &(GetClass(*refClassMap));
+            BeAssert(classM != nullptr);
+            ptr->GetPartitionsR()[&storage].insert(classM);
             }
         }
-
+    else
+        {
+        for (auto& part : classMap.GetStorageDescription().GetHorizontalPartitions())
+            {
+            auto& storage = GetStorage(part.GetTable().GetName().c_str());
+            for (auto id : part.GetClassIds())
+                {
+                auto refClassMap = GetClassMap(id);
+                BeAssert(refClassMap != nullptr);
+                auto classM = &(GetClass(*refClassMap));
+                BeAssert(classM != nullptr);
+                ptr->GetPartitionsR()[&storage].insert(classM);
+                }
+            }
+        }
     return *ptr;
     }
 
@@ -989,9 +1003,25 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
         }
     storage.GetRelationshipsR ().insert (ptr);
     auto isForward = classMap.GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward;
+    bool hasRootOfJoinedTable = false;
+    for (auto& key : m_map.GetLightweightCache().GetRelationships(classMap.GetClass().GetId()))
+        {
+        auto constraintMap = GetClassMap(key.first);
+        if (constraintMap->IsParentOfJoinedTable())
+            {
+            hasRootOfJoinedTable = true;
+            break;
+            }
+        }
     for (auto& key : m_map.GetLightweightCache ().GetRelationships (classMap.GetClass ().GetId ()))
         {
-        auto& constraitClass = GetClass (*GetClassMap (key.first));
+        auto constraintMap = GetClassMap(key.first);
+        if (constraintMap->IsJoinedTable() && hasRootOfJoinedTable)
+            {
+            continue;
+            }
+
+        auto& constraitClass = GetClass (*constraintMap);
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
             {
             if (isForward)
@@ -1363,7 +1393,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
         .Append (classMap->GetClass ().GetName ().c_str ());
 
     NativeSqlBuilder::List selects;
-    HorizontalPartition const* root = &storageDescription.GetRootHorizontalPartition ();
+    Partition const* root = &storageDescription.GetRootHorizontalPartition ();
     if (root->GetTable ().GetPersistenceType () == PersistenceType::Virtual)
         root = nullptr;
 

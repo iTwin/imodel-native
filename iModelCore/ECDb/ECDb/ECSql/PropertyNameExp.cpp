@@ -324,8 +324,8 @@ void PropertyNameExp::_DoToECSql(Utf8StringR ecsql) const
     {
     if (!m_classAlias.empty ())
         ecsql.append (m_classAlias).append (".");
-
-    ecsql.append (m_propertyPath.ToString ());
+  
+    ecsql.append (m_propertyPath.ToString (true, false));
     }
 
 //-----------------------------------------------------------------------------------------

@@ -102,7 +102,10 @@ ECDbSqlIndex* SchemaImportECDbMapDb::CreateIndex(ECDbCR ecdb, ECDbSqlTable& tabl
         BeAssert(false && "Index must have at least one column defined.");
         return nullptr;
         }
-
+    if (strcmp(indexName, "BentleyPlanning_Plan_Label_Unique") == 0)
+        {
+        printf("");
+        }
     Utf8String generatedIndexName;
     if (Utf8String::IsNullOrEmpty(indexName))
         {
