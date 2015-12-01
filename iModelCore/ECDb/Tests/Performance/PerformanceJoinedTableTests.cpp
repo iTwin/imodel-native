@@ -24,21 +24,16 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
         static const int s_initialInstanceCount = 1000000;
         static const int s_opCount = 500000;
 
-        static Utf8String GenerateTestValue()
-            {
-            Utf8String val; val.Sprintf("%d", DateTime::GetCurrentTimeUtc().GetDayOfYear()); return val;
-            }
-
         //---------------------------------------------------------------------------------------
         // @bsimethod                                      Affan.Khan                  10/15
         //+---------------+---------------+---------------+---------------+---------------+------
-        BentleyStatus SetupTestECDb(ECDbR ecdb)
+        BentleyStatus SetupTestECDb()
             {
             Utf8String seedFileName;
             bool mustCreateSeed = false;
             if (s_seedFilePath.empty())
                 {
-                seedFileName.Sprintf("joinedTableperformance_seed_%d.ecdb", DateTime::GetCurrentTimeUtc().GetDayOfYear());
+                seedFileName.Sprintf("performance_joinedtable_seed_%d.ecdb", DateTime::GetCurrentTimeUtc().GetDayOfYear());
 
                 BeFileName seedPath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
                 //if seed file exists on disk, we reuse it. This is risky if other tests happen to create file with same name
@@ -51,7 +46,7 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
 
             if (mustCreateSeed)
                 {
-                auto const schema_joinedTable =
+                SchemaItem testSchema(
                     "<?xml version='1.0' encoding='utf-8'?>"
                     "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
                     "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
@@ -92,26 +87,9 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
                     "        <ECProperty propertyName='B3l' typeName='long'/>"
                     "        <ECProperty propertyName='B4s' typeName='string'/>"
                     "    </ECClass>"
-                    "</ECSchema>";
-                    
-                {
-                ECDbTestProject seedProject;
-                ECSchemaPtr seedSchema;
-                seedProject.Create(seedFileName.c_str());
-                s_seedFilePath.AssignUtf8(seedProject.GetECDbPath());
-                auto readContext = ECSchemaReadContext::CreateContext();
-                ECSchema::ReadFromXmlString(seedSchema, schema_joinedTable, *readContext);
-                if (seedSchema.IsNull())
-                    return ERROR;
+                    "</ECSchema>");
 
-                auto importStatus = seedProject.GetECDb().Schemas().ImportECSchemas(readContext->GetCache());
-                if (importStatus != BentleyStatus::SUCCESS)
-                    return ERROR;
-                }
-
-                ECDb seed;
-                if (BE_SQLITE_OK != seed.OpenBeSQLiteDb(s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)))
-                    return ERROR;
+                ECDbR seed = SetupECDb(seedFileName.c_str(), testSchema);
 
                 ECSqlStatement stmt;
                 if (ECSqlStatus::Success != stmt.Prepare(seed, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"))
@@ -143,10 +121,13 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
                     stmt.ClearBindings();
                     }
 
+                stmt.Finalize();
+                s_seedFilePath.AssignUtf8(seed.GetDbFileName());
                 seed.SaveChanges();
+                seed.CloseDb();
                 }
 
-            return CloneECDb(ecdb, "joinedTableperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            return CloneECDb(m_ecdb, "performance_joinedTable.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
             }
 
 
@@ -162,8 +143,6 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
             }
     };
 
-int const PerformanceJoinedTableTests::s_opCount;
-
 BeFileName PerformanceJoinedTableTests::s_seedFilePath;
 
 //---------------------------------------------------------------------------------------
@@ -173,8 +152,7 @@ TEST_F(PerformanceJoinedTableTests, CreateSeedFile)
     {
     //separate out code that creates and populates the seed files, so that multiple runs of the actual
     //perf timings can be done without influence of the heavy work to create the seed file.
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
     }
 
 //---------------------------------------------------------------------------------------
@@ -182,12 +160,11 @@ TEST_F(PerformanceJoinedTableTests, CreateSeedFile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJoinedTableTests, Insert)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booInsert;
     // NOT USED: const int instanceIdIncrement = DetermineECInstanceIdIncrement();
-    ASSERT_EQ(booInsert.Prepare(ecdb, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
+    ASSERT_EQ(booInsert.Prepare(GetECDb(), "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
     StopWatch timer(true);
 
     for (int i = 0; i < s_opCount; i++)
@@ -221,11 +198,10 @@ TEST_F(PerformanceJoinedTableTests, Insert)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJoinedTableTests, Update)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booUpdate;
-    ASSERT_EQ(booUpdate.Prepare(ecdb, "UPDATE dgn.Boo SET F1l = ?,F2s = ?,F3l = ?,F4s = ?,G1l = ?,G2s = ?,G3l = ?,G4s = ?,B1l = ?,B2s = ?,B3l = ?,B4s = ? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(booUpdate.Prepare(GetECDb(), "UPDATE dgn.Boo SET F1l = ?,F2s = ?,F3l = ?,F4s = ?,G1l = ?,G2s = ?,G3l = ?,G4s = ?,B1l = ?,B2s = ?,B3l = ?,B4s = ? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     StopWatch timer(true);
     for (int i = 0; i < s_opCount; i++)
         {
@@ -259,11 +235,10 @@ TEST_F(PerformanceJoinedTableTests, Update)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJoinedTableTests, Select)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booSelect;
-    ASSERT_EQ(booSelect.Prepare(ecdb, "SELECT F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(booSelect.Prepare(GetECDb(), "SELECT F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     StopWatch timer(true);
     for (int i = 0; i < s_opCount; i++)
         {
@@ -301,11 +276,10 @@ TEST_F(PerformanceJoinedTableTests, Select)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJoinedTableTests, Delete)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booDelete;
-    ASSERT_EQ(booDelete.Prepare(ecdb, "DELETE FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(booDelete.Prepare(GetECDb(), "DELETE FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     StopWatch timer(true);
     for (auto i = 0; i < s_opCount; i++)
         {

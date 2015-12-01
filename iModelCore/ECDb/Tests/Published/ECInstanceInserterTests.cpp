@@ -19,8 +19,7 @@ struct ECInstanceInserterTests : ECDbTestFixture
 
 void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
     {
-    ECDb ecdb;
-    CreateECDb(ecdb, "insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
 
     ECClassCP testClass = ecdb.Schemas().GetECClass (schemaName, className);
     
@@ -70,8 +69,7 @@ extern IECRelationshipInstancePtr CreateRelationship (ECRelationshipClassCR rela
 
 void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipClassName, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP schemaName, int numberOfSourceInstances, int numberOfTargetInstancesPerSource)
     {
-    ECDb ecdb;
-    CreateECDb(ecdb, "insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
 
     ECClassCP sourceClass = ecdb.Schemas().GetECClass (schemaName, sourceClassName);
     ECClassCP targetClass = ecdb.Schemas().GetECClass (schemaName, targetClassName);
@@ -149,8 +147,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfComplexClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
     {
-    ECDb ecdb;
-    CreateECDb(ecdb, "insertRulesInstances.ecdb", BeFileName(L"ECRules.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("insertRulesInstances.ecdb", BeFileName(L"ECRules.01.00.ecschema.xml"));
 
     ECSchemaCP rulesECSchema = ecdb.Schemas ().GetECSchema ("ECRules");
     ASSERT_TRUE (rulesECSchema != nullptr);
@@ -193,8 +190,7 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     {
-    ECDb ecdb;
-    CreateECDb(ecdb, "insertwithuserprovidedecinstanceid.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("insertwithuserprovidedecinstanceid.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     ECClassCP testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "P");
     ASSERT_TRUE (testClass != nullptr);
@@ -314,8 +310,7 @@ void AssertCurrentTimeStamp (ECDbR ecdb, ECInstanceId const& id, bool expectedIs
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
-    ECDb ecdb;
-    CreateECDb(ecdb, "insertwithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("insertwithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     auto testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE (testClass != nullptr);
 

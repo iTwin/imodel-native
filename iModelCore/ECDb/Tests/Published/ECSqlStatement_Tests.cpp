@@ -626,6 +626,45 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
     stmt.Finalize ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
+    {
+    ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(10, 100*5, true, 100+1+GetECClassId(), 'Chair')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(11, 1000/5, false, 100+2+GetECClassId(), 'Table')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(12, 1000+100*5, true, 100+3+GetECClassId(), 'LCD')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price FROM ECST.Products WHERE ProductId=100+2+GetECClassId()"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (200 == statement.GetValueInt (0));
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price FROM ECST.Products WHERE ProductId>100+2+GetECClassId()"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (1500 == statement.GetValueInt (0));
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() AND Price=1000+100*5"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (statement.GetValueBoolean (0));
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price, ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() ORDER BY ECInstanceId"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_TRUE (1500 == statement.GetValueInt (0));
+    ASSERT_TRUE (statement.GetValueBoolean (1));
+    statement.Finalize ();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -977,7 +1016,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTest)
+TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTestWithStructArrays)
     {
     // Create and populate a sample project
     ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
@@ -1011,6 +1050,78 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTest)
         ASSERT_EQ (DbResult::BE_SQLITE_DONE, readStatement.Step ()) << "step failed for " << selectSql.c_str ();
         readStatement.Finalize ();
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTables)
+    {
+    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8' ?>"
+                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                          "    <ECClass typeName='A' isDomainClass='True'>"
+                          "        <ECProperty propertyName='Price' typeName='double' />"
+                          "    </ECClass>"
+                          "</ECSchema>", false, "");
+    ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", testSchema);
+
+    ECInstanceId fi1Id;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.ExternalFileInfo(Name, Size, RootFolder, RelativePath) VALUES('testfile.txt', 123, 1, 'myfolder')"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    fi1Id = key.GetECInstanceId();
+    }
+
+    ECInstanceId fi2Id;
+    {
+    BeFileName testFilePath;
+    BeTest::GetHost().GetDocumentsRoot(testFilePath);
+    testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"StartupCompany.json");
+    DbEmbeddedFileTable& embeddedFileTable = ecdb.EmbeddedFiles();
+    DbResult stat = BE_SQLITE_OK;
+    fi2Id = embeddedFileTable.Import(&stat, "embed1", testFilePath.GetNameUtf8().c_str(), "JSON");
+    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(fi2Id.IsValid());
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1262,7 +1373,7 @@ TEST_F (ECSqlStatementTestFixture, DeleteStructArray)
 TEST_F (ECSqlStatementTestFixture, ECInstanceIdColumnInfo)
     {
     const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
     auto ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
     ECSqlStatement statement;
@@ -1295,7 +1406,7 @@ TEST_F (ECSqlStatementTestFixture, ECInstanceIdColumnInfo)
 TEST_F (ECSqlStatementTestFixture, StructArrayInsert)
     {
     const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
     
     Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
     ECSqlStatement statement;
@@ -1334,7 +1445,7 @@ TEST_F (ECSqlStatementTestFixture, StructArrayInsert)
 TEST_F (ECSqlStatementTestFixture, StructArrayUpdate)
     {
     const int perClassRowCount = 2;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     Utf8CP ecsql = "UPDATE  ONLY ecsql.PSA SET L = ?,  PStruct_Array = ? WHERE I = ?";
     ECSqlStatement statement;
@@ -1383,7 +1494,7 @@ void setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP 
 TEST_F (ECSqlStatementTestFixture, StructArrayDelete)
     {
     const auto perClassRowCount = 2;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
     auto ecsql = "DELETE FROM  ONLY ecsql.PSA WHERE I = ?";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
@@ -1402,7 +1513,7 @@ TEST_F (ECSqlStatementTestFixture, BindECInstanceId)
     {
     const auto perClassRowCount = 0;
     // Create and populate a sample project
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     ECInstanceKey pKey;
     ECInstanceKey psaKey;
@@ -1485,8 +1596,7 @@ TEST_F (ECSqlStatementTestFixture, BindECInstanceId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
     {
-    const auto perClassRowCount = 0;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
@@ -1537,7 +1647,7 @@ TEST_F (ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
 TEST_F (ECSqlStatementTestFixture, BindPrimitiveArray)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     std::vector<int> expectedIntArray = { 1, 2, 3, 4, 5, 6, 7, 8 };
     std::vector<Utf8String> expectedStringArray = { "1", "2", "3", "4", "5", "6", "7", "8" };
@@ -1603,7 +1713,7 @@ TEST_F (ECSqlStatementTestFixture, BindPrimitiveArray)
 TEST_F (ECSqlStatementTestFixture, Insert_BindDateTimeArray)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PA (Dt_Array, DtUtc_Array) VALUES(:dt,:dtutc)");
@@ -1651,7 +1761,7 @@ TEST_F (ECSqlStatementTestFixture, Insert_BindDateTimeArray)
 TEST_F(ECSqlStatementTestFixture, BindPrimArrayWithOutOfBoundsLength)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (Prim_Array_Bounded) VALUES(?)");
@@ -1694,7 +1804,7 @@ TEST_F(ECSqlStatementTestFixture, BindPrimArrayWithOutOfBoundsLength)
 TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
     {
     const int perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (PStruct_Array_Bounded) VALUES(?)");
@@ -1737,7 +1847,7 @@ TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
 TEST_F (ECSqlStatementTestFixture, InsertWithStructBinding)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     auto testFunction = [this, &ecdb] (Utf8CP insertECSql, bool bindExpectedToSucceed, int structParameterIndex, Utf8CP structValueJson, Utf8CP verifySelectECSql, int structValueIndex)
         {
@@ -1872,7 +1982,7 @@ TEST_F (ECSqlStatementTestFixture, InsertWithStructBinding)
 TEST_F (ECSqlStatementTestFixture, UpdateWithStructBinding)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     //insert some test instances
     auto insertFunction = [this, &ecdb] (ECInstanceKey& ecInstanceKey, Utf8CP insertECSql, int structParameterIndex, Utf8CP structValueToBindJson)
@@ -2157,7 +2267,7 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
 TEST_F(ECSqlStatementTestFixture, ParameterInSelectClause)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
         {
         ECSqlStatement statement;
@@ -2220,7 +2330,7 @@ TEST_F(ECSqlStatementTestFixture, ParameterInSelectClause)
 TEST_F (ECSqlStatementTestFixture, GetParameterIndex)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
         {
         ECSqlStatement statement;
@@ -2310,7 +2420,7 @@ TEST_F (ECSqlStatementTestFixture, GetParameterIndex)
 TEST_F(ECSqlStatementTestFixture, NoECClassIdFilterOption)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     {
     ECSqlStatement statement;
@@ -2512,7 +2622,7 @@ void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Ut
 TEST_F (ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT c.Dt_Array FROM ecsql.PSA c LIMIT 1"));
@@ -2559,7 +2669,7 @@ TEST_F (ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
 TEST_F (ECSqlStatementTestFixture, ColumnInfoForStructs)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT SAStructProp FROM ecsql.SA LIMIT 1"));
@@ -2635,7 +2745,7 @@ TEST_F (ECSqlStatementTestFixture, ColumnInfoForStructs)
 TEST_F (ECSqlStatementTestFixture, ColumnInfoForStructArrays)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT SAStructProp FROM ecsql.SA LIMIT 1"));
@@ -2722,7 +2832,7 @@ TEST_F (ECSqlStatementTestFixture, ColumnInfoForStructArrays)
 TEST_F (ECSqlStatementTestFixture, Step)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
         {
         ECSqlStatement statement;
@@ -2758,7 +2868,7 @@ TEST_F (ECSqlStatementTestFixture, Step)
 TEST_F (ECSqlStatementTestFixture, MultipleInsertsWithoutReprepare)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (?, ?)"));
@@ -2833,7 +2943,7 @@ TEST_F (ECSqlStatementTestFixture, MultipleInsertsWithoutReprepare)
 TEST_F (ECSqlStatementTestFixture, Reset)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
         {
         ECSqlStatement stmt;
@@ -2862,7 +2972,7 @@ TEST_F (ECSqlStatementTestFixture, Reset)
 TEST_F (ECSqlStatementTestFixture, Finalize)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
         {
         ECSqlStatement stmt;
@@ -2909,7 +3019,7 @@ TEST_F (ECSqlStatementTestFixture, Finalize)
 TEST_F (ECSqlStatementTestFixture, IssueListener)
     {
     const auto perClassRowCount = 10;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
         {
         ECDbIssueListener issueListener(ecdb);
@@ -3264,7 +3374,7 @@ TEST_F(ECSqlStatementTestFixture, GetGeometryWithInvalidBlobFormat)
 TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
     {
     const auto perClassRowCount = 0;
-    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp) VALUES(?)";
     ECSqlStatement statement;

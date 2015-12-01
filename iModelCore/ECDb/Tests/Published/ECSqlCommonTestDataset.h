@@ -43,7 +43,6 @@ public:
     static ECSqlTestDataset WhereMatchTests(ECSqlType, ECDbCR, int rowCountPerClass);
     static ECSqlTestDataset WhereRelationshipEndTableMappingTests(ECSqlType, ECDbR, int rowCountPerClass);
     static ECSqlTestDataset WhereRelationshipLinkTableMappingTests (ECSqlType, ECDbR, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipWithAnyClassConstraintTests (ECSqlType, ECDbR, int rowCountPerClass);
     static ECSqlTestDataset WhereRelationshipWithAdditionalPropsTests (ECSqlType, ECDbR, int rowCountPerClass);
     static ECSqlTestDataset WhereStructTests (ECSqlType, ECDbCR, int rowCountPerClass);
     static ECSqlTestDataset OptionsTests(ECSqlType, ECDbCR, int rowCountPerClass);

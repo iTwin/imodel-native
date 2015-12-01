@@ -39,6 +39,15 @@ enum class ECDbIssueSeverity
 struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
+    //=======================================================================================
+    //! Modes for the ECDb::Purge method.
+    // @bsiclass                                                Krischan.Eberle      11/2015
+    //+===============+===============+===============+===============+===============+======
+    enum class PurgeMode
+        {
+        OrphanedFileInfos = 1 //!< Purges orphaned FileInfo instances (see also @ref ECDbFileInfo)
+        };
+
     struct Impl;
 
     //=======================================================================================
@@ -120,6 +129,12 @@ public:
     //! Gets the ECClass locator for ECClasses whose schemas are stored in this ECDb file.
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
+
+    //! Deletes orphaned ECInstances left over from operations specified by @p mode.
+    //! @param[in] mode Purge mode
+    //! @return SUCCESS or ERROR
+    //! @see @ref ECDbFileInfo
+    ECDB_EXPORT BentleyStatus Purge(PurgeMode mode) const;
 
     //! Adds a listener that listens to issues reported by this ECDb object.
     //! @remarks Only one listener can be added at a time.

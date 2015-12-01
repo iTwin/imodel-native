@@ -350,8 +350,8 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTable_SharedColum
     m_instancesPerClass = 1000;
     m_propertiesPerClass = 5;
     size_t hierarchyLevel = 7;
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb");
+    
+    ECDbR ecdb = SetupECDb("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
@@ -408,8 +408,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTableForSubClasse
     m_instancesPerClass = 1000;
     m_propertiesPerClass = 5;
     size_t hierarchyLevel = 7;
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("CRUDPerformance_SharedTableForSubClasses.ecdb");
+    ECDbR ecdb = SetupECDb("CRUDPerformance_SharedTableForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
@@ -461,8 +460,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_DefaultClasses)
     m_instancesPerClass = 1000;
     m_propertiesPerClass = 5;
     size_t hierarchyLevel = 7;
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("CRUDPerformance_DefaultClasses.ecdb");
+    ECDbR ecdb = SetupECDb("CRUDPerformance_DefaultClasses.ecdb");
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
@@ -739,8 +737,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlInsertPerformance_BindPropert
     for (size_t i = 2; i <= 7; i++)
         {
         m_propertiesPerClass = (size_t)pow (2, i);
-        ECDbTestProject testProj;
-        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
         ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
@@ -781,8 +778,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlInsertPerformance_DoNotBindPr
     for (size_t i = 2; i <= 7; i++)
         {
         m_propertiesPerClass = (size_t)pow (2, i);
-        ECDbTestProject testProj;
-        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
         ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
@@ -824,8 +820,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlReadPerformance)
     for (size_t i = 2; i <= 7; i++)
         {
         m_propertiesPerClass = (size_t)pow (2, i);
-        ECDbTestProject testProj;
-        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
         ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
@@ -869,8 +864,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlUpdatePerformance_DoNotBindPr
     for (size_t i = 2; i <= 7; i++)
         {
         m_propertiesPerClass = (size_t)pow (2, i);
-        ECDbTestProject testProj;
-        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
         ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
@@ -916,8 +910,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlUpdatePerformance_BindPropert
     for (size_t i = 2; i <= 7; i++)
         {
         m_propertiesPerClass = (size_t)pow (2, i);
-        ECDbTestProject testProj;
-        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
         ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
@@ -963,8 +956,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlDeletePerformance)
     for (size_t i = 2; i <= 7; i++)
         {
         m_propertiesPerClass = (size_t)pow (2, i);
-        ECDbTestProject testProj;
-        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
         ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);

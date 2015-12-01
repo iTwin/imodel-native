@@ -20,6 +20,8 @@ struct JoinedTableECDbMapStrategyTests: ECDbMappingTestFixture
     {
     protected:
         void AssertTableLayouts(ECDbCR, bmap<Utf8String, Utf8String> const& tableLayouts, Utf8CP scenario) const;
+        ECInstanceId InsertTestInstance (ECDbCR ecdb, Utf8CP ecsql);
+        Utf8CP ToInsertECSql (ECDbCR ecdb, Utf8CP className);
     };
 
 //---------------------------------------------------------------------------------------
@@ -1199,7 +1201,6 @@ TEST_F(JoinedTableECDbMapStrategyTests, AbstractBaseAndEmptyChildClass)
     assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND (A = 101 AND B = 'b1') AND (C = 101 AND D = 'd1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                      11/15
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1244,4 +1245,759 @@ void JoinedTableECDbMapStrategyTests::AssertTableLayouts(ECDbCR ecdb, bmap<Utf8S
         ASSERT_STREQ(expectedColNames, actualColNames.c_str()) << "Scenario: " << scenario << ". Unexpected layout of table " << tableName;
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceId JoinedTableECDbMapStrategyTests::InsertTestInstance (ECDbCR ecdb, Utf8CP ecsql)
+    {
+    ECSqlStatement stmt;
+    auto stat = stmt.Prepare (ecdb, ecsql);
+    if (stat != ECSqlStatus::Success)
+        {
+        EXPECT_EQ (ECSqlStatus::Success, stat) << "Inserting test instance with '" << ecsql << "' failed. Preparation failed";
+        return ECInstanceId ();
+        }
+
+    ECInstanceKey newECInstanceKey;
+    DbResult stepStat = stmt.Step (newECInstanceKey);
+    if (stepStat != BE_SQLITE_DONE)
+        {
+        EXPECT_EQ (BE_SQLITE_DONE, stepStat) << "Inserting test instance with '" << ecsql << "' failed. Step failed";
+        return ECInstanceId ();
+        }
+    else
+        return newECInstanceKey.GetECInstanceId ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP JoinedTableECDbMapStrategyTests::ToInsertECSql (ECDbCR ecdb, Utf8CP className)
+    {
+    ECN::ECClassCP ecClass = ecdb.Schemas ().GetECClass ("JoinedTableTest", className);
+    EXPECT_TRUE (ecClass != nullptr);
+
+    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
+    Utf8String insertECSql = "INSERT INTO ";
+    insertECSql.append (ecClassName).append (" (SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld)");
+
+    return insertECSql.c_str ();
+    }
+
+//---------------------------------------------------------------------------------------
+//           Foo  (JoinedTablePerDirectSubclass)  
+//            |
+//           Goo
+//
+//-------------SelfJoin relationships-----------------
+//      Foo  <- FooHasFoo(REFERENCING) -> Foo
+//      Foo  <- FooHasManyFoo(REFERENCING) -> Foo
+//      Foo  <- ManyFooHasManyFoo(REFERENCING) -> Foo
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
+    {
+    SchemaItem testSchema (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "    <ECRelationshipClass typeName='FooHasFoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='FooHasManyFoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Foo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='ManyFooHasManyFoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Foo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb ("JoinedTableTest.ecdb", testSchema);
+    ASSERT_TRUE (db.IsDbOpen ());
+
+    ECClassId fooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Foo");
+
+    EC::ECInstanceId fooInstanceId1;
+    EC::ECInstanceId fooInstanceId2;
+
+    //Insert two Instances each Per class
+    {
+    Savepoint savePoint (db, "Inserting Class Instances");
+    fooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
+    fooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Foo (A, B) VALUES(100002, 'Class Foo Instance 2')");
+
+    if (!fooInstanceId1.IsValid () || !fooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id's not valid";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-1 Relationship
+    EC::ECInstanceId fooHasFooInstanceId1;
+    {
+    Savepoint savePoint (db, "1-1 Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasFoo"), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    fooHasFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!fooHasFooInstanceId1.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-N Relationship
+    EC::ECInstanceId fooHasManyFooInstanceId1;
+    EC::ECInstanceId fooHasManyFooInstanceId2;
+    {
+    Savepoint savePoint (db, "1-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    fooHasManyFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
+    fooHasManyFooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!fooHasManyFooInstanceId1.IsValid () || !fooHasManyFooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for 1-N Relationship";
+    savePoint.Commit ();
+    }
+
+    //Insert N-N Relationship
+    EC::ECInstanceId manyFooHasManyFooInstanceId1;
+    EC::ECInstanceId manyFooHasManyFooInstanceId2;
+    EC::ECInstanceId manyFooHasManyFooInstanceId3;
+    EC::ECInstanceId manyFooHasManyFooInstanceId4;
+    {
+    Savepoint savePoint (db, "N-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    manyFooHasManyFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId1.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
+    manyFooHasManyFooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId2.GetValue (), fooInstanceId1.GetValue (), fooClassId, fooClassId);
+    manyFooHasManyFooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyFoo"), fooInstanceId2.GetValue (), fooInstanceId2.GetValue (), fooClassId, fooClassId);
+    manyFooHasManyFooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!manyFooHasManyFooInstanceId1.IsValid () || !manyFooHasManyFooInstanceId2.IsValid () || !manyFooHasManyFooInstanceId3.IsValid () || !manyFooHasManyFooInstanceId4.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for N-N Relationship";
+    savePoint.Commit ();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+//           Foo  (JoinedTablePerDirectSubclass)  
+//            |
+//           Goo
+//
+//------------- Relationships Of base class with Direct Derived class -----------------
+//      Foo <- FooHasGoo(REFERENCING) -> Goo
+//      Foo <- FooHasManyGoo(REFERENCING) -> Goo
+//      Foo <- ManyFooHasManyGoo(REFERENCING) -> Goo
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, BaseAndDirectDerivedClassRelationship)
+    {
+    SchemaItem testSchema (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "    <ECRelationshipClass typeName='FooHasGoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Goo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='FooHasManyGoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='ManyFooHasManyGoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb ("JoinedTableTest.ecdb", testSchema);
+    ASSERT_TRUE (db.IsDbOpen ());
+
+    ECClassId fooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Foo");
+    ECClassId gooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Goo");
+
+    EC::ECInstanceId fooInstanceId1;
+    EC::ECInstanceId fooInstanceId2;
+    EC::ECInstanceId gooInstanceId1;
+    EC::ECInstanceId gooInstanceId2;
+
+    //Insert Instances for Constraint classes of Relationships
+    {
+    Savepoint savePoint (db, "Inserting Class Instances");
+    fooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
+    fooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Foo (A, B) VALUES(100002, 'Class Foo Instance 2')");
+    gooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200001, 'Class Goo Instance 1')");
+    gooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200002, 'Class Goo Instance 2')");
+
+    if (!fooInstanceId1.IsValid () || !fooInstanceId2.IsValid () || !gooInstanceId1.IsValid () || !gooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id's not valid";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-1 Relationship
+    EC::ECInstanceId fooHasGooInstanceId1;
+    {
+    Savepoint savePoint (db, "1-1 Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasGoo"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    fooHasGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!fooHasGooInstanceId1.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    }
+
+    //Insert 1-N Relationship
+    EC::ECInstanceId fooHasManyGooInstanceId1;
+    EC::ECInstanceId fooHasManyGooInstanceId2;
+    {
+    Savepoint savePoint (db, "1-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    fooHasManyGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    fooHasManyGooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!fooHasManyGooInstanceId1.IsValid () || !fooHasManyGooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for 1-N Relationship";
+    savePoint.Commit ();
+    }
+
+    //Insert N-N Relationship
+    EC::ECInstanceId manyFooHasManyGooInstanceId1;
+    EC::ECInstanceId manyFooHasManyGooInstanceId2;
+    EC::ECInstanceId manyFooHasManyGooInstanceId3;
+    EC::ECInstanceId manyFooHasManyGooInstanceId4;
+    {
+    Savepoint savePoint (db, "N-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    manyFooHasManyGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    manyFooHasManyGooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId2.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    manyFooHasManyGooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyFooHasManyGoo"), fooInstanceId2.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    manyFooHasManyGooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!manyFooHasManyGooInstanceId1.IsValid () || !manyFooHasManyGooInstanceId2.IsValid () || !manyFooHasManyGooInstanceId3.IsValid () || !manyFooHasManyGooInstanceId4.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for N-N Relationship";
+    savePoint.Commit ();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+//           Foo  (JoinedTablePerDirectSubclass)  
+//            |
+//           Goo
+//
+//------------- Relationship of base class with Direct Derived class With Key Property -----------------
+//      Foo <- FooHasGooWithKeyProp(REFERENCING) -> Goo
+//      Foo <- FooHasManyGooWithKeyProp(REFERENCING) -> Goo
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
+    {
+    SchemaItem testSchema (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "    <ECRelationshipClass typeName='FooHasGooWithKeyProp' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Goo' >"
+        "        <Key><Property name='A'/></Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='FooHasManyGooWithKeyProp' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' >"
+        "        <Key><Property name='B'/></Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb ("JoinedTableTest.ecdb", testSchema);
+    ASSERT_TRUE (db.IsDbOpen ());
+
+    ECClassId fooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Foo");
+    ECClassId gooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Goo");
+
+    EC::ECInstanceId fooInstanceId1;
+    EC::ECInstanceId gooInstanceId1;
+    EC::ECInstanceId gooInstanceId2;
+
+    //Insert Instances for Constraint classes of Relationships
+    {
+    Savepoint savePoint (db, "Inserting Class Instances");
+    fooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
+    gooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200001, 'Class Goo Instance 1')");
+    gooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200002, 'Class Goo Instance 2')");
+
+    if (!fooInstanceId1.IsValid () || !gooInstanceId1.IsValid () || !gooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id's not valid";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-1 Relationship
+    EC::ECInstanceId fooHasGooInstanceId1;
+    {
+    Savepoint savePoint (db, "1-1 Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasGooWithKeyProp"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    fooHasGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!fooHasGooInstanceId1.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-N Relationship
+    EC::ECInstanceId fooHasManyGooInstanceId1;
+    EC::ECInstanceId fooHasManyGooInstanceId2;
+    {
+    Savepoint savePoint (db, "1-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGooWithKeyProp"), fooInstanceId1.GetValue (), gooInstanceId1.GetValue (), fooClassId, gooClassId);
+    fooHasManyGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "FooHasManyGooWithKeyProp"), fooInstanceId1.GetValue (), gooInstanceId2.GetValue (), fooClassId, gooClassId);
+    fooHasManyGooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!fooHasManyGooInstanceId1.IsValid () || !fooHasManyGooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for 1-N Relationship";
+    savePoint.Commit ();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+//           Foo  (JoinedTablePerDirectSubclass)  
+//     _______|______
+//    |              |
+//   Goo            Boo
+//                   |
+//                  Roo
+//
+//------------- Relationship Between two Derived Classes -----------------
+//      Goo <- GooHasRoo(REFERENCING) -> Roo
+//      Goo <- GooHasManyRoo(REFERENCING) -> Roo
+//      Goo <- ManyGooHasManyRoo(REFERENCING) -> Roo
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClasses)
+    {
+    SchemaItem testSchema (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Boo</BaseClass>"
+        "        <ECProperty propertyName='G' typeName='long'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "    </ECClass>"
+        "    <ECRelationshipClass typeName='GooHasRoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Source>"
+        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Roo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='GooHasManyRoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Roo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='ManyGooHasManyRoo' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Roo' >"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb ("JoinedTableTest.ecdb", testSchema);
+    ASSERT_TRUE (db.IsDbOpen ());
+
+    ECClassId gooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Goo");
+    ECClassId rooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Roo");
+
+    EC::ECInstanceId gooInstanceId1;
+    EC::ECInstanceId gooInstanceId2;
+    EC::ECInstanceId rooInstanceId1;
+    EC::ECInstanceId rooInstanceId2;
+
+    //Insert Instances for Constraint classes of Relationships
+    {
+    Savepoint savePoint (db, "Inserting Class Instances");
+    gooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(100001, 'Class Goo Instance 1')");
+    gooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(100002, 'Class Goo Instance 2')");
+    rooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Roo (G, H) VALUES(200001, 'Class Roo Instance 1')");
+    rooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Roo (G, H) VALUES(200002, 'Class Roo Instance 2')");
+
+    if (!gooInstanceId1.IsValid () || !gooInstanceId2.IsValid () || !rooInstanceId1.IsValid () || !rooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id's not valid";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-1 Relationship
+    EC::ECInstanceId gooHasRooInstanceId1;
+    {
+    Savepoint savePoint (db, "1-1 Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasRoo"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    gooHasRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!gooHasRooInstanceId1.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-N Relationship
+    EC::ECInstanceId gooHasManyRooInstanceId1;
+    EC::ECInstanceId gooHasManyRooInstanceId2;
+    {
+    Savepoint savePoint (db, "1-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    gooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    gooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!gooHasManyRooInstanceId1.IsValid () || !gooHasManyRooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for 1-N Relationship";
+    savePoint.Commit ();
+    }
+
+    //Insert N-N Relationship
+    EC::ECInstanceId manyGooHasManyRooInstanceId1;
+    EC::ECInstanceId manyGooHasManyRooInstanceId2;
+    EC::ECInstanceId manyGooHasManyRooInstanceId3;
+    EC::ECInstanceId manyGooHasManyRooInstanceId4;
+    {
+    Savepoint savePoint (db, "N-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    manyGooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    manyGooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId2.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    manyGooHasManyRooInstanceId3 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "ManyGooHasManyRoo"), gooInstanceId2.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    manyGooHasManyRooInstanceId4 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!manyGooHasManyRooInstanceId1.IsValid () || !manyGooHasManyRooInstanceId1.IsValid () || !manyGooHasManyRooInstanceId1.IsValid () || !manyGooHasManyRooInstanceId1.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for N-N Relationship";
+    savePoint.Commit ();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+//           Foo  (JoinedTablePerDirectSubclass)  
+//     _______|______
+//    |              |
+//   Goo            Boo
+//                   |
+//                  Roo
+//
+//------------- Relationship Between two Derived Classes With Key Properties-----------------
+//      Goo <- GooHasRooWithKeyProp(REFERENCING) -> Roo
+//      Goo <- GooHasManyRooWithKeyProp(REFERENCING) -> Roo
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, RelationshipBetweenSubClassesWithKeyProp)
+    {
+    SchemaItem testSchema (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='E1' typeName='long'/>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Boo</BaseClass>"
+        "        <ECProperty propertyName='G' typeName='long'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "    </ECClass>"
+        "    <ECRelationshipClass typeName='GooHasRooWithKeyProp' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Source>"
+        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Roo' >"
+        "           <Key>"
+        "              <Property name='E'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='GooHasManyRooWithKeyProp' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Roo' >"
+        "           <Key>"
+        "              <Property name='E1'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb ("JoinedTableTest.ecdb", testSchema);
+    ASSERT_TRUE (db.IsDbOpen ());
+
+    ECClassId gooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Goo");
+    ECClassId rooClassId = db.Schemas ().GetECClassId ("JoinedTableTest", "Roo");
+
+    EC::ECInstanceId gooInstanceId1;
+    EC::ECInstanceId rooInstanceId1;
+    EC::ECInstanceId rooInstanceId2;
+
+    //Insert Instances for Constraint classes of Relationships
+    {
+    Savepoint savePoint (db, "Inserting Class Instances");
+    gooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(100001, 'Class Goo Instance 1')");
+    rooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Roo (G, H) VALUES(200001, 'Class Roo Instance 1')");
+    rooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Roo (G, H) VALUES(200002, 'Class Roo Instance 2')");
+
+    if (!gooInstanceId1.IsValid () || !rooInstanceId1.IsValid () || !rooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id's not valid";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-1 Relationship
+    EC::ECInstanceId gooHasRooInstanceId1;
+    {
+    Savepoint savePoint (db, "1-1 Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasRooWithKeyProp"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    gooHasRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!gooHasRooInstanceId1.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id InValid for 1-1 Relationship";
+    savePoint.Commit ();
+    }
+
+    //Insert 1-N Relationship
+    EC::ECInstanceId gooHasManyRooInstanceId1;
+    EC::ECInstanceId gooHasManyRooInstanceId2;
+    {
+    Savepoint savePoint (db, "1-N Relationship Instances");
+    Utf8String ecsql;
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRooWithKeyProp"), gooInstanceId1.GetValue (), rooInstanceId1.GetValue (), gooClassId, rooClassId);
+    gooHasManyRooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
+
+    ecsql.Sprintf (ToInsertECSql (db, "GooHasManyRooWithKeyProp"), gooInstanceId1.GetValue (), rooInstanceId2.GetValue (), gooClassId, rooClassId);
+    gooHasManyRooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
+
+    if (!gooHasManyRooInstanceId1.IsValid () || !gooHasManyRooInstanceId2.IsValid ())
+        ASSERT_TRUE (false) << "Instance Id Invalid for 1-N Relationship";
+    savePoint.Commit ();
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

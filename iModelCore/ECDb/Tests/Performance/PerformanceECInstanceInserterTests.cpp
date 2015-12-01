@@ -8,6 +8,7 @@
 #include <BeSQLite/BeSQLite.h>
 #include "PerformanceTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 

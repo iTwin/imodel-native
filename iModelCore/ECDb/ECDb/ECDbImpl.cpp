@@ -262,6 +262,109 @@ DbResult ECDb::Impl::ResetSequences (BeBriefcaseId* repoId)
     return BE_SQLITE_OK;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
+    {
+    //All purge modes will be tried even if one fails. If one fails, the method returns ERROR
+    BentleyStatus stat = SUCCESS;
+    if (Enum::Contains(mode, ECDb::PurgeMode::OrphanedFileInfos))
+        stat = PurgeFileInfos();
+
+    return stat;
+    }
+
+#define ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME "ecdbf.FileInfoOwnership"
+#define ECDBF_FILEINFO_FULLCLASSNAME "ecdbf.FileInfo"
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::PurgeFileInfos() const
+    {
+    bvector<ECClassId> ownerClassIds;
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT DISTINCT OwnerECClassId FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ownerClassIds.push_back(stmt.GetValueInt64(0));
+        }
+    }
+
+    //Step 1: Purge ownership class from records for which owner doesn't exist anymore
+    {
+    Utf8String purgeOwnershipByOwnersECSql("DELETE FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE ");
+    bool isFirstOwnerClassId = true;
+    for (ECClassId ownerClassId : ownerClassIds)
+        {
+        ECClassCP ownerClass = Schemas().GetECClass(ownerClassId);
+        if (ownerClass == nullptr)
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "FileInfo owner ECClass not found for ECClassId %lld.", ownerClassId);
+            return ERROR;
+            }
+
+        if (!isFirstOwnerClassId)
+            purgeOwnershipByOwnersECSql.append(" OR ");
+
+        Utf8String whereSnippet;
+        whereSnippet.Sprintf("(OwnerECClassId=%lld AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId, ECSqlBuilder::ToECSqlSnippet(*ownerClass).c_str());
+        purgeOwnershipByOwnersECSql.append(whereSnippet);
+
+        isFirstOwnerClassId = false;
+        }
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, purgeOwnershipByOwnersECSql.c_str()))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return ERROR;
+    }
+
+    //Step 2: Purge ownership class from records for which file info doesn't exist anymore
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT ECInstanceId FROM " ECDBF_FILEINFO_FULLCLASSNAME ")"))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return ERROR;
+    }
+
+    //Step 3: Purge file info class from records for which no ownership exists anymore
+    {
+    //TODO: Once polymorphic DELETE works again, we only need a single DELETE. Uncomment the below, and remove
+    //the two statements below
+/*    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFO_FULLCLASSNAME " WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_CLASSNAME ")"))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return ERROR;
+        */
+
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM ONLY ecdbf.EmbeddedFileInfo WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME ")"))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return ERROR;
+
+    stmt.Finalize();
+
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM ecdbf.ExternalFileInfo WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME ")"))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return ERROR;
+    }
+
+    return SUCCESS;
+    }
 
 //******************************************
 // IssueReporter

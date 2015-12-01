@@ -22,9 +22,26 @@ ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 JsonUpdaterTests.UpdateRelationshipProperty
 ECDbInstances.UpdateRelationshipProperty
 
-# fails with exception _C_data D:\DgnDb06New\out\Winx64\BuildContexts\DgnClientFx\PublicAPI\Bentley/stdcxx/basic_string.h 872 0 
-# SEH exception with code 0xc0000005 thrown in the test body.
-ECDbMappingTestFixture.ECDbMapTests 
+#TFS341360 to address this (Affan)
+ECSqlStatementTestFixture.PolymorphicDeleteWithSubclassesInMultipleTables
+
+#TFS341439 (Hassan)
+RelationshipStrength.BackwardEmbedding
+RelationshipStrength.Test
+RelationshipStrength.BackwardHoldingForwardEmbedding
+RelationshipStrength.AnyClass
+RelationshipStrength.AnyClassBackwardHoldingBackwardEmbedding
+RelationshipStrength.ForwardHoldingByMultipleDeleteTest
+RelationshipStrength.ForwardHoldingMultipleLinkedObjectDeleteTest
+RelationshipStrength.ForwardEmbeddingByMultiplePathDeleteTest
+RelationshipStrength.ForwardEmbeddingMiddleInstancePathDeleteTest
+RelationshipStrength.ForwardEmbeddingMultipleLinkedObjectPathDeleteTest
+RelationshipStrength.DirectEmbeddedChildDeleteTest
+RelationshipStrength.HoldingDeleteRuleTest
+RelationshipStrength.ForwardEmbedDeleteThirdLevelParentWithTwoLinks
+RelationshipStrength.DeleteInstanceOfMultipleRelationsPath
+RelationshipStrength.ForwardEmbeddingWithMultipleLevelChildrens
+
 
 # WIP_EC3 - mapping logic needs to be fixed with respect to baseclasses and shared tables and struct/CA classes
 ECDbMappingTestFixture.ECDbMapTests 

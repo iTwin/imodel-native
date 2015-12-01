@@ -18,8 +18,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
     protected:
         void UpdateInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
             {
-            ECDb ecdb;
-            CreateECDb(ecdb, "updateInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+            ECDbR ecdb = SetupECDb("updateInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
             ECClassCP testClass = ecdb.Schemas().GetECClass(schemaName, className);
 
             ECInstanceInserter inserter(ecdb, *testClass);
@@ -102,8 +101,7 @@ TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimit
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     {
-    ECDb ecdb;
-    CreateECDb(ecdb, "updatewithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDbR ecdb = SetupECDb("updatewithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     auto testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE (testClass != nullptr);
 

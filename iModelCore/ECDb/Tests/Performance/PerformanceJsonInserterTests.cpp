@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 using namespace BentleyApi::ECN;
 
