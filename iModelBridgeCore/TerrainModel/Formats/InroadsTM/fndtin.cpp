@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* fndtin.c					tmi	10-Apr-1990           */
@@ -121,10 +121,6 @@ int  dbg = 0;
     {
 
       DTMTINTODPOINT ( srfP, triP, t );
-
-#if defined (DEBUG)
-      if ( dbg ) aecDTM_displaySingleTriangle ( srfP, triP, 1, (struct CIVdistri *)0 );
-#endif
 
       prev2triP = prevtriP;
       prevtriP = triP;

@@ -64,7 +64,6 @@
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
-//#pragma warning( disable : 4996)
 
 
 #include <afxwin.h>                     // MFC core and standard components
@@ -76,28 +75,6 @@
 #include <afxole.h>
 #endif
 
-////-------------------------------------------------------------------
-//// Defines Needed for MicroStation Header Files
-////-------------------------------------------------------------------
-//
-//#ifndef winNT
-//#define winNT
-//#endif
-//
-//#ifndef NO_BOOLEAN_TYPE
-//#define NO_BOOLEAN_TYPE
-//#endif
-//
-//#ifndef NO_IODEFS
-//#define NO_IODEFS
-//#endif
-//
-//#ifndef NO_LEGACY_DVEC3D
-//#ifndef LEGACY_DVEC3D
-//#define LEGACY_DVEC3D
-//#endif
-//#endif
-
 //-------------------------------------------------------------------
 // MicroStation Header Files
 //-------------------------------------------------------------------
@@ -108,23 +85,13 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeFilename.h>
-//#include <DgnPlatform\DgnPlatformAPI.h>
-//#include <Mstn\MstnPlatformAPI.h>
-//
-//#include <Mstn\MdlApi\MdlApi.h>
-//#include <Mstn\MdlApi\deprecated_beijing.fdf>
-//#include <Mstn\MdlApi\mstextstyle.fdf>
-//#include <Mstn\MdlApi\msdgnobj.fdf>
-//#include <Mstn\MdlApi\msunits.fdf>
-//#include <Mstn\MdlApi\mssheetdef.fdf>
 
 using namespace Bentley;
-//using namespace Bentley::DgnPlatform;
 
 //-------------------------------------------------------------------
 // Standard product pragmas
 //-------------------------------------------------------------------
-// To find size issues. #pragma warning(error:4311 4312 4302)
+//#pragma warning(error:4311 4312 4302)
 
 //-------------------------------------------------------------------
 // Standard product definitions
@@ -135,12 +102,6 @@ using namespace Bentley;
 #endif
 
 #define DEFAULT_OBJECT_NAME DEFAULT_PREFERENCE_NAME
-
-#define USERDATAPTRGET( hWnd ) (( hWnd ) ? GetWindowLong(( hWnd ), GWLP_USERDATA ) : NULL )
-#define USERDATAPTRSET(hWnd, pUserData) ( (hWnd) ? (boolean) SetWindowLong ( (hWnd), GWLP_USERDATA, (long)(pUserData) ) : FALSE )
-
-
-
 
 // ------------- DH Added -------------------
 #ifndef _AFXDLL
@@ -296,8 +257,6 @@ class CPtrArray :public CArray<void*>
     { };
 
 #define _tcscpy wcscpy
-//#define _mbsncmp(a,b,c) strncmp((char*)a, (char*)b, b)
-//#define _mbsncpy(a,b,c) strncpy((char*)a, (char*)b, b)
 #define _T(a) L a
 #define TEXT(a) a
 #define LCID long

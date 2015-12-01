@@ -175,18 +175,6 @@ static int aecDTM_pointAddCreate
 {
   int sts = SUCCESS, rpt;
 
-  if ( pntadd->srf->tinf->nrec - pntadd->srf->tinf->ndel < 1L )
-  {
-    int statusState = aecParams_getStatusState( NULL );
-    int tmp = 0;
-
-    aecParams_setStatusState ( &tmp );
-    aecDTM_triangulate ( NULL, NULL, NULL, pntadd->srf, 0, NULL, NULL, NULL, NULL );
-    aecParams_setStatusState ( &statusState );
-
-  }
-
-
   if ( pntadd->ntin > 0L )
     if ( aecDTM_findTriangle ( &pntadd->tin, 0, &rpt, 0, pntadd->srf, &pntadd->loc ) == SUCCESS  &&  rpt != -1 )
       sts = aecDTM_findAffectedTriangles ( &pntadd->tin, &pntadd->ntinlst, &pntadd->tinlst, pntadd->srf, &pntadd->loc );
