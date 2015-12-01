@@ -50,16 +50,6 @@ DEFINE_REF_COUNTED_PTR(Texture)
 DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Window)
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct RenderManager
-{
-    BeConditionVariable m_cv;
-    std::deque<TaskPtr> m_tasks;
-
-    DGNPLATFORM_EXPORT void AddTask(Task&);
-};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/15

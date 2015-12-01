@@ -17,7 +17,6 @@
 
 #define FOCAL_LENGTH_RATIO 0.023584905
 
-typedef uintptr_t QvExtSymbID;
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -506,7 +505,6 @@ public:
     void SetCurrentGeomSource(GeometrySourceCP source) {m_currentGeomSource = source;}
     
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
-    //! @return the DrawPurpose specified in the call to DrawContext#Attach (drawcontext.h)
     DrawPurpose GetDrawPurpose() const {return m_purpose;}
 
     //! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
