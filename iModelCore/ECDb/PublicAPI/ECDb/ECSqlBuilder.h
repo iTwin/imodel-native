@@ -285,6 +285,7 @@ private:
     //! @return text representation of this builder
     ECDB_EXPORT Utf8String ToString () const;
 
+    //! @deprecated Use BentleyApi::ECN::ECClass::GetECSqlName instead
     //! Creates the ECSQL snippet for the specified @p ecClass.
     //! @remarks this is a convenience methods for clients that build
     //! the ECSQL string manually, but want to leverage the logic of

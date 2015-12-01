@@ -149,7 +149,7 @@ Utf8String ClassClause::ToString (bool ignoreIsPolymorphic) const
         }
 
     //add fully qualified class name, i.e. <schema namespace prefix>.<class name> 
-    ecsql.append (ToString (GetClass ()));
+    ecsql.append (GetClass().GetECSqlName());
 
     if (!m_alias.empty ())
         {
