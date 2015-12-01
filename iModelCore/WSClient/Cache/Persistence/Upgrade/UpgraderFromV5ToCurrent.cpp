@@ -304,9 +304,9 @@ JsonValueCR oldParentInfo
     Utf8PrintfString statementKey("CopyInstanceHierarchy:%lld", relationshipClass->GetId());
     auto statement = m_statementCache.GetPreparedStatement(statementKey, [&]
         {
-        return
-            "SELECT TargetECClassId, TargetECInstanceId FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*relationshipClass) + " "
-            "WHERE SourceECClassId = ? AND SourceECInstanceId = ? ";
+        Utf8String ecsql ("SELECT TargetECClassId, TargetECInstanceId FROM ONLY ");
+        ecsql.append(relationshipClass->GetECSqlName()).append (" WHERE SourceECClassId = ? AND SourceECInstanceId = ? ");
+        return ecsql;
         });
 
     statement->BindInt64(1, oldParentKey.GetECClassId());
@@ -581,11 +581,12 @@ JsonValueR instanceInfo
     Utf8PrintfString statementKey("ReadInstanceData:%lld", key.GetECClassId());
     auto statement = m_statementCache.GetPreparedStatement(statementKey, [&]
         {
-        return
-            "SELECT * FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*instanceClass) + " instance "
+        Utf8String ecsql("SELECT * FROM ONLY ");
+        ecsql.append(instanceClass->GetECSqlName()).append(" instance "
             "JOIN [DSC].[CachedInstanceInfo] instanceInfo USING [DSCJS].[CachedInstanceInfoRelationship] "
             "WHERE instance.ECInstanceId = ? "
-            "LIMIT 1 ";
+            "LIMIT 1 ");
+        return ecsql;
         });
 
     statement->BindId(1, key.GetECInstanceId());

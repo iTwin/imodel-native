@@ -594,13 +594,12 @@ const ECInstanceKeyMultiMap& fullyPersistedInstances
     ECClassCP instanceInfoClass = m_objectInfoManager->GetInfoClass();
     ECClassCP instanceInfoRelationshipClass = m_objectInfoManager->GetInfoRelationshipClass();
 
-    Utf8String ecsql =
-        "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId, info.* "
-        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*instanceInfoClass) + " info "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*instanceInfoRelationshipClass) + " infoRel ON info.ECInstanceId = infoRel.SourceECInstanceId "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*resultRelationshipClass) + " resultRel ON infoRel.TargetECInstanceId = resultRel.TargetECInstanceId "
-        "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceState "] = ? "
-        "AND resultRel.SourceECInstanceId IN (" + StringHelper::Join(responseIds.begin(), responseIds.end(), ',') + ")";
+    Utf8String ecsql ("SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId, info.* FROM ONLY ");
+    ecsql.append(instanceInfoClass->GetECSqlName()).append(" info JOIN ONLY ").append(instanceInfoRelationshipClass->GetECSqlName());
+    ecsql.append(" infoRel ON info.ECInstanceId = infoRel.SourceECInstanceId JOIN ONLY ").append(resultRelationshipClass->GetECSqlName());
+    ecsql.append(" resultRel ON infoRel.TargetECInstanceId = resultRel.TargetECInstanceId WHERE info.[" 
+            CLASS_CachedObjectInfo_PROPERTY_InstanceState "] = ? "
+            "AND resultRel.SourceECInstanceId IN (").append(StringHelper::Join(responseIds.begin(), responseIds.end(), ',')).append(")");
 
     ECSqlStatement statement;
     if (SUCCESS != m_dbAdapter->PrepareStatement(statement, ecsql))
