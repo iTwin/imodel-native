@@ -1003,9 +1003,25 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
         }
     storage.GetRelationshipsR ().insert (ptr);
     auto isForward = classMap.GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward;
+    bool hasRootOfJoinedTable = false;
+    for (auto& key : m_map.GetLightweightCache().GetRelationships(classMap.GetClass().GetId()))
+        {
+        auto constraintMap = GetClassMap(key.first);
+        if (constraintMap->IsParentOfJoinedTable())
+            {
+            hasRootOfJoinedTable = true;
+            break;
+            }
+        }
     for (auto& key : m_map.GetLightweightCache ().GetRelationships (classMap.GetClass ().GetId ()))
         {
-        auto& constraitClass = GetClass (*GetClassMap (key.first));
+        auto constraintMap = GetClassMap(key.first);
+        if (constraintMap->IsJoinedTable() && hasRootOfJoinedTable)
+            {
+            continue;
+            }
+
+        auto& constraitClass = GetClass (*constraintMap);
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
             {
             if (isForward)

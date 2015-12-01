@@ -141,10 +141,30 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (table->TryGetECClassIdColumn(classIdColumn) &&
             classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
             {
-            if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
-                *classIdColumn,
-                exp.GetClassNameExp()->IsPolymorphic()))
-                return ECSqlStatus::Error;
+            if (ctx.IsParentOfJoinTable())
+                {
+                auto joinedTableClass = ctx.GetECDb().Schemas().GetECClass(ctx.GetJoinTableClassId());
+                auto joinedTableMap = ctx.GetECDb().GetECDbImplR().GetECDbMap().GetClassMap(*joinedTableClass);
+                if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
+                    *classIdColumn,
+                    exp.GetClassNameExp()->IsPolymorphic()))
+                    return ECSqlStatus::Error;
+                }
+            else if (ctx.GetJoinTableInfo() != nullptr  && !ctx.GetJoinTableInfo()->HasECSQlStatement())
+                {
+                auto joinedTableMap = ctx.GetECDb().GetECDbImplR().GetECDbMap().GetClassMap(ctx.GetJoinTableInfo()->GetClass());
+                if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
+                    *classIdColumn,
+                    exp.GetClassNameExp()->IsPolymorphic()))
+                    return ECSqlStatus::Error;
+                }
+            else
+                {
+                if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
+                    *classIdColumn,
+                    exp.GetClassNameExp()->IsPolymorphic()))
+                    return ECSqlStatus::Error;
+                }
             }
 
         if (!systemWhereClause.IsEmpty())
