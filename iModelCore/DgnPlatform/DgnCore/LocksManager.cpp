@@ -1002,7 +1002,7 @@ ILocksServerP ILocksManager::GetLocksServer() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool idFromJson(BeInt64Id& id, JsonValueCR value)
+bool DgnLocksJson::BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value)
     {
     if (value.isNull())
         return false;
@@ -1012,9 +1012,17 @@ static bool idFromJson(BeInt64Id& id, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::BeInt64IdToJson(JsonValueR value, BeInt64Id id)
+    {
+    value = id.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool briefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
+bool DgnLocksJson::BriefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
     {
     if (!value.isConvertibleTo(Json::uintValue))
         return false;
@@ -1024,9 +1032,17 @@ static bool briefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::BriefcaseIdToJson(JsonValueR value, BeBriefcaseId id)
+    {
+    value = id.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockLevelFromJson(LockLevel& level, JsonValueCR value)
+bool DgnLocksJson::LockLevelFromJson(LockLevel& level, JsonValueCR value)
     {
     if (value.isConvertibleTo(Json::uintValue))
         {
@@ -1044,9 +1060,17 @@ static bool lockLevelFromJson(LockLevel& level, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::LockLevelToJson(JsonValueR value, LockLevel level)
+    {
+    value = static_cast<uint32_t>(level);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockTypeFromJson(LockableType& type, JsonValueCR value)
+bool DgnLocksJson::LockableTypeFromJson(LockableType& type, JsonValueCR value)
     {
     if (value.isConvertibleTo(Json::uintValue))
         {
@@ -1064,9 +1088,17 @@ static bool lockTypeFromJson(LockableType& type, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::LockableTypeToJson(JsonValueR value, LockableType type)
+    {
+    value = static_cast<uint32_t>(type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockStatusFromJson(LockStatus& status, JsonValueCR value)
+bool DgnLocksJson::LockStatusFromJson(LockStatus& status, JsonValueCR value)
     {
     if (!value.isConvertibleTo(Json::uintValue))
         return false;
@@ -1076,12 +1108,20 @@ static bool lockStatusFromJson(LockStatus& status, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::LockStatusToJson(JsonValueR value, LockStatus status)
+    {
+    value = static_cast<uint32_t>(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LockableId::ToJson(JsonValueR value) const
     {
-    value[JSON_Id] = m_id.GetValue();
-    value[JSON_LockType] = static_cast<uint32_t>(m_type);
+    DgnLocksJson::BeInt64IdToJson(value[JSON_Id], m_id);
+    DgnLocksJson::LockableTypeToJson(value[JSON_LockType], m_type);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1089,7 +1129,7 @@ void LockableId::ToJson(JsonValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LockableId::FromJson(JsonValueCR value)
     {
-    if (!idFromJson(m_id, value[JSON_Id]) || !lockTypeFromJson(m_type, value[JSON_LockType]))
+    if (!DgnLocksJson::BeInt64IdFromJson(m_id, value[JSON_Id]) || !DgnLocksJson::LockableTypeFromJson(m_type, value[JSON_LockType]))
         {
         Invalidate();
         return false;
@@ -1104,7 +1144,7 @@ bool LockableId::FromJson(JsonValueCR value)
 void DgnLock::ToJson(JsonValueR value) const
     {
     m_id.ToJson(value[JSON_LockableId]);
-    value[JSON_LockLevel] = static_cast<uint32_t>(m_level);
+    DgnLocksJson::LockLevelToJson(value[JSON_LockLevel], m_level);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1112,7 +1152,7 @@ void DgnLock::ToJson(JsonValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnLock::FromJson(JsonValueCR value)
     {
-    if (!m_id.FromJson(value[JSON_LockableId]) || !lockLevelFromJson(m_level, value[JSON_LockLevel]))
+    if (!m_id.FromJson(value[JSON_LockableId]) || !DgnLocksJson::LockLevelFromJson(m_level, value[JSON_LockLevel]))
         {
         Invalidate();
         return false;
@@ -1127,7 +1167,7 @@ bool DgnLock::FromJson(JsonValueCR value)
 void DgnLockOwnership::ToJson(JsonValueR value) const
     {
     auto level = GetLockLevel();
-    value[JSON_LockLevel] = static_cast<uint32_t>(level);
+    DgnLocksJson::LockLevelToJson(value[JSON_LockLevel], level);
     switch (level)
         {
         case LockLevel::Exclusive:
@@ -1156,7 +1196,7 @@ bool DgnLockOwnership::FromJson(JsonValueCR value)
     {
     Reset();
     LockLevel level;
-    if (!lockLevelFromJson(level, value[JSON_LockLevel]))
+    if (!DgnLocksJson::LockLevelFromJson(level, value[JSON_LockLevel]))
         return false;
 
     switch (level)
@@ -1164,7 +1204,7 @@ bool DgnLockOwnership::FromJson(JsonValueCR value)
         case LockLevel::None:
             return true;
         case LockLevel::Exclusive:
-            return briefcaseIdFromJson(m_exclusiveOwner, value[JSON_ExclusiveOwner]);
+            return DgnLocksJson::BriefcaseIdFromJson(m_exclusiveOwner, value[JSON_ExclusiveOwner]);
         case LockLevel::Shared:
             {
             JsonValueCR owners = value[JSON_SharedOwners];
@@ -1175,7 +1215,7 @@ bool DgnLockOwnership::FromJson(JsonValueCR value)
             uint32_t nOwners = owners.size();
             for (uint32_t i = 0; i < nOwners; i++)
                 {
-                if (!briefcaseIdFromJson(owner, value[i]))
+                if (!DgnLocksJson::BriefcaseIdFromJson(owner, value[i]))
                     {
                     Reset();
                     return false;
@@ -1259,7 +1299,7 @@ bool LockRequest::Response::FromJson(JsonValueCR value)
     {
     m_denied.clear();
     JsonValueCR locks = value[JSON_DeniedLocks];
-    if (!locks.isArray() || !lockStatusFromJson(m_status, value[JSON_Status]))
+    if (!locks.isArray() || !DgnLocksJson::LockStatusFromJson(m_status, value[JSON_Status]))
         {
         Invalidate();
         return false;

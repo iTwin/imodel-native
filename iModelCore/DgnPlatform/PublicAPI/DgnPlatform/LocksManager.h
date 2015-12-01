@@ -435,5 +435,26 @@ public:
     LockStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) { return _QueryOwnership(ownership, lockId); }
 };
 
+//=======================================================================================
+//! Utilities for converting lock-related values to/from JSON.
+//! See also To/FromJson() methods on classes like LockRequest, LockableId, etc.
+// @bsiclass                                                      Paul.Connelly   12/15
+//=======================================================================================
+struct DgnLocksJson
+{
+public:
+    DGNPLATFORM_EXPORT static bool BriefcaseIdFromJson(BeSQLite::BeBriefcaseId& id, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool BeInt64IdFromJson(BeSQLite::BeInt64Id& id, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool LockLevelFromJson(LockLevel& level, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool LockStatusFromJson(LockStatus& status, JsonValueCR value);
+
+    DGNPLATFORM_EXPORT static void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
+    DGNPLATFORM_EXPORT static void BeInt64IdToJson(JsonValueR value, BeSQLite::BeInt64Id id);
+    DGNPLATFORM_EXPORT static void LockLevelToJson(JsonValueR value, LockLevel level);
+    DGNPLATFORM_EXPORT static void LockableTypeToJson(JsonValueR value, LockableType type);
+    DGNPLATFORM_EXPORT static void LockStatusToJson(JsonValueR value, LockStatus status);
+};
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
