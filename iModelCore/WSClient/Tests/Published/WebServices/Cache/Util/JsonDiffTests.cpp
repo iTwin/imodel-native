@@ -12,25 +12,25 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-#define TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, ignoreDeletedProperties, outJsonString) { \
+#define TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, flags, outJsonString) { \
     auto oldJson = ToRapidJson(oldJsonString);               \
     auto newJson = ToRapidJson(newJsonString);               \
     auto outJson = ToRapidJson(outJsonString);               \
                                                              \
-    JsonDiff jsonDiff(true, ignoreDeletedProperties);        \
+    JsonDiff jsonDiff(flags);        \
     jsonDiff.GetChanges(*oldJson, *newJson, *outJson);       \
                                                              \
     auto expectedOutJson = ToRapidJson(expectedDiffString);  \
     EXPECT_EQ(*expectedOutJson, *outJson); }
 
 #define TEST_GET_CHANGES(oldJsonString, newJsonString, expectedDiffString) \
-    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, true, R"({})")
+    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, JsonDiff::Flags::Default, R"({})")
 
 #define TEST_GET_CHANGES2(oldJsonString, newJsonString, outJsonString, expectedDiffString) \
-    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, true, outJsonString)
+    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, JsonDiff::Flags::Default, outJsonString)
 
 #define TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString) \
-    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, false, R"({})")
+    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, JsonDiff::Flags::FindDeletions, R"({})")
 
 using namespace ::testing;
 

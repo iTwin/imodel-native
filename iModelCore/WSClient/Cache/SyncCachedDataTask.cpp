@@ -195,7 +195,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         auto txn = m_ds->StartCacheTransaction();
         if (result.IsSuccess())
             {
-            if (SUCCESS != txn.GetCache().CachePartialResponse(responseKey, result.GetValue(), m_instancesToRedownload, query.get(), ct))
+            if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), &m_instancesToRedownload, query.get(), ct))
                 {
                 SetError({ICachingDataSource::Status::InternalCacheError, ct});
                 return;
@@ -203,7 +203,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
 
             InvalidatePersistentInstances();
 
-            // TODO: CachePartialResponse could return keys to avoid additonal query
+            // TODO: CacheResponse could return keys to avoid additonal query
             ECInstanceKeyMultiMap cachedInstances;
             if (CacheStatus::OK != txn.GetCache().ReadResponseInstanceKeys(responseKey, cachedInstances))
                 {

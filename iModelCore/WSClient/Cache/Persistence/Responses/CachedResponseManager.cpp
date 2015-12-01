@@ -32,15 +32,16 @@ m_hierarchyManager(&hierarchyManager),
 m_relationshipInfoManager(&relationshipInfoManager),
 m_objectInfoManager(&objectInfoManager),
 
-m_cachedQueryInfoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedResponseInfo)),
-m_cachedQueryInfoToResultRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToResultRelationship)),
-m_cachedQueryInfoToResultWeakRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToResultWeakRelationship)),
-m_cachedQueryInfoToParentRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToParentRelationship)),
-m_cachedQueryInfoToHolderRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToHolderRelationship)),
-m_cachedQueryInfoToRelInfoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToCachedRelationshipInfo)),
+m_responseClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedResponseInfo)),
 
-m_infoInserter(dbAdapter.GetECDb(), *m_cachedQueryInfoClass),
-m_infoUpdater(dbAdapter.GetECDb(), *m_cachedQueryInfoClass)
+m_responseToParentClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToParentRelationship)),
+m_responseToHolderClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToHolderRelationship)),
+m_responseToResultClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToResultRelationship)),
+m_responseToResultWeakClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToResultWeakRelationship)),
+m_responseToRelInfoClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedResponseInfoToCachedRelationshipInfo)),
+
+m_responseInserter(dbAdapter.GetECDb(), *m_responseClass),
+m_responseUpdater(dbAdapter.GetECDb(), *m_responseClass)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -49,7 +50,7 @@ m_infoUpdater(dbAdapter.GetECDb(), *m_cachedQueryInfoClass)
 BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId)
     {
     // TODO: can this be taken care of by ECDb with configuration that would tread referencing relationship as holding?
-    if (&ecClass != m_cachedQueryInfoToParentRelationshipClass)
+    if (&ecClass != m_responseToParentClass)
         {
         return SUCCESS;
         }
@@ -59,7 +60,7 @@ BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECIn
         ECSqlSelectBuilder sqlBuilder;
         sqlBuilder
             .Select("rel.SourceECClassId, rel.SourceECInstanceId")
-            .From(*m_cachedQueryInfoToParentRelationshipClass, "rel", false)
+            .From(*m_responseToParentClass, "rel", false)
             .Where("rel.ECInstanceId = ? ")
             .Limit("1");
         return sqlBuilder.ToString();
@@ -68,14 +69,14 @@ BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECIn
     statement->BindId(1, ecInstanceId);
     statement->Step();
 
-    ECInstanceKey cachedResponseInfoKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
-    if (!cachedResponseInfoKey.IsValid())
+    ECInstanceKey responseInfoKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
+    if (!responseInfoKey.IsValid())
         {
         BeAssert(false);
         return ERROR;
         }
 
-    m_cachedResponsesToDelete.insert(cachedResponseInfoKey);
+    m_responsesToDelete.insert(responseInfoKey);
     return SUCCESS;
     }
 
@@ -84,8 +85,8 @@ BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::OnAfterDelete(bset<ECInstanceKey>& instancesToDeleteOut)
     {
-    instancesToDeleteOut.insert(m_cachedResponsesToDelete.begin(), m_cachedResponsesToDelete.end());
-    m_cachedResponsesToDelete.clear();
+    instancesToDeleteOut.insert(m_responsesToDelete.begin(), m_responsesToDelete.end());
+    m_responsesToDelete.clear();
     return SUCCESS;
     }
 
@@ -105,11 +106,11 @@ CachedResponseInfo CachedResponseManager::ReadInfo(CachedResponseKeyCR key)
         {
         ECSqlSelectBuilder sqlBuilder;
         sqlBuilder
-            .Select("query.*")
-            .From(*m_cachedQueryInfoClass, "query", false)
+            .Select("response.*")
+            .From(*m_responseClass, "response", false)
             .Join(*parentClass, "parent", false)
-            .Using(*m_cachedQueryInfoToParentRelationshipClass, JoinDirection::Forward)
-            .Where("parent.ECInstanceId = ? AND query.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
+            .Using(*m_responseToParentClass, JoinDirection::Forward)
+            .Where("parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
             .Limit("1");
         return sqlBuilder.ToString();
         });
@@ -120,24 +121,24 @@ CachedResponseInfo CachedResponseManager::ReadInfo(CachedResponseKeyCR key)
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
         {
-        return CachedResponseInfo(key.GetParent(), key.GetHolder(), key.GetName(), m_cachedQueryInfoClass->GetId());
+        return CachedResponseInfo(key.GetParent(), key.GetHolder(), key.GetName(), m_responseClass->GetId());
         }
 
-    Json::Value queryInstanceJson;
+    Json::Value infoJson;
 
     JsonECSqlSelectAdapter adapter(*statement, ECValueFormat::RawNativeValues);
-    if (!adapter.GetRowInstance(queryInstanceJson, m_cachedQueryInfoClass->GetId()))
+    if (!adapter.GetRowInstance(infoJson, m_responseClass->GetId()))
         {
         return CachedResponseInfo();
         }
 
-    return CachedResponseInfo(key.GetParent(), key.GetHolder(), queryInstanceJson, m_cachedQueryInfoClass->GetId());
+    return CachedResponseInfo(key.GetParent(), key.GetHolder(), infoJson, m_responseClass->GetId());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ECInstanceKey CachedResponseManager::FindInfo(ECInstanceKeyCR parent, Utf8StringCR queryName)
+ECInstanceKey CachedResponseManager::FindInfo(ECInstanceKeyCR parent, Utf8StringCR responseName)
     {
     ECClassCP parentClass = m_dbAdapter->GetECClass(parent);
     if (!parent.IsValid() || nullptr == parentClass)
@@ -150,17 +151,17 @@ ECInstanceKey CachedResponseManager::FindInfo(ECInstanceKeyCR parent, Utf8String
         {
         ECSqlSelectBuilder sqlBuilder;
         sqlBuilder
-            .Select("query.ECInstanceId")
-            .From(*m_cachedQueryInfoClass, "query", false)
+            .Select("response.ECInstanceId")
+            .From(*m_responseClass, "response", false)
             .Join(*parentClass, "parent", false)
-            .Using(*m_cachedQueryInfoToParentRelationshipClass, JoinDirection::Forward)
-            .Where("parent.ECInstanceId = ? AND query.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
+            .Using(*m_responseToParentClass, JoinDirection::Forward)
+            .Where("parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
             .Limit("1");
         return sqlBuilder.ToString();
         });
 
     statement->BindId(1, parent.GetECInstanceId());
-    statement->BindText(2, queryName.c_str(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(2, responseName.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult status = statement->Step();
     if (status == BE_SQLITE_DONE)
@@ -169,27 +170,27 @@ ECInstanceKey CachedResponseManager::FindInfo(ECInstanceKeyCR parent, Utf8String
         return ECInstanceKey();
         }
 
-    return ECInstanceKey(m_cachedQueryInfoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+    return ECInstanceKey(m_responseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::DeleteInfo(ECInstanceKeyCR parent, Utf8StringCR queryName)
+BentleyStatus CachedResponseManager::DeleteInfo(ECInstanceKeyCR parent, Utf8StringCR responseName)
     {
     if (!parent.IsValid())
         {
         return ERROR;
         }
 
-    ECInstanceKey queryInfoKey = FindInfo(parent, queryName);
-    if (!queryInfoKey.IsValid())
+    ECInstanceKey infoKey = FindInfo(parent, responseName);
+    if (!infoKey.IsValid())
         {
         // Nothing to delete
         return SUCCESS;
         };
 
-    return m_hierarchyManager->DeleteInstance(queryInfoKey);
+    return m_hierarchyManager->DeleteInstance(infoKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -218,7 +219,7 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name, DateTime
     bset<ECInstanceKey> responsesToDelete;
     while (BE_SQLITE_ROW == statement->Step())
         {
-        ECInstanceKey responseKey(m_cachedQueryInfoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+        ECInstanceKey responseKey(m_responseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
         if (ECDbHelper::IsInstanceInMultiMap(responseKey, instancesToLeave))
             {
             continue;
@@ -250,28 +251,28 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR queryInfo)
+BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR info)
     {
-    if (!queryInfo.IsCached())
+    if (!info.IsCached())
         {
-        if (SUCCESS != m_infoInserter.Get().Insert(queryInfo.GetJsonData()))
+        if (SUCCESS != m_responseInserter.Get().Insert(info.GetJsonData()))
             {
             return ERROR;
             }
 
-        if (!m_hierarchyManager->RelateInstances(queryInfo.GetKey(), queryInfo.GetParent(), m_cachedQueryInfoToParentRelationshipClass).IsValid())
+        if (!m_hierarchyManager->RelateInstances(info.GetKey(), info.GetParent(), m_responseToParentClass).IsValid())
             {
             return ERROR;
             }
 
-        if (!m_hierarchyManager->RelateInstances(queryInfo.GetKey(), queryInfo.GetHolder(), m_cachedQueryInfoToHolderRelationshipClass).IsValid())
+        if (!m_hierarchyManager->RelateInstances(info.GetKey(), info.GetHolder(), m_responseToHolderClass).IsValid())
             {
             return ERROR;
             }
         }
     else
         {
-        if (SUCCESS != m_infoUpdater.Get().Update(queryInfo.GetJsonData()))
+        if (SUCCESS != m_responseUpdater.Get().Update(info.GetJsonData()))
             {
             return ERROR;
             }
@@ -282,21 +283,19 @@ BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR queryInfo)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR queryInfo, const InstanceCacheHelper::CachedInstances& cachedInstances)
+BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR info, const InstanceCacheHelper::CachedInstances& cachedInstances)
     {
-    // Insert/update query
-    if (SUCCESS != SaveInfo(queryInfo))
+    if (SUCCESS != SaveInfo(info))
         {
         return ERROR;
         }
 
-    if (SUCCESS != RelateResultInstancesToCachedResponseInfo(queryInfo, cachedInstances))
+    if (SUCCESS != RelateResultInstancesToCachedResponseInfo(info, cachedInstances))
         {
         return ERROR;
         }
 
-    ECInstanceKey queryKey = queryInfo.GetKey();
-    if (SUCCESS != RelateResultRelationshipInstancesToCachedResponseInfo(queryKey, cachedInstances))
+    if (SUCCESS != RelateResultRelationshipInstancesToCachedResponseInfo(info.GetKey(), cachedInstances))
         {
         return ERROR;
         }
@@ -309,7 +308,7 @@ BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR queryInfo, con
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::RelateResultRelationshipInstancesToCachedResponseInfo
 (
-ECInstanceKeyCR queryKey,
+ECInstanceKeyCR info,
 const InstanceCacheHelper::CachedInstances& cachedInstances
 )
     {
@@ -317,7 +316,7 @@ const InstanceCacheHelper::CachedInstances& cachedInstances
     bset<CachedRelationshipKey> oldCachedRelInfos;
 
     if (SUCCESS != m_relationshipInfoManager
-        ->ReadCachedRelationshipsFromHolder(queryKey, m_cachedQueryInfoToRelInfoRelationshipClass, oldCachedRelInfos))
+        ->ReadCachedRelationshipsFromHolder(info, m_responseToRelInfoClass, oldCachedRelInfos))
         {
         return ERROR;
         }
@@ -326,21 +325,21 @@ const InstanceCacheHelper::CachedInstances& cachedInstances
     bset<CachedRelationshipKey> newRelInfos;
 
     std::set_difference(oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
-                        newCachedRelInfos.begin(), newCachedRelInfos.end(),
-                        std::inserter(outdatedRelInfos, outdatedRelInfos.end()));
+        newCachedRelInfos.begin(), newCachedRelInfos.end(),
+        std::inserter(outdatedRelInfos, outdatedRelInfos.end()));
 
     std::set_difference(newCachedRelInfos.begin(), newCachedRelInfos.end(),
-                        oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
-                        std::inserter(newRelInfos, newRelInfos.end()));
+        oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
+        std::inserter(newRelInfos, newRelInfos.end()));
 
     if (SUCCESS != m_relationshipInfoManager
-        ->RelateCachedRelationshipsToHolder(queryKey, m_cachedQueryInfoToRelInfoRelationshipClass, newRelInfos))
+        ->RelateCachedRelationshipsToHolder(info, m_responseToRelInfoClass, newRelInfos))
         {
         return ERROR;
         }
 
     if (SUCCESS != m_relationshipInfoManager
-        ->RemoveCachedRelationshipsFromHolder(queryKey, m_cachedQueryInfoToRelInfoRelationshipClass, outdatedRelInfos))
+        ->RemoveCachedRelationshipsFromHolder(info, m_responseToRelInfoClass, outdatedRelInfos))
         {
         return ERROR;
         }
@@ -353,12 +352,12 @@ const InstanceCacheHelper::CachedInstances& cachedInstances
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::RelateResultInstancesToCachedResponseInfo
 (
-CachedResponseInfoCR queryInfo,
+CachedResponseInfoCR info,
 const InstanceCacheHelper::CachedInstances& cachedInstances
 )
     {
-    ECInstanceKey queryInfoKey = queryInfo.GetKey();
-    ECInstanceKey parent = queryInfo.GetParent();
+    ECInstanceKey infoKey = info.GetKey();
+    ECInstanceKey parent = info.GetParent();
 
     for (ECInstanceKeyCR resultInstance : cachedInstances.GetCachedInstances())
         {
@@ -367,20 +366,20 @@ const InstanceCacheHelper::CachedInstances& cachedInstances
             continue;
             }
 
-        ECRelationshipClassCP resultRelClass = m_cachedQueryInfoToResultRelationshipClass;
+        ECRelationshipClassCP resultRelClass = m_responseToResultClass;
         if (parent == resultInstance)
             {
-            resultRelClass = m_cachedQueryInfoToResultWeakRelationshipClass;
+            resultRelClass = m_responseToResultWeakClass;
             }
 
-        if (!m_hierarchyManager->RelateInstances(queryInfoKey, resultInstance, resultRelClass).IsValid())
+        if (!m_hierarchyManager->RelateInstances(infoKey, resultInstance, resultRelClass).IsValid())
             {
             return ERROR;
             }
         }
 
     // Remove old instances from query
-    if (SUCCESS != m_hierarchyManager->ReleaseOldChildren(queryInfoKey, cachedInstances.GetCachedInstances(), m_cachedQueryInfoToResultRelationshipClass))
+    if (SUCCESS != m_hierarchyManager->ReleaseOldChildren(infoKey, cachedInstances.GetCachedInstances(), m_responseToResultClass))
         {
         return ERROR;
         }
@@ -392,21 +391,19 @@ const InstanceCacheHelper::CachedInstances& cachedInstances
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::ReadResponse
 (
-CachedResponseInfoCR queryInfo,
+CachedResponseInfoCR info,
 ISelectProviderCR selectProvider,
 const CacheQueryHelper::ReadCallback& readCallback
 )
     {
-    if (!queryInfo.IsCached())
+    if (!info.IsCached())
         {
         return SUCCESS;
         }
 
-    ECInstanceKey queryInfoKey = queryInfo.GetKey();
-
     // Read result keys
     ECInstanceKeyMultiMap resultKeys;
-    if (SUCCESS != ReadResponseInstanceKeys(queryInfoKey, resultKeys))
+    if (SUCCESS != ReadResponseInstanceKeys(info.GetKey(), resultKeys))
         {
         return ERROR;
         }
@@ -418,13 +415,13 @@ const CacheQueryHelper::ReadCallback& readCallback
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus CachedResponseManager::ReadResponseInstanceKeys(ECInstanceKeyCR cachedQueryInfoDesc, ECInstanceKeyMultiMap& keysOut)
+BentleyStatus CachedResponseManager::ReadResponseInstanceKeys(ECInstanceKeyCR responseKey, ECInstanceKeyMultiMap& keysOut)
     {
-    if (SUCCESS != m_hierarchyManager->ReadTargetKeys(cachedQueryInfoDesc, m_cachedQueryInfoToResultRelationshipClass, keysOut))
+    if (SUCCESS != m_hierarchyManager->ReadTargetKeys(responseKey, m_responseToResultClass, keysOut))
         {
         return ERROR;
         }
-    if (SUCCESS != m_hierarchyManager->ReadTargetKeys(cachedQueryInfoDesc, m_cachedQueryInfoToResultWeakRelationshipClass, keysOut))
+    if (SUCCESS != m_hierarchyManager->ReadTargetKeys(responseKey, m_responseToResultWeakClass, keysOut))
         {
         return ERROR;
         }
@@ -436,15 +433,15 @@ BentleyStatus CachedResponseManager::ReadResponseInstanceKeys(ECInstanceKeyCR ca
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::ReadResponseObjectIds
 (
-ECInstanceId cachedQueryInfoId,
+ECInstanceId responseId,
 bset<ObjectId>& objectIdsOut
 )
     {
-    if (SUCCESS != ReadResponseObjectIds(cachedQueryInfoId, m_cachedQueryInfoToResultRelationshipClass, objectIdsOut))
+    if (SUCCESS != ReadResponseObjectIds(responseId, m_responseToResultClass, objectIdsOut))
         {
         return ERROR;
         }
-    if (SUCCESS != ReadResponseObjectIds(cachedQueryInfoId, m_cachedQueryInfoToResultWeakRelationshipClass, objectIdsOut))
+    if (SUCCESS != ReadResponseObjectIds(responseId, m_responseToResultWeakClass, objectIdsOut))
         {
         return ERROR;
         }
@@ -456,7 +453,7 @@ bset<ObjectId>& objectIdsOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::ReadResponseObjectIds
 (
-ECInstanceId cachedQueryInfoId,
+ECInstanceId responseId,
 ECRelationshipClassCP relationshipClass,
 bset<ObjectId>& objectIdsOut
 )
@@ -467,7 +464,7 @@ bset<ObjectId>& objectIdsOut
         return CacheQueryHelper::ECSql::SelectRemoteIdsByRelatedSourceECInstanceId(*relationshipClass);
         });
 
-    statement->BindId(1, cachedQueryInfoId);
+    statement->BindId(1, responseId);
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
@@ -498,7 +495,7 @@ bset<ObjectId>& objectIdsOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CachedResponseManager::ReadResponseCacheTag(ECInstanceKeyCR parent, Utf8StringCR queryName)
+Utf8String CachedResponseManager::ReadResponseCacheTag(ECInstanceKeyCR parent, Utf8StringCR responseName)
     {
     ECClassCP parentClass = m_dbAdapter->GetECClass(parent);
     if (!parent.IsValid() || nullptr == parentClass)
@@ -511,17 +508,17 @@ Utf8String CachedResponseManager::ReadResponseCacheTag(ECInstanceKeyCR parent, U
         {
         ECSqlSelectBuilder sqlBuilder;
         sqlBuilder
-            .Select("query.[" CLASS_CachedResponseInfo_PROPERTY_CacheTag "]")
-            .From(*m_cachedQueryInfoClass, "query", false)
+            .Select("response.[" CLASS_CachedResponseInfo_PROPERTY_CacheTag "]")
+            .From(*m_responseClass, "response", false)
             .Join(*parentClass, "parent", false)
-            .Using(*m_cachedQueryInfoToParentRelationshipClass, JoinDirection::Forward)
-            .Where("parent.ECInstanceId = ? AND query.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
+            .Using(*m_responseToParentClass, JoinDirection::Forward)
+            .Where("parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
             .Limit("1");
         return sqlBuilder.ToString();
         });
 
     statement->BindId(1, parent.GetECInstanceId());
-    statement->BindText(2, queryName.c_str(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(2, responseName.c_str(), IECSqlBinder::MakeCopy::No);
 
     statement->Step();
 
@@ -531,7 +528,7 @@ Utf8String CachedResponseManager::ReadResponseCacheTag(ECInstanceKeyCR parent, U
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DateTime CachedResponseManager::ReadResponseCachedDate(ECInstanceKeyCR parent, Utf8StringCR queryName)
+DateTime CachedResponseManager::ReadResponseCachedDate(ECInstanceKeyCR parent, Utf8StringCR responseName)
     {
     ECClassCP parentClass = m_dbAdapter->GetECClass(parent);
     if (!parent.IsValid() || nullptr == parentClass)
@@ -544,17 +541,17 @@ DateTime CachedResponseManager::ReadResponseCachedDate(ECInstanceKeyCR parent, U
         {
         ECSqlSelectBuilder sqlBuilder;
         sqlBuilder
-            .Select("query.[" CLASS_CachedResponseInfo_PROPERTY_CacheDate "]")
-            .From(*m_cachedQueryInfoClass, "query", false)
+            .Select("response.[" CLASS_CachedResponseInfo_PROPERTY_CacheDate "]")
+            .From(*m_responseClass, "response", false)
             .Join(*parentClass, "parent", false)
-            .Using(*m_cachedQueryInfoToParentRelationshipClass, JoinDirection::Forward)
-            .Where("parent.ECInstanceId = ? AND query.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
+            .Using(*m_responseToParentClass, JoinDirection::Forward)
+            .Where("parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
             .Limit("1");
         return sqlBuilder.ToString();
         });
 
     statement->BindId(1, parent.GetECInstanceId());
-    statement->BindText(2, queryName.c_str(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(2, responseName.c_str(), IECSqlBinder::MakeCopy::No);
 
     if (BE_SQLITE_ROW != statement->Step())
         {
@@ -569,15 +566,15 @@ DateTime CachedResponseManager::ReadResponseCachedDate(ECInstanceKeyCR parent, U
 +--------------------------------------------------------------------------------------*/
 BentleyStatus CachedResponseManager::MarkTemporaryInstancesAsPartial
 (
-const bset<ECInstanceId>& cachedQueryInfoIds,
+const bset<ECInstanceId>& responseIds,
 const ECInstanceKeyMultiMap& fullyPersistedInstances
 )
     {
-    if (SUCCESS != MarkTemporaryInstancesAsPartial(cachedQueryInfoIds, m_cachedQueryInfoToResultRelationshipClass, fullyPersistedInstances))
+    if (SUCCESS != MarkTemporaryInstancesAsPartial(responseIds, m_responseToResultClass, fullyPersistedInstances))
         {
         return ERROR;
         }
-    if (SUCCESS != MarkTemporaryInstancesAsPartial(cachedQueryInfoIds, m_cachedQueryInfoToResultWeakRelationshipClass, fullyPersistedInstances))
+    if (SUCCESS != MarkTemporaryInstancesAsPartial(responseIds, m_responseToResultWeakClass, fullyPersistedInstances))
         {
         return ERROR;
         }
@@ -589,7 +586,7 @@ const ECInstanceKeyMultiMap& fullyPersistedInstances
 +--------------------------------------------------------------------------------------*/
 BentleyStatus CachedResponseManager::MarkTemporaryInstancesAsPartial
 (
-const bset<ECInstanceId>& cachedQueryInfoIds,
+const bset<ECInstanceId>& responseIds,
 ECRelationshipClassCP resultRelationshipClass,
 const ECInstanceKeyMultiMap& fullyPersistedInstances
 )
@@ -603,7 +600,7 @@ const ECInstanceKeyMultiMap& fullyPersistedInstances
         "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*instanceInfoRelationshipClass) + " infoRel ON info.ECInstanceId = infoRel.SourceECInstanceId "
         "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*resultRelationshipClass) + " resultRel ON infoRel.TargetECInstanceId = resultRel.TargetECInstanceId "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceState "] = ? "
-        "AND resultRel.SourceECInstanceId IN (" + StringHelper::Join(cachedQueryInfoIds.begin(), cachedQueryInfoIds.end(), ',') + ")";
+        "AND resultRel.SourceECInstanceId IN (" + StringHelper::Join(responseIds.begin(), responseIds.end(), ',') + ")";
 
     ECSqlStatement statement;
     if (SUCCESS != m_dbAdapter->PrepareStatement(statement, ecsql))
@@ -666,7 +663,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsesContainingInstance(ECIns
     statement->BindInt64(1, instanceKey.GetECClassId());
     statement->BindId(2, instanceKey.GetECInstanceId());
 
-    if (SUCCESS != m_dbAdapter->ExtractJsonInstanceArrayFromStatement(*statement, m_cachedQueryInfoClass, infos))
+    if (SUCCESS != m_dbAdapter->ExtractJsonInstanceArrayFromStatement(*statement, m_responseClass, infos))
         {
         return ERROR;
         }
@@ -684,7 +681,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsesContainingInstance(ECIns
     statement->BindInt64(1, instanceKey.GetECClassId());
     statement->BindId(2, instanceKey.GetECInstanceId());
 
-    if (SUCCESS != m_dbAdapter->ExtractJsonInstanceArrayFromStatement(*statement, m_cachedQueryInfoClass, infos))
+    if (SUCCESS != m_dbAdapter->ExtractJsonInstanceArrayFromStatement(*statement, m_responseClass, infos))
         {
         return ERROR;
         }
@@ -693,7 +690,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsesContainingInstance(ECIns
     for (JsonValueR info : infos)
         {
         info[CLASS_CachedResponseInfo_PROPERTY_CacheTag] = "";
-        if (SUCCESS != m_infoUpdater.Get().Update(info))
+        if (SUCCESS != m_responseUpdater.Get().Update(info))
             {
             return ERROR;
             }
