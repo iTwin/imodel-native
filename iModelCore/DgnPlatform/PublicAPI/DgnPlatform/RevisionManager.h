@@ -91,7 +91,7 @@ public:
 //! Streams the contents of multiple files containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeStreamFileReader : BeSQLite::ChangeStream
+struct EXPORT_VTABLE_ATTRIBUTE ChangeStreamFileReader : BeSQLite::ChangeStream
 {
 private:
     bvector<BeFileName> m_pathnames;
@@ -184,6 +184,8 @@ public:
     //! Abandon creating a new revision
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT void AbandonCreateRevision();
+
+    TxnManager::TxnId GetCurrentRevisionEndTxnId() const; //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -40,8 +40,8 @@ WString currentDateTime()
 }
 
 /*=================================================================================**//**
-                                                                                      * @bsimethod                                                        Majd Uddin 10/10
-                                                                                      +===============+===============+===============+===============+===============+======*/
+* @bsimethod                                                        Majd Uddin 10/10
++===============+===============+===============+===============+===============+======*/
 std::vector<WString> GetFileNamesInFolder(WStringCR FolderName)
 {
     std::vector<WString> params;
@@ -75,8 +75,8 @@ std::vector<WString> GetFileNamesInFolder(WStringCR FolderName)
 }
 
 /*================================================================================**//**
-                                                                                     * @bsiclass                                                     Majd Uddin      09/12
-                                                                                     +===============+===============+===============+===============+===============+======*/
+* @bsiclass                                                     Majd Uddin      09/12
++===============+===============+===============+===============+===============+======*/
 class ValidatePublishing : public ::testing::TestWithParam<WString>
 {
 public:
@@ -136,8 +136,8 @@ void ValidatePublishing::setupPathsNames()
 }
 
 /*=================================================================================**//**
-                                                                                      * @bsimethod                                                        Majd Uddin 12/12
-                                                                                      +===============+===============+===============+===============+===============+======*/
+* @bsimethod                                                        Majd Uddin 12/12
++===============+===============+===============+===============+===============+======*/
 void ValidatePublishing::saveFileName()
 {
     //Saving file name to the XML report
@@ -162,8 +162,8 @@ DgnDbPtr ValidatePublishing::openDgnDb()
 }
 
 /*=================================================================================**//**
-                                                                                      * @bsimethod                                                        Majd Uddin 10/10
-                                                                                      +===============+===============+===============+===============+===============+======*/
+* @bsimethod                                                        Majd Uddin 10/10
++===============+===============+===============+===============+===============+======*/
 void ValidatePublishing::publishToDgnDb(bool NoAsserts)
 {
     //Building publisher command
@@ -201,8 +201,8 @@ void ValidatePublishing::publishToDgnDb(bool NoAsserts)
 }
 
 /*=================================================================================**//**
-                                                                                      * @bsimethod                                                        Majd Uddin 07/14
-                                                                                      +===============+===============+===============+===============+===============+======*/
+* @bsimethod                                                        Majd Uddin 07/14
++===============+===============+===============+===============+===============+======*/
 void ValidatePublishing::writeToXml()
 {
     double  publishTime = publishTimer.GetElapsedSeconds();

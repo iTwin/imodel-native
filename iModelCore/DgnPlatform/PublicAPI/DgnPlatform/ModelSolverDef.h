@@ -56,6 +56,7 @@ struct ModelSolverDef
         //! Construct a new Parameter
         DGNPLATFORM_EXPORT Parameter(Utf8CP n, Scope s, ECN::ECValueCR v);
         bool operator==(Parameter const& rhs) const {return m_scope == rhs.m_scope && m_name == rhs.m_name && m_value.Equals(rhs.m_value);}
+        bool operator!=(Parameter const& rhs) const {return !(*this == rhs);}
         //! Get the scope of this parameter
         Scope GetScope() const {return m_scope;}
         //! Get the name of this parameter
@@ -81,6 +82,7 @@ struct ModelSolverDef
         ParameterSet& operator=(ParameterSet const& rhs) {if (&rhs != this) m_parameters = rhs.m_parameters; return *this;}
 
         bool operator==(ParameterSet const& rhs) const {return m_parameters == rhs.m_parameters;}
+        bool operator!=(ParameterSet const& rhs) const {return !(*this == rhs);}
 
         DGNPLATFORM_EXPORT Json::Value ToJson() const;
 

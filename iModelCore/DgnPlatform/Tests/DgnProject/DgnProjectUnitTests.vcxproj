@@ -20,11 +20,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
+    <None Include="Published\DgnScriptTest.ts" />
+    <None Include="Published\TSG_Checker.ts" />
+    <None Include="Published\TSG_GeometryA.ts" />
+    <None Include="Published\TSG_GeometryB.ts" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
+    <ClCompile Include="BackDoor\DgnDbUtilities.cpp" />
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
-    <ClCompile Include="BackDoor\ElementCreateHelpers.cpp" />
+    <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
@@ -42,11 +47,13 @@
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
     <ClCompile Include="NonPublished\ECInstanceSelect_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementAspect_Test.cpp" />
+    <ClCompile Include="NonPublished\ElementDependencyGraph.cpp" />
     <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementMaterial_tests.cpp" />
     <ClCompile Include="NonPublished\ElementProperties.cpp" />
     <ClCompile Include="NonPublished\GeomStream_Test.cpp" />
+    <ClCompile Include="NonPublished\MissingHandler_Test.cpp" />
     <ClCompile Include="NonPublished\Polyface_Test.cpp" />
     <ClCompile Include="NonPublished\Raster_Test.cpp" />
     <ClCompile Include="NonPublished\RealityDataCache_Test.cpp" />
@@ -63,25 +70,32 @@
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeader_Test.cpp" />
+    <ClCompile Include="Published\AnnotationTable_Test.cpp" />
     <ClCompile Include="Published\AnnotationTestFixture.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
     <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
+    <ClCompile Include="Published\ChangeTestFixture.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
     <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
     <ClCompile Include="Published\DgnElement_Test.cpp" />
+    <ClCompile Include="Published\DgnImportContext_Test.cpp" />
     <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
     <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
     <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
     <ClCompile Include="Published\ElementGroup_Tests.cpp" />
+    <ClCompile Include="Published\FullTextSearch_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
+    <ClCompile Include="Published\LocksManager_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
+    <ClCompile Include="Published\MemoryManager_Test.cpp" />
     <ClCompile Include="Published\NamedVolume_Test.cpp" />
     <ClCompile Include="Published\NotificationManager_Test.cpp" />
     <ClCompile Include="Published\RealityDataCache_Test.cpp" />
+    <ClCompile Include="Published\Revision_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationSeed_Test.cpp" />
@@ -95,20 +109,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnDbUtilities.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\ElementCreateHelpers.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h" />
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
-    <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceElements.h" />
     <ClInclude Include="Performance\PerformanceElementsCRUDTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />
     <ClInclude Include="Published\AnnotationTestFixture.h" />
+    <ClInclude Include="Published\ChangeTestFixture.h" />
     <ClInclude Include="Published\DgnHandlersTests.h" />
-    <ClInclude Include="Published\GenericDgnModelTestFixture.h" />
+    <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h" />
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />
+    <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h" />
     <ClInclude Include="TestFixture\GeomHelper.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -168,7 +184,7 @@
     <NMakeReBuildCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest re dgnplatform:backdoor* dgnplatform:unittest* dgnplatform:gtest</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -a x64 -r dgnplatform -p dgnplatform:rungtest re dgnplatform:backdoor* dgnplatform:unittest* dgnplatform:gtest -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
-    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\Delivery\</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>DgnDbUnitTests.exe</NMakeOutput>
