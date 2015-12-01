@@ -669,7 +669,7 @@ StatusInt RangeGraphic::_ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
             {
-            // Do nothing, SimplifyViewDrawGeom will recurse...
+            // Do nothing, SimplifyGraphic will recurse...
             break;
             }
 

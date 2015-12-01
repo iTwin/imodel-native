@@ -100,7 +100,7 @@ void ChangeTestFixture::CreateDefaultView()
 
     PhysicalViewController viewController(*m_testDb, viewRow.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+    viewController.GetViewFlagsR().SetRenderMode(RenderMode::SmoothShade);
 
     for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
         viewController.ChangeCategoryDisplay(catId, true);

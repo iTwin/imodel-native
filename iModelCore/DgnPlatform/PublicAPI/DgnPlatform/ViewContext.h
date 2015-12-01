@@ -153,7 +153,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
 {
     friend struct ViewController;
-    friend struct SimplifyViewDrawGeom;
+    friend struct SimplifyGraphic;
 
 public:
 

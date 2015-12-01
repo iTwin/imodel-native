@@ -22,7 +22,7 @@ struct NullContext : ViewContext
     /*=================================================================================**//**
       @bsiclass                                                     Brien.Bastings  09/12
     +===============+===============+===============+===============+===============+======*/
-    struct NullGraphic : RefCounted<Render::Graphic>
+    struct NullGraphic : Render::Graphic
     {
         virtual void _ActivateMatSymb(Render::GraphicParamsCP matSymb) override {}
         virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
@@ -49,6 +49,7 @@ struct NullContext : ViewContext
         virtual void _AddDgnOle(Render::DgnOleDraw*) override {}
         virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
         virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
+        virtual void _AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) override {}
     #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         virtual void _PushClipStencil(Render::Graphic* qvElem) override {}
         virtual void _PopClipStencil() override {}

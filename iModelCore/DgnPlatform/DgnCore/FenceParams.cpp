@@ -16,9 +16,9 @@
 * Output to determine if element should be accepted for fence processing..
 * @bsiclass                                                     Brien.Bastings  09/04
 +===============+===============+===============+===============+===============+======*/
-struct FenceAcceptOutput : SimplifyViewDrawGeom
+struct FenceAcceptOutput : SimplifyGraphic
 {
-    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+    DEFINE_T_SUPER(SimplifyGraphic)
 protected:
 
 FenceParamsP    m_fp;
@@ -84,15 +84,15 @@ virtual void _SetDrawViewFlags (ViewFlags flags) override
         {
         case LocateSurfacesPref::Never:
             {
-            m_viewFlags.SetRenderMode(DgnRenderMode::Wireframe);
+            m_viewFlags.SetRenderMode(RenderMode::Wireframe);
             m_viewFlags.fill = false;
             break;
             }
 
         case LocateSurfacesPref::Always:
             {
-            if (DgnRenderMode::Wireframe == m_viewFlags.GetRenderMode())
-                m_viewFlags.SetRenderMode(DgnRenderMode::SmoothShade);
+            if (RenderMode::Wireframe == m_viewFlags.GetRenderMode())
+                m_viewFlags.SetRenderMode(RenderMode::SmoothShade);
             break;
             }
         }
@@ -367,7 +367,7 @@ StatusInt ProcessCurve(MSBsplineCurveCP curveP, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isWireframeDisplay(ViewContextR context)
     {
-    return (DgnRenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
+    return (RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2616,7 +2616,7 @@ static void     flushPartialCurve(bvector<CurveVectorPtr>* inside, bvector<Curve
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FenceParams::ParseAcceptedGeometry(bvector<CurveVectorPtr>* inside, bvector<CurveVectorPtr>* outside, GeometrySourceCR source)
     {
-    // TODO: Look into pushing the fence clip onto the output and having SimplifyViewDrawGeom do the clipping...
+    // TODO: Look into pushing the fence clip onto the output and having SimplifyGraphic do the clipping...
 #if defined (NEEDS_WORK_DGNITEM)
     CurveVectorPtr curveVector = ICurvePathQuery::ElementToCurveVector(eh);
 #else

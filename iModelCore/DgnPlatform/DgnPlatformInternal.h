@@ -38,7 +38,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <DgnPlatform/NullContext.h>
-#include <DgnPlatform/SimplifyViewDrawGeom.h>
+#include <DgnPlatform/SimplifyGraphic.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
 #include <DgnPlatform/SectionClip.h>

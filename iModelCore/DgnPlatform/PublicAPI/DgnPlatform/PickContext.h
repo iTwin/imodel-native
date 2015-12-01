@@ -9,7 +9,7 @@
 // __BENTLEY_INTERNAL_ONLY__
 
 #include    "Locate.h"
-#include    <DgnPlatform/SimplifyViewDrawGeom.h>
+#include    <DgnPlatform/SimplifyGraphic.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -24,9 +24,9 @@ enum TestLStylePhase
 * Output to determine if element should be accepted for fence processing..
 * @bsiclass                                                     Brien.Bastings  09/04
 +===============+===============+===============+===============+===============+======*/
-struct PickOutput : SimplifyViewDrawGeom
+struct PickOutput : SimplifyGraphic
 {
-    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+    DEFINE_T_SUPER(SimplifyGraphic)
 
 private:
     struct PickContext& m_pick;

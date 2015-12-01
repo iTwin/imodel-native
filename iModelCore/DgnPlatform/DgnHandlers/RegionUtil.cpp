@@ -371,7 +371,7 @@ void RegionGraphicsDrawGeom::_SetDrawViewFlags(ViewFlags flags)
     T_Super::_SetDrawViewFlags(flags);
 
     // Prefer "edge" geometry...
-    m_viewFlags.SetRenderMode(DgnRenderMode::Wireframe);
+    m_viewFlags.SetRenderMode(RenderMode::Wireframe);
 
     // Apply overrides to flags...
     m_viewFlags.styles = false;

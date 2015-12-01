@@ -12,7 +12,7 @@
 
 //__PUBLISH_SECTION_END__
 #include <DgnPlatform/NullContext.h>
-#include <DgnPlatform/SimplifyViewDrawGeom.h>
+#include <DgnPlatform/SimplifyGraphic.h>
 
 #include <Regions/regionsAPI.h>
 #include <Regions/rimsbsAPI.h>
@@ -105,9 +105,9 @@ struct RegionParams
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
 +===============+===============+===============+===============+===============+======*/
-struct RegionGraphicsDrawGeom : SimplifyViewDrawGeom
+struct RegionGraphicsDrawGeom : SimplifyGraphic
 {
-    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+    DEFINE_T_SUPER(SimplifyGraphic)
 private:
     RG_Header*          m_pRG;
     RIMSBS_Context*     m_pCurves;

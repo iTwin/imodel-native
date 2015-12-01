@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/SimplifyViewDrawGeom.cpp $
+|     $Source: DgnCore/SimplifyGraphic.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -22,7 +22,7 @@ struct Dgn::SimplifyDrawUnClippedProcessor
 struct FacetClipper : PolyfaceQuery::IClipToPlaneSetOutput
 {
 private:
-    SimplifyViewDrawGeom&   m_output;
+    SimplifyGraphic&   m_output;
     ClipVectorCP            m_clip;
     bool                    m_triangulate;
     bool                    m_filled;
@@ -32,7 +32,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-FacetClipper(SimplifyViewDrawGeom& output, bool filled) : m_output(output), m_filled(filled)
+FacetClipper(SimplifyGraphic& output, bool filled) : m_output(output), m_filled(filled)
     {
     m_clip = output.PerformClip() ? output.GetCurrClip() : NULL;
     m_triangulate = output.GetFacetOptions()->GetMaxPerFace() <= 3;
@@ -99,7 +99,7 @@ static void setDefaultFacetOptions(IFacetOptionsP options, double chordTolerance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyViewDrawGeom::SimplifyViewDrawGeom(bool addFacetNormals, bool addFacetParams)
+SimplifyGraphic::SimplifyGraphic(bool addFacetNormals, bool addFacetParams)
     {
     m_context = NULL;
 
@@ -124,7 +124,7 @@ SimplifyViewDrawGeom::SimplifyViewDrawGeom(bool addFacetNormals, bool addFacetPa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorCP SimplifyViewDrawGeom::GetCurrClip() 
+ClipVectorCP SimplifyGraphic::GetCurrClip() 
     {
     if (NULL == m_context)
         {
@@ -138,7 +138,7 @@ ClipVectorCP SimplifyViewDrawGeom::GetCurrClip()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   SimplifyViewDrawGeom::ProcessGeometryMapOrFacetSet(PolyfaceQueryCR polyfaceQuery, bool filled)
+StatusInt   SimplifyGraphic::ProcessGeometryMapOrFacetSet(PolyfaceQueryCR polyfaceQuery, bool filled)
     {
 #ifdef NEEDS_WORK_GEOMETRY_MAPS
     if (SUCCESS != ProcessGeometryMap(polyfaceQuery) &&
@@ -152,7 +152,7 @@ StatusInt   SimplifyViewDrawGeom::ProcessGeometryMapOrFacetSet(PolyfaceQueryCR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::PerformClip()
+bool SimplifyGraphic::PerformClip()
     {
     return _DoClipping() && NULL != GetCurrClip();
     }
@@ -160,7 +160,7 @@ bool SimplifyViewDrawGeom::PerformClip()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IPolyfaceConstructionPtr SimplifyViewDrawGeom::GetPolyfaceBuilder()
+IPolyfaceConstructionPtr SimplifyGraphic::GetPolyfaceBuilder()
     {
     _GetFacetOptions()->SetToleranceDistanceScale(1.0 / m_context->GetTransformClipStack().GetTransformScale());
     return IPolyfaceConstruction::New(*GetFacetOptions());
@@ -169,7 +169,7 @@ IPolyfaceConstructionPtr SimplifyViewDrawGeom::GetPolyfaceBuilder()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void processCurvePrimitives(SimplifyViewDrawGeom& drawGeom, CurveVectorCR curves, bool filled)
+static void processCurvePrimitives(SimplifyGraphic& drawGeom, CurveVectorCR curves, bool filled)
     {
     if (curves.IsUnionRegion() || curves.IsParityRegion())
         {
@@ -210,9 +210,18 @@ static void processCurvePrimitives(SimplifyViewDrawGeom& drawGeom, CurveVectorCR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) 
+    {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
+void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
     {
     BeAssert(numX==1 && numY==1 && "TBD: march over tiles");
 
@@ -229,7 +238,7 @@ void SimplifyViewDrawGeom::_AddMosaic(int numX, int numY, uintptr_t const* tileI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SimplifyViewDrawGeom::CurveVectorOutputProcessor(CurveVectorCR curves, bool filled)
+BentleyStatus SimplifyGraphic::CurveVectorOutputProcessor(CurveVectorCR curves, bool filled)
     {
     if (1 > curves.size() || SUCCESS == _ProcessCurveVector(curves, filled))
         return SUCCESS;
@@ -324,7 +333,7 @@ static bool computeInteriorPoint(DPoint3dR midPoint, CurveVectorCR curves, Inter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
+static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyGraphic* drawGeom)
     {
     if (1 > curves.size())
         return false;
@@ -445,7 +454,7 @@ static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, Simpl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
+static bool clipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVectorCR clip, SimplifyGraphic* drawGeom)
     {
     bvector<DPoint3d> const* points = primtive.GetPointStringCP ();
     bvector<DPoint3d>        insidePts;
@@ -472,7 +481,7 @@ static bool clipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
+static bool clipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyGraphic* drawGeom)
     {
     if (1 > curves.size())
         return false;
@@ -512,7 +521,7 @@ static bool clipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessCurveVector(CurveVectorCR curves, bool filled)
+void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR curves, bool filled)
     {
     CurveTopologyId::AddCurveVectorIds(curves, CurvePrimitiveId::Type_CurveVector, CurveTopologyId::FromCurveVector(), nullptr);
 
@@ -565,7 +574,7 @@ void SimplifyViewDrawGeom::ClipAndProcessCurveVector(CurveVectorCR curves, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessFacetSet(PolyfaceQueryCR facets, bool filled)
+void SimplifyGraphic::ClipAndProcessFacetSet(PolyfaceQueryCR facets, bool filled)
     {
     FacetClipper(*this, filled).ProcessPolyface(facets);
     }
@@ -573,7 +582,7 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSet(PolyfaceQueryCR facets, bool f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
+void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
     {
     IFacetTopologyTablePtr  facetsPtr;
 
@@ -641,7 +650,7 @@ void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessBody(ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor* unclippedOutputProcessor)
+void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor* unclippedOutputProcessor)
     {
     if (_ProcessAsBody(T_HOST.GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge)))
         {
@@ -678,10 +687,10 @@ void SimplifyViewDrawGeom::ClipAndProcessBody(ISolidKernelEntityCR entity, Simpl
 +===============+===============+===============+===============+===============+======*/
 struct UnClippedSurfaceProcessor : SimplifyDrawUnClippedProcessor
 {
-SimplifyViewDrawGeom*   m_drawGeom;
+SimplifyGraphic*   m_drawGeom;
 MSBsplineSurfaceCR      m_surface;
 
-UnClippedSurfaceProcessor(SimplifyViewDrawGeom* drawGeom, MSBsplineSurfaceCR surface) : m_drawGeom(drawGeom), m_surface(surface) {}
+UnClippedSurfaceProcessor(SimplifyGraphic* drawGeom, MSBsplineSurfaceCR surface) : m_drawGeom(drawGeom), m_surface(surface) {}
                                                                                                         
 virtual StatusInt _ProcessUnClipped() override {return m_drawGeom->ProcessSurface(m_surface);}
 
@@ -690,7 +699,7 @@ virtual StatusInt _ProcessUnClipped() override {return m_drawGeom->ProcessSurfac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessSurface(MSBsplineSurfaceCR surface)
+void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR surface)
     {
     // Give output a chance to handle un-clipped geometry directly...
     if (!PerformClip() && SUCCESS == _ProcessSurface(surface))
@@ -725,10 +734,10 @@ void SimplifyViewDrawGeom::ClipAndProcessSurface(MSBsplineSurfaceCR surface)
 +===============+===============+===============+===============+===============+======*/
 struct UnClippedSolidPrimitiveProcessor : SimplifyDrawUnClippedProcessor
 {
-SimplifyViewDrawGeom&   m_drawGeom;
+SimplifyGraphic&   m_drawGeom;
 ISolidPrimitiveCR       m_primitive;
 
-UnClippedSolidPrimitiveProcessor(SimplifyViewDrawGeom& drawGeom, ISolidPrimitiveCR primitive) : m_drawGeom(drawGeom), m_primitive(primitive) {}
+UnClippedSolidPrimitiveProcessor(SimplifyGraphic& drawGeom, ISolidPrimitiveCR primitive) : m_drawGeom(drawGeom), m_primitive(primitive) {}
 
 virtual StatusInt _ProcessUnClipped() override {return m_drawGeom.ProcessSolidPrimitive(m_primitive);}
 
@@ -737,7 +746,7 @@ virtual StatusInt _ProcessUnClipped() override {return m_drawGeom.ProcessSolidPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR primitive)
+void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR primitive)
     {
     // Give output a chance to handle un-clipped geometry directly...
     if (!PerformClip() && SUCCESS == ProcessSolidPrimitive(primitive))
@@ -812,7 +821,7 @@ static bool isPhysicallyClosed(ICurvePrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoint3dCR glyphOffset)
+void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoint3dCR glyphOffset)
     {
     GPArraySmartP  gpaText;
 
@@ -958,7 +967,7 @@ void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessText(TextStringCR text, double* zDepth)
+void SimplifyGraphic::ClipAndProcessText(TextStringCR text, double* zDepth)
     {
     Transform drawTrans = text.ComputeTransform();
     m_context->PushTransform(drawTrans);
@@ -977,11 +986,12 @@ void SimplifyViewDrawGeom::ClipAndProcessText(TextStringCR text, double* zDepth)
     m_context->PopTransformClip();
     }
 
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP)
+void SimplifyGraphic::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP)
     {
     if (!_DoSymbolGeometry())
         return;
@@ -1040,7 +1050,7 @@ static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyGraphic::_AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     
@@ -1051,7 +1061,7 @@ void SimplifyViewDrawGeom::_AddLineString(int numPoints, DPoint3dCP points, DPoi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
@@ -1062,7 +1072,7 @@ void SimplifyViewDrawGeom::_AddLineString2d(int numPoints, DPoint2dCP points, do
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyGraphic::_AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
 
@@ -1073,7 +1083,7 @@ void SimplifyViewDrawGeom::_AddPointString(int numPoints, DPoint3dCP points, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
@@ -1084,7 +1094,7 @@ void SimplifyViewDrawGeom::_AddPointString2d(int numPoints, DPoint2dCP points, d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
+void SimplifyGraphic::_AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
     {
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
 
@@ -1095,7 +1105,7 @@ void SimplifyViewDrawGeom::_AddShape(int numPoints, DPoint3dCP points, bool fill
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
@@ -1106,7 +1116,7 @@ void SimplifyViewDrawGeom::_AddShape2d(int numPoints, DPoint2dCP points, bool fi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
+void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
     {
     if (1 == usageFlags) // represents thickened line...
         {
@@ -1133,7 +1143,7 @@ void SimplifyViewDrawGeom::_AddTriStrip(int numPoints, DPoint3dCP points, int32_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d>  localPointsBuf3d(numPoints);
 
@@ -1144,7 +1154,7 @@ void SimplifyViewDrawGeom::_AddTriStrip2d(int numPoints, DPoint2dCP points, int3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
+void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
     {
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
     CurveVectorPtr  curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
@@ -1169,7 +1179,7 @@ void SimplifyViewDrawGeom::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool fi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
     {
     _AddArc(ellipse, isEllipse, filled, NULL);
     }
@@ -1177,7 +1187,7 @@ void SimplifyViewDrawGeom::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
+void SimplifyGraphic::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
     CurveVectorPtr  curve = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
 
@@ -1188,7 +1198,7 @@ void SimplifyViewDrawGeom::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
+void SimplifyGraphic::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
     {
     _AddBSplineCurve(bcurve, filled);
     }
@@ -1196,7 +1206,7 @@ void SimplifyViewDrawGeom::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool fill
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddCurveVector(CurveVectorCR curves, bool isFilled)
+void SimplifyGraphic::_AddCurveVector(CurveVectorCR curves, bool isFilled)
     {
     ClipAndProcessCurveVector(curves, isFilled);
     }
@@ -1204,7 +1214,7 @@ void SimplifyViewDrawGeom::_AddCurveVector(CurveVectorCR curves, bool isFilled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
+void SimplifyGraphic::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
     {
     _AddCurveVector(curves, isFilled); // Ignore zDepth...
     }
@@ -1212,7 +1222,7 @@ void SimplifyViewDrawGeom::_AddCurveVector2d(CurveVectorCR curves, bool isFilled
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
+void SimplifyGraphic::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
     {
     ClipAndProcessSolidPrimitive(primitive);
     }
@@ -1220,7 +1230,7 @@ void SimplifyViewDrawGeom::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddBSplineSurface(MSBsplineSurfaceCR surface)
+void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR surface)
     {
     ClipAndProcessSurface(surface);
     }
@@ -1228,7 +1238,7 @@ void SimplifyViewDrawGeom::_AddBSplineSurface(MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshData)
+void SimplifyGraphic::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshData)
     {
     int const*  vertIndex   = meshData.GetPointIndexCP();
     size_t      numIndices  = meshData.GetPointIndexCount();
@@ -1288,7 +1298,7 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshDa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
+void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
     {
     if (_ProcessAsFacets(true))
         {
@@ -1322,7 +1332,7 @@ void SimplifyViewDrawGeom::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::_AddBody(ISolidKernelEntityCR entity, double pixelSize)
+StatusInt SimplifyGraphic::_AddBody(ISolidKernelEntityCR entity, double pixelSize)
     {
     ClipAndProcessBody(entity, NULL);
     return SUCCESS;
@@ -1331,7 +1341,7 @@ StatusInt SimplifyViewDrawGeom::_AddBody(ISolidKernelEntityCR entity, double pix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddTextString(TextStringCR text, double* zDepth)
+void SimplifyGraphic::_AddTextString(TextStringCR text, double* zDepth)
     {
     AutoRestore <bool>  saveInTextDraw(&m_inTextDraw, true);
 
@@ -1354,7 +1364,7 @@ void SimplifyViewDrawGeom::_AddTextString(TextStringCR text, double* zDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddRaster3d (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
+void SimplifyGraphic::_AddRaster3d (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
     {
     DPoint3d    shapePoints[5];
 
@@ -1369,7 +1379,7 @@ void SimplifyViewDrawGeom::_AddRaster3d (DPoint3d const points[4], int pitch, in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
+void SimplifyGraphic::_AddRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
     {
     std::valarray<DPoint3d> localPointsBuf3d(4);
 
@@ -1380,7 +1390,7 @@ void SimplifyViewDrawGeom::_AddRaster2d (DPoint2d const points[4], int pitch, in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddDgnOle(DgnOleDraw* ole)
+void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
     {
 
     // NEEDSWORK...Draw Shape...
@@ -1389,11 +1399,11 @@ void SimplifyViewDrawGeom::_AddDgnOle(DgnOleDraw* ole)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_AddPointCloud(PointCloudDraw* drawParams)
+void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
     {
     enum {MAX_POINTS_PER_BATCH = 300};
 
-    uint32_t        numPoints = drawParams->GetNumPoints();
+    uint32_t        numPoints = drawParams->_GetNumPoints();
 
     if (0 == numPoints)
         return;
@@ -1402,8 +1412,8 @@ void SimplifyViewDrawGeom::_AddPointCloud(PointCloudDraw* drawParams)
 
     offsets.Init(0, 0, 0);
 
-    bool        haveOffsets = drawParams->GetOrigin(&offsets);
-    DPoint3dCP  dPoints = drawParams->GetDPoints();
+    bool        haveOffsets = drawParams->_GetOrigin(&offsets);
+    DPoint3dCP  dPoints = drawParams->_GetDPoints();
 
     if (NULL != dPoints)
         {
@@ -1435,7 +1445,7 @@ void SimplifyViewDrawGeom::_AddPointCloud(PointCloudDraw* drawParams)
     DPoint3dP   pointBuffer = (DPoint3dP)_alloca(maxPointsPerIter * sizeof (*pointBuffer));
 
     // Convert float points to DPoints and add offset
-    FPoint3dCP fPoints = drawParams->GetFPoints();
+    FPoint3dCP fPoints = drawParams->_GetFPoints();
     FPoint3dCP currIn = fPoints;
 
     while (numPoints > 0)
@@ -1460,7 +1470,7 @@ void SimplifyViewDrawGeom::_AddPointCloud(PointCloudDraw* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicParamsR     SimplifyViewDrawGeom::GetCurrentMatSymb(GraphicParamsR matSymb)
+GraphicParamsR     SimplifyGraphic::GetCurrentMatSymb(GraphicParamsR matSymb)
     {
     matSymb = *m_context->GetGraphicParams();
     Render::OvrGraphicParams ovr =  *m_context->GetOverrideMatSymb();
@@ -1489,7 +1499,7 @@ GraphicParamsR     SimplifyViewDrawGeom::GetCurrentMatSymb(GraphicParamsR matSym
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::IsRangeTotallyInside(DRange3dCR range)
+bool SimplifyGraphic::IsRangeTotallyInside(DRange3dCR range)
     {
     return ClipPlaneContainment_StronglyInside == m_context->GetTransformClipStack().ClassifyRange(range);
     }
@@ -1497,7 +1507,7 @@ bool SimplifyViewDrawGeom::IsRangeTotallyInside(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::IsRangeTotallyInsideClip(DRange3dCR range)
+bool SimplifyGraphic::IsRangeTotallyInsideClip(DRange3dCR range)
     { 
     DPoint3d    corners[8];
     
@@ -1509,7 +1519,7 @@ bool SimplifyViewDrawGeom::IsRangeTotallyInsideClip(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints)
+bool SimplifyGraphic::ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints)
     { 
     if (NULL == GetCurrClip())
         return true;
@@ -1524,7 +1534,7 @@ bool SimplifyViewDrawGeom::ArePointsTotallyInsideClip(DPoint3dCP points, int nPo
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints)
+bool SimplifyGraphic::ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints)
     { 
     if (NULL == GetCurrClip())
         return false;
@@ -1540,7 +1550,7 @@ bool SimplifyViewDrawGeom::ArePointsTotallyOutsideClip(DPoint3dCP points, int nP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial() const
+MaterialCP SimplifyGraphic::GetCurrentMaterial() const
     {
     if (m_inTextDraw)
         return NULL;
@@ -1554,7 +1564,7 @@ MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MaterialMapCP SimplifyViewDrawGeom::GetCurrentGeometryMap() const
+MaterialMapCP SimplifyGraphic::GetCurrentGeometryMap() const
     {
     MaterialCP      material;
     MaterialMapCP   map;
@@ -1576,7 +1586,7 @@ MaterialMapCP SimplifyViewDrawGeom::GetCurrentGeometryMap() const
 +===============+===============+===============+===============+===============+======*/
 struct      GeometryMapFacetOptionsMark
 {
-    SimplifyViewDrawGeom&       m_drawGeom;
+    SimplifyGraphic&       m_drawGeom;
     bool                        m_saveParamsRequired;
 
     ~GeometryMapFacetOptionsMark() { m_drawGeom.GetFacetOptions()->SetParamsRequired(m_saveParamsRequired); }
@@ -1584,7 +1594,7 @@ struct      GeometryMapFacetOptionsMark
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryMapFacetOptionsMark(SimplifyViewDrawGeom& drawGeom) : m_drawGeom(drawGeom)
+GeometryMapFacetOptionsMark(SimplifyGraphic& drawGeom) : m_drawGeom(drawGeom)
     { 
     m_saveParamsRequired = drawGeom.GetFacetOptions()->GetParamsRequired();
     drawGeom.GetFacetOptions()->SetParamsRequired(true);
@@ -1612,7 +1622,7 @@ static double calculateFacetParamArea(ElementProjectionInfo& projectionInfo, Tra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::ProcessGeometryMap(PolyfaceQueryCR facets)
+StatusInt SimplifyGraphic::ProcessGeometryMap(PolyfaceQueryCR facets)
     {
     MaterialCP          material;
     MaterialMapCP       geometryMap;
@@ -1918,7 +1928,7 @@ static double   s_facetTileAreaMinimum   = (.01 * .01);      // Minimum portion 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines(IPolyfaceConstructionR builder, DPoint3dCP points, DPoint2dCP params, bool const* edgeVisible, size_t nPoints, bvector<DPoint3d>& outlinePoints, bvector<int32_t>& outlineIndices)
+StatusInt SimplifyGraphic::ProcessFacetTextureOutlines(IPolyfaceConstructionR builder, DPoint3dCP points, DPoint2dCP params, bool const* edgeVisible, size_t nPoints, bvector<DPoint3d>& outlinePoints, bvector<int32_t>& outlineIndices)
     {
     DRange2d            paramRange;
     DVec2d              paramDelta;
@@ -1984,7 +1994,7 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines(IPolyfaceConstructio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::ProcessTextureOutlines(PolyfaceQueryCR facets)
+StatusInt SimplifyGraphic::ProcessTextureOutlines(PolyfaceQueryCR facets)
     {
     MaterialCP              material;
     MaterialMapCP           patternMap;
@@ -2041,7 +2051,7 @@ StatusInt SimplifyViewDrawGeom::ProcessTextureOutlines(PolyfaceQueryCR facets)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    SimplifyViewDrawGeom::StrokeGeometryMap(CurveVectorCR curves)
+void    SimplifyGraphic::StrokeGeometryMap(CurveVectorCR curves)
     {
     if (NULL == GetCurrentGeometryMap())
         return;
@@ -2058,7 +2068,7 @@ void    SimplifyViewDrawGeom::StrokeGeometryMap(CurveVectorCR curves)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SimplifyViewDrawGeom::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, 0); }
+BentleyStatus SimplifyGraphic::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, 0); }
 
 
 

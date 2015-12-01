@@ -250,7 +250,7 @@ void DgnDbTestFixture::setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementA
     PhysicalViewController viewController (dgnDb, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+    viewController.GetViewFlagsR().SetRenderMode(RenderMode::SmoothShade);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(model.GetModelId(), true);
 

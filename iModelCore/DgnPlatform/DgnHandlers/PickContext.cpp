@@ -51,8 +51,8 @@ void PickOutput::_SetDrawViewFlags(ViewFlags flags)
     T_Super::_SetDrawViewFlags(flags);
 
     // NOTE: Treat LocateSurfacesPref::Never as LocateSurfacesPref::ByView, still want to hide edge hits that aren't visible, will truncate returned list to remove surfaces...
-    if ((LocateSurfacesPref::Always == m_options.GetLocateSurfaces()) && (DgnRenderMode::Wireframe == m_viewFlags.GetRenderMode()))
-        m_viewFlags.SetRenderMode(DgnRenderMode::SmoothShade);
+    if ((LocateSurfacesPref::Always == m_options.GetLocateSurfaces()) && (RenderMode::Wireframe == m_viewFlags.GetRenderMode()))
+        m_viewFlags.SetRenderMode(RenderMode::SmoothShade);
     }
 #endif
 
@@ -73,11 +73,11 @@ static bool edgesVisible(HitDetailCP hit)
 
     switch (viewFlags.GetRenderMode())
         {
-        case DgnRenderMode::SolidFill:
-        case DgnRenderMode::HiddenLine:
+        case RenderMode::SolidFill:
+        case RenderMode::HiddenLine:
             return viewFlags.hiddenEdges;
 
-        case DgnRenderMode::SmoothShade:
+        case RenderMode::SmoothShade:
             return viewFlags.visibleEdges && viewFlags.hiddenEdges;
 
         default:
@@ -250,8 +250,8 @@ void PickContext::AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
 
         switch (viewFlags.GetRenderMode())
             {
-            case DgnRenderMode::SolidFill:
-            case DgnRenderMode::HiddenLine:
+            case RenderMode::SolidFill:
+            case RenderMode::HiddenLine:
                 {
                 if (!viewFlags.hiddenEdges)
                     break; // Accept, hidden edges are never displayed...
@@ -259,7 +259,7 @@ void PickContext::AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
                 break;
                 }
 
-            case DgnRenderMode::SmoothShade:
+            case RenderMode::SmoothShade:
                 {
                 if (!(viewFlags.visibleEdges && viewFlags.hiddenEdges))
                     break; // Accept, hidden edges are never displayed...
@@ -578,7 +578,7 @@ static void PrintVector(char *name, DVec3d vector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isWireframeDisplay(ViewContextR context)
     {
-    return (DgnRenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
+    return (RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     }
 
 /*---------------------------------------------------------------------------------**//**

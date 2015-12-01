@@ -243,15 +243,15 @@ $(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp
 
 $(CoreObjs)SymbolContext$(oext) :                   $(DgnCoreDir)SymbolContext.cpp   $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h  $(LevelApiDepends) ${MultiCompileDepends}
 
-$(CoreObjs)RangeContext$(oext) :                    $(DgnCoreDir)RangeContext.cpp $(DgnPlatformAPISrc)NullContext.h $(DgnPlatformAPISrc)SimplifyViewDrawGeom.h $(HandlerDepends) ${MultiCompileDepends}
+$(CoreObjs)RangeContext$(oext) :                    $(DgnCoreDir)RangeContext.cpp $(DgnPlatformAPISrc)NullContext.h $(DgnPlatformAPISrc)SimplifyGraphic.h $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SnapContext$(oext) :                     $(DgnCoreDir)SnapContext.cpp $(HandlerDepends) ${MultiCompileDepends}
 
-$(CoreObjs)SimplifyViewDrawGeom$(oext) :            $(DgnCoreDir)SimplifyViewDrawGeom.cpp $(contextDepends) $(DgnPlatformAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
+$(CoreObjs)SimplifyGraphic$(oext) :                 $(DgnCoreDir)SimplifyGraphic.cpp $(contextDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
 
 $(CoreObjs)IFacetTopologyTable$(oext) :             $(DgnCoreDir)IFacetTopologyTable.cpp $(contextDepends) ${MultiCompileDepends}
 
-$(CoreObjs)DrawAreaPattern$(oext) :                 $(DgnCoreDir)DrawAreaPattern.cpp   $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
+$(CoreObjs)DrawAreaPattern$(oext) :                 $(DgnCoreDir)DrawAreaPattern.cpp   $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
 
 $(CoreObjs)ClipUtil$(oext) :                        $(DgnCoreDir)ClipUtil.cpp $(DgnPlatformAPISrc)ClipUtil.h ${MultiCompileDepends}
 
@@ -343,7 +343,7 @@ $(CoreObjs)DgnHandlers$(oext) :                     $(DgnHandlersDir)DgnHandlers
 
 $(CoreObjs)HitDetail$(oext) :                       $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
 
-$(CoreObjs)PickContext$(oext) :                     $(DgnHandlersDir)PickContext.cpp $(DgnPlatformAPISrc)HitDetail.h $(contextDepends) $(DgnPlatformAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
+$(CoreObjs)PickContext$(oext) :                     $(DgnHandlersDir)PickContext.cpp $(DgnPlatformAPISrc)HitDetail.h $(contextDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
 
 $(CoreObjs)RegionUtil$(oext) :                      $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) ${MultiCompileDepends}
 

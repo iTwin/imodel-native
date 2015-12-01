@@ -2084,7 +2084,7 @@ void CookElemDisplayParams()
         return;
 
     // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change...
-    if (FillDisplay::ByView == m_context.GetCurrentGeometryParams().GetFillDisplay() && DgnRenderMode::Wireframe == m_flags.GetRenderMode() && !m_flags.fill)
+    if (FillDisplay::ByView == m_context.GetCurrentGeometryParams().GetFillDisplay() && RenderMode::Wireframe == m_flags.GetRenderMode() && !m_flags.fill)
         m_context.GetCurrentGeometryParams().SetFillDisplay(FillDisplay::Never);
 
     m_context.CookGeometryParams();
@@ -2831,7 +2831,7 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, 
 void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId category, ViewFlags flags) const
     {
     bool        isQVis = context.GetCurrentGraphicR().IsQuickVision();
-    bool        isQVWireframe = (isQVis && DgnRenderMode::Wireframe == flags.GetRenderMode());
+    bool        isQVWireframe = (isQVis && RenderMode::Wireframe == flags.GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);
     DrawState   state(context, flags);
@@ -3498,7 +3498,7 @@ struct ElementGeometryCollectionContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
-    RefCountedPtr<SimplifyViewDrawGeom> m_output;
+    RefCountedPtr<SimplifyGraphic> m_output;
 
 public:
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const&) override {return m_output;}
@@ -3508,7 +3508,7 @@ public:
         m_purpose = DrawPurpose::CaptureGeometry;
         m_wantMaterials = true; // Setup material in GeometryParams...
 
-        m_output = new SimplifyViewDrawGeom();
+        m_output = new SimplifyGraphic();
         m_currGraphic = m_output;
         m_output->SetViewContext(this);
 

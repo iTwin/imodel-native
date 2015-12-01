@@ -10,9 +10,9 @@
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  06/09
 +===============+===============+===============+===============+===============+======*/
-struct ElementGraphicsDrawGeom : SimplifyViewDrawGeom
+struct ElementGraphicsDrawGeom : SimplifyGraphic
 {
-    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+    DEFINE_T_SUPER(SimplifyGraphic)
 private:
     IElementGraphicsProcessor*  m_dropObj;
 
@@ -135,7 +135,7 @@ virtual void _AddTextString(TextStringCR text, double* zDepth) override
 void ModifyDrawViewFlags(ViewFlagsR flags)
     {
     // Prefer "higher level" geometry from legacy types...
-    flags.SetRenderMode(DgnRenderMode::SmoothShade);
+    flags.SetRenderMode(RenderMode::SmoothShade);
 
     // Make sure linestyles drawn for drop...esp. when dropping linestyles!
     flags.styles = true;

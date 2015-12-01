@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/SimplifyViewDrawGeom.h $
+|     $Source: PublicAPI/DgnPlatform/SimplifyGraphic.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,7 +19,7 @@ struct  SimplifyDrawUnClippedProcessor;
 //! Re-interpret complex geometry types as simple types
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
-struct SimplifyViewDrawGeom : RefCounted<Render::Graphic>
+struct SimplifyGraphic : Render::Graphic
 {
 protected:
     ViewContextP        m_context;
@@ -86,10 +86,11 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
     DGNPLATFORM_EXPORT virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override;
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) override;
 
 public:
-    DGNPLATFORM_EXPORT SimplifyViewDrawGeom(bool addNormals = false, bool addParameters = false);
-    virtual ~SimplifyViewDrawGeom() {}
+    DGNPLATFORM_EXPORT SimplifyGraphic(bool addNormals = false, bool addParameters = false);
+    virtual ~SimplifyGraphic() {}
 
     ViewContextP GetViewContext() {return m_context;};
     void SetViewContext(ViewContextP context) {m_context = context;} // NOTE: Required!!!
@@ -154,6 +155,6 @@ public:
     StatusInt                       ProcessFacetTextureOutlines(IPolyfaceConstructionR, DPoint3dCP points, DPoint2dCP params, bool const* edgeHidden, size_t nPoints, bvector<DPoint3d>&, bvector<int32_t>&);
     DGNPLATFORM_EXPORT void         StrokeGeometryMap(CurveVectorCR curves);
 #endif
-}; // SimplifyViewDrawGeom
+}; // SimplifyGraphic
 
 END_BENTLEY_DGN_NAMESPACE

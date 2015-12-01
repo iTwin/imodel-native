@@ -52,7 +52,7 @@ enum class StandardView
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-enum class DgnRenderMode : uint8_t
+enum class RenderMode : uint8_t
     {
     Wireframe           = 0,
     CrossSection        = 1,
@@ -77,7 +77,7 @@ enum class DgnRenderMode : uint8_t
 struct ViewFlags
     {
 private:
-    DgnRenderMode m_renderMode;
+    RenderMode m_renderMode;
 
 public:
     uint32_t    constructions:1;    //!< Shows or hides construction class geometry.
@@ -103,8 +103,8 @@ public:
     uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
     uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
 
-    void SetRenderMode (DgnRenderMode value) {m_renderMode = value;}
-    DgnRenderMode GetRenderMode() const {return m_renderMode;}
+    void SetRenderMode (RenderMode value) {m_renderMode = value;}
+    RenderMode GetRenderMode() const {return m_renderMode;}
 
     DGNPLATFORM_EXPORT void InitDefaults();
     DGNPLATFORM_EXPORT void ToBaseJson(JsonValueR) const;

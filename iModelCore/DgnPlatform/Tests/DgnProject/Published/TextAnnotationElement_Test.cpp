@@ -101,7 +101,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         DrawingViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+        viewController.GetViewFlagsR().SetRenderMode(RenderMode::Wireframe);
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 
@@ -260,7 +260,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         PhysicalViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+        viewController.GetViewFlagsR().SetRenderMode(RenderMode::Wireframe);
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 

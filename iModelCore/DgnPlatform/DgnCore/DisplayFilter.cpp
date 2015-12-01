@@ -153,7 +153,7 @@ DisplayFilter::OperatorPtr     DisplayFilter::CreateViewFlagTest (ViewFlag viewF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayFilter::OperatorPtr     DisplayFilter::CreateRenderModeTest (DgnRenderMode renderMode, TestMode testMode)
+DisplayFilter::OperatorPtr     DisplayFilter::CreateRenderModeTest (RenderMode renderMode, TestMode testMode)
     { 
     ViewParameterFilterData       data (static_cast<uint32_t>(renderMode), testMode, ViewParameterFilterData::Parameter_RenderMode);
 

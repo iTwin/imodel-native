@@ -130,9 +130,9 @@ public:
 * Context to calculate the range of an element.
 * @bsiclass                                                     KeithBentley    01/02
 +===============+===============+===============+===============+===============+======*/
-struct RangeGraphic : SimplifyViewDrawGeom
+struct RangeGraphic : SimplifyGraphic
 {
-    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+    DEFINE_T_SUPER(SimplifyGraphic)
 private:
     ElemRangeCalc m_elRange;
 

@@ -85,7 +85,7 @@ void ViewFlags::From3dJson(JsonValueCR val)
     noClipVolume = val[VIEWFLAG_noClipVolume].asBool();
     ignoreLighting = val[VIEWFLAG_ignoreLighting].asBool();
 
-    m_renderMode = DgnRenderMode(val[VIEWFLAG_renderMode].asUInt());
+    m_renderMode = RenderMode(val[VIEWFLAG_renderMode].asUInt());
     }
 
 /*---------------------------------------------------------------------------------**//**

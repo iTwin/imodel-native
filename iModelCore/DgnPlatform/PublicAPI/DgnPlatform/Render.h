@@ -404,10 +404,10 @@ public:
     //! Get line style information.
     LineStyleInfoCP GetLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return m_styleInfo.get();}
 
-    //! Get element weight.
+    //! Get line weight.
     uint32_t GetWeight() const {BeAssert(m_appearanceOverrides.m_weight || m_resolved); return m_weight;}
 
-    //! Get element transparency.
+    //! Get transparency.
     double GetTransparency() const {return m_elmTransparency;}
 
     //! Get fill/gradient transparency.
@@ -416,7 +416,7 @@ public:
     //! Get render material.
     DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId; }
 
-    //! Get element display priority (2d only).
+    //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
 };
 
@@ -740,9 +740,6 @@ struct Graphic : RefCounted<NonCopyableClass>
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
 
-    struct Overrides : RefCountedBase {};
-    DEFINE_REF_COUNTED_PTR(Overrides)
-
 protected:
     DgnViewportCP m_vp;
     double        m_pixelSize;
@@ -775,6 +772,7 @@ protected:
     virtual void _AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
+    virtual void _AddSubGraphic(Graphic&, TransformCR, GraphicParams&) = 0;
     virtual ~Graphic() {}
 
 public:

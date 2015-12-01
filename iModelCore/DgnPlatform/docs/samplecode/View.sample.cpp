@@ -31,7 +31,7 @@ DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DgnModelId baseModelId, Dg
         PhysicalViewController viewController(db, viewId);
         viewController.SetStandardViewRotation(StandardView::Iso);
         viewController.LookAtVolume(viewExtents);
-        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+        viewController.GetViewFlagsR().SetRenderMode(RenderMode::SmoothShade);
 
         for (DgnCategoryId category : categories)
             viewController.ChangeCategoryDisplay(category, true);
