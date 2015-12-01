@@ -124,6 +124,9 @@ enum class LockStatus : int
     AlreadyHeld, //!< A requested lock was already held by another briefcase
     SyncError, //!< Failed to sync local locks with server
     InvalidResponse, //!< Response from server not understood
+    PendingTransactions, //!< An operation requires local changes to be committed or abandoned
+    LockUsed, //!< A lock cannot be relinquished because the associated object has been modified
+    CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
 };
 
 /** @cond BENTLEY_SDK_Publisher */
