@@ -512,7 +512,7 @@ void PropertyPath::Clear()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String PropertyPath::ToString(bool includeArrayIndexes /*= true*/) const
+Utf8String PropertyPath::ToString(bool escape, bool includeArrayIndexes /*= true*/) const
     {
     Utf8String str;
     bool isFirstLoc = true;
@@ -520,8 +520,14 @@ Utf8String PropertyPath::ToString(bool includeArrayIndexes /*= true*/) const
         {
         if (!isFirstLoc)
             str.append(".");
+        
+        if (escape)
+            str.append("[");
 
         str.append(loc.ToString(includeArrayIndexes));
+
+        if (escape)
+            str.append("]");
 
         isFirstLoc = false;
         }

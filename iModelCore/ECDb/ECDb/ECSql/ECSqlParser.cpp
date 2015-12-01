@@ -30,6 +30,11 @@ BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb
     if (ecsqlParseTreeRaw == nullptr || !error.empty())
         {
         GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str ());
+        if (ecsqlParseTreeRaw)
+            {
+            delete ecsqlParseTreeRaw;
+            ecsqlParseTreeRaw = nullptr;
+            }
         return ERROR;
         }
 
@@ -37,65 +42,120 @@ BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb
         {
         BeAssert (false && "ECSQL grammar has changed, but parser wasn't adopted.");
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL grammar has changed, but parser wasn't adopted.");
+        if (ecsqlParseTreeRaw)
+            {
+            delete ecsqlParseTreeRaw;
+            ecsqlParseTreeRaw = nullptr;
+            }
+
         return ERROR;
         }
 
     switch (ecsqlParseTreeRaw->getKnownRuleID())
         {
         case OSQLParseNode::insert_statement:
-        {
-        std::unique_ptr<InsertStatementExp> exp = nullptr;
-        if (SUCCESS != parse_insert_statement(exp, ecsqlParseTreeRaw))
-            return ERROR;
+            {
+            std::unique_ptr<InsertStatementExp> exp = nullptr;
+            if (SUCCESS != parse_insert_statement(exp, ecsqlParseTreeRaw))
+                {
+                if (ecsqlParseTreeRaw)
+                    {
+                    delete ecsqlParseTreeRaw;
+                    ecsqlParseTreeRaw = nullptr;
+                    }
 
-        ecsqlParseTree = move(exp);
-        break;
-        }
+                return ERROR;
+                }
+            ecsqlParseTree = move(exp);
+            break;
+            }
 
         case OSQLParseNode::update_statement_searched:
-        {
-        std::unique_ptr<UpdateStatementExp> exp = nullptr;
-        if (SUCCESS != parse_update_statement_searched(exp, ecsqlParseTreeRaw))
-            return ERROR;
+            {
+            std::unique_ptr<UpdateStatementExp> exp = nullptr;
+            if (SUCCESS != parse_update_statement_searched(exp, ecsqlParseTreeRaw))
+                {
+                if (ecsqlParseTreeRaw)
+                    {
+                    delete ecsqlParseTreeRaw;
+                    ecsqlParseTreeRaw = nullptr;
+                    }
 
-        ecsqlParseTree = move(exp);
-        break;
-        }
+                return ERROR;
+                }
+            ecsqlParseTree = move(exp);
+            break;
+            }
 
         case OSQLParseNode::delete_statement_searched:
-        {
-        std::unique_ptr<DeleteStatementExp> exp = nullptr;
-        if (SUCCESS != parse_delete_statement_searched(exp, ecsqlParseTreeRaw))
-            return ERROR;
-
-        ecsqlParseTree = move(exp);
-        break;
-        }
+            {
+            std::unique_ptr<DeleteStatementExp> exp = nullptr;
+            if (SUCCESS != parse_delete_statement_searched(exp, ecsqlParseTreeRaw))
+                {
+                if (ecsqlParseTreeRaw)
+                    {
+                    delete ecsqlParseTreeRaw;
+                    ecsqlParseTreeRaw = nullptr;
+                    }
+                return ERROR;
+                }
+            ecsqlParseTree = move(exp);
+            break;
+            }
 
         case OSQLParseNode::select_statement:
-        {
-        std::unique_ptr<SelectStatementExp> exp = nullptr;
-        if (SUCCESS != parse_select_statement(exp, ecsqlParseTreeRaw))
-            return ERROR;
+            {
+            std::unique_ptr<SelectStatementExp> exp = nullptr;
+            if (SUCCESS != parse_select_statement(exp, ecsqlParseTreeRaw))
+                {
+                if (ecsqlParseTreeRaw)
+                    {
+                    delete ecsqlParseTreeRaw;
+                    ecsqlParseTreeRaw = nullptr;
+                    }
 
-        ecsqlParseTree = move(exp);
-        break;
-        }
+                return ERROR;
+                }
+            ecsqlParseTree = move(exp);
+            break;
+            }
 
         case OSQLParseNode::manipulative_statement:
             GetIssueReporter().Report(ECDbIssueSeverity::Error, "Manipulative statements are not supported.");
+            if (ecsqlParseTreeRaw)
+                {
+                delete ecsqlParseTreeRaw;
+                ecsqlParseTreeRaw = nullptr;
+                }
             return ERROR;
 
         default:
-            BeAssert (false && "Not a valid statement");
+            BeAssert(false && "Not a valid statement");
             GetIssueReporter().Report(ECDbIssueSeverity::Error, "Not a valid statement");
+            if (ecsqlParseTreeRaw)
+                {
+                delete ecsqlParseTreeRaw;
+                ecsqlParseTreeRaw = nullptr;
+                }
             return ERROR;
         };
 
+
     if (ecsqlParseTree == nullptr)
         {
+        if (ecsqlParseTreeRaw)
+            {
+            delete ecsqlParseTreeRaw;
+            ecsqlParseTreeRaw = nullptr;
+            }
         BeAssert(ecsqlParseTree != nullptr);
         return ERROR;
+        }
+
+    if (ecsqlParseTreeRaw)
+        {
+        delete ecsqlParseTreeRaw;
+        ecsqlParseTreeRaw = nullptr;
         }
 
     //resolve types and references now that first pass parsing is done and all nodes are available

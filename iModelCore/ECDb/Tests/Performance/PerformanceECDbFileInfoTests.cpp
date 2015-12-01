@@ -186,9 +186,9 @@ protected:
         Utf8String ecsql;
         if (count >= 0)
             ecsql.Sprintf("DELETE FROM ONLY %s WHERE ECInstanceId IN (SELECT OwnerId FROM ONLY ecdbf.FileInfoOwnership WHERE OwnerECClassId=%lld LIMIT %d)",
-                          ecclassECSqlToken, ownerClassId, count);
+                          ecclassECSqlToken.c_str(), ownerClassId, count);
         else
-            ecsql.Sprintf("DELETE FROM ONLY %s", ecclassECSqlToken);
+            ecsql.Sprintf("DELETE FROM ONLY %s", ecclassECSqlToken.c_str());
 
         ECSqlStatement deleteOwnerStmt;
         if (ECSqlStatus::Success != deleteOwnerStmt.Prepare(GetECDb(), ecsql.c_str()))

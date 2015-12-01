@@ -870,72 +870,77 @@ void LogKeyPropertyRetrievalError(IssueReporter const& issueReporter, Utf8CP err
 BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColumn const*& keyPropertyColumn, ECRelationshipConstraintCR constraint, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd) const
     {
     keyPropertyColumn = nullptr;
-    ECClassCP keyPropertyContainer = nullptr;
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     if (constraintClasses.size() == 0)
         return SUCCESS;
 
-    Utf8StringCP foundPropName = nullptr;
-    bool isMappable = constraintClasses.size() == 1;
+    ECDbSqlColumn const* keyPropCol = nullptr;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
         bvector<Utf8String> const& keys = constraintClass->GetKeys();
         const size_t keyCount = keys.size();
-        if (keyCount >= 1)
+        if (keyCount == 0)
             {
-            foundPropName = &keys[0];
-            keyPropertyContainer = &constraintClass->GetClass();
-            if (keyCount > 1 || foundPropName->empty())
-                isMappable = false;
+            if (keyPropCol == nullptr)
+                continue;
+            
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECRelationshipConstraint Key properties must be specified on all classes of the constraint or on none.",
+                                         relClass, constraintEnd);
+            return ERROR;
+            }
+            
+        if (keyCount > 1 || keys[0].empty())
+            {
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys that are empty or made up of multiple properties.",
+                                         relClass, constraintEnd);
+            return ERROR;
+            }
+      
+        IClassMap const* classMap = GetECDbMap().GetClassMap(constraintClass->GetClass());
+        if (classMap == nullptr || classMap->GetMapStrategy().IsNotMapped())
+            {
+            BeAssert(false && "Class on relationship end is not mapped. This should have been caught before.");
+            return ERROR;
+            }
 
-            break;
+        Utf8CP keyPropAccessString = keys[0].c_str();
+        PropertyMap const* keyPropertyMap = classMap->GetPropertyMap(keyPropAccessString);
+        if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
+            {
+            Utf8String error;
+            error.Sprintf("Key property '%s' does not exist or is not mapped.", keyPropAccessString);
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
+            return ERROR;
+            }
+
+        ECSqlTypeInfo typeInfo(keyPropertyMap->GetProperty());
+        if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
+            {
+            Utf8String error;
+            error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports Key properties that have an integral or string data type.", keyPropAccessString);
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
+            return ERROR;
+            }
+
+        std::vector<ECDbSqlColumn const*> columns;
+        keyPropertyMap->GetColumns(columns);
+        if (columns.size() != 1)
+            {
+            BeAssert(false && "Key property map is expected to map to a single column.");
+            return ERROR;
+            }
+
+        if (keyPropCol == nullptr)
+            keyPropCol = columns[0];
+        else if (keyPropCol != columns[0])
+            {
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "All ECRelationshipConstraint Keys must point to the same property for a given constraint.",
+                                         relClass, constraintEnd);
+            return ERROR;
             }
         }
 
-    if (foundPropName == nullptr)
-        return SUCCESS;
-
-    if (!isMappable)
-        {
-        LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb only supports Key properties if the constraint consists of a single ECClass and only a single Key property is defined for that ECClass.",
-                                     relClass, constraintEnd);
-        return ERROR;
-        }
-
-    IClassMap const* classMap = GetECDbMap().GetClassMap(*keyPropertyContainer);
-    if (classMap == nullptr || classMap->GetMapStrategy().IsNotMapped())
-        {
-        BeAssert(false && "Class on relationship end is not mapped. This should have been caught before.");
-        return ERROR;
-        }
-
-    PropertyMap const* keyPropertyMap = classMap->GetPropertyMap(foundPropName->c_str());
-    if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
-        {
-        Utf8String error;
-        error.Sprintf("Key property '%s' does not exist or is not mapped.", foundPropName->c_str());
-        LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
-        return ERROR;
-        }
-
-    ECSqlTypeInfo typeInfo(keyPropertyMap->GetProperty());
-    if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
-        {
-        Utf8String error;
-        error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports Key properties that have an integral or string data type.", foundPropName->c_str());
-        LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
-        return ERROR;
-        }
-
-    std::vector<ECDbSqlColumn const*> columns;
-    keyPropertyMap->GetColumns(columns);
-    if (columns.size() != 1)
-        {
-        BeAssert(false && "Key property map is expected to map to a single column.");
-        return ERROR;
-        }
-
-    keyPropertyColumn = columns[0];
+    keyPropertyColumn = keyPropCol;
     return SUCCESS;
     }
 

@@ -927,7 +927,7 @@ void ParameterExp::_DoToECSql(Utf8StringR ecsql) const
         return;
         }
 
-    ecsql.append(":").append(m_parameterName);
+    ecsql.append(":[").append(m_parameterName).append("]");
     }
 
 //-----------------------------------------------------------------------------------------
