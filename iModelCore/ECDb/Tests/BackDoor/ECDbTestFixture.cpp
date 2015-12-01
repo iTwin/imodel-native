@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
-#include "PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -44,23 +43,23 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount, ECDb::OpenParams openParams)
+ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, int instanceCountPerClass, ECDb::OpenParams openParams)
     {
     if (m_ecdb.IsDbOpen())
         m_ecdb.CloseDb();
 
-    bpair<WString, int> seedFileKey(schemaECXmlFileName.c_str(), perClassRowCount);
+    bpair<WString, int> seedFileKey(schemaECXmlFileName.c_str(), instanceCountPerClass);
 
     BeFileName seedFilePath;
     auto seedIter = s_seedECDbs.find(seedFileKey);
     if (s_seedECDbs.end() == seedIter)
         {
         Utf8String seedFileName;
-        seedFileName.Sprintf("seed_%s_%d", schemaECXmlFileName.GetNameUtf8().c_str(), perClassRowCount);
+        seedFileName.Sprintf("seed_%s_%d", schemaECXmlFileName.GetNameUtf8().c_str(), instanceCountPerClass);
         seedFileName.ReplaceAll(".", "_");
         seedFileName.append(".ecdb");
 
-        CreateECDb(seedFilePath, seedFileName.c_str(), schemaECXmlFileName, perClassRowCount);
+        CreateECDb(seedFilePath, seedFileName.c_str(), schemaECXmlFileName, instanceCountPerClass);
         s_seedECDbs[seedFileKey] = seedFilePath.GetNameUtf8();
         }
     else
@@ -73,7 +72,7 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, int perClassRowCount, ECDb::OpenParams openParams) const
+ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, int instanceCountPerClass, ECDb::OpenParams openParams) const
     {
     if (m_ecdb.IsDbOpen())
         m_ecdb.CloseDb();
@@ -81,7 +80,7 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, 
     BeFileName ecdbPath;
 
     {
-    if (BE_SQLITE_OK != CreateECDb(ecdbPath, ecdbFileName, schema, perClassRowCount))
+    if (BE_SQLITE_OK != CreateECDb(ecdbPath, ecdbFileName, schema, instanceCountPerClass))
         return GetECDb();
     }
 
@@ -110,14 +109,26 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
 // @bsimethod                                     Krischan.Eberle    10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount)
+BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName, BeFileNameCR schemaECXmlFileName, int instanceCountPerClass)
     {
-    Initialize();
+    ECDb ecdb;
+    if (SUCCESS != CreateECDb(ecdb, fileName))
+        return ERROR;
 
-    ECDbTestProject testProject;
-    ECDb& ecdb = testProject.Create(fileName, schemaECXmlFileName.c_str(), perClassRowCount);
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema = nullptr;
+    ECDbTestUtility::ReadECSchemaFromDisk(schema, schemaReadContext, schemaECXmlFileName);
+    if (schema == nullptr)
+        return ERROR;
 
-    filePath.AppendUtf8(ecdb.GetDbFileName());
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions(true, false)))
+        return ERROR;
+
+    ecdb.ClearECDbCache();
+    Populate(ecdb, instanceCountPerClass);
+    ecdb.SaveChanges();
+
+    filePath.AssignUtf8(ecdb.GetDbFileName());
     return SUCCESS;
     }
 
@@ -125,13 +136,13 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
 // @bsimethod                                     Krischan.Eberle    10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName, SchemaItem const& schemaItem, int perClassRowCount)
+BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName, SchemaItem const& schemaItem, int instanceCountPerClass)
     {
     ECDb ecdb;
     if (SUCCESS != CreateECDb(ecdb, fileName))
         return ERROR;
 
-    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
     for (Utf8StringCR schemaXml : schemaItem.m_schemaXmlList)
@@ -144,23 +155,7 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
         return ERROR;
 
     ecdb.ClearECDbCache();
-
-    if (perClassRowCount > 0)
-        {
-        ECSchemaList schemas;
-        if (SUCCESS != ecdb.Schemas().GetECSchemas(schemas, true))
-            return ERROR;
-
-        for (ECSchemaCP schema : schemas)
-            {
-            if (schema->IsStandardSchema() || schema->IsSystemSchema())
-                continue;
-
-            if (SUCCESS != Populate(ecdb, *schema, perClassRowCount))
-                return ERROR;
-            }
-        }
-
+    Populate(ecdb, instanceCountPerClass);
     ecdb.SaveChanges();
     filePath.AppendUtf8(ecdb.GetDbFileName());
     return SUCCESS;
@@ -188,6 +183,30 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
 // @bsimethod                                     Krischan.Eberle  11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, int instanceCountPerClass)
+    {
+    if (instanceCountPerClass > 0)
+        {
+        ECSchemaList schemas;
+        if (SUCCESS != ecdb.Schemas().GetECSchemas(schemas, true))
+            return ERROR;
+
+        for (ECSchemaCP schema : schemas)
+            {
+            if (schema->IsStandardSchema() || schema->IsSystemSchema())
+                continue;
+
+            Populate(ecdb, *schema, instanceCountPerClass);
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle  11/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, ECSchemaCR schema, int instanceCountPerClass)
     {
     for (ECClassCP ecClass : schema.GetClasses())
@@ -197,7 +216,7 @@ BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, ECSchemaCR schema, int inst
 
         ECInstanceInserter inserter(ecdb, *ecClass);
         if (!inserter.IsValid())
-            return ERROR;
+            continue;
 
         for (int i = 0; i < instanceCountPerClass; i++)
             {

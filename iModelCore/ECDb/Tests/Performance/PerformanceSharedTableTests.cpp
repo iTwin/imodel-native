@@ -24,12 +24,6 @@ struct PerformanceSharedTableTests: ECDbTestFixture
         static const int s_initialInstanceCount = 1000000;
         static const int s_opCount = 500000;
 
-
-        static Utf8String GenerateTestValue()
-            {
-            Utf8String val; val.Sprintf("%d", DateTime::GetCurrentTimeUtc().GetDayOfYear()); return val;
-            }
-
         //---------------------------------------------------------------------------------------
         // @bsimethod                                      Affan.Khan                  10/15
         //+---------------+---------------+---------------+---------------+---------------+------
@@ -52,7 +46,7 @@ struct PerformanceSharedTableTests: ECDbTestFixture
 
             if (mustCreateSeed)
                 {
-                auto const schema_joinedTable =
+                SchemaItem testSchema(
                     "<?xml version='1.0' encoding='utf-8'?>"
                     "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
                     "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
@@ -92,26 +86,9 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                     "        <ECProperty propertyName='B3l' typeName='long'/>"
                     "        <ECProperty propertyName='B4s' typeName='string'/>"
                     "    </ECClass>"
-                    "</ECSchema>";
+                    "</ECSchema>");
 
-                {
-                ECDbTestProject seedProject;
-                ECSchemaPtr seedSchema;
-                seedProject.Create(seedFileName.c_str());
-                s_seedFilePath.AssignUtf8(seedProject.GetECDbPath());
-                auto readContext = ECSchemaReadContext::CreateContext();
-                ECSchema::ReadFromXmlString(seedSchema, schema_joinedTable, *readContext);
-                if (seedSchema.IsNull())
-                    return ERROR;
-
-                auto importStatus = seedProject.GetECDb().Schemas().ImportECSchemas(readContext->GetCache());
-                if (importStatus != BentleyStatus::SUCCESS)
-                    return ERROR;
-                }
-
-                ECDb seed;
-                if (BE_SQLITE_OK != seed.OpenBeSQLiteDb(s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)))
-                    return ERROR;
+                ECDbR seed = SetupECDb(seedFileName.c_str(), testSchema);
 
                 ECSqlStatement stmt;
                 if (ECSqlStatus::Success != stmt.Prepare(seed, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"))
@@ -161,8 +138,6 @@ struct PerformanceSharedTableTests: ECDbTestFixture
             LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalTestDescr, actualOpCount);
             }
     };
-
-int const PerformanceSharedTableTests::s_opCount;
 
 BeFileName PerformanceSharedTableTests::s_seedFilePath;
 
