@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE_EC 
 USING_NAMESPACE_BENTLEY_EC
 
-#define DEFAULT_CATEGORY_NAME "VolumeItemDefaultCategory"
+#define VOLUME_DEFAULT_CATEGORY_NAME "VolumeCategory"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -38,14 +38,14 @@ NamedVolume::NamedVolume(CreateParams const& params) : T_Super(params)
 // static
 DgnCategoryId NamedVolume::GetDefaultCategoryId(DgnDbR db)
     {
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(DEFAULT_CATEGORY_NAME, db);
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(VOLUME_DEFAULT_CATEGORY_NAME, db);
     if (categoryId.IsValid())
         return categoryId;
 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::LightGrey());
 
-    DgnCategory category(DgnCategory::CreateParams(db, DEFAULT_CATEGORY_NAME, DgnCategory::Scope::Physical, DgnCategory::Rank::System));
+    DgnCategory category(DgnCategory::CreateParams(db, VOLUME_DEFAULT_CATEGORY_NAME, DgnCategory::Scope::Physical, DgnCategory::Rank::System));
     category.Insert(appearance);
     
     categoryId = category.GetCategoryId();

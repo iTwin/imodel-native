@@ -37,8 +37,8 @@ public:
         double m_height;
 
     protected:
-        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnClassId classId, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId id = DgnElementId(), DgnElementId parent = DgnElementId()) :
-            T_Super(db, modelId, classId, category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, id, parent), m_origin(origin), m_shape(shape), m_height(height) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnClassId classId, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), Utf8CP label = nullptr, DgnElementId parent = DgnElementId()) :
+            T_Super(db, modelId, classId, category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height) {}
 
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params, DgnCategoryId(), Placement3d()) {}
 
@@ -54,7 +54,7 @@ public:
         //! @param id ElementId
         //! @param parent Parent ElementId
         CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId id = DgnElementId(), DgnElementId parent = DgnElementId()) :
-            T_Super(db, modelId, NamedVolume::QueryClassId(db), category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, id, parent), m_origin(origin), m_shape(shape), m_height(height)
+            T_Super(db, modelId, NamedVolume::QueryClassId(db), category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, "", parent), m_origin(origin), m_shape(shape), m_height(height)
             {}
 
         CreateParams(CreateParams const& params) : T_Super(params), m_origin(params.m_origin), m_shape(params.m_shape), m_height(params.m_height) {}
