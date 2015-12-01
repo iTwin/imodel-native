@@ -12,7 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Scene::_AddGraphic(Graphic& graphic)
     {
-    m_scene.push_back(Node(graphic));
+    m_scene.push_back(&graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,7 +22,7 @@ void Render::Scene::_DropGraphic(Graphic& graphic)
     {
     for (auto it=m_scene.begin(); it != m_scene.end(); ++it)
         {
-        if (it->m_graphic.get() == &graphic)
+        if (it->get() == &graphic)
             {
             m_scene.erase(it);
             return;

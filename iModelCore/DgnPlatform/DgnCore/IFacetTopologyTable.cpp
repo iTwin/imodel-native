@@ -386,7 +386,7 @@ FaceAttachment::FaceAttachment ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
+FaceAttachment::FaceAttachment (GeometryParamsCR sourceParams)
     {
     m_categoryId    = sourceParams.GetCategoryId();
     m_subCategoryId = sourceParams.GetSubCategoryId();
@@ -404,7 +404,7 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
+void FaceAttachment::ToElemDisplayParams (GeometryParamsR elParams) const
     {
     elParams.SetCategoryId(m_categoryId);
     elParams.SetSubCategoryId(m_subCategoryId);
@@ -420,7 +420,7 @@ void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb, DgnViewportR vp) const
+void FaceAttachment::ToGraphicParams (GraphicParamsR elMatSymb, DgnViewportR vp) const
     {
     if (!m_subCategoryId.IsValid())
         return;

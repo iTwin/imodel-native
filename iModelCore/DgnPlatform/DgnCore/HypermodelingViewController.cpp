@@ -514,7 +514,7 @@ void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) cons
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_pass == PASS_Hatch)
         {
-        OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
         overrideMatSymb->SetLineColor (m_symbology.hatchColor);
         overrideMatSymb->SetFillColor (m_symbology.hatchColor);
         overrideMatSymb->SetFillTransparency (m_symbology.hatchColor.GetAlpha());
@@ -530,7 +530,7 @@ void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) cons
         }
     else if (m_pass == PASS_DrawingBackground)
         {
-        OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
         overrideMatSymb->SetLineColor (m_symbology.drawingBackgroundColor);
         overrideMatSymb->SetFillColor (m_symbology.drawingBackgroundColor);
         overrideMatSymb->SetFlags (overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
@@ -539,7 +539,7 @@ void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) cons
         context.GetCurrentGraphicR ().ActivateOverrideMatSymb (overrideMatSymb);
     else
         {
-        OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
         overrideMatSymb->SetFlags (MATSYMB_OVERRIDE_None);
         context.GetCurrentGraphicR ().ActivateOverrideMatSymb (overrideMatSymb);
         }

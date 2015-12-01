@@ -55,7 +55,7 @@ public:
     DgnModelR GetDefaultModel() { return *m_defaultModelP; }
 
     DgnElementCPtr InsertElement(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnDbStatus* result = nullptr, DgnElement::Code elementCode = DgnElement::Code());
-    DgnElementCPtr InsertElement(Render::ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
+    DgnElementCPtr InsertElement(Render::GeometryParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     DgnElementId InsertElement2d(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
 

@@ -367,9 +367,9 @@ void TextString::ApplyTransform(TransformCR transform)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
 //---------------------------------------------------------------------------------------
-void TextString::GetGlyphSymbology(ElemDisplayParamsR params) const
+void TextString::GetGlyphSymbology(GeometryParamsR params) const
     {
-    // Generally speaking, use the ElemDisplayParams that the user already set up...
+    // Generally speaking, use the GeometryParams that the user already set up...
     
     // Though we may actually care about weight...
     params.SetWeight((m_style.IsBold() && m_style.GetFont().CanDrawWithLineWeight()) ? DEFAULT_BOLD_WEIGHT : 0);
@@ -393,7 +393,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
 
     GraphicR output = context.GetCurrentGraphicR();
 
-    ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
+    GeometryParamsR elParams = context.GetCurrentGeometryParams();
     GetGlyphSymbology(elParams);
     elParams.SetWeight(0); // IsBold should not affect underline.
 
@@ -410,7 +410,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
     pts[1].z = 0.0;
 
     context.PushTransform(ComputeTransform());
-    context.CookDisplayParams();
+    context.CookGeometryParams();
     output.AddLineString(2, pts, NULL);
     context.PopTransformClip();
     }

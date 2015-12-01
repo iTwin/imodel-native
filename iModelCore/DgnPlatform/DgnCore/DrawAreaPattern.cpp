@@ -504,7 +504,7 @@ bool Is3dCellSymbol()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ApplyElemDisplayParams(ElemDisplayParamsCR elParams)
+void ApplyElemDisplayParams(GeometryParamsCR elParams)
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     ElementPropertiesSetter remapper;
@@ -535,7 +535,7 @@ struct PatternHelper
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
     {
-    ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
+    GeometryParamsR elParams = context.GetCurrentGeometryParams();
 
     if (PatternParamsModifierFlags::None != ((PatternParamsModifierFlags::Color | PatternParamsModifierFlags::Weight | PatternParamsModifierFlags::Style) & params.modifiers))
         {
@@ -552,7 +552,7 @@ static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
         }
 
     // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing it doesn't affect them...
-    context.CookDisplayParams();
+    context.CookGeometryParams();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,7 +728,7 @@ static MaterialPtr CreateGeometryMapMaterial(ViewContextR context, PatternSymbol
 
     // NOTE: Need to setup pattern symbology on cell element and hide 0 length lines used as pattern cell extent markers, etc.
     PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyElemDisplayParams(*context.GetCurrentDisplayParams());
+    symbCell.ApplyElemDisplayParams(*context.GetCurrentGeometryParams());
 
     DRange2d range;
     DisplayHandler::GetDPRange(&range.low, &eh.GetElementCP ()->hdr.dhdr.range);
@@ -845,14 +845,14 @@ double          scale
         }
 
     // NOTE: Colors aren't stored in geometry map for point cells, setup active matsymb color from pattern if different than element color...
-    if (symbCell.IsPointCellSymbol() && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentDisplayParams()->GetLineColor() != params->color)
+    if (symbCell.IsPointCellSymbol() && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentGeometryParams()->GetLineColor() != params->color)
         {
         // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing line color doesn't affect them...
-        context.GetCurrentDisplayParams()->SetLineColor(params->color);
-        context.CookDisplayParams();
+        context.GetCurrentGeometryParams()->SetLineColor(params->color);
+        context.CookGeometryParams();
         }
 
-    OvrMatSymbP  ovrMatSymb = context.GetOverrideMatSymb();
+    OvrGraphicParamsP  ovrMatSymb = context.GetOverrideMatSymb();
 
     ovrMatSymb->SetFillTransparency(0xff);
     ovrMatSymb->SetMaterial(appData->GetMaterial());
@@ -955,7 +955,7 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 break;
                 }
 
-            cellTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetCurrentDisplayParams().GetNetDisplayPriority());
+            cellTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetCurrentGeometryParams().GetNetDisplayPriority());
             cellTrans.Multiply(tileCorners, cellCorners, 8);
 
             if (ClipPlaneContainment_StronglyOutside == context.GetTransformClipStack().ClassifyPoints(tileCorners, 8))
@@ -1027,7 +1027,7 @@ DPoint3dR       origin
 
     // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
     PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyElemDisplayParams(*context.GetCurrentDisplayParams());
+    symbCell.ApplyElemDisplayParams(*context.GetCurrentGeometryParams());
 
     bool        drawFiltered = false;
     Transform   orgTrans;
@@ -1103,7 +1103,7 @@ ViewContextR    context
     size_t        nGot, sourceCount = pGPA->GetGraphicsPointCount();
     DPoint3d      localPoints[MAX_GPA_STROKES];
     bool          is3d = context.Is3dView();
-    double        priority = context.GetCurrentDisplayParams().GetNetDisplayPriority();
+    double        priority = context.GetCurrentGeometryParams().GetNetDisplayPriority();
     GraphicsPoint gp;
 
     for (size_t i=0; i < sourceCount;)
@@ -1590,7 +1590,7 @@ static void correctPatternOffsetAndRotation(PatternParamsR params, DPoint3dR ori
     // TR#261083 - We didn't store good pattern offsets for complex shapes, grouped holes, and assoc regions. Offset was from the
     //             lower left corner of range and might not lie in the plane of the geometry. Getting the CurveVector now to check
     //             the origin is ok (since it's cached) and even though we don't have the legacy complex element issue anymore, the
-    //             PatternParams could still be from an OvrMatSymb where the offset/rotation aren't explicitly set per-boundary.
+    //             PatternParams could still be from an OvrGraphicParams where the offset/rotation aren't explicitly set per-boundary.
     DVec3d      planeNormal;
     DPoint3d    planePt;
 
@@ -1632,7 +1632,7 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
     PatternParamsCP params = m_ovrMatSymb.GetPatternParams();
 
     if (nullptr == params)
-        params = m_elemMatSymb.GetPatternParams();
+        params = m_graphicParams.GetPatternParams();
 
     if (nullptr == params)
         return;

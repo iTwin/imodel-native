@@ -1005,8 +1005,8 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
             for (FaceAttachment attachment : faceAttachmentsVec)
                 {
                 // NOTE: First entry is base symbology, it's redundant with GeomStream, storing it makes implementing Get easier/cleaner...
-                FB::DPoint2d       uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to ElemDisplayParams/ElemMatSymb...
-                ElemDisplayParams  faceParams;
+                FB::DPoint2d       uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to GeometryParams/GraphicParams...
+                GeometryParams  faceParams;
 
                 attachment.ToElemDisplayParams(faceParams);
 
@@ -1060,7 +1060,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
         if (nullptr != attachments)
             {
             bvector<PolyfaceHeaderPtr> polyfaces;
-            bvector<ElemDisplayParams> params;
+            bvector<GeometryParams> params;
 
             WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
 
@@ -1102,7 +1102,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
         if (nullptr != attachments)
             {
             bvector<CurveVectorPtr> curves;
-            bvector<ElemDisplayParams> params;
+            bvector<GeometryParams> params;
 
             WireframeGeomUtil::CollectCurves(entity, m_db, curves, params, true, false);
 
@@ -1144,7 +1144,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
         if (nullptr != attachments)
             {
             bvector<CurveVectorPtr> curves;
-            bvector<ElemDisplayParams> params;
+            bvector<GeometryParams> params;
 
             WireframeGeomUtil::CollectCurves(entity, m_db, curves, params, false, true);
 
@@ -1216,7 +1216,7 @@ void ElementGeomIO::Writer::Append(DgnGeomPartId geomPart, TransformCP geomToEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams, bool ignoreSubCategory)
+void ElementGeomIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubCategory)
     {
     bool useColor  = !elParams.IsLineColorFromSubCategoryAppearance();
     bool useWeight = !elParams.IsWeightFromSubCategoryAppearance();
@@ -1308,7 +1308,7 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams, bool ignoreSubC
     // NEEDSWORK_WIP_MATERIAL - Not sure what we need to store per-geometry...
     //                          I assume we'll still need optional uv settings even when using sub-category material.
     //                          So we need a way to check for that case as we can't call GetMaterial
-    //                          when !useMaterial because ElemDisplayParams::Resolve hasn't been called...
+    //                          when !useMaterial because GeometryParams::Resolve hasn't been called...
     bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
 
     if (useMaterial)
@@ -1517,7 +1517,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
         {
         FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
 
-        ElemDisplayParams faceParams;
+        GeometryParams faceParams;
 
         if (fbSymb->useColor())
             faceParams.SetLineColor(ColorDef(fbSymb->color()));
@@ -1579,7 +1579,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnGeomPartId& geomPart, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elParams) const
+bool ElementGeomIO::Reader::Get(Operation const& egOp, GeometryParamsR elParams) const
     {
     bool changed = false;
 
@@ -1601,7 +1601,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
                 if (!categoryId.IsValid())
                     categoryId = DgnSubCategory::QueryCategoryId(subCategoryId, m_db);
 
-                elParams = ElemDisplayParams();
+                elParams = GeometryParams();
                 elParams.SetCategoryId(categoryId);
                 elParams.SetSubCategoryId(subCategoryId);
                 changed = true;
@@ -1748,7 +1748,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
             {
             auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
 
-            // NEEDSWORK_WIP_MATERIAL - Set geometry specific material settings of ElemDisplayParams...
+            // NEEDSWORK_WIP_MATERIAL - Set geometry specific material settings of GeometryParams...
             if (ppfb->useMaterial())
                 {
                 DgnMaterialId material((uint64_t)ppfb->materialId());
@@ -2044,9 +2044,9 @@ DrawState(ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InitDisplayParams(DgnCategoryId category)
     {
-    ElemDisplayParamsR  dispParams = m_context.GetCurrentDisplayParams();
+    GeometryParamsR  dispParams = m_context.GetCurrentGeometryParams();
 
-    dispParams = ElemDisplayParams();
+    dispParams = GeometryParams();
     dispParams.SetCategoryId(category);
 
     m_symbologyChanged = true;
@@ -2057,10 +2057,10 @@ void InitDisplayParams(DgnCategoryId category)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SetElemDisplayParams(DgnSubCategoryId subCategory)
     {
-    ElemDisplayParamsR  dispParams = m_context.GetCurrentDisplayParams();
+    GeometryParamsR  dispParams = m_context.GetCurrentGeometryParams();
     DgnCategoryId       category = dispParams.GetCategoryId(); // Preserve current category...
 
-    dispParams = ElemDisplayParams();
+    dispParams = GeometryParams();
     dispParams.SetCategoryId(category);
     dispParams.SetSubCategoryId(subCategory);
 
@@ -2084,10 +2084,10 @@ void CookElemDisplayParams()
         return;
 
     // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change...
-    if (FillDisplay::ByView == m_context.GetCurrentDisplayParams().GetFillDisplay() && DgnRenderMode::Wireframe == m_flags.GetRenderMode() && !m_flags.fill)
-        m_context.GetCurrentDisplayParams().SetFillDisplay(FillDisplay::Never);
+    if (FillDisplay::ByView == m_context.GetCurrentGeometryParams().GetFillDisplay() && DgnRenderMode::Wireframe == m_flags.GetRenderMode() && !m_flags.fill)
+        m_context.GetCurrentGeometryParams().SetFillDisplay(FillDisplay::Never);
 
-    m_context.CookDisplayParams();
+    m_context.CookGeometryParams();
     m_symbologyChanged = false;
     }
 
@@ -2096,7 +2096,7 @@ void CookElemDisplayParams()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsGeometryVisible()
     {
-    switch (m_context.GetCurrentDisplayParams().GetGeometryClass())
+    switch (m_context.GetCurrentGeometryParams().GetGeometryClass())
         {
         case DgnGeometryClass::Construction:
             if (!m_flags.constructions)
@@ -2117,7 +2117,7 @@ bool IsGeometryVisible()
     if (nullptr == m_context.GetViewport())
         return true;
 
-    DgnSubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams().GetSubCategoryId());
+    DgnSubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentGeometryParams().GetSubCategoryId());
 
     if (appearance.IsInvisible())
         return false;
@@ -2860,7 +2860,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
             case ElementGeomIO::OpCode::Pattern:
             case ElementGeomIO::OpCode::Material:
                 {
-                if (!reader.Get(egOp, context.GetCurrentDisplayParams()))
+                if (!reader.Get(egOp, context.GetCurrentGeometryParams()))
                     break;
 
                 state.ChangedElemDisplayParams();
@@ -2912,15 +2912,15 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        context.GetCurrentGraphicR().AddPointString2d(nPts, pts, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().AddPointString2d(nPts, pts, context.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
                         break;
 
                     case FB::BoundaryType_Open:
-                        context.GetCurrentGraphicR().AddLineString2d(nPts, pts, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().AddLineString2d(nPts, pts, context.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        context.GetCurrentGraphicR().AddShape2d(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().AddShape2d(nPts, pts, FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay(), context.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
                         break;
                     }
                 break;
@@ -2954,7 +2954,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                         break;
 
                     case FB::BoundaryType_Closed:
-                        context.GetCurrentGraphicR().AddShape(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), nullptr);
+                        context.GetCurrentGraphicR().AddShape(nPts, pts, FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay(), nullptr);
                         break;
                     }
                 break;
@@ -2978,16 +2978,16 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 if (!context.Is3dView())
                     {
                     if (FB::BoundaryType_Closed != boundary)
-                        context.GetCurrentGraphicR().AddArc2d(arc, false, false, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().AddArc2d(arc, false, false, context.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
                     else
-                        context.GetCurrentGraphicR().AddArc2d(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().AddArc2d(arc, true, FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay(), context.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
                     context.GetCurrentGraphicR().AddArc(arc, false, false, nullptr);
                 else
-                    context.GetCurrentGraphicR().AddArc(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), nullptr);
+                    context.GetCurrentGraphicR().AddArc(arc, true, FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay(), nullptr);
                 break;
                 }
 
@@ -3010,7 +3010,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 
                 if (!context.Is3dView())
                     {
-                    context.GetCurrentGraphicR().AddCurveVector2d(*curvePtr, false, context.GetCurrentDisplayParams().GetNetDisplayPriority());
+                    context.GetCurrentGraphicR().AddCurveVector2d(*curvePtr, false, context.GetCurrentGeometryParams().GetNetDisplayPriority());
                     break;
                     }
 
@@ -3034,11 +3034,11 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 
                 if (!context.Is3dView())
                     {
-                    context.GetCurrentGraphicR().AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority());
+                    context.GetCurrentGraphicR().AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay(), context.GetCurrentGeometryParams().GetNetDisplayPriority());
                     break;
                     }
 
-                context.GetCurrentGraphicR().AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay());
+                context.GetCurrentGraphicR().AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay());
                 break;
                 }
 
@@ -3055,7 +3055,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                     break;
 
                 state.CookElemDisplayParams();
-                context.GetCurrentGraphicR().AddPolyface(meshData, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay());
+                context.GetCurrentGraphicR().AddPolyface(meshData, FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay());
                 break;
                 };
 
@@ -3279,7 +3279,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
 
     context.SetCurrentGeomSource(this);
 
-    // Get the ElemDisplayParams for this hit from the GeomStream...
+    // Get the GeometryParams for this hit from the GeomStream...
     ElementGeometryCollection collection(*this);
 
     collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh);
@@ -3306,11 +3306,11 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
                 }
             }
 
-        context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
+        context.GetCurrentGeometryParams() = collection.GetElemDisplayParams();
 
         if (SubSelectionMode::Segment != hit.GetSubSelectionMode())
             {
-            context.CookDisplayParams();
+            context.CookGeometryParams();
             context.ResetContextOverrides();
 
             context.PushTransform(collection.GetGeometryToWorld());
@@ -3394,7 +3394,7 @@ void ElementGeometryCollection::Iterator::ToNext()
             case ElementGeomIO::OpCode::Pattern:
             case ElementGeomIO::OpCode::Material:
                 {
-                reader.Get(egOp, m_context->GetCurrentDisplayParams()); // Update active ElemDisplayParams...
+                reader.Get(egOp, m_context->GetCurrentGeometryParams()); // Update active GeometryParams...
                 break;
                 }
 
@@ -3482,8 +3482,8 @@ void ElementGeometryCollection::Iterator::ToNext()
                     break;
                     }
 
-                if (m_context->GetCurrentDisplayParams().GetCategoryId().IsValid())
-                    m_context->GetCurrentDisplayParams().Resolve(*m_context); // Resolve sub-category appearance...
+                if (m_context->GetCurrentGeometryParams().GetCategoryId().IsValid())
+                    m_context->GetCurrentGeometryParams().Resolve(*m_context); // Resolve sub-category appearance...
                 return;
                 }
             }
@@ -3506,13 +3506,13 @@ public:
     ElementGeometryCollectionContext(DgnDbR db)
         {
         m_purpose = DrawPurpose::CaptureGeometry;
-        m_wantMaterials = true; // Setup material in ElemDisplayParams...
+        m_wantMaterials = true; // Setup material in GeometryParams...
 
         m_output = new SimplifyViewDrawGeom();
         m_currGraphic = m_output;
         m_output->SetViewContext(this);
 
-        m_currDisplayParams = ElemDisplayParams();
+        m_currGeometryParams = GeometryParams();
         SetDgnDb(db);
         }
 
@@ -3521,9 +3521,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParamsCR ElementGeometryCollection::GetElemDisplayParams()
+GeometryParamsCR ElementGeometryCollection::GetElemDisplayParams()
     {
-    return m_context->GetCurrentDisplayParams();
+    return m_context->GetCurrentGeometryParams();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3592,7 +3592,7 @@ ElementGeometryCollection::ElementGeometryCollection(GeometrySourceCR source)
     m_dataSize = source.GetGeomStream().GetSize();
     m_elemToWorld = source.GetPlacementTransform();
     m_context = new ElementGeometryCollectionContext(source.GetSourceDgnDb());
-    m_context->GetCurrentDisplayParams().SetCategoryId(source.GetCategoryId());
+    m_context->GetCurrentGeometryParams().SetCategoryId(source.GetCategoryId());
     m_context->PushTransform(m_elemToWorld);
     }
 
@@ -3753,7 +3753,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometrySourceR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append(DgnSubCategoryId subCategoryId)
     {
-    ElemDisplayParams elParams;
+    GeometryParams elParams;
 
     elParams.SetCategoryId(m_elParams.GetCategoryId()); // Preserve current category...
     elParams.SetSubCategoryId(subCategoryId);
@@ -3764,7 +3764,7 @@ bool ElementGeometryBuilder::Append(DgnSubCategoryId subCategoryId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append(ElemDisplayParamsCR elParams)
+bool ElementGeometryBuilder::Append(GeometryParamsCR elParams)
     {
     if (!m_elParams.GetCategoryId().IsValid())
         return false;
@@ -4199,7 +4199,7 @@ public:
         m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_transform(Transform::FromIdentity()) {}
 
     virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
-    virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override { m_builder.Append(params); }
+    virtual void _AnnounceElemDisplayParams(GeometryParamsCR params) override { m_builder.Append(params); }
     virtual BentleyStatus _ProcessTextString(TextStringCR) override;
     virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool isFilled) override;
     virtual void _OutputGraphics(ViewContextR) override;
@@ -4248,7 +4248,7 @@ BentleyStatus TextAnnotationDrawToElementGeometry::_ProcessCurveVector(CurveVect
 //---------------------------------------------------------------------------------------
 void TextAnnotationDrawToElementGeometry::_OutputGraphics(ViewContextR context)
     {
-    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
+    context.GetCurrentGeometryParams().SetCategoryId(m_categoryId);
     m_annotationDraw.Draw(context);
     }
 

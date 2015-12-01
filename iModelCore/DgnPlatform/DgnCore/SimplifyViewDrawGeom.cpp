@@ -614,8 +614,8 @@ void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entit
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
                 polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
-                faceAttachmentsVec->at(i).ToElemDisplayParams(m_context->GetCurrentDisplayParams());
-                m_context->CookDisplayParams();
+                faceAttachmentsVec->at(i).ToElemDisplayParams(m_context->GetCurrentGeometryParams());
+                m_context->CookGeometryParams();
 
                 FacetClipper(*this, false).ProcessDisposablePolyface(*polyfaces[i]);
                 }
@@ -1000,12 +1000,12 @@ void SimplifyViewDrawGeom::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, Tran
     BeAssert(!m_inSymbolDraw); // Can't have nested symbols...
 
     AutoRestore <bool> saveInSymbolDraw(&m_inSymbolDraw, true);
-    AutoRestore <ElemMatSymb> saveContextElemMatSymb(m_context->GetElemMatSymb());
-    AutoRestore <OvrMatSymb> saveContextOvrMatSymb(m_context->GetOverrideMatSymb());
-    AutoRestore <ElemDisplayParams> saveContextDisplayParams(&m_context->GetCurrentDisplayParams());
+    AutoRestore <GraphicParams> saveContextGraphicParams(m_context->GetGraphicParams());
+    AutoRestore <OvrGraphicParams> saveContextOvrGraphicParams(m_context->GetOverrideMatSymb());
+    AutoRestore <GeometryParams> saveContextDisplayParams(&m_context->GetCurrentGeometryParams());
 
 #if defined (NEEDS_WORK_DGNITEM)
-    m_context->GetDisplayParamsIgnores().Set(*m_context->GetCurrentDisplayParams(), true, ignoreColor, ignoreWeight); // NOTE: Symbol level is always inherited from base element...
+    m_context->GetDisplayParamsIgnores().Set(*m_context->GetCurrentGeometryParams(), true, ignoreColor, ignoreWeight); // NOTE: Symbol level is always inherited from base element...
 #endif
 
     if (NULL != clipPlaneSetP)
@@ -1460,27 +1460,27 @@ void SimplifyViewDrawGeom::_AddPointCloud(PointCloudDraw* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymbR     SimplifyViewDrawGeom::GetCurrentMatSymb(ElemMatSymbR matSymb)
+GraphicParamsR     SimplifyViewDrawGeom::GetCurrentMatSymb(GraphicParamsR matSymb)
     {
-    matSymb = *m_context->GetElemMatSymb();
-    Render::OvrMatSymb ovr =  *m_context->GetOverrideMatSymb();
+    matSymb = *m_context->GetGraphicParams();
+    Render::OvrGraphicParams ovr =  *m_context->GetOverrideMatSymb();
 
-    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_Color))
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_Color))
         matSymb.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (matSymb.GetLineColor().GetValue() & 0xff000000)));
 
-    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_ColorTransparency))
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_ColorTransparency))
         matSymb.SetLineColor(ColorDef((matSymb.GetLineColor().GetValue() & 0xffffff) | (ovr.GetLineColor().GetValue() & 0xff000000)));
 
-    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_FillColor))
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColor))
         matSymb.SetFillColor(ColorDef((ovr.GetFillColor().GetValue() & 0xffffff) | (matSymb.GetFillColor().GetValue() & 0xff000000)));
 
-    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_FillColorTransparency))
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColorTransparency))
         matSymb.SetFillColor(ColorDef((matSymb.GetFillColor().GetValue() & 0xffffff) | (ovr.GetFillColor().GetValue() & 0xff000000)));
 
-    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_RastWidth))
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RastWidth))
         matSymb.SetWidth(ovr.GetWidth());
 
-    if (0 != (ovr.GetFlags() & OvrMatSymb::FLAGS_RenderMaterial))
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RenderMaterial))
         matSymb.SetMaterial(ovr.GetMaterial().get());
 
     return matSymb;
@@ -1545,7 +1545,7 @@ MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial() const
     if (m_inTextDraw)
         return NULL;
 
-    if (0 != (m_overrideMatSymb.GetFlags() & OvrMatSymb::FLAGS_RenderMaterial))
+    if (0 != (m_overrideMatSymb.GetFlags() & OvrGraphicParams::FLAGS_RenderMaterial))
         return m_overrideMatSymb.GetMaterial();
     
     return m_currentMatSymb.GetMaterial();
@@ -1633,7 +1633,7 @@ StatusInt SimplifyViewDrawGeom::ProcessGeometryMap(PolyfaceQueryCR facets)
     // Set the level same as the parent so the definition children are never eliminated on level/scan criteria.
     ElementPropertiesSetter     levelSetter;
 
-    levelSetter.SetCategory(m_context->GetCurrentDisplayParams()->GetCategory());
+    levelSetter.SetCategory(m_context->GetCurrentGeometryParams()->GetCategory());
     levelSetter.SetChangeEntireElement(true);
 
     levelSetter.Apply(definitionEh);
@@ -1649,15 +1649,15 @@ StatusInt SimplifyViewDrawGeom::ProcessGeometryMap(PolyfaceQueryCR facets)
     AutoRestore <ViewContext::T_DrawMethod>     saveDrawMethod(&m_context->m_callDrawMethod, &ViewContext::DrawElementNormal);
     AutoRestore <bool>                          saveNoRangeTestOnComponents(&m_context->m_noRangeTestOnComponents, true);
     AutoRestore <bool>                          saveProcessingGeometryMap(&m_processingMaterialGeometryMap, true);
-    AutoRestore <ElemMatSymb>                   saveOutputElemMatSymb(&m_currentMatSymb);
-    AutoRestore <OvrMatSymb>                    saveOutputOvrMatSymb(&m_overrideMatSymb);
-    AutoRestore <ElemMatSymb>                   saveContextElemMatSymb(m_context->GetElemMatSymb());
-    AutoRestore <OvrMatSymb>                    saveContextOvrMatSymb(m_context->GetOverrideMatSymb());
-    AutoRestore <ElemDisplayParams>             saveContextDisplayParams(m_context->GetCurrentDisplayParams());
+    AutoRestore <GraphicParams>                   saveOutputGraphicParams(&m_currentMatSymb);
+    AutoRestore <OvrGraphicParams>                    saveOutputOvrGraphicParams(&m_overrideMatSymb);
+    AutoRestore <GraphicParams>                   saveContextGraphicParams(m_context->GetGraphicParams());
+    AutoRestore <OvrGraphicParams>                    saveContextOvrGraphicParams(m_context->GetOverrideMatSymb());
+    AutoRestore <GeometryParams>             saveContextDisplayParams(m_context->GetCurrentGeometryParams());
     XGraphicsRecorder*                          xGraphicsRecorder = NULL;
     Transform                                   localToElement, elementToRoot;
 
-    m_context->GetDisplayParamsIgnores().Set(*m_context->GetCurrentDisplayParams(), true, !useCellColors, false); // NOTE: Geometry map level is always inherited from base element...
+    m_context->GetDisplayParamsIgnores().Set(*m_context->GetCurrentGeometryParams(), true, !useCellColors, false); // NOTE: Geometry map level is always inherited from base element...
 
     projectionInfo.CalculateForElement(GetCurrentElement(), SUCCESS == GetElementToRootTransform(elementToRoot) ? &elementToRoot : NULL, *material, geometryMap);
 

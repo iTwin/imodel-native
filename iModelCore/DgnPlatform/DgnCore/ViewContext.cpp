@@ -89,7 +89,7 @@ StatusInt ViewContext::_InitContextForView()
     {
     BeAssert(0 == GetTransClipDepth());
 
-    m_elemMatSymb.Init();
+    m_graphicParams.Init();
     m_ovrMatSymb.Clear();
 
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
@@ -459,7 +459,7 @@ void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP origi
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
     {
-    LineStyleSymbR  tSymb = (m_ovrMatSymb.GetFlags() & OvrMatSymb::FLAGS_Style) ? m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR() : m_elemMatSymb.GetLineStyleSymbR();
+    LineStyleSymbR  tSymb = (m_ovrMatSymb.GetFlags() & OvrGraphicParams::FLAGS_Style) ? m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR() : m_graphicParams.GetLineStyleSymbR();
 
     if (symb)
         *symb = &tSymb;
@@ -554,9 +554,9 @@ void ViewContext::_OutputElement(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
+void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    // NOTE: ElemDisplayParams/ElemMatSymb ARE NOT setup at this point!
+    // NOTE: GeometryParams/GraphicParams ARE NOT setup at this point!
     if (!m_viewflags.weights)
         ovrMatSymb.SetWidth(1);
 
@@ -570,7 +570,7 @@ void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddContextOverrides(OvrMatSymbR ovrMatSymb)
+void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb)
     {
     // Modify m_ovrMatSymb for view flags...
     _AddViewOverrides(ovrMatSymb); 
@@ -579,7 +579,7 @@ void ViewContext::_AddContextOverrides(OvrMatSymbR ovrMatSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_ModifyPreCook(ElemDisplayParamsR elParams)
+void ViewContext::_ModifyPreCook(GeometryParamsR elParams)
     {
     elParams.Resolve(*this);
     }
@@ -587,7 +587,7 @@ void ViewContext::_ModifyPreCook(ElemDisplayParamsR elParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb)
+void ViewContext::_CookGeometryParams(GeometryParamsR elParams, GraphicParamsR elMatSymb)
     {
     _ModifyPreCook(elParams); // Allow context to modify elParams before cooking...
 
@@ -598,23 +598,23 @@ void ViewContext::_CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::CookDisplayParams()
+void ViewContext::CookGeometryParams()
     {
-    _CookDisplayParams(m_currDisplayParams, m_elemMatSymb);
+    _CookGeometryParams(m_currGeometryParams, m_graphicParams);
 
     //  NEEDSWORK_LINESTYLES
     //  If this is a 3d view and we have a line style then we want to convert the line style
     //  to a texture line style.  We don't do it prior to this because generating the geometry map
     //  may use the current symbology.  This seems like a horrible place to do this,
     //  so we need to come up with something better.
-    LineStyleSymb & lsSym = m_elemMatSymb.GetLineStyleSymbR();
+    LineStyleSymb & lsSym = m_graphicParams.GetLineStyleSymbR();
     if (nullptr==lsSym.GetTexture() && lsSym.GetILineStyle() != nullptr && Is3dView())
         {
         lsSym.ConvertLineStyleToTexture(*this, true);
         }
 
     // Activate the matsymb in the IDrawGeom
-    GetCurrentGraphicR().ActivateMatSymb(&m_elemMatSymb);
+    GetCurrentGraphicR().ActivateMatSymb(&m_graphicParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -626,7 +626,7 @@ void ViewContext::ResetContextOverrides()
     m_rasterDisplayParams.SetFlags(ViewContext::RasterDisplayParams::RASTER_PARAM_None); // NEEDSWORK_RASTER_DISPLAY - Not sure how this fits into new continuous update approach?!?
 #endif
 
-    // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_elemMatSymb as they are not valid.
+    // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_graphicParams as they are not valid.
     m_ovrMatSymb.Clear();
     _AddContextOverrides(m_ovrMatSymb);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -723,7 +723,7 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
             p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
             p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
 
-            m_ovrMatSymb.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_elemMatSymb.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
+            m_ovrMatSymb.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_graphicParams.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
             m_ovrMatSymb.SetWidth(1);
             _AddContextOverrides(m_ovrMatSymb);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -1355,7 +1355,7 @@ int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCateg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymb::ElemMatSymb()
+GraphicParams::GraphicParams()
     {
     Init();
     }
@@ -1363,7 +1363,7 @@ ElemMatSymb::ElemMatSymb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::Init()
+void GraphicParams::Init()
     {
     m_lineColor         = ColorDef::Black();
     m_fillColor         = ColorDef::Black();
@@ -1402,7 +1402,7 @@ static void     applyScreeningFactor(ColorDef* rgb, double screeningFactor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::Cook(ElemDisplayParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
     Init();
 
@@ -1473,10 +1473,10 @@ void ElemMatSymb::Cook(ElemDisplayParamsCR elParams, ViewContextR context, DPoin
     }
 
 /*---------------------------------------------------------------------------------**//**
-* compare two ElemMatSymb's to see if they're the same.
+* compare two GraphicParams's to see if they're the same.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
+bool GraphicParams::operator==(GraphicParamsCR rhs) const
     {
     if (this == &rhs)
         return true;
@@ -1498,7 +1498,7 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
+GraphicParams::GraphicParams(GraphicParamsCR rhs)
     {
     m_lineColor         = rhs.m_lineColor;
     m_fillColor         = rhs.m_fillColor;
@@ -1513,7 +1513,7 @@ ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
+GraphicParamsR GraphicParams::operator=(GraphicParamsCR rhs)
     {
     m_lineColor         = rhs.m_lineColor;
     m_fillColor         = rhs.m_fillColor;
@@ -1529,7 +1529,7 @@ ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OvrMatSymb::Clear()
+void OvrGraphicParams::Clear()
     {
     SetFlags(FLAGS_None);
     m_matSymb.Init();
@@ -1538,7 +1538,7 @@ void OvrMatSymb::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  OvrMatSymb::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void  OvrGraphicParams::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
 #ifdef WIP_VANCOUVER_MERGE // linestyle
     m_matSymb.GetLineStyleSymbR().FromResolvedStyle(styleNo, modelRef, styleDgnModel, lStyleParams, context, startTangent, endTangent);
@@ -1549,7 +1549,7 @@ void  OvrMatSymb::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR st
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParams::ElemDisplayParams(ElemDisplayParamsCR rhs)
+GeometryParams::GeometryParams(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
     m_categoryId            = rhs.m_categoryId;
@@ -1574,7 +1574,7 @@ ElemDisplayParams::ElemDisplayParams(ElemDisplayParamsCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
+GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     {
     m_appearanceOverrides   = rhs.m_appearanceOverrides;
     m_categoryId            = rhs.m_categoryId;
@@ -1601,7 +1601,7 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParams::ElemDisplayParams()
+GeometryParams::GeometryParams()
     {
     m_resolved = false;
     m_elmPriority = 0;
@@ -1618,18 +1618,18 @@ ElemDisplayParams::ElemDisplayParams()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-void ElemDisplayParams::ResetAppearance()
+void GeometryParams::ResetAppearance()
     {
     AutoRestore<DgnCategoryId> saveCategory(&m_categoryId);
     AutoRestore<DgnSubCategoryId> saveSubCategory(&m_subCategoryId);
 
-    *this = ElemDisplayParams();
+    *this = GeometryParams();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
+bool GeometryParams::operator==(GeometryParamsCR rhs) const
     {
     if (this == &rhs)
         return true;
@@ -1674,7 +1674,7 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemDisplayParams::Resolve(ViewContextR context)
+void GeometryParams::Resolve(ViewContextR context)
     {
     DgnSubCategoryId subCategoryId = GetSubCategoryId();
 
@@ -1748,10 +1748,10 @@ void ElemDisplayParams::Resolve(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddTextString(TextStringCR text)
     {
-    text.GetGlyphSymbology(GetCurrentDisplayParams());
-    CookDisplayParams();
+    text.GetGlyphSymbology(GetCurrentGeometryParams());
+    CookGeometryParams();
 
-    double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
+    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
     GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments(*this);
     }
@@ -1763,7 +1763,7 @@ void ViewContext::SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end)
     {
     m_startTangent = start;
     m_endTangent = end;
-    m_elemMatSymb.GetLineStyleSymbR().ClearContinuationData();
+    m_graphicParams.GetLineStyleSymbR().ClearContinuationData();
     m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR().ClearContinuationData();
     }
 

@@ -289,7 +289,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
     else
         {
 #if defined (NEEDS_WORK_DGNITEM)
-        ElemDisplayParamsP elParams = context->GetCurrentDisplayParams();
+        ElemDisplayParamsP elParams = context->GetCurrentGeometryParams();
         if (0 == elParams->GetWeight())
             {
             context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
@@ -298,12 +298,12 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             {
             // True width is not discernable; need to ignore non-zero integer weight. Otherwise, discepancies
             // may arise due to level of detail differences between view display and printing. [TFS 8535]
-            ElemMatSymb saveMatSymb;
-            saveMatSymb = *context->GetElemMatSymb();
-            ElemDisplayParamsStateSaver saveState (*context->GetCurrentDisplayParams(), false, false, false, true, false);
+            GraphicParams saveMatSymb;
+            saveMatSymb = *context->GetGraphicParams();
+            ElemDisplayParamsStateSaver saveState (*context->GetCurrentGeometryParams(), false, false, false, true, false);
             elParams->SetWeight (0);
-            context->CookDisplayParams();
-            context->GetCurrentGraphic().ActivateMatSymb (context->GetElemMatSymb());
+            context->CookGeometryParams();
+            context->GetCurrentGraphic().ActivateMatSymb (context->GetGraphicParams());
             context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
             context->GetCurrentGraphic().ActivateMatSymb (&saveMatSymb);
             }

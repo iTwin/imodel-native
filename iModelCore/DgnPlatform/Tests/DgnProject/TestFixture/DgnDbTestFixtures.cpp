@@ -30,7 +30,7 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId mid, DgnCategoryId cat
 * Inserts TestElement with Display Properties
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(Render::ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementCPtr DgnDbTestFixture::InsertElement(Render::GeometryParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;

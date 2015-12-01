@@ -107,7 +107,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Majd.Uddin    06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(Dgn::DgnDbR db, Render::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize)
+TestElementPtr TestElement::Create(Dgn::DgnDbR db, Render::GeometryParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize)
     {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 

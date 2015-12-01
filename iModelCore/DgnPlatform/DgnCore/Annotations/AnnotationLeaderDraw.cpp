@@ -32,7 +32,7 @@ void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
 //---------------------------------------------------------------------------------------
 static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
     {
-    ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
+    GeometryParamsR displayParams = context.GetCurrentGeometryParams();
 
     displayParams.ResetAppearance();
     
@@ -47,7 +47,7 @@ static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorTy
         default: BeAssert(false) /* unknown */; break;
         }
 
-    context.CookDisplayParams();
+    context.CookGeometryParams();
     }
 
 //---------------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorTy
 //---------------------------------------------------------------------------------------
 static void setFillSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, double transparency)
     {
-    ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
+    GeometryParamsR displayParams = context.GetCurrentGeometryParams();
 
     displayParams.ResetAppearance();
 
@@ -70,7 +70,7 @@ static void setFillSymbology(ViewContextR context, AnnotationColorType colorType
         default: BeAssert(false) /* unknown */; break;
         }
 
-    context.CookDisplayParams();
+    context.CookGeometryParams();
     }
 
 //---------------------------------------------------------------------------------------

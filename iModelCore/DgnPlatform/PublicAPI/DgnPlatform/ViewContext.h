@@ -212,9 +212,9 @@ protected:
     DgnViewportP            m_viewport;
     GeometrySourceCP        m_currentGeomSource;
     Render::GraphicPtr      m_currGraphic;
-    Render::ElemDisplayParams m_currDisplayParams;
-    Render::ElemMatSymb     m_elemMatSymb;
-    Render::OvrMatSymb      m_ovrMatSymb;
+    Render::GeometryParams  m_currGeometryParams;
+    Render::GraphicParams   m_graphicParams;
+    Render::OvrGraphicParams      m_ovrMatSymb;
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     DgnElement::Hilited     m_hiliteState;
@@ -258,10 +258,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
-    DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrMatSymbR);
-    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrMatSymbR);
-    DGNPLATFORM_EXPORT virtual void _ModifyPreCook(Render::ElemDisplayParamsR); 
-    DGNPLATFORM_EXPORT virtual void _CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR);
+    DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
+    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR);
+    DGNPLATFORM_EXPORT virtual void _ModifyPreCook(Render::GeometryParamsR); 
+    DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
@@ -508,26 +508,26 @@ public:
     //@{
     bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
 
-    //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied ElemMatSymb.
-    //! @note Does NOT call ActivateMatSymb on the output or change the current ElemDisplayParams/ElemMatSymb of the context.
-    void CookDisplayParams(Render::ElemDisplayParamsR elParams, Render::ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
-    DGNPLATFORM_EXPORT void CookDisplayParams();
+    //! Change the supplied "natural" GeometryParams. Resolves effective symbology as required by the context and initializes the supplied GraphicParams.
+    //! @note Does NOT call ActivateMatSymb on the output or change the current GeometryParams/GraphicParams of the context.
+    void CookGeometryParams(Render::GeometryParamsR elParams, Render::GraphicParamsR elMatSymb) {_CookGeometryParams(elParams, elMatSymb);}
+    DGNPLATFORM_EXPORT void CookGeometryParams();
 
     //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
     //! @return the net display priority. For 3D views, display priority is always 0.
     DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearance = nullptr) const;
 
-    //! Get the current ElemMatSymb.
-    //! @return   the current ElemMatSymb.
-    Render::ElemMatSymbP GetElemMatSymb() {return &m_elemMatSymb;}
+    //! Get the current GraphicParams.
+    //! @return   the current GraphicParams.
+    Render::GraphicParamsP GetGraphicParams() {return &m_graphicParams;}
 
-    //! Get the current OvrMatSymb.
-    //! @return the current OvrMatSymb.
-    Render::OvrMatSymbP GetOverrideMatSymb() {return &m_ovrMatSymb;}
+    //! Get the current OvrGraphicParams.
+    //! @return the current OvrGraphicParams.
+    Render::OvrGraphicParamsP GetOverrideMatSymb() {return &m_ovrMatSymb;}
 
-    //! Get the current ElemDisplayParams.
-    //! @return the current ElemDisplayParams.
-    Render::ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
+    //! Get the current GeometryParams.
+    //! @return the current GeometryParams.
+    Render::GeometryParams& GetCurrentGeometryParams() {return m_currGeometryParams;}
 
     //! Clears current override flags and re-applies context overrides.
     //! @note Calls ActivateOverrideMatSymb on the output.
@@ -536,7 +536,6 @@ public:
     //! Gets the current level of detail.
     //! @return       the current level of detail.
     double GetCurrentLevelOfDetail() const {return m_levelOfDetail;}
-
 
     //! Sets the current level of detail.
     void SetCurrentLevelOfDetail(double levelOfDetail) {m_levelOfDetail = levelOfDetail;}
@@ -621,7 +620,7 @@ public:
     //! @param[in]    zDepth      Z depth value.
     DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
 
-    //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
+    //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current GeometryParams for TextString symbology.
     void AddTextString(TextStringCR textString) {_AddTextString(textString);}
 
     bool CheckStop() {return _CheckStop();}

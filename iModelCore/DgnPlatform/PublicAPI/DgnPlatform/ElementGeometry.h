@@ -120,7 +120,7 @@ struct ElementGeomIO
 enum class HeaderFlags : uint32_t
     {
     None                    = 0,
-    UseCurrentDisplayParams = 1,    //!< Do not reinitialize ElemDisplayParams before processing this GeomStream
+    UseCurrentDisplayParams = 1,    //!< Do not reinitialize GeometryParams before processing this GeomStream
     };
 
     //=======================================================================================
@@ -179,7 +179,7 @@ enum class HeaderFlags : uint32_t
         void Append(ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
         void Append(ElementGeometryCR);
         void Append(DgnGeomPartId, TransformCP geomToElem);
-        void Append(Render::ElemDisplayParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
+        void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
         void Append(TextStringCR);
     };
 
@@ -206,7 +206,7 @@ enum class HeaderFlags : uint32_t
         bool Get(Operation const&, ISolidKernelEntityPtr&) const;
         bool Get(Operation const&, ElementGeometryPtr&) const;
     bool Get(Operation const&, DgnGeomPartId&, TransformR) const;
-        bool Get(Operation const&, Render::ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
+        bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
     }; // Reader
 
@@ -353,7 +353,7 @@ const_iterator end   () const {return const_iterator ();}
 
 void SetBRepOutput(BRepOutput bRep) {m_bRepOutput = bRep;}
 
-DGNPLATFORM_EXPORT Render::ElemDisplayParamsCR GetElemDisplayParams();
+DGNPLATFORM_EXPORT Render::GeometryParamsCR GetElemDisplayParams();
 DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId(); //!< Returns primitive id for current geometry
 DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
@@ -404,7 +404,7 @@ bool                    m_is3d;
 Placement3d             m_placement3d;
 Placement2d             m_placement2d;
 DgnDbR                  m_dgnDb;
-Render::ElemDisplayParams       m_elParams;
+Render::GeometryParams       m_elParams;
 ElementGeomIO::Writer   m_writer;
 
 ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
@@ -429,7 +429,7 @@ DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometrySourceR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
-DGNPLATFORM_EXPORT bool Append (Render::ElemDisplayParamsCR);
+DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);
 DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
 DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);

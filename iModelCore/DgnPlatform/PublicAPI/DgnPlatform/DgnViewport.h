@@ -33,9 +33,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
   - \c DgnCoordSystem::World  - For PhyscialViews, the <i>world</i> coordinate system is the DgnDb coordinate system. For DrawingViews, 
                          the world coordinate system is the drawing's coordinate system.
 
-  \b Note: ViewContext has an additional type of coordinate system called "local" since it supports pushing and popping of transformations.
-           When an ViewContext is first attached to a DgnViewport, the "local" coordinate system will be the DgnViewport's world coordinate system.
-
   @see DgnCoordSystem
 */
 
@@ -306,10 +303,8 @@ struct StopEvents
 struct FullUpdateInfo
     {
 private:
-//__PUBLISH_SECTION_END__
     friend struct ViewSet;
-    friend struct UpdateContext;
-//__PUBLISH_SECTION_START__
+
     StopEvents          m_stopEvents;
     bool                m_incremental;
     bool                m_deferShadows;
@@ -350,10 +345,7 @@ public:
 struct DynamicUpdateInfo
     {
 private:
-//__PUBLISH_SECTION_END__
     friend struct ViewManager;
-    friend struct UpdateContext;
-//__PUBLISH_SECTION_START__
     StopEvents          m_stopEvents;
     bool                m_doBackingStore;
     bool                m_deferShadows;
@@ -428,7 +420,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
 public:
     friend struct ViewManager;
-    friend struct UpdateContext;
 
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
@@ -485,7 +476,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
-    DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(Render::PaintOptions const&);
     DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
     DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
@@ -497,9 +487,8 @@ public:
     virtual ~DgnViewport() {DestroyViewport();}
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     bool CheckNeedsRefresh() const {return m_needsRefresh;}
-    bool ShadowCastingLightsExist() const;
     bool IsVisible() {return _IsVisible();}
-    ViewFlagsP GetViewFlagsP () {return &m_rootViewFlags;}
+    ViewFlagsP GetViewFlagsP() {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
@@ -640,12 +629,14 @@ public:
     //! @return the current TBGR hilite color.
     ColorDef GetHiliteColor() const {return _GetHiliteColor();}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Set the current display symbology for this DgnViewport by TBGR color values, a pixel width, and 0-7 line code.
     //! @param[in]          lineColor Line color
     //! @param[in]          fillColor Fill color
     //! @param[in]          lineWidth       Line width in pixels (1 or greater)
     //! @param[in]          lineCodeIndex   Line code index (0-7)
     DGNPLATFORM_EXPORT void SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex);
+#endif
 /** @} */
 
 /** @name Coordinate Query and Conversion */

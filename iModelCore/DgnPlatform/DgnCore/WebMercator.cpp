@@ -137,7 +137,7 @@ Utf8String fmtSexagesimal (GeoPointCR gp)
 #ifdef WEBMERCATOR_DEBUG_TILES
 static void setSymbology (ViewContextR context, RgbColorDefCR color, uint32_t trans, uint32_t width)
     {
-    ElemMatSymb elemMatSymb;
+    GraphicParams elemMatSymb;
 
     auto colorIdx = ColorDef(color.red, color.green, color.blue, trans);
     elemMatSymb.SetLineColor (colorIdx);

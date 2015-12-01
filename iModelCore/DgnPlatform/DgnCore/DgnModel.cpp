@@ -1985,7 +1985,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
         }
 
     //  Gather geometry by SubCategory
-    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** WIP_IMPORT: add another dimension: break out builders by same ElemDisplayParams
+    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** WIP_IMPORT: add another dimension: break out builders by same GeometryParams
     FillModel();
     for (auto const& mapEntry : *this)
         {
@@ -2002,7 +2002,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
         for (ElementGeometryPtr const& geom : gcollection)
             {
             //  Look up the subcategory ... IN THE CLIENT DB
-            ElemDisplayParamsCR dparams = gcollection.GetElemDisplayParams();
+            GeometryParamsCR dparams = gcollection.GetElemDisplayParams();
             DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
             ElementGeometryBuilderPtr& builder = builders [clientsubcatid];

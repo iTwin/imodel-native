@@ -214,6 +214,7 @@ void NamedVolume::ClearClip (DgnViewport& viewport)
 //+---------------+---------------+---------------+---------------+---------------+-----
 void NamedVolume::DrawFace (DPoint3dCP points, size_t numPoints, uint32_t color, ViewContextR context )
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DgnViewportP viewport = context.GetViewport ();
     BeAssert (viewport != nullptr);
     GraphicR vDraw = context.GetCurrentGraphicR();
@@ -223,6 +224,7 @@ void NamedVolume::DrawFace (DPoint3dCP points, size_t numPoints, uint32_t color,
 
     viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Bold, STYLE_Solid);
     vDraw.AddLineString ((int) numPoints, points, nullptr);
+#endif
     }
 
 //--------------------------------------------------------------------------------------
@@ -234,7 +236,9 @@ void NamedVolume::Draw (uint32_t color, ViewContextR context) const
     if (!EXPECTED_CONDITION (viewport != nullptr))
         return;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Thin, STYLE_Solid);
+#endif
 
     bvector<DPoint3d> bottomFace;
     this->Get3dShape (bottomFace);

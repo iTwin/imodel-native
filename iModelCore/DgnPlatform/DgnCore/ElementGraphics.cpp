@@ -45,13 +45,13 @@ virtual bool _ProcessAsBody(bool isCurved) const override {return m_dropObj->_Pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AnnounceCurrentState()
     {
-    ElemMatSymb currentMatSymb;
+    GraphicParams currentMatSymb;
 
     GetCurrentMatSymb(currentMatSymb);
 
     m_dropObj->_AnnounceTransform(m_context->GetCurrLocalToWorldTransformCP());
-    m_dropObj->_AnnounceElemMatSymb(currentMatSymb);
-    m_dropObj->_AnnounceElemDisplayParams(m_context->GetCurrentDisplayParams());
+    m_dropObj->_AnnounceGraphicParams(currentMatSymb);
+    m_dropObj->_AnnounceElemDisplayParams(m_context->GetCurrentGeometryParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -194,7 +194,7 @@ public:
     ElementGraphicsContext(IElementGraphicsProcessor& dropObj)
         {
         m_purpose = dropObj._GetDrawPurpose();
-        m_wantMaterials = true; // Setup material in ElemDisplayParams in case IElementGraphicsProcessor needs it...
+        m_wantMaterials = true; // Setup material in GeometryParams in case IElementGraphicsProcessor needs it...
 
         m_graphic = new ElementGraphicsDrawGeom(this, dropObj);
         m_currGraphic = m_graphic;
@@ -208,10 +208,10 @@ public:
 virtual void _AddTextString(TextStringCR text) override
     {
     // NOTE: When IElementGraphicsProcessor handles TextString we don't want to spew adornment geometry!
-    text.GetGlyphSymbology(GetCurrentDisplayParams());
-    CookDisplayParams();
+    text.GetGlyphSymbology(GetCurrentGeometryParams());
+    CookGeometryParams();
 
-    double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
+    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
     GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
     }
 
@@ -242,9 +242,9 @@ virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP* symb) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) override
+virtual void _CookGeometryParams(GeometryParamsR elParams, GraphicParamsR elMatSymb) override
     {
-    // Apply ignores, resolve effective, and cook ElemMatSymb...
+    // Apply ignores, resolve effective, and cook GraphicParams...
     elParams.Resolve(*this);
     elMatSymb.Cook(elParams, *this, m_startTangent, m_endTangent);
     }
@@ -280,8 +280,8 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
                 {
                 context.SetGeomStreamEntryId(collection.GetGeomStreamEntryId());
 
-                context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
-                context.CookDisplayParams();
+                context.GetCurrentGeometryParams() = collection.GetElemDisplayParams();
+                context.CookGeometryParams();
 
                 context.PushTransform(collection.GetGeometryToWorld());
                 elemGeom->Draw(context);
@@ -303,7 +303,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, DgnDbR d
     {
     ElementGraphicsContext  context(dropObj);
 
-    context.GetCurrentDisplayParams() = ElemDisplayParams();
+    context.GetCurrentGeometryParams() = GeometryParams();
     context.SetDgnDb(dgnDb);
 
     dropObj._OutputGraphics(context);
@@ -1317,7 +1317,7 @@ struct FaceAttachmentRuleCollector : IElementGraphicsProcessor
 protected:
 
 Transform                           m_currentTransform;
-ElemDisplayParams                   m_currentDisplayParams;
+GeometryParams                   m_currentDisplayParams;
 
 ISolidKernelEntityCR                m_entity;
 bool                                m_includeEdges;
@@ -1325,14 +1325,14 @@ bool                                m_includeFaceIso;
 bmap<FaceAttachment, CurveVectorP>  m_uniqueAttachments;
 
 bvector<CurveVectorPtr>&            m_curves;
-bvector<ElemDisplayParams>&         m_params;
+bvector<GeometryParams>&         m_params;
 
 public:
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit FaceAttachmentRuleCollector(ISolidKernelEntityCR entity, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges, bool includeFaceIso) : m_entity(entity), m_curves(curves), m_params(params)
+explicit FaceAttachmentRuleCollector(ISolidKernelEntityCR entity, bvector<CurveVectorPtr>& curves, bvector<GeometryParams>& params, bool includeEdges, bool includeFaceIso) : m_entity(entity), m_curves(curves), m_params(params)
     {
     m_includeEdges   = includeEdges;
     m_includeFaceIso = includeFaceIso;
@@ -1347,7 +1347,7 @@ virtual bool _WantClipping() const override {return false;}
 virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
 virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
 virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
-virtual void _AnnounceElemDisplayParams(ElemDisplayParams const& params) override {m_currentDisplayParams = params;}
+virtual void _AnnounceElemDisplayParams(GeometryParams const& params) override {m_currentDisplayParams = params;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
@@ -1379,7 +1379,7 @@ virtual void _OutputGraphics(ViewContextR context) override
     for (FaceAttachment attachment : faceAttachmentsVec)
         {
         CurveVectorPtr    curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-        ElemDisplayParams faceParams;
+        GeometryParams faceParams;
 
         attachment.ToElemDisplayParams(faceParams);
         m_params.push_back(faceParams);
@@ -1395,7 +1395,7 @@ virtual void _OutputGraphics(ViewContextR context) override
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<CurveVectorPtr>& curves, bvector<ElemDisplayParams>& params, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<CurveVectorPtr>& curves, bvector<GeometryParams>& params, bool includeEdges, bool includeFaceIso)
     {
     if (nullptr == entity.GetFaceMaterialAttachments())
         return; // No reason to call this method when there aren't attachments...
@@ -1429,7 +1429,7 @@ PolyfaceHeaderPtr WireframeGeomUtil::CollectPolyface(ISolidKernelEntityCR entity
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<ElemDisplayParams>& params, IFacetOptionsR options)
+void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR options)
     {
     if (nullptr == entity.GetFaceMaterialAttachments())
         return; // No reason to call this method when there aren't attachments...
@@ -1452,7 +1452,7 @@ void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgn
         if (found == uniqueFaceAttachments.end())
             {
             PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
-            ElemDisplayParams faceParams;
+            GeometryParams faceParams;
 
             faceAttachment.ToElemDisplayParams(faceParams);
             params.push_back(faceParams);
@@ -1746,7 +1746,7 @@ static void DrawStyled(ViewContextR context, CurveVectorCR curves, bool is3d, do
         context.SetLinestyleTangents(pStartTangent, pEndTangent); // NOTE: This needs to happen before CookElemDisplayParams to setup modifiers!
 
         if (isComplex)
-            context.CookDisplayParams(); // Set/Clear linestyle start/end tangent modifiers. (needed for constant width change...)
+            context.CookGeometryParams(); // Set/Clear linestyle start/end tangent modifiers. (needed for constant width change...)
 
         switch (curve->GetCurvePrimitiveType())
             {

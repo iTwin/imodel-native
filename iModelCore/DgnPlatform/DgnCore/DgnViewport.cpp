@@ -998,24 +998,6 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    12/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus DgnViewport::_Activate(PaintOptions const& opts)
-    {
-    if (!m_renderTarget.IsValid() || !m_targetParamsSet)
-        return  ViewportStatus::ViewNotInitialized;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_renderTarget->AccumulateDirtyRegion(opts.WantAccumulateDirty());
-
-    if (SUCCESS != m_renderTarget->BeginDraw(opts.WantEraseBefore()))
-        return  ViewportStatus::DrawFailure;
-#endif
-
-    return  ViewportStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DgnViewport::GetDefaultIndexedLineWidth(int index)
@@ -1032,15 +1014,15 @@ int DgnViewport::_GetIndexedLineWidth(int index) const
     return DgnViewport::GetDefaultIndexedLineWidth(index);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_renderTarget->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
@@ -1486,7 +1468,8 @@ bool DgnViewport::UpdateView(FullUpdateInfo& info)
     sceneContext.CreateScene(*this);
 
     InitViewSettings(true);
-    m_renderTarget->_GetMainScene()->Render(); // TEMPORARY - should be on other thread
+    m_renderTarget->_GetMainScene()->Create(); // TEMPORARY - should be on other thread
+    m_renderTarget->_GetMainScene()->Paint(); // TEMPORARY - should be on other thread
 
     return false;
     }
@@ -1498,6 +1481,12 @@ UpdateAbort DgnViewport::UpdateViewDynamic(DynamicUpdateInfo& info)
     {
     ClearProgressiveDisplay();
 
+    InitViewSettings(true);
+    CreateSceneContext sceneContext(*m_renderTarget->_GetMainScene());
+    GetViewControllerR().OnDynamicUpdate(*this, sceneContext, info);
+    m_renderTarget->_GetMainScene()->Paint(); // TEMPORARY - should be on other thread
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Let BeSQLite detect operations that may block on a range tree query.
     BeSQLite::wt_GraphicsAndQuerySequencerDiagnosticsEnabler highPriorityRequired;
 
@@ -1511,7 +1500,6 @@ UpdateAbort DgnViewport::UpdateViewDynamic(DynamicUpdateInfo& info)
     InitViewSettings(true);
     m_renderTarget->_GetMainScene()->Render(); // TEMPORARY - should be on other thread
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     UpdateContext context;
     return context._DoDynamicUpdate(*this, info);
 #endif

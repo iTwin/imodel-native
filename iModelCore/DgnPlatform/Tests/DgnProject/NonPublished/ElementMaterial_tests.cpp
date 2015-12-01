@@ -160,7 +160,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     BeFileName textureImage;
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(textureImage, L"TextureImage.png", L"TextureImage.png", __FILE__));
 
-    Render::ElemDisplayParams elemDisplayParams;
+    Render::GeometryParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), JsonRenderMaterial::TextureMap::Units::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));

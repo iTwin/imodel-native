@@ -16,8 +16,8 @@ SymbolContext::SymbolContext(ViewContextR seedContext) : m_seedContext(seedConte
     if (SUCCESS != Attach(seedContext.GetViewport(), seedContext.GetDrawPurpose()))
         SetDgnDb(seedContext.GetDgnDb()); // so "by level" stuff will work in the symbol.
 
-    m_currDisplayParams = m_seedContext.GetCurrentDisplayParams();
-    m_elemMatSymb       = *m_seedContext.GetElemMatSymb();
+    m_currDisplayParams = m_seedContext.GetCurrentGeometryParams();
+    m_graphicParams       = *m_seedContext.GetGraphicParams();
     m_filterLOD         = FILTER_LOD_Off;
     m_ignoreViewRange   = true;
     m_parentRangeResult = RangeResult::Inside; // This will cause inhibit all range testing.

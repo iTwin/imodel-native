@@ -925,7 +925,7 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP l
     textStr.GetStyleR().SetSize(scale);
     textStr.SetOriginFromJustificationOrigin(textPt, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
 
-    ElemMatSymb elemMatSymb;
+    GraphicParams elemMatSymb;
 
     // Draw background fill for hilited ACS for select ACS tool, in case multiple ACS share common origin...
     if (!isAxisLabel && ACSDisplayOptions::None != (options & ACSDisplayOptions::Hilite))
@@ -965,7 +965,7 @@ void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* 
     memset(linePts, 0, sizeof (linePts));
     linePts[1].z = 0.65;
 
-    ElemMatSymb elemMatSymb;
+    GraphicParams elemMatSymb;
 
     elemMatSymb.SetLineColor(_GetColor(viewport, ColorDef::Blue(), _GetTransparency(false, options), options));
     elemMatSymb.SetFillColor(_GetColor(viewport, ColorDef::Blue(), _GetTransparency(true, options), options));
@@ -1037,7 +1037,7 @@ void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, SceneP cached, Transfo
         std::swap(userOrg.x, userOrg.y);
         }
 
-    ElemMatSymb elemMatSymb;
+    GraphicParams elemMatSymb;
 
     elemMatSymb.SetLineColor(_GetColor(viewport, menuColor, _GetTransparency(false, options), options));
     elemMatSymb.SetFillColor(_GetColor(viewport, menuColor, _GetTransparency(true, options), options));

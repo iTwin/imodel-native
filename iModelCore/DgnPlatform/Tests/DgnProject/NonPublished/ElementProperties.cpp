@@ -37,7 +37,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
-    Render::ElemDisplayParams ep;
+    Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetFillDisplay(Render::FillDisplay::Always);
 
@@ -66,7 +66,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
         Render::GradientSymbCP gradient = params.GetGradient();
         EXPECT_NE (nullptr, params.GetGradient());
         EXPECT_EQ (GradientMode::Spherical, gradient->GetMode());
@@ -94,7 +94,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
-    Render::ElemDisplayParams ep;
+    Render::GeometryParams ep;
     ep.SetCategoryId (m_defaultCategoryId);
 
     PatternParamsPtr pattern = PatternParams::Create (); 
@@ -113,7 +113,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams ();
+        Render::GeometryParamsCR params = collection.GetElemDisplayParams ();
         PatternParamsCP pattern = params.GetPatternParams ();
         ASSERT_NE(nullptr, pattern );
         EXPECT_EQ(ColorDef::Cyan(), pattern->GetColor());
@@ -137,7 +137,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
-    Render::ElemDisplayParams ep;
+    Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetTransparency(0.5);
 
@@ -149,7 +149,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
         EXPECT_EQ (0.5, params.GetTransparency());
         EXPECT_EQ (0.5, params.GetNetTransparency());
         }
@@ -170,7 +170,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
-    Render::ElemDisplayParams ep;
+    Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
 
     DgnElementCPtr pE1 = InsertElement( ep, m3id);
@@ -181,7 +181,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
         DgnCategoryId CId = params.GetCategoryId();
         ASSERT_TRUE (CId.IsValid());
         //Setting the Category Id also sets the SubCategory to the default.
@@ -205,7 +205,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
-    Render::ElemDisplayParams ep;
+    Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetWeight(21);
     ep.SetDisplayPriority(2);
@@ -218,7 +218,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
         EXPECT_EQ (21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
         EXPECT_FALSE (weight);
@@ -241,7 +241,7 @@ TEST_F (ElementDisplayProperties, FillProperties)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
-    Render::ElemDisplayParams ep;
+    Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetFillDisplay(Render::FillDisplay::Always);
     ep.SetFillColor(ColorDef::Red());
@@ -255,7 +255,7 @@ TEST_F (ElementDisplayProperties, FillProperties)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
         EXPECT_EQ (Render::FillDisplay::Always, params.GetFillDisplay());
         EXPECT_EQ (ColorDef::Red(), params.GetFillColor());
         bool FillColor = params.IsFillColorFromSubCategoryAppearance();

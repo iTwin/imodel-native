@@ -85,7 +85,7 @@ public:
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode, double shapeSize);
 
     // Create element with display params 
-    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::Render::ElemDisplayParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize);
+    static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::Render::GeometryParamsCR ep, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, DgnElement::Code elementCode, double shapeSize);
     static RefCountedPtr<TestElement> CreateWithoutGeometry(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
 
     // Change the shape size

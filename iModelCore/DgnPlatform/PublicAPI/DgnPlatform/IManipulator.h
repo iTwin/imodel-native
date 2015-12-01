@@ -195,7 +195,7 @@ public:
 //! Will be called by AccuSnap for auto-locate flashing, etc.
 //! @param hit The transient graphics HitDetail.
 //! @param context The ViewContext in which to draw. 
-//! @note You must fully setup context.GetCurrentDisplayParams() before drawing any geometry.
+//! @note You must fully setup context.GetCurrentGeometryParams() before drawing any geometry.
 virtual void _DrawTransient (HitDetailCR hit, ViewContextR context) = 0;
 
 //! Provide locate tool tip.

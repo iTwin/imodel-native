@@ -238,7 +238,7 @@ TEST_F(ImportTest, ImportGroups)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, ElemDisplayParams* customParms)
+static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, GeometryParams* customParms)
     {
     DgnCategoryId cat = DgnSubCategory::QueryCategoryId(subcat, db);
 
@@ -263,7 +263,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static void getFirstElemDisplayParams(ElemDisplayParams& ret, DgnElementCR gel)
+static void getFirstElemDisplayParams(GeometryParams& ret, DgnElementCR gel)
     {
     ElementGeometryCollection gcollection(gel);
     gcollection.begin(); // has the side-effect of setting up the current element display params on the collection
@@ -311,13 +311,13 @@ static bool areMaterialsEqual(DgnMaterialId lmatid, DgnDbR ldb, DgnMaterialId rm
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static bool areDisplayParamsEqual(Render::ElemDisplayParamsCR lhsUnresolved, DgnDbR ldb, Render::ElemDisplayParamsCR rhsUnresolved, DgnDbR rdb)
+static bool areDisplayParamsEqual(Render::GeometryParamsCR lhsUnresolved, DgnDbR ldb, Render::GeometryParamsCR rhsUnresolved, DgnDbR rdb)
     {
     // stub out data that we cannot compare by value
-    Render::ElemDisplayParams lhs(lhsUnresolved);
-    Render::ElemDisplayParams rhs(rhsUnresolved);
+    Render::GeometryParams lhs(lhsUnresolved);
+    Render::GeometryParams rhs(rhsUnresolved);
 
-    //  We must "resolve" each ElemDisplayParams object before we can ask for its properties.
+    //  We must "resolve" each GeometryParams object before we can ask for its properties.
     Dgn::NullContext lcontext;
     lhs.Resolve(lcontext);
     NullContext rcontext;
@@ -367,10 +367,10 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
 
     ASSERT_EQ( sourceCat->GetCode(), destCat->GetCode() );
 
-    Render::ElemDisplayParams sourceDisplayParams;
+    Render::GeometryParams sourceDisplayParams;
     getFirstElemDisplayParams(sourceDisplayParams, sourceElem);
 
-    Render::ElemDisplayParams destDisplayParams;
+    Render::GeometryParams destDisplayParams;
     getFirstElemDisplayParams(destDisplayParams, *destElem);
     
     DgnSubCategoryId destSubCategoryId = destDisplayParams.GetSubCategoryId();
@@ -422,13 +422,13 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     // Put elements in this category into the source model
     DgnElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, nullptr);   // 1 is based on default subcat
     DgnElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
-    ElemDisplayParams customParams;
+    GeometryParams customParams;
     customParams.SetCategoryId(sourceCategoryId);
     customParams.SetMaterial(createTexturedMaterial(*sourceDb, "Texture3", L"", RenderMaterialMap::Units::Relative));
     DgnElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
     sourceDb->SaveChanges();
 
-    ElemDisplayParams sourceDisplayParams;
+    GeometryParams sourceDisplayParams;
     getFirstElemDisplayParams(sourceDisplayParams, *sourceElem);
 
     ASSERT_EQ( sourceCategoryId , sourceElem->ToGeometrySource3d()->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above

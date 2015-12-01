@@ -233,11 +233,11 @@ void SectioningViewController::SetOverrideMatSymb(ViewContextR context) const
 
     ColorDef color = (m_pass == ClipVolumePass::InsideBackward)? ColorDef(0xcf00ffff) : ColorDef(0xcfffff00);
 
-    OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
+    OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
     overrideMatSymb->Clear();
     overrideMatSymb->SetLineColor(color);
     overrideMatSymb->SetFillColor(color);
-    overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | OvrMatSymb::FLAGS_FillColorTransparency);
+    overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | OvrGraphicParams::FLAGS_FillColorTransparency);
     overrideMatSymb->SetWidth(0);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetCurrentGraphicR().ActivateOverrideMatSymb(overrideMatSymb);

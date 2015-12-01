@@ -192,7 +192,7 @@ void LsSymbolComponent::_Draw (ViewContextR context)
         return;
 
     ElementGeomIO::Collection collection(geomPart->GetGeomStream().GetData(), geomPart->GetGeomStream().GetSize());
-    collection.Draw(context, context.GetCurrentDisplayParams().GetCategoryId(), context.GetViewFlags()); 
+    collection.Draw(context, context.GetCurrentGeometryParams().GetCategoryId(), context.GetViewFlags()); 
     }
 
 /*---------------------------------------------------------------------------------**//**

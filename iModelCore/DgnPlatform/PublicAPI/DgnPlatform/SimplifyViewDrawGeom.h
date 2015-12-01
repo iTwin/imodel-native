@@ -61,7 +61,7 @@ protected:
     virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR, bool filled) {return ERROR;}
     virtual StatusInt _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled) {return ERROR;}
 
-    virtual void _ActivateMatSymb(Render::ElemMatSymbCP matSymb) override {}
+    virtual void _ActivateMatSymb(Render::GraphicParamsCP matSymb) override {}
     DGNPLATFORM_EXPORT virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
@@ -118,7 +118,7 @@ public:
     StatusInt ProcessFacetSet(PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet(facets, filled);}
     StatusInt ProcessGeometryMapOrFacetSet(PolyfaceQueryCR facets, bool filled);
 
-    DGNPLATFORM_EXPORT Render::ElemMatSymbR GetCurrentMatSymb(Render::ElemMatSymbR matSymb);
+    DGNPLATFORM_EXPORT Render::GraphicParamsR GetCurrentMatSymb(Render::GraphicParamsR matSymb);
 
     IFacetOptionsP GetFacetOptions() {return _GetFacetOptions();}
 

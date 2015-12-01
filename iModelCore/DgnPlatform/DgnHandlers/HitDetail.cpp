@@ -420,10 +420,10 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
     if (nullptr == GetGeomDetail().GetCurvePrimitive())
         return;
 
-    ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
-    ElemMatSymbR elMatSymb = *context.GetElemMatSymb();
+    GeometryParamsR elParams = context.GetCurrentGeometryParams();
+    GraphicParamsR elMatSymb = *context.GetGraphicParams();
 
-    context.CookDisplayParams(elParams, elMatSymb); // Don't activate elMatSymb yet...
+    context.CookGeometryParams(elParams, elMatSymb); // Don't activate elMatSymb yet...
 
     // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
     elMatSymb.SetWidth(elMatSymb.GetWidth()+2);

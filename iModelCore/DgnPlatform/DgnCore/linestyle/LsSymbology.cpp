@@ -500,7 +500,7 @@ int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR co
 * @return the hardware linestyle to be used.
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+int LineStyleSymb::FromResolvedElemDisplayParams (GeometryParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
     BeAssert (NULL == GetILineStyle());
     return FromResolvedStyle (elParams.GetLineStyle (), context, startTangent, endTangent);
@@ -511,7 +511,7 @@ int LineStyleSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, 
 * @return the hardware linestyle to be used.
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleSymb::FromNaturalElemDisplayParams (ElemDisplayParamsR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+int LineStyleSymb::FromNaturalElemDisplayParams (GeometryParamsR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
     elParams.Resolve (context);
 
@@ -546,7 +546,7 @@ void LineStyleSymb::ClearContinuationData ()
     }
 
 //---------------------------------------------------------------------------------------
-// When this is called both ElemDisplayParams and ElemMatSymb are fully determined.
+// When this is called both GeometryParams and GraphicParams are fully determined.
 // It is called before the call to ActivateMatSymb.
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------

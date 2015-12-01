@@ -23,8 +23,8 @@ DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidKernelEntityCR, Dgn
 
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr CollectPolyface(ISolidKernelEntityCR, DgnDbR, IFacetOptionsR);
 
-DGNPLATFORM_EXPORT static void CollectCurves(ISolidKernelEntityCR, DgnDbR, bvector<CurveVectorPtr>& curves, bvector<Render::ElemDisplayParams>& params, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static void CollectPolyfaces(ISolidKernelEntityCR, DgnDbR, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::ElemDisplayParams>& params, IFacetOptionsR);
+DGNPLATFORM_EXPORT static void CollectCurves(ISolidKernelEntityCR, DgnDbR, bvector<CurveVectorPtr>& curves, bvector<Render::GeometryParams>& params, bool includeEdges = true, bool includeFaceIso = false);
+DGNPLATFORM_EXPORT static void CollectPolyfaces(ISolidKernelEntityCR, DgnDbR, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR);
 
 DGNPLATFORM_EXPORT static void Draw(ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 DGNPLATFORM_EXPORT static void Draw(MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
@@ -87,11 +87,11 @@ virtual void        _AnnounceTransform(TransformCP trans) {}
 
 //! Supply the current symbology that subsequent geometry is displayed with.
 //! @param[in] matSymb The symbology to apply to subsequent process calls.
-virtual void        _AnnounceElemMatSymb(Render::ElemMatSymbCR matSymb) {}
+virtual void        _AnnounceGraphicParams(Render::GraphicParamsCR matSymb) {}
 
 //! Supply the current symbology used to generate the ElemMatSym values.
 //! @param[in] displayParams The symbology to apply to subsequent process calls.
-virtual void        _AnnounceElemDisplayParams(Render::ElemDisplayParamsCR displayParams) {}
+virtual void        _AnnounceElemDisplayParams(Render::GeometryParamsCR displayParams) {}
 
 //! Collect output as text.
 //! @param[in] text The text data.

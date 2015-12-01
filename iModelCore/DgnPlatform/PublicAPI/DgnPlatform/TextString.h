@@ -163,9 +163,9 @@ public:
     //! This is typically used, internally, to draw the "adornments" of text (e.g. underline), which can be distinct from drawing the actual glyphs in some APIs.
     //! @private
     DGNPLATFORM_EXPORT void DrawTextAdornments(ViewContextR) const;
-    //! Applies the relevant TextStringStyle properties to an ElemDisplayParams. Most ElemDisplayParams members are left untouched.
+    //! Applies the relevant TextStringStyle properties to an GeometryParams. Most GeometryParams members are left untouched.
     //! @private
-    DGNPLATFORM_EXPORT void GetGlyphSymbology(Render::ElemDisplayParamsR) const;
+    DGNPLATFORM_EXPORT void GetGlyphSymbology(Render::GeometryParamsR) const;
     //! Decomposes a Transform into an orientation and a 2D scale factor. This is useful for text, because scale should be transferred to the style's height and width, but orientation should remain as RotMatrix on the TextString.
     //! @private
     DGNPLATFORM_EXPORT static void TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotMatrixR orientation, TransformCR transform);

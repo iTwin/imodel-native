@@ -191,7 +191,7 @@ public:
 
     void DrawInVp(DgnViewportR vp, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
     DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
-    DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
+    DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentGeometryParams() before calling!
     
     DGNVIEW_EXPORT void DrawInView(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
     DGNVIEW_EXPORT void DrawInAllViews(ViewSetR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;

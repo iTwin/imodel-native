@@ -299,7 +299,7 @@ ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, 
 //---------------------------------------------------------------------------------------
 void _Stroke(ViewContextR context) const override
     {
-    ElemMatSymb         elemMatSymb;
+    GraphicParams         elemMatSymb;
 
     elemMatSymb.Init();
     //  Generally the line style will be drawn with the color of the element. We accomplish that

@@ -513,21 +513,21 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 
     int32_t style = GetHardwareStyle ();
 
-    ElemMatSymb saveMatSymb;
-    saveMatSymb = *context->GetElemMatSymb (); // Copy current ElemMatSymb
+    GraphicParams saveMatSymb;
+    saveMatSymb = *context->GetGraphicParams (); // Copy current GraphicParams
 
 #if defined (NEEDS_WORK_DGNITEM)
-    // Keep ElemDisplayParams and ElemMatSymb in synch...operations like drop lstyle use ElemDisplayParams not ElemMatSymb.
-    ElemDisplayParamsStateSaver saveState (*context->GetCurrentDisplayParams (), false, false, false, true, false);
+    // Keep GeometryParams and GraphicParams in synch...operations like drop lstyle use GeometryParams not GraphicParams.
+    ElemDisplayParamsStateSaver saveState (*context->GetCurrentGeometryParams (), false, false, false, true, false);
 #endif
 
-    // It's important to set the style via ElemDisplayParams, not ElemMatSymb, for printing to work correctly.
-    context->GetCurrentDisplayParams ()->SetLineStyle (style);
-    context->CookDisplayParams ();
-    context->GetIDrawGeom ().ActivateMatSymb (context->GetElemMatSymb ()); // Activate the new matsymb
+    // It's important to set the style via GeometryParams, not GraphicParams, for printing to work correctly.
+    context->GetCurrentGeometryParams ()->SetLineStyle (style);
+    context->CookGeometryParams ();
+    context->GetIDrawGeom ().ActivateMatSymb (context->GetGraphicParams ()); // Activate the new matsymb
 
     // Style override that caused this linestyle to be used needs to be cleared in order to use the correct raster pattern for the strokes. 
-    OvrMatSymbP ovrMatSymb = context->GetOverrideMatSymb ();
+    OvrGraphicParamsP ovrMatSymb = context->GetOverrideMatSymb ();
     uint32_t    saveFlags = ovrMatSymb->GetFlags ();
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
@@ -538,7 +538,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 
     context->GetIDrawGeom ().AddLineString (nPoints, inPoints, NULL); // Draw the linestring
 
-    // Restore ElemMatSymb to previous state, ElemDisplayParams will be restored in ElemDisplayParamsStateSaver destructor...
+    // Restore GraphicParams to previous state, GeometryParams will be restored in ElemDisplayParamsStateSaver destructor...
     context->GetIDrawGeom ().ActivateMatSymb (&saveMatSymb);
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))

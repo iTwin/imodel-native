@@ -171,7 +171,7 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetClosestPoint(hitPtWorld);
     m_currGeomDetail.SetLocatePriority(priority);
     m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtScreen, m_pickPointView)));
-    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtScreen) + GetCurrentDisplayParams().GetNetDisplayPriority());
+    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtScreen) + GetCurrentGeometryParams().GetNetDisplayPriority());
     m_currGeomDetail.SetGeomStreamEntryId(GetGeomStreamEntryId());
 
     RefCountedPtr<HitDetail> thisHit = new HitDetail(*GetViewport(), m_currentGeomSource, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
@@ -237,18 +237,6 @@ DRay3d PickContext::_GetBoresite() const
 
     return boresite;
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-int PickOutput::LocateQvElemCheckStop(CallbackArgP arg)
-    {
-    ViewContextP context = (ViewContextP) arg;
-
-    return (context->CheckStop() ? 1 : 0);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
