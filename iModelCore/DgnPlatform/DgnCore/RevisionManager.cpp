@@ -588,7 +588,7 @@ BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeG
     {
     ChangeStreamFileWriter writer(pathname);
     DbResult result = writer.FromChangeGroup(changeGroup);
-    if (BE_SQLITE_OK != result)
+    if (BE_SQLITE_OK != result || !pathname.DoesPathExist())
         {
         BeAssert("Could not write revision to a file");
         return ERROR;
@@ -598,23 +598,35 @@ BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeG
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2015
+//---------------------------------------------------------------------------------------
+bool RevisionManager::CanCreateRevision() const
+    {
+    TxnManagerR txnMgr = m_dgndb.Txns();
+    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
+        return false;
+
+    if (IsCreatingRevision())
+        return false;
+
+    TxnManager::TxnId firstTxn = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
+    if (!firstTxn.IsValid())
+        return false;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 DgnRevisionPtr RevisionManager::StartCreateRevision()
     {
-    TxnManagerR txnMgr = m_dgndb.Txns();
-    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
+    if (!CanCreateRevision())
         {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
+        BeAssert(false && "Cannot create revision. Check if there are changes and if there isn't a revision already created");
         return nullptr;
         }
-
-    if (IsCreatingRevision())
-        {
-        BeAssert(false && "There is already a revision being uploaded. Call AbandonCreateRevision() or FinishCreateRevision() first");
-        return nullptr;
-        }
-
+        
     ChangeGroup changeGroup;
     BentleyStatus status = GroupChanges(changeGroup);
     if (SUCCESS != status)
@@ -629,7 +641,7 @@ DgnRevisionPtr RevisionManager::StartCreateRevision()
         return nullptr;
 
     m_currentRevision = currentRevision;
-    m_currentRevisionEndTxnId = txnMgr.GetCurrentTxnId();
+    m_currentRevisionEndTxnId = m_dgndb.Txns().GetCurrentTxnId();
 
     return m_currentRevision;
     }

@@ -158,6 +158,9 @@ public:
     //! @return SUCCESS if the revisions were found to be valid, and were successfully merged, ERROR otherwise. 
     DGNPLATFORM_EXPORT BentleyStatus MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions);
 
+    //! Returns true if a revision can be created. 
+    DGNPLATFORM_EXPORT bool CanCreateRevision() const;
+
     //! Start creating a new revision from the changes saved to the Db
     //! @return Newly created revision. Null if there was an error.
     //! @remarks 
