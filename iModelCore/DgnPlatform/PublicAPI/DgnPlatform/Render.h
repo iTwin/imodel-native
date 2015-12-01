@@ -474,12 +474,11 @@ private:
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-
     DGNPLATFORM_EXPORT int FromResolvedElemDisplayParams(GeometryParamsCR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams(GeometryParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
-    void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_texture = nullptr; }
+    void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_texture = nullptr;}
     void Init(ILineStyleCP);
 
 public:
@@ -914,12 +913,13 @@ public:
     void AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster3d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
 
     //! Draw a 3D point cloud.
-    //! @param[in]      drawParams      Object containing draw parameters.
+    //! @param[in] drawParams Object containing draw parameters.
     void AddPointCloud(PointCloudDraw* drawParams) {_AddPointCloud(drawParams);}
 
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
+    void AddSubGraphic(Graphic& graphic, TransformCR trans, GraphicParams& params) {_AddSubGraphic(graphic, trans, params);}
     bool IsQuickVision() const {return _IsQuickVision();}
 };
 
