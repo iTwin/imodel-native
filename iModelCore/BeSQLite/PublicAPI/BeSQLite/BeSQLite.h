@@ -1681,7 +1681,7 @@ public:
     //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
     //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be nullptr.
     //! @param[in] description a string that describes this entry. May be nullptr.
-    //! @param[in] lastModified the time the file was last modified. May be nullptr.
+    //! @param[in] lastModified the time the file was last modified. May be nullptr. If not specified, then no last-modifed time will be recorded for this embedded file.
     //! @return BE_SQLITE_OK if the entry was successfully added, and error status otherwise.
     BE_SQLITE_EXPORT DbResult AddEntry(Utf8CP name, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr);
 
@@ -1690,11 +1690,12 @@ public:
     //! @param[in] data the file data to save.
     //! @param[in] size the number of bytes in data.
     //! @param[in] name the name by which the file was embedded.
+    //! @param[in] lastModified the updated last-modified time to associate with the embedded file. May be nullptr. If not specified, then the last-modified time of this embeded file (if any) is left unchanged.
     //! @param[in] compress if true, the file will be compressed as it is imported. This makes the Db smaller, but is also slower to import and later read.
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @return BE_SQLITE_OK if the entry was successfully saved, and error status otherwise.
-    BE_SQLITE_EXPORT DbResult Save(void const* data, uint64_t size, Utf8CP name, bool compress=true, uint32_t chunkSize=500*1024);
+    BE_SQLITE_EXPORT DbResult Save(void const* data, uint64_t size, Utf8CP name, DateTime const* lastModified, bool compress=true, uint32_t chunkSize=500*1024);
 
 
     //! Remove an entry from this embedded file table, by name. All of its data will be deleted from the Db.

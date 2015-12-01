@@ -3879,7 +3879,7 @@ DbResult DbEmbeddedFileTable::Replace(Utf8CP name, Utf8CP filespec, uint32_t chu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbEmbeddedFileTable::Save(void const* data, uint64_t size, Utf8CP name, bool compress, uint32_t chunkSize)
+DbResult DbEmbeddedFileTable::Save(void const* data, uint64_t size, Utf8CP name, DateTime const* lastModified, bool compress, uint32_t chunkSize)
     {
     BeAssert(m_db.IsTransactionActive());
     BeBriefcaseBasedId id = QueryFile(name);
@@ -3887,6 +3887,23 @@ DbResult DbEmbeddedFileTable::Save(void const* data, uint64_t size, Utf8CP name,
         return  BE_SQLITE_ERROR;
 
     removeFileBlobs(m_db, id);
+
+    if (nullptr != lastModified)
+        {
+        Statement stmt(m_db, "UPDATE " BEDB_TABLE_EmbeddedFile " SET LastModified=? WHERE Id=?");
+
+        int parameterIndex = 1;
+        double lastModifiedJd = 0.0;
+        lastModified->ToJulianDay(lastModifiedJd);
+        stmt.BindDouble(parameterIndex, lastModifiedJd);
+
+        parameterIndex++;
+        stmt.BindId(parameterIndex, id);
+
+        DbResult rc = stmt.Step();
+        if (BE_SQLITE_DONE != rc)
+            return rc;
+        }
 
     if (compress)
         {
