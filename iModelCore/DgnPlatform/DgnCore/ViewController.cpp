@@ -314,7 +314,7 @@ DbResult ViewController::SaveAs(Utf8CP newName)
     if (cpView.IsNull())
         return BE_SQLITE_INTERNAL;
 
-    DgnElement::CreateParams params(cpView->GetDgnDb(), cpView->GetModelId(), cpView->GetElementClassId(), ViewDefinition::CreateCode(newName), DgnElementId());
+    DgnElement::CreateParams params(cpView->GetDgnDb(), cpView->GetModelId(), cpView->GetElementClassId(), ViewDefinition::CreateCode(newName));
     ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(cpView->Clone(nullptr, &params).get());
     BeAssert(newView.IsValid());
     if (newView.IsNull() || newView->Insert().IsNull())
@@ -1094,11 +1094,6 @@ bool PhysicalViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status,
     return true;
     }
 
-// Temporary hack to make this work properly. The first rotation I receive from CM seems
-// to always be the reference frame - using that at best causes the camera to skip for a frame,
-// and at worst causes it to be permanently wrong (RelativeHeading).  Will remove and clean
-// up alongside s_defaultForward/s_defaultUp.
-static bool s_isFirstMotion = false;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
@@ -1106,7 +1101,6 @@ static bool s_isFirstMotion = false;
 void ViewController::ResetDeviceOrientation()
     {
     m_defaultDeviceOrientationValid = false;
-    s_isFirstMotion = true;
     }
 
 static DVec3d s_defaultForward, s_defaultUp;
@@ -1114,13 +1108,16 @@ static DVec3d s_defaultForward, s_defaultUp;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui)
+bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
     if (!m_defaultDeviceOrientationValid)
         {
-        if (s_isFirstMotion)
+        if (nEventsSinceEnabled < 2)
             {
-            s_isFirstMotion = false;
+            // Hack to make this work properly. The first rotation received from CM seems
+            // to always be the reference frame - using that at best causes the camera to skip for a frame,
+            // and at worst causes it to be permanently wrong (RelativeHeading).  Someone should remove and clean
+            // up alongside s_defaultForward/s_defaultUp.
             return false;
             }
         m_defaultDeviceOrientation = matrix;

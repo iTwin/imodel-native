@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "../TestFixture/BlankDgnDbTestFixture.h"
 #include <numeric>
 #include <DgnPlatform/DgnTexture.h>
 
@@ -14,30 +14,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnTexturesTest : public ::testing::Test
+struct DgnTexturesTest : public BlankDgnDbTestFixture
     {
-private:
-    ScopedDgnHost           m_host;
-    DgnDbPtr                m_db;
-protected:
-    void SetupProject()
-        {
-        BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath (L"textures.idgndb");
-        BeFileName::BeDeleteFile (filename);
-
-        CreateDgnDbParams params;
-        params.SetOverwriteExisting (false);
-        DbResult status;
-        m_db = DgnDb::CreateDgnDb (&status, filename, params);
-        ASSERT_TRUE (m_db != nullptr);
-        ASSERT_EQ (BE_SQLITE_OK, status) << status;
-        }
-
-    DgnDbR      GetDb()
-        {
-        return *m_db;
-        }
-
     DgnTexture::Data     MakeTextureData (DgnTexture::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
@@ -69,7 +47,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     {
-    SetupProject();
+    SetupProject(L"textures.idgndb");
     DgnDbR db = GetDb();
 
     // Textures have names

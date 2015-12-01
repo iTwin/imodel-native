@@ -36,7 +36,6 @@
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
-#define DGN_CLASSNAME_ElementLabel          "ElementLabel"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_Link                  "Link"
@@ -750,10 +749,10 @@ public:
     private:
         DEFINE_T_SUPER(BeSQLite::DbTableIterator);
 
-        DgnElementKey m_elementKey;
+        DgnElementId m_elementId;
 
     public:
-        OnElementIterator(DgnDbCR db, DgnElementKey elementKey) : T_Super((BeSQLite::DbCR)db), m_elementKey(elementKey) {}
+        OnElementIterator(DgnDbCR db, DgnElementId elementId) : T_Super((BeSQLite::DbCR)db), m_elementId(elementId) {}
 
         //=======================================================================================
         // @bsiclass
@@ -806,7 +805,7 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
-            DGNPLATFORM_EXPORT DgnElementKey GetKey() const;
+            DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey GetECInstanceKey() const;
             Entry const& operator*() const { return *this; }
 
         }; // Entry
@@ -820,13 +819,13 @@ public:
 
     DGNPLATFORM_EXPORT DgnLinkPtr QueryById(DgnLinkId) const;
     Iterator MakeIterator() const { return Iterator(m_dgndb); }
-    OnElementIterator MakeOnElementIterator(DgnElementKey elementKey) const { return OnElementIterator(m_dgndb, elementKey); }
+    OnElementIterator MakeOnElementIterator(DgnElementId elementId) const { return OnElementIterator(m_dgndb, elementId); }
     ReferencesLinkIterator MakeReferencesLinkIterator(DgnLinkId linkId) const { return ReferencesLinkIterator(m_dgndb, linkId); }
     DGNPLATFORM_EXPORT BentleyStatus Update(DgnLinkCR);
 
-    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkR);
-    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkId);
-    DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
+    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementId, DgnLinkR);
+    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementId, DgnLinkId);
+    DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementId, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
 };
 
