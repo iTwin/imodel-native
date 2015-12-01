@@ -47,6 +47,7 @@
 #include "DgnFont.h"
 #include "RenderMaterial.h"
 #include "DgnView.h"
+#include "NamedVolume.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

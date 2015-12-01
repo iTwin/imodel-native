@@ -8,165 +8,121 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+DGNPLATFORM_REF_COUNTED_PTR(NamedVolume)
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 using BentleyApi::BeSQLite::EC::ECInstanceKey;
 using BentleyApi::BeSQLite::EC::ECSqlStatement;
 using BentleyApi::BeSQLite::Statement;
 
+namespace dgn_ElementHandler { struct NamedVolumeHandler; }
+
 //=======================================================================================
 //! API to setup user defined regions that can be shaded, clipped, queried & serialized
 // @bsiclass                                                 Ramanujam.Raman      01/2015
 //=======================================================================================
-struct NamedVolume
+struct EXPORT_VTABLE_ATTRIBUTE NamedVolume : PhysicalElement
 {
+    friend struct dgn_ElementHandler::NamedVolumeHandler;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_NamedVolume, PhysicalElement)
+public:
+    struct CreateParams : PhysicalElement::CreateParams
+    {
+        friend struct dgn_ElementHandler::NamedVolumeHandler;
+        DEFINE_T_SUPER(PhysicalElement::CreateParams);
+
+        DPoint3d m_origin;
+        bvector<DPoint2d> m_shape;
+        double m_height;
+
+    protected:
+        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnClassId classId, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId id = DgnElementId(), DgnElementId parent = DgnElementId()) :
+            T_Super(db, modelId, classId, category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, id, parent), m_origin(origin), m_shape(shape), m_height(height) {}
+
+        explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params, DgnCategoryId(), Placement3d()) {}
+
+    public:
+        //! Parameters to create a NamedVolume
+        //! @param db DgnDb
+        //! @param modelId Model Id
+        //! @param category Category Id
+        //! @param origin Origin of the volume, described from the Project Coordinate System in storage units (this translated origin, and the Project Coordinate System directions together define a Local Coordinate System for the volume)
+        //! @param shape Closed loop of 2D points representing the boundary of the extruded volume, described from the Local Coordinate System in storage units.
+        //! @param height Height of the extruded volume in storage units
+        //! @param code Code
+        //! @param id ElementId
+        //! @param parent Parent ElementId
+        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId id = DgnElementId(), DgnElementId parent = DgnElementId()) :
+            T_Super(db, modelId, NamedVolume::QueryClassId(db), category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, id, parent), m_origin(origin), m_shape(shape), m_height(height)
+            {}
+
+        CreateParams(CreateParams const& params) : T_Super(params), m_origin(params.m_origin), m_shape(params.m_shape), m_height(params.m_height) {}
+    };
+
 private:
-    Utf8String m_name;
-    DPoint3d m_origin;
-    bvector<DPoint2d> m_shape;
-    double m_height;
+    mutable ViewContextP m_viewContext = nullptr;
+    mutable ClipPlaneSet* m_clipPlaneSet = nullptr;
 
-    ECInstanceKey m_ecKey;
-
-//__PUBLISH_SECTION_END__
-
-    NamedVolume() {}
-    void BindForInsertOrUpdate (ECSqlStatement& statement) const;
-    static void DrawFace (DPoint3dCP points, size_t numPoints, uint32_t color, ViewContextR context);
-
-    void Get3dShape (bvector<DPoint3d>& shape) const;
     ClipVectorPtr CreateClipVector() const;
     std::unique_ptr<FenceParams> CreateFence (DgnViewportP viewport, bool allowPartialOverlaps) const;
     static std::unique_ptr<DgnViewport> CreateNonVisibleViewport (DgnDbR dgnDb);
 
-    // Gets the range of the volume, described from the Project Coordinate System in storage units 
-    void GetRange(DRange3d& range) const;
-
-    void FindElements 
-        (
-        DgnElementIdSet* elementIds, 
-        FenceParamsR fence,
-        Statement& stmt,
-        DgnDbR dgnDb
-        ) const;
-
-//__PUBLISH_SECTION_START__
+    BentleyStatus GetRange(DRange3d& range) const; // Gets the range of the volume, described from the Project Coordinate System in storage units 
+    
+    void FindElements(DgnElementIdSet& elementIds, FenceParamsR fence, Statement& stmt, DgnDbR dgnDb) const;
+    BentleyStatus ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const;
 
 public:
     /*
-     * Create 
-     */
+    * CRUD
+    */
 
     //! Constructor
-    //! @param name Name of the volume
-    //! @param origin Origin of the volume, described from the Project Coordinate System in storage units 
-    //! (this translated origin, and the Project Coordinate System directions together define a Local Coordinate System for the volume)
-    //! @param shapePoints Closed loop of 2D points representing the boundary of the extruded volume, described from the 
-    //! Local Coordinate System in storage units.
-    //! @param shapeNumPoints Length of array of the shapePoints parameter
-    //! @param height Height of the extruded volume in storage units
-    inline NamedVolume 
-        (
-        Utf8StringCR name, 
-        DPoint3dCR origin, 
-        DPoint2dCP shapePoints, 
-        size_t shapeNumPoints,
-        double height
-        );
+    DGNPLATFORM_EXPORT explicit NamedVolume(CreateParams const& params);
 
-    //! Copy constructor
-    inline NamedVolume (const NamedVolume& other);
+    //! Creates a new NamedVolume element
+    static NamedVolumePtr Create(PhysicalModelCR model, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height) { return new NamedVolume(CreateParams(model.GetDgnDb(), model.GetModelId(), origin, shape, height)); }
 
-    //! Move constructor
-    inline NamedVolume (NamedVolume&& other);
+    //! Creates a new NamedVolume element
+    static NamedVolumePtr Create(CreateParams const& params) { return new NamedVolume(params); }
 
     //! Destructor
-    ~NamedVolume() {}
+    ~NamedVolume() { ClearClip(); }
 
-    //! Copy assignment operator
-    inline NamedVolume& operator= (const NamedVolume& other);
-
-    //! Move assignment operator
-    inline NamedVolume& operator= (NamedVolume&& other);
-
-    //! Set the name of the volume
-    //! @param name Name of the volume
-    void SetName (Utf8StringCR name) {m_name = name;}
-
-    //! Set the origin of the volume 
-    //! @param origin Origin of the volume, described from the Project Coordinate System in storage units 
-    //! (this translated origin, and the Project Coordinate System directions together define a Local Coordinate System for the volume)
-    void SetOrigin (DPoint3dCR origin) {m_origin = origin;}
-
-    //! Set the shape of the volume
-    //! @param shapePoints Closed loop of 2D points representing the boundary of the extruded volume, described from the 
-    //! Local Coordinate System in storage units.
-    //! @param shapeNumPoints Length of array of the shapePoints parameter
-    DGNPLATFORM_EXPORT void SetShape (DPoint2dCP shapePoints, size_t shapeNumPoints);
-
-    //! Set the height of the volume
+    //! Setup the geom stream
+    //! @param origin Origin of the volume, described from the Project Coordinate System in storage units (this translated origin, and the Project Coordinate System directions together define a Local Coordinate System for the volume)
+    //! @param shape Closed loop of 2D points representing the boundary of the extruded volume, described from the Local Coordinate System in storage units.
     //! @param height Height of the extruded volume in storage units
-    void SetHeight (double height) {m_height = height;}
+    DGNPLATFORM_EXPORT void SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& shape, double height);
 
-    /* 
-    * Insert 
-    */
+    //! Extract geometry details
+    DGNPLATFORM_EXPORT BentleyStatus ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& direction, double& height) const;
+
+    //! Inserts the volume into the Db
+    DGNPLATFORM_EXPORT NamedVolumeCPtr Insert();
     
-    //! Inserts the named volume into the Db
-    DGNPLATFORM_EXPORT StatusInt Insert (DgnDbR);
+    //! Updates the volume in the Db
+    DGNPLATFORM_EXPORT NamedVolumeCPtr Update();
 
-    /*
-     * Read 
-     */
-     
-     //! Reads a named volume 
-    DGNPLATFORM_EXPORT static std::unique_ptr<NamedVolume> Read (Utf8StringCR name, DgnDbR);
-   
-    //! Get the name of the volume
-    Utf8StringCR GetName() const {return m_name;}
-
-    //! Get the origin of the volume, described as a translation from the Project Coordinate System in storage units 
-    DPoint3dCR GetOrigin() const {return m_origin;}
-
-    //! Get the shape of the volume, described from the Local Coordinate System in storage units.
-    const bvector<DPoint2d>& GetShape() const {return m_shape;}
-
-    //! Get the height of the volume in storage units
-    double GetHeight() const {return m_height;}
+    //! Get a read only copy of the NamedVolume from the DgnDb
+    DGNPLATFORM_EXPORT static NamedVolumeCPtr Get(DgnDbCR dgndb, Dgn::DgnElementId elementId);
     
-     //! Check if a volume exists
-    DGNPLATFORM_EXPORT static bool Exists (Utf8StringCR name, DgnDbR);
-   
+    //! Get an editable copy of the NamedVolume from the DgnDb
+    DGNPLATFORM_EXPORT static NamedVolumePtr GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elementId);
+
     /*
-     * Update
+     * Setup views with the Volume
      */
-     //! Updates the named volume in the Db
-    DGNPLATFORM_EXPORT StatusInt Update (DgnDbR);
-
-    /*
-    * Delete
-    */
-    //! Deletes a named volume 
-    DGNPLATFORM_EXPORT static StatusInt Delete (Utf8StringCR name, DgnDbR);
-
-    /*
-    * View operations
-    */
 
     //! Setup view clips to the boundary of the volume. 
-    //! @param viewport Viewport to setup the clips in 
-    DGNPLATFORM_EXPORT void SetClip (DgnViewport& viewport) const;
+    //! @param context ViewContext to setup the clips in 
+    DGNPLATFORM_EXPORT BentleyStatus SetClip(ViewContextR context) const;
 
     //! Clear any view clips previously setup
-    //! @param viewport Viewport to clear the clips from.
-    DGNPLATFORM_EXPORT static void ClearClip (DgnViewport& viewport);
+    DGNPLATFORM_EXPORT void ClearClip() const;
     
-    //! Draw the named volume with the supplied color
-    //! @param color Color used to draw/shade the volume. @see Viewport::MakeTrgbColor()
-    //! @param context ViewContext used to draw the volume. It needs to be attached to a viewport.
-    DGNPLATFORM_EXPORT void Draw (uint32_t color, ViewContextR context) const;
-
-    //! Fit the view to just show the named volume, keeping the view's current rotation.
+    //! Fit the view to just show the volume, keeping the view's current rotation.
     //! @param[in] viewport  Viewport to fit the volume
     //! @param[in] aspectRatio The X/Y aspect ratio of the view into which the result will be displayed. If the aspect ratio of the volume does not
     //! match aspectRatio, the shorter axis is lengthened and the volume is centered. If aspectRatio is NULL, no adjustment is made.
@@ -178,90 +134,59 @@ public:
     //! @see ViewController::LookAtVolume()
     DGNPLATFORM_EXPORT void Fit (DgnViewport& viewport, double const* aspectRatio=nullptr, ViewController::MarginPercent const* margin=nullptr) const;
 
+    //! Hide the volume in all views
+    void Hide() const { SetUndisplayed(true); }
+
+    //! Un-hide the volume in all views
+    //! @remarks The view should display the category and model of the volume to be shown
+    void UnHide() const { SetUndisplayed(false); }
+
+
     /*
-     * Find/Test contained elements
+     * Query contained elements in the Volume
      */
 
-    //! Find all elements in the project within the named volume
-    //! @param[out] elementIds Element ids found (pass nullptr if not interested). Any existing entries are not cleared. 
+    //! Find all elements in the project within the volume
+    //! @param[out] elementIds Element ids found. Any existing entries are not cleared. 
     //! @param[in] dgnDb DgnDb containing the elements
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
-    DGNPLATFORM_EXPORT void FindElements (DgnElementIdSet* elementIds, DgnDbR dgnDb, bool allowPartialOverlaps = true) const;
+    DGNPLATFORM_EXPORT void FindElements (DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps = true) const;
 
-    //! Find all elements in the specified view within the named volume
-    //! @param[out] elementIds Element ids found (pass nullptr if not interested). Any existing entries are not cleared. 
+    //! Find all elements in the specified view within the volume
+    //! @param[out] elementIds Element ids found. Any existing entries are not cleared. 
     //! @param[in] viewport Viewport that's used to find only the elements displayed. 
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
-    DGNPLATFORM_EXPORT void FindElements (DgnElementIdSet* elementIds, DgnViewportR viewport, bool allowPartialOverlaps = true) const;
+    DGNPLATFORM_EXPORT void FindElements (DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps = true) const;
 
-    //! Determines if the named volume contains the element
-    //! @param elementRef Element to check
+    //! Determines if the volume contains the element
+    //! @param element Element to check
     //! @param allowPartialOverlaps Pass false to check strict containment. Pass true to allow elements that partially
     //! overlap the volume (i.e., at the boundary). 
     //! @return true if volume contains element. false otherwise. 
-    DGNPLATFORM_EXPORT bool ContainsElement (DgnElementR elementRef, bool allowPartialOverlaps = true) const;
+    DGNPLATFORM_EXPORT bool ContainsElement(DgnElementCR element, bool allowPartialOverlaps = true) const;
+
+    /*
+    * Misc
+    */
+
+    //! Query the DgnClassId of the dgn.NamedVolume ECClass in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.NamedVolume class - it does @em not return the class of a specific instance.
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_NamedVolume)); }
+
+    //! Gets the default category id for the vaolumes
+    DGNPLATFORM_EXPORT static DgnCategoryId GetDefaultCategoryId(DgnDbR db);
 };
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-inline NamedVolume::NamedVolume 
-(
-Utf8StringCR name, 
-DPoint3dCR origin, 
-DPoint2dCP shapePoints, 
-size_t numShapePoints,
-double height
-) : m_name (name), m_origin (origin), m_height (height)
+namespace dgn_ElementHandler
+{
+    //! The ElementHandler for NamedVolume
+    struct EXPORT_VTABLE_ATTRIBUTE NamedVolumeHandler : Physical
     {
-    SetShape (shapePoints, numShapePoints);
-    }
-    
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-inline NamedVolume::NamedVolume (const NamedVolume& other) 
-    : m_name (other.m_name), m_origin (other.m_origin), m_shape (other.m_shape), m_height (other.m_height), m_ecKey (other.m_ecKey)
-    {
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-inline NamedVolume::NamedVolume (NamedVolume&& other)
-    : m_origin (other.m_origin), m_height (other.m_height), m_ecKey (other.m_ecKey)
-    {
-    m_name = std::move (other.m_name);
-    m_shape = std::move (other.m_shape);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-inline NamedVolume& NamedVolume::operator= (const NamedVolume& other)
-    {
-    m_name = other.m_name;
-    m_origin = other.m_origin;
-    m_shape = other.m_shape;
-    m_height = other.m_height;
-    m_ecKey = other.m_ecKey;
-    return *this;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-inline NamedVolume& NamedVolume::operator= (NamedVolume&& other)
-    {
-    m_name = std::move (other.m_name);
-    m_origin = other.m_origin;
-    m_shape = std::move (other.m_shape);
-    m_height = other.m_height;
-    m_ecKey = other.m_ecKey;
-    return *this;
-    }
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_NamedVolume, NamedVolume, NamedVolumeHandler, Physical, DGNPLATFORM_EXPORT)
+    };
+}
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

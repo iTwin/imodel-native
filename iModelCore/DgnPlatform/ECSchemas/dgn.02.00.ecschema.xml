@@ -372,6 +372,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>Element3d</BaseClass>
     </ECClass>
+    <ECClass typeName="NamedVolume" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECClass>
     <ECClass typeName="DrawingElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />

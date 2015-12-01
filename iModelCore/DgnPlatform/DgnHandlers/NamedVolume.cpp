@@ -9,288 +9,249 @@
 #include    <DgnPlatform/NamedVolume.h>
 #include    <DgnPlatform/QueryView.h>
 
-#define DGNEC_SCHEMA_NAME L"dgn"
-#define DGNEC_SCHEMA_MAJOR_VERSION 1
-#define DGNEC_SCHEMA_MINOR_VERSION 2
-
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE_EC 
 USING_NAMESPACE_BENTLEY_EC
 
+#define DEFAULT_CATEGORY_NAME "VolumeItemDefaultCategory"
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::SetShape (DPoint2dCP shapePoints, size_t shapeNumPoints)
+namespace dgn_ElementHandler
     {
-    m_shape.resize (shapeNumPoints);
-    memcpy (&m_shape.front(), shapePoints, shapeNumPoints * sizeof(DPoint2d));
-
-    if (!m_shape[shapeNumPoints -1].IsEqual (m_shape[0]))
-        m_shape.push_back (m_shape[0]);
+    HANDLER_DEFINE_MEMBERS(NamedVolumeHandler)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
+// @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::BindForInsertOrUpdate (ECSqlStatement& statement) const
+NamedVolume::NamedVolume(CreateParams const& params) : T_Super(params) 
     {
-    statement.BindText (1, m_name.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindPoint3D (2, m_origin);
-    statement.BindDouble (3, m_height);
-    IECSqlArrayBinder& arrayBinder = statement.BindArray (4, (uint32_t) m_shape.size());
-    for (DPoint2dCR point : m_shape)
-        {
-        arrayBinder.AddArrayElement().BindPoint2D (point);
-        }
+    if (GetModel().IsValid() && params.m_shape.size() > 0)
+       SetupGeomStream(params.m_origin, params.m_shape, params.m_height);
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
+// @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-StatusInt NamedVolume::Insert (DgnDbR project)
+// static
+DgnCategoryId NamedVolume::GetDefaultCategoryId(DgnDbR db)
     {
-    PRECONDITION (!m_ecKey.IsValid() && "Call update instead", ERROR);
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(DEFAULT_CATEGORY_NAME, db);
+    if (categoryId.IsValid())
+        return categoryId;
 
-    ECSqlStatement statement;
-    Utf8CP ecSql = "INSERT INTO dgn.NamedVolume (Name, Origin, Height, Shape) VALUES(?,?,?,?)";
-    ECSqlStatus ecSqlStatus = statement.Prepare (project, ecSql);
-    if (!EXPECTED_CONDITION (ecSqlStatus.IsSuccess()))
-        return ERROR;
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(ColorDef::LightGrey());
 
-    this->BindForInsertOrUpdate (statement);
-    DbResult stepStatus = statement.Step (m_ecKey);
-    return (stepStatus == BE_SQLITE_DONE) ? SUCCESS : ERROR;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-// static 
-unique_ptr<NamedVolume> NamedVolume::Read (Utf8StringCR name, DgnDbR project)
-    {
-    ECSqlStatement statement;
-    Utf8PrintfString ecSql ("SELECT Origin, Height, Shape FROM ONLY dgn.NamedVolume WHERE Name = '%s'", name.c_str());
-    ECSqlStatus status = statement.Prepare (project, ecSql.c_str());
-    if (!EXPECTED_CONDITION (status.IsSuccess()))
-        return nullptr;
-
-    DbResult stepStatus = statement.Step();
-    if (!EXPECTED_CONDITION (stepStatus == BE_SQLITE_ROW))
-        return nullptr;
-
-    DPoint3d origin = statement.GetValuePoint3D (0);
-    double height = statement.GetValueDouble (1);
-    IECSqlArrayValue const& shapeValue = statement.GetValueArray (2);
-    bvector<DPoint2d> shape;
-    for (IECSqlValue const* pointValue : shapeValue)
-        {
-        shape.push_back (pointValue->GetPoint2D());
-        }
-
-    unique_ptr<NamedVolume> volume = std::unique_ptr<NamedVolume> (new NamedVolume (name, origin, (DPoint2dCP) &shape[0], shape.size(), height));
-    return volume;
-    }
+    DgnCategory category(DgnCategory::CreateParams(db, DEFAULT_CATEGORY_NAME, DgnCategory::Scope::Physical, DgnCategory::Rank::System));
+    category.Insert(appearance);
     
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-// static 
-bool NamedVolume::Exists (Utf8StringCR name, DgnDbR project)
-    {
-    ECSqlStatement statement;
-    Utf8PrintfString ecSql ("SELECT * FROM ONLY dgn.NamedVolume WHERE Name = '%s'", name.c_str());
-    ECSqlStatus status = statement.Prepare (project, ecSql.c_str());
-    if (!EXPECTED_CONDITION (status.IsSuccess()))
-        return false;
-
-    DbResult stepStatus = statement.Step();
-    return (stepStatus == BE_SQLITE_ROW);
+    categoryId = category.GetCategoryId();
+    BeAssert(categoryId.IsValid());
+    return categoryId;
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
+// @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-StatusInt NamedVolume::Update (DgnDbR project)
+void NamedVolume::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& shape, double height)
     {
-    PRECONDITION (m_ecKey.IsValid() && "Call insert instead", ERROR);
+    bvector<DPoint3d> shape3d;
+    for (int ii = 0; ii < (int) shape.size(); ii++)
+        shape3d.push_back(DPoint3d::From(shape[ii]));
+    CurveVectorPtr baseCurve = CurveVector::CreateLinear(&shape3d[0], (int) shape3d.size(), CurveVector::BOUNDARY_TYPE_Outer, true);
 
-    ECSqlStatement statement;
-    Utf8CP ecSql = "UPDATE ONLY dgn.NamedVolume SET Name=?, Origin=?, Height=?, Shape=? WHERE ECInstanceId=?";
-    ECSqlStatus ecSqlStatus = statement.Prepare (project, ecSql);
-    if (!EXPECTED_CONDITION (ecSqlStatus.IsSuccess()))
-        return ERROR;
-
-    this->BindForInsertOrUpdate (statement);
-    statement.BindId (5, m_ecKey.GetECInstanceId());
-
-    DbResult stepStatus = statement.Step ();
-    return (stepStatus == BE_SQLITE_DONE) ? SUCCESS : ERROR;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-// static 
-StatusInt NamedVolume::Delete (Utf8StringCR name, DgnDbR project)
-    {
-    ECSqlStatement statement;
-    Utf8CP ecSql = "DELETE FROM ONLY dgn.NamedVolume WHERE NamedVolume.Name=?";
-    ECSqlStatus ecSqlStatus = statement.Prepare (project, ecSql);
-    if (!EXPECTED_CONDITION (ecSqlStatus.IsSuccess()))
-        return ERROR;
-
-    statement.BindText (1, name.c_str(), IECSqlBinder::MakeCopy::No);
+    DVec3d extrusionVector;
+    extrusionVector.Init(0, 0, height);
     
-    DbResult stepStatus = statement.Step ();
-    return (stepStatus == BE_SQLITE_DONE) ? SUCCESS : ERROR;
+    DgnExtrusionDetail extrusionDetail(baseCurve, extrusionVector, true);
+    ISolidPrimitivePtr extrusionSolid = ISolidPrimitive::CreateDgnExtrusion(extrusionDetail);
+
+    DgnModelPtr model = GetModel();
+    BeAssert(model.IsValid());
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, GetCategoryId(), origin, YawPitchRollAngles());
+    builder->Append(*extrusionSolid);
+    builder->SetGeomStreamAndPlacement(*this);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+NamedVolumeCPtr NamedVolume::Get(DgnDbCR dgndb, Dgn::DgnElementId elementId)
+    {
+    DgnElementCPtr element = dgndb.Elements().GetElement(elementId);
+    return NamedVolumeCPtr(dynamic_cast<NamedVolume const*> (element.get()));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+NamedVolumePtr NamedVolume::GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elementId)
+    {
+    return dgndb.Elements().GetForEdit<NamedVolume>(elementId);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+NamedVolumeCPtr NamedVolume::Insert()
+    {
+    return GetDgnDb().Elements().Insert<NamedVolume>(*this);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+NamedVolumeCPtr NamedVolume::Update()
+    {
+    return GetDgnDb().Elements().Update<NamedVolume>(*this);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+BentleyStatus NamedVolume::ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const
+    {
+    ElementGeometryCollection geomCollection(*this);
+
+    ElementGeometryCollection::const_iterator iter = geomCollection.begin();
+    if (iter == geomCollection.end())
+        {
+        BeAssert(false && "Expected DgnExtrusion in the geometry source for NamedVolume-s");
+        return ERROR;
+        }
+
+    (*iter)->GetAsISolidPrimitive()->TryGetDgnExtrusionDetail(extrusionDetail);
+    extrusionDetail.TransformInPlace(geomCollection.GetGeometryToWorld());
+    
+    BeAssert(++iter == geomCollection.end() && "Did not expect more than two entries in geometry source for NamedVolume-s");
+    if (extrusionDetail.m_baseCurve->GetBoundaryType() != CurveVector::BOUNDARY_TYPE_Outer)
+        {
+        BeAssert(false && "Only extrusions of outer curves supported");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+BentleyStatus NamedVolume::ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& direction, double& height) const
+    {
+    DgnExtrusionDetail extrusionDetail;
+    BentleyStatus status = ExtractExtrusionDetail(extrusionDetail);
+    if (SUCCESS != status)
+        return ERROR;
+
+    height = direction.Normalize(extrusionDetail.m_extrusionVector);
+
+    if (extrusionDetail.m_baseCurve.IsNull() || extrusionDetail.m_baseCurve->size() != 1)
+        {
+        BeAssert(false && "Empty or unexpected curve in the NamedVolume profile");
+        return ERROR;
+        }
+
+    ICurvePrimitivePtr& curve = (*extrusionDetail.m_baseCurve)[0];
+
+    if (!curve.IsValid() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != curve->GetCurvePrimitiveType())
+        {
+        BeAssert(false && "Unhandled curve primitives in the NamedVolume profile");
+        return ERROR;
+        }
+
+    bvector<DPoint3d> const* curvePoints = curve->GetLineStringCP();
+    if (curvePoints == nullptr || curvePoints->size() == 0)
+        {
+        BeAssert(false && "Empty curve primitive in the NamedVolume profile");
+        return ERROR;
+        }
+
+    shape.clear();
+    shape.insert(shape.end(), curvePoints->begin(), curvePoints->end());
+
+    return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::SetClip (DgnViewport& viewport) const
+BentleyStatus NamedVolume::SetClip(ViewContextR context) const
     {
-    DPoint3d origin = this->GetOrigin();
-
-    DVec3d direction;
-    direction.Init (0, 0, 1.0);
-
-    // Transform the local shape points to the Project Csys
     bvector<DPoint3d> shape;
-    this->Get3dShape (shape);
+    DVec3d direction;
+    double height;
+    BentleyStatus status = ExtractGeomStream(shape, direction, height);
+    if (SUCCESS != status)
+        return status;
 
     // Sweep the shape to form clip planes
-    ClipPlaneSet tmpClipPlaneSet = ClipPlaneSet::FromSweptPolygon (&shape[0], shape.size(), &direction);
+    ClipPlaneSet tmpClipPlaneSet = ClipPlaneSet::FromSweptPolygon(&shape[0], shape.size(), &direction);
 
     // Add top and bottom clip planes
     DVec3d topNormal;
     topNormal.Negate(direction);
-    DPoint3d topOrigin;
-    topOrigin.SumOf (origin, direction, this->GetHeight());
+    DPoint3d topPoint;
+    topPoint.SumOf(shape[0], direction, height);
 
     DPlane3d topPlane, bottomPlane;
-    bottomPlane.InitFromOriginAndNormal (origin, direction);
-    topPlane.InitFromOriginAndNormal (topOrigin, topNormal);
+    bottomPlane.InitFromOriginAndNormal(shape[0], direction);
+    topPlane.InitFromOriginAndNormal(topPoint, topNormal);
 
-    ClipPlane topClipPlane (topPlane);
-    ClipPlane bottomClipPlane (bottomPlane);
+    ClipPlane topClipPlane(topPlane);
+    ClipPlane bottomClipPlane(bottomPlane);
 
     for (ConvexClipPlaneSet& subSet : tmpClipPlaneSet)
         {
-        subSet.push_back (topClipPlane);
-        subSet.push_back (bottomClipPlane);
+        subSet.push_back(topClipPlane);
+        subSet.push_back(bottomClipPlane);
         }
 
-    // Setup the view controller
-    ClipPlaneSet* sweptClipPlaneSet = new ClipPlaneSet();
-    sweptClipPlaneSet->insert (sweptClipPlaneSet->end(), tmpClipPlaneSet.begin(), tmpClipPlaneSet.end());
-#ifdef WIP_NAMED_VOLUME
-    PhysicalViewControllerP vi = (PhysicalViewControllerP) viewport.GetViewControllerP()->ToPhysicalViewController();
-    vi->SetClipPlanes (sweptClipPlaneSet); // PhysicalViewController takes over memorymanagement of ClipPlaneSet
-#endif
-    }
-    
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-// static
-void NamedVolume::ClearClip (DgnViewport& viewport)
-    {
-#ifdef WIP_NAMED_VOLUME
-    PhysicalViewControllerP vi = (PhysicalViewControllerP) viewport.GetViewControllerP()->ToPhysicalViewController();
-    vi->SetClipPlanes (nullptr);
-#endif
-    }
+    ClearClip();
 
-#define WEIGHT_Thin 1
-#define WEIGHT_Bold 3
-#define STYLE_Solid 0
+    m_clipPlaneSet = new ClipPlaneSet();
+    m_clipPlaneSet->insert(m_clipPlaneSet->end(), tmpClipPlaneSet.begin(), tmpClipPlaneSet.end());
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-// static
-void NamedVolume::DrawFace (DPoint3dCP points, size_t numPoints, uint32_t color, ViewContextR context )
-    {
-    DgnViewportP viewport = context.GetViewport ();
-    BeAssert (viewport != nullptr);
-    IViewDrawR vDraw = context.GetIViewDraw();
+    m_viewContext = &context;
+    m_viewContext->PushClipPlanes(*m_clipPlaneSet);
 
-    viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Thin, STYLE_Solid);
-    vDraw.DrawShape3d ((int) numPoints, points, true, nullptr);
-
-    viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Bold, STYLE_Solid);
-    vDraw.DrawLineString3d ((int) numPoints, points, nullptr);
+    return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::Draw (uint32_t color, ViewContextR context) const
+void NamedVolume::ClearClip() const
     {
-    DgnViewportP viewport = context.GetViewport ();
-    if (!EXPECTED_CONDITION (viewport != nullptr))
-        return;
-
-    viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Thin, STYLE_Solid);
-
-    bvector<DPoint3d> bottomFace;
-    this->Get3dShape (bottomFace);
-
-    DVec3d direction;
-    direction.Init (0, 0, 1.0);
-
-    bvector<DPoint3d> topFace;
-    for (int ii=0; ii < (int) bottomFace.size(); ii++)
+    if (m_viewContext)
         {
-        DPoint3dR bottomPoint = bottomFace[ii];
-
-        DPoint3d topPoint;
-        topPoint.SumOf (bottomPoint, direction, this->GetHeight());
-        topFace.push_back (topPoint);
-
-        if (ii > 0)
-            {
-            DPoint3dR previousBottomPoint = bottomFace[ii-1];
-            DPoint3dR previousTopPoint = topFace[ii-1];
-            DPoint3d sideFace[5] = {previousBottomPoint, bottomPoint, topPoint, previousTopPoint, previousBottomPoint};
-            DrawFace (sideFace, 5, color, context);
-            }
+        m_viewContext->PopTransformClip();
+        m_viewContext = nullptr;
         }
 
-    DrawFace  (&topFace[0], topFace.size(), color, context);
-    DrawFace  (&bottomFace[0], bottomFace.size(),color, context);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::Get3dShape (bvector<DPoint3d>& shape) const
-    {
-    DPoint3d origin = this->GetOrigin();
-    bvector<DPoint2d> localShape = this->GetShape();
-    for (int ii=0; ii < (int) localShape.size(); ii++)
+    if (m_clipPlaneSet)
         {
-        DPoint3d point = DPoint3d::FromSumOf (origin, DPoint3d::From (localShape[ii]));
-        shape.push_back (point);
+        delete m_clipPlaneSet;
+        m_clipPlaneSet = nullptr;
         }
     }
-     
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
 ClipVectorPtr NamedVolume::CreateClipVector() const
     {
-    bvector<DPoint3d> shape;
-    this->Get3dShape (shape);
+    DgnExtrusionDetail extrusionDetail;
+    BentleyStatus status = ExtractExtrusionDetail(extrusionDetail);
+    if (SUCCESS != status)
+        return nullptr;
 
-    CurveVectorPtr curveVector = CurveVector::CreateLinear (&shape[0], (int) shape.size(), CurveVector::BOUNDARY_TYPE_Outer, true);
     double zLow = 0.0;
-    double zHigh = this->GetHeight();
-    return ClipVector::CreateFromCurveVector (*curveVector, 0.1, 0.4, &zLow, &zHigh);
+    double zHigh = extrusionDetail.m_extrusionVector.Magnitude();
+    return ClipVector::CreateFromCurveVector(*(extrusionDetail.m_baseCurve), 0.1, 0.4, &zLow, &zHigh);
     }
     
 //--------------------------------------------------------------------------------------
@@ -301,6 +262,8 @@ unique_ptr<FenceParams> NamedVolume::CreateFence(DgnViewportP viewport, bool all
     unique_ptr<FenceParams> fence = std::unique_ptr<FenceParams> (FenceParams::Create ());
     
     ClipVectorPtr clipVector = this->CreateClipVector();
+    if (clipVector.IsNull())
+        return nullptr;
     fence->SetClip (*clipVector);
     fence->SetClipMode (FenceClipMode::None);
     fence->SetOverlapMode (allowPartialOverlaps);
@@ -322,58 +285,38 @@ unique_ptr<FenceParams> NamedVolume::CreateFence(DgnViewportP viewport, bool all
 unique_ptr<DgnViewport> NamedVolume::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
-    // TODO: Is it cool to assume the first view found can be used to create a PhysicalViewController?
+    // TODO: Is it cool to assume the first view found can be used to create a CameraViewController?
     auto viewIter = ViewDefinition::MakeIterator(project);
     BeAssert(viewIter.begin() != viewIter.end());
     if (viewIter.begin() == viewIter.end())
         return nullptr;
 
     DgnViewId viewId = (*viewIter.begin()).GetId(); 
-    PhysicalViewControllerP viewController = new PhysicalViewController (project, viewId);
+    CameraViewControllerP viewController = new CameraViewController(project, viewId);
     viewController->Load();
-#ifdef WIP_NAMED_VOLUME
     viewController->SetCameraOn (false); // Has to be done after Load()!!
-#endif
     return std::unique_ptr<NonVisibleViewport> (new NonVisibleViewport (*viewController));
     }
     
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   02/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::GetRange(DRange3d& range) const
+BentleyStatus NamedVolume::GetRange(DRange3d& range) const
     {
-    bvector<DPoint3d> bottomShape;
-    this->Get3dShape (bottomShape);
+    DgnExtrusionDetail extrusionDetail;
+    BentleyStatus status = ExtractExtrusionDetail(extrusionDetail);
+    if (SUCCESS != status)
+        return ERROR;
 
-    DVec3d direction;
-    direction.Init (0, 0, 1.0);
-
-    bvector<DPoint3d> topShape;
-    for (const DPoint3d& bottomPoint : bottomShape)
-        {
-        DPoint3d topPoint;
-        topPoint.SumOf (bottomPoint, direction, this->GetHeight());
-        topShape.push_back (topPoint);
-        }
-
-    range.InitFrom (&bottomShape[0], (int) bottomShape.size());
-    range.Extend (&topShape[0], (int) topShape.size());
+    extrusionDetail.GetRange(range);
+    return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::FindElements 
-(
-DgnElementIdSet* elementIds,
-FenceParamsR fence,
-Statement& stmt,
-DgnDbR dgnDb
-) const
+void NamedVolume::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence, Statement& stmt, DgnDbR dgnDb) const
     {
-    if (nullptr == elementIds)
-        return;
-
     DbResult result;
     while ((result = stmt.Step()) == BE_SQLITE_ROW)
         {
@@ -388,33 +331,21 @@ DgnDbR dgnDb
         if (nullptr == geomElement || !fence.AcceptElement (*geomElement))
             continue;
 
-        elementIds->insert (id);
+        elementIds.insert (id);
         }
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::FindElements 
-(
-DgnElementIdSet* elementIds,
-DgnDbR dgnDb,
-bool allowPartialOverlaps /*=true*/
-) const
+void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps /*=true*/) const
     {
-    if (nullptr == elementIds)
-        return;
-
     unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
     
     // Prepare element query by range
     Statement stmt;
-#ifdef WIP_NAMED_VOLUME
-    Utf8CP sql = "SELECT ElementId FROM " DGNELEMENT_VTABLE_3dRTree " WHERE xmax > ? AND xmin < ?  AND ymax > ? AND ymin < ? AND zmax > ? AND zmin < ?";
-#else
-    Utf8CP sql = "";
-#endif
+    Utf8CP sql = "SELECT ElementId FROM " DGN_VTABLE_RTree3d " WHERE MaxX > ? AND MinX < ?  AND MaxY > ? AND MinY < ? AND MaxZ > ? AND MinZ < ? AND ElementId != ?";
     DbResult result = stmt.Prepare (dgnDb, sql);
     BeAssert (result == BE_SQLITE_OK);
 
@@ -427,22 +358,18 @@ bool allowPartialOverlaps /*=true*/
     stmt.BindDouble (5, volumeRange.low.z);
     stmt.BindDouble (6, volumeRange.high.z);
 
+    DgnElementId elementId = GetElementId();
+    if (elementId.IsValid())
+        stmt.BindId(7, GetElementId()); // Exclude the NamedVolume itself from the checks!!
+
     this->FindElements (elementIds, *fence, stmt, dgnDb);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::FindElements 
-(
-DgnElementIdSet* elementIds,
-DgnViewportR viewport,
-bool allowPartialOverlaps /*=true*/
-) const
+void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
     {
-    if (nullptr == elementIds)
-        return;
-
     QueryViewControllerP viewController = dynamic_cast<QueryViewControllerP> (&viewport.GetViewControllerR());
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
@@ -457,14 +384,10 @@ bool allowPartialOverlaps /*=true*/
     
     // Prepare element query by range, and by what's visible in the view
     Statement stmt;
-#ifdef WIP_NAMED_VOLUME
-    Utf8CP sql = "SELECT a.ElementId FROM " DGNELEMENT_VTABLE_3dRTree " AS a, " DGNELEMENT_TABLE_Data " AS b" \
-        " WHERE a.xmax > ? AND a.xmin < ?  AND a.ymax > ? AND a.ymin < ? AND a.zmax > ? AND a.zmin < ?" \
-        " AND a.ElementId=b.ElementId" \
-        " AND InVirtualSet (?, b.ModelId, b.Level)";
-#else
-    Utf8CP sql = "";
-#endif
+    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g " \
+        " WHERE r.MaxX > ? AND r.MinX < ?  AND r.MaxY > ? AND r.MinY < ? AND r.MaxZ > ? AND r.MinZ < ?" \
+        " AND e.Id=r.ElementId AND g.ElementId=r.ElementId AND e.Id != ?" \
+        " AND InVirtualSet (?,e.ModelId,g.CategoryId)";
     DbResult result = stmt.Prepare (dgnDb, sql);
     BeAssert (result == BE_SQLITE_OK);
 
@@ -480,7 +403,11 @@ bool allowPartialOverlaps /*=true*/
     stmt.BindDouble (5, queryRange.low.z);
     stmt.BindDouble (6, queryRange.high.z);
 
-    stmt.BindVirtualSet (7, *viewController);
+    DgnElementId elementId = GetElementId();
+    if (elementId.IsValid())
+        stmt.BindId(7, GetElementId()); // Exclude the NamedVolume itself from the checks!!
+
+    stmt.BindVirtualSet (8, *viewController);
 
     this->FindElements (elementIds, *fence, stmt, dgnDb);
 
@@ -492,23 +419,16 @@ bool allowPartialOverlaps /*=true*/
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-bool NamedVolume::ContainsElement
-(
-DgnElementR element, 
-bool allowPartialOverlaps /*=true*/
-) const
+bool NamedVolume::ContainsElement(DgnElementCR element, bool allowPartialOverlaps /*=true*/) const
     {
-    GeometrySourceCP geomElement = element.ToGeometrySource();
-
-    if (nullptr == geomElement)
+    GeometrySourceCP geomSource = element.ToGeometrySource();
+    if (nullptr == geomSource)
         return false;
 
-    DgnDbR dgnDb = element.GetDgnDb();
-
-    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
+    unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport(element.GetDgnDb());
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
 
-    return fence->AcceptElement (*geomElement);
+    return fence->AcceptElement(*geomSource);
     }
 
 //--------------------------------------------------------------------------------------
@@ -518,9 +438,8 @@ void NamedVolume::Fit (DgnViewport& viewport, double const* aspectRatio /*=nullp
     {
     DRange3d volumeRange;
     this->GetRange (volumeRange);
-#ifdef WIP_NAMED_VOLUME
-    viewport.GetViewControllerP()->LookAtVolume (volumeRange, aspectRatio, margin);
-#endif
+
+    viewport.GetViewControllerR().LookAtVolume(volumeRange, aspectRatio, margin);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

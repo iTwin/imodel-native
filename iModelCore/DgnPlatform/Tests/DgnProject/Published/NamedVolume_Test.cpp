@@ -5,10 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
-#include <ECDb/ECDbApi.h>
+#include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnHandlersAPI.h>
-#include <DgnPlatform/DgnMarkupProject.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
@@ -17,101 +15,178 @@
 #endif
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_SQLITE 
-USING_NAMESPACE_BENTLEY_SQLITE_EC
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Ramanujam.Raman                   01/15
-//+---------------+---------------+---------------+---------------+---------------+-----
-bool AreVolumesEqual (const NamedVolume& volume1, const NamedVolume& volume2)
+//=======================================================================================
+//! NamedVolumeTestFixture
+//=======================================================================================
+struct NamedVolumeTestFixture : public ChangeTestFixture
+{
+protected:
+    void CreateSample(WCharCP fileName);
+    NamedVolumeCPtr InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height);
+    PhysicalElementCPtr InsertBlock(DPoint3dCR origin, double dimension);
+
+public:
+    virtual void SetUp() override {}
+    virtual void TearDown() override { m_testDb->SaveChanges("Saving file at end of test"); }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2015
+//---------------------------------------------------------------------------------------
+void NamedVolumeTestFixture::CreateSample(WCharCP fileName)
     {
-    if (volume1.GetName() != volume2.GetName())
-        return false;
-    if (!volume1.GetOrigin().IsEqual (volume2.GetOrigin()))
-        return false;
-    if (volume1.GetHeight() != volume2.GetHeight())
-        return false;
-
-    bvector<DPoint2d> shape1 = volume1.GetShape();
-    bvector<DPoint2d> shape2 = volume2.GetShape();
-    if (shape1.size() != shape2.size())
-        return false;
-    for (int ii=0; ii< (int) shape1.size(); ii++)
-        {
-        if (!shape1[ii].IsEqual (shape2[ii]))
-            return false;
-        }
-    return true;
+    CreateDgnDb(fileName);
+    InsertModel();
+    InsertCategory();
+    InsertAuthority();
+    CreateDefaultView();
+    m_testDb->SaveChanges("Inserted sample");
     }
-    
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2015
+//---------------------------------------------------------------------------------------
+NamedVolumeCPtr NamedVolumeTestFixture::InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height)
+    {
+    bvector<DPoint2d> shape(shapeArr, shapeArr + 5);
+
+    NamedVolumePtr volume = NamedVolume::Create(*(m_testModel->ToPhysicalModel()), origin, shape, height);
+    return volume->Insert();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2015
+//---------------------------------------------------------------------------------------
+PhysicalElementCPtr NamedVolumeTestFixture::InsertBlock(DPoint3dCR center, double dimension)
+    {
+    PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(*(m_testModel->ToPhysicalModelP()), m_testCategoryId);
+
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(dimension, dimension, dimension), true);
+    ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
+    BeAssert(geomPtr.IsValid());
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
+    builder->Append(*geomPtr);
+    BentleyStatus status = builder->SetGeomStreamAndPlacement(*physicalElementPtr);
+    BeAssert(status == SUCCESS);
+
+    PhysicalElementCPtr insertedElement = m_testDb->Elements().Insert<PhysicalElement>(*physicalElementPtr);
+    BeAssert(insertedElement.IsValid());
+
+    return insertedElement;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-TEST(NamedVolume, CrudTest)
+TEST_F(NamedVolumeTestFixture, CrudTest)
     {
-    ScopedDgnHost host;
+    WCharCP fileName = L"NamedVolumeCrudTest.dgndb";
+    CreateSample(fileName);
 
-    DgnDbTestDgnManager tdmSeed (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly, false);
-    DgnDbTestDgnManager tdm (L"79_Main.i.idgndb", __FILE__, Db::OpenMode::Readonly, false);
-    DgnDbP project = tdm.GetDgnProjectP();
-    ASSERT_TRUE (project != nullptr);
-
-    BeFileName markupProjectFileName = DgnDbTestDgnManager::GetOutputFilePath  (L"NamedVolume");
-    CreateDgnMarkupProjectParams cparms (*project);
-    cparms.SetOverwriteExisting(true);
-    cparms.SetSeedDb (BeFileName(tdmSeed.GetPath()));
-    DbResult dgnFileStatus;
-    DgnMarkupProjectPtr markupProject = DgnMarkupProject::CreateDgnDb (&dgnFileStatus, markupProjectFileName, cparms);
-    ASSERT_TRUE (dgnFileStatus == BE_SQLITE_OK);
-    ASSERT_TRUE (markupProject.IsValid());
-    
-    // Create
-    Utf8String name = "CrudTest";
     DPoint3d origin = {0.0, 0.0, 0.0};
-    DPoint2d shapePoints[5] = {{0.0, 0.0}, {0.0, 100.0}, {100.0, 100.0}, {100.0, 0.0}, {0.0, 0.0}};
-    size_t numShapePoints = (size_t) (sizeof (shapePoints) / sizeof (DPoint2d));
+    DPoint2d shapePointsArr[5] = {{0.0, 0.0}, {100.0, 0.0}, {100.0, 100.0}, {0.0, 100.0}, {0.0, 0.0}};
     double height = 100.0;
-    NamedVolume volume (name, origin, &shapePoints[0], numShapePoints, height);
+    NamedVolumeCPtr volume = InsertVolume(origin, shapePointsArr, height);
+    ASSERT_TRUE(volume.IsValid());
 
-    // Insert
-    StatusInt status = volume.Insert (*markupProject);
-    ASSERT_TRUE (status == SUCCESS);
+    bvector<DPoint3d> actualShape;
+    DVec3d actualDirection;
+    double actualHeight;
+    BentleyStatus actualStatus;
 
-    bool exists = NamedVolume::Exists (name, *markupProject);
-    ASSERT_TRUE (exists);
+    actualStatus = volume->ExtractGeomStream(actualShape, actualDirection, actualHeight);
 
-    // Read
-    std::unique_ptr<NamedVolume> readVolume = NamedVolume::Read (name, *markupProject);
-    ASSERT_TRUE (readVolume != nullptr);
-    bool volumesAreEqual = AreVolumesEqual (*readVolume, volume);
-    ASSERT_TRUE (volumesAreEqual);
+    /*
+    * Validate
+    */
+    ASSERT_TRUE(SUCCESS == actualStatus);
+    ASSERT_EQ(height, actualHeight);
+    DVec3d expectedDirection = DVec3d::From(0.0, 0.0, 1.0);
+    ASSERT_TRUE(expectedDirection.IsEqual(actualDirection));
+    for (int ii = 0; ii < 5; ii++)
+        {
+        DPoint3d expectedPoint = DPoint3d::FromSumOf(origin, DPoint3d::From(shapePointsArr[ii]));
+        ASSERT_TRUE(actualShape[ii].IsEqual(expectedPoint));
+        }
+
+    NamedVolumePtr volumeEdit = NamedVolume::GetForEdit(*m_testDb, volume->GetElementId());
+    ASSERT_TRUE(volumeEdit.IsValid());
 
     // Update
-    name = "CrudTest1";
-    origin = {1.0, 1.0, 1.0};
-    DPoint2d shapePoints2[5] = {{0.0, 0.0}, {0.0, 200.0}, {100.0, 200.0}, {200.0, 0.0}, {0.0, 0.0}};
-    numShapePoints = (size_t) (sizeof (shapePoints2) / sizeof (DPoint2d));
+    //name = "CrudTest1";
+    origin = {1000.0, 1000.0, 1000.0};
+    DPoint2d shapePointsArr2[5] = {{0.0, 0.0}, {200.0, 0.0}, {100.0, 200.0}, {0.0, 200.0}, {0.0, 0.0}};
+    int numShapePoints2 = (size_t) (sizeof(shapePointsArr2) / sizeof(DPoint2d));
+    bvector<DPoint2d> shapePoints2(shapePointsArr2, shapePointsArr2 + numShapePoints2);
     height = 200.0;
-    NamedVolume updateVolume (name, origin, &shapePoints2[0], numShapePoints, height);
+    volumeEdit->SetupGeomStream(origin, shapePoints2, height);
+    NamedVolumeCPtr volumeUpdate = volumeEdit->Update();
+    ASSERT_TRUE(volumeUpdate.IsValid());
 
-    volume.SetName (name);
-    volume.SetOrigin (origin);
-    volume.SetShape (&shapePoints2[0], numShapePoints);
-    volume.SetHeight (height);
-    status = volume.Update (*markupProject);
-    ASSERT_TRUE (status == SUCCESS);
-
-    readVolume = NamedVolume::Read (volume.GetName(), *markupProject);
-    ASSERT_TRUE (readVolume != nullptr);
-    volumesAreEqual = AreVolumesEqual (*readVolume, updateVolume);
-    ASSERT_TRUE (volumesAreEqual);
-
-    // Delete
-    status = NamedVolume::Delete (volume.GetName(), *markupProject);
-    ASSERT_TRUE (status == SUCCESS);
+    actualStatus = volumeUpdate->ExtractGeomStream(actualShape, actualDirection, actualHeight);
     
-    exists = NamedVolume::Exists (volume.GetName(), *markupProject);
-    ASSERT_FALSE (exists);
+    /*
+    * Validate
+    */
+    ASSERT_TRUE(SUCCESS == actualStatus);
+    ASSERT_EQ(height, actualHeight);
+    ASSERT_TRUE(expectedDirection.IsEqual(actualDirection));
+    for (int ii = 0; ii < 5; ii++)
+        {
+        DPoint3d expectedPoint = DPoint3d::FromSumOf(origin, DPoint3d::From(shapePointsArr2[ii]));
+        ASSERT_TRUE(actualShape[ii].IsEqual(expectedPoint));
+        }
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(NamedVolumeTestFixture, QueryTest)
+    {
+    WCharCP fileName = L"NamedVolumeQueryTest.dgndb";
+    CreateSample(fileName);
+
+    // Entirely inside
+    PhysicalElementCPtr insideEl = InsertBlock(DPoint3d::From(37.5, 37.5, 37.5), 25.0);
+    InsertBlock(DPoint3d::From(-37.5, -37.5, -37.5), 25.0);
+
+    // Partly overlaps
+    PhysicalElementCPtr overlapEl = InsertBlock(DPoint3d::From(100.0, 100.0, 100.0), 25.0);
+
+    // Entirely outside
+    PhysicalElementCPtr outsideEl = InsertBlock(DPoint3d::From(150.0, 150.0, 150.0), 25.0);
+    InsertBlock(DPoint3d::From(-150.0, -150.0, -150.0), 25.0);
     
+    // Named volume
+    DPoint3d origin = {0.0, 0.0, -100.0};
+    DPoint2d shapePointsArr[5] = {{-100.0, -100.0}, {100.0, -100.0}, {100.0, 100.0}, {-100.0, 100.0}, {-100.0, -100.0}};
+    double height = 200.0;
+    NamedVolumeCPtr volume = InsertVolume(origin, shapePointsArr, height);
+    ASSERT_TRUE(volume.IsValid());
+
+    m_testDb->SaveChanges("Finished inserts");
+    UpdateDgnDbExtents();
+
+    DgnElementIdSet idSet;
+    volume->FindElements(idSet, *m_testDb, false);
+    ASSERT_EQ(2, (int) idSet.size());
+
+    idSet.clear();
+    volume->FindElements(idSet, *m_testDb, true);
+    ASSERT_EQ(3, (int) idSet.size());
+
+    ASSERT_TRUE(volume->ContainsElement(*insideEl, false));
+    ASSERT_TRUE(volume->ContainsElement(*insideEl, true));
+
+    ASSERT_FALSE(volume->ContainsElement(*overlapEl, false));
+    ASSERT_TRUE(volume->ContainsElement(*overlapEl, true));
+
+    ASSERT_FALSE(volume->ContainsElement(*outsideEl, false));
+    ASSERT_FALSE(volume->ContainsElement(*outsideEl, true));
+
+    // TODO: SetClip(), ClearClip(), Fit()
+    // TODO: SetName(), Exists()
+    // TODO: Show(), Hide()
+    }
