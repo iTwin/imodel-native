@@ -52,6 +52,45 @@ BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 typedef Bentley::TerrainModel::DTMFenceParams DTMFenceParams;
 
+struct BcDTMMeshFace : RefCountedBase
+    {
+    private: const long* m_points;
+    private: BcDTMMeshPtr m_mesh;
+
+    protected: BcDTMMeshFace(BcDTMMeshP mesh, const long* meshFacesP, long numEdges);
+    public: BENTLEYDTM_EXPORT static BcDTMMeshFacePtr Create(BcDTMMeshP mesh, const long* meshFaces, long numEdges)
+        {
+        return new BcDTMMeshFace(mesh, meshFaces, numEdges);
+        }
+    public: virtual ~BcDTMMeshFace();
+
+    public: BENTLEYDTM_EXPORT DPoint3d GetCoordinates(int index);
+    public: BENTLEYDTM_EXPORT int GetMeshPointIndex(int index);
+    };
+
+struct BcDTMMesh : RefCountedBase
+    {
+    private: bvector<DPoint3d> m_points;
+
+    private: bvector<long> m_meshFaceIndices;
+
+    public: BENTLEYDTM_EXPORT int GetPointCount();
+    public: BENTLEYDTM_EXPORT int GetFaceCount();
+    public: BENTLEYDTM_EXPORT DPoint3d GetPoint(int index);
+    public: BENTLEYDTM_EXPORT BcDTMMeshFacePtr GetFace(int index);
+    public: BENTLEYDTM_EXPORT DPoint3dCP GetPointReference()
+        {
+        return m_points.data();
+        }
+
+    public: BENTLEYDTM_EXPORT static BcDTMMeshPtr Create(bvector<DPoint3d>& meshPts, bvector<long>& meshFaces)
+        {
+        return new BcDTMMesh(meshPts, meshFaces);
+        }
+    protected: BcDTMMesh(bvector<DPoint3d>& meshPts, bvector<long>& meshFaces);
+    public: virtual ~BcDTMMesh();
+    };
+
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -688,26 +727,13 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             int  *fListArraySize,
             int  *lastFListArraySize
             );
-        //BENTLEYDTM_EXPORT  BcDTMMeshPtr GetMesh
-        //    (
-        //    long firstCall,
-        //    long maxMeshSize,
-        //    DPoint3dCP fencePtsP,
-        //    int numFencePts
-        //    );
-        //BENTLEYDTM_EXPORT  BcDTMEdgesPtr GetEdges
-        //    (
-        //    DPoint3dCP fencePtsP,
-        //    int numFencePts
-        //    );
-        //BENTLEYDTM_EXPORT  void GetMesh
-        //    (
-        //    DPoint3dCP fencePtsP,
-        //    int numFencePts,
-        //    DPoint3dP* pointsPP,
-        //    long *numIndices,
-        //    long** triangleIndexPP
-        //    );
+        BENTLEYDTM_EXPORT  BcDTMMeshPtr GetMesh
+            (
+            bool firstCall,
+            long maxMeshSize,
+            DPoint3dCP fencePtsP,
+            int numFencePts
+            );
 
         BENTLEYDTM_EXPORT  DTMStatusInt ConvertUnits
             (

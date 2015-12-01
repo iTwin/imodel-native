@@ -74,8 +74,6 @@ $(o)bcDTMClass$(oext) : $(baseDir)CPPWrappers\bcDTMClass.cpp $(DependsOnHeaders)
 
 $(o)bcDTMDrapedLineClass$(oext) : $(baseDir)CPPWrappers\bcDTMDrapedLineClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-#$(o)bcDTMEdges$(oext) : $(baseDir)CPPWrappers\bcDTMEdges.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
-
 $(o)bcDTMFeatureClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)bcDTMFeatureEnumeratorClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureEnumeratorClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
@@ -84,7 +82,7 @@ $(o)bcDTMFeatureMapClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureMapClass.cpp
 
 $(o)bcDTMInputClass$(oext) : $(baseDir)CPPWrappers\bcDTMInputClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-#$(o)bcDTMMesh$(oext) : $(baseDir)CPPWrappers\bcDTMMesh.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMMesh$(oext) : $(baseDir)CPPWrappers\bcDTMMesh.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)dtmio$(oext) : $(baseDir)2d\dtmio.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
@@ -106,19 +104,7 @@ $(o)bcdtmDelta$(oext) : $(baseDir)2d\bcdtmDelta.cpp $(DependsOnHeaders) ${MultiC
 
 $(o)bcdtmDrape$(oext) : $(baseDir)2d\bcdtmDrape.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-# $(o)bcdtmDrainage00$(oext) : $(baseDir)2d\bcdtmDrainage00.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
-# $(o)bcdtmDrainage01$(oext) : $(baseDir)2d\bcdtmDrainage01.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
-# $(o)bcdtmDrainage02$(oext) : $(baseDir)2d\bcdtmDrainage02.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
-# $(o)bcdtmDrainage03$(oext) : $(baseDir)2d\bcdtmDrainage03.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
-# $(o)bcdtmDrainage04$(oext) : $(baseDir)2d\bcdtmDrainage04.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
 $(o)bcdtmEdit$(oext) : $(baseDir)2d\bcdtmEdit.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
-#$(o)bcdtmEsri$(oext) : $(baseDir)2d\bcdtmEsri.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)bcdtmEditDraw$(oext) : $(baseDir)2d\bcdtmEditDraw.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
@@ -203,8 +189,6 @@ $(o)bcdtmLoadRegions$(oext) : $(baseDir)2d\bcdtmLoadRegions.cpp $(DependsOnHeade
 $(o)bcdtmStockPile$(oext) : $(baseDir)2d\bcdtmStockPile.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)bcdtm3DModel$(oext) : $(baseDir)2d\bcdtm3DModel.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
-#$(o)bcdtmMX$(oext) : $(baseDir)2d\bcdtmMX.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)bcdtmExport$(oext) : $(baseDir)2d\bcdtmExport.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 

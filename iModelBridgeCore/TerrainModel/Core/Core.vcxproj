@@ -96,7 +96,6 @@
     <ClCompile Include="2d\dtmio.cpp" />
     <ClCompile Include="cppwrappers\bcDTMClass.cpp" />
     <ClCompile Include="cppwrappers\bcDTMDrapedLineClass.cpp" />
-    <ClCompile Include="cppwrappers\bcDTMEdges.cpp" />
     <ClCompile Include="cppwrappers\bcDTMFeatureClass.cpp" />
     <ClCompile Include="cppwrappers\bcDTMFeatureEnumeratorClass.cpp" />
     <ClCompile Include="cppwrappers\bcDTMFeatureMapClass.cpp" />

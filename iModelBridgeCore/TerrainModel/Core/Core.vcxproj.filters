@@ -238,9 +238,6 @@
     <ClCompile Include="cppwrappers\bcDTMDrapedLineClass.cpp">
       <Filter>Source\CPPWrappers</Filter>
     </ClCompile>
-    <ClCompile Include="cppwrappers\bcDTMEdges.cpp">
-      <Filter>Source\CPPWrappers</Filter>
-    </ClCompile>
     <ClCompile Include="cppwrappers\bcDTMFeatureClass.cpp">
       <Filter>Source\CPPWrappers</Filter>
     </ClCompile>

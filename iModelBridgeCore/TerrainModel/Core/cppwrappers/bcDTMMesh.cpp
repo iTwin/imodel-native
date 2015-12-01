@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMMesh.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDtmImpl.h"
@@ -29,21 +29,14 @@ BcDTMMeshFace::~BcDTMMeshFace()
     {
     }
 
-BcDTMMesh::BcDTMMesh (DPoint3dCP meshPts, long numMeshPts, const long* meshFaces, long numMeshFaces)
+BcDTMMesh::BcDTMMesh (bvector<DPoint3d>& meshPts, bvector<long>& meshFaces)
     {
     m_points = meshPts;
-    m_pointCount = numMeshPts;
     m_meshFaceIndices = meshFaces;
-    m_meshFaceIndicesCount = numMeshFaces;
     }
 
 BcDTMMesh::~BcDTMMesh()
     {
-    if (m_points != nullptr)
-        free ((void*)m_points);
-
-    if (m_meshFaceIndices != nullptr)
-        free ((void*)m_meshFaceIndices);
     }
 
 DPoint3d BcDTMMesh::GetPoint (int index)
@@ -53,12 +46,12 @@ DPoint3d BcDTMMesh::GetPoint (int index)
 
 int BcDTMMesh::GetPointCount ()
     {
-    return m_pointCount;
+    return (int)m_points.size();
     }
 
 int BcDTMMesh::GetFaceCount ()
     {
-    return m_meshFaceIndicesCount;
+    return (int)m_meshFaceIndices.size();
     }
 
 BcDTMMeshFacePtr BcDTMMesh::GetFace (int index)

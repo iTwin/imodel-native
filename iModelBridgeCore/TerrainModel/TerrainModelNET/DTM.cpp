@@ -2808,36 +2808,19 @@ void  DTM::BrowseTriangleEdges (TriangleEdgesBrowsingCriteria^ criteria, Dynamic
 //=======================================================================================
 // @bsimethod                                               Sylvain.Pucci      5/2007
 //=======================================================================================
-//Mesh^ DTM::GetMesh (bool firstCall, int maxMeshSize)
-//    {
-//    CheckIsTriangulated();
-//    long firstCallLong = firstCall ? TRUE : FALSE;
-//
-//    BcDTMMeshPtr unmanagedMesh = Handle->GetMesh(firstCallLong, maxMeshSize, NULL, 0);
-//
-//    if (!unmanagedMesh.IsValid())
-//        return nullptr;
-//
-//    Mesh^ mesh = gcnew Mesh(unmanagedMesh.get());
-//
-//    return mesh;
-//    }
+Mesh^ DTM::GetMesh (bool firstCall, int maxMeshSize)
+    {
+    CheckIsTriangulated();
 
-//=======================================================================================
-// @bsimethod                                               Sylvain.Pucci      5/2007
-//=======================================================================================
-//Edges^ DTM::GetEdges()
-//    {
-//    CheckIsTriangulated();
-//    BcDTMEdgesPtr unmanagedEdges = Handle->GetEdges (NULL, 0);
-//
-//    if (!unmanagedEdges.IsValid())
-//        return nullptr;
-//
-//    Edges^ edges = gcnew Edges(unmanagedEdges.get());
-//
-//    return edges;
-//    }
+    BcDTMMeshPtr unmanagedMesh = Handle->GetMesh(firstCall, maxMeshSize, NULL, 0);
+
+    if (!unmanagedMesh.IsValid())
+        return nullptr;
+
+    Mesh^ mesh = gcnew Mesh(unmanagedMesh.get());
+
+    return mesh;
+    }
 
 //=======================================================================================
 // @bsimethod                                               Sylvain.Pucci      5/2007

@@ -2984,85 +2984,26 @@ void BcDTM::GetHandles (void** headerPP, int* nHeaderP, void*** featureArraysPP,
         *lastFListArraysSize = 0;
         }
     }
-#ifdef TODO
+
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   spu.04sep2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTMMeshPtr BcDTM::GetMesh (long firstCall, long maxMeshSize, DPoint3dCP fencePts, int numFencePts)
+BcDTMMeshPtr BcDTM::GetMesh (bool firstCall, long maxMeshSize, DPoint3dCP fencePts, int numFencePts)
     {
-    DPoint3dP meshPtsP = nullptr;
-    long numMeshPts = 0;
-    long* meshFacesP = nullptr;
-    long numMeshFaces = 0;
+    bvector<DPoint3d> meshPts;
+    bvector<long> meshFaces;
 
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject (GetTinHandle (), firstCall, maxMeshSize, fencePts != nullptr, DTMFenceType::Block, DTMFenceOption::Overlap, (DPoint3d*)fencePts, numFencePts, (DPoint3d**)&meshPtsP, &numMeshPts, &meshFacesP, &numMeshFaces);
+    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject (GetTinHandle (), firstCall, maxMeshSize, fencePts != nullptr, DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, numFencePts, meshPts, meshFaces);
 
-    if (status == DTM_ERROR || numMeshFaces == 0)
-        {
-        if( meshPtsP   != nullptr ) bcMem_free ((void*)meshPtsP) ;
-        if( meshFacesP != nullptr ) bcMem_free ((void*)meshFacesP) ;
+    if (status == DTM_ERROR || meshFaces.empty())
         return nullptr;
-        }
 
     if (_dtmTransformHelper.IsValid ())
-        _dtmTransformHelper->convertPointsFromDTM (meshPtsP, numMeshPts);
-    return BcDTMMesh::Create (meshPtsP, numMeshPts, meshFacesP, numMeshFaces);
+        _dtmTransformHelper->convertPointsFromDTM (meshPts.data(), (int)meshPts.size());
+    return BcDTMMesh::Create (meshPts, meshFaces);
     }
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-|   spu.04sep2005   -  Created.                                         |
-|                                                                       |
-+----------------------------------------------------------------------*/
-BcDTMEdgesPtr BcDTM::GetEdges (DPoint3dCP fencePts, int numFencePts)
-    {
-    long *edgesP = nullptr;
-    long numEdges = 0;
-
-    DPoint3d** tinPointsPP = nullptr;    // Pointer To The Tin Point Arrays - Do not Free
-
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinEdgesFromDtmObject (GetTinHandle (), fencePts != nullptr, (DPoint3d*)fencePts, numFencePts, &numEdges, &edgesP, &tinPointsPP);
-
-    if (status == DTM_ERROR || numEdges == 0)
-        {
-        if( edgesP != nullptr ) bcMem_free ((void*)edgesP) ;
-        return nullptr ;
-        }
-
-    // Translation is handled in BcDTMEdges.
-    return BcDTMEdges::Create (this, edgesP, numEdges);
-    }
-/*----------------------------------------------------------------------+
-|                                                                       |
-|   spu.04sep2005   -  Created.                                         |
-|                                                                       |
-+----------------------------------------------------------------------*/
-void BcDTM::GetMesh (DPoint3dCP fencePts, int numFencePts, bvector<DPoint3dP>& points, bvector<long>& triangleIndex)
-    {
-    BeAssert (false && "Needs Work");
-    BC_DTM_OBJ *dtmHandleP = GetTinHandle();
-    DTMFenceType   fenceType=DTMFenceType::Shape ;
-    DPoint3d **tinPointsPP = nullptr ;
-    long numIndices;
-    // Call DTMFeatureState::Tin function to get triangle index.
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinTrianglesFromDtmObject (dtmHandleP, fencePts != nullptr, fenceType, (DPoint3d*)fencePts, &numFencePts, numIndices, triangleIndexPP, &tinPointsPP);
-
-    if( status == DTM_ERROR && numIndices == 0 )
-        {
-        points.empty();
-        triangleIndex.empty();
-        if( *triangleIndexPP != nullptr ) bcMem_free ((void*)*triangleIndexPP) ;
-        }
-    else
-        {
-        points.resize(num)
-        *pointsPP = nullptr  ; // Temporary Until Fixed
-        //     *pointsPPP = (DPoint3d **) tinPointsPP ;
-        }
-    }
-#endif
 
 /*----------------------------------------------------------------------+
 |                                                                       |

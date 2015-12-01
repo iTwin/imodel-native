@@ -64,9 +64,8 @@ TERRAINMODEL_TYPEDEFS (BcDTM)
 TERRAINMODEL_TYPEDEFS (DTMFenceParams)
 TERRAINMODEL_TYPEDEFS (DTMContourParams)
 //__PUBLISH_SECTION_END__
-//TERRAINMODEL_TYPEDEFS (BcDTMEdges)
-//TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
-//TERRAINMODEL_TYPEDEFS (BcDTMMesh)
+TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
+TERRAINMODEL_TYPEDEFS (BcDTMMesh)
 TERRAINMODEL_TYPEDEFS (IBcDtmStream)
 TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
 TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
@@ -91,9 +90,8 @@ BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 typedef RefCountedPtr<BcDTM> BcDTMPtr;
 //__PUBLISH_SECTION_END__
-//typedef RefCountedPtr<BcDTMEdges> BcDTMEdgesPtr;
-//typedef RefCountedPtr<BcDTMMeshFace> BcDTMMeshFacePtr;
-//typedef RefCountedPtr<BcDTMMesh> BcDTMMeshPtr;
+typedef RefCountedPtr<BcDTMMeshFace> BcDTMMeshFacePtr;
+typedef RefCountedPtr<BcDTMMesh> BcDTMMeshPtr;
 typedef RefCountedPtr<IBcDtmStream> BcDtmStreamPtr;
 typedef RefCountedPtr<BcDTMDrapedLine> BcDTMDrapedLinePtr;
 typedef RefCountedPtr<BcDTMDrapedLinePoint> BcDTMDrapedLinePointPtr;

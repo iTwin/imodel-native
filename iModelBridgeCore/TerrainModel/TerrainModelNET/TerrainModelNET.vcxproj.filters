@@ -21,9 +21,6 @@
     <ClCompile Include="DTMDrapedLinearElement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DTMEdges.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DTMFeature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,9 +66,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DTMDrapedLinearElement.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DTMEdges.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DTMException.h">
