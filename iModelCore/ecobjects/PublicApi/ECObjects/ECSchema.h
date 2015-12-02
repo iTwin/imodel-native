@@ -1333,7 +1333,7 @@ struct ECEnumeration
     //__PUBLISH_SECTION_END__
 friend struct ECSchema;
 friend struct SchemaXmlWriter;
-friend struct SchemaXmlReader;
+friend struct SchemaXmlReaderImpl;
 
     private:
         ECSchemaCR  m_schema;
@@ -1351,6 +1351,7 @@ friend struct SchemaXmlReader;
         // schemas index enumeration by name so publicly name can not be reset
         ECObjectsStatus                     SetName(Utf8StringCR name);
 
+        SchemaReadStatus                    _ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context);
         SchemaWriteStatus                   _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     //__PUBLISH_SECTION_START__
     public:
@@ -1361,9 +1362,13 @@ friend struct SchemaXmlReader;
         //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
         ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
         //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
-        ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetType(PrimitiveType value);
         //! Gets the PrimitiveType of this ECProperty
-        ECOBJECTS_EXPORT PrimitiveType GetType() const;
+        ECOBJECTS_EXPORT PrimitiveType      GetType() const;
+        //! Gets the name of the backing primitive type.
+        Utf8String                          GetTypeName() const;
+        //! Sets the backing primitive type by its name.
+        ECObjectsStatus                     SetTypeName(Utf8StringCR typeName);
         //! Whether the display label is explicitly defined or not
         ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
         //! Sets the display label of this ECClass
@@ -2393,6 +2398,7 @@ private:
 
     template<typename T>
     ECObjectsStatus                     AddClass (T& pClass, bool deleteClassIfDuplicate = true);
+    ECObjectsStatus                     AddEnumeration(ECEnumerationP& pEnumeration);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 

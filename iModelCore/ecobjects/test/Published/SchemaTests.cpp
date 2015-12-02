@@ -979,7 +979,7 @@ TEST_F (SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, widgets_schemaXML, *schemaContext);
 
-    EXPECT_EQ (SchemaReadStatus::DuplicateClassDefinition, status);
+    EXPECT_EQ (SchemaReadStatus::DuplicateTypeName, status);
 
     ECSchemaPtr schema2;
     ECSchemaReadContextPtr   schemaContext2 = ECSchemaReadContext::CreateContext ();
@@ -995,7 +995,7 @@ TEST_F (SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
         "</ECSchema>";
     status = ECSchema::ReadFromXmlString (schema2, widgets2_schemaXML, *schemaContext2);
 
-    EXPECT_EQ (SchemaReadStatus::DuplicateClassDefinition, status);
+    EXPECT_EQ (SchemaReadStatus::DuplicateTypeName, status);
     }
 
 /*---------------------------------------------------------------------------------**//**

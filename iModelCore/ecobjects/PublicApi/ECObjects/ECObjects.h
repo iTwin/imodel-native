@@ -163,7 +163,7 @@ enum class SchemaReadStatus
     InvalidECSchemaXml,
     ReferencedSchemaNotFound,
     DuplicateSchema,
-    DuplicateClassDefinition,
+    DuplicateTypeName,
     InvalidPrimitiveType,
     HasReferenceCycle,
     };

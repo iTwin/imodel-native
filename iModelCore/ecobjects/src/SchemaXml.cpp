@@ -39,6 +39,7 @@ struct SchemaXmlReaderImpl
 
         virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
         virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
+        SchemaReadStatus ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
     };
 
 //---------------------------------------------------------------------------------------
@@ -230,22 +231,24 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
         else
             LOG.tracev("    Created ECEntityClass Stub: %s", ecClass->GetName().c_str());
 
-        ECClassP existingClass = schemaOut->GetClassP(ecClass->GetName().c_str());
+        Utf8StringCR name = ecClass->GetName();
+        ECObjectsStatus addStatus = schemaOut->AddClass(ecClass);
 
-        if (NULL != existingClass)
+        if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)
             {
-            LOG.errorv("Duplicate class node for %s in schema %s.", ecClass->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            return SchemaReadStatus::DuplicateClassDefinition;
+            LOG.errorv("Duplicate class node for %s in schema %s.", name.c_str(), schemaOut->GetFullSchemaName().c_str());
+            return SchemaReadStatus::DuplicateTypeName;
             }
-        else if (ECObjectsStatus::Success != schemaOut->AddClass(ecClass))
+
+        if (ECObjectsStatus::Success != addStatus)
             return SchemaReadStatus::InvalidECSchemaXml;
 
-        else
-
-            classes.push_back(make_bpair(ecClass, classNode));
+        classes.push_back(make_bpair(ecClass, classNode));
         }
+
     return status;
     }
+
 
 //---------------------------------------------------------------------------------------
 // - Expects class stubs have already been read and created.  They are stored in the vector passed into this method.
@@ -441,6 +444,46 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
 SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes)
     {
     return _ReadClassContentsFromXml(schemaOut, classes, 3);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReaderImpl::ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+
+    // Create ECClass Stubs (no properties)
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        Utf8CP nodeName = candidateNode->GetName();
+        if (0 != strcmp(EC_ENUMERATION_ELEMENT, nodeName))
+            {
+            continue; //node is not an enumeration
+            }
+
+        ECEnumerationP ecEnumeration = new ECEnumeration(*schemaOut);
+        status = ecEnumeration->_ReadXml(*candidateNode, m_schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            delete ecEnumeration;
+            return status;
+            }
+
+        Utf8StringCR name = ecEnumeration->GetName();
+        ECObjectsStatus addStatus = schemaOut->AddEnumeration(ecEnumeration);
+
+        if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)
+            {
+            LOG.errorv("Duplicate enumeration node for %s in schema %s.", name.c_str(), schemaOut->GetFullSchemaName().c_str());
+            return SchemaReadStatus::DuplicateTypeName;
+            }
+
+        if (ECObjectsStatus::Success != addStatus)
+            return SchemaReadStatus::InvalidECSchemaXml;
+        }
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
