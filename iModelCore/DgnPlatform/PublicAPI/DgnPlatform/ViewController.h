@@ -98,7 +98,7 @@ public:
      - etc.
 
 <h3>View Controller types and sub-types</h3>
-A ViewController has a DgnViewType, indicating in broad terms what kind of view it is. There are only a few different DgnViewTypes.
+A ViewController belongs to one of only a few different "categories" of views, indicating in broad terms what kind of view it is.
 There are many specific types of ViewController within each view type category. ViewController defines a number of convenience methods
 to dynamic_cast a controller to a subclass. See ViewController::ToPhysicalViewController, ViewController::ToCameraViewController,
 ViewController::ToDrawingViewController.
@@ -139,7 +139,7 @@ the ViewDefinition::LoadViewController method, like this:
 
 <h3>Defining a subclass of ViewController</h3>
 
-To create a subclass of ViewController, create a ViewHandler and implement _SupplyController.
+To create a subclass of ViewController, create a subclass of ViewDefinition and implement _SupplyController.
 
 */
 //=======================================================================================
