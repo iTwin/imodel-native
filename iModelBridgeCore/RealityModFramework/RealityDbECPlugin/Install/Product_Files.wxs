@@ -23,36 +23,70 @@
       <Component Id="Bentley.RealityDbECPlugin.dll" Directory="Extensions" Guid="{FC6641BC-6377-4C0B-9FB8-35EC334FF0C9}">
         <File Id="Bentley.RealityDbECPlugin.dll" KeyPath="yes" Source="$(var.ProductDir)Bentley.RealityDbECPlugin.dll" />
         <util:XmlConfig Id="SetWebconfigAccessControlAllowOriginValue" Action="create" Node="value" ElementPath="//appSettings/add[\[]@key='AccessControlAllowOrigin'[\]]" Name="value" Value="*" File="[INSTALLDIR]Web.config" On="install" Sequence="1"/>
-
         <util:XmlConfig Id="CreateElementecomconfig1" Action="create" Node="element" ElementPath="//ECConfiguration/StartupRepositories" Name="Repository" File="[INSTALLDIR]ecom.config" On="install" Sequence="1">
           <util:XmlConfig Id="CreateElementecomconfig2" ElementId="CreateElementecomconfig1" Name="pluginId" Value="IndexECPlugin" File="[INSTALLDIR]ecom.config" />
-          <util:XmlConfig Id="CreateElementecomconfig3" ElementId="CreateElementecomconfig1" Name="location" Value="[#newDbLocation.config]" File="[INSTALLDIR]ecom.config" />
+          <util:XmlConfig Id="CreateElementecomconfig3" ElementId="CreateElementecomconfig1" Name="location" Value="Server" File="[INSTALLDIR]ecom.config" />
         </util:XmlConfig>
         <util:XmlConfig Id="RemoveElementecomconfig1" Action="delete" Node="element" ElementPath="//ECConfiguration/StartupRepositories" VerifyPath="//ECConfiguration/StartupRepositories/Repository[\[]@pluginId='IndexECPlugin'[\]]" File="[INSTALLDIR]ecom.config" On="uninstall" Sequence="2"/>
-
         <util:XmlConfig Id="CreateElementecomconfig4" Action="create" Node="element" ElementPath="//ECConfiguration/Extensions" Name="Extension" File="[INSTALLDIR]ecom.config" On="install" Sequence="3">
           <util:XmlConfig Id="CreateElementecomconfig5" ElementId="CreateElementecomconfig4" Name="assemblyPath" Value="bin\Extensions\Bentley.RealityDbECPlugin.dll" File="[INSTALLDIR]ecom.config" />
         </util:XmlConfig>
         <util:XmlConfig Id="RemoveElementecomconfig2" Action="delete" Node="element" ElementPath="//ECConfiguration/Extensions" VerifyPath="//ECConfiguration/Extensions/Extension[\[]@assemblyPath='bin\\Extensions\\Bentley.RealityDbECPlugin.dll'[\]]" File="[INSTALLDIR]ecom.config" On="uninstall" Sequence="4"/>
+        <util:XmlConfig Id="CreateElementwebconfig1" Action="create" Node="element" ElementPath="/configuration" Name="configSections" File="[INSTALLDIR]web.config" On="install" Sequence="5" />
+        <util:XmlConfig Id="CreateElementwebconfig2" Action="create" Node="element" ElementPath="//configSections" Name="section" File="[INSTALLDIR]web.config" On="install" Sequence="6">
+          <util:XmlConfig Id="CreateElementwebconfig3" ElementId="CreateElementwebconfig2" Name="name" Value="microsoft.identityModel" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig4" ElementId="CreateElementwebconfig2" Name="type" Value="Microsoft.IdentityModel.Configuration.MicrosoftIdentityModelSection, Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="CreateElementwebconfig5" Action="create" Node="element" ElementPath="/configuration" Name="microsoft.identityModel" File="[INSTALLDIR]web.config" On="install" Sequence="7" />
+        <util:XmlConfig Id="CreateElementwebconfig6" Action="create" Node="element" ElementPath="//microsoft.identityModel" Name="service" File="[INSTALLDIR]web.config" On="install" Sequence="8">
+            <util:XmlConfig Id="CreateElementwebconfig7" ElementId="CreateElementwebconfig6" Name="saveBootstrapTokens" Value="true" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="CreateElementwebconfig8" Action="create" Node="element" ElementPath="//microsoft.identityModel/service" Name="audienceUris" File="[INSTALLDIR]web.config" On="install" Sequence="9">
+          <util:XmlConfig Id="CreateElementwebconfig9" ElementId="CreateElementwebconfig8" Name="mode" Value="Never" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="CreateElementwebconfig10" Action="create" Node="element" ElementPath="//microsoft.identityModel/service" Name="federatedAuthentication" File="[INSTALLDIR]web.config" On="install" Sequence="10" />
+        <util:XmlConfig Id="CreateElementwebconfig11" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/federatedAuthentication" Name="cookieHandler" File="[INSTALLDIR]web.config" On="install" Sequence="11">
+          <util:XmlConfig Id="CreateElementwebconfig12" ElementId="CreateElementwebconfig11" Name="requireSsl" Value="true" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="CreateElementwebconfig13" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/federatedAuthentication" Name="wsFederation" File="[INSTALLDIR]web.config" On="install" Sequence="12">
+          <util:XmlConfig Id="CreateElementwebconfig14" ElementId="CreateElementwebconfig13" Name="passiveRedirectEnabled" Value="false" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig15" ElementId="CreateElementwebconfig13" Name="issuer" Value="https://ims-testing.bentley.com/" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig16" ElementId="CreateElementwebconfig13" Name="realm" Value="https://dev-wsg20-eus.cloudapp.net/" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig17" ElementId="CreateElementwebconfig13" Name="requireHttps" Value="true" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="CreateElementwebconfig18" Action="create" Node="element" ElementPath="//microsoft.identityModel/service" Name="certificateValidation" File="[INSTALLDIR]web.config" On="install" Sequence="13">
+          <util:XmlConfig Id="CreateElementwebconfig19" ElementId="CreateElementwebconfig18" Name="certificateValidationMode" Value="PeerOrChainTrust" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="CreateElementwebconfig20" Action="create" Node="element" ElementPath="//microsoft.identityModel/service" Name="issuerNameRegistry" File="[INSTALLDIR]web.config" On="install" Sequence="14">
+          <util:XmlConfig Id="CreateElementwebconfig21" ElementId="CreateElementwebconfig20" Name="type" Value="Microsoft.IdentityModel.Tokens.ConfigurationBasedIssuerNameRegistry,Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="CreateElementwebconfig22" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/issuerNameRegistry" Name="trustedIssuers" File="[INSTALLDIR]web.config" On="install" Sequence="15" />
+        <util:XmlConfig Id="CreateElementwebconfig23" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/issuerNameRegistry/trustedIssuers" Name="add" File="[INSTALLDIR]web.config" On="install" Sequence="16">
+          <util:XmlConfig Id="CreateElementwebconfig24" ElementId="CreateElementwebconfig23" Name="thumbprint" Value="74dcf3da6dc654bceae79403d7848db29e350f10" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig25" ElementId="CreateElementwebconfig23" Name="name" Value="https://auth.bentley.com/" File="[INSTALLDIR]web.config" />
+        </util:XmlConfig>
+      </Component>
+      <Component Id="Bentley_RealityDbECPlugin_Settings.01.00.ecschema.xml" Directory="Extensions" Guid="{56481A18-4ABF-441E-9484-D53332B533CD}">
+        <File Id="Bentley_RealityDbECPlugin_Settings.01.00.ecschema.xml" KeyPath="yes" Source="$(var.InstallDataDir)Bentley_RealityDbECPlugin_Settings.01.00.ecschema.xml" />
       </Component>
     </ComponentGroup>
   </Fragment>
   <Fragment>
     <ComponentGroup Id ="CG_Config">
-      <Component Id="ECSchemaNewDB.xml" Directory="INSTALLDIR" Guid="{E9A59A8A-F810-4299-A8C0-963BABA6434E}">
+      <!--Component Id="ECSchemaNewDB.xml" Directory="INSTALLDIR" Guid="{E9A59A8A-F810-4299-A8C0-963BABA6434E}">
         <File Id="ECSchemaNewDB.xml" KeyPath="yes" Source="$(var.InstallDataDir)ECSchemaNewDB.xml" />
-      </Component>
-      <Component Id="newDbLocation.config" Directory="INSTALLDIR" Guid="{D3C4425C-BFCE-4D3D-81FE-779EFDED3CC9}">
+      </Component-->
+      <!--Component Id="newDbLocation.config" Directory="INSTALLDIR" Guid="{D3C4425C-BFCE-4D3D-81FE-779EFDED3CC9}">
         <File Id="newDbLocation.config" KeyPath="yes" Source="$(var.InstallDataDir)newDbLocation.config" />
         <util:XmlConfig Id="SetnewDbLocationconfigValue1" Action="create" Node="value" ElementPath="//SchemaLocation" Value="[#ECSchemaNewDB.xml]" File="[#newDbLocation.config]" On="install" Sequence="1"/>
         <util:XmlConfig Id="SetnewDbLocationconfigValue2" Action="create" Node="value" ElementPath="//PackagesLocation" Value="[PackagesCache]" File="[#newDbLocation.config]" On="install" Sequence="2"/>
+      </Component-->
+      <Component Id="logging.config.xml" Directory="INSTALLDIR" Guid="{9FE912AB-B3A2-40EE-84EE-1CA0DEDE3FF8}">
+        <File Id="logging.config.xml" KeyPath="yes" Source="$(var.InstallDataDir)logging.config.xml" />
       </Component>
-      <Component Id="RMIndexDbScript.sql" Directory="RealityDbECPlugin" Guid="{56481A18-4ABF-441E-9484-D53332B533CD}">
-        <File Id="RMIndexDbScript.sql" KeyPath="yes" Source="$(var.InstallDataDir)RMIndexDbScript.sql" />
-      </Component>
-      <Component Id="CreateOSMEntry.sql" Directory="RealityDbECPlugin" Guid="{9FE912AB-B3A2-40EE-84EE-1CA0DEDE3FF8}">
+      <!--Component Id="CreateOSMEntry.sql" Directory="RealityDbECPlugin" Guid="{9FE912AB-B3A2-40EE-84EE-1CA0DEDE3FF8}">
         <File Id="CreateOSMEntry.sql" KeyPath="yes" Source="$(var.InstallDataDir)CreateOSMEntry.sql" />
-      </Component>
+      </Component-->
       <Component Id="PackagesCache" Directory="PackagesCache" Guid="{27D6F18C-916E-4E25-AFCD-F69ED395BB21}">
         <CreateFolder/>        
       </Component>
@@ -67,9 +101,6 @@
   </Fragment>
   <Fragment>
     <ComponentGroup Id ="CG_BentleyFiles">
-      <Component Id="BaseGeoCoordG.dll" Directory="bin" Guid="{31DB8983-F88B-4B33-82CC-B86A0F196C95}">
-        <File Id="BaseGeoCoordG.dll" KeyPath="yes" Source="$(var.ProductDir)BaseGeoCoordG.dll" />
-      </Component>
       <Component Id="BeCurlG.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
         <File Id="BeCurlG.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurlG.dll" />
       </Component>
@@ -85,9 +116,6 @@
       <Component Id="BentleyG.dll" Directory="bin" Guid="{761EFBFA-783D-4641-BFCD-D3BC2F465F4B}">
         <File Id="BentleyG.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyG.dll" />
       </Component>
-      <Component Id="BentleyGeomG.dll" Directory="bin" Guid="{328A82AC-A2EA-4040-A7EA-851F2A236611}">
-        <File Id="BentleyGeomG.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyGeomG.dll" />
-      </Component>
       <Component Id="BeOpenSSLG.dll" Directory="bin" Guid="{335ABA3A-4B35-4FC0-82AC-5D3B69E4C5DA}">
         <File Id="BeOpenSSLG.dll" KeyPath="yes" Source="$(var.ProductDir)BeOpenSSLG.dll" />
       </Component>
@@ -99,9 +127,6 @@
       </Component>
       <Component Id="ImagePPG.dll" Directory="bin" Guid="{ADB2DF63-BB0F-463C-941A-05A8DC96CF5E}">
         <File Id="ImagePPG.dll" KeyPath="yes" Source="$(var.ProductDir)ImagePPG.dll" />
-      </Component>
-      <Component Id="NCSEcw.dll" Directory="bin" Guid="{8C63E0AF-7B46-4219-9C97-210F9C9DF68C}">
-        <File Id="NCSEcw.dll" KeyPath="yes" Source="$(var.ProductDir)NCSEcw.dll" />
       </Component>
       <Component Id="RealityPackage.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
         <File Id="RealityPackage.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPackage.dll" />

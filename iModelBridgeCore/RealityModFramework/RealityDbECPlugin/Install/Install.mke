@@ -82,16 +82,13 @@ $(InstallReadMeDir)RealityDbECPlugin_Readme.txt : $(_MakeFilePath)ReadMe/Reality
 $(InstallReadMeDir)RealityDbECPluginEula.pdf : $(EulaFile)
         $(LinkFirstDepToFirstTarget)
 
-$(InstallDataDir)ECSchemaNewDB.xml : $(_MakeFilePath)Data/ECSchemaNewDB.xml
-        $(LinkFirstDepToFirstTarget)
-
-$(InstallDataDir)newDbLocation.config : $(_MakeFilePath)Data/newDbLocation.config
-        $(LinkFirstDepToFirstTarget)
-
 $(InstallDataDir)RMIndexDbScript.sql : $(_MakeFilePath)Data/RMIndexDbScript.sql
         $(LinkFirstDepToFirstTarget)
-
-$(InstallDataDir)CreateOSMEntry.sql : $(_MakeFilePath)Data/CreateOSMEntry.sql
+        
+$(InstallDataDir)Bentley_RealityDbECPlugin_Settings.01.00.ecschema.xml : $(_MakeFilePath)Data/Bentley_RealityDbECPlugin_Settings.01.00.ecschema.xml
+        $(LinkFirstDepToFirstTarget)        
+        
+$(InstallDataDir)logging.config.xml : $(_MakeFilePath)Data/logging.config.xml
         $(LinkFirstDepToFirstTarget)
 
 %ifndef INSTALLER_NAME
