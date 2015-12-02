@@ -1003,38 +1003,48 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
         }
     storage.GetRelationshipsR ().insert (ptr);
     auto isForward = classMap.GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward;
-    bool hasRootOfJoinedTable = false;
+    bool hasRootOfJoinedTableSource = false;
+    bool hasRootOfJoinedTableTarget = false;
+
     for (auto& key : m_map.GetLightweightCache().GetRelationships(classMap.GetClass().GetId()))
         {
         auto constraintMap = GetClassMap(key.first);
         if (constraintMap->IsParentOfJoinedTable())
             {
-            hasRootOfJoinedTable = true;
-            break;
+            if (!hasRootOfJoinedTableSource && Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
+                {
+                hasRootOfJoinedTableSource = true;
+                }
+            if (!hasRootOfJoinedTableTarget && Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Target))
+                {
+                hasRootOfJoinedTableTarget = true;
+                }
             }
         }
     for (auto& key : m_map.GetLightweightCache ().GetRelationships (classMap.GetClass ().GetId ()))
         {
         auto constraintMap = GetClassMap(key.first);
-        if (constraintMap->IsJoinedTable() && hasRootOfJoinedTable)
-            {
-            continue;
-            }
 
         auto& constraitClass = GetClass (*constraintMap);
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
             {
-            if (isForward)
-                ptr->From ().GetClassesR ().insert (&constraitClass);
-            else
-                ptr->To ().GetClassesR ().insert (&constraitClass);
+            if (!(constraintMap->IsJoinedTable() && hasRootOfJoinedTableSource))
+                {
+                if (isForward)
+                    ptr->From().GetClassesR().insert(&constraitClass);
+                else
+                    ptr->To().GetClassesR().insert(&constraitClass);
+                }
             }
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Target))
             {
-            if (!isForward)
-                ptr->From ().GetClassesR ().insert (&constraitClass);
-            else
-                ptr->To ().GetClassesR ().insert (&constraitClass);
+            if (!(constraintMap->IsJoinedTable() && hasRootOfJoinedTableTarget))
+                {
+                if (!isForward)
+                    ptr->From().GetClassesR().insert(&constraitClass);
+                else
+                    ptr->To().GetClassesR().insert(&constraitClass);
+                }
             }
         }
 
