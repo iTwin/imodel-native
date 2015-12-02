@@ -90,12 +90,13 @@ struct FakeScriptLibrary : ScopedDgnHost::FetchScriptCallback
     Utf8String m_jsProgramName;
     Utf8String m_jsProgramText;
 
-    Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override
+    Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override
         {
         if (!m_jsProgramName.EqualsI(sName))
             return DgnDbStatus::NotFound;
         stypeFound = DgnScriptType::JavaScript;
         sText = m_jsProgramText;
+        lmt = DateTime();
         return DgnDbStatus::Success;
         }
     };

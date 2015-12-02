@@ -164,6 +164,8 @@ $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp 
 
 $(CoreObjs)DgnModel$(oext) :                        $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h
 
+$(CoreObjs)ComponentModel$(oext) :                  $(DgnCoreDir)ComponentModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h
+
 $(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
 $(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
