@@ -35,13 +35,13 @@ m_objectInfoManager(&objectInfoManager),
 m_responseClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedResponseInfo)),
 m_responsePageClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedResponsePageInfo)),
 
-m_responseToParentClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ResponseInfoToParent)),
-m_responseToHolderClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ResponseInfoToHolder)),
-m_responseToResponsePageClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ResponseToResponsePage)),
+m_responseToParentClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseInfoToParent)),
+m_responseToHolderClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseInfoToHolder)),
+m_responseToResponsePageClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToResponsePage)),
 
-m_responsePageToResultClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ResponsePageToResult)),
-m_responsePageToResultWeakClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ResponsePageToResultWeak)),
-m_responsePageToRelInfoClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ResponsePageToRelationshipInfo)),
+m_responsePageToResultClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResult)),
+m_responsePageToResultWeakClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResultWeak)),
+m_responsePageToRelInfoClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToRelationshipInfo)),
 
 m_responseInserter(dbAdapter.GetECDb(), *m_responseClass),
 m_responseUpdater(dbAdapter.GetECDb(), *m_responseClass)
