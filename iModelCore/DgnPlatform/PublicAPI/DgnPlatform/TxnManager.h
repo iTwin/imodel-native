@@ -275,15 +275,15 @@ private:
     DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
     BentleyStatus PropagateChanges();
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
-    void DeleteReversedTxns();
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
     bool IsMultiTxnMember(TxnId rowid);
-    DgnDbStatus DeleteFromStartTo(TxnId lastId);
     BentleyStatus MergeChanges(BeSQLite::ChangeStream& changeStream);
     void CancelDynamics();
 
 public:
+    DgnDbStatus DeleteFromStartTo(TxnId lastId);
+    void DeleteReversedTxns();
     void OnBeginValidate(); //!< @private
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private

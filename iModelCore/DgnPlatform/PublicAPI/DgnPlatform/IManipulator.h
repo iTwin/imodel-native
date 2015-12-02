@@ -110,7 +110,7 @@ virtual StatusInt _DoModify (DgnButtonEventCR ev, bool isDynamics) = 0;
 //! instead of on a control. Manipulator may choose to present the user with a different set of controls or cleanup.
 //! Transient manipulators need to verify that the new hit is compatible as caller has no way of checking.
 //! @return true to clear manipulator, false if current manipulator is still ok.
-virtual bool _OnNewHit (HitDetailCR path) {return false;}
+virtual bool _OnNewHit (HitDetailCR hit) {return !hit.GetElementId().IsValid();}
 
 //! Called on a data button event to allow controls to act on a single click.
 //! @note This method can be used to launch editors as it is called before _OnPreModify.
@@ -183,29 +183,6 @@ HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
 virtual ~IEditManipulatorExtension() {}
 
 }; // IEditManipulatorExtension
-
-//=======================================================================================
-//! Interface for supplying additional functionality for transient geometry.
-//=======================================================================================
-struct ITransientGeometryHandler
-{
-public:
-
-//! Implement this method to draw the HitDetail resulting from a locate of the transient graphics.
-//! Will be called by AccuSnap for auto-locate flashing, etc.
-//! @param hit The transient graphics HitDetail.
-//! @param context The ViewContext in which to draw. 
-//! @note You must fully setup context.GetCurrentDisplayParams() before drawing any geometry.
-virtual void _DrawTransient (HitDetailCR hit, ViewContextR context) = 0;
-
-//! Provide locate tool tip.
-virtual void _GetTransientInfoString (HitDetailCR hit, Utf8StringR pathDescr, Utf8CP delimiter) {}
-
-//! Return IEditManipulator for interacting with transient geometry.
-//! @note Implementor is expected to check hit.GetDgnDb().IsReadonly().
-virtual IEditManipulatorPtr _GetTransientManipulator (HitDetailCR hit) {return nullptr;}
-
-}; // ITransientGeometryHandler
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
