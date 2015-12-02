@@ -70,14 +70,14 @@
       <Component Id="BaseGeoCoordG.dll" Directory="bin" Guid="{31DB8983-F88B-4B33-82CC-B86A0F196C95}">
         <File Id="BaseGeoCoordG.dll" KeyPath="yes" Source="$(var.ProductDir)BaseGeoCoordG.dll" />
       </Component>
-      <Component Id="BeCurl.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
-        <File Id="BeCurl.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurl.dll" />
+      <Component Id="BeCurlG.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
+        <File Id="BeCurlG.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurlG.dll" />
       </Component>
-      <Component Id="BeIcu4c.dll" Directory="bin" Guid="{3425543D-91A9-4524-849E-1FAE356317F9}">
-        <File Id="BeIcu4c.dll" KeyPath="yes" Source="$(var.ProductDir)BeIcu4c.dll" />
+      <Component Id="BeIcu4cG.dll" Directory="bin" Guid="{3425543D-91A9-4524-849E-1FAE356317F9}">
+        <File Id="BeIcu4cG.dll" KeyPath="yes" Source="$(var.ProductDir)BeIcu4cG.dll" />
       </Component>
-      <Component Id="BeLibxml2.dll" Directory="bin" Guid="{A34FE1FE-E8E3-4731-8EAA-493570A6792F}">
-        <File Id="BeLibxml2.dll" KeyPath="yes" Source="$(var.ProductDir)BeLibxml2.dll" />
+      <Component Id="BeLibxml2G.dll" Directory="bin" Guid="{A34FE1FE-E8E3-4731-8EAA-493570A6792F}">
+        <File Id="BeLibxml2G.dll" KeyPath="yes" Source="$(var.ProductDir)BeLibxml2G.dll" />
       </Component>
       <Component Id="BentleyAllocator.dll" Directory="bin" Guid="{6F9F3CAA-DD42-466C-8F07-EF1E9E41C1A0}">
         <File Id="BentleyAllocator.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyAllocator.dll" />
@@ -88,8 +88,8 @@
       <Component Id="BentleyGeomG.dll" Directory="bin" Guid="{328A82AC-A2EA-4040-A7EA-851F2A236611}">
         <File Id="BentleyGeomG.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyGeomG.dll" />
       </Component>
-      <Component Id="BeOpenSSL.dll" Directory="bin" Guid="{335ABA3A-4B35-4FC0-82AC-5D3B69E4C5DA}">
-        <File Id="BeOpenSSL.dll" KeyPath="yes" Source="$(var.ProductDir)BeOpenSSL.dll" />
+      <Component Id="BeOpenSSLG.dll" Directory="bin" Guid="{335ABA3A-4B35-4FC0-82AC-5D3B69E4C5DA}">
+        <File Id="BeOpenSSLG.dll" KeyPath="yes" Source="$(var.ProductDir)BeOpenSSLG.dll" />
       </Component>
       <Component Id="BeSQLiteG.dll" Directory="bin" Guid="{641FED9B-9A14-4CB1-BC22-3DE18562CF44}">
         <File Id="BeSQLiteG.dll" KeyPath="yes" Source="$(var.ProductDir)BeSQLiteG.dll" />
