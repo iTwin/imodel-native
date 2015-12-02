@@ -16,6 +16,8 @@ DGNPLATFORM_TYPEDEFS(DgnLockOwnership);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct DgnChangeSummary;
+
 //=======================================================================================
 //! Enumerates the types of objects that can be locked by a briefcase.
 // @bsiclass                                                      Paul.Connelly   10/15
@@ -302,6 +304,7 @@ public:
     };
 
     DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db, bool stopOnFirst); //!< @private
+    void FromChangeSummary(DgnChangeSummary const& changes, bool stopOnFirst=false); //!< @private
 };
 
 ENUM_IS_FLAGS(LockRequest::ResponseOptions);

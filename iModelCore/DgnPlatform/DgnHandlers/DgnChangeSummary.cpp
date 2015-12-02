@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/DgnChangeSummary.h>
+#include    <DgnPlatform/LocksManager.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -401,6 +402,14 @@ void DgnChangeSummary::GetCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssue
     collectCodes(assigned, discarded, elems);
     auto models = MakeModelIterator();
     collectCodes(assigned, discarded, models);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnChangeSummary::GetLocks(LockRequestR locks) const
+    {
+    locks.FromChangeSummary(*this);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

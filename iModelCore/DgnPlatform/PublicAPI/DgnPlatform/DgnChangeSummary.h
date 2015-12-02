@@ -12,6 +12,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct LockRequest;
+
 //=======================================================================================
 //! Utility to extract Dgn related information from ChangeSet-s
 //=======================================================================================
@@ -137,6 +139,10 @@ public:
     //! @param[in]      assigned  Codes which were newly assigned within these changes.
     //! @param[in]      discarded Codes which were previously assigned, and removed within these changes.
     DGNPLATFORM_EXPORT void GetCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssuedCodeSet& discarded) const;
+
+    //! Populate the set of locks required for these changes.
+    //! @param[in]      locks The set of locks which are required for these changes.
+    DGNPLATFORM_EXPORT void GetLocks(LockRequest& locks) const;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -188,6 +188,17 @@ DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db, bool stop
     if (SUCCESS != summary.FromChangeSet(changes))
         return DgnDbStatus::BadArg;
 
+    FromChangeSummary(summary);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::FromChangeSummary(DgnChangeSummary const& summary, bool stopOnFirst)
+    {
+    Clear();
+
     for (auto const& entry : summary.MakeElementIterator())
         {
         if (entry.IsIndirectChange())
@@ -213,11 +224,11 @@ DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db, bool stop
         InsertLock(LockableId(modelId), LockLevel::Shared);
         InsertLock(LockableId(entry.GetElementId()), LockLevel::Exclusive);
         if (stopOnFirst && !IsEmpty())
-            return DgnDbStatus::Success;
+            return;
         }
 
     // Any models directly changed?
-    ECClassId classId = db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
+    ECClassId classId = summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
     DgnChangeSummary::InstanceIterator::Options options(classId);
     for (auto const& entry : summary.MakeInstanceIterator(options))
         {
@@ -225,15 +236,13 @@ DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db, bool stop
             {
             InsertLock(LockableId(LockableType::Model, entry.GetInstanceId()), LockLevel::Exclusive);
             if (stopOnFirst && !IsEmpty())
-                return DgnDbStatus::Success;
+                return;
             }
         }
 
     // Anything changed at all?
     if (!IsEmpty())
-        Insert(db, LockLevel::Shared);
-
-    return DgnDbStatus::Success;
+        Insert(summary.GetDgnDb(), LockLevel::Shared);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,6 +735,8 @@ LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db)
         return;
         }
 
+    // ###TODO: If IsCreatingRevision(), use RevisionManager::m_currentRevision
+    // (Expect more often than not this function will be invoked while pushing a revision and relinquishing locks...)
     DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
     if (rev.IsValid())
         {
