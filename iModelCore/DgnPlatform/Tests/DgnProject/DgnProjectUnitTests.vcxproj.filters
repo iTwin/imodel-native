@@ -241,6 +241,9 @@
     <ClCompile Include="NonPublished\MissingHandler_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

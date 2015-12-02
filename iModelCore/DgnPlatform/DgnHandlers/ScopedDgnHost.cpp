@@ -82,11 +82,11 @@ struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
 
     TestingDgnScriptingAdmin() {m_callback=nullptr;}
 
-    DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred) override
+    DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred) override
         {
         if (nullptr == m_callback)
             return DgnDbStatus::NotEnabled;
-        return m_callback->_FetchScript(sText, stypeFound, db, sName, stypePreferred);
+        return m_callback->_FetchScript(sText, stypeFound, lmt, db, sName, stypePreferred);
         }
 };
 

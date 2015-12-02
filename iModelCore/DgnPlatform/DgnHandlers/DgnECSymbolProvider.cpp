@@ -86,6 +86,38 @@ ECValue DgnElementExpressionContext::GetFullClassName() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnElementExpressionContext::GetLabel() const
+    {
+    return ECValue(m_element.GetLabel());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnElementExpressionContext::HasLabel() const
+    {
+    return ECValue(m_element.HasLabel());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnElementExpressionContext::GetDisplayLabel() const
+    {
+    return ECValue(m_element.GetDisplayLabel().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  05/2015
+//---------------------------------------------------------------------------------------
+ECValue DgnElementExpressionContext::GetCodeValue() const
+    {
+    return ECValue(m_element.GetCode().GetValueCP());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  11/2015
 //---------------------------------------------------------------------------------------
 ECValue DgnElementExpressionContext::HasGeometry() const
@@ -114,6 +146,10 @@ DgnElementExpressionContext::DgnElementExpressionContext(DgnElementCR element) :
 
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("ClassName", *this, &DgnElementExpressionContext::GetClassName));
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("FullClassName", *this, &DgnElementExpressionContext::GetFullClassName));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("DisplayLabel", *this, &DgnElementExpressionContext::GetDisplayLabel));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("Label", *this, &DgnElementExpressionContext::GetLabel));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("HasLabel", *this, &DgnElementExpressionContext::HasLabel));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("CodeValue", *this, &DgnElementExpressionContext::GetCodeValue));
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("HasGeometry", *this, &DgnElementExpressionContext::HasGeometry));
 
     AddSymbol(*ContextSymbol::CreateContextSymbol("element", *methodContext));

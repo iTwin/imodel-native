@@ -1129,7 +1129,7 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
         return;
 
     Utf8String ecsql ("INSERT INTO ");
-    ecsql.append (ECSqlBuilder::ToECSqlSnippet (*ecclass)).append (" (RedlineModelId, [Name], CreateDate) VALUES (?, ?, ?)");
+    ecsql.append (ecclass->GetECSqlName()).append (" (RedlineModelId, [Name], CreateDate) VALUES (?, ?, ?)");
     
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (*this, ecsql.c_str ());

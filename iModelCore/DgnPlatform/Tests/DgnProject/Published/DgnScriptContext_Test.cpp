@@ -47,12 +47,13 @@ struct JsProg : ScopedDgnHost::FetchScriptCallback
     Utf8String m_jsProgramName;
     Utf8String m_jsProgramText;
 
-    Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override
+    Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override
         {
         if (!m_jsProgramName.EqualsI(sName))
             return DgnDbStatus::NotFound;
         stypeFound = DgnScriptType::JavaScript;
         sText = m_jsProgramText;
+        lmt = DateTime();
         return DgnDbStatus::Success;
         }
     };
@@ -215,6 +216,18 @@ TEST_F(DgnScriptTest, RunScripts)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool areDateTimesEqual(DateTime const& d1, DateTime const& d2)
+    {
+    // TRICKY: avoid problems with rounding.
+    double jd1, jd2;
+    d1.ToJulianDay(jd1);
+    d2.ToJulianDay(jd2);
+    return jd1 == jd2;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, CRUD)
@@ -240,41 +253,49 @@ TEST_F(DgnScriptTest, CRUD)
     DgnScriptLibrary::ReadText(tsProgram, tsFileName);
 
     DgnScriptLibrary scriptLib(*project);
+    DateTime scriptLastModifiedTime = DateTime::GetCurrentTimeUtc();
     // Insert JS
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestJsScript", jsProgram.c_str(), DgnScriptType::JavaScript, false));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestJsScript", jsProgram.c_str(), DgnScriptType::JavaScript, scriptLastModifiedTime, false));
     // Insert JS ( Updated existing )
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestJsScript", jsProgram.c_str(), DgnScriptType::JavaScript, true));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestJsScript", jsProgram.c_str(), DgnScriptType::JavaScript, scriptLastModifiedTime, true));
     // Insert TS
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestTsScript", tsProgram.c_str(), DgnScriptType::TypeScript, false));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestTsScript", tsProgram.c_str(), DgnScriptType::TypeScript, scriptLastModifiedTime, false));
     // Insert anonymous
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("", tsProgram.c_str(), DgnScriptType::TypeScript, false));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("", tsProgram.c_str(), DgnScriptType::TypeScript, scriptLastModifiedTime, false));
 
     // Query JS
     Utf8String outText;
     DgnScriptType outType;
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestJsScript", DgnScriptType::JavaScript));
+    DateTime queryLastModifiedTime;
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestJsScript", DgnScriptType::JavaScript));
     EXPECT_TRUE(jsProgram.Equals(outText));
     EXPECT_TRUE(DgnScriptType::JavaScript == outType);
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     // Query TS with wrong type
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestTsScript", DgnScriptType::JavaScript));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestTsScript", DgnScriptType::JavaScript));
     EXPECT_TRUE(tsProgram.Equals(outText));
     EXPECT_TRUE(DgnScriptType::TypeScript == outType);
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     // Query Annonyous
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "", DgnScriptType::TypeScript));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "", DgnScriptType::TypeScript));
     EXPECT_TRUE(tsProgram.Equals(outText));
     EXPECT_TRUE(DgnScriptType::TypeScript == outType);
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     // Update
     Utf8String updatedScript("<script>Updated One </script>");
-    EXPECT_TRUE(DgnDbStatus::Success != scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, false));
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestTsScript", DgnScriptType::TypeScript));
+    scriptLastModifiedTime = DateTime::GetCurrentTimeUtc();
+    EXPECT_TRUE(DgnDbStatus::Success != scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, scriptLastModifiedTime, false));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestTsScript", DgnScriptType::TypeScript));
     EXPECT_TRUE(tsProgram.Equals(outText));
+    EXPECT_TRUE(!areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, true));
-    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestTsScript", DgnScriptType::TypeScript));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, scriptLastModifiedTime, true));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, queryLastModifiedTime, "TestTsScript", DgnScriptType::TypeScript));
     EXPECT_TRUE(updatedScript.Equals(outText));
+    EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime));
 
     }
 

@@ -28,7 +28,7 @@ struct ScopedDgnHost
 
     struct FetchScriptCallback
         {
-        virtual DgnDbStatus _FetchScript(Utf8StringR, DgnScriptType&, DgnDbR, Utf8CP, DgnScriptType) = 0;
+        virtual DgnDbStatus _FetchScript(Utf8StringR, DgnScriptType&, DateTime& lmt, DgnDbR, Utf8CP, DgnScriptType) = 0;
         };
 
     DGNPLATFORM_EXPORT ScopedDgnHost();
