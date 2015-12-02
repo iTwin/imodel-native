@@ -1361,6 +1361,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
 {
 protected:
 
+virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
 virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
 virtual Placement3dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
@@ -1382,6 +1383,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
 {
 protected:
 
+virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
 virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
 virtual Placement2dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
@@ -1427,7 +1429,6 @@ protected:
 
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
-    virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return nullptr;}
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
 
@@ -1485,7 +1486,6 @@ protected:
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nullptr;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
 
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
