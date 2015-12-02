@@ -181,11 +181,10 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
     WSQueryPtr query = providerQuery.query;
     bool syncRecursively = providerQuery.syncRecursively;
 
-    Utf8String eTag = txn.GetCache().ReadResponseCacheTag(responseKey);
     auto ct = GetCancellationToken();
 
-    m_ds->GetClient()->SendQueryRequest(*query, eTag, ct)
-        ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
+    m_ds->CacheObjects(responseKey, *query, CachingDataSource::DataOrigin::RemoteData, IWSRepositoryClient::InitialSkipToken, 0, ct)
+    ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::DataOriginResult result)
         {
         if (IsTaskCanceled())
             {
@@ -195,12 +194,6 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         auto txn = m_ds->StartCacheTransaction();
         if (result.IsSuccess())
             {
-            if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), &m_instancesToRedownload, query.get(), ct))
-                {
-                SetError({ICachingDataSource::Status::InternalCacheError, ct});
-                return;
-                }
-
             InvalidatePersistentInstances();
 
             // TODO: CacheResponse could return keys to avoid additonal query
@@ -234,9 +227,9 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, WSErrorCR error)
+void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, CachingDataSource::ErrorCR error)
     {
-    if (WSError::Status::ReceivedError == error.GetStatus())
+    if (WSError::Status::ReceivedError == error.GetWSError().GetStatus())
         {
         AddFailedObject(txn, txn.GetCache().FindInstance(responseKey.GetParent()), error);
         }

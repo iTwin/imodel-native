@@ -97,6 +97,7 @@ struct DataSourceCache : public IDataSourceCache
             WSObjectsResponseCR response,
             bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
+            uint64_t page = 0,
             ICancellationTokenPtr cancellationToken = nullptr
             ) override;
 
@@ -178,11 +179,11 @@ struct DataSourceCache : public IDataSourceCache
 
         WSCACHE_EXPORT bool IsResponseCached(CachedResponseKeyCR responseKey) override;
 
-        WSCACHE_EXPORT Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey) override;
+        WSCACHE_EXPORT Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey, uint64_t page = 0) override;
         WSCACHE_EXPORT Utf8String ReadInstanceCacheTag(ObjectIdCR objectId) override;
         WSCACHE_EXPORT Utf8String ReadFileCacheTag(ObjectIdCR objectId) override;
 
-        WSCACHE_EXPORT DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey) override;
+        WSCACHE_EXPORT DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey, uint64_t page = 0) override;
         WSCACHE_EXPORT DateTime ReadInstanceCachedDate(ObjectIdCR objectId) override;
         WSCACHE_EXPORT DateTime ReadFileCachedDate(ObjectIdCR objectId) override;
 

@@ -680,14 +680,16 @@ AsyncTaskPtr<CachingDataSource::DataOriginResult> CachingDataSource::CacheObject
 CachedResponseKeyCR responseKey,
 WSQueryCR query,
 DataOrigin origin,
-ICancellationTokenPtr cancellationToken
+Utf8StringCR skipToken,
+uint64_t page,
+ICancellationTokenPtr ct
 )
     {
     auto result = std::make_shared <DataOriginResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
-        if (cancellationToken->IsCanceled())
+        if (ct->IsCanceled())
             {
             result->SetError(Status::Canceled);
             return;
@@ -710,29 +712,40 @@ ICancellationTokenPtr cancellationToken
             }
 
         // connect to server for data
-        Utf8String cacheTag = txn.GetCache().ReadResponseCacheTag(responseKey);
-        m_client->SendQueryRequest(query, cacheTag, cancellationToken)
+        Utf8String cacheTag = txn.GetCache().ReadResponseCacheTag(responseKey, page);
+        m_client->SendQueryRequest(query, cacheTag, skipToken, ct)
             ->Then(m_cacheAccessThread, [=] (WSObjectsResult& objectsResult)
             {
             auto txn = StartCacheTransaction();
             DataOrigin returningDataOrigin = DataOrigin::RemoteData;
             if (objectsResult.IsSuccess())
                 {
+                WSObjectsResponseCR response = objectsResult.GetValue();
+
                 bset<ObjectId> rejected;
-                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, objectsResult.GetValue(), &rejected, &query, cancellationToken))
+                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct))
                     {
-                    result->SetError({ICachingDataSource::Status::InternalCacheError, cancellationToken});
+                    result->SetError({ICachingDataSource::Status::InternalCacheError, ct});
                     return;
                     }
 
-                if (!objectsResult.GetValue().IsModified())
+                if (!response.IsModified())
                     {
                     returningDataOrigin = DataOrigin::CachedData;
                     }
 
+                if (!response.IsFinal())
+                    {
+                    CacheObjects(responseKey, query, origin, response.GetSkipToken(), page + 1, ct)
+                    ->Then([=] (DataOriginResult nextResult)
+                        {
+                        *result = nextResult;
+                        });
+                    }
+
                 if (!rejected.empty())
                     {
-                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, cancellationToken)
+                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, ct)
                         ->Then(m_cacheAccessThread, [=] (BatchResult instancesResult)
                         {
                         if (instancesResult.IsSuccess())
@@ -789,7 +802,7 @@ ICancellationTokenPtr cancellationToken
         }
     cancellationToken = CreateCancellationToken(cancellationToken);
 
-    return CacheObjects(responseKey, query, origin, cancellationToken)
+    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, cancellationToken)
         ->Then<ObjectsResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -821,7 +834,7 @@ ICancellationTokenPtr cancellationToken
     {
     cancellationToken = CreateCancellationToken(cancellationToken);
 
-    return CacheObjects(responseKey, query, origin, cancellationToken)
+    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, cancellationToken)
         ->Then<KeysResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -880,7 +893,7 @@ ICancellationTokenPtr cancellationToken
             return;
             }
 
-        CacheObjects(responseKey, *query, origin, cancellationToken)
+        CacheObjects(responseKey, *query, origin, IWSRepositoryClient::InitialSkipToken, 0, cancellationToken)
             ->Then([=] (DataOriginResult result)
             {
             *finalResult = result;

@@ -30,11 +30,13 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
 
         static std::shared_ptr<NiceMock<MockWSRepositoryClient>> Create(Utf8StringCR id = "test")
             {
-            // Set the default return values for tasks so they would crash with stack trace in unit tests
-            DefaultValue<AsyncTaskPtr<WSCreateObjectResult>>::Set(AsyncTaskPtr<WSCreateObjectResult>());
-            DefaultValue<AsyncTaskPtr<WSUpdateObjectResult>>::Set(AsyncTaskPtr<WSUpdateObjectResult>());
-            DefaultValue<AsyncTaskPtr<WSDeleteObjectResult>>::Set(AsyncTaskPtr<WSDeleteObjectResult>());
-            DefaultValue<AsyncTaskPtr<WSUpdateFileResult>>::Set(AsyncTaskPtr<WSUpdateFileResult>());
+            DefaultValue<AsyncTaskPtr<WSObjectsResult>>::Set(CreateCompletedAsyncTask(WSObjectsResult()));
+            DefaultValue<AsyncTaskPtr<WSFileResult>>::Set(CreateCompletedAsyncTask(WSFileResult()));
+            DefaultValue<AsyncTaskPtr<WSChangesetResult>>::Set(CreateCompletedAsyncTask(WSChangesetResult()));
+            DefaultValue<AsyncTaskPtr<WSCreateObjectResult>>::Set(CreateCompletedAsyncTask(WSCreateObjectResult()));
+            DefaultValue<AsyncTaskPtr<WSUpdateObjectResult>>::Set(CreateCompletedAsyncTask(WSUpdateObjectResult()));
+            DefaultValue<AsyncTaskPtr<WSDeleteObjectResult>>::Set(CreateCompletedAsyncTask(WSDeleteObjectResult()));
+            DefaultValue<AsyncTaskPtr<WSUpdateFileResult>>::Set(CreateCompletedAsyncTask(WSUpdateFileResult()));
 
             auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
             client->m_client = MockWSClient::Create();
@@ -101,10 +103,11 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr cancellationToken
             ));
 
-        MOCK_CONST_METHOD3(SendQueryRequest, AsyncTaskPtr<WSObjectsResult>
+        MOCK_CONST_METHOD4(SendQueryRequest, AsyncTaskPtr<WSObjectsResult>
             (
             WSQueryCR query,
             Utf8StringCR eTag,
+            Utf8StringCR skipToken,
             ICancellationTokenPtr cancellationToken
             ));
 

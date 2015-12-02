@@ -40,8 +40,25 @@ TEST_F (WSObjectsResponseTests, GetRapidJsonDocument_DefaultCtor_ReturnsNull)
 TEST_F (WSObjectsResponseTests, GetInstances_CtorWithReaderAndBody_ReturnsInstances)
     {
     auto reader = WSObjectsReaderV1::Create ("Schema", "Class");
-    WSObjectsResponse result (reader, HttpStringBody::Create (R"({"$id":"A"})"), HttpStatus::OK, "");
+    WSObjectsResponse result (reader, HttpStringBody::Create (R"({"$id":"A"})"), HttpStatus::OK, "", "");
 
     EXPECT_FALSE (result.GetInstances ().IsEmpty ());
     EXPECT_EQ (ObjectId ("Schema", "Class", "A"), (*result.GetInstances ().begin ()).GetObjectId ());
     }
+
+TEST_F(WSObjectsResponseTests, IsFinal_SkipTokenEmpty_True)
+    {
+    WSObjectsResponse response(nullptr, HttpStringBody::Create(), HttpStatus::OK, "", "");
+
+    EXPECT_TRUE(response.IsFinal());
+    EXPECT_EQ ("", response.GetSkipToken());
+    }
+
+TEST_F(WSObjectsResponseTests, IsFinal_SkipTokenNotEmpty_False)
+    {
+    WSObjectsResponse response(nullptr, HttpStringBody::Create(), HttpStatus::OK, "", "SomeToken");
+
+    EXPECT_FALSE(response.IsFinal());
+    EXPECT_EQ("SomeToken", response.GetSkipToken());
+    }
+

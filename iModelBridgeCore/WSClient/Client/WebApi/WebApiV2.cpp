@@ -9,6 +9,8 @@
 #include "WebApiV2.h"
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
+#define HEADER_SkipToken "SkipToken"
+
 const BeVersion WebApiV2::s_maxTestedWebApi(2, 3);
 
 /*--------------------------------------------------------------------------------------+
@@ -248,8 +250,9 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, const O
 
         auto body = response.GetContent()->GetBody();
         auto eTag = response.GetHeaders().GetETag();
+        auto skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
 
-        return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag));
+        return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
         }
     return WSObjectsResult::Error(response);
     }
@@ -393,6 +396,7 @@ AsyncTaskPtr<WSObjectsResult> WebApiV2::SendQueryRequest
 (
 WSQueryCR query,
 Utf8StringCR eTag,
+Utf8StringCR skipToken,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -401,6 +405,7 @@ ICancellationTokenPtr cancellationToken
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
     request.GetHeaders().SetIfNoneMatch(eTag);
+    request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(cancellationToken);

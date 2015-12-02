@@ -91,6 +91,7 @@ struct WebApiV2 : public WebApi
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 

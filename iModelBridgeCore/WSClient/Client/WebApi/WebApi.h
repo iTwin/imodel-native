@@ -72,6 +72,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 

@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 UpgraderBase::UpgraderBase(ECDbAdapter& adapter) :
-m_adapter(adapter)
+    m_adapter(adapter)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -38,4 +38,26 @@ BentleyStatus UpgraderBase::UpgradeCacheSchema(int versionMajor, int versionMino
 
     return m_adapter.GetECDb().GetEC().GetSchemaManager()
         .ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UpgraderBase::ExecuteStatement(Utf8CP ecSql)
+    {
+    ECSqlStatement statement;
+    if (SUCCESS != m_adapter.PrepareStatement(statement, ecSql))
+        {
+        return ERROR;
+        }
+
+    ECSqlStepStatus status;
+    while (ECSqlStepStatus::HasRow == (status = statement.Step()));
+
+    if (ECSqlStepStatus::Done != status)
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
     }

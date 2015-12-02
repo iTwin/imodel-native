@@ -110,11 +110,13 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
 
         //! Saves query response to cache
         //! @param[in] responseKey - key used to store response data
-        //! @param[in] response - contains information about instances
+        //! @param[in] response - contains information about instances. Will trim to current page index if response is final.
         //! @param[out] rejectedOut - returns ObjectIds that are protected by full persistence and were not updated with partial instances. 
         //! Required when specifying query.
         //! @param[in] query - when specified, is used to determine instances that are partial and thus not overriding already fully 
         //! cached instances. Null results in all instances treated as full that overrides existing data.
+        //! FinalizeCachedResponse needs to be called later if non-null value is passed.
+        //! @param[in] page - page index being cached
         //! @param[in] cancellationToken - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
         virtual BentleyStatus CacheResponse
             (
@@ -122,6 +124,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             WSObjectsResponseCR response,
             bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
+            uint64_t page = 0,
             ICancellationTokenPtr cancellationToken = nullptr
             ) = 0;
 
@@ -232,17 +235,18 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Returns cached file path or empty path if not found
         virtual BeFileName ReadFilePath(ECInstanceKeyCR instanceKey) = 0;
         //! Read main file properties from cached instance.
-        //! @param@ fileName[out] will be filled with file name or instance label if found.
-        //! @param@ fileSize[out] will be filled with file size property value or 0 if not found.
+        //! @param fileName[out] will be filled with file name or instance label if found.
+        //! @param fileSize[out] will be filled with file size property value or 0 if not found.
         virtual BentleyStatus ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize) = 0;
 
+        //! Check if final response page was cached and caching is finished for it.
         virtual bool IsResponseCached(CachedResponseKeyCR responseKey) = 0;
 
-        virtual Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey) = 0;
+        virtual Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey, uint64_t page = 0) = 0;
         virtual Utf8String ReadInstanceCacheTag(ObjectIdCR objectId) = 0;
         virtual Utf8String ReadFileCacheTag(ObjectIdCR objectId) = 0;
 
-        virtual DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey) = 0;
+        virtual DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey, uint64_t page = 0) = 0;
         virtual DateTime ReadInstanceCachedDate(ObjectIdCR objectId) = 0;
         virtual DateTime ReadFileCachedDate(ObjectIdCR objectId) = 0;
 

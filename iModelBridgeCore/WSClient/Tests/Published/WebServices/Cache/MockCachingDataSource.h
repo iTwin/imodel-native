@@ -31,6 +31,12 @@ struct MockCachingDataSource : public ICachingDataSource
         MockCachingDataSource () :
             m_thread (WorkerThread::Create ("MockCachingDataSource"))
             {
+            DefaultValue<AsyncTaskPtr<ObjectsResult>>::Set(CreateCompletedAsyncTask(ObjectsResult()));
+            DefaultValue<AsyncTaskPtr<KeysResult>>::Set(CreateCompletedAsyncTask(KeysResult()));
+            DefaultValue<AsyncTaskPtr<FileResult>>::Set(CreateCompletedAsyncTask(FileResult()));
+            DefaultValue<AsyncTaskPtr<BatchResult>>::Set(CreateCompletedAsyncTask(BatchResult()));
+            DefaultValue<AsyncTaskPtr<Result>>::Set(CreateCompletedAsyncTask(Result()));
+
             ON_CALL (*this, GetCacheAccessThread ()).WillByDefault (Return (m_thread));
 
             ON_CALL (m_txnManager, CommitTransaction ()).WillByDefault (Return (SUCCESS));

@@ -48,6 +48,9 @@ typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
 struct IWSRepositoryClient
     {
     public:
+        WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
+
+    public:
         WSCLIENT_EXPORT virtual ~IWSRepositoryClient();
 
         virtual IWSClientPtr GetWSClient() const = 0;
@@ -105,10 +108,17 @@ struct IWSRepositoryClient
         //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters.
         //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query.
         //!         Select will be used as property list to select
+        //! @param query
+        //! @param eTag send previous eTag to check if data was modified and avoid sending if not.
+        //! @param skipToken allows using paged mechanism if supported by server and repository. Used to "skip" previous response data.
+        //! Supply IWSRepositoryClient::InitialSkipToken to start paged requests. 
+        //! For sequental page requests supply previous response skipToken if response was not final.
+        //! @param cancellationToken
         virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
@@ -275,6 +285,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
