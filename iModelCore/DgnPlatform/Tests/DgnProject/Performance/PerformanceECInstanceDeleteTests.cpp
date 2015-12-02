@@ -34,6 +34,7 @@ struct PerformanceECInstanceDeleteTestsFixture : public ::testing::Test
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
+#if defined (WIP_DGNITEM)
 TEST_F (PerformanceECInstanceDeleteTestsFixture, DeleteInstancesOfDgn_ElementItemUsingDerivedClasses)
     {
     DgnDbPtr dgnProj = nullptr;
@@ -108,6 +109,7 @@ TEST_F (PerformanceECInstanceDeleteTestsFixture, CascadeDeleteOnDgn_ElementItem)
     ASSERT_EQ (0, stmt.GetValueInt (0));
     stmt.Finalize ();
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
@@ -120,7 +122,7 @@ TEST_F (PerformanceECInstanceDeleteTestsFixture, CascadeDeleteOnDgn_Element)
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*dgnProj, "Select COUNT(*) FROM dgn.Element"));
     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
-    ASSERT_EQ (2182, stmt.GetValueInt (0));
+    ASSERT_EQ (2220, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     Utf8String deleteECSql = "Delete FROM dgn.Element";
@@ -152,7 +154,7 @@ TEST_F (PerformanceECInstanceDeleteTestsFixture, DeleteInstancesOfDgn_ElementUsi
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*dgnProj, "Select COUNT(*) FROM dgn.Element"));
     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
-    ASSERT_EQ (2182, stmt.GetValueInt (0));
+    ASSERT_EQ (2220, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     StopWatch timer;
