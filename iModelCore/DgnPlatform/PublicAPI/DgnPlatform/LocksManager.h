@@ -328,7 +328,7 @@ private:
 protected:
     ILocksManager(DgnDbR db) : m_db(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly) = 0;
+    virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly, LockStatus* status) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
     virtual LockStatus _ReleaseLocks(DgnLockSet& locks) = 0;
@@ -347,7 +347,8 @@ public:
     DgnDbR GetDgnDb() const { return m_db; }
 
     //! Returns true if this briefcase owns all of the requested locks. Note this function may modify the LockRequest object.
-    bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false) { return _QueryLocksHeld(locks, localQueryOnly); }
+    //! This method always returns false if an error occurs while processing the query; check the optional LockStatus argument.
+    bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false, LockStatus* status=nullptr) { return _QueryLocksHeld(locks, localQueryOnly, status); }
 
     //! Attempts to acquire the specified locks. Note this function may modify the LockRequest object.
     LockRequest::Response AcquireLocks(LockRequestR locks) { return _AcquireLocks(locks); }
@@ -405,7 +406,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ILocksServer
 {
 protected:
-    virtual bool _QueryLocksHeld(LockRequestCR locks, DgnDbR db) = 0;
+    virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
     virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) = 0;
@@ -413,8 +414,8 @@ protected:
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
 public:
-    //! Returns true if all specified locks are held at or above the specified levels by the specified briefcase
-    bool QueryLocksHeld(LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(locks, db); }
+    //! Query whether all specified locks are held at or above the specified levels by the specified briefcase
+    LockStatus QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(held, locks, db); }
 
     //! Attempts to acquire the specified locks for the specified briefcase
     LockRequest::Response AcquireLocks(LockRequestCR locks, DgnDbR db) { return _AcquireLocks(locks, db); }

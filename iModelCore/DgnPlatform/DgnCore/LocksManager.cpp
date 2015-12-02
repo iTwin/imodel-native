@@ -312,7 +312,13 @@ struct UnrestrictedLocksManager : ILocksManager
 private:
     UnrestrictedLocksManager(DgnDbR db) : ILocksManager(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestR, bool) override { return true; }
+    virtual bool _QueryLocksHeld(LockRequestR, bool, LockStatus* status) override
+        {
+        if (nullptr != status)
+            *status = LockStatus::Success;
+
+        return true;
+        }
     virtual LockRequest::Response _AcquireLocks(LockRequestR) override { return LockRequest::Response(LockStatus::Success); }
     virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
     virtual LockStatus _ReleaseLocks(DgnLockSet& locks) override { return LockStatus::Success; }
@@ -356,7 +362,7 @@ private:
 
     BeBriefcaseId GetId() const { return GetDgnDb().GetBriefcaseId(); }
 
-    virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly) override;
+    virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly, LockStatus* status) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) override { return AcquireLocks(locks, true); }
     virtual LockStatus _RelinquishLocks() override;
     virtual LockStatus _ReleaseLocks(DgnLockSet& locks) override;
@@ -919,17 +925,34 @@ LockStatus LocalLocksManager::PromoteDependentElements(LockRequestCR usedLocks, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly)
+bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly, LockStatus* outStatus)
     {
+    LockStatus localStatus;
+    LockStatus& status = nullptr != outStatus ? *outStatus : localStatus;
+
     if (!Validate())
+        {
+        status = LockStatus::SyncError;
         return false;
+        }
 
     Cull(locks);
     if (localOnly || locks.IsEmpty())
+        {
+        status = LockStatus::Success;
         return locks.IsEmpty();
+        }
 
     auto server = GetLocksServer();
-    return nullptr != server && server->QueryLocksHeld(locks, GetDgnDb());
+    if (nullptr == server)
+        {
+        status = LockStatus::ServerUnavailable;
+        return false;
+        }
+
+    bool held = false;
+    status = server->QueryLocksHeld(held, locks, GetDgnDb());
+    return held;
     }
 
 /*---------------------------------------------------------------------------------**//**

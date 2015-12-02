@@ -64,7 +64,7 @@ private:
     Db m_db;
     bool m_offline;
 
-    virtual bool _QueryLocksHeld(LockRequestCR reqs, DgnDbR db) override;
+    virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR reqs, DgnDbR db) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
     virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) override;
@@ -279,10 +279,11 @@ void LocksServer::Reduce(DgnLockSet const& locks, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocksServer::_QueryLocksHeld(LockRequestCR inputReqs, DgnDbR db)
+LockStatus LocksServer::_QueryLocksHeld(bool& held, LockRequestCR inputReqs, DgnDbR db)
     {
+    held = false;
     if (m_offline)
-        return false;
+        return LockStatus::ServerUnavailable;
 
     // Simulating serialization and deserialization of server request...
     Json::Value reqJson;
@@ -300,10 +301,8 @@ bool LocksServer::_QueryLocksHeld(LockRequestCR inputReqs, DgnDbR db)
     bindBcId(stmt, 1, db.GetBriefcaseId());
     stmt.BindVirtualSet(2, vset);
 
-    if (BE_SQLITE_ROW != stmt.Step())
-        return false;
-
-    return stmt.GetValueInt(0) == reqs.Size();
+    held = BE_SQLITE_ROW == stmt.Step() && stmt.GetValueInt(0) == reqs.Size();
+    return LockStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

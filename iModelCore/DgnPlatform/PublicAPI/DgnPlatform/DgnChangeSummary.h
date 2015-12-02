@@ -8,6 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <DgnPlatform/DgnDbTables.h>
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
@@ -123,8 +125,18 @@ public:
     //! @return An iterator over the elements which have changed.
     ElementIterator MakeElementIterator(QueryDbOpcode opcodes=QueryDbOpcode::All) const { return ElementIterator(*this, opcodes); }
 
+    //! Get an iterator over models that have changed
+    //! @param[in]      opcodes Optionally filters changes by operation (delete, insert, update)
+    //! @return An iterator over the models which have changed.
+    ModelIterator MakeModelIterator(QueryDbOpcode opcodes=QueryDbOpcode::All) const { return ModelIterator(*this, opcodes); }
+
     //! Returns the DgnDb for which this change summary was created
     DgnDbR GetDgnDb() const { return m_dgndb; }
+
+    //! Populate a set of those codes which were newly assigned within these changes, and those which were discarded.
+    //! @param[in]      assigned  Codes which were newly assigned within these changes.
+    //! @param[in]      discarded Codes which were previously assigned, and removed within these changes.
+    DGNPLATFORM_EXPORT void GetCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssuedCodeSet& discarded) const;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
