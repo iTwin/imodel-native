@@ -13,7 +13,6 @@
 #include <Geom/GeomApi.h>
 
 #include "Locate.h"
-#include "NamedVolume.h"
 #include "IManipulator.h"
 
 //__PUBLISH_SECTION_END__
