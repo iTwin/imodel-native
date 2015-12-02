@@ -51,6 +51,8 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_SystemElement         "SystemElement"
+#define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 
