@@ -185,7 +185,7 @@ template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, 
 
     auto instance = entry.GetImpl().GetInstance();
     DbDupValue oldAuthId = instance.GetOldValue("Code.AuthorityId"),
-               oldNamespace = instance.GetOldValue("Code.NameSpace"),
+               oldNamespace = instance.GetOldValue("Code.Namespace"),
                oldValue = instance.GetOldValue("Code.Value");
 
     if (DbOpcode::Delete == op)
@@ -351,7 +351,7 @@ void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementId
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void insertCode(AuthorityIssuedCodeSet& into, AuthorityIssuedCode const& code, AuthorityIssuedCodeSet& ifNotIn)
     {
-    if (!code.IsValid())
+    if (code.IsEmpty() || !code.IsValid())
         return;
 
     // At most, we can expect one discard and one assign per unique code.
