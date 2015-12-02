@@ -160,9 +160,13 @@ TEST_F(RevisionTestFixture, Workflow)
     m_testDb->SaveChanges("Created Initial Model");
 
     // Create an initial revision
+    ASSERT_TRUE(m_testDb->Revisions().CanCreateRevision());
+    
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     
+    ASSERT_FALSE(m_testDb->Revisions().CanCreateRevision());
+
     // Create and save multiple revisions
     BackupTestFile();
     bvector<DgnRevisionPtr> revisions;
