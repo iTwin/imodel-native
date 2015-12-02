@@ -1876,21 +1876,20 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
     if (nullptr == geom)
         {
         IElemTopologyCP elemTopo = hit.GetElemTopology();
-        ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
 
-        if (nullptr == transientHandler)
+        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
             return ERROR;
-
-        transientHandler->_DrawTransient(hit, context);
-        return SUCCESS;
         }
 
-    if (&GetDgnDb() != &element->GetDgnDb() || !IsModelViewed(element->GetModelId()))
-        return SUCCESS;
+    if (&GetDgnDb() != &geom->GetSourceDgnDb())
+        return ERROR;
+
+    if (element.IsValid() && !IsModelViewed(element->GetModelId()))
+        return ERROR;
 
     ViewContext::ContextMark mark(&context);
 
-    // Allow element sub-class involvement for flashing sub-entities...
+    // Allow sub-class involvement for flashing sub-entities...
     if (geom->DrawHit(hit, context))
         return SUCCESS;
 

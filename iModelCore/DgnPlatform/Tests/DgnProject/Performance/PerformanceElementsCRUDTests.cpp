@@ -83,6 +83,8 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb (WCharCP destFileName, U
     ASSERT_TRUE (m_db.IsValid ());
     }
 
+int64_t PerformanceElementsCRUDTestFixture::s_elementId = INT64_C(2000000);
+
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
@@ -675,8 +677,10 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (BeSQ
 void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className)
     {
     bool updateParams = false;
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Id"), element->GetElementId ()));
+    const ECInstanceId id (s_elementId++);
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Id"), id));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":ModelId"), element->GetModelId ()));
+
     DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
     if (elementCode.IsEmpty ())
         {
@@ -870,7 +874,8 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (ECSq
 void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className)
     {
     bool updateParams = false;
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ECInstanceId"), element->GetElementId ()));
+    const ECInstanceId id (s_elementId++);
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ECInstanceId"), id));
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ModelId"), element->GetModelId ()));
 
     // Bind Code
@@ -952,9 +957,9 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams (ECSqlStatement& stmt,
 //static
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (BeSQLite::Statement& stmt)
     {
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (6))) ||
-        (stmt.GetValueInt64 (7) != 10000000) ||
-        (stmt.GetValueDouble (8) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (7))) ||
+        (stmt.GetValueInt64 (8) != 10000000) ||
+        (stmt.GetValueDouble (9) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -967,9 +972,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (BeS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (BeSQLite::Statement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams (stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (9))) ||
-        (stmt.GetValueInt64 (10) != 20000000) ||
-        (stmt.GetValueDouble (11) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (10))) ||
+        (stmt.GetValueInt64 (11) != 20000000) ||
+        (stmt.GetValueDouble (12) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -982,9 +987,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (BeS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (BeSQLite::Statement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams (stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (12))) ||
-        (stmt.GetValueInt64 (13) != 30000000) ||
-        (stmt.GetValueDouble (14) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (13))) ||
+        (stmt.GetValueInt64 (14) != 30000000) ||
+        (stmt.GetValueDouble (15) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -997,9 +1002,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (BeS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (BeSQLite::Statement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams (stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (15))) ||
-        (stmt.GetValueInt64 (16) != 40000000) ||
-        (stmt.GetValueDouble (17) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (16))) ||
+        (stmt.GetValueInt64 (17) != 40000000) ||
+        (stmt.GetValueDouble (18) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1040,9 +1045,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECS
     //printf ("\n int Prop : %d", stmt.GetValueInt64 (5));
     //printf ("\n double Prop : %f", stmt.GetValueDouble (6));
 
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (4))) ||
-        (stmt.GetValueInt64 (5) != 10000000) ||
-        (stmt.GetValueDouble (6) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (5))) ||
+        (stmt.GetValueInt64 (6) != 10000000) ||
+        (stmt.GetValueDouble (7) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1055,9 +1060,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams (stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (7))) ||
-        (stmt.GetValueInt64 (8) != 20000000) ||
-        (stmt.GetValueDouble (9) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (8))) ||
+        (stmt.GetValueInt64 (9) != 20000000) ||
+        (stmt.GetValueDouble (10) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1070,9 +1075,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams (stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (10))) ||
-        (stmt.GetValueInt64 (11) != 30000000) ||
-        (stmt.GetValueDouble (12) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (11))) ||
+        (stmt.GetValueInt64 (12) != 30000000) ||
+        (stmt.GetValueDouble (13) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1085,9 +1090,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams (stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (13))) ||
-        (stmt.GetValueInt64 (14) != 40000000) ||
-        (stmt.GetValueDouble (15) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (14))) ||
+        (stmt.GetValueInt64 (15) != 40000000) ||
+        (stmt.GetValueDouble (16) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1287,10 +1292,8 @@ void PerformanceElementsCRUDTestFixture::GetInsertECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
-
     insertECSql = Utf8String ("INSERT INTO ");
-    insertECSql.append (ecClassName).append (" ([ECInstanceId], ");
+    insertECSql.append (ecClass->GetECSqlName()).append (" ([ECInstanceId], ");
     Utf8String insertValuesSql (") VALUES (:[ECInstanceId], ");
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
@@ -1320,7 +1323,6 @@ void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     selectECSql = "SELECT ";
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
@@ -1333,7 +1335,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8S
         isFirstItem = false;
         }
 
-    selectECSql.append(" FROM ").append(ecClassName).append(" WHERE ECInstanceId = ?");
+    selectECSql.append(" FROM ").append(ecClass->GetECSqlName()).append(" WHERE ECInstanceId = ?");
     if(omitClassIdFilter)
         selectECSql.append(" ECSQLOPTIONS NoECClassIdFilter");
     }
@@ -1346,9 +1348,8 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     updateECSql = "UPDATE ";
-    updateECSql.append (ecClassName).append (" SET ");
+    updateECSql.append (ecClass->GetECSqlName()).append (" SET ");
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
@@ -1376,9 +1377,8 @@ void PerformanceElementsCRUDTestFixture::GetDeleteECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     deleteECSql = "DELETE FROM ONLY ";
-    deleteECSql.append (ecClassName).append (" WHERE ").append ("ECInstanceId = ?");
+    deleteECSql.append (ecClass->GetECSqlName()).append (" WHERE ").append ("ECInstanceId = ?");
 
     if (omitClassIdFilter)
         deleteECSql.append(" ECSQLOPTIONS NoECClassIdFilter");

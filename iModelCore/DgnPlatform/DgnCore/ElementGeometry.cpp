@@ -3272,7 +3272,21 @@ void GeometrySource::_Draw(ViewContextR context) const
     DgnElementCP el = ToElement();
 
     if (nullptr == el)
+        {
+        // NEEDSWORK: Temporary - Continous rendering DgnGraphic will allow this to be cached...
+        Transform   placementTrans = GetPlacementTransform();
+        ViewFlags   viewFlags;
+
+        if (nullptr != context.GetViewFlags())
+            viewFlags = *context.GetViewFlags();
+        else
+            viewFlags.InitDefaults();
+
+        context.PushTransform(placementTrans);
+        ElementGeomIO::Collection(GetGeomStream().GetData(), GetGeomStream().GetSize()).Draw(context, GetCategoryId(), viewFlags);
+        context.PopTransformClip();
         return;
+        }
 
     // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver...
     ViewFlags   viewFlags;
