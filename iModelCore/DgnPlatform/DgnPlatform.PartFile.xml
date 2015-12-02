@@ -638,6 +638,10 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
+    <!-- This part is only needed for analysis of Performance test results with previous benchmarks-->
+    <Part Name="RunPerformanceSummary" BentleyBuildMakeFile="${SrcRoot}BeGTest/scripts/RunPerformanceSummary.mke" BentleyBuildMakeOptions="-dGTEST_OUTPUT_DIR=$(OutputRootDir)Product/Gtest-DgnPlatform-TestCollection-Performance" OnlyPlatforms="x86,x64">
+    </Part>
+  
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->

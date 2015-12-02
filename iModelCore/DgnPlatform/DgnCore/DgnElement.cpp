@@ -9,13 +9,15 @@
 #include <DgnPlatform/QvElemSet.h>
 #include <DgnPlatform/DgnScript.h>
 
-#define DGN_ELEMENT_PROPNAME_ECINSTANCEID "ECInstanceId"
-#define DGN_ELEMENT_PROPNAME_MODELID "ModelId"
-#define DGN_ELEMENT_PROPNAME_CODE "Code"
-#define DGN_ELEMENT_PROPNAME_CODEAUTHORITYID "CodeAuthorityId"
-#define DGN_ELEMENT_PROPNAME_CODENAMESPACE "CodeNameSpace"
-#define DGN_ELEMENT_PROPNAME_PARENTID "ParentId"
-#define DGN_ELEMENT_PROPNAME_LASTMOD "LastMod"
+#define DGN_ELEMENT_PROPNAME_ECInstanceId "ECInstanceId"
+#define DGN_ELEMENT_PROPNAME_ModelId "ModelId"
+#define DGN_ELEMENT_PROPNAME_Code "Code"
+#define DGN_ELEMENT_CODESTRUCT_AuthorityId "AuthorityId"
+#define DGN_ELEMENT_CODESTRUCT_Namespace "Namespace"
+#define DGN_ELEMENT_CODESTRUCT_Value "Value"
+#define DGN_ELEMENT_PROPNAME_Label "Label"
+#define DGN_ELEMENT_PROPNAME_ParentId "ParentId"
+#define DGN_ELEMENT_PROPNAME_LastMode "LastMod"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item::Key&  DgnElement::Item::GetKey() {static Key s_key; return s_key;}
@@ -129,14 +131,6 @@ void QvKey32::DeleteQvElem(QvElem* qvElem)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DgnElement::QueryClassId(DgnDbR db)
-    {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::GetElementClass() const
@@ -158,7 +152,7 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
 DateTime DgnElement::QueryTimeStamp() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT " DGN_ELEMENT_PROPNAME_LASTMOD " FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE " DGN_ELEMENT_PROPNAME_ECINSTANCEID "=?");
+    stmt.Prepare(GetDgnDb(), "SELECT " DGN_ELEMENT_PROPNAME_LastMode " FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE " DGN_ELEMENT_PROPNAME_ECInstanceId "=?");
     stmt.BindId(1, m_elementId);
     stmt.Step();
     return stmt.GetValueDateTime(0);
@@ -308,7 +302,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
+    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
         return DgnDbStatus::LockNotHeld;
 
     return GetModel()->_OnUpdateElement(*this, original);
@@ -407,12 +401,11 @@ void DgnElement::_OnReversedAdd() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParams& params)
     {
-    params.Add(DGN_ELEMENT_PROPNAME_ECINSTANCEID, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_MODELID, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_CODE, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_CODENAMESPACE, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_PARENTID, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
+    params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
+    params.Add(DGN_ELEMENT_PROPNAME_Code, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(DGN_ELEMENT_PROPNAME_Label, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(DGN_ELEMENT_PROPNAME_ParentId, ECSqlClassParams::StatementType::InsertUpdate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -424,22 +417,30 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
 
     if (!m_code.IsValid())
         return DgnDbStatus::InvalidName;
-    else if (m_code.IsEmpty() && ECSqlStatus::Success != statement.BindNull(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE)))
+
+    IECSqlStructBinder& codeBinder = statement.BindStruct(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Code));
+
+    if (m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindNull()))
         return DgnDbStatus::BadArg;
-    else if (!m_code.IsEmpty() && ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No))
+    if (!m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
-    if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID), m_code.GetAuthority()) ||
-        ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODENAMESPACE), m_code.GetNameSpace().c_str(), IECSqlBinder::MakeCopy::No) ||
-        ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_PARENTID), m_parentId))
-        {
+    if ((ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_AuthorityId).BindId(m_code.GetAuthority())) ||
+        (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Namespace).BindText(m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
-        }
+
+    if (HasLabel())
+        statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label), GetLabel(), IECSqlBinder::MakeCopy::No);
+    else
+        statement.BindNull(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label));
+
+    if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ParentId), m_parentId))
+        return DgnDbStatus::BadArg;
 
     if (!isForUpdate)
         {
-        if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ECINSTANCEID), m_elementId) ||
-            ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_MODELID), m_modelId))
+        if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ECInstanceId), m_elementId) ||
+            ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ModelId), m_modelId))
             return DgnDbStatus::BadArg;
         }
 
@@ -966,29 +967,15 @@ DgnDbStatus DgnElement3d::_UpdateInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
     {
-    if (!categoryId.IsValid())
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
+
+    if (!classId.IsValid() || !categoryId.IsValid())
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId PhysicalElement::QueryClassId(DgnDbR db)
-    {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DrawingElement::QueryClassId(DgnDbR db)
-    {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
+    return new PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1129,7 +1116,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* inStat, DgnElement::CreateParams c
             }
         }
 
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), Code(), DgnElementId()));
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), Code(), GetLabel()));
     if (!cloneElem.IsValid())
         {
         stat = DgnDbStatus::BadRequest;
@@ -1181,8 +1168,9 @@ void DgnElement::_CopyFrom(DgnElementCR other)
         return;
 
     // Copying between DgnDbs is allowed. Caller must do Id remapping.
-    m_code       = other.m_code;
-    m_parentId   = other.m_parentId;
+    m_code      = other.m_code;
+    m_label     = other.m_label;
+    m_parentId  = other.m_parentId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1365,7 +1353,10 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, GetCode(), m_elementId, m_parentId));
+    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetLabel(), m_parentId);
+    createParams.SetElementId(GetElementId());
+
+    DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
     BeAssert(typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
     newEl->_CopyFrom(*this);
     return newEl;
@@ -2542,85 +2533,6 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAutho
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::Key const& DgnElement::LabelAspect::GetAppDataKey()
-    {
-    static Key s_appDataKey;
-    return s_appDataKey;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::LabelAspectPtr DgnElement::LabelAspect::Create(Utf8CP label)
-    {
-    if (!label || !*label)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return new DgnElement::LabelAspect(label);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::LabelAspect::_OnInserted(DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " (ECInstanceId,[Label]) VALUES (?,?)");
-    if (!statement.IsValid())
-        return DgnElement::AppData::DropMe::Yes;
-
-    statement->BindId(1, element.GetElementId());
-    statement->BindText(2, GetLabel(), IECSqlBinder::MakeCopy::No);
-
-    ECInstanceKey key;
-    if (BE_SQLITE_DONE != statement->Step(key))
-        {
-        BeAssert(false);
-        }
-
-    return DgnElement::AppData::DropMe::Yes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::LabelAspect::Query(Utf8StringR name, DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Label] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " WHERE ECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::ReadError;
-
-    statement->BindId(1, element.GetElementId());
-
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnDbStatus::ReadError;
-
-    name.AssignOrClear(statement->GetValueText(0));
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::LabelAspect::Delete(DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " WHERE ECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::WriteError;
-
-    statement->BindId(1, element.GetElementId());
-
-    if (BE_SQLITE_DONE != statement->Step())
-        return DgnDbStatus::WriteError;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::Key const& DgnElement::DescriptionAspect::GetAppDataKey()
     {
     static Key s_appDataKey;
@@ -2700,10 +2612,9 @@ DgnDbStatus DgnElement::DescriptionAspect::Delete(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId)
-    : T_Super(db, DgnModel::DictionaryId(), classId, code, DgnElementId(), parentId) 
+DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Utf8CP label, DgnElementId parentId)
+    : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId) 
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**

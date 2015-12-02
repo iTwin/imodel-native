@@ -99,7 +99,7 @@ DgnTrueColorId DgnTrueColor::FindMatchingColor(ColorDef colorDef, DgnDbR db)
     }
 
 #define COUNT_TrueColor "SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor)
-#define COUNT_TrueColorByBook COUNT_TrueColor " WHERE CodeNameSpace=?"
+#define COUNT_TrueColorByBook COUNT_TrueColor " WHERE Code.[Namespace]=?"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -129,10 +129,10 @@ ColorDef DgnTrueColor::Entry::GetColorDef() const
     return ColorDef(static_cast<uint32_t>(m_statement->GetValueInt(3)));
     }
 
-#define SELECT_TrueColor "SELECT ECInstanceId, Code, CodeNameSpace, Data FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor)
-#define SELECT_TrueColorByBook SELECT_TrueColor " WHERE CodeNameSpace=?"
-#define SELECT_ORDERED_TrueColor SELECT_TrueColor " ORDER BY CodeNameSpace, Code"
-#define SELECT_ORDERED_TrueColorByBook SELECT_TrueColorByBook " ORDER BY Code"
+#define SELECT_TrueColor "SELECT ECInstanceId, Code.[Value], Code.[Namespace], Data FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor)
+#define SELECT_TrueColorByBook SELECT_TrueColor " WHERE Code.[Namespace]=?"
+#define SELECT_ORDERED_TrueColor SELECT_TrueColor " ORDER BY Code.[Namespace], Code.[Value]"
+#define SELECT_ORDERED_TrueColorByBook SELECT_TrueColorByBook " ORDER BY Code.[Value]"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15

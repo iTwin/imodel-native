@@ -91,7 +91,7 @@ public:
 //! Streams the contents of multiple files containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeStreamFileReader : BeSQLite::ChangeStream
+struct EXPORT_VTABLE_ATTRIBUTE ChangeStreamFileReader : BeSQLite::ChangeStream
 {
 private:
     bvector<BeFileName> m_pathnames;
@@ -106,9 +106,10 @@ private:
     BentleyStatus ReadNextPage(void *pData, int *pnData);
 
     bool IsCurrentFileComplete() const;
-    BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
-    void _Reset() override;
-    BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
+
+    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
+    DGNPLATFORM_EXPORT virtual void _Reset() override;
+    DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 
 public:
     ChangeStreamFileReader(bvector<BeFileName> pathnames) : m_pathnames(pathnames) {}
@@ -136,8 +137,8 @@ private:
     BentleyStatus UpdateInitialParentRevisionId();
 
     BentleyStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
-    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup const& changeGroup);
-    static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup const& changeGroup);
+    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup& changeGroup);
+    static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
 public:
     //! Constructor
@@ -183,6 +184,8 @@ public:
     //! Abandon creating a new revision
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT void AbandonCreateRevision();
+
+    TxnManager::TxnId GetCurrentRevisionEndTxnId() const; //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

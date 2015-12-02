@@ -59,9 +59,9 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR value="", Utf8StringCR descr="") : T_Super(params), m_data(value, descr) { }
 
         //! Constructs parameters for a material with the specified values. Primarily for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id = DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr,
                      DgnElementId parent = DgnElementId(), Utf8StringCR value="", Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, code, id, parent), m_data(value, descr) { }
+            : T_Super(db, modelId, classId, code, label, parent), m_data(value, descr) { }
 
         //! Constructs parameters for creating a material.
         //! @param[in]      db               The DgnDb in which the material will reside
@@ -74,7 +74,7 @@ public:
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value="",
                     DgnMaterialId parentMaterialId=DgnMaterialId(), Utf8StringCR descr="");
 
-        Utf8String GetPaletteName() const { return m_code.GetNameSpace(); } //!< Return the palette name
+        Utf8String GetPaletteName() const { return m_code.GetNamespace(); } //!< Return the palette name
         Utf8String GetMaterialName() const { return m_code.GetValue(); } //!< Return the material name
     };
 
@@ -102,7 +102,7 @@ public:
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
     DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the ID of this material.
-    Utf8String GetPaletteName() const { return GetCode().GetNameSpace(); } //!< Returns the palette name
+    Utf8String GetPaletteName() const { return GetCode().GetNamespace(); } //!< Returns the palette name
     Utf8String GetMaterialName() const { return GetCode().GetValue(); } //!< Returns the material name
 
     Utf8StringCR GetValue() const { return m_data.m_value; } //!< Returns the material data as a JSON string

@@ -9,25 +9,14 @@
 #include <DgnPlatform/DgnDbTables.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
-    {
-    Utf8CP dot = strchr(fullname, '.');
-    if (nullptr == dot)
-        return std::make_pair("","");
-    return std::make_pair(Utf8String(fullname,dot), Utf8String(dot+1));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
     {
     CachedStatementPtr stmt;
-    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE CodeAuthorityId=? AND CodeNameSpace=? AND Code=? LIMIT 1");
+    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=? LIMIT 1");
     stmt->BindId(1, code.GetAuthority());
-    stmt->BindText(2, code.GetNameSpace(), Statement::MakeCopy::No);
+    stmt->BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
     stmt->BindText(3, code.GetValue(), Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
@@ -37,7 +26,7 @@ DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Code,Descr,ECClassId,Visibility,CodeNameSpace,CodeAuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Code_Value,Descr,ECClassId,Visibility,Code_Namespace,Code_AuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -49,7 +38,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_description.AssignOrClear(stmt.GetValueText(1));
         out->m_classId = DgnClassId(stmt.GetValueInt64(2));
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
-        out->m_code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
+        out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
         }
 
     return SUCCESS;
@@ -60,13 +49,13 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT CodeAuthorityId,CodeNameSpace,Code FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Code_AuthorityId,Code_Namespace,Code_Value FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
         return  ERROR;
 
-    code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+    code.From(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
     return  SUCCESS;
     }
 
@@ -75,7 +64,9 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
     {
-    return DgnModel::Code(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNameSpace());
+    DgnModel::Code code;
+    code.From(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
+    return code;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,7 +152,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Code,Descr,Visibility,ECClassId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        Utf8String sqlString = "SELECT Id,Code_Value,Descr,Visibility,ECClassId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -187,7 +178,7 @@ Utf8CP          DgnModels::Iterator::Entry::GetCodeValue() const {Verify(); retu
 Utf8CP          DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
 bool            DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(3));}
 DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
-Utf8CP          DgnModels::Iterator::Entry::GetCodeNameSpace() const {Verify(); return m_sql->GetValueText(5);}
+Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -898,20 +889,19 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 
     DgnModels& models = GetDgnDb().Models();
 
-    m_code.m_value.Trim();
     if (models.QueryModelId(m_code).IsValid()) // can't allow two models with the same code
         return DgnDbStatus::DuplicateName;
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Code,Descr,ECClassId,Visibility,CodeAuthorityId,CodeNameSpace) VALUES(?,?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Code_Value,Descr,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_code.GetValue().c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
     stmt.BindId(4, GetClassId());
     stmt.BindInt(5, inGuiList ? 1 : 0);
     stmt.BindId(6, m_code.GetAuthority());
-    stmt.BindText(7, m_code.GetNameSpace().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(7, m_code.GetNamespace().c_str(), Statement::MakeCopy::No);
 
     auto rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
@@ -1094,8 +1084,8 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     _SetFilled();
@@ -1113,12 +1103,17 @@ void DgnModel::_FillModel()
             continue;
             }
 
-        elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
+        DgnElement::Code code;
+        code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
+        DgnElement::CreateParams createParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
-            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code), stmt.GetValueText(Column::CodeNameSpace)), 
-            id,
-            stmt.GetValueId<DgnElementId>(Column::ParentId)),
-            true);
+            code,
+            stmt.GetValueText(Column::Label),
+            stmt.GetValueId<DgnElementId>(Column::ParentId));
+
+        createParams.SetElementId(id);
+
+        elements.LoadElement(createParams, true);
         }
 
     CallAppData(FilledCaller());
@@ -1528,474 +1523,6 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
         return nullptr;
 
     return model2;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::CreateParams::CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver)
-    :
-    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name), Properties(), solver),
-    m_compProps(iclass, icat, iauthority)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params), m_compProps(params.m_compProps)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::_GetSolverOptions(Json::Value& json)
-    {
-    json["Category"] = m_compProps.m_itemCategoryName.c_str();          // *** NB: Do not change this name. It is part of the DgnScriptAPI
-    json["ECClass"] = m_compProps.m_itemECClassName.c_str();            //              "
-    json["CodeAuthority"] = m_compProps.m_itemCodeAuthority.c_str();    //              "
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentModel::CompProps::IsValid(DgnDbR db) const
-    {
-    if (!QueryItemCategoryId(db).IsValid())
-        return false;
-    if (!GetItemECClassId(db).IsValid())
-        return false;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId ComponentModel::CompProps::QueryItemCategoryId(DgnDbR db) const
-    {
-    return DgnCategory::QueryCategoryId(m_itemCategoryName.c_str(), db);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId ComponentModel::CompProps::GetItemECClassId(DgnDbR db) const
-    {
-    Utf8String ns, cls;
-    std::tie(ns, cls) = parseFullECClassName(m_itemECClassName.c_str());
-    return DgnClassId(db.Schemas().GetECClassId(ns.c_str(), cls.c_str()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentModel::IsValid() const
-    {
-    if (!GetSolver().IsValid())
-        return false;
-    if (!m_compProps.IsValid(GetDgnDb()))
-        return false;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::_OnDelete()
-    {
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-        //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
-    Statement delSolutions;
-
-    delSolutions.Prepare(GetDgnDb(), "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=?");
-    delSolutions.BindText(1, GetModelName(), Statement::MakeCopy::No);
-    delSolutions.Step();
-
-    // *** NEEDS WORK: I should kill off all of the GeomParts referenced by the geomstreams in the rows of ComponentSolution 
-
-#endif
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::GetItemCategoryName() const {return m_compProps.m_itemCategoryName;}
-Utf8String ComponentModel::GetItemECClassName() const {return m_compProps.m_itemECClassName;}
-Utf8String ComponentModel::GetItemCodeAuthority() const {return m_compProps.m_itemCodeAuthority;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::_ToPropertiesJson(Json::Value& val) const {m_compProps.ToJson(val);}
-void ComponentModel::_FromPropertiesJson(Json::Value const& val) {m_compProps.FromJson(val);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::CompProps::FromJson(Json::Value const& inValue)
-    {
-    m_itemCategoryName = inValue["ComponentModel_itemCategoryName"].asCString();
-    m_itemECClassName = inValue["ComponentModel_itemECClassName"].asCString();
-    m_itemCodeAuthority = inValue["ComponentModel_itemCodeAuthority"].asCString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::CompProps::ToJson(Json::Value& outValue) const
-    {
-    outValue["ComponentModel_itemCategoryName"] = m_itemCategoryName;
-    outValue["ComponentModel_itemECClassName"] = m_itemECClassName;
-    outValue["ComponentModel_itemCodeAuthority"] = m_itemCodeAuthority;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSolutionOfComponentRelationship(DgnElementCR inst, ComponentModelR componentModel)
-    {
-    CachedECSqlStatementPtr statement = inst.GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent)
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-
-    if (!statement.IsValid())
-        return DgnDbStatus::BadRequest;
-
-    statement->BindId(1, inst.GetElementClassId());
-    statement->BindId(2, inst.GetElementId());
-    statement->BindId(3, componentModel.GetClassId());
-    statement->BindId(4, componentModel.GetModelId());
-    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    10/2015
-//---------------------------------------------------------------------------------------
-static DgnModelId queryComponentModelFromSolution(DgnDbR db, DgnElementId itemId)
-    {
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
-        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE SourceECInstanceId=? LIMIT 1");
-
-    if (!statement.IsValid())
-        return DgnModelId();
-
-    statement->BindId(1, itemId);
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnModelId();
-
-    return statement->GetValueId<DgnModelId>(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createInstanceOfTemplateRelationship(DgnElementCR inst, DgnElementCR templateItem)
-    {
-    CachedECSqlStatementPtr statement = inst.GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate)
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-
-    if (!statement.IsValid())
-        return DgnDbStatus::BadRequest;
-
-    statement->BindId(1, inst.GetElementClassId());
-    statement->BindId(2, inst.GetElementId());
-    statement->BindId(3, templateItem.GetElementClassId());
-    statement->BindId(4, templateItem.GetElementId());
-    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    10/2015
-//---------------------------------------------------------------------------------------
-#ifndef NDEBUG
-static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instanceId)
-    {
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
-        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate) " WHERE SourceECInstanceId=? LIMIT 1");
-
-    if (!statement.IsValid())
-        return DgnElementId();
-
-    statement->BindId(1, instanceId);
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnElementId();
-
-    return statement->GetValueId<DgnElementId>(0);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::GetSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool generateSolution)
-    {
-    DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
-
-    DgnDbR db = catalogModel.GetDgnDb();
-    if (&db != &GetDgnDb())
-        {
-        BeAssert(false && "you must import the component model before you can capture a solution");
-        status = DgnDbStatus::WrongDgnDb;
-        return nullptr;
-        }
-
-    Utf8String solutionName = parameters.ComputeSolutionName();
-
-    DgnElement::Code icode = CreateCatalogItemCode(solutionName);
-    if (!icode.IsValid())
-        {
-        BeAssert(false);
-        status = DgnDbStatus::BadRequest;
-        return nullptr;
-        }
-
-    //  Check to see if this solution has already been captured. If so, return the existing catalog item.
-    DgnElementId existingTemplateItemId = db.Elements().QueryElementIdByCode(icode);
-    if (existingTemplateItemId.IsValid())
-        {
-        PhysicalElementCPtr existingTemplateItem = db.Elements().Get<PhysicalElement>(existingTemplateItemId);
-        if (!existingTemplateItem.IsValid())
-            {
-            BeAssert(false && "template item cannot be loaded");
-            status = DgnDbStatus::BadElement;
-            return nullptr;
-            }
-        if (existingTemplateItem->GetModel().get() != &catalogModel)
-            {
-            BeDataAssert(false && "solution has already been captured in a different model");
-            }
-        return existingTemplateItem;
-        }
-    
-    if (!generateSolution)
-        {
-        status = DgnDbStatus::NotFound;
-        return nullptr;
-        }
-
-    if (DgnDbStatus::Success != (status = Solve(parameters)))
-        return nullptr;
-
-    return HarvestSolution(status, catalogModel, solutionName, icode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& parameters)
-    {
-    //  Generate the requested solution
-    GetSolver().GetParametersR().SetValues(parameters);
-
-    DgnDbStatus status = Update();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    auto sstatus = GetDgnDb().SaveChanges(); // => txn validation invokes the model's solver
-    if (BE_SQLITE_OK != sstatus)
-        status = (BE_SQLITE_ERROR_ChangeTrackError == sstatus)? DgnDbStatus::ValidationFailed: DgnDbStatus::SQLiteError;
-    
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, PhysicalModelR catalogModel, Utf8StringCR solutionName, DgnElement::Code const& icode)
-    {
-    DgnDbR db = GetDgnDb();
-
-    DgnClassId iclass = m_compProps.GetItemECClassId(db);
-    if (!iclass.IsValid())
-        {
-        BeAssert(false);
-        status = DgnDbStatus::MissingDomain;
-        return nullptr;
-        }
-
-    //  We'll use the same Category for the catalog item as for the (future) instance items.
-    DgnCategoryId itemCategoryId = m_compProps.QueryItemCategoryId(db);
-    if (!itemCategoryId.IsValid())
-        {
-        BeAssert(false && "component category not found -- you must import the component model before you can capture a solution");
-        status = DgnDbStatus::InvalidCategory;
-        return nullptr;
-        }
-
-    //  Gather geometry by SubCategory
-    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** WIP_IMPORT: add another dimension: break out builders by same ElemDisplayParams
-    FillModel();
-    for (auto const& mapEntry : *this)
-        {
-        GeometrySourceCP componentElement = mapEntry.second->ToGeometrySource();
-        if (nullptr == componentElement)
-            continue;
-
-        //  Only solution elements in the component's Category are collected. The rest are construction/annotation geometry.
-        if (componentElement->GetCategoryId() != itemCategoryId)
-            continue;
-
-        // *** NEEDS WORK: Detect, schedule, and skip instances of other CM's
-        ElementGeometryCollection gcollection(*componentElement);
-        for (ElementGeometryPtr const& geom : gcollection)
-            {
-            //  Look up the subcategory ... IN THE CLIENT DB
-            ElemDisplayParamsCR dparams = gcollection.GetElemDisplayParams();
-            DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
-
-            ElementGeometryBuilderPtr& builder = builders [clientsubcatid];
-            if (!builder.IsValid())
-                builder = ElementGeometryBuilder::CreateGeomPart(db, true);
-
-            // Since each little piece of geometry can have its own transform, we must
-            // build the transforms back into them in order to assemble them into a single geomstream.
-            // It's all relative to 0,0,0 in the component model, so it's fine to do this.
-            ElementGeometryPtr xgeom = geom->Clone();
-            Transform trans = gcollection.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
-            xgeom->TransformInPlace(trans);
-
-            builder->Append(*xgeom);
-            }
-        }
-
-    if (builders.empty())
-        {
-        BeDataAssert(false && "Component model contains no elements in the component's category.");
-        status = DgnDbStatus::NotFound;
-        return nullptr;
-        }
-
-    //  **** GeomParts ****
-    //  Create a GeomPart for each SubCategory
-    bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> subcatAndGeoms;
-    for (auto const& entry : builders)
-        {
-        DgnSubCategoryId clientsubcatid = entry.first;
-        ElementGeometryBuilderPtr builder = entry.second;
-
-        Utf8String geomPartCode(solutionName);
-        geomPartCode.append("|");
-        geomPartCode.append(GetModelName());
-        geomPartCode.append(Utf8PrintfString("|%lld", clientsubcatid.GetValue()));
-
-        DgnGeomPartPtr geomPart = DgnGeomPart::Create(geomPartCode.c_str());
-        builder->CreateGeomPart(db, true);
-        builder->SetGeomStream(*geomPart);
-        if (BSISUCCESS != db.GeomParts().InsertGeomPart(*geomPart))
-            {
-            BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
-            status = DgnDbStatus::WriteError;
-            return nullptr;
-            }
-        subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
-        }
-
-    //  **** Catalog Item ****
-    PhysicalElementPtr catalogItem;
-        {
-        DgnElement::CreateParams cparams(db, catalogModel.GetModelId(), iclass, icode);
-        dgn_ElementHandler::Element* handler = dgn_ElementHandler::Element::FindHandler(db, iclass);
-        if (nullptr == handler)
-            {
-            BeAssert(false);
-            status = DgnDbStatus::MissingHandler;
-            return nullptr;
-            }
-        DgnElementPtr dgnElem = handler->Create(cparams);    
-        if (!dgnElem.IsValid())
-            {
-            BeAssert(false && "Handler::Create failed");
-            status = DgnDbStatus::WrongHandler;
-            return nullptr;
-            }
-        catalogItem = dgnElem->ToPhysicalElementP();
-        if (!catalogItem.IsValid())
-            {
-            BeAssert(false && "ComponentModel::HarvestSolution creates only PhysicalItems");
-            status = DgnDbStatus::WrongClass;
-            return nullptr;
-            }
-        }
-
-    catalogItem->SetCategoryId(itemCategoryId); // Note that I have to set this afterward, as handler Create works in terms of DgnElement::CreateParams, not GeometricElement::CreateParams
-
-    //  Build a single geomstream that refers to all of the geomparts -- that's the solution
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*catalogItem);
-    for (bpair<DgnSubCategoryId, DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
-        {
-        Transform noTransform = Transform::FromIdentity();
-        builder->Append(subcatAndGeom.first);
-        builder->Append(subcatAndGeom.second, noTransform);
-        }
-
-    builder->SetGeomStreamAndPlacement(*catalogItem);
-
-    DgnElementCPtr persistentDgnElem = catalogItem->Insert(&status);
-    if (!persistentDgnElem.IsValid())
-        return nullptr;
-
-    PhysicalElementCPtr persistentCatalogItem = persistentDgnElem->ToPhysicalElement();
-
-    //  Link the catalog item to this ComponentModel
-    createSolutionOfComponentRelationship(*persistentCatalogItem, *this);
-    BeAssert(queryComponentModelFromSolution(db, persistentCatalogItem->GetElementId()) == GetModelId());
-    return persistentCatalogItem;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR catalogItem,
-                                              DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code)
-    {
-    DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
-    
-    DgnDbR db = catalogItem.GetDgnDb();
-    if (&db != &targetModel.GetDgnDb())
-        {
-        status = DgnDbStatus::WrongDgnDb;
-        BeAssert(false && "Catalog and target models must be in the same Db");
-        return nullptr;
-        }
-
-    //  Generate the item code. This will be a null code, unless there's a specified authority for the componentmodel.
-    DgnModelId mid = queryComponentModelFromSolution(db, catalogItem.GetElementId());
-    if (!mid.IsValid())
-        {
-        status = DgnDbStatus::BadArg;
-        BeAssert(false && "input catalog item must be the solution of a componentmodel");
-        return nullptr;
-        }
-    ComponentModelPtr cmm = db.Models().Get<ComponentModel>(mid);
-    if (!cmm.IsValid())
-        {
-        status = DgnDbStatus::BadArg;
-        BeAssert(false && "input catalog item must be the solution of a componentmodel");
-        return nullptr;
-        }
-
-    DgnElement::Code icode;
-    if (!cmm->m_compProps.m_itemCodeAuthority.empty())  // WARNING: Don't call GetAuthority with an invalid authority name. It will always prepare a statement and will not cache the (negative) answer.
-        {
-        DgnAuthorityCPtr authority = db.Authorities().GetAuthority(cmm->m_compProps.m_itemCodeAuthority.c_str());
-        if (authority.IsValid())
-            icode = authority->CreateDefaultCode();  // *** WIP_COMPONENT_MODEL -- how do I ask an Authority to issue a code?
-        }    
-
-    //  Creating the item is just a matter of copying the catalog item
-    ElementCopier copier;
-    PhysicalElementCPtr inst = copier.MakeCopy(&status, targetModel, catalogItem, origin, angles, icode);
-    if (!inst.IsValid())
-        return nullptr;
-
-    //  Insert InstanceOfTemplate relationship
-    createInstanceOfTemplateRelationship(*inst, catalogItem);
-    BeAssert(queryTemplateItemFromInstance(db, inst->GetElementId()) == catalogItem.GetElementId());
-
-    return inst;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
-#include "GenericDgnModelTestFixture.h"
+#include "../TestFixture/GenericDgnModelTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"

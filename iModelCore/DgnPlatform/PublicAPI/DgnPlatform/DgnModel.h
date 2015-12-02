@@ -577,7 +577,7 @@ public:
     //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
     //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will 
     //! invoke the subclass handler to create an instance of the subclass. The base class implementation will also
-    //! cause the new model object to read its properties from the this (source) model's properties. That will 
+    //! cause the new model object to read its properties from this (source) model's properties. That will 
     //! take of populating most if not all subclass members.
     //! @return the copy of the model
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the clone fails.
@@ -851,11 +851,9 @@ public:
 * Note that a ComponentModel does not define a type; it generates possible configurations of an existing type.
 *
 * <p>A ComponentModel uses an algorithm called a "solver" that generates a configuration, based on the values of a pre-defined set of parameters.
-* The component's solver and its input parameters are specified by the model's ModelSolverDef (m_solver).
+* The component's solver and its input parameters are specified by the model's ModelSolverDef.
 *
-* <p>The results of solving ComponentModel are delivered to a TemplateModel. See TemplateModel for details on how instances are ultimately placed in a PhysicalModel.
-*
-* <p>The Items in a ComponentModel that are to be harvested into a TemplateModel are in the Category that is identified by the model's ItemCategoryName property.
+* <p>The Items in a ComponentModel that are to be harvested are in the Category that is identified by the model's ItemCategoryName property.
 * See #GetItemCategoryName for the name of this category. Items in the ComponentModel that are not assigned to the Element Category are considered to be 
 * construction elements and are not harvested.
 * @bsiclass                                                    Keith.Bentley   10/11
@@ -915,6 +913,7 @@ private:
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
+    //DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate() override;
 
 protected:
     //! @private
@@ -923,26 +922,59 @@ protected:
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
 
     //! @private
-    DgnElement::Code CreateCatalogItemCode(Utf8StringCR slnId);
+    DgnElement::Code CreateCapturedSolutionCode(Utf8StringCR slnId);
+
+    struct HarvestedSolutionWriter
+        {
+      protected:
+        ComponentModel& m_cm;
+        DgnModelR m_destModel;
+      public:
+        virtual DgnDbR _GetOutputDgnDb() {return m_destModel.GetDgnDb();}
+        virtual PhysicalElementPtr _CreateCapturedSolutionElement(DgnDbStatus& status, DgnClassId iclass, DgnElement::Code const& icode); // (rarely need to override this)
+        virtual PhysicalElementCPtr _WriteSolution(DgnDbStatus&, PhysicalElementR) = 0;
+        HarvestedSolutionWriter(DgnModelR m, ComponentModel& c) : m_destModel(m), m_cm(c) {;}
+        };
+
+    struct HarvestedSolutionInserter : HarvestedSolutionWriter
+        {
+        DEFINE_T_SUPER(HarvestedSolutionWriter)
+      protected:
+        PhysicalElementCPtr _WriteSolution(DgnDbStatus&, PhysicalElementR) override;
+      public:
+        HarvestedSolutionInserter(DgnModelR m, ComponentModel& c) : HarvestedSolutionWriter(m,c) {;}
+        };
+
+    struct HarvestedSingletonInserter : HarvestedSolutionInserter
+        {
+        DEFINE_T_SUPER(HarvestedSolutionInserter)
+      protected:
+        PhysicalElementCPtr _WriteSolution(DgnDbStatus&, PhysicalElementR) override;
+      public:
+        HarvestedSingletonInserter(DgnModelR m, ComponentModel& c) : HarvestedSolutionInserter(m,c) {;}
+        };
+
+    struct HarvestedSolutionUpdater : HarvestedSolutionWriter
+        {
+        DEFINE_T_SUPER(HarvestedSolutionWriter)
+      protected:
+        PhysicalElementCPtr m_existing;
+        PhysicalElementCPtr _WriteSolution(DgnDbStatus&, PhysicalElementR) override;
+      public:
+        HarvestedSolutionUpdater(DgnModelR m, ComponentModel& c, PhysicalElementCR e) : HarvestedSolutionWriter(m, c), m_existing(&e) {;}
+        };
 
     //! @private
-    DGNPLATFORM_EXPORT PhysicalElementCPtr HarvestSolution(DgnDbStatus& status, PhysicalModelR catalogModel, Utf8StringCR solutionName, DgnElement::Code const& icode);
+    DGNPLATFORM_EXPORT PhysicalElementCPtr HarvestSolution(DgnDbStatus& status, DgnElement::Code const& icode, Placement3dCR placement, HarvestedSolutionWriter& WriterHandler);
 
 public:
     //! @private - used in testing only 
     DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
 
-    /**
-     *The constructor for ComponentModel.
-    * @see DgnScript
-    */
     DGNPLATFORM_EXPORT explicit ComponentModel(CreateParams const& params);
 
     //! Query if the ComponentModel is correctly defined.
     DGNPLATFORM_EXPORT bool IsValid() const;
-
-    //! @private - used by unit test
-    void Developer_RedefineSolver(ModelSolverDef const& s) {SetSolver(s);}
 
     //! Get the full (namespace.class) name of the ECClass that should be used when creating an Item from this component.
     DGNPLATFORM_EXPORT Utf8String GetItemECClassName() const;
@@ -957,39 +989,159 @@ public:
     //! Get the name of the component.
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
 
-    //! Get the element that captures the result of solving for the specified parameters. If the solution has already been captured 
-    //! then the existing solution is returned. If not already captured, then, if \a createSolutionIfNecessary is true, this component model is solved and a new 
-    //! solution is captured in the specified output catalog model.  
-    //! @param[out] stat        Optional. If not null and if the solution cannot be returned, then an error code is stored here to explain what happened, as explained below.
-    //! @param[in] catalogModel The output catalog model, where the captured solution item(s) is(are) stored.
+    /** @name Capturing Solutions */
+    /** @{ */
+
+    //! Captures the result of solving for the specified parameters. This may be called to create an Item in a solution, or it may be called to capture a unique, singleton solution.
+    //! @param[out] stat        Optional. If not null and if the solution cannot be captured, then an error code is stored here to explain what happened, as explained below.
+    //! @param[in] destModel    The output model, where the captured solution item(s) is(are) stored.
     //! @param[in] parameters   The parameters that specify the solution
-    //! @param[in] createSolutionIfNecessary Pass true solve and capture a solution if it does not already exists. Pass false if you just want to check if the solution has already been captured.
-    //! @return A handle to the Item that was created to capture the solution results. If more than one element was created, this is the parent. 
-    //! @note This function is used only for solutions that result in PhysicalElements. That is, The ECClass identified by #GetItemECClassName must be a subclass of PhysicalElement.
-    //! @note An existing solution is returned even if it is is not assigned to \a catalogModel.
-    //! @note When a solution cannot be returned, the error code will be:
-    //!     * DgnDbStatus::NotFound - solution does not exist and \a createSolutionIfNecessary is \a false, or no element in the solution is in the category identified by #GetItemCategoryName.
+    //! @param[in] solutionItemName The name of the Item to be created in the destModel. This cannot be blank, and it must be unique among all captured solutions for this component.
+    //! @return A handle to the Item that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent.
+    //! @note This function is used only for solutions that result in PhysicalElements. That is, the ECClass identified by #GetItemECClassName must be a subclass of PhysicalElement.
+    //! @note When a solution cannot be captured, the error code will be:
     //!     * DgnDbStatus::ValidationFailed - The model could not be solved, possibly because the values in \a parameters are invalid.
+    //!     * DgnDbStatus::DuplicateCode - An Item already exists with the same name for this component.
+    //!     * DgnDbStatus::NotFound - no element in the solution is in the category identified by #GetItemCategoryName.
     //!     * DgnDbStatus::SQLiteError or DgnDbStatus::WriteError - The solution could not be written to the Db. 
-    //!     * DgnDbStatus::LockNotHeld  - This component model cannot be locked.
+    //!     * DgnDbStatus::LockNotHeld - Failure to lock this component model or the output model.
     //!     * DgnDbStatus::InvalidCategory - The category identified by #GetItemCategoryName does not exist in this Db.
     //!     * DgnDbStatus::MissingDomain - The ECClass identified by #GetItemECClassName does not exist in this Db.
     //!     * DgnDbStatus::MissingHandler - The handler for the ECClass identified by #GetItemECClassName has not been registered.
     //!     * DgnDbStatus::WrongClass - The ECClass identified by #GetItemECClassName is not a subclass of PhysicalElement.
+    //! @see MakeInstanceOfSolution, QuerySolutionByName
+    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR destModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR solutionItemName);
+
+    //! Test if the specified code is that of a captured solution element.
+    DGNPLATFORM_EXPORT bool IsCapturedSolutionCode(DgnElement::Code const& icode);
+
+    //! Delete the specified solution Item. This function also deletes the ECRelationship that relates the Item to this component model.
+    //! @return DgnDbStatus::BadRequest if \a solutionItem is not an element that capatures a solution to this component model.
+    //! @note This function does not delete all existing instances of the specified solution Item
     //! @see MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT PhysicalElementCPtr GetSolution(DgnDbStatus* stat, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, bool createSolutionIfNecessary = true);
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteSolution(PhysicalElementCR solutionItem);
+
+    //! Search for all captured solutions for this component model
+    //! @param solutions    Where to return the IDs of the captured solutions
+    //! @see CaptureSolution, QuerySolutionById, QuerySolutionByName, MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT void QuerySolutions(bvector<DgnElementId>& solutions);
+
+    //! Get the specified captured solution element. 
+    //! This function looks up an element by ElementId and then calls QuerySolutionInfo.
+    //! This method is better than DgnElements::Get, in that it \em also checks that the specified DgnElementId identifies an element that captures a solution to this component model
+    //! and returns information about the solution.
+    //! @param[out] capturedSolutionElement The element that captures the solution
+    //! @param[out] params      The parameters that were used to generate the specified captured solution element
+    //! @param[in] capturedSolutionElementId The ID of the captured solution element
+    //! @return non-zero error status if \a capturedSolutionElementId does not identify an element that captures a solution of this component model
+    //! @see CaptureSolution, QuerySolutionByName, QuerySolutionInfo
+    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionById(PhysicalElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet& params, DgnElementId capturedSolutionElementId);
+    
+    //! Get the element that captures the result of solving for the captured solution element Name.
+    //! This function looks up an element by code and then calls QuerySolutionInfo.
+    //! This method is better than DgnElements::Get, in that it \em also checks that the specified DgnElementId identifies an element that captures a solution to this component model
+    //! and returns information about the solution.
+    //! @param[out] capturedSolutionElement The element that captures the solution
+    //! @param[out] params      The parameters that were used to generate the specified captured solution element
+    //! @param[in] capturedSolutionName The name of the captured solution element
+    //! @return non-zero error status if \a capturedSolutionName does not identify an element that captures a solution of this component model
+    //! @see CaptureSolution, QuerySolutionById, QuerySolutionInfo
+    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionByName(PhysicalElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet& params, Utf8StringCR capturedSolutionName);
+
+    //! Try to find a captured solution for this component model with the specified parameters.
+    //! @param[out] capturedSolutionElement The element that captures the solution
+    //! @param[in] params      A set of parameters 
+    //! @return non-zero error status if no solution based on the specified parameters has been captured.
+    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionByParameters(PhysicalElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet const& params);
+
+    //! Get the ComponentModel and parameters that were used to generate the specified captured solution element
+    //! @param[out] params      The parameters that were used to generate the specified captured solution element
+    //! @param[in] capturedSolutionElement  The captured solution element that is to be queried
+    //! @return non-zero error status if \a capturedSolution is not an element that captures a solution of this component model
+    //! @see MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionInfo(ModelSolverDef::ParameterSet& params, PhysicalElementCR capturedSolutionElement);
+
+    //! Get the ComponentModel and parameters that were used to generate the specified captured solution element
+    //! @param[out] cmid        The ID of the ComponentModel that was used to generate the specified captured solution element
+    //! @param[out] params      The parameters that were used to generate the specified captured solution element
+    //! @param[in] capturedSolutionElement The captured solution element
+    //! @return non-zero error status if \a capturedSolution is not the solution of any component model
+    //! @see MakeInstanceOfSolution
+    DGNPLATFORM_EXPORT static DgnDbStatus QuerySolutionInfo(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR capturedSolutionElement);
+
+    //! Helper class for importing component models and their captured solutions
+    struct Importer : DgnImportContext
+        {
+        ComponentModelR m_sourceComponent;
+        ComponentModelPtr m_destComponent;
+
+        //! Construct a new importer
+        DGNPLATFORM_EXPORT Importer(DgnDbR destDb, ComponentModel& sourceComponent);
+
+        //! If necessary, set the destination component model. 
+        //! @note This is rarely needed. ImportComponentModel will set the destination model automatically.
+        void SetDestComponent(ComponentModelR m) {m_destComponent=&m;}
+
+        //! Import the component model.
+        //! @param[out] status  Optional. If not null, then an error code is stored here in case the clone fails.
+        //! @return the newly created component model in the destinataion Db
+        DGNPLATFORM_EXPORT ComponentModelPtr ImportComponentModel(DgnDbStatus* status = nullptr);
+
+        //! Import all or selected solutions of this component model.
+        //! @param destModel    The model to which solutions are to be copied. 
+        //! @param solutionFilter Optional. If not empty, this is the list of solutions to import. If empty, then all solutions are imported.
+        //! @return non-zero error status if the import failed, including \a DgnDbStatus::WrongDgnDb if \a destModel is not in the
+        //!         same DgnDb as the destination component model, \a DgnDbStatus::WrongModel if \a destModel is the same as the destination component model,
+        //!         or \a DgnDbStatus::BadModel if the destination component model is not set, or some other
+        //!         error code if the import of any individual solution Item fails.
+        //! @note \a destModel must be different from but in the same DgnDb as the destination component model.
+        DGNPLATFORM_EXPORT DgnDbStatus ImportSolutions(DgnModelR destModel, bvector<AuthorityIssuedCode> const& solutionFilter = bvector<AuthorityIssuedCode>());
+        };
+
+    //! Call this function if you update the solver definition itself.
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateSolutionsAndInstances();
+
+    /** @} */
+
+    /** @name Placing Instances of Captured Slutions */
+    /** @{ */
 
     //! Make a persistent copy of a specified solution Item, along with all of its children.
+    //! Call this function if you are sure that you just need a copy of an already captured solution.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
     //! @param[in] targetModel  The model where the instance is to be inserted
-    //! @param[in] catalogItem  The catalog item that is to be copied
-    //! @param[in] origin       The original of the new instance element's placement.
-    //! @param[in] angles       The angles of the new instance element's placement. 
-    //! @param[in] code         The code to assign to the new item. If invalid, then a code will be generated by the templateItem's CodeAuthority
-    //! @return the instance item if successfull
-    //! @see GetSolution
-    DGNPLATFORM_EXPORT static PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, PhysicalElementCR catalogItem,
-                                                    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code);
+    //! @param[in] capturedSolution  The captured solution element that is to be copied
+    //! @param[in] placement    The new element's placement.
+    //! @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
+    //! @return the instance item if successful
+    //! @see QuerySolutionByName
+    DGNPLATFORM_EXPORT static PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, 
+                                                    PhysicalElementCR capturedSolution,
+                                                    Placement3dCR placement, DgnElement::Code const& code = DgnElement::Code());
+
+    //! Make a persistent copy of a specified solution Item or create a unique/singleton Item.
+    //! Call this function if you might need a unique/singleton solution.
+    //! If \a capturedSolutionName is valid and identifies an existing solution \em and if \a parameters matches the captured solution's parameters, then this function calls MakeInstanceOfSolution to make a copy of the captured solution.
+    //! Otherwise, this function calls CaptureSolution to create a unique/singleton solution.
+    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the instance fails.
+    //! @param[in] targetModel  The model where the instance is to be inserted
+    //! @param[in] capturedSolutionName  The name of the captured solution element that is to be copied, if any. Pass the empty string to create a unique/singleton solution.
+    //! @param[in] parameters   The parameters that specify the solution
+    //! @param[in] placement    The new element's placement.
+    //! @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
+    //! @return the instance item if successful
+    //! @see QuerySolutionByName
+    DGNPLATFORM_EXPORT PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, 
+                                                    Utf8StringCR capturedSolutionName,
+                                                    ModelSolverDef::ParameterSet const& parameters, 
+                                                    Placement3dCR placement, DgnElement::Code const& code = DgnElement::Code());
+
+    //! Search for all instances of the specified captured solution for this component model
+    //! @param instances    Where to return the IDs of the instances
+    //! @param solutionId   The captured solution element
+    DGNPLATFORM_EXPORT void QueryInstances(bvector<DgnElementId>& instances, DgnElementId solutionId);
+
+    /** @} */
 };
 
 //=======================================================================================

@@ -55,7 +55,7 @@ struct PerformanceElement1 : Dgn::PhysicalElement
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement1CPtr Insert ();
         PerformanceElement1CPtr Update ();
@@ -91,7 +91,7 @@ struct PerformanceElement2 : PerformanceElement1
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement2CPtr Insert ();
         PerformanceElement2CPtr Update ();
@@ -127,7 +127,7 @@ struct PerformanceElement3 : PerformanceElement2
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement3CPtr Insert ();
         PerformanceElement3CPtr Update ();
@@ -165,7 +165,7 @@ struct PerformanceElement4 : PerformanceElement3
         virtual Dgn::DgnDbStatus _ExtractSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement4Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues);
+        static PerformanceElement4Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
 
         PerformanceElement4CPtr Insert ();
         PerformanceElement4CPtr Update ();
@@ -227,12 +227,14 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         static const int s_opCount = 50000;
         static const int64_t s_firstElementId = INT64_C(6);
         static Utf8CP const s_testSchemaXml;
+        //we need to explicitly supply ElementId in case of insertion using Sql and ECSql otherwise we will get Unique_Constraint_Error
+        static int64_t s_elementId;
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
 
         void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const;
 
-        static int DetermineElementIdIncrement() { return s_initialInstanceCount / s_opCount; }
+        static int DetermineElementIdIncrement(int initialInstanceCount, int opCount) { return initialInstanceCount / opCount; }
 
         //Generate Sql CRUD Statements.
         void GetInsertSql(Utf8CP className, Utf8StringR insertSql, DgnClassId classId) const;
@@ -279,10 +281,10 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         void LogTiming(StopWatch&, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialCount, int opCount) const;
 
     protected:
-        void ElementApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ElementApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ElementApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
-        void ElementApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
+        void ApiDeleteTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
 
         void ECSqlInsertTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ECSqlSelectTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);

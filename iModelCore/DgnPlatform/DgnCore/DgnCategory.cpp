@@ -222,7 +222,7 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
     {
     DgnCategoryIdList ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code FROM " DGN_SCHEMA(DGN_CLASSNAME_Category) " ORDER BY Code");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code.[Value] FROM " DGN_SCHEMA(DGN_CLASSNAME_Category) " ORDER BY Code.[Value]");
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())
@@ -275,7 +275,7 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_SetCode(Code const& code)
     {
-    return code.GetNameSpace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
+    return code.GetNamespace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -344,7 +344,7 @@ DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
 
     // all sub-category codes have namespace = category ID
     uint64_t categoryIdVal;
-    if (SUCCESS != BeStringUtilities::ParseUInt64(categoryIdVal, code.GetNameSpace().c_str()) || GetCategoryId().GetValue() != categoryIdVal)
+    if (SUCCESS != BeStringUtilities::ParseUInt64(categoryIdVal, code.GetNamespace().c_str()) || GetCategoryId().GetValue() != categoryIdVal)
         return DgnDbStatus::InvalidName;
 
     if (m_elementId.IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
@@ -376,9 +376,8 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), catId), m_data(app, descr)
+    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), nullptr, catId), m_data(app, descr)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**

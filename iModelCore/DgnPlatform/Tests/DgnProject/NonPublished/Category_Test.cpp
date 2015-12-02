@@ -8,7 +8,7 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_DPTEST
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
@@ -52,7 +52,7 @@ struct CategoryTests : public DgnDbTestFixture
             {
             EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
             EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
-            EXPECT_EQ(subcat->GetCode().GetNameSpace(), other.GetCode().GetNameSpace());
+            EXPECT_EQ(subcat->GetCode().GetNamespace(), other.GetCode().GetNamespace());
             EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
             EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
             }

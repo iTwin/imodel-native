@@ -36,7 +36,6 @@
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
-#define DGN_CLASSNAME_ElementLabel          "ElementLabel"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_Link                  "Link"
@@ -118,9 +117,6 @@ private:
     Utf8String      m_nameSpace;
 
     friend struct DgnAuthority;
-    friend struct DgnElements;
-    friend struct DgnModel;
-    friend struct DgnModels;
     friend struct SystemAuthority;
 
     AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
@@ -141,10 +137,12 @@ public:
     Utf8StringCR GetValue() const {return m_value;}
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
     //! Get the namespace for this Code
-    Utf8StringCR GetNameSpace() const {return m_nameSpace;}
+    Utf8StringCR GetNamespace() const {return m_nameSpace;}
     //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
     DgnAuthorityId GetAuthority() const {return m_authority;}
     void RelocateToDestinationDb(DgnImportContext&);
+
+    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace); //!< @private DO NOT EXPORT
 };
 
 //=======================================================================================
@@ -263,7 +261,7 @@ public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
             DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
-            DGNPLATFORM_EXPORT Utf8CP GetCodeNameSpace() const;
+            DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
@@ -592,17 +590,19 @@ public:
     //! Register the specified script in the DgnDb's script library.
     //! @param sName    The name to assign to the script in the library
     //! @param sText    The content of the script program
+    //! @param lastModifiedTime The last modified time to record. This will be used to track versions.
     //! @param updateExisting If true, programs already registered are updated from soruce found in \a jsDir
     //! @see QueryScript
-    DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, bool updateExisting);
+    DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, DateTime const& lastModifiedTime, bool updateExisting);
 
     //! Look up an imported script program by the specified name.
     //! @param[out] sText           The text of the script that was found in the library
     //! @param[out] stypeFound      The type of script actually found in the library
+    //! @param[out] lastModifiedTime The last modified time recorded.
     //! @param[in] sName            Identifies the script in the library
     //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
     //! @see RegisterScript
-    DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred);
+    DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, Utf8CP sName, DgnScriptType stypePreferred);
 
     //! Utility function to read the text of the specified file
     //! @param contents[out]    The content of the file
@@ -751,10 +751,10 @@ public:
     private:
         DEFINE_T_SUPER(BeSQLite::DbTableIterator);
 
-        DgnElementKey m_elementKey;
+        DgnElementId m_elementId;
 
     public:
-        OnElementIterator(DgnDbCR db, DgnElementKey elementKey) : T_Super((BeSQLite::DbCR)db), m_elementKey(elementKey) {}
+        OnElementIterator(DgnDbCR db, DgnElementId elementId) : T_Super((BeSQLite::DbCR)db), m_elementId(elementId) {}
 
         //=======================================================================================
         // @bsiclass
@@ -807,7 +807,7 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
-            DGNPLATFORM_EXPORT DgnElementKey GetKey() const;
+            DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey GetECInstanceKey() const;
             Entry const& operator*() const { return *this; }
 
         }; // Entry
@@ -821,13 +821,13 @@ public:
 
     DGNPLATFORM_EXPORT DgnLinkPtr QueryById(DgnLinkId) const;
     Iterator MakeIterator() const { return Iterator(m_dgndb); }
-    OnElementIterator MakeOnElementIterator(DgnElementKey elementKey) const { return OnElementIterator(m_dgndb, elementKey); }
+    OnElementIterator MakeOnElementIterator(DgnElementId elementId) const { return OnElementIterator(m_dgndb, elementId); }
     ReferencesLinkIterator MakeReferencesLinkIterator(DgnLinkId linkId) const { return ReferencesLinkIterator(m_dgndb, linkId); }
     DGNPLATFORM_EXPORT BentleyStatus Update(DgnLinkCR);
 
-    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkR);
-    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkId);
-    DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
+    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementId, DgnLinkR);
+    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementId, DgnLinkId);
+    DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementId, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
 };
 
