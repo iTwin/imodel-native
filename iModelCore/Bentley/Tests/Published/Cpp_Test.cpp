@@ -520,6 +520,14 @@ void test_initiailzerLists ()
     {
     SequenceClass some_var = {1, 4, 5, 6};
     function_name ({1.0f, -3.45f, -0.4f});
+
+    Object o = {0.43f, 10};
+    Object oArray[] = {{13.4f, 3}, {43.28f, 29}, {5.934f, 17}};
+    std::vector<int> vec = {1,2,3};
+
+    UNUSED_VARIABLE(o);
+    UNUSED_VARIABLE(oArray);
+    UNUSED_VARIABLE(vec);
     }
 
 //  ---------------------------------------------------------------------
