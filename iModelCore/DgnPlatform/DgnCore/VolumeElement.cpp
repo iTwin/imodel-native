@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnHandlers/NamedVolume.cpp $
+|     $Source: DgnCore/VolumeElement.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/NamedVolume.h>
+#include    <DgnPlatform/VolumeElement.h>
 #include    <DgnPlatform/QueryView.h>
 
 USING_NAMESPACE_BENTLEY
@@ -20,13 +20,13 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
     {
-    HANDLER_DEFINE_MEMBERS(NamedVolumeHandler)
+    HANDLER_DEFINE_MEMBERS(VolumeElementHandler)
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-NamedVolume::NamedVolume(CreateParams const& params) : T_Super(params) 
+VolumeElement::VolumeElement(CreateParams const& params) : T_Super(params) 
     {
     if (GetModel().IsValid() && params.m_shape.size() > 0)
        SetupGeomStream(params.m_origin, params.m_shape, params.m_height);
@@ -36,7 +36,7 @@ NamedVolume::NamedVolume(CreateParams const& params) : T_Super(params)
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
 // static
-DgnCategoryId NamedVolume::GetDefaultCategoryId(DgnDbR db)
+DgnCategoryId VolumeElement::GetDefaultCategoryId(DgnDbR db)
     {
     DgnCategoryId categoryId = DgnCategory::QueryCategoryId(VOLUME_DEFAULT_CATEGORY_NAME, db);
     if (categoryId.IsValid())
@@ -59,7 +59,7 @@ DgnCategoryId NamedVolume::GetDefaultCategoryId(DgnDbR db)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& shape, double height)
+void VolumeElement::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& shape, double height)
     {
     bvector<DPoint3d> shape3d;
     for (int ii = 0; ii < (int) shape.size(); ii++)
@@ -83,54 +83,54 @@ void NamedVolume::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& sh
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-NamedVolumeCPtr NamedVolume::Get(DgnDbCR dgndb, Dgn::DgnElementId elementId)
+VolumeElementCPtr VolumeElement::Get(DgnDbCR dgndb, Dgn::DgnElementId elementId)
     {
     DgnElementCPtr element = dgndb.Elements().GetElement(elementId);
-    return NamedVolumeCPtr(dynamic_cast<NamedVolume const*> (element.get()));
+    return VolumeElementCPtr(dynamic_cast<VolumeElement const*> (element.get()));
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-NamedVolumePtr NamedVolume::GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elementId)
+VolumeElementPtr VolumeElement::GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elementId)
     {
-    return dgndb.Elements().GetForEdit<NamedVolume>(elementId);
+    return dgndb.Elements().GetForEdit<VolumeElement>(elementId);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-NamedVolumeCPtr NamedVolume::Insert()
+VolumeElementCPtr VolumeElement::Insert()
     {
-    return GetDgnDb().Elements().Insert<NamedVolume>(*this);
+    return GetDgnDb().Elements().Insert<VolumeElement>(*this);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-NamedVolumeCPtr NamedVolume::Update()
+VolumeElementCPtr VolumeElement::Update()
     {
-    return GetDgnDb().Elements().Update<NamedVolume>(*this);
+    return GetDgnDb().Elements().Update<VolumeElement>(*this);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-BentleyStatus NamedVolume::ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const
+BentleyStatus VolumeElement::ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const
     {
     ElementGeometryCollection geomCollection(*this);
 
     ElementGeometryCollection::const_iterator iter = geomCollection.begin();
     if (iter == geomCollection.end())
         {
-        BeAssert(false && "Expected DgnExtrusion in the geometry source for NamedVolume-s");
+        BeAssert(false && "Expected DgnExtrusion in the geometry source for VolumeElement-s");
         return ERROR;
         }
 
     (*iter)->GetAsISolidPrimitive()->TryGetDgnExtrusionDetail(extrusionDetail);
     extrusionDetail.TransformInPlace(geomCollection.GetGeometryToWorld());
     
-    BeAssert(++iter == geomCollection.end() && "Did not expect more than two entries in geometry source for NamedVolume-s");
+    BeAssert(++iter == geomCollection.end() && "Did not expect more than two entries in geometry source for VolumeElement-s");
     if (extrusionDetail.m_baseCurve->GetBoundaryType() != CurveVector::BOUNDARY_TYPE_Outer)
         {
         BeAssert(false && "Only extrusions of outer curves supported");
@@ -143,7 +143,7 @@ BentleyStatus NamedVolume::ExtractExtrusionDetail(DgnExtrusionDetail& extrusionD
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-BentleyStatus NamedVolume::ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& direction, double& height) const
+BentleyStatus VolumeElement::ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& direction, double& height) const
     {
     DgnExtrusionDetail extrusionDetail;
     BentleyStatus status = ExtractExtrusionDetail(extrusionDetail);
@@ -154,7 +154,7 @@ BentleyStatus NamedVolume::ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& d
 
     if (extrusionDetail.m_baseCurve.IsNull() || extrusionDetail.m_baseCurve->size() != 1)
         {
-        BeAssert(false && "Empty or unexpected curve in the NamedVolume profile");
+        BeAssert(false && "Empty or unexpected curve in the VolumeElement profile");
         return ERROR;
         }
 
@@ -162,14 +162,14 @@ BentleyStatus NamedVolume::ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& d
 
     if (!curve.IsValid() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != curve->GetCurvePrimitiveType())
         {
-        BeAssert(false && "Unhandled curve primitives in the NamedVolume profile");
+        BeAssert(false && "Unhandled curve primitives in the VolumeElement profile");
         return ERROR;
         }
 
     bvector<DPoint3d> const* curvePoints = curve->GetLineStringCP();
     if (curvePoints == nullptr || curvePoints->size() == 0)
         {
-        BeAssert(false && "Empty curve primitive in the NamedVolume profile");
+        BeAssert(false && "Empty curve primitive in the VolumeElement profile");
         return ERROR;
         }
 
@@ -182,7 +182,7 @@ BentleyStatus NamedVolume::ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& d
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-BentleyStatus NamedVolume::SetClip(ViewContextR context) const
+BentleyStatus VolumeElement::SetClip(ViewContextR context) const
     {
     bvector<DPoint3d> shape;
     DVec3d direction;
@@ -227,7 +227,7 @@ BentleyStatus NamedVolume::SetClip(ViewContextR context) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::ClearClip() const
+void VolumeElement::ClearClip() const
     {
     if (m_viewContext)
         {
@@ -245,7 +245,7 @@ void NamedVolume::ClearClip() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-ClipVectorPtr NamedVolume::CreateClipVector() const
+ClipVectorPtr VolumeElement::CreateClipVector() const
     {
     DgnExtrusionDetail extrusionDetail;
     BentleyStatus status = ExtractExtrusionDetail(extrusionDetail);
@@ -260,7 +260,7 @@ ClipVectorPtr NamedVolume::CreateClipVector() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-unique_ptr<FenceParams> NamedVolume::CreateFence(DgnViewportP viewport, bool allowPartialOverlaps) const
+unique_ptr<FenceParams> VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialOverlaps) const
     {
     unique_ptr<FenceParams> fence = std::unique_ptr<FenceParams> (FenceParams::Create ());
     
@@ -285,7 +285,7 @@ unique_ptr<FenceParams> NamedVolume::CreateFence(DgnViewportP viewport, bool all
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
 // static
-unique_ptr<DgnViewport> NamedVolume::CreateNonVisibleViewport (DgnDbR project) 
+unique_ptr<DgnViewport> VolumeElement::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
     // TODO: Is it cool to assume the first view found can be used to create a CameraViewController?
@@ -304,7 +304,7 @@ unique_ptr<DgnViewport> NamedVolume::CreateNonVisibleViewport (DgnDbR project)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   02/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-BentleyStatus NamedVolume::GetRange(DRange3d& range) const
+BentleyStatus VolumeElement::GetRange(DRange3d& range) const
     {
     DgnExtrusionDetail extrusionDetail;
     BentleyStatus status = ExtractExtrusionDetail(extrusionDetail);
@@ -318,7 +318,7 @@ BentleyStatus NamedVolume::GetRange(DRange3d& range) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence, Statement& stmt, DgnDbR dgnDb) const
+void VolumeElement::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence, Statement& stmt, DgnDbR dgnDb) const
     {
     DbResult result;
     while ((result = stmt.Step()) == BE_SQLITE_ROW)
@@ -341,7 +341,7 @@ void NamedVolume::FindElements(DgnElementIdSet& elementIds, FenceParamsR fence, 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps /*=true*/) const
+void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps /*=true*/) const
     {
     unique_ptr<DgnViewport> viewport = CreateNonVisibleViewport (dgnDb);
     unique_ptr<FenceParams> fence = this->CreateFence (viewport.get(), allowPartialOverlaps);
@@ -363,7 +363,7 @@ void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool a
 
     DgnElementId elementId = GetElementId();
     if (elementId.IsValid())
-        stmt.BindId(7, GetElementId()); // Exclude the NamedVolume itself from the checks!!
+        stmt.BindId(7, GetElementId()); // Exclude the VolumeElement itself from the checks!!
 
     this->FindElements (elementIds, *fence, stmt, dgnDb);
     }
@@ -371,7 +371,7 @@ void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool a
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
+void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
     {
     QueryViewControllerP viewController = dynamic_cast<QueryViewControllerP> (&viewport.GetViewControllerR());
     BeAssert (viewController != nullptr);
@@ -408,7 +408,7 @@ void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewpor
 
     DgnElementId elementId = GetElementId();
     if (elementId.IsValid())
-        stmt.BindId(7, GetElementId()); // Exclude the NamedVolume itself from the checks!!
+        stmt.BindId(7, GetElementId()); // Exclude the VolumeElement itself from the checks!!
 
     stmt.BindVirtualSet (8, *viewController);
 
@@ -422,7 +422,7 @@ void NamedVolume::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewpor
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-bool NamedVolume::ContainsElement(DgnElementCR element, bool allowPartialOverlaps /*=true*/) const
+bool VolumeElement::ContainsElement(DgnElementCR element, bool allowPartialOverlaps /*=true*/) const
     {
     GeometrySourceCP geomSource = element.ToGeometrySource();
     if (nullptr == geomSource)
@@ -437,7 +437,7 @@ bool NamedVolume::ContainsElement(DgnElementCR element, bool allowPartialOverlap
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   02/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-void NamedVolume::Fit (DgnViewport& viewport, double const* aspectRatio /*=nullptr*/, ViewController::MarginPercent const* margin /*=nullptr*/) const
+void VolumeElement::Fit (DgnViewport& viewport, double const* aspectRatio /*=nullptr*/, ViewController::MarginPercent const* margin /*=nullptr*/) const
     {
     DRange3d volumeRange;
     this->GetRange (volumeRange);

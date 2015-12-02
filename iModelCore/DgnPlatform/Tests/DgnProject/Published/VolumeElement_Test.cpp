@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/NamedVolume_Test.cpp $
+|  $Source: Tests/DgnProject/Published/VolumeElement_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,13 +17,13 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 //=======================================================================================
-//! NamedVolumeTestFixture
+//! VolumeElementTestFixture
 //=======================================================================================
-struct NamedVolumeTestFixture : public ChangeTestFixture
+struct VolumeElementTestFixture : public ChangeTestFixture
 {
 protected:
     void CreateSample(WCharCP fileName);
-    NamedVolumeCPtr InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height);
+    VolumeElementCPtr InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height, Utf8CP label);
     PhysicalElementCPtr InsertBlock(DPoint3dCR origin, double dimension);
 
 public:
@@ -34,7 +34,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-void NamedVolumeTestFixture::CreateSample(WCharCP fileName)
+void VolumeElementTestFixture::CreateSample(WCharCP fileName)
     {
     CreateDgnDb(fileName);
     InsertModel();
@@ -46,18 +46,18 @@ void NamedVolumeTestFixture::CreateSample(WCharCP fileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-NamedVolumeCPtr NamedVolumeTestFixture::InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height)
+VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height, Utf8CP label)
     {
     bvector<DPoint2d> shape(shapeArr, shapeArr + 5);
 
-    NamedVolumePtr volume = NamedVolume::Create(*(m_testModel->ToPhysicalModel()), origin, shape, height);
+    VolumeElementPtr volume = VolumeElement::Create(*(m_testModel->ToPhysicalModel()), origin, shape, height, label);
     return volume->Insert();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-PhysicalElementCPtr NamedVolumeTestFixture::InsertBlock(DPoint3dCR center, double dimension)
+PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
     {
     PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(*(m_testModel->ToPhysicalModelP()), m_testCategoryId);
 
@@ -79,15 +79,15 @@ PhysicalElementCPtr NamedVolumeTestFixture::InsertBlock(DPoint3dCR center, doubl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(NamedVolumeTestFixture, CrudTest)
+TEST_F(VolumeElementTestFixture, CrudTest)
     {
-    WCharCP fileName = L"NamedVolumeCrudTest.dgndb";
+    WCharCP fileName = L"VolumeElementCrudTest.dgndb";
     CreateSample(fileName);
 
     DPoint3d origin = {0.0, 0.0, 0.0};
     DPoint2d shapePointsArr[5] = {{0.0, 0.0}, {100.0, 0.0}, {100.0, 100.0}, {0.0, 100.0}, {0.0, 0.0}};
     double height = 100.0;
-    NamedVolumeCPtr volume = InsertVolume(origin, shapePointsArr, height);
+    VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, "CrudTestVolume");
     ASSERT_TRUE(volume.IsValid());
 
     bvector<DPoint3d> actualShape;
@@ -110,7 +110,7 @@ TEST_F(NamedVolumeTestFixture, CrudTest)
         ASSERT_TRUE(actualShape[ii].IsEqual(expectedPoint));
         }
 
-    NamedVolumePtr volumeEdit = NamedVolume::GetForEdit(*m_testDb, volume->GetElementId());
+    VolumeElementPtr volumeEdit = VolumeElement::GetForEdit(*m_testDb, volume->GetElementId());
     ASSERT_TRUE(volumeEdit.IsValid());
 
     // Update
@@ -121,7 +121,7 @@ TEST_F(NamedVolumeTestFixture, CrudTest)
     bvector<DPoint2d> shapePoints2(shapePointsArr2, shapePointsArr2 + numShapePoints2);
     height = 200.0;
     volumeEdit->SetupGeomStream(origin, shapePoints2, height);
-    NamedVolumeCPtr volumeUpdate = volumeEdit->Update();
+    VolumeElementCPtr volumeUpdate = volumeEdit->Update();
     ASSERT_TRUE(volumeUpdate.IsValid());
 
     actualStatus = volumeUpdate->ExtractGeomStream(actualShape, actualDirection, actualHeight);
@@ -142,9 +142,9 @@ TEST_F(NamedVolumeTestFixture, CrudTest)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(NamedVolumeTestFixture, QueryTest)
+TEST_F(VolumeElementTestFixture, QueryTest)
     {
-    WCharCP fileName = L"NamedVolumeQueryTest.dgndb";
+    WCharCP fileName = L"VolumeElementQueryTest.dgndb";
     CreateSample(fileName);
 
     // Entirely inside
@@ -160,11 +160,11 @@ TEST_F(NamedVolumeTestFixture, QueryTest)
     InsertBlock(DPoint3d::From(0.0, 0.0, 150.0), 25.0); 
     InsertBlock(DPoint3d::From(0.0, 0.0, -150.0), 25.0);
 
-    // Named volume
+    // Volume Item
     DPoint3d origin = {0.0, 0.0, -100.0};
     DPoint2d shapePointsArr[5] = {{-100.0, -100.0}, {100.0, -100.0}, {100.0, 100.0}, {-100.0, 100.0}, {-100.0, -100.0}};
     double height = 200.0;
-    NamedVolumeCPtr volume = InsertVolume(origin, shapePointsArr, height);
+    VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, "QueryTestVolume");
     ASSERT_TRUE(volume.IsValid());
 
     CreateDefaultView();
@@ -189,6 +189,5 @@ TEST_F(NamedVolumeTestFixture, QueryTest)
     ASSERT_FALSE(volume->ContainsElement(*outsideEl, true));
 
     // TODO: SetClip(), ClearClip(), Fit()
-    // TODO: SetName(), Exists()
     // TODO: Show(), Hide()
     }

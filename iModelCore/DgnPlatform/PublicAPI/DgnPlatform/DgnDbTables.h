@@ -42,7 +42,7 @@
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
-#define DGN_CLASSNAME_NamedVolume           "NamedVolume"
+#define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"

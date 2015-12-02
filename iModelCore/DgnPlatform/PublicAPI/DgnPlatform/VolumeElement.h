@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/NamedVolume.h $
+|     $Source: PublicAPI/DgnPlatform/VolumeElement.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-DGNPLATFORM_REF_COUNTED_PTR(NamedVolume)
+DGNPLATFORM_REF_COUNTED_PTR(VolumeElement)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -16,20 +16,21 @@ using BentleyApi::BeSQLite::EC::ECInstanceKey;
 using BentleyApi::BeSQLite::EC::ECSqlStatement;
 using BentleyApi::BeSQLite::Statement;
 
-namespace dgn_ElementHandler { struct NamedVolumeHandler; }
+namespace dgn_ElementHandler { struct VolumeElementHandler; }
 
 //=======================================================================================
-//! API to setup user defined regions that can be shaded, clipped, queried & serialized
+//! API to setup user defined regions that can be visualized, clipped to, or queried for 
+//! contained elements.
 // @bsiclass                                                 Ramanujam.Raman      01/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE NamedVolume : PhysicalElement
+struct EXPORT_VTABLE_ATTRIBUTE VolumeElement : PhysicalElement
 {
-    friend struct dgn_ElementHandler::NamedVolumeHandler;
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_NamedVolume, PhysicalElement)
+    friend struct dgn_ElementHandler::VolumeElementHandler;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, PhysicalElement)
 public:
     struct CreateParams : PhysicalElement::CreateParams
     {
-        friend struct dgn_ElementHandler::NamedVolumeHandler;
+        friend struct dgn_ElementHandler::VolumeElementHandler;
         DEFINE_T_SUPER(PhysicalElement::CreateParams);
 
         DPoint3d m_origin;
@@ -38,23 +39,24 @@ public:
 
     protected:
         CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnClassId classId, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), Utf8CP label = nullptr, DgnElementId parent = DgnElementId()) :
-            T_Super(db, modelId, classId, category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height) {}
+            T_Super(db, modelId, classId, category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height) {}
 
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params, DgnCategoryId(), Placement3d()) {}
 
     public:
-        //! Parameters to create a NamedVolume
+        //! Parameters to create a VolumeElement
         //! @param db DgnDb
         //! @param modelId Model Id
         //! @param category Category Id
         //! @param origin Origin of the volume, described from the Project Coordinate System in storage units (this translated origin, and the Project Coordinate System directions together define a Local Coordinate System for the volume)
         //! @param shape Closed loop of 2D points representing the boundary of the extruded volume, described from the Local Coordinate System in storage units.
         //! @param height Height of the extruded volume in storage units
+        //! @param label Label of the volume.
         //! @param code Code
         //! @param id ElementId
         //! @param parent Parent ElementId
-        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId id = DgnElementId(), DgnElementId parent = DgnElementId()) :
-            T_Super(db, modelId, NamedVolume::QueryClassId(db), category.IsValid() ? category : NamedVolume::GetDefaultCategoryId(db), Placement3d(), code, "", parent), m_origin(origin), m_shape(shape), m_height(height)
+        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label = nullptr, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId id = DgnElementId(), DgnElementId parent = DgnElementId()) :
+            T_Super(db, modelId, VolumeElement::QueryClassId(db), category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height)
             {}
 
         CreateParams(CreateParams const& params) : T_Super(params), m_origin(params.m_origin), m_shape(params.m_shape), m_height(params.m_height) {}
@@ -79,16 +81,16 @@ public:
     */
 
     //! Constructor
-    DGNPLATFORM_EXPORT explicit NamedVolume(CreateParams const& params);
+    DGNPLATFORM_EXPORT explicit VolumeElement(CreateParams const& params);
 
-    //! Creates a new NamedVolume element
-    static NamedVolumePtr Create(PhysicalModelCR model, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height) { return new NamedVolume(CreateParams(model.GetDgnDb(), model.GetModelId(), origin, shape, height)); }
+    //! Creates a new VolumeElement element
+    static VolumeElementPtr Create(PhysicalModelCR model, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label=nullptr) { return new VolumeElement(CreateParams(model.GetDgnDb(), model.GetModelId(), origin, shape, height, label)); }
 
-    //! Creates a new NamedVolume element
-    static NamedVolumePtr Create(CreateParams const& params) { return new NamedVolume(params); }
+    //! Creates a new VolumeElement element
+    static VolumeElementPtr Create(CreateParams const& params) { return new VolumeElement(params); }
 
     //! Destructor
-    ~NamedVolume() { ClearClip(); }
+    ~VolumeElement() { ClearClip(); }
 
     //! Setup the geom stream
     //! @param origin Origin of the volume, described from the Project Coordinate System in storage units (this translated origin, and the Project Coordinate System directions together define a Local Coordinate System for the volume)
@@ -100,16 +102,16 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus ExtractGeomStream(bvector<DPoint3d>& shape, DVec3d& direction, double& height) const;
 
     //! Inserts the volume into the Db
-    DGNPLATFORM_EXPORT NamedVolumeCPtr Insert();
+    DGNPLATFORM_EXPORT VolumeElementCPtr Insert();
     
     //! Updates the volume in the Db
-    DGNPLATFORM_EXPORT NamedVolumeCPtr Update();
+    DGNPLATFORM_EXPORT VolumeElementCPtr Update();
 
-    //! Get a read only copy of the NamedVolume from the DgnDb
-    DGNPLATFORM_EXPORT static NamedVolumeCPtr Get(DgnDbCR dgndb, Dgn::DgnElementId elementId);
+    //! Get a read only copy of the VolumeElement from the DgnDb
+    DGNPLATFORM_EXPORT static VolumeElementCPtr Get(DgnDbCR dgndb, Dgn::DgnElementId elementId);
     
-    //! Get an editable copy of the NamedVolume from the DgnDb
-    DGNPLATFORM_EXPORT static NamedVolumePtr GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elementId);
+    //! Get an editable copy of the VolumeElement from the DgnDb
+    DGNPLATFORM_EXPORT static VolumeElementPtr GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elementId);
 
     /*
      * Setup views with the Volume
@@ -133,14 +135,6 @@ public:
     //! @note, for 2d views, only the X and Y values of volume are used.
     //! @see ViewController::LookAtVolume()
     DGNPLATFORM_EXPORT void Fit (DgnViewport& viewport, double const* aspectRatio=nullptr, ViewController::MarginPercent const* margin=nullptr) const;
-
-    //! Hide the volume in all views
-    void Hide() const { SetUndisplayed(true); }
-
-    //! Un-hide the volume in all views
-    //! @remarks The view should display the category and model of the volume to be shown
-    void UnHide() const { SetUndisplayed(false); }
-
 
     /*
      * Query contained elements in the Volume
@@ -170,21 +164,20 @@ public:
     /*
     * Misc
     */
+    //! Query the DgnClassId of the dgn.VolumeElement ECClass in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.VolumeElement class - it does @em not return the class of a specific instance.
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_VolumeElement)); }
 
-    //! Query the DgnClassId of the dgn.NamedVolume ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the dgn.NamedVolume class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_NamedVolume)); }
-
-    //! Gets the default category id for the vaolumes
+    //! Gets the default category id for the volumes
     DGNPLATFORM_EXPORT static DgnCategoryId GetDefaultCategoryId(DgnDbR db);
 };
 
 namespace dgn_ElementHandler
 {
-    //! The ElementHandler for NamedVolume
-    struct EXPORT_VTABLE_ATTRIBUTE NamedVolumeHandler : Physical
+    //! The ElementHandler for VolumeElement
+    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Physical
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_NamedVolume, NamedVolume, NamedVolumeHandler, Physical, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Physical, DGNPLATFORM_EXPORT)
     };
 }
 
