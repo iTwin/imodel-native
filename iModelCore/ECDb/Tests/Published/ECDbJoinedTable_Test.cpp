@@ -1278,9 +1278,8 @@ Utf8CP JoinedTableECDbMapStrategyTests::ToInsertECSql (ECDbCR ecdb, Utf8CP class
     ECN::ECClassCP ecClass = ecdb.Schemas ().GetECClass ("JoinedTableTest", className);
     EXPECT_TRUE (ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     Utf8String insertECSql = "INSERT INTO ";
-    insertECSql.append (ecClassName).append (" (SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld)");
+    insertECSql.append (ecClass->GetECSqlName()).append (" (SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld)");
 
     return insertECSql.c_str ();
     }
