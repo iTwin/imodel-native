@@ -94,7 +94,7 @@ protected:
 
                     Utf8String ecsql;
                     ecsql.Sprintf("SELECT ECInstanceId, GetECClassId() FROM ONLY %s LIMIT %d",
-                                  ECSqlBuilder::ToECSqlSnippet(*ecclass).c_str(), s_fileInfoCountPerClass);
+                                  ecclass->GetECSqlName(), s_fileInfoCountPerClass);
 
                     ECSqlStatement stmt;
                     if (ECSqlStatus::Success != stmt.Prepare(GetECDb(), ecsql.c_str()))
@@ -167,9 +167,9 @@ protected:
         if (ownerClass == nullptr)
             return ERROR;
 
-        Utf8String ecclassECSqlToken = ECSqlBuilder::ToECSqlSnippet(*ownerClass);
+        Utf8CP ecclassECSqlToken = ownerClass->GetECSqlName();
         Utf8String getCountECSql;
-        getCountECSql.Sprintf("SELECT count(*) FROM ONLY %s", ecclassECSqlToken.c_str());
+        getCountECSql.Sprintf("SELECT count(*) FROM ONLY %s", ecclassECSqlToken);
         ECSqlStatement getCountStmt;
         if (ECSqlStatus::Success != getCountStmt.Prepare(GetECDb(), getCountECSql.c_str()))
             return SUCCESS;//some classes cannot be used in ECSQL. ignore them.
@@ -186,9 +186,9 @@ protected:
         Utf8String ecsql;
         if (count >= 0)
             ecsql.Sprintf("DELETE FROM ONLY %s WHERE ECInstanceId IN (SELECT OwnerId FROM ONLY ecdbf.FileInfoOwnership WHERE OwnerECClassId=%lld LIMIT %d)",
-                          ecclassECSqlToken.c_str(), ownerClassId, count);
+                          ecclassECSqlToken, ownerClassId, count);
         else
-            ecsql.Sprintf("DELETE FROM ONLY %s", ecclassECSqlToken.c_str());
+            ecsql.Sprintf("DELETE FROM ONLY %s", ecclassECSqlToken);
 
         ECSqlStatement deleteOwnerStmt;
         if (ECSqlStatus::Success != deleteOwnerStmt.Prepare(GetECDb(), ecsql.c_str()))

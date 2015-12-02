@@ -43,7 +43,7 @@ bool ECInstanceDeleter::IsValid () const
 void ECInstanceDeleter::Initialize()
     {
     Utf8String ecsql ("DELETE FROM ONLY ");
-    ecsql.append (ECSqlBuilder::ToECSqlSnippet (m_ecClass));
+    ecsql.append (m_ecClass.GetECSqlName());
     ecsql.append (" WHERE ").append (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).append (" = ?");
 
     ECSqlStatus stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());

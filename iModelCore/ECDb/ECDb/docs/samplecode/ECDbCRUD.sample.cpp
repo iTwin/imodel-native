@@ -47,54 +47,6 @@ BentleyStatus ECDb_ECSqlSelect ()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   03/13
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlSelectBuilder ()
-    {
-    ECDb ecdb;
-
-    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlSelectBuilder.sampleCode
-    
-    // Get class to perform ECSQL statement against
-    ECClassCP employeeClass = ecdb.Schemas ().GetECClass ("StartupCompany", "Employee");
-    if (employeeClass == nullptr)
-        {
-        // class not found. do error handling here...
-        return ERROR;
-        }
-    
-    // Define ECSQL via ECSqlBuilder
-    ECSqlSelectBuilder ecsqlBuilder;
-    ecsqlBuilder.Select ("FirstName, LastName, Birthday").From (*employeeClass).Where ("LastName LIKE 'S%'").OrderBy ("LastName, FirstName");
-    
-    Utf8String ecsql = ecsqlBuilder.ToString ();
-
-    // Prepare statement
-    ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare (ecdb, ecsql.c_str ());
-    if (!stat.IsSuccess())
-        {
-        // do error handling here...
-        return ERROR;
-        }
-
-    // Execute statement and step over each row of the result set
-    while (BE_SQLITE_ROW == statement.Step())
-        {
-        // Property indices in result set are 0-based -> 0 refers to first property in result set
-        Utf8CP firstName = statement.GetValueText (0);
-        Utf8CP lastName = statement.GetValueText (1);
-        DateTime birthday = statement.GetValueDateTime (2);
-        // do something with the retrieved data of this row
-        printf ("%s, %s - Born %s\n", lastName, firstName, birthday.ToUtf8String ().c_str ());
-        }
-
-//__PUBLISH_EXTRACT_END__
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/13
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb_ECSqlSelectStructProps ()

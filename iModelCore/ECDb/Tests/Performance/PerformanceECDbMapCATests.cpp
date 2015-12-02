@@ -246,7 +246,7 @@ void PerformanceECDbMapCATestFixture::GenerateECSqlCRUDTestStatements (ECSchemaR
         Utf8StringR updateECSql = testItem.m_updateECSql;
         Utf8StringR deleteECSql = testItem.m_deleteECSql;
 
-        Utf8String className = ECSqlBuilder::ToECSqlSnippet (*testClass);
+        Utf8CP className = testClass->GetECSqlName();
 
         insertECSql = Utf8String ("INSERT INTO ");
         insertECSql.append (className).append (" (ECInstanceId, ");

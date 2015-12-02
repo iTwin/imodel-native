@@ -149,7 +149,7 @@ Utf8String ClassClause::ToString (bool ignoreIsPolymorphic) const
         }
 
     //add fully qualified class name, i.e. <schema namespace prefix>.<class name> 
-    ecsql.append (ToString (GetClass ()));
+    ecsql.append (GetClass().GetECSqlName());
 
     if (!m_alias.empty ())
         {
@@ -160,18 +160,6 @@ Utf8String ClassClause::ToString (bool ignoreIsPolymorphic) const
     return ecsql;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8String ClassClause::ToString (ECN::ECClassCR ecClass)
-    {
-    //add fully qualified class name, i.e. <schema name>.<class name> 
-    Utf8String fullClassName ("[");
-    fullClassName.append (ecClass.GetSchema ().GetName ()).append ("].[").append (ecClass.GetName ().c_str ()).append ("]");
-
-    return fullClassName;
-    }
 
 //****************** SelectClause ****************************************************
 //---------------------------------------------------------------------------------------

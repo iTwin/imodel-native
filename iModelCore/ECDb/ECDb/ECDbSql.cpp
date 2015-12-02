@@ -1363,23 +1363,6 @@ Utf8String DDLGenerator::GetColumnDDL (ECDbSqlColumn const& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-//static
-const std::map<ColumnKind, Utf8CP> ECDbSqlColumn::s_columnKindNames =
-    {
-            {ColumnKind::ECInstanceId, "ECInstanceId"},
-            {ColumnKind::ECClassId, "ECClassId"},
-            {ColumnKind::ECArrayIndex, "ECArrayIndex"},
-            {ColumnKind::ECPropertyPathId, "ECPropertyPathId"},
-            {ColumnKind::ParentECInstanceId, "ParentECInstanceId"},
-            {ColumnKind::SourceECClassId, "SourceECClassId"},
-            {ColumnKind::SourceECInstanceId, "SourceECInstanceId"},
-            {ColumnKind::TargetECClassId, "TargetECClassId"},
-            {ColumnKind::TargetECInstanceId, "TargetECInstanceId"}
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
 BentleyStatus ECDbSqlColumn::SetKind(ColumnKind kind)
     {
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
@@ -1476,15 +1459,32 @@ Utf8CP ECDbSqlColumn::TypeToString (ECDbSqlColumn::Type type)
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP ECDbSqlColumn::KindToString(ColumnKind columnId)
+Utf8CP ECDbSqlColumn::KindToString(ColumnKind columnKind)
     {
-    auto itor = s_columnKindNames.find(columnId);
-    if (itor != s_columnKindNames.end())
+    switch (columnKind)
         {
-        return itor->second;
+        case ColumnKind::ECInstanceId:
+            return "ECInstanceId";
+        case ColumnKind::ECClassId:
+            return "ECClassId";
+        case ColumnKind::ECArrayIndex:
+            return "ECArrayIndex";
+        case ColumnKind::ECPropertyPathId:
+            return "ECPropertyPathId";
+        case ColumnKind::ParentECInstanceId:
+            return "ParentECInstanceId";
+        case ColumnKind::SourceECInstanceId:
+            return "SourceECInstanceId";
+        case ColumnKind::SourceECClassId:
+            return "SourceECClassId";
+        case ColumnKind::TargetECInstanceId:
+            return "TargetECInstanceId";
+        case ColumnKind::TargetECClassId:
+            return "TargetECClassId";
+            
+        default:
+            return nullptr;
         }
-
-    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
