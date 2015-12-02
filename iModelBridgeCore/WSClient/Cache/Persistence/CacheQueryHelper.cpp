@@ -205,8 +205,8 @@ ECRelationshipClassCR relationshipClass
         "SELECT %s FROM %s target, %s source "
         "JOIN ONLY %s relationship ON target.ECInstanceId = relationship.TargetECInstanceId AND "
         "                             source.ECInstanceId = relationship.SourceECInstanceId "
-        "JOIN ONLY " ECSql_CachedObjectInfoClass                " targetInfo    ON targetInfoRel.SourceECInstanceId = targetInfo.ECInstanceId "
-        "JOIN ONLY " ECSql_CachedObjectInfoRelationshipClass    " targetInfoRel ON targetInfoRel.TargetECInstanceId = relationship.TargetECInstanceId "
+        "JOIN ONLY " ECSql_CachedObjectInfoClass            " targetInfo    ON targetInfoRel.SourceECInstanceId = targetInfo.ECInstanceId "
+        "JOIN ONLY " ECSql_CachedObjectInfoToInstanceClass  " targetInfoRel ON targetInfoRel.TargetECInstanceId = relationship.TargetECInstanceId "
         "WHERE source.ECInstanceId = ? "
         "%s",
         selectClause.c_str(),
@@ -242,7 +242,7 @@ Utf8StringCR optionalWhereClause
     Utf8PrintfString ecSql
         (
         "SELECT %s FROM ONLY %s instance "
-        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
+        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] IN (%s) %s"
         "%s",
         selectClause.c_str(),
@@ -269,7 +269,7 @@ const ClassReadInfo& info
     Utf8PrintfString ecSql
         (
         "SELECT %s FROM ONLY %s instance "
-        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
+        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "%s",
         selectClause.c_str(),
@@ -296,7 +296,7 @@ Utf8StringCR customWhereClause
     Utf8String infoJoin;
     if (infoNeedsSelecting)
         {
-        infoJoin = "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " ";
+        infoJoin = "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " ";
         }
 
     Utf8PrintfString ecSql
@@ -327,7 +327,7 @@ ECRelationshipClassCR relationshipClass
         (
         "SELECT targetInfoRel.TargetECClassId, targetInfo.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] "
         "FROM ONLY " ECSql_CachedObjectInfoClass " targetInfo "
-        "JOIN ONLY " ECSql_CachedObjectInfoRelationshipClass " targetInfoRel ON targetInfo.ECInstanceId = targetInfoRel.SourceECInstanceId "
+        "JOIN ONLY " ECSql_CachedObjectInfoToInstanceClass " targetInfoRel ON targetInfo.ECInstanceId = targetInfoRel.SourceECInstanceId "
         "JOIN ONLY %s relationship ON targetInfoRel.TargetECInstanceId = relationship.TargetECInstanceId "
         "WHERE relationship.SourceECInstanceId = ?",
         ECSqlSelectBuilder::ToECSqlSnippet(relationshipClass).c_str()
@@ -343,7 +343,7 @@ Utf8String CacheQueryHelper::ECSql::SelectAllPropertiesAndRemoteIdByECInstanceId
     Utf8PrintfString ecSql
         (
         "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "], instance.* FROM ONLY %s instance "
-        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
+        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE instance.ECInstanceId = ? "
         "LIMIT 1 ",
         ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
@@ -359,7 +359,7 @@ Utf8String CacheQueryHelper::ECSql::SelectAllPropertiesByRemoteId(ECClassCR cach
     Utf8PrintfString ecSql
         (
         "SELECT instance.* FROM ONLY %s instance "
-        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
+        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "LIMIT 1 ",
         ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
@@ -375,7 +375,7 @@ Utf8String CacheQueryHelper::ECSql::SelectECInstanceIdByRemoteId(ECClassCR cache
     Utf8PrintfString ecSql
         (
         "SELECT instance.ECInstanceId FROM ONLY %s instance "
-        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
+        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "LIMIT 1 ",
         ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
@@ -395,7 +395,7 @@ Utf8StringCR commaSeperatedECInstanceIds
     Utf8PrintfString ecSql
         (
         "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] FROM ONLY %s instance "
-        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
+        "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE instance.ECInstanceId IN (%s) ",
         ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str(),
         commaSeperatedECInstanceIds.c_str()
