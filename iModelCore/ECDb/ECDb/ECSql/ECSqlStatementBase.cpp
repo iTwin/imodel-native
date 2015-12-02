@@ -55,22 +55,6 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
         Finalize ();
         return ECSqlStatus::InvalidECSql;
         }
-    //prepare : INSERT INTO Foo (B1, D1) - parsed
-    //step1
-    //INSERT INTO Boo (B1, ECInstanceId) VALUES(?,?)
-    //INSERT INTO Foo (D1, ECinstanceId) VALUES(?,?)
-    //step2
-    //prepare: INSERT INTO Boo (B1, ECInstanceId) VALUES(?,?) -parsed 
-    //step3
-    //Prepare: INSERT INTO Foo (D1, ECinstanceId) VALUES(?,?)
-    
-    //INSERT INTO Boo(B1)
-
-    //INSERT INTO Foo(D1)
-
-    //INSERT INTO Foo(ECInstanceId)
-
-    //INSERT INTO Boo(B1, ECInstanceId)
 
     //establish joinTable context if any
     if (auto joinTableContext = prepareContext.TrySetupJoinTableContextIfAny(*ecsqlParseTree, ecsql))

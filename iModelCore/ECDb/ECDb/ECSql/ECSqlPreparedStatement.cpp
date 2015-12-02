@@ -47,8 +47,12 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
     auto stat = ECSqlPreparer::Prepare(nativeSql, prepareContext, ecsqlParseTree);
     if (!stat.IsSuccess())
         return stat;
-
-    m_ecsql = Utf8String(ecsql);
+    if (auto info = prepareContext.GetJoinTableInfo())
+        {
+        m_ecsql = Utf8String(info->GetOrignalECSQlStatement());
+        }
+    else
+        m_ecsql = Utf8String(ecsql);
 
     if (prepareContext.NativeStatementIsNoop())
         m_isNoopInSqlite = true;
