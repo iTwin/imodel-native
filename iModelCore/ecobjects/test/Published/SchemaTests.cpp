@@ -861,6 +861,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStr
         "       <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' displayLabel='Geometry' />"
         "       <ECProperty propertyName='LineSegment' typeName='Bentley.Geometry.Common.ILineSegment' displayLabel='Line Segment' />"
         "    </ECClass>"
+        "    <ECEnumeration typeName='Enumeration' backingTypeName='int' description='desc' displayLabel='dl'/>"
         "</ECSchema>";
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
 
@@ -931,6 +932,12 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStr
 
     pProperty = GetPropertyByName (*pClass, "PropertyDoesNotExistInClass", false);
     EXPECT_FALSE (pProperty);
+
+    ECEnumerationP pEnumeration = schema->GetEnumerationP("Enumeration");
+    EXPECT_TRUE(pEnumeration != nullptr);
+    EXPECT_STREQ("int", pEnumeration->GetTypeName().c_str());
+    EXPECT_STREQ("desc", pEnumeration->GetDescription().c_str());
+    EXPECT_STREQ("dl", pEnumeration->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -957,6 +964,43 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     EXPECT_EQ (SchemaReadStatus::Success, status);
 
     VerifyWidgetsSchema (deserializedSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ASSERT_TRUE(schema.IsValid());
+
+    //Create Enumeration
+    ECEnumerationP enumeration;
+    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_String);
+    enumeration->SetDescription("de");
+    enumeration->SetDisplayLabel("dl");
+    ASSERT_TRUE(enumeration != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    EXPECT_STREQ("dl", enumeration->GetDisplayLabel().c_str());
+    EXPECT_STREQ("de", enumeration->GetDescription().c_str());
+    EXPECT_STREQ("string", enumeration->GetTypeName().c_str());
+
+    Utf8String ecSchemaXmlString;
+    SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXmlString);
+    EXPECT_EQ (SchemaWriteStatus::Success, status2);
+
+    ECSchemaPtr deserializedSchema;
+    auto schemaContext = ECSchemaReadContext::CreateContext ();
+    auto status3 = ECSchema::ReadFromXmlString (deserializedSchema, ecSchemaXmlString.c_str (), *schemaContext);
+    EXPECT_EQ (SchemaReadStatus::Success, status3);
+
+    ECEnumerationP deserializedEnumeration;
+    deserializedEnumeration = deserializedSchema->GetEnumerationP("Enumeration");
+    ASSERT_TRUE(deserializedEnumeration != nullptr);
+    EXPECT_STREQ("dl", deserializedEnumeration->GetDisplayLabel().c_str());
+    EXPECT_STREQ("de", deserializedEnumeration->GetDescription().c_str());
+    EXPECT_STREQ("string", deserializedEnumeration->GetTypeName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

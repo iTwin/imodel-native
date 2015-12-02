@@ -1366,9 +1366,9 @@ friend struct SchemaXmlReaderImpl;
         //! Gets the PrimitiveType of this ECProperty
         ECOBJECTS_EXPORT PrimitiveType      GetType() const;
         //! Gets the name of the backing primitive type.
-        Utf8String                          GetTypeName() const;
+        ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
         //! Sets the backing primitive type by its name.
-        ECObjectsStatus                     SetTypeName(Utf8StringCR typeName);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8StringCR typeName);
         //! Whether the display label is explicitly defined or not
         ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
         //! Sets the display label of this ECClass
