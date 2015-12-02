@@ -72,7 +72,6 @@ struct RevisionTestFixture : ChangeTestFixture
             EXPECT_TRUE(pStyle.IsValid());
             return pStyle;
             }
-
         AnnotationTextStyleCPtr RenameTextStyle(AnnotationTextStyleCR style, Utf8CP newName)
             {
             auto pStyle = style.CreateCopy();
@@ -80,6 +79,21 @@ struct RevisionTestFixture : ChangeTestFixture
             auto cpStyle = pStyle->Update();
             EXPECT_TRUE(cpStyle.IsValid());
             return cpStyle;
+            }
+
+        DgnElementCPtr InsertPhysicalElement(Code const& code)
+            {
+            DgnClassId classId = m_testDb->Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
+            PhysicalElement elem(PhysicalElement::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
+            return elem.Insert();
+            }
+        DgnElementCPtr RenameElement(DgnElementCR el, Code const& code)
+            {
+            auto pEl = el.CopyForEdit();
+            EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(code));
+            auto cpEl = pEl->Update();
+            EXPECT_TRUE(cpEl.IsValid());
+            return cpEl;
             }
     public:
         virtual void SetUp() override {}
@@ -347,6 +361,42 @@ TEST_F(RevisionTestFixture, Codes)
     expectedCodes.clear();
     expectedCodes.insert(cpStyleA->GetCode());
     ExpectCodes(expectedCodes, createdCodes);
-    }
 
+    // Create two elements with a code, and one with a default (empty) code. We only care about non-empty codes.
+    auto defaultCode = DgnAuthority::CreateDefaultCode();
+    auto auth = NamespaceAuthority::CreateNamespaceAuthority("MyAuthority", db);
+    EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
+
+    auto cpElX1 = InsertPhysicalElement(auth->CreateCode("X", "1")),
+         cpElY2 = InsertPhysicalElement(auth->CreateCode("Y", "2")),
+         cpUncoded = InsertPhysicalElement(defaultCode);
+
+    ExtractCodesFromRevision(createdCodes, discardedCodes);
+
+    expectedCodes.clear();
+    ExpectCodes(expectedCodes, discardedCodes);
+
+    expectedCodes.insert(cpElX1->GetCode());
+    expectedCodes.insert(cpElY2->GetCode());
+    ExpectCodes(expectedCodes, createdCodes);
+
+    // Set one code to empty, and one empty code to a non-empty code, and delete one coded element, and create a new element with the same code as the deleted element
+    cpUncoded = RenameElement(*cpUncoded, auth->CreateCode("Z"));
+    auto codeX1 = cpElX1->GetCode();
+    cpElX1 = RenameElement(*cpElX1, defaultCode);
+    auto codeY2 = cpElY2->GetCode();
+    EXPECT_EQ(DgnDbStatus::Success, cpElY2->Delete());
+    auto cpNewElY2 = InsertPhysicalElement(codeY2);
+
+    // The code that was set to empty should be seen as discarded; the code that replaced empty should be seen as new; the reused code should not appear.
+    ExtractCodesFromRevision(createdCodes, discardedCodes);
+
+    expectedCodes.clear();
+    expectedCodes.insert(codeX1);
+    ExpectCodes(expectedCodes, discardedCodes);
+
+    expectedCodes.clear();
+    expectedCodes.insert(cpUncoded->GetCode());
+    ExpectCodes(expectedCodes, createdCodes);
+    }
 
