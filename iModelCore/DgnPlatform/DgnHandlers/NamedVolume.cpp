@@ -43,7 +43,10 @@ DgnCategoryId NamedVolume::GetDefaultCategoryId(DgnDbR db)
         return categoryId;
 
     DgnSubCategory::Appearance appearance;
-    appearance.SetColor(ColorDef::LightGrey());
+    appearance.SetColor(ColorDef(0xF2, 0xB5, 0x0F)); // Yellow
+    appearance.SetTransparency(0.75);
+    appearance.SetDontSnap(true);
+    appearance.SetDontLocate(true);
 
     DgnCategory category(DgnCategory::CreateParams(db, VOLUME_DEFAULT_CATEGORY_NAME, DgnCategory::Scope::Physical, DgnCategory::Rank::System));
     category.Insert(appearance);

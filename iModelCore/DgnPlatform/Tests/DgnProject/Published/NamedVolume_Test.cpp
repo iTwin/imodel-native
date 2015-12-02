@@ -40,7 +40,6 @@ void NamedVolumeTestFixture::CreateSample(WCharCP fileName)
     InsertModel();
     InsertCategory();
     InsertAuthority();
-    CreateDefaultView();
     m_testDb->SaveChanges("Inserted sample");
     }
 
@@ -158,7 +157,9 @@ TEST_F(NamedVolumeTestFixture, QueryTest)
     // Entirely outside
     PhysicalElementCPtr outsideEl = InsertBlock(DPoint3d::From(150.0, 150.0, 150.0), 25.0);
     InsertBlock(DPoint3d::From(-150.0, -150.0, -150.0), 25.0);
-    
+    InsertBlock(DPoint3d::From(0.0, 0.0, 150.0), 25.0); 
+    InsertBlock(DPoint3d::From(0.0, 0.0, -150.0), 25.0);
+
     // Named volume
     DPoint3d origin = {0.0, 0.0, -100.0};
     DPoint2d shapePointsArr[5] = {{-100.0, -100.0}, {100.0, -100.0}, {100.0, 100.0}, {-100.0, 100.0}, {-100.0, -100.0}};
@@ -166,9 +167,10 @@ TEST_F(NamedVolumeTestFixture, QueryTest)
     NamedVolumeCPtr volume = InsertVolume(origin, shapePointsArr, height);
     ASSERT_TRUE(volume.IsValid());
 
-    m_testDb->SaveChanges("Finished inserts");
+    CreateDefaultView();
     UpdateDgnDbExtents();
-
+    m_testDb->SaveChanges("Finished inserts");
+    
     DgnElementIdSet idSet;
     volume->FindElements(idSet, *m_testDb, false);
     ASSERT_EQ(2, (int) idSet.size());
