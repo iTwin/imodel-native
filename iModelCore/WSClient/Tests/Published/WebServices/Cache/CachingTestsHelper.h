@@ -57,9 +57,9 @@ ICachingDataSource::ObjectsResult StubObjectsResult(
     ICachingDataSource::DataOrigin origin = ICachingDataSource::DataOrigin::CachedData);
 
     // Create result with IsModified == false
-WSObjectsResponse StubWSObjectsResponseNotModified();
+WSObjectsResponse StubWSObjectsResponseNotModified(Utf8StringCR skipToken = "");
 WSObjectsResponse StubWSObjectsResponseV2(Utf8StringCR jsonBody, Utf8StringCR eTag = "");
-WSObjectsResult StubWSObjectsResultNotModified();
+WSObjectsResult StubWSObjectsResultNotModified(Utf8StringCR skipToken = "");
 WSObjectsResult StubWSObjectsResultInvalidInstances();
 
 WSFileResponse StubWSFileResponse(BeFileNameCR filePath, Utf8StringCR eTag = "");

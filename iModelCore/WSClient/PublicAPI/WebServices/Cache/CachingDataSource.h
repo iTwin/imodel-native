@@ -36,6 +36,7 @@ struct CachingDataSource :
         friend struct CacheNavigationTask;
         friend struct DownloadFilesTask;
         friend struct SyncLocalChangesTask;
+        friend struct SyncCachedDataTask;
 
         typedef AsyncResult<CachingDataSourcePtr, Error> OpenResult;
 
@@ -47,7 +48,7 @@ struct CachingDataSource :
         std::shared_ptr<ICacheTransactionManager>   m_cacheTransactionManager;
         std::shared_ptr<IRepositoryInfoStore>       m_infoStore;
 
-        WorkerThreadPtr               m_cacheAccessThread;
+        WorkerThreadPtr                             m_cacheAccessThread;
         SimpleCancellationTokenPtr                  m_cancellationToken;
 
         BeFileName                                  m_temporaryDir;
@@ -98,6 +99,8 @@ struct CachingDataSource :
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
+            Utf8StringCR skipToken,
+            uint64_t page,
             ICancellationTokenPtr cancellationToken
             );
 

@@ -15,7 +15,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 //--------------------------------------------------------------------------------------+
 
 #define SCHEMA_CacheSchema_Major                                    1
-#define SCHEMA_CacheSchema_Minor                                    6
+#define SCHEMA_CacheSchema_Minor                                    7
 
 #define SCHEMA_CacheSchema                                          "DSCacheSchema"
 
@@ -34,9 +34,13 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 #define CLASS_CachedResponseInfo                                    "CachedResponseInfo"
 #define CLASS_CachedResponseInfo_PROPERTY_Name                      "Name"
-#define CLASS_CachedResponseInfo_PROPERTY_CacheDate                 "CacheDate"
-#define CLASS_CachedResponseInfo_PROPERTY_CacheTag                  "CacheTag"
 #define CLASS_CachedResponseInfo_PROPERTY_AccessDate                "AccessDate"
+#define CLASS_CachedResponseInfo_PROPERTY_IsCompleted               "IsCompleted"
+
+#define CLASS_CachedResponsePageInfo                                "CachedResponsePageInfo"
+#define CLASS_CachedResponsePageInfo_PROPERTY_CacheDate             "CacheDate"
+#define CLASS_CachedResponsePageInfo_PROPERTY_CacheTag              "CacheTag"
+#define CLASS_CachedResponsePageInfo_PROPERTY_Index                 "Index"
 
 #define CLASS_CachedRelationshipInfo                                "CachedRelationshipInfo"
 #define CLASS_CachedRelationshipInfo_PROPERTY_RemoteId              "RemoteId"
@@ -81,17 +85,19 @@ enum class CachedInstanceState
 #define CLASS_REL_WeakRootRelationship                              "WeakRootRelationship"
 #define CLASS_REL_CachedFileInfoRelationship                        "CachedFileInfoRelationship"
 #define CLASS_REL_CachedObjectInfoRelationship                      "CachedObjectInfoRelationship"
-#define CLASS_REL_CachedResponseInfoToResultRelationship            "CachedResponseInfoToResultRelationship"
-#define CLASS_REL_CachedResponseInfoToResultWeakRelationship        "CachedResponseInfoToResultWeakRelationship"
-#define CLASS_REL_CachedResponseInfoToParentRelationship            "CachedResponseInfoToParentRelationship"
-#define CLASS_REL_CachedResponseInfoToHolderRelationship            "CachedResponseInfoToHolderRelationship"
-#define CLASS_REL_CachedResponseInfoToCachedRelationshipInfo        "CachedResponseInfoToCachedRelationshipInfo"
+#define CLASS_REL_ResponseInfoToParent                              "CachedResponseInfoToParentRelationship"
+#define CLASS_REL_ResponseInfoToHolder                              "CachedResponseInfoToHolderRelationship"
+#define CLASS_REL_ResponseToResponsePage                            "ResponseToResponsePage"
+#define CLASS_REL_ResponsePageToResult                              "ResponsePageToResult"
+#define CLASS_REL_ResponsePageToResultWeak                          "ResponsePageToResultWeak"
+#define CLASS_REL_ResponsePageToRelationshipInfo                    "ResponsePageToRelationshipInfo"
 #define CLASS_REL_ChangeInfoToInstanceBackup                        "ChangeInfoToInstanceBackup"
 
 #define ECSql_RootClass                                             "[DSC].[Root]"
 #define ECSql_CachedObjectInfoClass                                 "[DSC].[CachedObjectInfo]"
 #define ECSql_CachedObjectInfoRelationshipClass                     "[DSC].[CachedObjectInfoRelationship]"
 #define ECSql_CachedResponseInfoClass                               "[DSC].[CachedResponseInfo]"
+#define ECSql_CachedResponsePageInfoClass                           "[DSC].[CachedResponsePageInfo]"
 #define ECSql_CachedRelationshipInfoClass                           "[DSC].[CachedRelationshipInfo]"
 #define ECSql_CachedFileInfoClass                                   "[DSC].[CachedFileInfo]"
 #define ECSql_CachedFileInfoRelationshipClass                       "[DSC].[CachedFileInfoRelationship]"
@@ -99,9 +105,10 @@ enum class CachedInstanceState
 #define ECSql_NavigationBaseClass                                   "[DSC].[NavigationBase]"
 #define ECSql_InstanceBackup                                        "[DSC].[InstanceBackup]"
 #define ECSql_ChangeInfoToInstanceBackup                            "[DSC].[ChangeInfoToInstanceBackup]"
-
-#define ECSql_CachedResponseInfoToResultRelationshipClass           "[DSC].[CachedResponseInfoToResultRelationship]"
-#define ECSql_CachedResponseInfoToResultWeakRelationshipClass       "[DSC].[CachedResponseInfoToResultWeakRelationship]"
+#define ECSql_ResponseToParentClass                                 "[DSC].[CachedResponseInfoToParentRelationship]"
+#define ECSql_ResponseToResponsePageClass                           "[DSC].[ResponseToResponsePage]"
+#define ECSql_ResponsePageToResultClass                             "[DSC].[ResponsePageToResult]"
+#define ECSql_ResponsePageToResultWeakClass                         "[DSC].[ResponsePageToResultWeak]"
 
 #define SCHEMA_CacheLegacySupportSchema                             "DSCacheLegacySupportSchema"
 #define SCHEMA_CacheLegacySupportSchema_LegacyParentRelationship    "LegacyParentRelationship"

@@ -385,7 +385,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
                     WSQuery query(*newInstanceClass, true);
                     query.SetFilter("$id+eq+'" + newObjectId.remoteId + "'");
 
-                    m_ds->GetClient()->SendQueryRequest(query, nullptr, GetCancellationToken())
+                    m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetCancellationToken())
                         ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
                         {
                         if (!result.IsSuccess())

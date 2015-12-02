@@ -46,36 +46,55 @@ void DataSourceCacheUpgradeTests::SetUp()
     EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CloneDirectory(assetsSeedPath, targetSeedPath, true));
     }
 
-BeFileName GetSeedDir(int version, Utf8StringCR subdir)
+BeFileName GetSeedDir(int version, Utf8StringCR subdir, BeFileName basedir)
     {
     BeFileName path =
-        GetTestsTempDir()
+        basedir
         .AppendToPath(L"DataSourceCacheUpgradeTests")
         .AppendToPath(L"UpgradeSeeds")
         .AppendToPath(WPrintfString(L"%d", version))
         .AppendToPath(BeFileName(subdir));
 
-    if (!path.DoesPathExist())
-        {
-        EXPECT_TRUE(path.DoesPathExist());
-        }
     return path;
     }
 
-bpair<BeFileName, CacheEnvironment> GetSeedPaths(int version, Utf8StringCR subdir)
+bpair<BeFileName, CacheEnvironment> GetSeedPaths(int version, Utf8StringCR subdir, BeFileName basedir)
     {
     BeFileName path =
-        GetSeedDir(version, subdir)
+        GetSeedDir(version, subdir, basedir)
         .AppendToPath(L"cache.ecdb");
 
-    EXPECT_TRUE(path.DoesPathExist());
 
-    BeFileName persistent = GetSeedDir(version, subdir).AppendToPath(L"persistent");
-    BeFileName temporary = GetSeedDir(version, subdir).AppendToPath(L"temporary");
+    BeFileName persistent = GetSeedDir(version, subdir, basedir).AppendToPath(L"persistent");
+    BeFileName temporary = GetSeedDir(version, subdir, basedir).AppendToPath(L"temporary");
 
     CacheEnvironment environment(persistent, temporary);
 
     return {path, environment};
+    }
+
+bpair<BeFileName, CacheEnvironment> GetSeedPaths(int version, Utf8StringCR subdir)
+    {
+    auto paths = GetSeedPaths(version, subdir, GetTestsTempDir());
+
+    if (!paths.first.DoesPathExist())
+        {
+        EXPECT_TRUE(false);
+        }
+
+    return paths;
+    }
+
+bpair<BeFileName, CacheEnvironment> GetNewSeedPaths(int version, Utf8StringCR subdir, BeFileName basedir = BeFileName(LR"(C:\temp-wsclient\)"))
+    {
+    BeFileName::EmptyAndRemoveDirectory(basedir);
+    return GetSeedPaths(version, subdir, basedir);
+    }
+
+BeFileName GetSeedFilePath(BeFileName cachePath, Utf8StringCR fileName)
+    {
+    BeFileName path = cachePath.GetDirectoryName();
+    return path.AppendToPath(BeFileName(fileName));
     }
 
 TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success)
@@ -505,6 +524,150 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalD
     EXPECT_FALSE(cache.GetChangeManager().HasChanges());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache.GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache.GetChangeManager().GetRelationshipChange(relationship).GetChangeStatus());
+    }
+
+//// Left for referance
+//TEST_F(DataSourceCacheUpgradeTests, DISABLED_SetupV9)
+//    {
+//    DataSourceCache cache;
+//    auto paths = GetNewSeedPaths(9, "data");
+//    ASSERT_EQ(SUCCESS, cache.Create(paths.first, paths.second));
+//    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+//
+//    // Setup test data
+//    StubInstances instances;
+//    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+//    CachedResponseKey key1(cache.FindOrCreateRoot(nullptr), "ResponseA");
+//    ASSERT_EQ(SUCCESS, cache.CacheResponse(key1, instances.ToWSObjectsResponse("ETagA")));
+//    SimpleWriteToFile(cache.ReadResponseCachedDate(key1).ToUtf8String(), GetNewFilePath(paths.first, "CacheDateResponseA"));
+//
+//    instances.Clear();
+//    instances.Add({"TestSchema.TestClass", "C"});
+//    CachedResponseKey key2(cache.FindOrCreateRoot("Parent"), "ResponseB", cache.FindOrCreateRoot("Holder"));
+//    ASSERT_EQ(SUCCESS, cache.CacheResponse(key2, instances.ToWSObjectsResponse()));
+//
+//    // Save
+//    cache.GetECDb().SaveChanges();
+//    cache.Close();
+//    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(9, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    CachedResponseKey key1(cache.FindOrCreateRoot(nullptr), "ResponseA");
+    CachedResponseKey key2(cache.FindOrCreateRoot("Parent"), "ResponseB", cache.FindOrCreateRoot("Holder"));
+
+    // Check if cached
+    EXPECT_TRUE(cache.IsResponseCached(key1));
+    EXPECT_TRUE(cache.IsResponseCached(key2));
+
+    // Check tags
+    EXPECT_EQ("ETagA", cache.ReadResponseCacheTag(key1));
+    EXPECT_EQ("", cache.ReadResponseCacheTag(key2));
+
+    // Check date
+    Utf8String dateStr = SimpleReadFile(GetSeedFilePath(paths.first, "CacheDateResponseA"));
+    EXPECT_FALSE(dateStr.empty());
+    DateTime cachedDate;
+    DateTime::FromString(cachedDate, dateStr.c_str());
+    EXPECT_EQ(cachedDate, cache.ReadResponseCachedDate(key1));
+
+    // Check data
+    ECInstanceKeyMultiMap keys1, keys2;
+    EXPECT_EQ(CacheStatus::OK, cache.ReadResponseInstanceKeys(key1, keys1));
+    EXPECT_EQ(CacheStatus::OK, cache.ReadResponseInstanceKeys(key2, keys2));
+
+    EXPECT_EQ(2, keys1.size());
+    EXPECT_EQ(1, keys2.size());
+
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache.FindInstance({"TestSchema.TestClass", "A"}), keys1));
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache.FindInstance({"TestSchema.TestClass", "B"}), keys1));
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache.FindInstance({"TestSchema.TestClass", "C"}), keys2));
+
+    auto relClass = cache.GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
+    auto relationship = cache.FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"});
+    EXPECT_EQ(ObjectId("TestSchema.TestRelationshipClass", "AB"), cache.FindRelationship(relationship));
+
+    // Deprecated data is removed
+    EXPECT_EQ(0, CountClassInstances(cache, "DSCacheSchema.CachedResponseInfoToCachedRelationshipInfo"));
+    EXPECT_EQ(0, CountClassInstances(cache, "DSCacheSchema.CachedResponseInfoToResultRelationship"));
+    EXPECT_EQ(0, CountClassInstances(cache, "DSCacheSchema.CachedResponseInfoToResultWeakRelationship"));
+    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(9, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    CachedResponseKey key1(cache.FindOrCreateRoot(nullptr), "ResponseA");
+    CachedResponseKey key2(cache.FindOrCreateRoot("Parent"), "ResponseB", cache.FindOrCreateRoot("Holder"));
+
+    // Check if cached
+    ASSERT_EQ(SUCCESS, cache.RemoveResponse(key1));
+    ASSERT_EQ(SUCCESS, cache.RemoveResponse(key2));
+
+    // Check tags
+    EXPECT_EQ("", cache.ReadResponseCacheTag(key1));
+    EXPECT_EQ("", cache.ReadResponseCacheTag(key2));
+
+    // Check date
+    EXPECT_FALSE(cache.ReadResponseCachedDate(key1).IsValid());
+    EXPECT_FALSE(cache.ReadResponseCachedDate(key2).IsValid());
+
+    // Check data
+    ECInstanceKeyMultiMap keys;
+    EXPECT_EQ(CacheStatus::DataNotCached, cache.ReadResponseInstanceKeys(key1, keys));
+    EXPECT_EQ(0, keys.size());
+    EXPECT_EQ(CacheStatus::DataNotCached, cache.ReadResponseInstanceKeys(key2, keys));
+    EXPECT_EQ(0, keys.size());
+
+    auto relClass = cache.GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
+    EXPECT_FALSE(cache.FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache.FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_FALSE(cache.FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    EXPECT_FALSE(cache.FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(9, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    CachedResponseKey key1(cache.FindOrCreateRoot(nullptr), "ResponseA");
+
+    // Check if caches
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache.CacheResponse(key1, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    EXPECT_FALSE(cache.IsResponseCached(key1));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache.CacheResponse(key1, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    EXPECT_FALSE(cache.IsResponseCached(key1));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "D"});
+    ASSERT_EQ(SUCCESS, cache.CacheResponse(key1, instances.ToWSObjectsResponse("", ""), nullptr, nullptr, 2));
+    EXPECT_TRUE(cache.IsResponseCached(key1));
+
+    auto relClass = cache.GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
+    EXPECT_TRUE(cache.FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_TRUE(cache.FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_TRUE(cache.FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    EXPECT_TRUE(cache.FindInstance({"TestSchema.TestClass", "D"}).IsValid());
+    EXPECT_TRUE(cache.FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}).IsValid());
     }
 
 #endif

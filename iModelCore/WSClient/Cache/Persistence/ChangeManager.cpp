@@ -813,7 +813,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         // This usually happens when creating new version of object and referances to latest version need to be preserved.
         // Old instance is invalidated as it is replaced by new one.
 
-        if (SUCCESS != m_responseManager->InvalidateResponsesContainingInstance(oldVersionInstance) ||
+        if (SUCCESS != m_responseManager->InvalidateResponsePagesContainingInstance(oldVersionInstance) ||
             SUCCESS != m_rootManager->CopyRootRelationships(oldVersionInstance, info.GetCachedInstanceKey()) ||
             SUCCESS != m_hierarchyManager->DeleteInstance(oldVersionInstance))
             {
@@ -965,7 +965,7 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
     ECInstanceKey oldInstanceKey = oldInfo.GetCachedInstanceKey();
     ECInstanceKey newInstanceKey = newInfo.GetCachedInstanceKey();
 
-    if (SUCCESS != m_responseManager->InvalidateResponsesContainingInstance(oldInstanceKey))
+    if (SUCCESS != m_responseManager->InvalidateResponsePagesContainingInstance(oldInstanceKey))
         {
         return ERROR;
         }

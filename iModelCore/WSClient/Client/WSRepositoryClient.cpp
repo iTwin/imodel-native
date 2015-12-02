@@ -10,6 +10,8 @@
 
 using namespace std::placeholders;
 
+const Utf8String IWSRepositoryClient::InitialSkipToken = "0";
+
 const uint32_t WSRepositoryClient::Timeout::Connection::Default = 30;
 
 const uint32_t WSRepositoryClient::Timeout::Transfer::GetObject = 30;
@@ -196,12 +198,13 @@ AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendQueryRequest
 (
 WSQueryCR query,
 Utf8StringCR eTag,
+Utf8StringCR skipToken,
 ICancellationTokenPtr cancellationToken
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendQueryRequest(query, eTag, cancellationToken);
+        return webApi->SendQueryRequest(query, eTag, skipToken, cancellationToken);
         }, cancellationToken);
     }
 

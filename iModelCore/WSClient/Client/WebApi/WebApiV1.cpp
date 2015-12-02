@@ -285,7 +285,7 @@ WSObjectsResult WebApiV1::ResolveObjectsResponse(HttpResponse& response, Utf8Str
     auto body = response.GetContent()->GetBody();
     auto eTag = response.GetHeaders().GetETag();
 
-    return WSObjectsResult::Success(WSObjectsResponse(reader, body, response.GetHttpStatus(), eTag));
+    return WSObjectsResult::Success(WSObjectsResponse(reader, body, response.GetHttpStatus(), eTag, nullptr));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -863,6 +863,7 @@ AsyncTaskPtr<WSObjectsResult> WebApiV1::SendQueryRequest
 (
 WSQueryCR query,
 Utf8StringCR eTag,
+Utf8StringCR skipToken,
 ICancellationTokenPtr cancellationToken
 ) const
     {

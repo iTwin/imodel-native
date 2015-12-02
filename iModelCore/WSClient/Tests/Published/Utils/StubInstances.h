@@ -41,9 +41,9 @@ struct StubInstances
             Utf8StringCR eTag = ""
             );
         //! Create server objects result to be used in caching
-        WSObjectsResponse ToWSObjectsResponse(Utf8StringCR eTag = "") const;
+        WSObjectsResponse ToWSObjectsResponse(Utf8StringCR eTag = "", Utf8StringCR skipToken = "") const;
         //! Create success WSObjectsResult
-        WSObjectsResult ToWSObjectsResult(Utf8StringCR eTag = "") const;
+        WSObjectsResult ToWSObjectsResult(Utf8StringCR eTag = "", Utf8StringCR skipToken = "") const;
         //! Create success WSChangesetResult
         WSChangesetResult ToWSChangesetResult() const;
         //! Create WSG 1.3 server response body JSON string

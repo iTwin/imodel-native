@@ -50,14 +50,8 @@ struct CachedResponseInfo
         bool IsCached() const;
         Utf8CP GetName() const;
 
-        DateTime GetCacheDate() const;
-        void SetCacheDate(DateTimeCR utcDate);
-
         DateTime GetAccessDate() const;
         void SetAccessDate(DateTimeCR utcDate);
-
-        Utf8CP GetCacheTag() const;
-        void SetCacheTag(Utf8StringCR tag);
     };
 
 typedef const CachedResponseInfo& CachedResponseInfoCR;

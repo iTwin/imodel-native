@@ -23,7 +23,8 @@ WSObjectsResponse RawWSObjectsReader::CreateWSObjectsResponse(const bvector<RawI
         std::shared_ptr<RawWSObjectsReader>(new RawWSObjectsReader(instances)),
         HttpStringBody::Create("{}"),
         HttpStatus::OK,
-        eTag
+        eTag,
+        nullptr
         );
     }
 

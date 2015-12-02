@@ -13,32 +13,30 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-using std::shared_ptr;
-
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassKey_ReturnsClass)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECClassCP ecClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     EXPECT_EQ(L"TestClass", ecClass->GetName());
     }
 
 TEST_F(ECDbAdapterTests, GetECClass_InValidClassKey_ReturnsNullptr)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECClassCP ecClass = cache->GetAdapter().GetECClass("NotClassKey");
     EXPECT_EQ(nullptr, ecClass);
     }
 
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassKeyWithNotExistingClass_ReturnsNullptr)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECClassCP ecClass = cache->GetAdapter().GetECClass("TestSchema.NotExistingClass");
     EXPECT_EQ(nullptr, ecClass);
     }
 
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassId_ReturnsClass)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECClassId ecClassId = cache->GetAdapter().GetECClass("TestSchema", "TestClass")->GetId();
 
     ECClassCP ecClass = cache->GetAdapter().GetECClass(ecClassId);
@@ -48,20 +46,20 @@ TEST_F(ECDbAdapterTests, GetECClass_ValidClassId_ReturnsClass)
 
 TEST_F(ECDbAdapterTests, GetECClass_InValidClassId_ReturnsNull)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     ECClassCP ecClass = cache->GetAdapter().GetECClass(9999);
     EXPECT_EQ(nullptr, ecClass);
     }
 
 TEST_F(ECDbAdapterTests, GetECClasses_EmptyMap_EmptyResult)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
     EXPECT_TRUE(cache->GetAdapter().GetECClasses(ECInstanceKeyMultiMap()).empty());
     }
 
 TEST_F(ECDbAdapterTests, GetECClasses_MapWithTwoSameClassInstances_ReturnsOneClass)
     {
-    shared_ptr<DataSourceCache> cache = GetTestCache();
+    auto cache = GetTestCache();
 
     ECClassCP ecClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
 
