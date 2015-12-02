@@ -601,7 +601,7 @@ BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeG
     {
     ChangeStreamFileWriter writer(pathname);
     DbResult result = writer.FromChangeGroup(changeGroup);
-    if (BE_SQLITE_OK != result || !pathname.DoesPathExist())
+    if (BE_SQLITE_OK != result /* || !pathname.DoesPathExist() */)
         {
         BeAssert("Could not write revision to a file");
         return ERROR;
@@ -623,9 +623,9 @@ bool RevisionManager::CanCreateRevision() const
     if (IsCreatingRevision())
         return false;
 
-    TxnManager::TxnId firstTxn = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
-    if (!firstTxn.IsValid())
-        return false;
+    //TxnManager::TxnId firstTxn = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
+    //if (!firstTxn.IsValid())
+    //    return false;
 
     return true;
     }
