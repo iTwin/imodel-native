@@ -1549,6 +1549,7 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
             { "updateelement", UpdateElement },
             { "deleteelement", DeleteElement },
             { "clone", Clone },
+            { "setcode", SetCode },
         };
 
     for (auto const& pair : s_pairs)
@@ -1556,5 +1557,19 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
             return pair.value;
 
     return T_Super::Parse(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_SetCode(Code const& code)
+    {
+    if (!DgnModels::IsValidName(m_code.GetValue()))
+        return DgnDbStatus::InvalidName;
+    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::SetCode))
+        return DgnDbStatus::MissingHandler;
+
+    m_code = code;
+    return DgnDbStatus::Success;
     }
 
