@@ -87,8 +87,15 @@ TEST_F(VolumeElementTestFixture, CrudTest)
     DPoint3d origin = {0.0, 0.0, 0.0};
     DPoint2d shapePointsArr[5] = {{0.0, 0.0}, {100.0, 0.0}, {100.0, 100.0}, {0.0, 100.0}, {0.0, 0.0}};
     double height = 100.0;
-    VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, "CrudTestVolume");
+    Utf8CP name = "CrudTestVolume";
+    VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, name);
     ASSERT_TRUE(volume.IsValid());
+
+    DgnElementIdSet volIdSet = VolumeElement::QueryVolumes(*m_testDb);
+    ASSERT_EQ(1, (int) volIdSet.size());
+
+    DgnElementId volId = VolumeElement::QueryVolumeByLabel(*m_testDb, name);
+    ASSERT_EQ(volume->GetElementId(), volId);
 
     bvector<DPoint3d> actualShape;
     DVec3d actualDirection;

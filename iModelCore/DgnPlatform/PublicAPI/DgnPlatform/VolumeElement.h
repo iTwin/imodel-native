@@ -107,11 +107,18 @@ public:
     //! Updates the volume in the Db
     DGNPLATFORM_EXPORT VolumeElementCPtr Update();
 
-    //! Get a read only copy of the VolumeElement from the DgnDb
+    //! Get a read only copy of the volume from the DgnDb
     DGNPLATFORM_EXPORT static VolumeElementCPtr Get(DgnDbCR dgndb, Dgn::DgnElementId elementId);
     
-    //! Get an editable copy of the VolumeElement from the DgnDb
+    //! Get an editable copy of the volume from the DgnDb
     DGNPLATFORM_EXPORT static VolumeElementPtr GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elementId);
+
+    //! Query all volumes in the DgnDb
+    DGNPLATFORM_EXPORT static DgnElementIdSet QueryVolumes(DgnDbCR db);
+
+    //! Query volume by label
+    //! @remarks If there are multiple volumes with the same label, returns the first one found.
+    DGNPLATFORM_EXPORT static DgnElementId QueryVolumeByLabel(DgnDbCR db, Utf8CP label);
 
     /*
      * Setup views with the Volume

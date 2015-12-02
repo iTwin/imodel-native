@@ -116,6 +116,40 @@ VolumeElementCPtr VolumeElement::Update()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
+// static
+DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
+    {
+    DgnElementIdSet ids;
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement));
+    if (stmt.IsValid())
+        {
+        while (BE_SQLITE_ROW == stmt->Step())
+            ids.insert(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    return ids;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
+// static
+DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
+    {
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement) " WHERE Label=? LIMIT 1"); // find first if label not unique
+
+    if (label)
+        stmt->BindText(1, label, IECSqlBinder::MakeCopy::No);
+    else
+        stmt->BindNull(1);
+
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnElementId() : stmt->GetValueId<DgnElementId>(0);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Ramanujam.Raman                   11/15
+//+---------------+---------------+---------------+---------------+---------------+-----
 BentleyStatus VolumeElement::ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const
     {
     ElementGeometryCollection geomCollection(*this);
