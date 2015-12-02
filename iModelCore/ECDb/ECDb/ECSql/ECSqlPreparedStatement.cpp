@@ -437,7 +437,7 @@ DbResult ECSqlUpdatePreparedStatement::Step()
             if (auto baseStmt = GetBaseECSqlStatement())
                 {
                 auto baseStatus = baseStmt->Step();
-                BeAssert(baseStatus == status && "base and child status must return same status");
+                //BeAssert(baseStatus == status && "base and child status must return same status");
                 if (baseStatus == status)
                     return baseStatus;
                 }
