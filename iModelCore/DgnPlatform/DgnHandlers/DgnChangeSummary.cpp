@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/DgnChangeSummary.h>
+#include    <DgnPlatform/LocksManager.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -185,7 +186,7 @@ template<typename T> static AuthorityIssuedCode getOriginalCode(T const& entry, 
 
     auto instance = entry.GetImpl().GetInstance();
     DbDupValue oldAuthId = instance.GetOldValue("Code.AuthorityId"),
-               oldNamespace = instance.GetOldValue("Code.NameSpace"),
+               oldNamespace = instance.GetOldValue("Code.Namespace"),
                oldValue = instance.GetOldValue("Code.Value");
 
     if (DbOpcode::Delete == op)
@@ -344,6 +345,71 @@ void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementId
     FindUpdatedInstanceIds(updatedGeomParts, "dgn", "GeomPart");
     ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, updatedGeomParts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void insertCode(AuthorityIssuedCodeSet& into, AuthorityIssuedCode const& code, AuthorityIssuedCodeSet& ifNotIn)
+    {
+    if (code.IsEmpty() || !code.IsValid())
+        return;
+
+    // At most, we can expect one discard and one assign per unique code.
+    BeAssert(into.end() == into.find(code));
+
+    auto existing = ifNotIn.find(code);
+    if (ifNotIn.end() != existing)
+        {
+        // Code was discarded by one and assigned to another within the same changeset...so no net change
+        ifNotIn.erase(existing);
+        return;
+        }
+
+    into.insert(code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void collectCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssuedCodeSet& discarded, T& collection)
+    {
+    for (auto const& entry : collection)
+        {
+        if (entry.IsIndirectChange())
+            continue;
+
+        auto oldCode = entry.GetOriginalCode(),
+             newCode = entry.GetCurrentCode();
+
+        if (oldCode == newCode)
+            continue;
+
+        insertCode(discarded, oldCode, assigned);
+        insertCode(assigned, newCode, discarded);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnChangeSummary::GetCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssuedCodeSet& discarded) const
+    {
+    assigned.clear();
+    discarded.clear();
+
+    auto elems = MakeElementIterator();
+    collectCodes(assigned, discarded, elems);
+    auto models = MakeModelIterator();
+    collectCodes(assigned, discarded, models);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnChangeSummary::GetLocks(LockRequestR locks) const
+    {
+    locks.FromChangeSummary(*this);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

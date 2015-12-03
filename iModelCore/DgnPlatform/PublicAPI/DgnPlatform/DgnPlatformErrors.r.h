@@ -128,6 +128,7 @@ enum class LockStatus : int
     PendingTransactions, //!< An operation requires local changes to be committed or abandoned
     LockUsed, //!< A lock cannot be relinquished because the associated object has been modified
     CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
+    InvalidRequest, //!< Request to server not understood
 };
 
 //! Status codes for the Revision API

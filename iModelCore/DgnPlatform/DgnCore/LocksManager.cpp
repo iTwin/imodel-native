@@ -188,6 +188,17 @@ DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db, bool stop
     if (SUCCESS != summary.FromChangeSet(changes))
         return DgnDbStatus::BadArg;
 
+    FromChangeSummary(summary);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::FromChangeSummary(DgnChangeSummary const& summary, bool stopOnFirst)
+    {
+    Clear();
+
     for (auto const& entry : summary.MakeElementIterator())
         {
         if (entry.IsIndirectChange())
@@ -213,11 +224,11 @@ DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db, bool stop
         InsertLock(LockableId(modelId), LockLevel::Shared);
         InsertLock(LockableId(entry.GetElementId()), LockLevel::Exclusive);
         if (stopOnFirst && !IsEmpty())
-            return DgnDbStatus::Success;
+            return;
         }
 
     // Any models directly changed?
-    ECClassId classId = db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
+    ECClassId classId = summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
     DgnChangeSummary::InstanceIterator::Options options(classId);
     for (auto const& entry : summary.MakeInstanceIterator(options))
         {
@@ -225,15 +236,13 @@ DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db, bool stop
             {
             InsertLock(LockableId(LockableType::Model, entry.GetInstanceId()), LockLevel::Exclusive);
             if (stopOnFirst && !IsEmpty())
-                return DgnDbStatus::Success;
+                return;
             }
         }
 
     // Anything changed at all?
     if (!IsEmpty())
-        Insert(db, LockLevel::Shared);
-
-    return DgnDbStatus::Success;
+        Insert(summary.GetDgnDb(), LockLevel::Shared);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,7 +321,13 @@ struct UnrestrictedLocksManager : ILocksManager
 private:
     UnrestrictedLocksManager(DgnDbR db) : ILocksManager(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestR, bool) override { return true; }
+    virtual bool _QueryLocksHeld(LockRequestR, bool, LockStatus* status) override
+        {
+        if (nullptr != status)
+            *status = LockStatus::Success;
+
+        return true;
+        }
     virtual LockRequest::Response _AcquireLocks(LockRequestR) override { return LockRequest::Response(LockStatus::Success); }
     virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
     virtual LockStatus _ReleaseLocks(DgnLockSet& locks) override { return LockStatus::Success; }
@@ -356,7 +371,7 @@ private:
 
     BeBriefcaseId GetId() const { return GetDgnDb().GetBriefcaseId(); }
 
-    virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly) override;
+    virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly, LockStatus* status) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) override { return AcquireLocks(locks, true); }
     virtual LockStatus _RelinquishLocks() override;
     virtual LockStatus _ReleaseLocks(DgnLockSet& locks) override;
@@ -720,6 +735,8 @@ LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db)
         return;
         }
 
+    // ###TODO: If IsCreatingRevision(), use RevisionManager::m_currentRevision
+    // (Expect more often than not this function will be invoked while pushing a revision and relinquishing locks...)
     DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
     if (rev.IsValid())
         {
@@ -919,17 +936,34 @@ LockStatus LocalLocksManager::PromoteDependentElements(LockRequestCR usedLocks, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly)
+bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly, LockStatus* outStatus)
     {
+    LockStatus localStatus;
+    LockStatus& status = nullptr != outStatus ? *outStatus : localStatus;
+
     if (!Validate())
+        {
+        status = LockStatus::SyncError;
         return false;
+        }
 
     Cull(locks);
     if (localOnly || locks.IsEmpty())
+        {
+        status = LockStatus::Success;
         return locks.IsEmpty();
+        }
 
     auto server = GetLocksServer();
-    return nullptr != server && server->QueryLocksHeld(locks, GetDgnDb());
+    if (nullptr == server)
+        {
+        status = LockStatus::ServerUnavailable;
+        return false;
+        }
+
+    bool held = false;
+    status = server->QueryLocksHeld(held, locks, GetDgnDb());
+    return held;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1002,7 +1036,7 @@ ILocksServerP ILocksManager::GetLocksServer() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool idFromJson(BeInt64Id& id, JsonValueCR value)
+bool DgnLocksJson::BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value)
     {
     if (value.isNull())
         return false;
@@ -1012,9 +1046,17 @@ static bool idFromJson(BeInt64Id& id, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::BeInt64IdToJson(JsonValueR value, BeInt64Id id)
+    {
+    value = id.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool briefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
+bool DgnLocksJson::BriefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
     {
     if (!value.isConvertibleTo(Json::uintValue))
         return false;
@@ -1024,9 +1066,17 @@ static bool briefcaseIdFromJson(BeBriefcaseId& bcId, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::BriefcaseIdToJson(JsonValueR value, BeBriefcaseId id)
+    {
+    value = id.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockLevelFromJson(LockLevel& level, JsonValueCR value)
+bool DgnLocksJson::LockLevelFromJson(LockLevel& level, JsonValueCR value)
     {
     if (value.isConvertibleTo(Json::uintValue))
         {
@@ -1044,9 +1094,17 @@ static bool lockLevelFromJson(LockLevel& level, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::LockLevelToJson(JsonValueR value, LockLevel level)
+    {
+    value = static_cast<uint32_t>(level);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockTypeFromJson(LockableType& type, JsonValueCR value)
+bool DgnLocksJson::LockableTypeFromJson(LockableType& type, JsonValueCR value)
     {
     if (value.isConvertibleTo(Json::uintValue))
         {
@@ -1064,9 +1122,17 @@ static bool lockTypeFromJson(LockableType& type, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::LockableTypeToJson(JsonValueR value, LockableType type)
+    {
+    value = static_cast<uint32_t>(type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool lockStatusFromJson(LockStatus& status, JsonValueCR value)
+bool DgnLocksJson::LockStatusFromJson(LockStatus& status, JsonValueCR value)
     {
     if (!value.isConvertibleTo(Json::uintValue))
         return false;
@@ -1076,12 +1142,20 @@ static bool lockStatusFromJson(LockStatus& status, JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnLocksJson::LockStatusToJson(JsonValueR value, LockStatus status)
+    {
+    value = static_cast<uint32_t>(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LockableId::ToJson(JsonValueR value) const
     {
-    value[JSON_Id] = m_id.GetValue();
-    value[JSON_LockType] = static_cast<uint32_t>(m_type);
+    DgnLocksJson::BeInt64IdToJson(value[JSON_Id], m_id);
+    DgnLocksJson::LockableTypeToJson(value[JSON_LockType], m_type);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1089,7 +1163,7 @@ void LockableId::ToJson(JsonValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LockableId::FromJson(JsonValueCR value)
     {
-    if (!idFromJson(m_id, value[JSON_Id]) || !lockTypeFromJson(m_type, value[JSON_LockType]))
+    if (!DgnLocksJson::BeInt64IdFromJson(m_id, value[JSON_Id]) || !DgnLocksJson::LockableTypeFromJson(m_type, value[JSON_LockType]))
         {
         Invalidate();
         return false;
@@ -1104,7 +1178,7 @@ bool LockableId::FromJson(JsonValueCR value)
 void DgnLock::ToJson(JsonValueR value) const
     {
     m_id.ToJson(value[JSON_LockableId]);
-    value[JSON_LockLevel] = static_cast<uint32_t>(m_level);
+    DgnLocksJson::LockLevelToJson(value[JSON_LockLevel], m_level);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1112,7 +1186,7 @@ void DgnLock::ToJson(JsonValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnLock::FromJson(JsonValueCR value)
     {
-    if (!m_id.FromJson(value[JSON_LockableId]) || !lockLevelFromJson(m_level, value[JSON_LockLevel]))
+    if (!m_id.FromJson(value[JSON_LockableId]) || !DgnLocksJson::LockLevelFromJson(m_level, value[JSON_LockLevel]))
         {
         Invalidate();
         return false;
@@ -1127,7 +1201,7 @@ bool DgnLock::FromJson(JsonValueCR value)
 void DgnLockOwnership::ToJson(JsonValueR value) const
     {
     auto level = GetLockLevel();
-    value[JSON_LockLevel] = static_cast<uint32_t>(level);
+    DgnLocksJson::LockLevelToJson(value[JSON_LockLevel], level);
     switch (level)
         {
         case LockLevel::Exclusive:
@@ -1156,7 +1230,7 @@ bool DgnLockOwnership::FromJson(JsonValueCR value)
     {
     Reset();
     LockLevel level;
-    if (!lockLevelFromJson(level, value[JSON_LockLevel]))
+    if (!DgnLocksJson::LockLevelFromJson(level, value[JSON_LockLevel]))
         return false;
 
     switch (level)
@@ -1164,7 +1238,7 @@ bool DgnLockOwnership::FromJson(JsonValueCR value)
         case LockLevel::None:
             return true;
         case LockLevel::Exclusive:
-            return briefcaseIdFromJson(m_exclusiveOwner, value[JSON_ExclusiveOwner]);
+            return DgnLocksJson::BriefcaseIdFromJson(m_exclusiveOwner, value[JSON_ExclusiveOwner]);
         case LockLevel::Shared:
             {
             JsonValueCR owners = value[JSON_SharedOwners];
@@ -1175,7 +1249,7 @@ bool DgnLockOwnership::FromJson(JsonValueCR value)
             uint32_t nOwners = owners.size();
             for (uint32_t i = 0; i < nOwners; i++)
                 {
-                if (!briefcaseIdFromJson(owner, value[i]))
+                if (!DgnLocksJson::BriefcaseIdFromJson(owner, value[i]))
                     {
                     Reset();
                     return false;
@@ -1259,7 +1333,7 @@ bool LockRequest::Response::FromJson(JsonValueCR value)
     {
     m_denied.clear();
     JsonValueCR locks = value[JSON_DeniedLocks];
-    if (!locks.isArray() || !lockStatusFromJson(m_status, value[JSON_Status]))
+    if (!locks.isArray() || !DgnLocksJson::LockStatusFromJson(m_status, value[JSON_Status]))
         {
         Invalidate();
         return false;
