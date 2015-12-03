@@ -1944,13 +1944,15 @@ public:
 //! Interface implemented by class that provides schema location services.
 //! @bsiclass
 //=======================================================================================
-struct IECSchemaLocater
+struct EXPORT_VTABLE_ATTRIBUTE IECSchemaLocater
 {
 protected:
     //! Tries to locate the requested schema.
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) = 0;
 
 public:
+    virtual ~IECSchemaLocater() {}
+
     //! Tries to locate the requested schema.
     //! @param[in] key  The SchemaKey fully describing the schema to locate
     //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
@@ -2476,23 +2478,14 @@ public:
 //*=================================================================================**//**
 //* @bsistruct                                                  Ramanujam.Raman   12/12
 //+===============+===============+===============+===============+===============+======*/
-struct IECClassLocater /*: RefCountedBase*/
+struct EXPORT_VTABLE_ATTRIBUTE IECClassLocater
     {
     protected:
         ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) = 0;
     public:
-        ECClassCP LocateClass (Utf8CP schemaName, Utf8CP className)
-            {
-            return _LocateClass (schemaName, className);
-            }
+        virtual ~IECClassLocater() {}
 
-        //private:
-        //    static IECClassLocaterPtr s_registeredClassLocater;
-        //public:
-        //    // TODO: This needs to migrate to the ECSchema implementation
-        //    static ECOBJECTS_EXPORT void RegisterClassLocater (IECClassLocaterR classLocater);
-        //    static ECOBJECTS_EXPORT void UnRegisterClassLocater ();
-        //    static IECClassLocaterP GetRegisteredClassLocater();
+        ECClassCP LocateClass (Utf8CP schemaName, Utf8CP className) { return _LocateClass (schemaName, className); }
     };
 
 typedef IECClassLocater& IECClassLocaterR;
