@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Physical; struct Drawing; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Physical; struct Annotation; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
@@ -962,7 +962,7 @@ protected:
 
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
-    virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
+    virtual AnnotationElementCP _ToAnnotationElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual SystemElementCP _ToSystemElement() const {return nullptr;}
@@ -996,7 +996,7 @@ public:
 
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();} //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
-    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
+    AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}       //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}          //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     SystemElementCP ToSystemElement() const {return _ToSystemElement();}          //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
     
@@ -1006,7 +1006,7 @@ public:
 
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
-    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
+    AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}         //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
     SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}             //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
     //! @}
 
@@ -1463,15 +1463,15 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement, GeometrySource2d
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : DgnElement, GeometrySource2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement)
-    friend struct dgn_ElementHandler::Drawing;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, DgnElement)
+    friend struct dgn_ElementHandler::Annotation;
 
 public:
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DrawingElement::T_Super::CreateParams);
+    DEFINE_T_SUPER(AnnotationElement::T_Super::CreateParams);
 
     DgnCategoryId m_categoryId;
     Placement2dCR m_placement;
@@ -1492,7 +1492,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
+    virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
 
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
@@ -1512,13 +1512,13 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
-    explicit DrawingElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
+    explicit AnnotationElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
 
 public:
-    //! Create a DrawingElement from CreateParams.
-    static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+    //! Create a AnnotationElement from CreateParams.
+    static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
 
-}; // DrawingElement
+}; // AnnotationElement
 
 //=======================================================================================
 //! A DgnElement3d that exists in the physical coordinate space of a DgnDb.

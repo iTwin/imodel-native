@@ -404,8 +404,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>PhysicalElement</BaseClass>
     </ECClass>
-    <ECClass typeName="DrawingElement" isDomainClass="True">
-        <!-- 2D element used in drawings -->
+    <ECClass typeName="AnnotationElement" isDomainClass="True">
+        <!-- 2D element used to annotate drawings and sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
@@ -424,7 +424,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>DrawingElement</BaseClass>
+        <BaseClass>AnnotationElement</BaseClass>
     </ECClass>
     <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
         <ECCustomAttributes>
@@ -434,11 +434,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="AnnotationTableElement" isDomainClass="True">
-        <!-- An AnnotationTableElement is a drawing element that displays a grid containing text and or graphics -->
+        <!-- An AnnotationTableElement is an annotation element that displays a grid containing text and or graphics -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>DrawingElement</BaseClass>
+        <BaseClass>AnnotationElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="AnnotationTableHeader" isDomainClass="True">

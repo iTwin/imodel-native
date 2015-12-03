@@ -27,7 +27,7 @@
 #endif
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
-#define DGN_CLASSNAME_DrawingElement        "DrawingElement"
+#define DGN_CLASSNAME_AnnotationElement     "AnnotationElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"

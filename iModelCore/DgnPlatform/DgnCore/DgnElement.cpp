@@ -981,7 +981,7 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingElement::_LoadFromDb()
+DgnDbStatus AnnotationElement::_LoadFromDb()
     {
     DgnDbStatus stat = T_Super::_LoadFromDb();
     if (DgnDbStatus::Success != stat)
@@ -1020,7 +1020,7 @@ DgnDbStatus DrawingElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingElement::_OnInsert()
+DgnDbStatus AnnotationElement::_OnInsert()
     {
     if (!m_categoryId.IsValid())
         return DgnDbStatus::InvalidCategory;
@@ -1033,7 +1033,7 @@ DgnDbStatus DrawingElement::_OnInsert()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DrawingElement::_InsertInDb()
+DgnDbStatus AnnotationElement::_InsertInDb()
     {
     DgnDbStatus stat;
 
@@ -1046,7 +1046,7 @@ DgnDbStatus DrawingElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingElement::_OnUpdate(DgnElementCR original)
+DgnDbStatus AnnotationElement::_OnUpdate(DgnElementCR original)
     {
     if (!m_categoryId.IsValid())
         return DgnDbStatus::InvalidCategory;
@@ -1059,7 +1059,7 @@ DgnDbStatus DrawingElement::_OnUpdate(DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingElement::_UpdateInDb()
+DgnDbStatus AnnotationElement::_UpdateInDb()
     {
     DgnDbStatus stat = T_Super::_UpdateInDb();
     if (DgnDbStatus::Success != stat)
@@ -1307,7 +1307,7 @@ void DgnElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawingElement::_AdjustPlacementForImport(DgnImportContext const& importer)
+void AnnotationElement::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
     m_placement.GetOriginR().Add(importer.GetOriginOffset());
     m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
@@ -1316,7 +1316,7 @@ void DrawingElement::_AdjustPlacementForImport(DgnImportContext const& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawingElement::_CopyFrom(DgnElementCR other)
+void AnnotationElement::_CopyFrom(DgnElementCR other)
     {
     T_Super::_CopyFrom(other);
 
@@ -1332,7 +1332,7 @@ void DrawingElement::_CopyFrom(DgnElementCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawingElement::_RemapIds(DgnImportContext& importer)
+void AnnotationElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     T_Super::_RemapIds(importer);
@@ -2271,7 +2271,7 @@ DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el, G
         placement = e3d->GetPlacement();
     else
         {
-        DrawingElementP e2d = el.ToDrawingElementP();
+        AnnotationElementP e2d = el.ToAnnotationElementP();
         Placement2d p2d = e2d->GetPlacement();
         DPoint3d o3d = DPoint3d::From(p2d.GetOrigin().x, p2d.GetOrigin().y, 0);
         YawPitchRollAngles a3d = YawPitchRollAngles::FromDegrees(p2d.GetAngle().Degrees(), 0, 0);
@@ -2678,7 +2678,7 @@ DgnDbStatus DgnElement3d::_SetCategoryId(DgnCategoryId catId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingElement::_SetCategoryId(DgnCategoryId catId)
+DgnDbStatus AnnotationElement::_SetCategoryId(DgnCategoryId catId)
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCategory))
         return DgnDbStatus::MissingHandler;
@@ -2702,7 +2702,7 @@ DgnDbStatus DgnElement3d::_SetPlacement(Placement3dCR placement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingElement::_SetPlacement(Placement2dCR placement)
+DgnDbStatus AnnotationElement::_SetPlacement(Placement2dCR placement)
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Move))
         return DgnDbStatus::MissingHandler;
