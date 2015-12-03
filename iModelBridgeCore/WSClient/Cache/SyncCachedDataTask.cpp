@@ -195,8 +195,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         if (result.IsSuccess())
             {
             InvalidatePersistentInstances();
-
-            // TODO: CacheResponse could return keys to avoid additonal query
+            
             ECInstanceKeyMultiMap cachedInstances;
             if (CacheStatus::OK != txn.GetCache().ReadResponseInstanceKeys(responseKey, cachedInstances))
                 {
