@@ -127,8 +127,6 @@
         <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord" LibType="static"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord" LibType="static"/>
-        <ProductDirectory Name="DgnClientSdkSeedFiles"              Path="Assets/seed"/>
-        <ProductDirectory Name="DgnClientSdkSeedFiles"              Path="Assets/seed" LibType="static"/>
         <ProductDirectory Name="PlanningLibs"                       Path="Libs"/>
         <ProductDirectory Name="PlanningLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
