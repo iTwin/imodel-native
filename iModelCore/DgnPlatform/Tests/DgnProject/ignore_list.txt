@@ -40,3 +40,4 @@ SingleBriefcaseLocksTest.RelinquishLocks # Notified Paul - Disabling these for c
 DoubleBriefcaseTest.Contention # Notified Paul - Disabling these for convenient merging
 DoubleBriefcaseTest.ReleaseLocks # Notified Paul - Disabling these for convenient merging
 ExtractLocksTest.UsedLocks # Notified Paul - Disabling these for convenient merging
+DoubleBriefcaseTest.ReformulateRequest  # Notified Paul - Disabling these for convenient merging
