@@ -420,7 +420,42 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String PrimitiveECProperty::_GetTypeName () const
     {
-    return ECXml::GetPrimitiveTypeName (m_primitiveType);
+    if(m_enumeration == nullptr)
+        return ECXml::GetPrimitiveTypeName (m_primitiveType);
+
+    return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
+    }
+
+ECObjectsStatus ResolveEnumerationType(ECEnumerationCP& enumeration, Utf8StringCR typeName, ECSchemaCR parentSchema)
+    {
+    // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
+    Utf8String namespacePrefix;
+    Utf8String enumName;
+    ECObjectsStatus status = ECEnumeration::ParseEnumerationName(namespacePrefix, enumName, typeName);
+    if (ECObjectsStatus::Success != status)
+        {
+        LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
+        return status;
+        }
+
+    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByNamespacePrefixP(namespacePrefix);
+    if (nullptr == resolvedSchema)
+        {
+        LOG.warningv("Cannot resolve the type name '%s' as an enumeration type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.",
+                     typeName.c_str(), namespacePrefix.c_str());
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
+    ECEnumerationCP result = resolvedSchema->GetEnumerationCP(enumName.c_str());
+    if (nullptr == result)
+        {
+        LOG.warningv("Cannot resolve the type name '%s' as an enumeration type because ECEnumeration '%s' does not exist in the schema '%ls'.",
+                     typeName.c_str(), enumName.c_str(), resolvedSchema->GetName().c_str());
+        return ECObjectsStatus::EnumerationNotFound;
+        }
+
+    enumeration = result;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -430,20 +465,28 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
     {
     PrimitiveType primitiveType;
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
-    if (ECObjectsStatus::Success != status)
+    if (ECObjectsStatus::Success == status)
         {            
-        m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
-        LOG.warningv ("Unrecognized primitive typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
-                                typeName.c_str(),
-                                this->GetClass().GetSchema().GetName().c_str(),
-                                this->GetClass().GetName().c_str(),
-                                this->GetName().c_str() );
-        return status;
-        }
-    else if (PRIMITIVETYPE_IGeometry == primitiveType)
-        m_originalTypeName = typeName; // Internally we treat everything as the common Bentley.Geometry.Common.IGeometry, but we need to preserve the actual type
+        if (PRIMITIVETYPE_IGeometry == primitiveType)
+            m_originalTypeName = typeName; // Internally we treat everything as the common Bentley.Geometry.Common.IGeometry, but we need to preserve the actual type
 
-    return SetType (primitiveType);
+        return SetType(primitiveType);
+        }
+    
+    ECEnumerationCP enumeration;
+    ECObjectsStatus status2 = ResolveEnumerationType(enumeration, typeName, this->GetClass().GetSchema());
+    if (ECObjectsStatus::Success == status2)
+        {
+        return SetType(enumeration);
+        }
+        
+    m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
+    LOG.warningv("Unrecognized typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
+                 typeName.c_str(),
+                 this->GetClass().GetSchema().GetName().c_str(),
+                 this->GetClass().GetName().c_str(),
+                 this->GetName().c_str());
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

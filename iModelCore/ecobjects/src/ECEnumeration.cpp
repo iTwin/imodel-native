@@ -76,6 +76,62 @@ Utf8CP ECEnumeration::GetFullName () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ECEnumeration::GetQualifiedEnumerationName
+(
+ECSchemaCR primarySchema,
+ECEnumerationCR  ecEnumeration
+)
+    {
+    Utf8String namespacePrefix;
+    Utf8StringCR enumName = ecEnumeration.GetName();
+    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveNamespacePrefix (ecEnumeration.GetSchema(), namespacePrefix)))
+        {
+        LOG.warningv ("warning: Can not qualify an ECEnumeration name with a namespace prefix unless the schema containing the ECEnumeration is referenced by the primary schema."
+            "The name will remain unqualified.\n  Primary ECSchema: %s\n  ECEnumeration: %s\n ECSchema containing ECEnumeration: %s", primarySchema.GetName().c_str(), enumName.c_str(), ecEnumeration.GetSchema().GetName().c_str());
+        return enumName;
+        }
+    if (namespacePrefix.empty())
+        return enumName;
+    else
+        return namespacePrefix + ":" + enumName;
+    }
+
+ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8StringR enumName, Utf8StringCR qualifiedEnumName)
+    {
+    if (0 == qualifiedEnumName.length())
+        {
+        LOG.warningv("Failed to parse a prefix and name from a qualified name because the string is empty.");
+        return ECObjectsStatus::ParseError;
+        }
+
+    Utf8String::size_type colonIndex = qualifiedEnumName.find(':');
+    if (Utf8String::npos == colonIndex)
+        {
+        prefix.clear();
+        enumName = qualifiedEnumName;
+        return ECObjectsStatus::Success;
+        }
+
+    if (qualifiedEnumName.length() == colonIndex + 1)
+        {
+        LOG.warningv("Failed to parse a prefix and name from the qualified name '%s' because the string ends with a colon.  There must be characters after the colon.",
+                     qualifiedEnumName.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    if (0 == colonIndex)
+        prefix.clear();
+    else
+        prefix = qualifiedEnumName.substr(0, colonIndex);
+
+    enumName = qualifiedEnumName.substr(colonIndex + 1);
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECEnumeration::SetType(PrimitiveType value)
