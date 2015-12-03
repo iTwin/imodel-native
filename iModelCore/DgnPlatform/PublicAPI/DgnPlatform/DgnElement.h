@@ -1466,7 +1466,7 @@ protected:
 
 //=======================================================================================
 //! Geometric data associated with a 2d geometric element.
-//! @ingroup DgnElementGroup
+//! @private
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
 struct ElementGeom2d
