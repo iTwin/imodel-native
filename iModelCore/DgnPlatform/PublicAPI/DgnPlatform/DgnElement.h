@@ -1459,48 +1459,72 @@ protected:
 }; // DgnElement3d
 
 //=======================================================================================
-//! A 2-dimensional geometric element used in drawings.
+//! Geometric data associated with a 2d geometric element.
 //! @ingroup DgnElementGroup
-// @bsiclass                                                    Keith.Bentley   04/15
+// @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : DgnElement, GeometrySource2d
+struct ElementGeom2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, DgnElement)
-    friend struct dgn_ElementHandler::Annotation;
-
-public:
-    struct CreateParams : T_Super::CreateParams
-    {
-    DEFINE_T_SUPER(AnnotationElement::T_Super::CreateParams);
-
-    DgnCategoryId m_categoryId;
-    Placement2dCR m_placement;
-
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, code, label, parent), m_categoryId(category), m_placement(placement) {}
-
-    explicit CreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
-    CreateParams(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
-    };
-
-protected:
+private:
     DgnCategoryId   m_categoryId;
     GeomStream      m_geom;
     Placement2d     m_placement;
+public:
+    explicit ElementGeom2d(DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : m_categoryId(category), m_placement(placement) { }
+
+    DgnCategoryId GetCategoryId() const { return m_categoryId; }
+    Placement2dCR GetPlacement() const { return m_placement; }
+    GeomStreamCR GetGeomStream() const { return m_geom; }
+
+    void SetCategoryId(DgnCategoryId catId) { m_categoryId = catId; }
+    void SetPlacement(Placement2dCR placement) { m_placement = placement; }
+
+    DGNPLATFORM_EXPORT DgnDbStatus LoadFromDb(DgnElementId elemId, DgnDbR db);
+    DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
+    DGNPLATFORM_EXPORT void RemapIds(DgnImportContext& importer);
+    DGNPLATFORM_EXPORT void CopyFrom(GeometrySource2dCR geomSource);
+};
+
+//=======================================================================================
+//! A 2-dimensional geometric element deriving directly from DgnElement and GeometrySource2d.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
+{
+    DEFINE_T_SUPER(DgnElement);
+
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
+
+        DgnCategoryId m_categoryId;
+        Placement2dCR m_placement;
+
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
+            T_Super(db, modelId, classId, code, label, parent), m_categoryId(category), m_placement(placement) {}
+
+        explicit CreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
+        CreateParams(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
+        };
+
+protected:
+    ElementGeom2d   m_geom;
+
+    explicit DgnElement2d(CreateParams const& params) : T_Super(params), m_geom(params.m_categoryId, params.m_placement) { }
 
     virtual DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-    virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
 
-    virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
+    virtual DgnCategoryId _GetCategoryId() const override final {return m_geom.GetCategoryId();}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
-    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
+    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom.GetGeomStream();}
 
-    virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
+    virtual Placement2dCR _GetPlacement() const override final {return m_geom.GetPlacement();}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override final;
-    DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
+    void _AdjustPlacementForImport(DgnImportContext const& context) override { m_geom.AdjustPlacementForImport(context); }
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
@@ -1511,13 +1535,26 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
-    explicit AnnotationElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
+}; // DgnElement2d
 
+//=======================================================================================
+//! A 2-dimensional geometric element used in drawings.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : DgnElement2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, DgnElement2d)
+    friend struct dgn_ElementHandler::Annotation;
+
+protected:
+    virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
+
+    explicit AnnotationElement(CreateParams const& params) : T_Super(params) { }
 public:
     //! Create a AnnotationElement from CreateParams.
     static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
-
 }; // AnnotationElement
 
 //=======================================================================================

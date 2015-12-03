@@ -981,17 +981,26 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationElement::_LoadFromDb()
+DgnDbStatus DgnElement2d::_LoadFromDb()
     {
     DgnDbStatus stat = T_Super::_LoadFromDb();
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    if (DgnDbStatus::Success != (stat = m_geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
+    return m_geom.LoadFromDb(m_elementId, GetDgnDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementGeom2d::LoadFromDb(DgnElementId elemId, DgnDbR db)
+    {
+    DgnDbStatus stat = m_geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elemId.GetValue());
+    if (DgnDbStatus::Success != stat)
         return stat;
 
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
-    stmt->BindId(1, m_elementId);
+    CachedStatementPtr stmt=db.Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
+    stmt->BindId(1, elemId);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it still must have an entry in the element geom table (with nulls)
@@ -1020,11 +1029,11 @@ DgnDbStatus AnnotationElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationElement::_OnInsert()
+DgnDbStatus DgnElement2d::_OnInsert()
     {
-    if (!m_categoryId.IsValid())
+    if (!m_geom.GetCategoryId().IsValid())
         return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
+    else if (HasGeometry() && !m_geom.GetPlacement().IsValid())
         return DgnDbStatus::BadElement;
     else
         return T_Super::_OnInsert();
@@ -1033,7 +1042,7 @@ DgnDbStatus AnnotationElement::_OnInsert()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus AnnotationElement::_InsertInDb()
+DgnDbStatus DgnElement2d::_InsertInDb()
     {
     DgnDbStatus stat;
 
@@ -1046,11 +1055,11 @@ DgnDbStatus AnnotationElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationElement::_OnUpdate(DgnElementCR original)
+DgnDbStatus DgnElement2d::_OnUpdate(DgnElementCR original)
     {
-    if (!m_categoryId.IsValid())
+    if (!m_geom.GetCategoryId().IsValid())
         return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
+    else if (HasGeometry() && !m_geom.GetPlacement().IsValid())
         return DgnDbStatus::BadElement;
     else
         return T_Super::_OnUpdate(original);
@@ -1059,7 +1068,7 @@ DgnDbStatus AnnotationElement::_OnUpdate(DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationElement::_UpdateInDb()
+DgnDbStatus DgnElement2d::_UpdateInDb()
     {
     DgnDbStatus stat = T_Super::_UpdateInDb();
     if (DgnDbStatus::Success != stat)
@@ -1307,7 +1316,7 @@ void DgnElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AnnotationElement::_AdjustPlacementForImport(DgnImportContext const& importer)
+void ElementGeom2d::AdjustPlacementForImport(DgnImportContext const& importer)
     {
     m_placement.GetOriginR().Add(importer.GetOriginOffset());
     m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
@@ -1316,26 +1325,40 @@ void AnnotationElement::_AdjustPlacementForImport(DgnImportContext const& import
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AnnotationElement::_CopyFrom(DgnElementCR other)
+void DgnElement2d::_CopyFrom(DgnElementCR other)
     {
     T_Super::_CopyFrom(other);
 
     GeometrySource2dCP el2d = other.ToGeometrySource2d();
-    if (nullptr == el2d)
-        return;
+    if (nullptr != el2d)
+        m_geom.CopyFrom(*el2d);
+    }
 
-    m_placement = el2d->GetPlacement();
-    m_categoryId = el2d->GetCategoryId();
-    m_geom = el2d->GetGeomStream();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeom2d::CopyFrom(GeometrySource2dCR src)
+    {
+    m_placement = src.GetPlacement();
+    m_categoryId = src.GetCategoryId();
+    m_geom = src.GetGeomStream();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AnnotationElement::_RemapIds(DgnImportContext& importer)
+void DgnElement2d::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     T_Super::_RemapIds(importer);
+    m_geom.RemapIds(importer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeom2d::RemapIds(DgnImportContext& importer)
+    {
     m_categoryId = importer.RemapCategory(m_categoryId);
     importer.RemapGeomStreamIds(m_geom);
     }
@@ -2678,12 +2701,12 @@ DgnDbStatus DgnElement3d::_SetCategoryId(DgnCategoryId catId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationElement::_SetCategoryId(DgnCategoryId catId)
+DgnDbStatus DgnElement2d::_SetCategoryId(DgnCategoryId catId)
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCategory))
         return DgnDbStatus::MissingHandler;
 
-    m_categoryId = catId;
+    m_geom.SetCategoryId(catId);
     return DgnDbStatus::Success;
     }
 
@@ -2702,12 +2725,12 @@ DgnDbStatus DgnElement3d::_SetPlacement(Placement3dCR placement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AnnotationElement::_SetPlacement(Placement2dCR placement)
+DgnDbStatus DgnElement2d::_SetPlacement(Placement2dCR placement)
     {
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Move))
         return DgnDbStatus::MissingHandler;
 
-    m_placement = placement;
+    m_geom.SetPlacement(placement);
     return DgnDbStatus::Success;
     }
 
