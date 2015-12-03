@@ -411,12 +411,10 @@ ECInstanceKeyMultiMap& keysOut
     Utf8PrintfString key("HierarchyManager::ReadTargetKeys:%lld", relationshipClass->GetId());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
-        ECSqlSelectBuilder sqlBuilder;
-        sqlBuilder
-            .Select("rel.TargetECClassId, rel.TargetECInstanceId")
-            .From(*relationshipClass, "rel", false)
-            .Where("rel.SourceECClassId = ? AND rel.SourceECInstanceId = ?");
-        return sqlBuilder.ToString();
+        return 
+            "SELECT rel.TargetECClassId, rel.TargetECInstanceId "
+            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*relationshipClass) +  " rel "
+            "WHERE rel.SourceECClassId = ? AND rel.SourceECInstanceId = ? ";
         });
 
     statement->BindInt64(1, source.GetECClassId());

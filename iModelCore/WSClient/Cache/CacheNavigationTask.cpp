@@ -484,14 +484,12 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
     Utf8PrintfString key("IsObjectFileBacked:%lld", instance.GetECClassId());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
-        ECSqlSelectBuilder builder;
-        builder
-            .Select("NULL")
-            .From(*objectClass, "fileClass", false)
-            .Where(Utf8PrintfString("ECInstanceId = ? AND fileClass.[%s] IS NOT NULL AND fileClass.[%s] != ''",
-            fileNameProperty.c_str(), fileNameProperty.c_str()));
-
-        return builder.ToString();
+        return
+            "SELECT NULL "
+            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*objectClass) + " file "
+            "WHERE ECInstanceId = ? "
+            "  AND file.[" + fileNameProperty + "] IS NOT NULL "
+            "  AND file.[" + fileNameProperty + "] != ''";
         });
 
     statement->BindId(1, instance.GetECInstanceId());

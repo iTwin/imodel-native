@@ -70,7 +70,10 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
 
         WSCACHE_EXPORT ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) override;
 
+        //! DEPRECATED
         WSCACHE_EXPORT BentleyStatus PrepareStatement(ECSqlStatement& statement, ECSqlBuilderCR builder) override;
+
+        //! Prepare statement. Assert and return error if failed
         WSCACHE_EXPORT BentleyStatus PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql) override;
 
         //! Selects as few properties as possible to acomplish valid query
@@ -100,14 +103,14 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             ) override;
 
         WSCACHE_EXPORT int  CountClassInstances(ECClassCP ecClass) override;
-        WSCACHE_EXPORT ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereQuery = nullptr) override;
-        WSCACHE_EXPORT bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereQuery = nullptr) override;
+        WSCACHE_EXPORT ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereClause = nullptr) override;
+        WSCACHE_EXPORT bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereClause = nullptr) override;
 
         WSCACHE_EXPORT BentleyStatus GetJsonInstance(JsonValueR objectOut, ECInstanceKeyCR instanceKey) override;
         WSCACHE_EXPORT BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, ECInstanceId ecId) override;
-        WSCACHE_EXPORT BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, Utf8CP select = nullptr) override;
+        WSCACHE_EXPORT BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereClause = nullptr, Utf8CP select = nullptr) override;
 
-        WSCACHE_EXPORT BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, ICancellationTokenPtr cancellationToken = nullptr) override;
+        WSCACHE_EXPORT BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereClause = nullptr, ICancellationTokenPtr cancellationToken = nullptr) override;
         WSCACHE_EXPORT BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, ECSqlStatement& statement, ICancellationTokenPtr cancellationToken = nullptr) override;
 
         WSCACHE_EXPORT ECInstanceKey RelateInstances(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;

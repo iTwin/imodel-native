@@ -60,13 +60,11 @@ BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECIn
 
     auto statement = m_statementCache->GetPreparedStatement("CachedResponseManager::_OnBeforeDelete", [=]
         {
-        ECSqlSelectBuilder sqlBuilder;
-        sqlBuilder
-            .Select("rel.SourceECClassId, rel.SourceECInstanceId")
-            .From(*m_responseToParentClass, "rel", false)
-            .Where("rel.ECInstanceId = ? ")
-            .Limit("1");
-        return sqlBuilder.ToString();
+        return
+            "SELECT rel.SourceECClassId, rel.SourceECInstanceId "
+            "FROM ONLY " ECSql_ResponseToParentClass " rel "
+            "WHERE rel.ECInstanceId = ? "
+            "LIMIT 1 ";
         });
 
     statement->BindId(1, ecInstanceId);
@@ -107,15 +105,13 @@ CachedResponseInfo CachedResponseManager::ReadInfo(CachedResponseKeyCR key)
     Utf8PrintfString statementKey("CachedResponseManager::ReadInfo:%lld", key.GetParent().GetECClassId());
     auto statement = m_statementCache->GetPreparedStatement(statementKey, [=]
         {
-        ECSqlSelectBuilder sqlBuilder;
-        sqlBuilder
-            .Select("response.*")
-            .From(*m_responseClass, "response", false)
-            .Join(*parentClass, "parent", false)
-            .Using(*m_responseToParentClass, JoinDirection::Forward)
-            .Where("parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
-            .Limit("1");
-        return sqlBuilder.ToString();
+        return 
+            "SELECT response.* "
+            "FROM ONLY " ECSql_CachedResponseInfoClass " response "
+            "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*parentClass) + " parent "
+            "USING " ECSql_ResponseToParentClass " FORWARD "
+            "WHERE parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ? "
+            "LIMIT 1 ";
         });
 
     statement->BindId(1, key.GetParent().GetECInstanceId());
@@ -152,15 +148,13 @@ ECInstanceKey CachedResponseManager::FindInfo(CachedResponseKeyCR responseKey)
     Utf8PrintfString key("CachedResponseManager::FindInfo:%lld", responseKey.GetParent().GetECClassId());
     auto statement = m_statementCache->GetPreparedStatement(key, [=]
         {
-        ECSqlSelectBuilder sqlBuilder;
-        sqlBuilder
-            .Select("response.ECInstanceId")
-            .From(*m_responseClass, "response", false)
-            .Join(*parentClass, "parent", false)
-            .Using(*m_responseToParentClass, JoinDirection::Forward)
-            .Where("parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ?")
-            .Limit("1");
-        return sqlBuilder.ToString();
+        return
+            "SELECT response.ECInstanceId "
+            "FROM ONLY " ECSql_CachedResponseInfoClass " response "
+            "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*parentClass) + " parent "
+            "USING " ECSql_ResponseToParentClass " FORWARD "
+            "WHERE parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ? "
+            "LIMIT 1 ";
         });
 
     statement->BindId(1, responseKey.GetParent().GetECInstanceId());
