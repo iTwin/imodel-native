@@ -1775,6 +1775,7 @@ protected:
     virtual bool                        _IsRelationshipClass() const override { return true;}
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
+    virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }
 
 //__PUBLISH_SECTION_START__
 public:
