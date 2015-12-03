@@ -77,7 +77,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD4(SendGetChildrenRequest, AsyncTaskPtr<WSObjectsResult>
@@ -85,7 +85,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD5(SendGetFileRequest, AsyncTaskPtr<WSFileResult>
@@ -94,13 +94,13 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             BeFileNameCR filePath,
             Utf8StringCR eTag,
             HttpRequest::ProgressCallbackCR downloadProgressCallback,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD2(SendGetSchemasRequest, AsyncTaskPtr<WSObjectsResult>
             (
             Utf8StringCR eTag,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD4(SendQueryRequest, AsyncTaskPtr<WSObjectsResult>
@@ -108,7 +108,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             WSQueryCR query,
             Utf8StringCR eTag,
             Utf8StringCR skipToken,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD3(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
@@ -123,7 +123,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD5(SendUpdateObjectRequest, AsyncTaskPtr<WSUpdateObjectResult>
@@ -132,13 +132,13 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             JsonValueCR propertiesJson,
             Utf8String eTag,
             HttpRequest::ProgressCallbackCR uploadProgressCallback,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD2(SendDeleteObjectRequest, AsyncTaskPtr<WSDeleteObjectResult>
             (
             ObjectIdCR objectId,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD4(SendUpdateFileRequest, AsyncTaskPtr<WSUpdateFileResult>
@@ -146,7 +146,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
     };
 #endif

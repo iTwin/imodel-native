@@ -507,10 +507,10 @@ BentleyStatus CacheQueryHelper::ReadJsonInstance
 const ClassReadInfo& info,
 ECSqlStatement& statement,
 JsonValueR jsonInstanceOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    if (cancellationToken && cancellationToken->IsCanceled())
+    if (ct && ct->IsCanceled())
         {
         return ERROR;
         }
@@ -556,10 +556,10 @@ BentleyStatus CacheQueryHelper::ReadJsonInstances
 const ClassReadInfo& info,
 ECSqlStatement& statement,
 JsonValueR jsonInstancesArrayOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    if (cancellationToken && cancellationToken->IsCanceled())
+    if (ct && ct->IsCanceled())
         {
         return ERROR;
         }
@@ -567,13 +567,13 @@ ICancellationTokenPtr cancellationToken
     ECSqlStepStatus status;
     while (ECSqlStepStatus::HasRow == (status = statement.Step()))
         {
-        if (cancellationToken && cancellationToken->IsCanceled())
+        if (ct && ct->IsCanceled())
             {
             return ERROR;
             }
 
         JsonValueR currentObj = jsonInstancesArrayOut.append(Json::objectValue);
-        if (SUCCESS != ReadJsonInstance(info, statement, currentObj, cancellationToken))
+        if (SUCCESS != ReadJsonInstance(info, statement, currentObj, ct))
             {
             return ERROR;
             }

@@ -35,14 +35,14 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
@@ -50,7 +50,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
@@ -59,13 +59,13 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
             HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
@@ -73,14 +73,14 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
             Utf8StringCR skipToken = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
@@ -88,7 +88,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
@@ -97,13 +97,13 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
@@ -111,7 +111,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
     };
 

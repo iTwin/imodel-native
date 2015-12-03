@@ -65,7 +65,7 @@ struct MockCachingDataSource : public ICachingDataSource
         MOCK_METHOD0 (CancelAllTasksAndWait,
             void ());
         MOCK_METHOD1 (UpdateSchemas,
-            AsyncTaskPtr<Result> (ICancellationTokenPtr cancellationToken));
+            AsyncTaskPtr<Result> (ICancellationTokenPtr ct));
 
         CacheTransaction StartCacheTransaction () override
             {
@@ -95,19 +95,19 @@ struct MockCachingDataSource : public ICachingDataSource
         MOCK_METHOD4 (GetObject,
             AsyncTaskPtr<ObjectsResult> (ObjectIdCR, DataOrigin, IDataSourceCache::JsonFormat, ICancellationTokenPtr));
         MOCK_METHOD5 (GetObjects,
-            AsyncTaskPtr<ObjectsResult> (CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr cancellationToken));
+            AsyncTaskPtr<ObjectsResult> (CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr ct));
         MOCK_METHOD4 (GetObjectsKeys,
-            AsyncTaskPtr<KeysResult> (CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, ICancellationTokenPtr cancellationToken));
+            AsyncTaskPtr<KeysResult> (CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, ICancellationTokenPtr ct));
         MOCK_METHOD4 (GetNavigationChildren,
             AsyncTaskPtr<ObjectsResult> (ObjectIdCR, DataOrigin, std::shared_ptr<const SelectProvider>, ICancellationTokenPtr));
         MOCK_METHOD4 (GetNavigationChildrenKeys,
             AsyncTaskPtr<KeysResult> (ObjectIdCR, DataOrigin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr));
         MOCK_METHOD4 (GetFile,
-            AsyncTaskPtr<FileResult> (ObjectIdCR fileId, DataOrigin origin, LabeledProgressCallback onProgress, ICancellationTokenPtr cancellationToken));
+            AsyncTaskPtr<FileResult> (ObjectIdCR fileId, DataOrigin origin, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
         MOCK_METHOD5 (CacheFiles,
-            AsyncTaskPtr<BatchResult> (const bvector<ObjectId>& filesIds, bool skipCachedFiles, FileCache fileCacheLocation, LabeledProgressCallback onProgress, ICancellationTokenPtr cancellationToken));
+            AsyncTaskPtr<BatchResult> (const bvector<ObjectId>& filesIds, bool skipCachedFiles, FileCache fileCacheLocation, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
         MOCK_METHOD2 (DownloadAndCacheChildren,
-            AsyncTaskPtr<Result> (const bvector<ObjectId>& parentIds, ICancellationTokenPtr cancellationToken));
+            AsyncTaskPtr<Result> (const bvector<ObjectId>& parentIds, ICancellationTokenPtr ct));
         MOCK_METHOD3 (SyncLocalChanges,
             AsyncTaskPtr<BatchResult> (SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
         MOCK_METHOD4 (SyncLocalChanges,

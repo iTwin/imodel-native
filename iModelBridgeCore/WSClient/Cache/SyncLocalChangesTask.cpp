@@ -26,9 +26,9 @@ CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
 SyncOptions options,
 CachingDataSource::SyncProgressCallback&& onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) :
-CachingTaskBase(cachingDataSource, cancellationToken),
+CachingTaskBase(cachingDataSource, ct),
 m_objectsToSyncPtr(objectsToSync),
 m_options(options),
 m_onProgressCallback(onProgress),

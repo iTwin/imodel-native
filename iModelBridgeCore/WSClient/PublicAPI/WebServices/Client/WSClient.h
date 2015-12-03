@@ -57,25 +57,25 @@ struct IWSClient
         //! Returns server information or queries server if needs updating
         virtual AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         //! Queries server information
         virtual AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
     };
 
@@ -110,24 +110,24 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> SendGetInfoRequest
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
     };
 

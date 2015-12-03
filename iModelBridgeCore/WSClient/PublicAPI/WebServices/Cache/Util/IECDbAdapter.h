@@ -94,7 +94,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             ECSqlStatement& statement,
             ECClassCP ecClass,
             JsonValueR jsonInstancesArrayOut,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
         virtual BentleyStatus ExtractJsonInstanceFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstanceOut) = 0;
         virtual BentleyStatus ExtractECIdsFromStatement
@@ -102,7 +102,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             ECSqlStatement& statement,
             int ecInstanceIdcolumn,
             bvector<ECInstanceId>& ecIdsOut,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual BentleyStatus ExtractECInstanceKeyMultiMapFromStatement
@@ -111,7 +111,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             int ecInstanceIdcolumn,
             ECClassId classId,
             ECInstanceKeyMultiMap& keysOut,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual int  CountClassInstances(ECClassCP ecClass) = 0;
@@ -122,8 +122,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, ECInstanceId ecId) = 0;
         virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereClause = nullptr, Utf8CP select = nullptr) = 0;
 
-        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereClause = nullptr, ICancellationTokenPtr cancellationToken = nullptr) = 0;
-        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, ECSqlStatement& statement, ICancellationTokenPtr cancellationToken = nullptr) = 0;
+        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereClause = nullptr, ICancellationTokenPtr ct = nullptr) = 0;
+        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, ECSqlStatement& statement, ICancellationTokenPtr ct = nullptr) = 0;
 
         virtual ECInstanceKey RelateInstances(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
 

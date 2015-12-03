@@ -643,7 +643,7 @@ WSObjectsResponseCR response,
 Utf8StringCR rootName,
 ECInstanceKeyMultiMap* cachedInstanceKeysOut,
 bool weakLinkToRoot,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     LogCacheDataForMethod();
@@ -656,7 +656,7 @@ ICancellationTokenPtr cancellationToken
 
     WSObjectsReader::Instances instances = response.GetInstances();
     InstanceCacheHelper::CachedInstances cachedInstances;
-    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, nullptr, cancellationToken))
+    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, nullptr, ct))
         {
         return ERROR;
         }
@@ -720,7 +720,7 @@ BentleyStatus DataSourceCache::UpdateInstances
 WSObjectsResponseCR response,
 bset<ObjectId>* notFoundOut,
 bset<ECInstanceKey>* cachedInstancesOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     LogCacheDataForMethod();
@@ -735,7 +735,7 @@ ICancellationTokenPtr cancellationToken
 
     InstanceCacheHelper::CachedInstances cachedInstances;
     InstanceCacheHelper::UpdateCachingState updateCachingState;
-    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, &updateCachingState, cancellationToken))
+    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, &updateCachingState, ct))
         {
         return ERROR;
         }

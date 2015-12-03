@@ -28,9 +28,9 @@ bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
 ICachingDataSource::ProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) :
-CachingTaskBase(ds, cancellationToken),
+CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
 m_initialInstances(initialInstances),
 m_queriesToCache(initialQueries.begin(), initialQueries.end()),

@@ -278,14 +278,14 @@ AsyncTaskPtr<WSRepositoriesResult> WebApiV2::SendGetRepositoriesRequest
 (
 const bvector<Utf8String>& types,
 const bvector<Utf8String>& providerIds,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     // TODO: implement filtering query by PluginId if needed
     Utf8String url = GetRepositoryUrl("");
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoriesResult>([this] (HttpResponse& httpResponse)
         {
         return ResolveGetRepositoriesResponse(httpResponse);
@@ -299,7 +299,7 @@ AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetObjectRequest
 (
 ObjectIdCR objectId,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
@@ -308,7 +308,7 @@ ICancellationTokenPtr cancellationToken
     request.SetRetryOptions(HttpRequest::ResetTransfer, 1);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObject);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSObjectsResult>([this, objectId] (HttpResponse& httpResponse)
         {
@@ -324,13 +324,13 @@ AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetChildrenRequest
 ObjectIdCR parentObjectId,
 const bset<Utf8String>& propertiesToSelect,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(CreateNavigationSubPath(parentObjectId), CreateSelectPropertiesQuery(propertiesToSelect));
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
 
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSObjectsResult>([this] (HttpResponse& httpResponse)
         {
@@ -347,7 +347,7 @@ ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR eTag,
 HttpRequest::ProgressCallbackCR downloadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(CreateFileSubPath(objectId));
@@ -358,7 +358,7 @@ ICancellationTokenPtr cancellationToken
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
     request.SetDownloadProgressCallback(downloadProgressCallback);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSFileResult>([this, filePath] (HttpResponse& httpResponse)
         {
@@ -372,7 +372,7 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetSchemasRequest
 (
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(CreateClassSubPath("MetaSchema", "ECSchemaDef"));
@@ -381,7 +381,7 @@ ICancellationTokenPtr cancellationToken
     request.GetHeaders().SetIfNoneMatch(eTag);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSObjectsResult>([this] (HttpResponse& httpResponse)
         {
@@ -397,7 +397,7 @@ AsyncTaskPtr<WSObjectsResult> WebApiV2::SendQueryRequest
 WSQueryCR query,
 Utf8StringCR eTag,
 Utf8StringCR skipToken,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
@@ -408,7 +408,7 @@ ICancellationTokenPtr cancellationToken
     request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSObjectsResult>([this] (HttpResponse& httpResponse)
         {
@@ -423,7 +423,7 @@ AsyncTaskPtr<WSChangesetResult> WebApiV2::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     if (m_info.GetWebApiVersion() < BeVersion(2, 1))
@@ -437,7 +437,7 @@ ICancellationTokenPtr cancellationToken
     request.GetHeaders().SetContentType("application/json");
 
     request.SetRequestBody(changeset);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return request.PerformAsync()->Then<WSChangesetResult>([this] (HttpResponse& response)
@@ -458,7 +458,7 @@ AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
@@ -478,7 +478,7 @@ ICancellationTokenPtr cancellationToken
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
         }
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return request.PerformAsync()->Then<WSCreateObjectResult>([this] (HttpResponse& httpResponse)
@@ -496,7 +496,7 @@ ObjectIdCR objectId,
 JsonValueCR propertiesJson,
 Utf8String eTag,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
@@ -520,7 +520,7 @@ ICancellationTokenPtr cancellationToken
     instanceJson["properties"] = propertiesJson;
 
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)));
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return request.PerformAsync()->Then<WSUpdateObjectResult>([this] (HttpResponse& httpResponse)
@@ -535,13 +535,13 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<WSDeleteObjectResult> WebApiV2::SendDeleteObjectRequest
 (
 ObjectIdCR objectId,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
 
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSDeleteObjectResult>([] (HttpResponse& httpResponse)
         {
@@ -561,7 +561,7 @@ AsyncTaskPtr<WSUpdateFileResult> WebApiV2::SendUpdateFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     BeFile beFile;
@@ -571,7 +571,7 @@ ICancellationTokenPtr cancellationToken
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
 
     request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return request.PerformAsync()->Then<WSUpdateFileResult>([] (HttpResponse& httpResponse)

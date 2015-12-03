@@ -28,10 +28,10 @@ bvector<ObjectId>&& navigationTreesToCacheFully,
 bvector<ObjectId>&& navigationTreesToUpdateOnly,
 std::shared_ptr<const ISelectProvider> updateSelectProvider,
 CachingDataSource::LabeledProgressCallback&& onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
 :
-CachingTaskBase(cachingDataSource, cancellationToken),
+CachingTaskBase(cachingDataSource, ct),
 m_navigationTreesToCacheFully(navigationTreesToCacheFully),
 m_navigationTreesToUpdateOnly(navigationTreesToUpdateOnly),
 m_updateSelectProvider(nullptr == updateSelectProvider ? std::make_shared<ISelectProvider>() : updateSelectProvider),

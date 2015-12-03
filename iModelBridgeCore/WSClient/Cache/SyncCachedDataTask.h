@@ -56,7 +56,7 @@ struct SyncCachedDataTask : public CachingTaskBase
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
             ICachingDataSource::ProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
     };
 

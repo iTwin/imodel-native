@@ -117,7 +117,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! cached instances. Null results in all instances treated as full that overrides existing data.
         //! FinalizeCachedResponse needs to be called later if non-null value is passed.
         //! @param[in] page - page index being cached
-        //! @param[in] cancellationToken - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
+        //! @param[in] ct - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
         virtual BentleyStatus CacheResponse
             (
             CachedResponseKeyCR responseKey,
@@ -125,7 +125,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
             uint64_t page = 0,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Cache instances and link to specified root
@@ -157,7 +157,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             Utf8StringCR rootName,
             ECInstanceKeyMultiMap* cachedInstanceKeysOut = nullptr,
             bool weakLinkToRoot = false,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Updates existing instance. instanceResult.IsModified() == false will result in updating cached date
@@ -169,7 +169,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             WSObjectsResponseCR response,
             bset<ObjectId>* notFoundOut = nullptr,
             bset<ECInstanceKey>* cachedInstancesOut = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) = 0;

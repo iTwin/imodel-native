@@ -67,7 +67,7 @@ struct CachingDataSource :
             );
 
         void ExecuteNextSyncLocalChangesTask();
-        ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr cancellationToken);
+        ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
         SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
 
@@ -80,7 +80,7 @@ struct CachingDataSource :
         AsyncTaskPtr<Result> CacheObject
             (
             ObjectIdCR objectId,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
 
         BentleyStatus LoadSchemas
@@ -101,7 +101,7 @@ struct CachingDataSource :
             DataOrigin origin,
             Utf8StringCR skipToken,
             uint64_t page,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
 
         AsyncTaskPtr<DataOriginResult> CacheNavigationChildren
@@ -109,14 +109,14 @@ struct CachingDataSource :
             ObjectIdCR parentId,
             DataOrigin origin,
             std::shared_ptr<const ISelectProvider> serverReadOptions,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
 
         AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             std::shared_ptr<bset<ECInstanceKey>> instancesToSync,
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken,
+            ICancellationTokenPtr ct,
             SyncOptions options
             );
 
@@ -151,7 +151,7 @@ struct CachingDataSource :
 
         WSCACHE_EXPORT void CancelAllTasksAndWait() override;
 
-        WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr cancellationToken) override;
+        WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct) override;
 
         WSCACHE_EXPORT CacheTransaction StartCacheTransaction() override;
         WSCACHE_EXPORT WorkerThreadPtr GetCacheAccessThread() override;
@@ -171,7 +171,7 @@ struct CachingDataSource :
             ObjectIdCR objectId,
             DataOrigin origin,
             IDataSourceCache::JsonFormat format,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<ObjectsResult> GetObjects
@@ -180,7 +180,7 @@ struct CachingDataSource :
             WSQueryCR query,
             DataOrigin origin,
             std::shared_ptr<const ISelectProvider> cacheReadOptions,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<KeysResult> GetObjectsKeys
@@ -188,7 +188,7 @@ struct CachingDataSource :
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<ObjectsResult> GetNavigationChildren
@@ -196,7 +196,7 @@ struct CachingDataSource :
             ObjectIdCR parentId,
             DataOrigin origin,
             std::shared_ptr<const SelectProvider> readOptions,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<KeysResult> GetNavigationChildrenKeys
@@ -204,7 +204,7 @@ struct CachingDataSource :
             ObjectIdCR parentId,
             DataOrigin origin,
             std::shared_ptr<const ISelectProvider> serverReadOptions,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<FileResult> GetFile
@@ -212,7 +212,7 @@ struct CachingDataSource :
             ObjectIdCR fileId,
             DataOrigin origin,
             LabeledProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> CacheFiles
@@ -221,19 +221,19 @@ struct CachingDataSource :
             bool skipCachedFiles,
             FileCache fileCacheLocation,
             LabeledProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<Result> DownloadAndCacheChildren
             (
             const bvector<ObjectId>& parentIds,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken,
+            ICancellationTokenPtr ct,
             SyncOptions options = SyncOptions()
             ) override;
 
@@ -241,7 +241,7 @@ struct CachingDataSource :
             (
             const bset<ECInstanceKey>& objectsToSync,
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken,
+            ICancellationTokenPtr ct,
             SyncOptions options = SyncOptions()
             ) override;
 
@@ -251,7 +251,7 @@ struct CachingDataSource :
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
             ProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> CacheNavigation
@@ -260,7 +260,7 @@ struct CachingDataSource :
             const bvector<ObjectId>& temporaryNavigationTrees,
             std::shared_ptr<const ISelectProvider> temporaryNavigationTreesServerReadOptions,
             LabeledProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) override;
     };
 

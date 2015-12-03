@@ -98,7 +98,7 @@ struct DataSourceCache : public IDataSourceCache
             bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
             uint64_t page = 0,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT BentleyStatus CacheInstanceAndLinkToRoot
@@ -122,7 +122,7 @@ struct DataSourceCache : public IDataSourceCache
             Utf8StringCR rootName,
             ECInstanceKeyMultiMap* cachedInstanceKeysOut = nullptr,
             bool weakLinkToRoot = false,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT BentleyStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) override;
@@ -132,7 +132,7 @@ struct DataSourceCache : public IDataSourceCache
             WSObjectsResponseCR response,
             bset<ObjectId>* notFoundOut = nullptr,
             bset<ECInstanceKey>* cachedInstancesOut = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) override;
