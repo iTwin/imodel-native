@@ -695,8 +695,10 @@ void ComponentModelTest::SimulateClient()
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
 
-        ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, "Nesting");  // Open the client's imported copy
-        ASSERT_TRUE( componentModel.IsValid() );
+        Client_ImportCM(TEST_NESTING_COMPONENT_NAME);
+
+        ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_NESTING_COMPONENT_NAME);  // Open the client's imported copy
+        ASSERT_TRUE( nestingComponentModel.IsValid() );
 
         PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
         ASSERT_TRUE( targetModel.IsValid() );
@@ -705,14 +707,33 @@ void ComponentModelTest::SimulateClient()
         Placement3d placement;
         placement.GetOriginR() = DPoint3d::FromZero();
         placement.GetAnglesR() = YawPitchRollAngles();
-        ModelSolverDef::ParameterSet params;
-        params.GetParameterP("A")->SetValue(ECN::ECValue(1));
+        ModelSolverDef::ParameterSet params = nestingComponentModel->GetSolver().GetParameters(); // get a copy of the component's parameters
+        params.GetParameterP("A")->SetValue(ECN::ECValue(1));   // set some new values ...
         params.GetParameterP("B")->SetValue(ECN::ECValue(2));
         params.GetParameterP("C")->SetValue(ECN::ECValue(3));
 
-        PhysicalElementCPtr instanceElement = componentModel->MakeInstanceOfSolution(&status, *targetModel, "", params, placement);
+        PhysicalElementCPtr instanceElement = nestingComponentModel->MakeInstanceOfSolution(&status, *targetModel, "", params, placement); // create a unique/singleton instance with these parameters
         ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
 
+        // double-check the parameters associated with this instance
+        PhysicalElementCPtr sln = ComponentModel::QuerySolutionFromInstance(*instanceElement); 
+        // (in this particular case, sln == instanceElement, since we created a singleton. In the general case, the solution will be a different element.)
+        ASSERT_TRUE(sln.IsValid());
+        ModelSolverDef::ParameterSet slnparams;
+        ASSERT_EQ(DgnDbStatus::Success, nestingComponentModel->QuerySolutionInfo(slnparams, *sln));
+        ASSERT_TRUE(slnparams == params);
+
+        // The placed instance should have 1 child, which should be an instance of a Gadget
+        auto instanceChildren = instanceElement->QueryChildren();
+        ASSERT_EQ(1, instanceChildren.size());
+        PhysicalElementCPtr nestedInstance = m_clientDb->Elements().Get<PhysicalElement>(*instanceChildren.begin());
+        ASSERT_TRUE(nestedInstance.IsValid());
+        PhysicalElementCPtr nestedSln = ComponentModel::QuerySolutionFromInstance(*nestedInstance); 
+        ASSERT_TRUE(nestedSln.IsValid());
+        DgnModelId nestedSlnComponentModelId;
+        ModelSolverDef::ParameterSet nestedslnparams;
+        ASSERT_EQ(DgnDbStatus::Success, ComponentModel::QuerySolutionInfo(nestedSlnComponentModelId, nestedslnparams, *nestedSln));
+        ASSERT_EQ(ComponentModel::FindModelByName(*m_clientDb, TEST_GADGET_COMPONENT_NAME)->GetModelId(), nestedSlnComponentModelId);
 
         ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
         }

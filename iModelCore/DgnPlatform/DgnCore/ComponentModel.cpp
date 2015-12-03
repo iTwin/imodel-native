@@ -348,7 +348,15 @@ DgnDbStatus ComponentModel::Importer::ImportSolutions(DgnModelR destCatalogModel
             return status;
             }
 
-        createSolutionOfComponentRelationship(*destCatalogItem, *m_destComponent, params);
+        //createSolutionOfComponentRelationship(*destCatalogItem, *m_destComponent, params);
+        // OnElementImported should have taken care of linking copied solutions to the component model
+        #ifndef NDEBUG
+        DgnModelId qmid;
+        ModelSolverDef::ParameterSet qparams;
+        BeAssert(BE_SQLITE_OK == queryComponentModelFromSolution(qmid, qparams, GetDestinationDb(), destCatalogItem->GetElementId()) 
+                    && qmid == m_destComponent->GetModelId() 
+                    && qparams == params);
+        #endif
         }
 
     return DgnDbStatus::Success;
@@ -461,7 +469,7 @@ PhysicalElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, Phys
         return nullptr;
 
     HarvestedSolutionInserter inserter(catalogModel, *this);
-    return HarvestSolution(status, icode, Placement3d(), inserter);
+    return MakeCapturedSolutionElement(status, icode, Placement3d(), inserter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -512,6 +520,15 @@ static bool isInstanceOfComponent(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::QuerySolutionFromInstance(PhysicalElementCR instance)
+    {
+    DgnElementId capturedSolutionElementId = queryTemplateItemFromInstance(instance.GetDgnDb(), instance.GetElementId());
+    return instance.GetDgnDb().Elements().Get<PhysicalElement>(capturedSolutionElementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementPtr ComponentModel::HarvestedSolutionWriter::_CreateCapturedSolutionElement(DgnDbStatus& status, DgnClassId iclass, DgnElement::Code const& icode)
     {
     DgnElement::CreateParams cparams(m_destModel.GetDgnDb(), m_destModel.GetModelId(), iclass, icode);
@@ -542,17 +559,20 @@ PhysicalElementPtr ComponentModel::HarvestedSolutionWriter::_CreateCapturedSolut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus harvestSolutionGeomeetry(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& subcatAndGeoms, ComponentModelR cm, DgnCategoryId harvestableGeometryCategoryId)
+DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<PhysicalElementCPtr>& nestedInstances)
     {
-    DgnDbR db = cm.GetDgnDb();
+    DgnDbR db = GetDgnDb();
 
+    // ***
     // *** WIP_COMPONENT_MODEL *** the logic below is not complete. Must must add another dimension -- we must break out builders by same ElemDisplayParams, not just subcategory
+    // ***
+
+    DgnCategoryId harvestableGeometryCategoryId = m_compProps.QueryItemCategoryId(db);
 
     //  Gather geometry by SubCategory
     bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     
-    bvector<DgnElementCPtr> nestedInstances;
-    cm.FillModel();
-    for (auto const& mapEntry : cm)
+    FillModel();
+    for (auto const& mapEntry : *this)
         {
         GeometrySourceCP componentElement = mapEntry.second->ToGeometrySource();
         if (nullptr == componentElement)
@@ -560,7 +580,16 @@ static DgnDbStatus harvestSolutionGeomeetry(bvector<bpair<DgnSubCategoryId, DgnG
 
         //  Nested instances will become child elements or will be folded into the solution. That will be handled below.
         if (isInstanceOfComponent(*mapEntry.second))
-            nestedInstances.push_back(mapEntry.second);
+            {
+            PhysicalElementCP pnested = mapEntry.second->ToPhysicalElement();
+            if (nullptr != pnested)
+                nestedInstances.push_back(pnested);
+            else
+                {
+                BeDataAssert(false && "HarvestSolution supports only PhysicalElements.");
+                }
+            continue;
+            }
 
         //  Only solution elements in the component's Category are collected. The rest are construction/annotation geometry.
         if (componentElement->GetCategoryId() != harvestableGeometryCategoryId)
@@ -612,7 +641,7 @@ static DgnDbStatus harvestSolutionGeomeetry(bvector<bpair<DgnSubCategoryId, DgnG
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
             return DgnDbStatus::WriteError;
             }
-        subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
+        geomBySubcategory.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
         }
 
     return DgnDbStatus::Success;
@@ -621,7 +650,38 @@ static DgnDbStatus harvestSolutionGeomeetry(bvector<bpair<DgnSubCategoryId, DgnG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, DgnElement::Code const& icode, Placement3dCR placement, HarvestedSolutionWriter& writer)
+PhysicalElementPtr ComponentModel::CreateCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, Placement3dCR placement, 
+    bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const& geomBySubcategory, HarvestedSolutionWriter& writer)
+    {
+    DgnDbR db = GetDgnDb();
+
+    PhysicalElementPtr capturedSolutionElement = writer._CreateCapturedSolutionElement(status, m_compProps.GetItemECClassId(db), icode);
+    if (!capturedSolutionElement.IsValid())
+        return nullptr;
+
+    capturedSolutionElement->SetCategoryId(m_compProps.QueryItemCategoryId(db)); // *** TRICKY: I have to set Category after creating the element, 
+                                                                                 // ***         because handler Create works in terms of DgnElement::CreateParams, 
+                                                                                 // ***         not GeometricElement::CreateParams
+    capturedSolutionElement->SetPlacement(placement);
+
+    //  The element's geometry is just a list of references to the GeomParts
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*capturedSolutionElement);
+    for (bpair<DgnSubCategoryId, DgnGeomPartId> const& subcatAndGeom : geomBySubcategory)
+        {
+        Transform noTransform = Transform::FromIdentity();
+        builder->Append(subcatAndGeom.first);
+        builder->Append(subcatAndGeom.second, noTransform);
+        }
+
+    builder->SetGeomStreamAndPlacement(*capturedSolutionElement);
+
+    return capturedSolutionElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentModel::MakeCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, Placement3dCR placement, HarvestedSolutionWriter& writer)
     {
     DgnDbR db = GetDgnDb();
 
@@ -632,55 +692,90 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, DgnElem
         return nullptr;
         }
 
-    DgnClassId iclass = m_compProps.GetItemECClassId(db);
-    if (!iclass.IsValid())
+    if (!m_compProps.GetItemECClassId(db).IsValid())
         {
         BeAssert(false && "component ECClass not found. The target ECSchema must be imported and must contain solution ECClass before you can capture a solution or create instances.");
         status = DgnDbStatus::MissingDomain;
         return nullptr;
         }
 
-    DgnCategoryId harvestableGeometryCategoryId = m_compProps.QueryItemCategoryId(db);
-    if (!harvestableGeometryCategoryId.IsValid())
+    if (!m_compProps.QueryItemCategoryId(db).IsValid())
         {
         BeAssert(false && "component category not found. This is normally created by the target domain but may also be created a side-effect of importing the component model.");
         status = DgnDbStatus::InvalidCategory;
         return nullptr;
         }
 
-    //  Store all harvestable solution geometry as geomparts
-    bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> subcatAndGeoms;
-    if (DgnDbStatus::Success != (status = harvestSolutionGeomeetry(subcatAndGeoms, *this, harvestableGeometryCategoryId)))
+    //  Gather up the current solution results. Note: a side-effect of harvesting is to create and insert GeomParts to hold the harvested solution geometry
+    bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> geomBySubcategory;
+    bvector<PhysicalElementCPtr> nestedInstances;
+    if (DgnDbStatus::Success != (status = HarvestSolution(geomBySubcategory, nestedInstances)))
         return nullptr;
 
-    //  Create an element ...
-    PhysicalElementPtr capturedSolutionElement = writer._CreateCapturedSolutionElement(status, iclass, icode);
+    //  Create an element that holds this geometry. 
+    PhysicalElementPtr capturedSolutionElement = CreateCapturedSolutionElement(status, icode, placement, geomBySubcategory, writer);
     if (!capturedSolutionElement.IsValid())
         return nullptr;
 
-    capturedSolutionElement->SetCategoryId(harvestableGeometryCategoryId); // Note that I have to set Category after creating the element, because handler Create works in terms of DgnElement::CreateParams, not GeometricElement::CreateParams
-    capturedSolutionElement->SetPlacement(placement);
-
-    //  ... that holds references to all of the generated geomparts
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*capturedSolutionElement);
-    for (bpair<DgnSubCategoryId, DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
-        {
-        Transform noTransform = Transform::FromIdentity();
-        builder->Append(subcatAndGeom.first);
-        builder->Append(subcatAndGeom.second, noTransform);
-        }
-
-    builder->SetGeomStreamAndPlacement(*capturedSolutionElement);
-    
     //  Write the captured solution element. Do this before dealing with nested instances, as they will need to refer to it as their parent.
     PhysicalElementCPtr storedSolutionElement = writer._WriteSolution(status, *capturedSolutionElement);
     if (!storedSolutionElement.IsValid())
         return nullptr;
 
-    //  Gather in the nested instances.
-    // *** TBD
+    //  Nested instances become child elements.
+    ElementCopier copier;
+    for (auto nestedInstance : nestedInstances)
+        {
+        copier.MakeCopy(&status, writer._GetOutputModel(), *nestedInstance, placement, DgnElement::Code(), storedSolutionElement->GetElementId());
+        }
 
     return storedSolutionElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&)
+    {
+    //  Instances must remain connected to the solutions from which they are derived
+    DgnElementCPtr solutionElement = sourceElement.GetDgnDb().Elements().GetElement(queryTemplateItemFromInstance(sourceElement.GetDgnDb(), sourceElement.GetElementId()));
+    if (!solutionElement.IsValid())
+        return;
+    createInstanceOfTemplateRelationship(outputElement, *solutionElement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext& importer)
+    {
+    DgnDbR sourceDb = importer.GetSourceDb();
+    DgnDbR destDb = importer.GetDestinationDb();
+
+    //  Solutions must remap to their component models
+    DgnModelId sourceComponentModelId;
+    ModelSolverDef::ParameterSet sourceParameters;
+    queryComponentModelFromSolution(sourceComponentModelId, sourceParameters, sourceDb, sourceElement.GetElementId());
+    ComponentModelPtr sourceComponentModel = sourceDb.Models().Get<ComponentModel>(sourceComponentModelId);
+    if (sourceComponentModel.IsValid())
+        {
+        //  Look up the component in the destination by its name
+        ComponentModelPtr destComponentModel = ComponentModel::FindModelByName(destDb, sourceComponentModel->GetModelName());
+        if (!destComponentModel.IsValid())
+            return; // if the component model hasn't been imported, then this solution element must become an orphan
+        createSolutionOfComponentRelationship(outputElement, *destComponentModel, sourceParameters);     // set up the copy as a solution of the target's copy of the component
+        }
+
+    //  Instances must remap to their solutions
+    DgnElementCPtr sourceSolutionElement = sourceDb.Elements().GetElement(queryTemplateItemFromInstance(sourceDb, sourceElement.GetElementId()));
+    if (sourceSolutionElement.IsValid())
+        {
+        //  Look up the solution in the destination by its code
+        DgnElementCPtr destSolutionElement = destDb.Elements().Get<PhysicalElement>(destDb.Elements().QueryElementIdByCode(sourceSolutionElement->GetCode()));
+        if (!destSolutionElement.IsValid())
+            return; // if solution has not been imported, then this instance must become an orphan
+        createInstanceOfTemplateRelationship(outputElement, *destSolutionElement);  // set up the copy as an instance of the same solution in the destination db
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -774,7 +869,7 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
 
     //  Creating the item is just a matter of copying the catalog item
     ElementCopier copier;
-    PhysicalElementCPtr inst = copier.MakeCopy(&status, targetModel, catalogItem, placement.GetOrigin(), placement.GetAngles(), icode);
+    PhysicalElementCPtr inst = copier.MakeCopy(&status, targetModel, catalogItem, placement, icode);
     if (!inst.IsValid())
         return nullptr;
 
@@ -796,7 +891,7 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
     PhysicalElementCPtr typeElem;
     ModelSolverDef::ParameterSet typeParams;
     if ((DgnDbStatus::Success == QuerySolutionByName(typeElem, typeParams, capturedSolutionName)) && (params == typeParams))
-        return MakeInstanceOfSolution(statusOut, targetModel, *typeElem, placement);
+        return MakeInstanceOfSolution(statusOut, targetModel, *typeElem, placement, code);
     
     // Otherwise, capture a unique/singleton solution
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
@@ -804,7 +899,7 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
         return nullptr;
 
     HarvestedSingletonInserter inserter(targetModel, *this);
-    return HarvestSolution(status, DgnElement::Code(), placement, inserter);
+    return MakeCapturedSolutionElement(status, code, placement, inserter);
     }
 
 /*---------------------------------------------------------------------------------**//**

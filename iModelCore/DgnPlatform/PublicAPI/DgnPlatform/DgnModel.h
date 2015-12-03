@@ -938,23 +938,7 @@ public:
     friend struct CreateParams;
 
 private:
-    CompProps m_compProps;
-
-    DPoint3d _GetGlobalOrigin() const override final {return DPoint3d::FromZero();}
-    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
-    DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
-    //DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate() override;
-
-protected:
-    //! @private
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
-    //! @private
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
-
-    //! @private
-    DgnElement::Code CreateCapturedSolutionCode(Utf8StringCR slnId);
-
+    // Base for helper classes that assist in making harvested solutions persistent
     struct HarvestedSolutionWriter
         {
       protected:
@@ -962,11 +946,13 @@ protected:
         DgnModelR m_destModel;
       public:
         virtual DgnDbR _GetOutputDgnDb() {return m_destModel.GetDgnDb();}
+        virtual DgnModelR _GetOutputModel() {return m_destModel;}
         virtual PhysicalElementPtr _CreateCapturedSolutionElement(DgnDbStatus& status, DgnClassId iclass, DgnElement::Code const& icode); // (rarely need to override this)
         virtual PhysicalElementCPtr _WriteSolution(DgnDbStatus&, PhysicalElementR) = 0;
         HarvestedSolutionWriter(DgnModelR m, ComponentModel& c) : m_destModel(m), m_cm(c) {;}
         };
 
+    // Makes a "catalog item" persistent
     struct HarvestedSolutionInserter : HarvestedSolutionWriter
         {
         DEFINE_T_SUPER(HarvestedSolutionWriter)
@@ -976,6 +962,7 @@ protected:
         HarvestedSolutionInserter(DgnModelR m, ComponentModel& c) : HarvestedSolutionWriter(m,c) {;}
         };
 
+    // Makes a unique/single solution persistent
     struct HarvestedSingletonInserter : HarvestedSolutionInserter
         {
         DEFINE_T_SUPER(HarvestedSolutionInserter)
@@ -985,6 +972,7 @@ protected:
         HarvestedSingletonInserter(DgnModelR m, ComponentModel& c) : HarvestedSolutionInserter(m,c) {;}
         };
 
+    // Updates any kind of persistent solution element
     struct HarvestedSolutionUpdater : HarvestedSolutionWriter
         {
         DEFINE_T_SUPER(HarvestedSolutionWriter)
@@ -995,12 +983,32 @@ protected:
         HarvestedSolutionUpdater(DgnModelR m, ComponentModel& c, PhysicalElementCR e) : HarvestedSolutionWriter(m, c), m_existing(&e) {;}
         };
 
-    //! @private
-    DGNPLATFORM_EXPORT PhysicalElementCPtr HarvestSolution(DgnDbStatus& status, DgnElement::Code const& icode, Placement3dCR placement, HarvestedSolutionWriter& WriterHandler);
+private:
+    CompProps m_compProps;
+
+    DPoint3d _GetGlobalOrigin() const override final {return DPoint3d::FromZero();}
+    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
+    void _GetSolverOptions(Json::Value&) override;
+    DgnDbStatus _OnDelete() override;
+    //DgnDbStatus _OnUpdate() override;
+
+    void _ToPropertiesJson(Json::Value&) const override;//!< @private
+    void _FromPropertiesJson(Json::Value const&) override;//!< @private
+
+    DgnElement::Code CreateCapturedSolutionCode(Utf8StringCR slnId);
+
+    DgnDbStatus HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<PhysicalElementCPtr>& nestedInstances);
+    PhysicalElementPtr CreateCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, Placement3dCR placement, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
+    PhysicalElementCPtr MakeCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, Placement3dCR placement, HarvestedSolutionWriter& WriterHandler);
 
 public:
     //! @private - used in testing only 
     DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
+
+    //! @private - used only by ElementCopier
+    static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&);
+    //! @private - used only by importer
+    static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&);
 
     DGNPLATFORM_EXPORT explicit ComponentModel(CreateParams const& params);
 
@@ -1182,6 +1190,11 @@ public:
                                                     Utf8StringCR capturedSolutionName,
                                                     ModelSolverDef::ParameterSet const& parameters, 
                                                     Placement3dCR placement, DgnElement::Code const& code = DgnElement::Code());
+
+    //! Look up the captured solution element that was used to generate the specified instance
+    //! @param instance An element that is an instance of a solution to some component model
+    //! @return the captured solution element that was used to generate the specified instance or nullptr if \a instance is not in fact an instance of any known component model
+    DGNPLATFORM_EXPORT static PhysicalElementCPtr QuerySolutionFromInstance(PhysicalElementCR instance);
 
     //! Search for all instances of the specified captured solution for this component model
     //! @param instances    Where to return the IDs of the instances

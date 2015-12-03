@@ -1249,6 +1249,9 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
 
     ccp->_OnImported(*this, importer);
 
+    // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
+    ComponentModel::OnElementImported(*ccp, *this, importer);
+
     return ccp;
     }
 
@@ -2721,41 +2724,37 @@ ElementCopier::ElementCopier()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, PhysicalElementCR templateItem,
-    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& icode)
+PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, PhysicalElementCR sourceElement,
+    Placement3dCR placementIn, DgnElement::Code const& icode, DgnElementId newParentId)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
-    Placement3d placement(origin, angles, templateItem.GetPlacement().GetElementBox());
+    Placement3d placement(placementIn);
+    placement.GetElementBoxR() = sourceElement.GetPlacement().GetElementBox();
 
-    PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), templateItem.GetElementClassId(), templateItem.GetCategoryId(), placement, icode);
+    PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), sourceElement.GetElementClassId(), sourceElement.GetCategoryId(), placement, icode);
 
-    DgnElementPtr instanceDgnElement0 = templateItem.Clone(&status, &iparams);
-    if (!instanceDgnElement0.IsValid())
+    DgnElementPtr outputDgnElement0 = sourceElement.Clone(&status, &iparams);
+    if (!outputDgnElement0.IsValid())
         return nullptr;
 
-    PhysicalElementPtr instanceElement0 = instanceDgnElement0->ToPhysicalElementP();
-    if (!instanceElement0.IsValid())
+    if (!newParentId.IsValid())
         {
-        status = DgnDbStatus::WrongClass;
-        BeAssert(false);
-        return nullptr;
+        DgnElementId remappedParentId = m_context.FindElementId(outputDgnElement0->GetParentId());
+        if (remappedParentId.IsValid())
+            newParentId = remappedParentId;
         }
+    outputDgnElement0->SetParentId(newParentId);
 
     // *** WIP_CLONE - work-around problem with CreateParams slicing
-    instanceElement0->SetPlacement(placement);
+    outputDgnElement0->ToPhysicalElementP()->SetPlacement(placement);
 
-    DgnElementCPtr instanceDgnElement = instanceElement0->Insert(&status);
-    if (!instanceDgnElement.IsValid())
+    DgnElementCPtr outputDgnElement = outputDgnElement0->Insert(&status);
+    if (!outputDgnElement.IsValid())
         return nullptr;
 
-    PhysicalElementCPtr instanceElement = instanceDgnElement->ToPhysicalElement();
-    if (!instanceElement.IsValid())
-        {
-        status = DgnDbStatus::WrongClass;
-        BeAssert(false);
-        return nullptr;
-        }
+    // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
+    ComponentModel::OnElementCopied(*outputDgnElement->ToPhysicalElement(), sourceElement, m_context);
 
-    return instanceElement;
+    return outputDgnElement0->ToPhysicalElementP();
     }
