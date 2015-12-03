@@ -392,10 +392,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
-    <ECClass typeName="Element2d"  isCustomAttributeClass="False" isStruct="False" isDomainClass="False">
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
-    </ECClass>
     <ECClass typeName="PhysicalElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
@@ -409,10 +405,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>PhysicalElement</BaseClass>
     </ECClass>
     <ECClass typeName="DrawingElement" isDomainClass="True">
+        <!-- 2D element used in drawings -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>Element2d</BaseClass>
+        <BaseClass>Element</BaseClass>
+        <BaseClass>GeometrySource</BaseClass>
     </ECClass>
 
     <ECClass typeName="TextAnnotationItem" isDomainClass="True">
