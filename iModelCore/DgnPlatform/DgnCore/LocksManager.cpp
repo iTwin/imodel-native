@@ -737,7 +737,8 @@ LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db)
 
     // ###TODO: If IsCreatingRevision(), use RevisionManager::m_currentRevision
     // (Expect more often than not this function will be invoked while pushing a revision and relinquishing locks...)
-    DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
+    RevisionStatus revStatus;
+    DgnRevisionPtr rev = db.Revisions().StartCreateRevision(&revStatus);
     if (rev.IsValid())
         {
         ChangeStreamFileReader stream(rev->GetChangeStreamFile());
@@ -748,6 +749,11 @@ LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db)
             }
 
         db.Revisions().AbandonCreateRevision();
+        }
+    else if (RevisionStatus::NoTransactions == revStatus)
+        {
+        // No changes => no locks have been used
+        m_status = LockStatus::Success;
         }
     }
 
