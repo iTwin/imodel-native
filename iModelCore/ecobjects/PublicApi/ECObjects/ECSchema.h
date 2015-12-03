@@ -1365,7 +1365,7 @@ friend struct SchemaXmlReaderImpl;
         ECOBJECTS_EXPORT static Utf8String GetQualifiedEnumerationName(ECSchemaCR primarySchema, ECEnumerationCR ecEnumeration);
         //! Given a qualified enum name, will parse out the schema's namespace prefix and the enum name.
         //! @param[out] prefix  The namespace prefix of the schema
-        //! @param[out] className   The name of the enum
+        //! @param[out] enumName   The name of the enum
         //! @param[in]  qualifiedEnumName  The qualified name of the enum, in the format of ns:enumName
         //! @return A status code indicating whether the qualified name was successfully parsed or not
         ECOBJECTS_EXPORT static ECObjectsStatus ParseEnumerationName(Utf8StringR prefix, Utf8StringR enumName, Utf8StringCR qualifiedEnumName);
