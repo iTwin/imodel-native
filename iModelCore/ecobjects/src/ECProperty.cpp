@@ -676,7 +676,7 @@ ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR ty
     ECClassCP ecClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == ecClass)
         {
-        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%ls'.", 
+        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
             typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
