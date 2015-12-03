@@ -73,9 +73,9 @@ void CachingDataSource::CancelAllTasksAndWait()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICancellationTokenPtr CachingDataSource::CreateCancellationToken(ICancellationTokenPtr cancellationToken)
+ICancellationTokenPtr CachingDataSource::CreateCancellationToken(ICancellationTokenPtr ct)
     {
-    return MergeCancellationToken::Create(m_cancellationToken, cancellationToken);
+    return MergeCancellationToken::Create(m_cancellationToken, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -237,15 +237,15 @@ BeFileNameCR temporaryDir
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancellationTokenPtr ct)
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
     auto schemaDownloadResults = std::make_shared<bmap<ObjectId, WSFileResult>>();
     auto temporaryFiles = std::make_shared<bvector<TempFilePtr>>();
     auto result = std::make_shared<Result>(Result::Success());
 
-    return m_client->GetWSClient()->GetServerInfo(cancellationToken)
+    return m_client->GetWSClient()->GetServerInfo(ct)
         ->Then(m_cacheAccessThread, [=] (WSInfoResult infoResult)
         {
         if (!infoResult.IsSuccess())
@@ -260,7 +260,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
         })
             ->Then(m_cacheAccessThread, [=]
             {
-            if (cancellationToken->IsCanceled())
+            if (ct->IsCanceled())
                 {
                 result->SetError(Status::Canceled);
                 return;
@@ -286,7 +286,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
             Utf8String eTag = txn.GetCache().ReadResponseCacheTag(responseKey);
             txn.Commit();
 
-            m_client->SendGetSchemasRequest(eTag, cancellationToken)
+            m_client->SendGetSchemasRequest(eTag, ct)
                 ->Then(m_cacheAccessThread, [=] (WSObjectsResult& objectsResult)
                 {
                 if (!objectsResult.IsSuccess())
@@ -306,7 +306,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
             })
                 ->Then(m_cacheAccessThread, [=]
                 {
-                if (cancellationToken->IsCanceled())
+                if (ct->IsCanceled())
                     {
                     result->SetError(Status::Canceled);
                     return;
@@ -339,7 +339,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
 
                     temporaryFiles->push_back(schemaFile);
 
-                    m_client->SendGetFileRequest(schemaId, schemaFile->GetPath(), eTag, nullptr, cancellationToken)
+                    m_client->SendGetFileRequest(schemaId, schemaFile->GetPath(), eTag, nullptr, ct)
                         ->Then(m_cacheAccessThread, [=] (WSFileResult& schemaFileResult)
                         {
                         schemaDownloadResults->insert({schemaId, schemaFileResult});
@@ -348,7 +348,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                 })
                     ->Then(m_cacheAccessThread, [=]
                     {
-                    if (cancellationToken->IsCanceled())
+                    if (ct->IsCanceled())
                         {
                         result->SetError(Status::Canceled);
                         return;
@@ -583,15 +583,15 @@ AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetObject
 ObjectIdCR objectId,
 DataOrigin origin,
 IDataSourceCache::JsonFormat format,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
     auto result = std::make_shared <ObjectsResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
-        if (cancellationToken->IsCanceled())
+        if (ct->IsCanceled())
             {
             result->SetError(Status::Canceled);
             return;
@@ -621,7 +621,7 @@ ICancellationTokenPtr cancellationToken
                 }
             }
 
-        m_client->SendGetObjectRequest(objectId, txn.GetCache().ReadInstanceCacheTag(objectId), cancellationToken)
+        m_client->SendGetObjectRequest(objectId, txn.GetCache().ReadInstanceCacheTag(objectId), ct)
             ->Then(m_cacheAccessThread, [=] (WSObjectsResult& objectsResult)
             {
             auto txn = StartCacheTransaction();
@@ -793,16 +793,16 @@ CachedResponseKeyCR responseKey,
 WSQueryCR query,
 DataOrigin origin,
 std::shared_ptr<const ISelectProvider> cachedSelectProvider,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     if (nullptr == cachedSelectProvider)
         {
         cachedSelectProvider = std::make_shared<ISelectProvider>();
         }
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, cancellationToken)
+    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
         ->Then<ObjectsResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -829,12 +829,12 @@ AsyncTaskPtr<CachingDataSource::KeysResult> CachingDataSource::GetObjectsKeys
 CachedResponseKeyCR responseKey,
 WSQueryCR query,
 DataOrigin origin,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, cancellationToken)
+    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
         ->Then<KeysResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -864,14 +864,14 @@ AsyncTaskPtr<CachingDataSource::DataOriginResult> CachingDataSource::CacheNaviga
 ObjectIdCR parentId,
 DataOrigin origin,
 std::shared_ptr<const ISelectProvider> selectProvider,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     auto finalResult = std::make_shared <DataOriginResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
-        if (cancellationToken->IsCanceled())
+        if (ct->IsCanceled())
             {
             finalResult->SetError(Status::Canceled);
             return;
@@ -893,7 +893,7 @@ ICancellationTokenPtr cancellationToken
             return;
             }
 
-        CacheObjects(responseKey, *query, origin, IWSRepositoryClient::InitialSkipToken, 0, cancellationToken)
+        CacheObjects(responseKey, *query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
             ->Then([=] (DataOriginResult result)
             {
             *finalResult = result;
@@ -913,16 +913,16 @@ AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetNavigationC
 ObjectIdCR parentId,
 DataOrigin origin,
 std::shared_ptr<const SelectProvider> selectProvider,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     if (nullptr == selectProvider)
         {
         selectProvider = std::make_shared<SelectProvider>();
         }
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
-    return CacheNavigationChildren(parentId, origin, selectProvider->GetForRemote(), cancellationToken)
+    return CacheNavigationChildren(parentId, origin, selectProvider->GetForRemote(), ct)
         ->Then<ObjectsResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -951,16 +951,16 @@ AsyncTaskPtr<CachingDataSource::KeysResult> CachingDataSource::GetNavigationChil
 ObjectIdCR parentId,
 DataOrigin origin,
 std::shared_ptr<const ISelectProvider> selectProvider,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     if (nullptr == selectProvider)
         {
         selectProvider = std::make_shared<ISelectProvider>();
         }
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
-    return CacheNavigationChildren(parentId, origin, selectProvider, cancellationToken)
+    return CacheNavigationChildren(parentId, origin, selectProvider, ct)
         ->Then<KeysResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -1082,10 +1082,10 @@ AsyncTaskPtr<CachingDataSource::FileResult> CachingDataSource::GetFile
 ObjectIdCR objectId,
 DataOrigin origin,
 LabeledProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
     // TODO: Support RemoteOrCachedData
     if (origin == DataOrigin::RemoteOrCachedData)
@@ -1097,7 +1097,7 @@ ICancellationTokenPtr cancellationToken
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
-        if (cancellationToken->IsCanceled())
+        if (ct->IsCanceled())
             {
             result->SetError(Status::Canceled);
             return;
@@ -1135,7 +1135,7 @@ ICancellationTokenPtr cancellationToken
             std::move(filesToDownload),
             FileCache::ExistingOrTemporary,
             std::move(onProgress),
-            cancellationToken
+            ct
             );
 
         m_cacheAccessThread->Push(task);
@@ -1173,16 +1173,16 @@ const bvector<ObjectId>& filesIds,
 bool skipCachedFiles,
 FileCache fileCacheLocation,
 LabeledProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
     auto result = std::make_shared <BatchResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
-        if (cancellationToken->IsCanceled())
+        if (ct->IsCanceled())
             {
             result->SetError(Status::Canceled);
             return;
@@ -1220,7 +1220,7 @@ ICancellationTokenPtr cancellationToken
             std::move(filesToDownload),
             fileCacheLocation,
             std::move(onProgress),
-            cancellationToken
+            ct
             );
 
         m_cacheAccessThread->Push(task);
@@ -1242,16 +1242,16 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::DownloadAndCacheChildren
 (
 const bvector<ObjectId>& parentIds,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
     auto finalResult = std::make_shared<CachingDataSource::Result>();
     finalResult->SetSuccess();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
-        if (cancellationToken->IsCanceled())
+        if (ct->IsCanceled())
             {
             finalResult->SetError(Status::Canceled);
             return;
@@ -1259,7 +1259,7 @@ ICancellationTokenPtr cancellationToken
 
         for (ObjectIdCR parentId : parentIds)
             {
-            CacheNavigationChildren(parentId, DataOrigin::RemoteData, nullptr, cancellationToken)
+            CacheNavigationChildren(parentId, DataOrigin::RemoteData, nullptr, ct)
                 ->Then(m_cacheAccessThread, [=] (DataOriginResult& result)
                 {
                 if (!result.IsSuccess())
@@ -1281,11 +1281,11 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 SyncProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken,
+ICancellationTokenPtr ct,
 SyncOptions options
 )
     {
-    return SyncLocalChanges(nullptr, std::move(onProgress), cancellationToken, options);
+    return SyncLocalChanges(nullptr, std::move(onProgress), ct, options);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1295,12 +1295,12 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 const bset<ECInstanceKey>& objectsToSync,
 SyncProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken,
+ICancellationTokenPtr ct,
 SyncOptions options
 )
     {
     auto objectsToSyncPtr = std::make_shared<bset<ECInstanceKey>>(objectsToSync);
-    return SyncLocalChanges(objectsToSyncPtr, std::move(onProgress), cancellationToken, options);
+    return SyncLocalChanges(objectsToSyncPtr, std::move(onProgress), ct, options);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1310,11 +1310,11 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
 SyncProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken,
+ICancellationTokenPtr ct,
 SyncOptions options
 )
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
 
     auto syncTask = std::make_shared<SyncLocalChangesTask>
         (
@@ -1322,7 +1322,7 @@ SyncOptions options
         objectsToSync,
         options,
         std::move(onProgress),
-        cancellationToken
+        ct
         );
 
     m_cacheAccessThread->ExecuteAsync([=]
@@ -1369,10 +1369,10 @@ void CachingDataSource::ExecuteNextSyncLocalChangesTask()
 AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::CacheObject
 (
 ObjectIdCR objectId,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    cancellationToken = CreateCancellationToken(cancellationToken);
+    ct = CreateCancellationToken(ct);
     auto result = std::make_shared<CachingDataSource::Result>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
@@ -1380,10 +1380,10 @@ ICancellationTokenPtr cancellationToken
         auto txn = StartCacheTransaction();
         Utf8String cacheTag = txn.GetCache().ReadInstanceCacheTag(objectId);
 
-        m_client->SendGetObjectRequest(objectId, cacheTag, cancellationToken)
+        m_client->SendGetObjectRequest(objectId, cacheTag, ct)
             ->Then(m_cacheAccessThread, [=] (WSObjectsResult& objectsResult)
             {
-            if (cancellationToken->IsCanceled())
+            if (ct->IsCanceled())
                 {
                 result->SetError(Status::Canceled);
                 return;
@@ -1430,7 +1430,7 @@ bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
 ProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     auto task = std::make_shared<SyncCachedDataTask>
@@ -1440,7 +1440,7 @@ ICancellationTokenPtr cancellationToken
         std::move(initialQueries),
         std::move(queryProviders),
         std::move(onProgress),
-        CreateCancellationToken(cancellationToken)
+        CreateCancellationToken(ct)
         );
 
     m_cacheAccessThread->Push(task);
@@ -1460,7 +1460,7 @@ const bvector<ObjectId>& navigationTreesToCacheFully,
 const bvector<ObjectId>& navigationTreesToUpdateOnly,
 std::shared_ptr<const ISelectProvider> updateSelectProvider,
 LabeledProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     HttpClient::BeginNetworkActivity();
@@ -1472,7 +1472,7 @@ ICancellationTokenPtr cancellationToken
         bvector<ObjectId>(navigationTreesToUpdateOnly),
         updateSelectProvider,
         std::move(onProgress),
-        CreateCancellationToken(cancellationToken)
+        CreateCancellationToken(ct)
         );
 
     m_cacheAccessThread->Push(task);

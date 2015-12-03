@@ -96,7 +96,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         virtual void CancelAllTasksAndWait() = 0;
 
-        virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr cancellationToken) = 0;
+        virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct) = 0;
 
         //! Get read/write transaction for local data cache storage. Must be called in cache access thread.
         //! READ/WRITE:
@@ -141,7 +141,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             ObjectIdCR objectId,
             DataOrigin origin,
             IDataSourceCache::JsonFormat format,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return flat list of instances cached.
@@ -149,40 +149,40 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param[in] query - server query
         //! @param[in] origin - specify what data to try returning
         //! @param[in] cachedSelectProvider - (optional) provider for reading instances from cache. Note that query parameter specifies property selection from server.
-        //! @param[in] cancellationToken - (optional)
+        //! @param[in] ct - (optional)
         virtual AsyncTaskPtr<ObjectsResult> GetObjects
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
             std::shared_ptr<const ISelectProvider> cachedSelectProvider,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) = 0;
 
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return ECInstanceKeys of instances cached.
         //! @param[in] responseKey - identifier for holding cached data
         //! @param[in] query - server query
         //! @param[in] origin - specify what data to try returning
-        //! @param[in] cancellationToken - (optional)
+        //! @param[in] ct - (optional)
         virtual AsyncTaskPtr<KeysResult> GetObjectsKeys
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) = 0;
 
         //! Get navigation instances.
         //! @param[in] parentId - parent ObjectId or empty for repository root. Each parent (inluding root) must be cached or linked to cache root first.
         //! @param[in] origin
         //! @param[in] readOptions
-        //! @param[in] cancellationToken
+        //! @param[in] ct
         virtual AsyncTaskPtr<ObjectsResult> GetNavigationChildren
             (
             ObjectIdCR parentId,
             DataOrigin origin,
             std::shared_ptr<const SelectProvider> readOptions,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual AsyncTaskPtr<KeysResult> GetNavigationChildrenKeys
@@ -190,7 +190,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             ObjectIdCR parentId,
             DataOrigin origin,
             std::shared_ptr<const ISelectProvider> remoteSelectProvider,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual AsyncTaskPtr<FileResult> GetFile
@@ -198,7 +198,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             ObjectIdCR fileId,
             DataOrigin origin,
             LabeledProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) = 0;
 
         virtual AsyncTaskPtr<BatchResult> CacheFiles
@@ -207,18 +207,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bool skipCachedFiles,
             FileCache fileCacheLocation,
             LabeledProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) = 0;
 
         virtual AsyncTaskPtr<Result> DownloadAndCacheChildren
             (
             const bvector<ObjectId>& parentIds,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) = 0;
 
         //! Push all local changes to server with SyncStatus::Ready.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
-        //! @param cancellationToken - cancelling sync task
+        //! @param ct - cancelling sync task
         //! @param options - additonal configuration for sync
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
@@ -226,14 +226,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken,
+            ICancellationTokenPtr ct,
             SyncOptions options = SyncOptions()
             ) = 0;
 
         //! Push specific local changes to server
         //! @param instancesToSync - locally changed instances to sync. Changes with SyncStatus::NotReady are also synced if specified.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
-        //! @param cancellationToken - cancelling sync task
+        //! @param ct - cancelling sync task
         //! @param options - additonal configuration for sync
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
@@ -242,7 +242,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             const bset<ECInstanceKey>& instancesToSync,
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken,
+            ICancellationTokenPtr ct,
             SyncOptions options = SyncOptions()
             ) = 0;
 
@@ -250,7 +250,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param initialInstances - list of instances that should be used to start syncing
         //! @param initialQueries - list of queries that should be used to start syncing
         //! @param queryProviders - list of query providers to get queries for each instance that is being synced
-        //! @param cancellationToken - cancelling sync task
+        //! @param ct - cancelling sync task
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
         //! after everything is synced.
@@ -260,7 +260,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
             ProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) = 0;
 
         //! DEPRECATED - Use SyncCachedData ().
@@ -271,7 +271,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param persistenceNavigationTrees - Update all items under specified objects including files
         //! @param temporaryNavigationTrees - Update only previously cached items under specified object and don't update any files
         //! @param temporaryNavigationTreesServerSelectProvider - Selected properties will be used to retrieve from server for "Update only" temporary navigation trees.
-        //! @param cancellationToken - cancelling sync task
+        //! @param ct - cancelling sync task
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
         //! after everything is synced.
@@ -281,7 +281,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             const bvector<ObjectId>& temporaryNavigationTrees,
             std::shared_ptr<const ISelectProvider> temporaryNavigationTreesServerSelectProvider,
             LabeledProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) = 0;
     };
 
@@ -334,7 +334,7 @@ struct ICachingDataSource::Error : public AsyncError
         WSCACHE_EXPORT Error(Utf8StringCR message);
         //! Constructs error with supplied status or status Canceled if cancellation token is non null and already canceled.
         //! Used when operation might have been canceled but status does not indicated that.
-        WSCACHE_EXPORT Error(ICachingDataSource::Status status, ICancellationTokenPtr cancellationToken);
+        WSCACHE_EXPORT Error(ICachingDataSource::Status status, ICancellationTokenPtr ct);
         WSCACHE_EXPORT ~Error();
 
         WSCACHE_EXPORT ICachingDataSource::Status GetStatus() const;

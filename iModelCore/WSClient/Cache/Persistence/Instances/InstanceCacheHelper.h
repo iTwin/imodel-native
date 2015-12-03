@@ -54,7 +54,7 @@ struct InstanceCacheHelper
             PartialCachingState* partialCachingState,
             UpdateCachingState* updateCachingState,
             ECInstanceKey* cachedInstanceOut,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
 
         BentleyStatus CacheRelationshipInstance
@@ -90,7 +90,7 @@ struct InstanceCacheHelper
             CachedInstances& cachedInstancesInOut,
             PartialCachingState* partialCachingState = nullptr,
             UpdateCachingState* updateCachingState = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             );
 
         //! Utility for caching new or existing instance to cache and handle modified instance merging

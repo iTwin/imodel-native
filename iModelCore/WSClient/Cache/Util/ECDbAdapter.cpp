@@ -488,9 +488,9 @@ ECInstanceKey ECDbAdapter::GetInstanceKeyFromJsonInstance(JsonValueCR ecInstance
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstancesArrayOut, ICancellationTokenPtr cancellationToken)
+BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstancesArrayOut, ICancellationTokenPtr ct)
     {
-    if (cancellationToken && cancellationToken->IsCanceled())
+    if (ct && ct->IsCanceled())
         {
         return ERROR;
         }
@@ -502,7 +502,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement&
     ECSqlStepStatus status;
     while (ECSqlStepStatus::HasRow == (status = statement.Step()))
         {
-        if (cancellationToken && cancellationToken->IsCanceled())
+        if (ct && ct->IsCanceled())
             {
             return ERROR;
             }
@@ -553,13 +553,13 @@ BentleyStatus ECDbAdapter::ExtractECIdsFromStatement
 ECSqlStatement& statement,
 int ecInstanceIdcolumn,
 bvector<ECInstanceId>& ecIdsOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     ECSqlStepStatus status;
     while (ECSqlStepStatus::HasRow == (status = statement.Step()))
         {
-        if (cancellationToken && cancellationToken->IsCanceled())
+        if (ct && ct->IsCanceled())
             {
             return ERROR;
             }
@@ -577,13 +577,13 @@ ECSqlStatement& statement,
 int ecInstanceIdcolumn,
 ECClassId classId,
 ECInstanceKeyMultiMap& keysOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     ECSqlStepStatus status;
     while (ECSqlStepStatus::HasRow == (status = statement.Step()))
         {
-        if (cancellationToken && cancellationToken->IsCanceled())
+        if (ct && ct->IsCanceled())
             {
             return ERROR;
             }
@@ -772,7 +772,7 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecCla
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::GetJsonInstances(JsonValueR jsonOut, ECClassCP ecClass, Utf8CP whereClause, ICancellationTokenPtr cancellationToken)
+BentleyStatus ECDbAdapter::GetJsonInstances(JsonValueR jsonOut, ECClassCP ecClass, Utf8CP whereClause, ICancellationTokenPtr ct)
     {
     Utf8String ecsql = "SELECT * FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
     if (whereClause != nullptr)
@@ -783,7 +783,7 @@ BentleyStatus ECDbAdapter::GetJsonInstances(JsonValueR jsonOut, ECClassCP ecClas
     ECSqlStatement statement;
     PrepareStatement(statement, ecsql);
 
-    return GetJsonInstances(jsonOut, ecClass, statement, cancellationToken);
+    return GetJsonInstances(jsonOut, ecClass, statement, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -794,10 +794,10 @@ BentleyStatus ECDbAdapter::GetJsonInstances
 JsonValueR jsonOut,
 ECClassCP ecClass,
 ECSqlStatement& statement,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    return ExtractJsonInstanceArrayFromStatement(statement, ecClass, jsonOut, cancellationToken);
+    return ExtractJsonInstanceArrayFromStatement(statement, ecClass, jsonOut, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
