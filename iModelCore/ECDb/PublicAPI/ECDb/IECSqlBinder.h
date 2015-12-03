@@ -22,7 +22,7 @@ struct IECSqlArrayBinder;
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    05/2013
 //+===============+===============+===============+===============+===============+======
-struct IECSqlBinder : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlBinder : NonCopyableClass
     {
 public:
     //=======================================================================================
@@ -164,7 +164,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    01/2014
 //+===============+===============+===============+===============+===============+======
-struct IECSqlStructBinder : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlStructBinder : NonCopyableClass
     {
 private:
     virtual IECSqlBinder& _GetMember(Utf8CP structMemberPropertyName) = 0;
@@ -189,7 +189,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    01/2014
 //+===============+===============+===============+===============+===============+======
-struct IECSqlArrayBinder : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlArrayBinder : NonCopyableClass
     {
 private:
     virtual IECSqlBinder& _AddArrayElement() = 0;
