@@ -512,57 +512,98 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct PropertySymbol : Symbol
 {
-private:
     /*=============================================================================**//**
     * @bsiclass
     +===============+===============+===============+===============+===============+==*/
     struct PropertyEvaluator : RefCountedBase
         {
-        virtual ECValue EvaluateProperty () = 0;
+        virtual ~PropertyEvaluator() {}
+        virtual ECValue _EvaluateProperty() = 0;
+        };
+    
+    /*=============================================================================**//**
+    * @bsiclass
+    +===============+===============+===============+===============+===============+==*/
+    struct ContextEvaluator : RefCountedBase
+        {
+        virtual ~ContextEvaluator() {}
+        virtual ExpressionContextPtr _GetContext() = 0;
         };
 
+private:
     /*=============================================================================**//**
     * @bsiclass
     +===============+===============+===============+===============+===============+==*/
     template<class InstanceType, class ReturnValueType>
     struct TemplatedPropertyEvaluator : PropertyEvaluator
         {
-        typedef ReturnValueType (InstanceType::*GetPropertyMethod) () const;
+        typedef ReturnValueType(InstanceType::*GetPropertyMethod)() const;
         private:
             InstanceType const& m_instance;
             GetPropertyMethod   m_method;
             TemplatedPropertyEvaluator (InstanceType const& instance, GetPropertyMethod method)
-                : m_instance (instance), m_method (method)
-                { }
+                : m_instance(instance), m_method(method)
+                {}
         public:
-            virtual ECValue EvaluateProperty () override { return ECValue ((m_instance.*m_method) ()); }
-            static RefCountedPtr<PropertyEvaluator> Create (InstanceType const& instance, GetPropertyMethod method) { return new TemplatedPropertyEvaluator (instance, method); }
+            virtual ECValue _EvaluateProperty() override {return ECValue((m_instance.*m_method)());}
+            static RefCountedPtr<PropertyEvaluator> Create(InstanceType const& instance, GetPropertyMethod method) { return new TemplatedPropertyEvaluator(instance, method); }
         };
 
-    ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create (Utf8CP name, RefCountedPtr<PropertyEvaluator> evaluator);
-
+    /*=============================================================================**//**
+    * @bsiclass
+    +===============+===============+===============+===============+===============+==*/
+    template<class InstanceType>
+    struct TemplatedContextEvaluator : ContextEvaluator
+        {
+        typedef ExpressionContextPtr(InstanceType::*GetContextMethod)() const;
+        private:
+            InstanceType const& m_instance;
+            GetContextMethod    m_method;
+            TemplatedContextEvaluator(InstanceType const& instance, GetContextMethod method)
+                : m_instance(instance), m_method(method)
+                {}
+        public:
+            virtual ExpressionContextPtr _GetContext() override {return (m_instance.*m_method)();}
+            static RefCountedPtr<ContextEvaluator> Create(InstanceType const& instance, GetContextMethod method) { return new TemplatedContextEvaluator(instance, method); }
+        };
+    
 /*__PUBLISH_SECTION_END__*/
 private:
-    RefCountedPtr<PropertyEvaluator> m_evaluator;
+    RefCountedPtr<PropertyEvaluator> m_valueEvaluator;
+    RefCountedPtr<ContextEvaluator> m_contextEvaluator;
 
 protected:
-    ECOBJECTS_EXPORT PropertySymbol (Utf8CP name, RefCountedPtr<PropertyEvaluator> evaluator);
-    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-    virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
+    ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, PropertyEvaluator& evaluator);
+    ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, ContextEvaluator& evaluator);
+    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    virtual ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
         {
         return ExprStatus_NeedsLValue;
         }
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create(Utf8CP name, PropertyEvaluator& evaluator);
+    ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create(Utf8CP name, ContextEvaluator& evaluator);
+
     //! Creates a new PropertySymbol with the given name, instance and method reference to get the property value
     //! @param name     Name of the symbol.
     //! @param instance Instance of type InstanceType that will be used to invoke the provided method.
     //! @param method   The method that provides value for this property.
     template<class InstanceType, class ReturnValueType>
-    static RefCountedPtr<PropertySymbol> Create (Utf8CP name, InstanceType const& instance, ReturnValueType (InstanceType::*method) () const) 
+    static RefCountedPtr<PropertySymbol> Create(Utf8CP name, InstanceType const& instance, ReturnValueType(InstanceType::*method)() const) 
         {
-        return Create (name, TemplatedPropertyEvaluator<InstanceType, ReturnValueType>::Create (instance, method));
+        return Create(name, *TemplatedPropertyEvaluator<InstanceType, ReturnValueType>::Create(instance, method));
+        }
+
+    //! Creates a new PropertySymbol with the given name, instance and method reference to get the property value
+    //! @param name     Name of the symbol.
+    //! @param instance Instance of type InstanceType that will be used to invoke the provided method.
+    //! @param method   The method that provides the expression context for this property.
+    template<class InstanceType>
+    static RefCountedPtr<PropertySymbol> Create(Utf8CP name, InstanceType const& instance, ExpressionContextPtr(InstanceType::*method)() const) 
+        {
+        return Create(name, *TemplatedContextEvaluator<InstanceType>::Create(instance, method));
         }
 };
 
