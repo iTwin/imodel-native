@@ -1246,7 +1246,7 @@ public:
 };
 
 //=======================================================================================
-//! The position, rotation angle, and size of a DgnElement2d.
+//! The position, rotation angle, and bounding box for a 2-dimensional element.
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct Placement2d
@@ -1459,17 +1459,19 @@ protected:
 }; // DgnElement3d
 
 //=======================================================================================
-//! A 2-dimensional geometric element.
+//! A 2-dimensional geometric element used in drawings.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
+struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement, GeometrySource2d
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement)
+    friend struct dgn_ElementHandler::Drawing;
 
+public:
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
+    DEFINE_T_SUPER(DrawingElement::T_Super::CreateParams);
 
     DgnCategoryId m_categoryId;
     Placement2dCR m_placement;
@@ -1482,7 +1484,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
     };
 
 protected:
-
     DgnCategoryId   m_categoryId;
     GeomStream      m_geom;
     Placement2d     m_placement;
@@ -1491,6 +1492,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
 
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
@@ -1510,9 +1512,13 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
-    explicit DgnElement2d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
+    explicit DrawingElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
 
-}; // DgnElement2d
+public:
+    //! Create a DrawingElement from CreateParams.
+    static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+
+}; // DrawingElement
 
 //=======================================================================================
 //! A DgnElement3d that exists in the physical coordinate space of a DgnDb.
@@ -1537,24 +1543,6 @@ public:
     //! @param[in] model The PhysicalModel for the new PhysicalElement.
     //! @param[in] categoryId The category for the new PhysicalElement.
     DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
-};
-
-//=======================================================================================
-//! A DgnElement2d that holds geometry in a DrawingModel
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
-{
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d)
-
-protected:
-    DrawingElementCP _ToDrawingElement() const override {return this;}
-
-public:
-    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
-    //! Create a DrawingElement from CreateParams.
-    static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 };
 
 //=======================================================================================
