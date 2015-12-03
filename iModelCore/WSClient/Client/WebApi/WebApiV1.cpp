@@ -234,16 +234,30 @@ WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(HttpResponse& resp
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className)
+WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(HttpResponse& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId)
     {
     Utf8String remoteId = response.GetBody().AsJson()["id"].asString();
     if (HttpStatus::Created == response.GetHttpStatus() && !remoteId.empty())
         {
         Json::Value createdObject;
 
-        createdObject["changedInstance"]["instanceAfterChange"]["schemaName"] = schemaName;
-        createdObject["changedInstance"]["instanceAfterChange"]["className"] = className;
-        createdObject["changedInstance"]["instanceAfterChange"]["instanceId"] = remoteId;
+        auto& instance = createdObject["changedInstance"]["instanceAfterChange"];
+        instance["schemaName"] = newObjectId.schemaName;
+        instance["className"] = newObjectId.className;
+        instance["instanceId"] = remoteId;
+
+        if (!parentObjectId.IsEmpty())
+            {
+            auto& relationship = createdObject["changedInstance"]["instanceAfterChange"]["relationshipInstances"][0];
+            relationship["schemaName"] = relObjectId.schemaName;
+            relationship["className"] = relObjectId.className;
+            relationship["instanceId"] = "";
+
+            auto& related = relationship["relatedInstance"];
+            related["schemaName"] = relObjectId.schemaName;
+            related["className"] = relObjectId.className;
+            related["instanceId"] = "";
+            }
 
         return WSCreateObjectResult::Success(createdObject);
         }
@@ -348,27 +362,36 @@ bool WebApiV1::IsObjectCreationJsonSupported(JsonValueCR objectCreationJson)
 void WebApiV1::GetParametersFromObjectCreationJson
 (
 JsonValueCR objectCreationJson,
-Utf8StringR schemaNameOut,
-Utf8StringR classNameOut,
+ObjectIdR newObjectId,
 Utf8StringR propertiesOut,
+ObjectIdR relObjectId,
 ObjectIdR parentObjectIdOut
 )
     {
-    JsonValueCR instanceJson = objectCreationJson["instance"];
+    JsonValueCR instance = objectCreationJson["instance"];
 
-    schemaNameOut = instanceJson["schemaName"].asString();
-    classNameOut = instanceJson["className"].asString();
-    propertiesOut = Json::FastWriter::ToString(instanceJson["properties"]);
+    newObjectId.schemaName = instance["schemaName"].asString();
+    newObjectId.className = instance["className"].asString();
+    newObjectId.remoteId = instance["instanceId"].asString();
 
-    if (0 == instanceJson["relationshipInstances"].size())
+    propertiesOut = Json::FastWriter::ToString(instance["properties"]);
+
+    if (0 == instance["relationshipInstances"].size())
         {
+        relObjectId = ObjectId();
         parentObjectIdOut = ObjectId();
         }
     else
         {
-        parentObjectIdOut.schemaName = schemaNameOut;
-        parentObjectIdOut.className = instanceJson["relationshipInstances"][0]["relatedInstance"]["className"].asString();
-        parentObjectIdOut.remoteId = instanceJson["relationshipInstances"][0]["relatedInstance"]["instanceId"].asString();
+        auto& relationship = instance["relationshipInstances"][0];
+        relObjectId.schemaName = relationship["schemaName"].asString();;
+        relObjectId.className = relationship["className"].asString();
+        relObjectId.remoteId = relationship["instanceId"].asString();
+
+        auto& related = relationship["relatedInstance"];
+        parentObjectIdOut.schemaName = related["schemaName"].asString();
+        parentObjectIdOut.className = related["className"].asString();
+        parentObjectIdOut.remoteId = related["instanceId"].asString();
         }
     }
 
@@ -935,17 +958,16 @@ ICancellationTokenPtr ct
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
         }
 
-    Utf8String schemaName;
-    Utf8String className;
-    Utf8String properties;
-    ObjectId parentObjectId;
+    Utf8String propertiesStr;
+    ObjectId newObjectId, relObjectId, parentObjectId;
 
-    GetParametersFromObjectCreationJson(objectCreationJson, schemaName, className, properties, parentObjectId);
+    GetParametersFromObjectCreationJson
+        (objectCreationJson, newObjectId, propertiesStr, relObjectId, parentObjectId);
 
-    Utf8String url = GetUrl(SERVICE_Objects, className, CreateParentQuery(parentObjectId), "v1.2");
+    Utf8String url = GetUrl(SERVICE_Objects, newObjectId.className, CreateParentQuery(parentObjectId), "v1.2");
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(properties), "application/json");
+    request.SetHandshakeRequestBody(HttpStringBody::Create(propertiesStr), "application/json");
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
@@ -953,9 +975,9 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSCreateObjectResult>([schemaName, className] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSCreateObjectResult>([=] (HttpResponse& httpResponse)
         {
-        return ResolveCreateObjectResponse(httpResponse, schemaName, className);
+        return ResolveCreateObjectResponse(httpResponse, newObjectId, relObjectId, parentObjectId);
         });
     }
 
