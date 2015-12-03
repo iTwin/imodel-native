@@ -181,7 +181,7 @@ ECClassType ECClass::GetClassType() const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECClass::IsEntityClass() const
     {
-    return _IsEntityClass();
+    return ECClassType::Entity == GetClassType();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
@@ -204,7 +204,7 @@ ECEntityClassP ECClass::GetEntityClassP()
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECClass::IsCustomAttributeClass() const
     {
-    return _IsCustomAttributeClass();
+    return ECClassType::CustomAttribute == GetClassType();
     }
 
 //---------------------------------------------------------------------------------------
@@ -228,7 +228,7 @@ ECCustomAttributeClassP ECClass::GetCustomAttributeClassP()
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECClass::IsStructClass() const
     {
-    return _IsStructClass();
+    return ECClassType::Struct == GetClassType();
     }
 
 //---------------------------------------------------------------------------------------
@@ -252,7 +252,7 @@ ECStructClassP ECClass::GetStructClassP()
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECClass::IsRelationshipClass() const
     {
-    return _IsRelationshipClass();
+    return ECClassType::Relationship == GetClassType();
     }
 
 /*---------------------------------------------------------------------------------**//**

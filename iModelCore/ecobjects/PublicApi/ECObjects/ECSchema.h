@@ -1088,10 +1088,6 @@ protected:
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual ECClassType                  _GetClassType() const { return ECClassType::Entity;} // default type
-    virtual bool                         _IsEntityClass() const { return false; }
-    virtual bool                         _IsStructClass() const { return false; }
-    virtual bool                         _IsCustomAttributeClass() const { return false; }
-    virtual bool                         _IsRelationshipClass() const { return false; }
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
@@ -1411,7 +1407,6 @@ protected:
     virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
     virtual ECEntityClassP _GetEntityClassP() override { return this; }
     virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
-    bool _IsEntityClass() const override { return true; }
 
 };
 
@@ -1440,7 +1435,6 @@ protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
     ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
-    bool _IsCustomAttributeClass() const override { return true; }
     ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
     ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
 
@@ -1471,7 +1465,6 @@ private:
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
     virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
-    virtual bool _IsStructClass() const override { return true; }
     virtual ECStructClassCP _GetStructClassCP() const override { return this;}
     virtual ECStructClassP _GetStructClassP() override { return this; }
 
@@ -1772,7 +1765,6 @@ protected:
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor) override;
-    virtual bool                        _IsRelationshipClass() const override { return true;}
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }
