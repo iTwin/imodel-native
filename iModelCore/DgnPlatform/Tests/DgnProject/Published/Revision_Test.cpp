@@ -96,8 +96,8 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
         return nullptr;
         }
 
-    BentleyStatus status = m_testDb->Revisions().FinishCreateRevision();
-    if (SUCCESS != status)
+    RevisionStatus status = m_testDb->Revisions().FinishCreateRevision();
+    if (RevisionStatus::Success != status)
         {
         BeAssert(false);
         return nullptr;
@@ -160,13 +160,9 @@ TEST_F(RevisionTestFixture, Workflow)
     m_testDb->SaveChanges("Created Initial Model");
 
     // Create an initial revision
-    ASSERT_TRUE(m_testDb->Revisions().CanCreateRevision());
-    
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     
-    ASSERT_FALSE(m_testDb->Revisions().CanCreateRevision());
-
     // Create and save multiple revisions
     BackupTestFile();
     bvector<DgnRevisionPtr> revisions;
@@ -187,8 +183,8 @@ TEST_F(RevisionTestFixture, Workflow)
         DumpRevision(*rev);
 
     // Merge all the saved revisions
-    BentleyStatus status = m_testDb->Revisions().MergeRevisions(revisions);
-    ASSERT_TRUE(status == SUCCESS);
+    RevisionStatus status = m_testDb->Revisions().MergeRevisions(revisions);
+    ASSERT_TRUE(status == RevisionStatus::Success);
     }
 
 //---------------------------------------------------------------------------------------
@@ -224,8 +220,8 @@ TEST_F(RevisionTestFixture, ConflictError)
     bvector<DgnRevisionPtr> revisions;
     revisions.push_back(revision);
     BeTest::SetFailOnAssert(false);
-    BentleyStatus status = m_testDb->Revisions().MergeRevisions(revisions);
-    ASSERT_TRUE(status != SUCCESS);
+    RevisionStatus status = m_testDb->Revisions().MergeRevisions(revisions);
+    ASSERT_TRUE(status != RevisionStatus::Success);
     BeTest::SetFailOnAssert(true);
     }
 

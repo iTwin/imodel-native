@@ -71,19 +71,6 @@ public:
     //---------------------------------------------------------------------------------------
     ChangeStreamFileWriter(BeFileNameCR pathname) : m_pathname(pathname) {}
     ~ChangeStreamFileWriter() {}
-
-    // NEEDSWORK_MAYBE? If the change group is empty, the output callback is never invoked, therefore file never created
-    BentleyStatus EnsureFileExists()
-        {
-        if (!m_pathname.DoesPathExist())
-            {
-            BeFile file;
-            if (BeFileStatus::Success != file.Create(m_pathname.c_str(), true))
-                return ERROR;
-            }
-
-        return SUCCESS;
-        }
 };
 
 //---------------------------------------------------------------------------------------
@@ -330,20 +317,22 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr DgnRevision::Create(Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid)
+DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid)
     {
+    RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
+    
     if (revisionId.empty() || revisionId.length() != SHA1::HashBytes * 2)
         {
-        BeAssert(false && "Invalid revision id passed in");
+        status = RevisionStatus::InvalidId;
+        BeAssert(false && "Empty or invalid revision id passed in");
         return nullptr;
         }
 
     BeFileName changeStreamPathname = BuildChangeStreamPathname(revisionId);
-    if (changeStreamPathname.empty())
-        return nullptr;
-
+    
     DgnRevisionPtr revision = new DgnRevision(revisionId, parentRevisionId, dbGuid);
     revision->SetChangeStreamFile(changeStreamPathname);
+    status = RevisionStatus::Success;
     return revision;
     }
 
@@ -367,12 +356,7 @@ BeFileName DgnRevision::BuildChangeStreamPathname(Utf8String revisionId)
     {
     BeFileName tempPathname;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
-    if (SUCCESS != status)
-        {
-        BeAssert(false && "Cannot get temporary directory");
-        return tempPathname;
-        }
-
+    BeAssert(SUCCESS == status && "Cannot get temporary directory");
     tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
     tempPathname.AppendExtension(L"rev");
     return tempPathname;
@@ -401,25 +385,25 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-bool DgnRevision::Validate(DgnDbCR dgndb) const
+RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
     {
-    if (m_id.empty())
+    if (m_id.empty() || m_id.length() != SHA1::HashBytes * 2)
         {
         BeAssert(false && "The revision id is empty");
-        return false;
+        return RevisionStatus::InvalidId;
         }
 
     Utf8String dbGuid = dgndb.GetDbGuid().ToString();
     if (m_dbGuid != dbGuid)
         {
         BeAssert(false && "The revision did not originate in the specified DgnDb");
-        return false;
+        return RevisionStatus::WrongDgnDb;
         }
 
     if (!m_changeStreamFile.DoesPathExist())
         {
         BeAssert(false && "File containing the change stream doesn't exist. Cannot validate.");
-        return false;
+        return RevisionStatus::FileNotFound;
         }
 
     ChangeStreamFileReader fs (m_changeStreamFile);
@@ -427,10 +411,10 @@ bool DgnRevision::Validate(DgnDbCR dgndb) const
     if (m_id != id)
         {
         BeAssert(false && "The contents of the change stream file don't match the DgnRevision");
-        return false;
+        return RevisionStatus::CorruptedChangeStream;
         }
 
-    return true;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -445,17 +429,17 @@ RevisionManager::~RevisionManager()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus RevisionManager::SetParentRevisionId(Utf8StringCR revisionId)
+RevisionStatus RevisionManager::SetParentRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
     DbResult result = m_dgndb.SaveBriefcaseLocalValue("ParentRevisionId", revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
-        return ERROR;
+        return RevisionStatus::SQLiteError;
         }
 
-    return SUCCESS;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -471,16 +455,16 @@ Utf8String RevisionManager::GetParentRevisionId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus RevisionManager::UpdateInitialParentRevisionId()
+RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
     {
     DbResult result = m_dgndb.SaveBriefcaseLocalValue("InitialParentRevisionId", GetParentRevisionId());
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
-        return ERROR;
+        return RevisionStatus::SQLiteError;
         }
 
-    return SUCCESS;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -496,95 +480,103 @@ Utf8String RevisionManager::GetInitialParentRevisionId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions)
+RevisionStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
     if (mergeRevisions.empty())
         {
         BeAssert(false && "Nothing to merge");
-        return SUCCESS;
+        return RevisionStatus::NothingToMerge;
         }
 
     if (!txnMgr.IsTracking())
         {
-        BeAssert(false && "Using revisions requires that change tracking is enabled");
-        return ERROR;
+        BeAssert(false && "Revision API mandates that change tracking is enabled");
+        return RevisionStatus::ChangeTrackingNotEnabled;
         }
 
-    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
+    if (txnMgr.HasChanges())
         {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() before merging");
-        return ERROR;
+        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
+        return RevisionStatus::TransactionHasUnsavedChanges;
+        }
+
+    if (txnMgr.IsInDynamics())
+        {
+        BeAssert(false && "Cannot merge revisions if in the middle of a dynamic transaction");
+        return RevisionStatus::InDynamicTransaction;
         }
 
     if (IsCreatingRevision())
         {
-        BeAssert(false && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() before merging");
-        return ERROR;
+        BeAssert(false && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first");
+        return RevisionStatus::IsCreatingRevision;
         }
 
     Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
 
+    RevisionStatus status;
     bvector<BeFileName> changeStreamFiles;
     for (DgnRevisionPtr const& revision : mergeRevisions)
         {
-        if (!revision->Validate(m_dgndb))
-            return ERROR;
+        status = revision->Validate(m_dgndb);
+        if (RevisionStatus::Success != status)
+            return status;
 
         changeStreamFiles.push_back(revision->GetChangeStreamFile());
         }
         
     ChangeStreamFileReader revisionStream (changeStreamFiles);
-    BentleyStatus status = txnMgr.MergeChanges(revisionStream);
-    if (SUCCESS != status)
-        return status;
+    if (SUCCESS != txnMgr.MergeChanges(revisionStream))
+        return RevisionStatus::MergeError;
     
     DgnRevisionPtr const& currentRevision = *(mergeRevisions.end() - 1);
     status = SetParentRevisionId(currentRevision->GetId());
-    if (SUCCESS != status)
+    if (RevisionStatus::Success != status)
         return status;
 
-    return SUCCESS;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
+RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
     
     TxnManager::TxnId startTxnId = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
+    if (!startTxnId.IsValid())
+        return RevisionStatus::NoTransactions;
+
     TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
 
     for (TxnManager::TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = txnMgr.QueryNextTxnId(currTxnId))
         {
-        BeAssert(currTxnId.IsValid());
-
         AbortOnConflictChangeSet sqlChangeSet;
         txnMgr.ReadChangeSet(sqlChangeSet, currTxnId, TxnAction::None);
 
         DbResult result = changeGroup.AddChanges(sqlChangeSet.GetSize(), sqlChangeSet.GetData());
         if (result != BE_SQLITE_OK)
             {
-            BeAssert(false && "Failed to group sqlite changesets due to either schema changes- see error codes in sqlite3changegroup_add()");
-            return ERROR;
+            BeAssert(false && "Failed to group sqlite changesets - see error codes in sqlite3changegroup_add()");
+            return RevisionStatus::SQLiteError;
             }
         }
 
-    return SUCCESS;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup& changeGroup)
+DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, ChangeGroup& changeGroup)
     {
     Utf8String parentRevId = GetParentRevisionId();
     Utf8String revId = DgnRevisionIdGenerator::GenerateId(parentRevId, changeGroup);
     Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
 
-    DgnRevisionPtr revision = DgnRevision::Create(revId, parentRevId, dbGuid);
+    DgnRevisionPtr revision = DgnRevision::Create(outStatus, revId, parentRevId, dbGuid);
     if (revision.IsNull())
         return revision;
 
@@ -597,94 +589,99 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup& changeGroup)
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
-BentleyStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup& changeGroup)
+RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup& changeGroup)
     {
     ChangeStreamFileWriter writer(pathname);
     DbResult result = writer.FromChangeGroup(changeGroup);
-    if (BE_SQLITE_OK != result /* || !pathname.DoesPathExist() */)
+    if (BE_SQLITE_OK != result || !pathname.DoesPathExist())
         {
         BeAssert("Could not write revision to a file");
-        return ERROR;
+        return RevisionStatus::FileWriteError;
         }
 
-    // NEEDSWORK_MAYBE? If the change group is empty, the output callback is never invoked, therefore file never created
-    return writer.EnsureFileExists();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    11/2015
-//---------------------------------------------------------------------------------------
-bool RevisionManager::CanCreateRevision() const
-    {
-    TxnManagerR txnMgr = m_dgndb.Txns();
-    if (txnMgr.HasChanges() || txnMgr.IsInDynamics())
-        return false;
-
-    if (IsCreatingRevision())
-        return false;
-
-    //TxnManager::TxnId firstTxn = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
-    //if (!firstTxn.IsValid())
-    //    return false;
-
-    return true;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::StartCreateRevision()
+DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /* = nullptr */)
     {
-    if (!CanCreateRevision())
+    RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
+
+    TxnManagerR txnMgr = m_dgndb.Txns();
+    if (!txnMgr.IsTracking())
         {
-        BeAssert(false && "Cannot create revision. Check if there are changes and if there isn't a revision already created");
+        BeAssert(false && "Creating revisions requires that change tracking is enabled");
+        status = RevisionStatus::ChangeTrackingNotEnabled;
         return nullptr;
         }
-        
+
+    if (txnMgr.HasChanges())
+        {
+        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
+        status = RevisionStatus::TransactionHasUnsavedChanges;
+        return nullptr;
+        }
+
+    if (txnMgr.IsInDynamics())
+        {
+        BeAssert(false && "Cannot create a revision if in the middle of a dynamic transaction");
+        status = RevisionStatus::InDynamicTransaction;
+        return nullptr;
+        }
+
+    if (IsCreatingRevision())
+        {
+        BeAssert(false && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first");
+        status = RevisionStatus::IsCreatingRevision;
+        return nullptr;
+        }
+
     ChangeGroup changeGroup;
-    BentleyStatus status = GroupChanges(changeGroup);
-    if (SUCCESS != status)
+    status = GroupChanges(changeGroup);
+    if (RevisionStatus::Success != status)
         return nullptr;
 
-    DgnRevisionPtr currentRevision = CreateRevisionObject(changeGroup);
+    DgnRevisionPtr currentRevision = CreateRevisionObject(outStatus, changeGroup);
     if (currentRevision.IsNull())
         return nullptr;
 
     status = WriteChangesToFile(currentRevision->GetChangeStreamFile(), changeGroup);
-    if (SUCCESS != status)
+    if (RevisionStatus::Success != status)
         return nullptr;
 
     m_currentRevision = currentRevision;
     m_currentRevisionEndTxnId = m_dgndb.Txns().GetCurrentTxnId();
-
+    
     return m_currentRevision;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus RevisionManager::FinishCreateRevision()
+RevisionStatus RevisionManager::FinishCreateRevision()
     {
     if (!IsCreatingRevision())
         {
         BeAssert(false && "No revision is currently being created");
-        return ERROR;
+        return RevisionStatus::IsNotCreatingRevision;
         }
 
-    DgnDbStatus dbStatus = m_dgndb.Txns().DeleteFromStartTo(m_currentRevisionEndTxnId);
-    if (DgnDbStatus::Success != dbStatus)
-        return ERROR;
+    if (DgnDbStatus::Success != m_dgndb.Txns().DeleteFromStartTo(m_currentRevisionEndTxnId))
+        return RevisionStatus::SQLiteError;
 
-    BentleyStatus status = SetParentRevisionId(m_currentRevision->GetId());
-    if (SUCCESS != status)
-        return ERROR;
+    RevisionStatus status = SetParentRevisionId(m_currentRevision->GetId());
+    if (RevisionStatus::Success != status)
+        return status;
 
     status = UpdateInitialParentRevisionId();
-    BeAssert(SUCCESS == status);
+    if (RevisionStatus::Success != status)
+        return status;
 
     m_currentRevisionEndTxnId = TxnManager::TxnId(); // Invalid id
     m_currentRevision = nullptr;
-    return SUCCESS;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------

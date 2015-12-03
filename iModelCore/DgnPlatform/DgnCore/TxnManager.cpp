@@ -733,7 +733,7 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowPrevious)
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
         BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
-        return DgnDbStatus::RevisionStarted;
+        return DgnDbStatus::IsCreatingRevision;
         }
 
     if (!pos.IsValid() || (allowPrevious == AllowCrossSessions::No && !PrepareForUndo()))
@@ -801,7 +801,7 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrev
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
         BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
-        return DgnDbStatus::RevisionStarted;
+        return DgnDbStatus::IsCreatingRevision;
         }
 
     if (allowPrevious == AllowCrossSessions::No && !PrepareForUndo())
@@ -841,7 +841,7 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
         BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
-        return DgnDbStatus::RevisionStarted;
+        return DgnDbStatus::IsCreatingRevision;
         }
 
     if (!PrepareForUndo())
