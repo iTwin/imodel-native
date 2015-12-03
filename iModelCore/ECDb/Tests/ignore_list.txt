@@ -42,4 +42,5 @@ RelationshipStrength.ForwardEmbedDeleteThirdLevelParentWithTwoLinks
 RelationshipStrength.DeleteInstanceOfMultipleRelationsPath
 RelationshipStrength.ForwardEmbeddingWithMultipleLevelChildrens
 
-
+#TFS344205 (Affan)
+JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
