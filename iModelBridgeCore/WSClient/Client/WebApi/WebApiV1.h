@@ -63,7 +63,7 @@ struct WebApiV1 : public WebApi
 
         static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut);
         static WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response);
-        static WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className);
+        static WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId);
         static WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response);
         static WSObjectsResult ResolveObjectsResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
         static WSFileResult ResolveFileResponse(HttpResponse& response, BeFileName filePath);
@@ -75,9 +75,9 @@ struct WebApiV1 : public WebApi
         static void GetParametersFromObjectCreationJson
             (
             JsonValueCR objectCreationJson,
-            Utf8StringR schemaNameOut,
-            Utf8StringR classNameOut,
+            ObjectIdR newObjectId,
             Utf8StringR propertiesOut,
+            ObjectIdR relObjectId,
             ObjectIdR parentObjectIdOut
             );
 

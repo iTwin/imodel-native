@@ -13,6 +13,8 @@
 
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Client/WSRepositoryClient.h>
+#include <WebServices/Client/WSChangeset.h>
+#include "../../../../Cache/Util/JsonUtil.h"
 
 #include "MockWSSchemaProvider.h"
 
@@ -661,8 +663,8 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSen
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
-        return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(), 
-            {{"SkipToken", "ServerSkipToken"}, {"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(),
+        {{"SkipToken", "ServerSkipToken"}, {"Content-Type", "application/json"}});
         });
 
     auto result = client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();
@@ -948,6 +950,47 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2F
             })");
 
     EXPECT_EQ(expectedObject, response.GetValue().GetObject());
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
+    {
+    // Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Created, R"({ "id" : "NewRemoteId" })"));
+
+    WSChangeset changeset (WSChangeset::Format::SingeInstance);
+    changeset
+        .AddInstance({"TestSchema.TestClass", "LocalId"}, WSChangeset::Created, nullptr)
+        .AddRelatedInstance(ObjectId("TestRelSchema.TestRelClass", "RelId"), WSChangeset::Created, ECRelatedInstanceDirection::Forward, {"TestSchema.ParentClass", "ParentId"}, WSChangeset::Existing, nullptr);
+
+    // Act
+    auto response = client->SendCreateObjectRequest(ToJson(changeset.ToRequestString()))->GetResult();
+    ASSERT_TRUE(response.IsSuccess());
+
+    // Assert
+    auto a = response.GetValue().GetObject().toStyledString();
+    rapidjson::Document responseJson;
+    JsonUtil::ToRapidJson(response.GetValue().GetObject(), responseJson);
+
+    bmap<ObjectId, ObjectId> ids;
+    EXPECT_EQ (SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
+        {
+        ids[oldId] = newId;
+        return SUCCESS;
+        }));
+
+    EXPECT_EQ(2, ids.size());
+
+    auto it = ids.find(ObjectId("TestSchema.TestClass", "LocalId"));
+    ASSERT_FALSE(it == ids.end());
+    EXPECT_EQ(ObjectId("TestSchema.TestClass", "NewRemoteId"), it->second);
+
+    it = ids.find(ObjectId("TestRelSchema.TestRelClass", "RelId"));
+    ASSERT_FALSE(it == ids.end());
+    EXPECT_EQ(ObjectId("TestRelSchema", "TestRelClass", ""), it->second);
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJsonAsObject)
