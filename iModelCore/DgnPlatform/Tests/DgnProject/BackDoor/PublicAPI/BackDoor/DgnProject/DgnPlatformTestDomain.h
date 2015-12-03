@@ -21,6 +21,7 @@
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define DPTEST_TEST_GROUP_CLASS_NAME                     "TestGroup"
+#define DPTEST_TEST_REQUIREMENT_CLASS_NAME               "TestRequirement"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
 
@@ -167,6 +168,35 @@ typedef TestGroup const& TestGroupCR;
 struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestRequirement : Dgn::SystemElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_REQUIREMENT_CLASS_NAME, Dgn::SystemElement)
+    friend struct TestRequirementHandler;
+
+protected:
+    explicit TestRequirement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestRequirement> Create(Dgn::DgnDbR, Dgn::DgnModelId);
+};
+
+typedef RefCountedPtr<TestRequirement> TestRequirementPtr;
+typedef RefCountedCPtr<TestRequirement> TestRequirementCPtr;
+typedef TestRequirement* TestRequirementP;
+typedef TestRequirement& TestRequirementR;
+typedef TestRequirement const& TestRequirementCR;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestRequirementHandler : Dgn::dgn_ElementHandler::Element
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_REQUIREMENT_CLASS_NAME, TestRequirement, TestRequirementHandler, Dgn::dgn_ElementHandler::Element, )
 };
 
 //=======================================================================================

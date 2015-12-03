@@ -262,7 +262,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-    
+    <ECClass typeName="SystemModel" isDomainClass="True" >
+        <!-- A SystemModel contains SystemElements which are used to model functional systems -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>Model</BaseClass>
+    </ECClass>
+
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" isDomainClass="True" strength="embedding">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
@@ -375,6 +382,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="DictionaryElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <BaseClass>Element</BaseClass>
+    </ECClass>
+    <ECClass typeName="SystemElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <!-- A SystemElement is used to model functional systems -->
         <BaseClass>Element</BaseClass>
     </ECClass>
     <ECClass typeName="Element3d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
