@@ -2621,9 +2621,11 @@ public:
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
+    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0) const;
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
@@ -2635,18 +2637,22 @@ public:
 
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
+    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, bool utf16 = false) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0, bool utf16 = false) const;
 
 
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
+    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, bool utf16 = false);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0, bool utf16 = false);
 
 
     //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.

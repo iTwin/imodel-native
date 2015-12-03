@@ -777,9 +777,13 @@ SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaXmlWriter::Serialize()
+SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     {
-    m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    if (utf16)
+        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF16LE);
+    else
+        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+
     Utf8PrintfString ns("%s.%d.%d", ECXML_URI, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());
 
