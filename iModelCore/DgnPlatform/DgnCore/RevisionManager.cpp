@@ -551,8 +551,11 @@ RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
 
     TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
 
+    bool anyChanges = false;
     for (TxnManager::TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = txnMgr.QueryNextTxnId(currTxnId))
         {
+        anyChanges = true;
+
         AbortOnConflictChangeSet sqlChangeSet;
         txnMgr.ReadChangeSet(sqlChangeSet, currTxnId, TxnAction::None);
 
@@ -564,7 +567,7 @@ RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
             }
         }
 
-    return RevisionStatus::Success;
+    return anyChanges ? RevisionStatus::Success : RevisionStatus::NoTransactions;
     }
 
 //---------------------------------------------------------------------------------------
@@ -593,13 +596,13 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, Change
     {
     ChangeStreamFileWriter writer(pathname);
     DbResult result = writer.FromChangeGroup(changeGroup);
-    if (BE_SQLITE_OK != result || !pathname.DoesPathExist())
+    if (BE_SQLITE_OK != result)
         {
         BeAssert("Could not write revision to a file");
         return RevisionStatus::FileWriteError;
         }
 
-    return RevisionStatus::Success;
+    return pathname.DoesPathExist() ? RevisionStatus::Success : RevisionStatus::NoTransactions;
     }
 
 //---------------------------------------------------------------------------------------
