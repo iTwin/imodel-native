@@ -15,18 +15,20 @@
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
-DGNPLATFORM_TYPEDEFS (GeometricModel)
-DGNPLATFORM_TYPEDEFS (ResourceModel)
-DGNPLATFORM_TYPEDEFS (DgnModel2d)
-DGNPLATFORM_TYPEDEFS (DgnModel3d)
-DGNPLATFORM_TYPEDEFS (DgnRangeTree)
-DGNPLATFORM_TYPEDEFS (ICheckStop)
-DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
-DGNPLATFORM_TYPEDEFS (SheetModel)
-DGNPLATFORM_TYPEDEFS (DictionaryModel)
+DGNPLATFORM_TYPEDEFS(GeometricModel)
+DGNPLATFORM_TYPEDEFS(ResourceModel)
+DGNPLATFORM_TYPEDEFS(DgnModel2d)
+DGNPLATFORM_TYPEDEFS(DgnModel3d)
+DGNPLATFORM_TYPEDEFS(DgnRangeTree)
+DGNPLATFORM_TYPEDEFS(ICheckStop)
+DGNPLATFORM_TYPEDEFS(PlanarPhysicalModel)
+DGNPLATFORM_TYPEDEFS(SheetModel)
+DGNPLATFORM_TYPEDEFS(DictionaryModel)
+DGNPLATFORM_TYPEDEFS(SystemModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(ResourceModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
+DGNPLATFORM_REF_COUNTED_PTR(SystemModel)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -242,9 +244,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
         static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
         static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
+        static const uint64_t SetCode = Clone << 1; //!< Change this model's Code. "SetCode"
 
-        static const uint64_t Reserved_1 = Clone << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_2 = SetCode << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
@@ -393,6 +395,7 @@ protected:
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
     virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
+    virtual SystemModelCP _ToSystemModel() const {return nullptr;}
     /** @} */
 
     void ReadProperties();
@@ -439,6 +442,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _EmptyModel();
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
+
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
 public:
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
     DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
@@ -476,6 +481,9 @@ public:
     //! Get the Code of this DgnModel
     Code const& GetCode() const {return m_code;}
 
+    //! Change the Code of this DgnModel
+    DgnDbStatus SetCode(Code const& code) { return _SetCode(code); }
+
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
 
@@ -491,6 +499,7 @@ public:
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
     PlanarPhysicalModelCP ToPlanarPhysicalModel() const {return _ToPlanarPhysicalModel();} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
+    SystemModelCP ToSystemModel() const {return _ToSystemModel();} //!< more efficient substitute for dynamic_cast<SystemModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     ResourceModelP ToResourceModelP() {return const_cast<ResourceModelP>(_ToResourceModel());} //!< more efficient substitute for dynamic_cast<ResourceModelP>(model)
     DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
@@ -498,6 +507,7 @@ public:
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
+    SystemModelP ToSystemModelP() {return const_cast<SystemModelP>(_ToSystemModel());}//!< more efficient substitute for dynamic_cast<SystemModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
     bool IsPhysicalModel() const { return nullptr != ToPhysicalModel(); }
@@ -506,6 +516,7 @@ public:
     bool IsResourceModel() const { return nullptr != ToResourceModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
+    bool IsSystemModel() const { return nullptr != ToSystemModel(); }
     //@}
 
     //! Get the DgnDb of this DgnModel.
@@ -842,6 +853,26 @@ protected:
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
+};
+
+//=======================================================================================
+//! A SystemModel holds SystemElements which are used to model functional systems.
+//! @see SystemElement
+//! @ingroup DgnModelGroup
+// @bsiclass                                                    Shaun.Sewall    12/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SystemModel : DgnModel
+{
+    DEFINE_T_SUPER(DgnModel);
+
+protected:
+    SystemModelCP _ToSystemModel() const override {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+
+public:
+    explicit SystemModel(CreateParams const& params) : T_Super(params) {}
+    static SystemModelPtr Create(CreateParams const& params) {return new SystemModel(params);}
+    DGNPLATFORM_EXPORT static SystemModelPtr Create(DgnDbR, Code const&);
 };
 
 /*=======================================================================================*//**
@@ -1316,6 +1347,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for SystemModel
+    struct EXPORT_VTABLE_ATTRIBUTE System : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SystemModel, SystemModel, System, Model, DGNPLATFORM_EXPORT)
     };
 };
 

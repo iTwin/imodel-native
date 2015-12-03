@@ -612,3 +612,18 @@ void DgnAuthority::Code::From(DgnAuthorityId id, Utf8StringCR value, Utf8StringC
     m_nameSpace = nameSpace;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnAuthority::Code::operator<(Code const& rhs) const
+    {
+    if (GetAuthority().GetValueUnchecked() != rhs.GetAuthority().GetValueUnchecked())
+        return GetAuthority().GetValueUnchecked() < rhs.GetAuthority().GetValueUnchecked();
+
+    int cmp = GetValue().CompareTo(rhs.GetValue());
+    if (0 != cmp)
+        return cmp < 0;
+
+    return GetNamespace().CompareTo(rhs.GetNamespace()) < 0;
+    }
+

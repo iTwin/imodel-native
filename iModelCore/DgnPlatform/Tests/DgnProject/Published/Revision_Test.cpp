@@ -6,12 +6,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
+#include <DgnPlatform/DgnChangeSummary.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 
 // Turn this on for debugging.
 // #define DUMP_REVISION 1
+
+// #define DUMP_CODES
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   10/15
@@ -38,6 +41,60 @@ struct RevisionTestFixture : ChangeTestFixture
         void BackupTestFile();
         void RestoreTestFile();
 
+        typedef AuthorityIssuedCodeSet CodeSet;
+        typedef AuthorityIssuedCode Code;
+        void ExtractCodesFromRevision(CodeSet& assigned, CodeSet& discarded);
+
+        static Utf8String CodeToString(Code const& code) { return Utf8PrintfString("%s:%s\n", code.GetNamespace().c_str(), code.GetValueCP()); }
+        static void ExpectCode(Code const& code, CodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
+        static void ExpectCodes(CodeSet const& exp, CodeSet const& actual)
+            {
+            EXPECT_EQ(exp.size(), actual.size());
+            for (auto const& code : exp)
+                ExpectCode(code, actual);
+            }
+
+        static void DumpCode(Code const& code) { printf("    %s\n", CodeToString(code).c_str()); }
+        static void DumpCodes(CodeSet const& codes, Utf8StringCR msg="Codes:")
+            {
+#ifdef DUMP_CODES
+            printf("%s\n", msg.c_str());
+            for (auto const& code : codes)
+                DumpCode(code);
+#endif
+            }
+
+        AnnotationTextStyleCPtr CreateTextStyle(Utf8CP name)
+            {
+            AnnotationTextStyle style(*m_testDb);
+            style.SetName(name);
+            auto pStyle = style.Insert();
+            EXPECT_TRUE(pStyle.IsValid());
+            return pStyle;
+            }
+        AnnotationTextStyleCPtr RenameTextStyle(AnnotationTextStyleCR style, Utf8CP newName)
+            {
+            auto pStyle = style.CreateCopy();
+            pStyle->SetName(newName);
+            auto cpStyle = pStyle->Update();
+            EXPECT_TRUE(cpStyle.IsValid());
+            return cpStyle;
+            }
+
+        DgnElementCPtr InsertPhysicalElement(Code const& code)
+            {
+            DgnClassId classId = m_testDb->Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
+            PhysicalElement elem(PhysicalElement::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
+            return elem.Insert();
+            }
+        DgnElementCPtr RenameElement(DgnElementCR el, Code const& code)
+            {
+            auto pEl = el.CopyForEdit();
+            EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(code));
+            auto cpEl = pEl->Update();
+            EXPECT_TRUE(cpEl.IsValid());
+            return cpEl;
+            }
     public:
         virtual void SetUp() override {}
         virtual void TearDown() override {}
@@ -227,5 +284,123 @@ TEST_F(RevisionTestFixture, ConflictError)
     BentleyStatus status = m_testDb->Revisions().MergeRevisions(revisions);
     ASSERT_TRUE(status != SUCCESS);
     BeTest::SetFailOnAssert(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void RevisionTestFixture::ExtractCodesFromRevision(CodeSet& assigned, CodeSet& discarded)
+    {
+    m_testDb->SaveChanges();
+    DgnRevisionPtr rev = m_testDb->Revisions().StartCreateRevision();
+    BeAssert(rev.IsValid());
+
+    ChangeStreamFileReader stream(rev->GetChangeStreamFile());
+    DgnChangeSummary summary(*m_testDb);
+    EXPECT_EQ(SUCCESS, summary.FromChangeSet(stream));
+    summary.GetCodes(assigned, discarded);
+
+    m_testDb->Revisions().FinishCreateRevision();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RevisionTestFixture, Codes)
+    {
+    // Creating the DgnDb allocates some codes (category, model, view...)
+    CreateDgnDb(1);
+    DgnDbR db = *m_testDb;
+
+    DgnCategoryCPtr defaultCat = DgnCategory::QueryCategory(m_testCategoryId, db);
+    DgnSubCategory subCat(DgnSubCategory::CreateParams(db, m_testCategoryId, "MySubCategory", DgnSubCategory::Appearance()));
+    auto cpSubCat = subCat.Insert();
+    EXPECT_TRUE(cpSubCat.IsValid());
+
+    DgnModelPtr defaultModel = m_testModel;
+    ASSERT_TRUE(defaultCat.IsValid());
+    ASSERT_TRUE(defaultModel.IsValid());
+
+    // Check that the new codes are all reported
+    CodeSet createdCodes, discardedCodes;
+    ExtractCodesFromRevision(createdCodes, discardedCodes);
+
+    CodeSet expectedCodes;
+    ExpectCodes(expectedCodes, discardedCodes);
+
+    expectedCodes.insert(defaultModel->GetCode());
+    expectedCodes.insert(defaultCat->GetCode());
+    expectedCodes.insert(DgnSubCategory::QuerySubCategory(defaultCat->GetDefaultSubCategoryId(), db)->GetCode());
+    expectedCodes.insert(subCat.GetCode());
+    expectedCodes.insert(ViewDefinition::CreateCode("Default"));
+    ExpectCodes(expectedCodes, createdCodes);
+
+    // Create some new elements with codes, and delete one with a code
+    auto cpStyleA = CreateTextStyle("A"),
+         cpStyleB = CreateTextStyle("B");
+
+    auto subCatCode = cpSubCat->GetCode();
+    EXPECT_EQ(DgnDbStatus::Success, cpSubCat->Delete());
+
+    ExtractCodesFromRevision(createdCodes, discardedCodes);
+    expectedCodes.clear();
+    expectedCodes.insert(subCatCode);
+    ExpectCodes(expectedCodes, discardedCodes);
+
+    expectedCodes.clear();
+    expectedCodes.insert(cpStyleA->GetCode());
+    expectedCodes.insert(cpStyleB->GetCode());
+    ExpectCodes(expectedCodes, createdCodes);
+
+    // Change two codes, reusing one. Because the revision is composed of *net* changes, we should not see the reused code.
+    auto codeB = cpStyleB->GetCode();
+    cpStyleA = RenameTextStyle(*cpStyleA, "C");
+    cpStyleB = RenameTextStyle(*cpStyleB, "A");
+
+    ExtractCodesFromRevision(createdCodes, discardedCodes);
+    expectedCodes.clear();
+    expectedCodes.insert(codeB);
+    ExpectCodes(expectedCodes, discardedCodes);
+
+    expectedCodes.clear();
+    expectedCodes.insert(cpStyleA->GetCode());
+    ExpectCodes(expectedCodes, createdCodes);
+
+    // Create two elements with a code, and one with a default (empty) code. We only care about non-empty codes.
+    auto defaultCode = DgnAuthority::CreateDefaultCode();
+    auto auth = NamespaceAuthority::CreateNamespaceAuthority("MyAuthority", db);
+    EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
+
+    auto cpElX1 = InsertPhysicalElement(auth->CreateCode("X", "1")),
+         cpElY2 = InsertPhysicalElement(auth->CreateCode("Y", "2")),
+         cpUncoded = InsertPhysicalElement(defaultCode);
+
+    ExtractCodesFromRevision(createdCodes, discardedCodes);
+
+    expectedCodes.clear();
+    ExpectCodes(expectedCodes, discardedCodes);
+
+    expectedCodes.insert(cpElX1->GetCode());
+    expectedCodes.insert(cpElY2->GetCode());
+    ExpectCodes(expectedCodes, createdCodes);
+
+    // Set one code to empty, and one empty code to a non-empty code, and delete one coded element, and create a new element with the same code as the deleted element
+    cpUncoded = RenameElement(*cpUncoded, auth->CreateCode("Z"));
+    auto codeX1 = cpElX1->GetCode();
+    cpElX1 = RenameElement(*cpElX1, defaultCode);
+    auto codeY2 = cpElY2->GetCode();
+    EXPECT_EQ(DgnDbStatus::Success, cpElY2->Delete());
+    auto cpNewElY2 = InsertPhysicalElement(codeY2);
+
+    // The code that was set to empty should be seen as discarded; the code that replaced empty should be seen as new; the reused code should not appear.
+    ExtractCodesFromRevision(createdCodes, discardedCodes);
+
+    expectedCodes.clear();
+    expectedCodes.insert(codeX1);
+    ExpectCodes(expectedCodes, discardedCodes);
+
+    expectedCodes.clear();
+    expectedCodes.insert(cpUncoded->GetCode());
+    ExpectCodes(expectedCodes, createdCodes);
     }
 
