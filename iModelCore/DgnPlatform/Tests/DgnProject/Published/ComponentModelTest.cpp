@@ -17,10 +17,12 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 
+// *** WARNING: Keep this consistent with ComponentModelTest.ts
 #define TEST_JS_NAMESPACE    "ComponentModelTest"
 #define TEST_JS_NAMESPACE_W L"ComponentModelTest"
 #define TEST_WIDGET_COMPONENT_NAME "Widget"
 #define TEST_GADGET_COMPONENT_NAME "Gadget"
+#define TEST_NESTING_COMPONENT_NAME "Nesting"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
@@ -81,23 +83,19 @@ static size_t countElementsInModel (DgnModelR model)
     }
 
 /*=================================================================================**//**
-* This is a stub implementation of a Script library. 
-* In a real implementation, we would look in a disk=based cache or go to Bentley Connect.
-* @bsiclass                                                     Sam.Wilson     02/2012
+* @bsimethod                                    Sam.Wilson                      04/2013
 +===============+===============+===============+===============+===============+======*/
-struct FakeScriptLibrary : ScopedDgnHost::FetchScriptCallback
+struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
     {
-    Utf8String m_jsProgramName;
-    Utf8String m_jsProgramText;
-
-    Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override
+    void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
-        if (!m_jsProgramName.EqualsI(sName))
-            return DgnDbStatus::NotFound;
-        stypeFound = DgnScriptType::JavaScript;
-        sText = m_jsProgramText;
-        lmt = DateTime();
-        return DgnDbStatus::Success;
+        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
+        }
+
+    void _HandleLogMessage(Utf8CP category, DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity sev, Utf8CP msg) override
+        {
+        ScriptNotificationHandler::_HandleLogMessage(category, sev, msg);  // logs it
+        printf ("%s\n", msg);
         }
     };
 
@@ -145,7 +143,7 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson     02/2012
 +===============+===============+===============+===============+===============+======*/
-struct ComponentModelTest : public testing::Test
+struct ComponentModelTest : public testing::Test, ScopedDgnHost::FetchScriptCallback
 {
 BeFileName         m_componentDbName;
 BeFileName         m_componentSchemaFileName;
@@ -153,11 +151,11 @@ BeFileName         m_clientDbName;
 DgnDbPtr           m_componentDb;
 DgnDbPtr           m_clientDb;
 Dgn::ScopedDgnHost m_host;
-FakeScriptLibrary  m_scriptLibrary;
 Json::Value m_wsln1, m_wsln3, m_wsln4, m_wsln44, m_gsln1;
 
+Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override;
+
 ComponentModelTest();
-void AddToFakeScriptLibrary(Utf8CP jns, Utf8CP jtext);
 DgnCategoryId Developer_CreateCategory(Utf8CP code, ColorDef const&);
 void Developer_CreateCMs();
 void OpenComponentDb(DgnDb::OpenMode mode) {openDb(m_componentDb, m_componentDbName, mode);}
@@ -166,6 +164,7 @@ void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode
 void CloseClientDb() {if (m_clientDb.IsValid()) m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
+void Developer_TestNestingSolver();
 void Client_ImportCM(Utf8CP componentName);
 void Developer_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
@@ -198,8 +197,7 @@ AutoCloseComponentDb(ComponentModelTest& t) : m_test(t) {;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModelTest::ComponentModelTest()
     {
-    m_host.SetFetchScriptCallback(&m_scriptLibrary);// In this test, we redirect all requests for JS programs to our fake library
-
+    // *** WARNING: Keep these parameters names consistent with ComponentModelTest.ts
     m_wsln1 = Json::objectValue;
     m_wsln1["X"] = 10;
     m_wsln1["Y"] = 11;
@@ -219,16 +217,25 @@ ComponentModelTest::ComponentModelTest()
     m_gsln1["W"] = 2;
     m_gsln1["R"] = 1;
     m_gsln1["T"] = "text";
+
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
+    m_host.SetFetchScriptCallback(this);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
+* @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::AddToFakeScriptLibrary(Utf8CP jns, Utf8CP jtext)
+Dgn::DgnDbStatus ComponentModelTest::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred)
     {
-    // In this test, there is only one JS program in the fake library at a time.
-    m_scriptLibrary.m_jsProgramName = jns;
-    m_scriptLibrary.m_jsProgramText = jtext;
+    BeFileName jsFileName;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
+    jsFileName.AppendToPath(L"Script");
+    jsFileName.AppendToPath(WString(sName,BentleyCharEncoding::Utf8).c_str());
+    if (jsFileName.find(L".js") == WString::npos)
+        jsFileName.append(L".js");
+    stypeFound = DgnScriptType::JavaScript;
+    lmt = DateTime();
+    return DgnScriptLibrary::ReadText(sText, jsFileName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,80 +262,56 @@ void ComponentModelTest::Developer_CreateCMs()
     ASSERT_TRUE(m_componentDb.IsValid());
 
     // Define the CM's Element Category (in the CM's DgnDb). Use the same name as the component model. 
-    ASSERT_TRUE( Developer_CreateCategory("Widget", ColorDef(0xff,0x00,0x00)).IsValid() );
-    ASSERT_TRUE( Developer_CreateCategory("Gadget", ColorDef(0x00,0xff,0x00)).IsValid() );
+    ASSERT_TRUE( Developer_CreateCategory("WidgetCategory", ColorDef(0xff,0x00,0x00)).IsValid() );
+    ASSERT_TRUE( Developer_CreateCategory("GadgetCategory", ColorDef(0x00,0xff,0x00)).IsValid() );
+    ASSERT_TRUE( Developer_CreateCategory("NestingCategory", ColorDef(0x00,0x00,0xff)).IsValid() );
 
-    // Define the Solver wparameters for use by this model.
     ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
     ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
-    bvector<ModelSolverDef::Parameter> wparameters;
-    wparameters.push_back(ModelSolverDef::Parameter("X", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("Y", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("Z", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("Other", ip, ECN::ECValue("Something else")));
-    ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Widget", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
-    bvector<ModelSolverDef::Parameter> gparameters; 
-    gparameters.push_back(ModelSolverDef::Parameter("Q", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(ModelSolverDef::Parameter("R", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(ModelSolverDef::Parameter("T", ip, ECN::ECValue("Some other parm")));
-    ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
 
-    // Create the models
-    ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "", wsolver);     // *** WIP_COMPONENT_MODEL Authority
-    ComponentModelPtr wcm = new ComponentModel(wparms);
-    ASSERT_TRUE( wcm->IsValid() );
-    ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );       /* Insert the new model into the DgnDb */
+    // Widget
+        {
+        bvector<ModelSolverDef::Parameter> wparameters;
+        wparameters.push_back(ModelSolverDef::Parameter("X", tp, ECN::ECValue(1.0))); 
+        wparameters.push_back(ModelSolverDef::Parameter("Y", tp, ECN::ECValue(1.0))); 
+        wparameters.push_back(ModelSolverDef::Parameter("Z", tp, ECN::ECValue(1.0))); 
+        wparameters.push_back(ModelSolverDef::Parameter("Other", ip, ECN::ECValue("Something else")));
+        ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME, wparameters);
+                                                           // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ This must match the name used in the .ts file in the call to RegisterModelSolver
+        ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, "dgn.PhysicalElement", "WidgetCategory", "", wsolver);
+        ComponentModelPtr wcm = new ComponentModel(wparms);
+        ASSERT_TRUE( wcm->IsValid() );
+        ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );
+        }
 
-    ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "", gsolver);     // *** WIP_COMPONENT_MODEL Authority
-    gparms.SetSolver(gsolver);
-    ComponentModelPtr gcm = new ComponentModel(gparms);
-    ASSERT_TRUE( gcm->IsValid() );
-    ASSERT_EQ( DgnDbStatus::Success , gcm->Insert() );       /* Insert the new model into the DgnDb */
+    //  Gadget
+        {
+        bvector<ModelSolverDef::Parameter> gparameters; 
+        gparameters.push_back(ModelSolverDef::Parameter("Q", tp, ECN::ECValue(1.0))); 
+        gparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
+        gparameters.push_back(ModelSolverDef::Parameter("R", tp, ECN::ECValue(1.0))); 
+        gparameters.push_back(ModelSolverDef::Parameter("T", ip, ECN::ECValue("Some other parm")));
+        ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_GADGET_COMPONENT_NAME, gparameters);
 
-    // Here is the model solver that should be used. 
-    // Note that we must put it into the Script library under the same name that was used in the model definition above.
-    // It must also register itself as a model solver under the same name as was used in the model definition above
-    // Note that a script will generally create elements from scratch. That's why it starts by deleting all elements in the model. They would have been the outputs of the last run.
-    AddToFakeScriptLibrary(TEST_JS_NAMESPACE, 
-"(function () { \
-    function widgetSolver(model, params, options) { \
-        model.DeleteAllElements();\
-        var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
-        var origin = new Bentley.Dgn.DPoint3d(1,2,3);\
-        var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
-        var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-        builder.AppendBox(params['X'], params['Y'], params['Z']); \
-        builder.SetGeomStreamAndPlacement(element); \
-        element.Insert(); \
-        var element2 = model.CreateElement('dgn.PhysicalElement', options.Category);\
-        var origin2 = new Bentley.Dgn.DPoint3d(10,12,13);\
-        var angles2 = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
-        var builder2 = new Bentley.Dgn.ElementGeometryBuilder(element2, origin2, angles2); \
-        builder2.AppendBox(params['X'], params['Y'], params['Z']); \
-        builder2.SetGeomStreamAndPlacement(element2); \
-        element2.Insert(); \
-        element.SetParent(element2);\
-        element.Update();\
-        return 0;\
-    } \
-    function gadgetSolver(model, params, options) { \
-        model.DeleteAllElements();\
-        var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
-        var origin = new Bentley.Dgn.DPoint3d(0,0,0);\
-        var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,45);\
-        var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-        builder.AppendBox(params['Q'], params['W'], params['R']); \
-        builder.SetGeomStreamAndPlacement(element); \
-        element.Insert(); \
-        return 0;\
-    } \
-    Bentley.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Widget" "', widgetSolver); \
-    Bentley.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Gadget" "', gadgetSolver); \
-})();\
-");
-    ASSERT_TRUE( wcm.IsValid() );
-    ASSERT_TRUE( gcm.IsValid() );
+        ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, "dgn.PhysicalElement", "GadgetCategory", "", gsolver);
+        ComponentModelPtr gcm = new ComponentModel(gparms);
+        ASSERT_TRUE( gcm->IsValid() );
+        ASSERT_EQ( DgnDbStatus::Success , gcm->Insert() );
+        }
+
+    //  Nesting
+        {
+        bvector<ModelSolverDef::Parameter> nparameters; 
+        nparameters.push_back(ModelSolverDef::Parameter("A", tp, ECN::ECValue(1.0))); 
+        nparameters.push_back(ModelSolverDef::Parameter("B", tp, ECN::ECValue(1.0))); 
+        nparameters.push_back(ModelSolverDef::Parameter("C", tp, ECN::ECValue(1.0))); 
+        ModelSolverDef nsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_NESTING_COMPONENT_NAME, nparameters);
+
+        ComponentModel::CreateParams nparms(*m_componentDb, TEST_NESTING_COMPONENT_NAME, "dgn.PhysicalElement", "NestingCategory", "", nsolver);
+        ComponentModelPtr ncm = new ComponentModel(nparms);
+        ASSERT_TRUE( ncm->IsValid() );
+        ASSERT_EQ( DgnDbStatus::Success , ncm->Insert() );
+        }
 
     m_componentDb->SaveChanges(); // should trigger validation
     }
@@ -394,6 +377,38 @@ void ComponentModelTest::Developer_TestGadgetSolver()
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("Q")->GetValue().GetDouble(), 
                                                         params.GetParameter("W")->GetValue().GetDouble(),
                                                         params.GetParameter("R")->GetValue().GetDouble());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModelTest::Developer_TestNestingSolver()
+    {
+    OpenComponentDb(Db::OpenMode::ReadWrite);
+    AutoCloseComponentDb closeComponentDb(*this);
+
+    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_NESTING_COMPONENT_NAME);
+    ASSERT_TRUE( cm.IsValid() );
+
+    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
+
+    for (int i=0; i<10; ++i)
+        {
+        params.GetParameterP("A")->SetValue(ECN::ECValue(1*i));
+        params.GetParameterP("B")->SetValue(ECN::ECValue(2*i));
+        params.GetParameterP("C")->SetValue(ECN::ECValue(3*i));
+
+        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
+    
+        cm->FillModel();
+        ASSERT_EQ( 2 , countElementsInModel(*cm) );
+
+        RefCountedCPtr<DgnElement> el = cm->begin()->second;
+        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("A")->GetValue().GetDouble(), 
+                                                        params.GetParameter("B")->GetValue().GetDouble(),
+                                                        params.GetParameter("C")->GetValue().GetDouble());
         }
     }
 
@@ -558,6 +573,7 @@ void ComponentModelTest::SimulateDeveloper()
     Developer_CreateCMs();
     Developer_TestWidgetSolver();
     Developer_TestGadgetSolver();
+    Developer_TestNestingSolver();
 
     // Create catalogs of widgets and gadgets
     OpenComponentDb(Db::OpenMode::ReadWrite);
@@ -587,7 +603,7 @@ void ComponentModelTest::SimulateClient()
 
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
-        AutoCloseClientDb closeClientDb(*this);
+        AutoCloseClientDb closeClientDbAtEnd(*this);
         //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
         PhysicalModelPtr targetModel;
         ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
@@ -643,7 +659,7 @@ void ComponentModelTest::SimulateClient()
 
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
-        AutoCloseClientDb closeClientDb(*this);
+        AutoCloseClientDb closeClientDbAtEnd(*this);
         PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
 
         DgnElementId w4;
@@ -672,6 +688,33 @@ void ComponentModelTest::SimulateClient()
         Client_CheckComponentInstance(w3, 2, m_wsln3["X"].asDouble(), m_wsln3["Y"].asDouble(), m_wsln3["Z"].asDouble());
         Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());
         Client_CheckComponentInstance(g1, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
+        }
+
+    // Make a unique/singleton instance of the 'Nesting' component.
+    OpenClientDb(Db::OpenMode::ReadWrite);
+        {
+        AutoCloseClientDb closeClientDbAtEnd(*this);
+
+        ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, "Nesting");  // Open the client's imported copy
+        ASSERT_TRUE( componentModel.IsValid() );
+
+        PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
+        ASSERT_TRUE( targetModel.IsValid() );
+
+        DgnDbStatus status;
+        Placement3d placement;
+        placement.GetOriginR() = DPoint3d::FromZero();
+        placement.GetAnglesR() = YawPitchRollAngles();
+        ModelSolverDef::ParameterSet params;
+        params.GetParameterP("A")->SetValue(ECN::ECValue(1));
+        params.GetParameterP("B")->SetValue(ECN::ECValue(2));
+        params.GetParameterP("C")->SetValue(ECN::ECValue(3));
+
+        PhysicalElementCPtr instanceElement = componentModel->MakeInstanceOfSolution(&status, *targetModel, "", params, placement);
+        ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
+
+
+        ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
         }
     }
 

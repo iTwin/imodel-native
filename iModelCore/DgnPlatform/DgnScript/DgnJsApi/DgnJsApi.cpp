@@ -108,6 +108,68 @@ JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringC
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnModelP JsDgnElement::GetModel() {return new JsDgnModel(*m_el->GetModel());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnModelsP JsDgnDb::GetModels() {return new JsDgnModels(m_db->Models());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsComponentModelP JsDgnModel::ToComponentModel() 
+    {
+    ComponentModel* cm = ToDgnComponentModel();
+    return (nullptr == cm)? nullptr: new JsComponentModel(*cm);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+static void loadParams(ModelSolverDef::ParameterSet& params, ComponentModel& cm, Utf8StringCR paramsJSON)
+    {
+    Json::Value paramsJsonValue(Json::objectValue);
+    Json::Reader::Parse(paramsJSON.c_str(), paramsJsonValue);
+
+    ModelSolverDef::ParameterSet newParameterValues = cm.GetSolver().GetParameters();
+    for (auto pname : paramsJsonValue.getMemberNames())
+        {
+        ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
+        BeAssert( nullptr != sparam );
+        ECN::ECValue ecv;
+        ECUtils::ConvertJsonToECValue(ecv, paramsJsonValue[pname], sparam->GetValue().GetPrimitiveType());
+        sparam->SetValue(ecv);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElement* JsComponentModel::MakeInstanceOfSolution(JsDgnModelP targetJsModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsPlacement3dP jsplacement, JsAuthorityIssuedCodeP jscode)
+    {
+    ComponentModel* cm = ToDgnComponentModel();
+    if (nullptr == cm || nullptr == targetJsModel || !targetJsModel->m_model.IsValid())
+        return nullptr;
+    DgnModelR targetModel = *targetJsModel->m_model;
+
+    ModelSolverDef::ParameterSet params;
+    loadParams(params, *cm, paramsJSON);
+
+    DgnElement::Code ecode;
+    if (nullptr != jscode)
+        ecode = jscode->m_code;
+
+    PhysicalElementCPtr instance = cm->MakeInstanceOfSolution(nullptr, targetModel, capturedSolutionName, params, jsplacement->m_placement, ecode);
+    if (!instance.IsValid())
+        return nullptr;
+
+    return new JsDgnElement(*const_cast<PhysicalElementP>(instance.get()));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
 void Script::ImportLibrary (Utf8StringCR libName)

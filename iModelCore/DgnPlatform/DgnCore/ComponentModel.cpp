@@ -39,6 +39,14 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params), m_
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentModelPtr ComponentModel::FindModelByName(DgnDbR db, Utf8StringCR name)
+    {
+    return db.Models().Get<ComponentModel>(db.Models().QueryModelId(DgnModel::CreateModelCode(name)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModel::_GetSolverOptions(Json::Value& json)
@@ -722,7 +730,7 @@ PhysicalElementCPtr ComponentModel::HarvestedSingletonInserter::_WriteSolution(D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR catalogItem,
+PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, DgnModelR targetModel, PhysicalElementCR catalogItem,
                                               Placement3dCR placement, DgnElement::Code const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
@@ -780,7 +788,7 @@ PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, PhysicalModelR targetModel, 
+PhysicalElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, DgnModelR targetModel, 
                                                 Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, 
                                                 Placement3dCR placement, DgnElement::Code const& code)
     {

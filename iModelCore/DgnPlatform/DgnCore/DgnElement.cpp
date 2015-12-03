@@ -2721,7 +2721,7 @@ ElementCopier::ElementCopier()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR templateItem,
+PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, PhysicalElementCR templateItem,
     DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& icode)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
