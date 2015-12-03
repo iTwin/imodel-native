@@ -412,6 +412,22 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
+    <ECClass typeName="DrawingElement" isDomainClass="True">
+        <!-- 2D element used in drawings -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>Element</BaseClass>
+        <BaseClass>GeometrySource</BaseClass>
+    </ECClass>
+    <ECClass typeName="SheetElement" isDomainClass="True">
+        <!-- 2D element used in sheets -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>Element</BaseClass>
+        <BaseClass>GeometrySource</BaseClass>
+    </ECClass>
 
     <ECClass typeName="TextAnnotationItem" isDomainClass="True">
         <ECCustomAttributes>
