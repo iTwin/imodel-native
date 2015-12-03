@@ -1208,6 +1208,39 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementImporter::ElementImporter(DgnImportContext& c) : m_context(c), m_copyChildren(true)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR destModel, DgnElementCR sourceElement)
+    {
+    DgnElementCPtr destElement = sourceElement.Import(statusOut, destModel, m_context);
+    if (!destElement.IsValid())
+        return nullptr;
+
+    if (m_copyChildren)
+        {
+        for (auto sourceChildid : sourceElement.QueryChildren())
+            {
+            DgnElementCPtr sourceChildElement = sourceElement.GetDgnDb().Elements().GetElement(sourceChildid);
+            if (!sourceChildElement.IsValid())
+                continue;
+
+            Placement3d childPlacement; // *** WIP COPY - compute offset and rotation of source child relative to source parent 
+
+            ImportElement(statusOut, destModel, *sourceChildElement);
+            }
+        }
+
+    return destElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
@@ -2717,22 +2750,22 @@ DgnDbStatus DrawingElement::_SetPlacement(Placement2dCR placement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementCopier::ElementCopier() 
+ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, PhysicalElementCR sourceElement,
-    Placement3dCR placementIn, DgnElement::Code const& icode, DgnElementId newParentId)
+DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR sourceElement, DgnElement::Code const& icode, DgnElementId newParentId)
     {
+    DgnElementId alreadyCopied = m_context.FindElementId(sourceElement.GetElementId());
+    if (alreadyCopied.IsValid())
+        return targetModel.GetDgnDb().Elements().Get<PhysicalElement>(alreadyCopied);
+    
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
-    Placement3d placement(placementIn);
-    placement.GetElementBoxR() = sourceElement.GetPlacement().GetElementBox();
-
-    PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), sourceElement.GetElementClassId(), sourceElement.GetCategoryId(), placement, icode);
+    DgnElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), sourceElement.GetElementClassId(), icode);
 
     DgnElementPtr outputDgnElement0 = sourceElement.Clone(&status, &iparams);
     if (!outputDgnElement0.IsValid())
@@ -2746,15 +2779,24 @@ PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR ta
         }
     outputDgnElement0->SetParentId(newParentId);
 
-    // *** WIP_CLONE - work-around problem with CreateParams slicing
-    outputDgnElement0->ToPhysicalElementP()->SetPlacement(placement);
-
     DgnElementCPtr outputDgnElement = outputDgnElement0->Insert(&status);
     if (!outputDgnElement.IsValid())
         return nullptr;
 
     // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
     ComponentModel::OnElementCopied(*outputDgnElement->ToPhysicalElement(), sourceElement, m_context);
+
+    if (m_copyChildren)
+        {
+        for (auto sourceChildid : sourceElement.QueryChildren())
+            {
+            PhysicalElementCPtr sourceChildElement = sourceElement.GetDgnDb().Elements().Get<PhysicalElement>(sourceChildid);
+            if (!sourceChildElement.IsValid())
+                continue;
+
+            MakeCopy(&status, targetModel, *sourceChildElement, DgnElement::Code(), outputDgnElement->GetElementId());
+            }
+        }
 
     return outputDgnElement0->ToPhysicalElementP();
     }

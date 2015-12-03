@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 #define TEST_JS_NAMESPACE_W L"ComponentModelTest"
 #define TEST_WIDGET_COMPONENT_NAME "Widget"
 #define TEST_GADGET_COMPONENT_NAME "Gadget"
-#define TEST_NESTING_COMPONENT_NAME "Nesting"
+#define TEST_THING_COMPONENT_NAME "Thing"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
@@ -151,7 +151,7 @@ BeFileName         m_clientDbName;
 DgnDbPtr           m_componentDb;
 DgnDbPtr           m_clientDb;
 Dgn::ScopedDgnHost m_host;
-Json::Value m_wsln1, m_wsln3, m_wsln4, m_wsln44, m_gsln1;
+Json::Value m_wsln1, m_wsln3, m_wsln4, m_wsln44, m_gsln1, m_nsln1;
 
 Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override;
 
@@ -164,13 +164,14 @@ void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode
 void CloseClientDb() {if (m_clientDb.IsValid()) m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
-void Developer_TestNestingSolver();
+void Developer_TestThingSolver();
+void Developer_CreateCapturedSolution(DgnElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
 void Client_ImportCM(Utf8CP componentName);
-void Developer_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
-void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, PhysicalElementCR catalogItem);
+void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, DgnElementCR catalogItem);
 void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution);
-void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
+void Client_CheckComponentInstance(DgnElementId, size_t expectedSolidCount, double x, double y, double z);
+void Client_CheckNestedInstance(DgnElementCR instanceElement, Utf8CP expectedChildComponentName, int nChildrenExpected);
 
 void SimulateDeveloper();
 void SimulateClient();
@@ -218,6 +219,11 @@ ComponentModelTest::ComponentModelTest()
     m_gsln1["R"] = 1;
     m_gsln1["T"] = "text";
 
+    m_nsln1 = Json::objectValue;
+    m_nsln1["A"] = 1;
+    m_nsln1["B"] = 1;
+    m_nsln1["C"] = 1;
+
     T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
     m_host.SetFetchScriptCallback(this);
     }
@@ -264,7 +270,7 @@ void ComponentModelTest::Developer_CreateCMs()
     // Define the CM's Element Category (in the CM's DgnDb). Use the same name as the component model. 
     ASSERT_TRUE( Developer_CreateCategory("WidgetCategory", ColorDef(0xff,0x00,0x00)).IsValid() );
     ASSERT_TRUE( Developer_CreateCategory("GadgetCategory", ColorDef(0x00,0xff,0x00)).IsValid() );
-    ASSERT_TRUE( Developer_CreateCategory("NestingCategory", ColorDef(0x00,0x00,0xff)).IsValid() );
+    ASSERT_TRUE( Developer_CreateCategory("ThingCategory", ColorDef(0x00,0x00,0xff)).IsValid() );
 
     ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
     ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
@@ -278,7 +284,7 @@ void ComponentModelTest::Developer_CreateCMs()
         wparameters.push_back(ModelSolverDef::Parameter("Other", ip, ECN::ECValue("Something else")));
         ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME, wparameters);
                                                            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ This must match the name used in the .ts file in the call to RegisterModelSolver
-        ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, "dgn.PhysicalElement", "WidgetCategory", "", wsolver);
+        ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement), "WidgetCategory", "", wsolver);
         ComponentModelPtr wcm = new ComponentModel(wparms);
         ASSERT_TRUE( wcm->IsValid() );
         ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );
@@ -293,21 +299,21 @@ void ComponentModelTest::Developer_CreateCMs()
         gparameters.push_back(ModelSolverDef::Parameter("T", ip, ECN::ECValue("Some other parm")));
         ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_GADGET_COMPONENT_NAME, gparameters);
 
-        ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, "dgn.PhysicalElement", "GadgetCategory", "", gsolver);
+        ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement), "GadgetCategory", "", gsolver);
         ComponentModelPtr gcm = new ComponentModel(gparms);
         ASSERT_TRUE( gcm->IsValid() );
         ASSERT_EQ( DgnDbStatus::Success , gcm->Insert() );
         }
 
-    //  Nesting
+    //  Thing
         {
         bvector<ModelSolverDef::Parameter> nparameters; 
         nparameters.push_back(ModelSolverDef::Parameter("A", tp, ECN::ECValue(1.0))); 
         nparameters.push_back(ModelSolverDef::Parameter("B", tp, ECN::ECValue(1.0))); 
         nparameters.push_back(ModelSolverDef::Parameter("C", tp, ECN::ECValue(1.0))); 
-        ModelSolverDef nsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_NESTING_COMPONENT_NAME, nparameters);
+        ModelSolverDef nsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME, nparameters);
 
-        ComponentModel::CreateParams nparms(*m_componentDb, TEST_NESTING_COMPONENT_NAME, "dgn.PhysicalElement", "NestingCategory", "", nsolver);
+        ComponentModel::CreateParams nparms(*m_componentDb, TEST_THING_COMPONENT_NAME, DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement), "ThingCategory", "", nsolver);
         ComponentModelPtr ncm = new ComponentModel(nparms);
         ASSERT_TRUE( ncm->IsValid() );
         ASSERT_EQ( DgnDbStatus::Success , ncm->Insert() );
@@ -383,12 +389,12 @@ void ComponentModelTest::Developer_TestGadgetSolver()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_TestNestingSolver()
+void ComponentModelTest::Developer_TestThingSolver()
     {
     OpenComponentDb(Db::OpenMode::ReadWrite);
     AutoCloseComponentDb closeComponentDb(*this);
 
-    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_NESTING_COMPONENT_NAME);
+    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_THING_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
     ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
@@ -466,17 +472,17 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedCount, double x, double y, double z)
+void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, double x, double y, double z)
     {
     DgnElementCPtr el = m_clientDb->Elements().Get<DgnElement>(eid);
-    checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedCount);
+    checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
     checkSlabDimensions(*el->ToGeometrySource(), x, y, z);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
+void ComponentModelTest::Developer_CreateCapturedSolution(DgnElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
     {
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
@@ -499,7 +505,7 @@ void ComponentModelTest::Developer_SolveAndCapture(PhysicalElementCPtr& catalogI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, PhysicalElementCR catalogItem)
+void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, DgnElementCR catalogItem)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -507,26 +513,12 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     ASSERT_TRUE( targetModel.IsValid() );
 
     DgnDbStatus status;
-    Placement3d placement;
-    placement.GetOriginR() = DPoint3d::From(1, 2, 3);
-    placement.GetAnglesR() = YawPitchRollAngles::FromDegrees(4, 5, 6);
-    PhysicalElementCPtr instanceElement = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, catalogItem, placement);
+    DgnElementCPtr instanceElement = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, catalogItem);
     ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
 
     ieid = instanceElement->GetElementId();
 
     ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
-
-    // *** TBD: check that instance matches catalog item
-
-    // Make sure that no component model elements are accidentally copied into the instances model
-    bset<DgnClassId> targetModelElementClasses;
-    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element)));
-    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Widget")));
-    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Gadget")));
-    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element)));
-    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*targetModel, targetModelElementClasses);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -538,7 +530,7 @@ void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetM
 
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
-    PhysicalElementCPtr catalogItem;
+    DgnElementCPtr catalogItem;
     ModelSolverDef::ParameterSet cmparams;
     componentModel->QuerySolutionByName(catalogItem, cmparams, ciname);
     if (!expectToFindSolution)
@@ -573,29 +565,54 @@ void ComponentModelTest::SimulateDeveloper()
     Developer_CreateCMs();
     Developer_TestWidgetSolver();
     Developer_TestGadgetSolver();
-    Developer_TestNestingSolver();
+    Developer_TestThingSolver();
 
-    // Create catalogs of widgets and gadgets
+    // Create catalogs of components
     OpenComponentDb(Db::OpenMode::ReadWrite);
     AutoCloseComponentDb closeComponentDb(*this);
 
     PhysicalModelPtr catalogModel;
     ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
 
-    PhysicalElementCPtr ci;
-    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1, "wsln1");
-    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln3, "wsln3");
-    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4, "wsln4");
-    Developer_SolveAndCapture(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln44, "wsln44");
+    DgnElementCPtr ci;
+    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1, "wsln1");
+    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln3, "wsln3");
+    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4, "wsln4");
+    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln44, "wsln44");
 
-    Developer_SolveAndCapture(ci, *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1, "gsln1");
+    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1, "gsln1");
+
+    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_THING_COMPONENT_NAME, m_nsln1, "nsln1");
     
     ci = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModelTest::Client_CheckNestedInstance(DgnElementCR instanceElement, Utf8CP expectedChildComponentName, int nChildrenExpected)
+    {
+    auto instanceChildren = instanceElement.QueryChildren();
+    ASSERT_EQ(nChildrenExpected, instanceChildren.size());
+    if (0 == nChildrenExpected)
+        return;
+
+    DgnElementCPtr nestedInstance = m_clientDb->Elements().GetElement(*instanceChildren.begin());
+    ASSERT_TRUE(nestedInstance.IsValid());
+
+    DgnElementCPtr nestedSln = ComponentModel::QuerySolutionFromInstance(*nestedInstance); 
+    ASSERT_TRUE(nestedSln.IsValid());
+    
+    DgnModelId nestedSlnComponentModelId;
+    ModelSolverDef::ParameterSet nestedslnparams;
+    ASSERT_EQ(DgnDbStatus::Success, ComponentModel::QuerySolutionInfo(nestedSlnComponentModelId, nestedslnparams, *nestedSln));
+    
+    ASSERT_EQ(ComponentModel::FindModelByName(*m_clientDb, expectedChildComponentName)->GetModelId(), nestedSlnComponentModelId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Simulate a client who receives a ComponentModel and then places instances of solutions to it.
-* @bsimethod                                    Sam.Wilson                      04/2013
+* @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::SimulateClient()
     {
@@ -690,53 +707,6 @@ void ComponentModelTest::SimulateClient()
         Client_CheckComponentInstance(g1, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
         }
 
-    // Make a unique/singleton instance of the 'Nesting' component.
-    OpenClientDb(Db::OpenMode::ReadWrite);
-        {
-        AutoCloseClientDb closeClientDbAtEnd(*this);
-
-        Client_ImportCM(TEST_NESTING_COMPONENT_NAME);
-
-        ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_NESTING_COMPONENT_NAME);  // Open the client's imported copy
-        ASSERT_TRUE( nestingComponentModel.IsValid() );
-
-        PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
-        ASSERT_TRUE( targetModel.IsValid() );
-
-        DgnDbStatus status;
-        Placement3d placement;
-        placement.GetOriginR() = DPoint3d::FromZero();
-        placement.GetAnglesR() = YawPitchRollAngles();
-        ModelSolverDef::ParameterSet params = nestingComponentModel->GetSolver().GetParameters(); // get a copy of the component's parameters
-        params.GetParameterP("A")->SetValue(ECN::ECValue(1));   // set some new values ...
-        params.GetParameterP("B")->SetValue(ECN::ECValue(2));
-        params.GetParameterP("C")->SetValue(ECN::ECValue(3));
-
-        PhysicalElementCPtr instanceElement = nestingComponentModel->MakeInstanceOfSolution(&status, *targetModel, "", params, placement); // create a unique/singleton instance with these parameters
-        ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
-
-        // double-check the parameters associated with this instance
-        PhysicalElementCPtr sln = ComponentModel::QuerySolutionFromInstance(*instanceElement); 
-        // (in this particular case, sln == instanceElement, since we created a singleton. In the general case, the solution will be a different element.)
-        ASSERT_TRUE(sln.IsValid());
-        ModelSolverDef::ParameterSet slnparams;
-        ASSERT_EQ(DgnDbStatus::Success, nestingComponentModel->QuerySolutionInfo(slnparams, *sln));
-        ASSERT_TRUE(slnparams == params);
-
-        // The placed instance should have 1 child, which should be an instance of a Gadget
-        auto instanceChildren = instanceElement->QueryChildren();
-        ASSERT_EQ(1, instanceChildren.size());
-        PhysicalElementCPtr nestedInstance = m_clientDb->Elements().Get<PhysicalElement>(*instanceChildren.begin());
-        ASSERT_TRUE(nestedInstance.IsValid());
-        PhysicalElementCPtr nestedSln = ComponentModel::QuerySolutionFromInstance(*nestedInstance); 
-        ASSERT_TRUE(nestedSln.IsValid());
-        DgnModelId nestedSlnComponentModelId;
-        ModelSolverDef::ParameterSet nestedslnparams;
-        ASSERT_EQ(DgnDbStatus::Success, ComponentModel::QuerySolutionInfo(nestedSlnComponentModelId, nestedslnparams, *nestedSln));
-        ASSERT_EQ(ComponentModel::FindModelByName(*m_clientDb, TEST_GADGET_COMPONENT_NAME)->GetModelId(), nestedSlnComponentModelId);
-
-        ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,5 +723,86 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     SimulateDeveloper();
     SimulateClient();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Make a unique/singleton instance of the 'Thing' component.
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
+    {
+    // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_ClientWithNestingSingleton.idgndb");
+    BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
+    m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
+
+    SimulateDeveloper();
+
+    OpenClientDb(Db::OpenMode::ReadWrite);
+    AutoCloseClientDb closeClientDbAtEnd(*this);
+
+    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+    PhysicalModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+
+    Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
+    Client_ImportCM(TEST_THING_COMPONENT_NAME);
+
+    ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_THING_COMPONENT_NAME);  // Open the client's imported copy
+    ASSERT_TRUE( nestingComponentModel.IsValid() );
+
+    DgnDbStatus status;
+    ModelSolverDef::ParameterSet params = nestingComponentModel->GetSolver().GetParameters(); // get a copy of the component's parameters
+    params.GetParameterP("A")->SetValue(ECN::ECValue(1));   // set some new values ...
+    params.GetParameterP("B")->SetValue(ECN::ECValue(2));
+    params.GetParameterP("C")->SetValue(ECN::ECValue(3));
+
+    DgnElementCPtr instanceElement = nestingComponentModel->MakeInstanceOfSolution(&status, *targetModel, "", params); // create a unique/singleton instance with these parameters
+    ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
+    Client_CheckComponentInstance(instanceElement->GetElementId(), 1, params.GetParameterP("A")->GetValue().GetDouble(), params.GetParameterP("B")->GetValue().GetDouble(), params.GetParameterP("C")->GetValue().GetDouble());
+
+    Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
+
+    ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Make an instance of a pre-captured solution to the 'Thing' component.
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
+    {
+    // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_ClientWithNesting.idgndb");
+    BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
+    m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
+
+    SimulateDeveloper();
+
+    OpenClientDb(Db::OpenMode::ReadWrite);
+    AutoCloseClientDb closeClientDbAtEnd(*this);
+
+    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+    PhysicalModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+
+    Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
+    Client_ImportCM(TEST_THING_COMPONENT_NAME);
+
+    ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_THING_COMPONENT_NAME);  // Open the client's imported copy
+    ASSERT_TRUE( nestingComponentModel.IsValid() );
+
+    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+
+    DgnElementId n1;
+    Client_PlaceInstance(n1, "Instances", *catalogModel, TEST_THING_COMPONENT_NAME, "nsln1", true);
+    ASSERT_TRUE(n1.IsValid());
+
+    Client_CheckComponentInstance(n1, 1, m_nsln1["A"].asDouble(), m_nsln1["B"].asDouble(), m_nsln1["C"].asDouble());
+
+    Client_CheckNestedInstance(*m_clientDb->Elements().GetElement(n1), TEST_GADGET_COMPONENT_NAME, 1);
+    }
+
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

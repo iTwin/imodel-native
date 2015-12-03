@@ -141,11 +141,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @param targetModel The model where the new instance will be placed.
          * @param capturedSolutionName Optional. The name of the captured solution to copy. If not specified, then \a params must be specified.
          * @param params Optional. The parameters to use to look up or to generate the instance. If \a capturedSolutionName is specified, then params may be null.
-         * @param placement The placement for the new instance.
          * @param code Optional. The code for the new instance. If not specified, then the newly created element will have no Code.
          * @return A new, persistent element that is an instance of the specified solution of the specified component, or null if the component could not supply that solution.
          */
-        MakeInstanceOfSolution(targetModel: DgnModelP, capturedSolutionName: Bentley_Utf8String, params: Bentley_Utf8String, placement: Placement3dP, code: AuthorityIssuedCode): DgnElementP;
+        MakeInstanceOfSolution(targetModel: DgnModelP, capturedSolutionName: Bentley_Utf8String, params: Bentley_Utf8String, code: AuthorityIssuedCode): DgnElementP;
         OnDispose(): void;
         Dispose(): void;
     }

@@ -148,7 +148,7 @@ static void loadParams(ModelSolverDef::ParameterSet& params, ComponentModel& cm,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsDgnElement* JsComponentModel::MakeInstanceOfSolution(JsDgnModelP targetJsModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsPlacement3dP jsplacement, JsAuthorityIssuedCodeP jscode)
+JsDgnElement* JsComponentModel::MakeInstanceOfSolution(JsDgnModelP targetJsModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP jscode)
     {
     ComponentModel* cm = ToDgnComponentModel();
     if (nullptr == cm || nullptr == targetJsModel || !targetJsModel->m_model.IsValid())
@@ -162,11 +162,11 @@ JsDgnElement* JsComponentModel::MakeInstanceOfSolution(JsDgnModelP targetJsModel
     if (nullptr != jscode)
         ecode = jscode->m_code;
 
-    PhysicalElementCPtr instance = cm->MakeInstanceOfSolution(nullptr, targetModel, capturedSolutionName, params, jsplacement->m_placement, ecode);
+    DgnElementCPtr instance = cm->MakeInstanceOfSolution(nullptr, targetModel, capturedSolutionName, params, ecode);
     if (!instance.IsValid())
         return nullptr;
 
-    return new JsDgnElement(*const_cast<PhysicalElementP>(instance.get()));
+    return new JsDgnElement(*const_cast<DgnElementP>(instance.get()));
     }
 
 //---------------------------------------------------------------------------------------
