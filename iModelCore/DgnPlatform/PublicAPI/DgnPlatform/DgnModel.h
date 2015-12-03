@@ -244,9 +244,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
         static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
         static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
+        static const uint64_t SetCode = Clone << 1; //!< Change this model's Code. "SetCode"
 
-        static const uint64_t Reserved_1 = Clone << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_2 = SetCode << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
@@ -442,6 +442,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _EmptyModel();
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
+
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
 public:
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
     DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
@@ -478,6 +480,9 @@ public:
 
     //! Get the Code of this DgnModel
     Code const& GetCode() const {return m_code;}
+
+    //! Change the Code of this DgnModel
+    DgnDbStatus SetCode(Code const& code) { return _SetCode(code); }
 
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
