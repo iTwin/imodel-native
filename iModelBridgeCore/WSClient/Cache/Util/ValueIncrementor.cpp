@@ -34,46 +34,58 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
     Utf8PrintfString key("ValueIncrementor::IncrementWithoutSaving:%lld:%s", m_propertyClassId, m_propertyName.c_str());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
-        ECSqlSelectBuilder builder;
-        builder.SelectAll().From(*propertyClass, false).Limit("1");
-        return builder.ToString();
+        return 
+            "SELECT ECInstanceId, [" + m_propertyName + "] "
+            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*propertyClass) + " LIMIT 1 ";
         });
 
-    Json::Value instance;
+    ECInstanceId instanceId;
+    int64_t value = 0;
     if (ECSqlStepStatus::HasRow == statement->Step())
         {
-        JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-        if (!adapter.GetRowInstance(instance, m_propertyClassId))
-            {
-            return ERROR;
-            }
+        instanceId = statement->GetValueId<ECInstanceId>(0);
+        value = statement->GetValueInt64(1);
         }
 
-    if (instance.isNull())
+    if (!instanceId.IsValid())
         {
-        instance[m_propertyName] = "0";
-        JsonInserter inserter(*m_db, *propertyClass);
-        if (SUCCESS != inserter.Insert(instance))
+        Utf8String ecsql = 
+            "INSERT INTO " + ECSqlBuilder::ToECSqlSnippet(*propertyClass) + " "
+            "([" + m_propertyName + "]) VALUES (1) ";
+
+        ECSqlStatement statement;
+        statement.Prepare(*m_db, ecsql.c_str());
+        if (ECSqlStepStatus::Done != statement.Step())
             {
             return ERROR;
             }
+
+        valueOut = "1";
+        return SUCCESS;
         }
 
-    int64_t value = BeJsonUtilities::Int64FromValue(instance[m_propertyName]);
     if (LLONG_MAX == value)
         {
         BeAssert(false);
         return ERROR;
         }
-    value++;
-    instance[m_propertyName] = BeJsonUtilities::StringValueFromInt64(value);
 
-    JsonUpdater updater(*m_db, *propertyClass);
-    if (SUCCESS != updater.Update(instance))
+    value++;
+
+    statement = m_statementCache->GetPreparedStatement(key + "Update", [&]
+        {
+        return
+            "UPDATE ONLY " + ECSqlBuilder::ToECSqlSnippet(*propertyClass) + " "
+            "SET [" + m_propertyName + "] = ? ";
+        });
+
+    statement->BindInt64(1, value);
+    if (ECSqlStepStatus::Done != statement->Step())
         {
         return ERROR;
         }
 
-    valueOut = instance[m_propertyName].asString();
+    valueOut.Sprintf("%lld", value);
+
     return SUCCESS;
     }

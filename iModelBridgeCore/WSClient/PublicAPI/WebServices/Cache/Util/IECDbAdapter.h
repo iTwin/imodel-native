@@ -82,7 +82,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
 
         virtual ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) = 0;
 
+        //! DEPRECATED
         virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, ECSqlBuilderCR builder) = 0;
+
         virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql) = 0;
 
         //! Selects as few properties as possible to acomplish valid query
@@ -113,14 +115,14 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             ) = 0;
 
         virtual int  CountClassInstances(ECClassCP ecClass) = 0;
-        virtual ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereQuery = nullptr) = 0;
-        virtual bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereQuery = nullptr) = 0;
+        virtual ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereClause = nullptr) = 0;
+        virtual bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereClause = nullptr) = 0;
 
         virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECInstanceKeyCR instanceKey) = 0;
         virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, ECInstanceId ecId) = 0;
-        virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, Utf8CP select = nullptr) = 0;
+        virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereClause = nullptr, Utf8CP select = nullptr) = 0;
 
-        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, ICancellationTokenPtr cancellationToken = nullptr) = 0;
+        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereClause = nullptr, ICancellationTokenPtr cancellationToken = nullptr) = 0;
         virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, ECSqlStatement& statement, ICancellationTokenPtr cancellationToken = nullptr) = 0;
 
         virtual ECInstanceKey RelateInstances(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;

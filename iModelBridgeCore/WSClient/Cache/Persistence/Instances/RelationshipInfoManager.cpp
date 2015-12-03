@@ -387,19 +387,15 @@ bset<CachedRelationshipKey>& cachedRelationshipsOut
     Utf8PrintfString key("RelationshipInfoManager::GetRelationshipsForHolder:%lld:%lld", holder.GetECClassId(), holderToInfoRelClass->GetId());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
-        ECSqlSelectBuilder sqlBuilder;
-        sqlBuilder
-            .Select
-            (
-            "info.ECInstanceId, "
-            "info.[" CLASS_CachedRelationshipInfo_PROPERTY_RelClassId "], "
-            "info.[" CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId "]"
-            )
-            .From(*m_cachedRelationshipInfoClass, "info", false)
-            .Join(*holderClass, "holder", false)
-            .Using(*holderToInfoRelClass)
-            .Where("holder.ECInstanceId = ?");
-        return sqlBuilder.ToString();
+        return
+            "SELECT "
+            "   info.ECInstanceId, "
+            "   info.[" CLASS_CachedRelationshipInfo_PROPERTY_RelClassId "], "
+            "   info.[" CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId "] "
+            "FROM ONLY " ECSql_CachedRelationshipInfoClass " info "
+            "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*holderClass) + " holder "
+            "USING " + ECSqlBuilder::ToECSqlSnippet(*holderToInfoRelClass) + " "
+            "WHERE holder.ECInstanceId = ? ";
         });
 
     statement->BindId(1, holder.GetECInstanceId());

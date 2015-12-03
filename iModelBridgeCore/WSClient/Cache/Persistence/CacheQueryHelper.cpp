@@ -210,9 +210,9 @@ ECRelationshipClassCR relationshipClass
         "WHERE source.ECInstanceId = ? "
         "%s",
         selectClause.c_str(),
-        ECSqlSelectBuilder::ToECSqlSnippet(targetClass).c_str(),
-        ECSqlSelectBuilder::ToECSqlSnippet(sourceClass).c_str(),
-        ECSqlSelectBuilder::ToECSqlSnippet(relationshipClass).c_str(),
+        ECSqlBuilder::ToECSqlSnippet(targetClass).c_str(),
+        ECSqlBuilder::ToECSqlSnippet(sourceClass).c_str(),
+        ECSqlBuilder::ToECSqlSnippet(relationshipClass).c_str(),
         orderByClause.c_str()
         );
 
@@ -246,7 +246,7 @@ Utf8StringCR optionalWhereClause
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] IN (%s) %s"
         "%s",
         selectClause.c_str(),
-        ECSqlSelectBuilder::ToECSqlSnippet(ecClass).c_str(),
+        ECSqlBuilder::ToECSqlSnippet(ecClass).c_str(),
         commaSeperatedRemoteIds.c_str(),
         optionalAndClause.c_str(),
         orderByClause.c_str()
@@ -273,7 +273,7 @@ const ClassReadInfo& info
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "%s",
         selectClause.c_str(),
-        ECSqlSelectBuilder::ToECSqlSnippet(ecClass).c_str(),
+        ECSqlBuilder::ToECSqlSnippet(ecClass).c_str(),
         orderByClause.c_str()
         );
     return ecSql;
@@ -306,7 +306,7 @@ Utf8StringCR customWhereClause
         "WHERE %s "
         "%s",
         selectClause.c_str(),
-        ECSqlSelectBuilder::ToECSqlSnippet(ecClass).c_str(),
+        ECSqlBuilder::ToECSqlSnippet(ecClass).c_str(),
         infoJoin.c_str(),
         customWhereClause.c_str(),
         orderByClause.c_str()
@@ -330,7 +330,7 @@ ECRelationshipClassCR relationshipClass
         "JOIN ONLY " ECSql_CachedObjectInfoToInstanceClass " targetInfoRel ON targetInfo.ECInstanceId = targetInfoRel.SourceECInstanceId "
         "JOIN ONLY %s relationship ON targetInfoRel.TargetECInstanceId = relationship.TargetECInstanceId "
         "WHERE relationship.SourceECInstanceId = ?",
-        ECSqlSelectBuilder::ToECSqlSnippet(relationshipClass).c_str()
+        ECSqlBuilder::ToECSqlSnippet(relationshipClass).c_str()
         );
     return ecSql;
     }
@@ -346,7 +346,7 @@ Utf8String CacheQueryHelper::ECSql::SelectAllPropertiesAndRemoteIdByECInstanceId
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE instance.ECInstanceId = ? "
         "LIMIT 1 ",
-        ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
+        ECSqlBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
         );
     return ecSql;
     }
@@ -362,7 +362,7 @@ Utf8String CacheQueryHelper::ECSql::SelectAllPropertiesByRemoteId(ECClassCR cach
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "LIMIT 1 ",
-        ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
+        ECSqlBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
         );
     return ecSql;
     }
@@ -378,7 +378,7 @@ Utf8String CacheQueryHelper::ECSql::SelectECInstanceIdByRemoteId(ECClassCR cache
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "LIMIT 1 ",
-        ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
+        ECSqlBuilder::ToECSqlSnippet(cachedInstanceClass).c_str()
         );
     return ecSql;
     }
@@ -397,7 +397,7 @@ Utf8StringCR commaSeperatedECInstanceIds
         "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] FROM ONLY %s instance "
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoToInstanceClass " "
         "WHERE instance.ECInstanceId IN (%s) ",
-        ECSqlSelectBuilder::ToECSqlSnippet(cachedInstanceClass).c_str(),
+        ECSqlBuilder::ToECSqlSnippet(cachedInstanceClass).c_str(),
         commaSeperatedECInstanceIds.c_str()
         );
     return ecSql;
