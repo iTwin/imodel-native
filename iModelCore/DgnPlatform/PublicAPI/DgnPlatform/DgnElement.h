@@ -965,6 +965,7 @@ protected:
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
+    virtual SystemElementCP _ToSystemElement() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -997,6 +998,7 @@ public:
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}          //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
+    SystemElementCP ToSystemElement() const {return _ToSystemElement();}          //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -1005,13 +1007,15 @@ public:
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
+    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}             //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
     //! @}
 
-    bool Is3d() const {return nullptr != ToGeometrySource3d();} //!< Determine whether this element is 3d or not
-    bool Is2d() const {return nullptr != ToGeometrySource2d();} //!< Determine whether this element is 2d or not
-    bool IsGeometricElement() const {return nullptr != ToGeometrySource();}
+    bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
+    bool Is2d() const {return nullptr != ToGeometrySource2d();}                     //!< Determine whether this element is 2d or not
+    bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is geometric or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
-    bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
+    bool IsSystemElement() const {return nullptr != ToSystemElement();}             //!< Determine whether this element is a SystemElement or not
+    bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
     //! @note If this flag is true, this element must be readonly. To modify an element, call CopyForEdit.
@@ -1242,7 +1246,7 @@ public:
 };
 
 //=======================================================================================
-//! The position, rotation angle, and size of a DgnElement2d.
+//! The position, rotation angle, and bounding box for a 2-dimensional element.
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct Placement2d
@@ -1455,17 +1459,19 @@ protected:
 }; // DgnElement3d
 
 //=======================================================================================
-//! A 2-dimensional geometric element.
+//! A 2-dimensional geometric element used in drawings.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
+struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement, GeometrySource2d
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement)
+    friend struct dgn_ElementHandler::Drawing;
 
+public:
     struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
+    DEFINE_T_SUPER(DrawingElement::T_Super::CreateParams);
 
     DgnCategoryId m_categoryId;
     Placement2dCR m_placement;
@@ -1478,7 +1484,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
     };
 
 protected:
-
     DgnCategoryId   m_categoryId;
     GeomStream      m_geom;
     Placement2d     m_placement;
@@ -1487,6 +1492,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
+    virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
 
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
@@ -1506,9 +1512,13 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
-    explicit DgnElement2d(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
+    explicit DrawingElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
 
-}; // DgnElement2d
+public:
+    //! Create a DrawingElement from CreateParams.
+    static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+
+}; // DrawingElement
 
 //=======================================================================================
 //! A DgnElement3d that exists in the physical coordinate space of a DgnDb.
@@ -1536,21 +1546,18 @@ public:
 };
 
 //=======================================================================================
-//! A DgnElement2d that holds geometry in a DrawingModel
+//! A SystemElement is used to model functional systems
+//! @see SystemModel
 //! @ingroup DgnElementGroup
-// @bsiclass                                                    Keith.Bentley   04/15
+// @bsiclass                                                    Shaun.Sewall    12/25
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
+struct EXPORT_VTABLE_ATTRIBUTE SystemElement : DgnElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d)
+    DEFINE_T_SUPER(DgnElement);
 
 protected:
-    DrawingElementCP _ToDrawingElement() const override {return this;}
-
-public:
-    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
-    //! Create a DrawingElement from CreateParams.
-    static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+    virtual SystemElementCP _ToSystemElement() const override final {return this;}
+    explicit SystemElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

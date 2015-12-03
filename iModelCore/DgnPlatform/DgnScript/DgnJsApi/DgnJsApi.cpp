@@ -87,14 +87,14 @@ void JsElementGeometryBuilder::AppendSphere(double radius)
 //---------------------------------------------------------------------------------------
 JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
-    DgnElement3dP e3d = dynamic_cast<DgnElement3dP>(e->m_el.get());
-    if (nullptr != e3d)
-        m_builder = ElementGeometryBuilder::Create(*e3d, o->Get (), a->GetYawPitchRollAngles ());
+    GeometrySource3dCP source3d = e->m_el->ToGeometrySource3d();
+    if (nullptr != source3d)
+        m_builder = ElementGeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
     else
         {
-        DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());
-        if (nullptr != e2d)
-            m_builder = ElementGeometryBuilder::Create(*e2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
+        GeometrySource2dCP source2d = e->m_el->ToGeometrySource2d();
+        if (nullptr != source2d)
+            m_builder = ElementGeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
         }
     }
 

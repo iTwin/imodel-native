@@ -1356,8 +1356,6 @@ typedef T_LsIdTree::Iterator                  T_LsIdIterator;
 //!  @ingroup LineStyleManagerModule
 enum class LsUnit
 {
-    //  Master      = 0,    //!< Master Units -- not supported in DgnDb
-    Uor         = 1,        //!< Internal Units (UORS)
     Device      = 2,        //!< Pixel units
     Meters      = 3,        //!< Meters
 };
@@ -1455,8 +1453,6 @@ public:
     DGNPLATFORM_EXPORT void SetUnitsDefinition (double newValue);
     DGNPLATFORM_EXPORT void SetUnitsType (LsUnit unitsType);
     DGNPLATFORM_EXPORT LsUnit GetUnitsType () const;
-    //!  This is equivalent to "LsUnit::Uor == GetUnits()"
-    DGNPLATFORM_EXPORT bool IsUnitsUOR () const;
     //!  This is equivalent to "LsUnit::Meters == GetUnits()"
     DGNPLATFORM_EXPORT bool IsUnitsMeters () const;
     //!  This is equivalent to "LsUnit::Device == GetUnits()"
@@ -1482,10 +1478,6 @@ public:
 
     DGNPLATFORM_EXPORT bool                     IsContinuous            () const;
     DGNPLATFORM_EXPORT void                     SetIsContinuous         (bool newValue);
-    //!  Controls whether the line style scale is independent of the scale of shared cells
-    DGNPLATFORM_EXPORT bool                     IsSCScaleIndependent    () const;
-    //!  Controls whether the line style scale is independent of the scale of shared cells
-    DGNPLATFORM_EXPORT void                     SetIsSCScaleIndependent (bool newValue);
     //!  Gets the LsComponent for the line style.
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent

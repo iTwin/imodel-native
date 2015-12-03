@@ -42,6 +42,7 @@
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
+#define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
@@ -51,6 +52,8 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_SystemElement         "SystemElement"
+#define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 
@@ -132,6 +135,10 @@ public:
     bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
     //! Determine if two Codes are equivalent
     bool operator==(AuthorityIssuedCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
+    //! Determine if two Codes are not equivalent
+    bool operator!=(AuthorityIssuedCode const& other) const {return !(*this == other);}
+    //! Perform ordered comparison, e.g. for inclusion in associative containers
+    DGNPLATFORM_EXPORT bool operator<(AuthorityIssuedCode const& rhs) const;
 
     //! Get the value for this Code
     Utf8StringCR GetValue() const {return m_value;}
@@ -144,6 +151,8 @@ public:
 
     void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace); //!< @private DO NOT EXPORT
 };
+
+typedef bset<AuthorityIssuedCode> AuthorityIssuedCodeSet;
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
