@@ -125,7 +125,6 @@ public:
     virtual DPoint4dCR _GetPickPointView() const override {return m_pickPointView;}
     virtual DPoint3dCR _GetPickPointWorld() const override {return m_pickPointWorld;}
     virtual GeomDetailR _GetGeomDetail() override {return m_currGeomDetail;}
-    virtual bool _IsPointVisible(DPoint3dCP screenPt) override;
     virtual void _SetHitPriorityOverride(HitPriority priority) override {m_hitPriorityOverride = priority;}
     virtual void _AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority) override;
     virtual bool _IsSnap() const;

@@ -107,7 +107,7 @@ static double getAdjustedViewZ (ViewContextR context, DPoint4dCR viewPt)
 * @see          HitList
 * @bsimethod                                                    KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority priority)
+void PickContext::_AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriority priority)
     {
     // NOTE: Only reason to have ElemTopology for non-element hit is to allow locate/snap...
     if (nullptr == m_currentGeomSource && nullptr == GetElemTopology())
@@ -118,7 +118,7 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     if (hitPtLocal)
         localPt = *hitPtLocal;
     else
-        ViewToLocal(&localPt, &hitPtScreen, 1);
+        ViewToLocal(&localPt, &hitPtView, 1);
 
     // if the point is not visible in the current view, skip this hit (skip when drawing base geom after getting lstyle hit!)
     if (!(TEST_LSTYLE_BaseGeom == m_testingLStyle && m_unusableLStyleHit))
@@ -170,8 +170,8 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
 
     m_currGeomDetail.SetClosestPoint(hitPtWorld);
     m_currGeomDetail.SetLocatePriority(priority);
-    m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtScreen, m_pickPointView)));
-    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtScreen) + GetCurrentGeometryParams().GetNetDisplayPriority());
+    m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtView, m_pickPointView)));
+    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtView) + GetCurrentGeometryParams().GetNetDisplayPriority());
     m_currGeomDetail.SetGeomStreamEntryId(GetGeomStreamEntryId());
 
     RefCountedPtr<HitDetail> thisHit = new HitDetail(*GetViewport(), m_currentGeomSource, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
@@ -194,16 +194,6 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
         m_doneSearching = true;
 
     m_hitList->RemoveHit(-1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* determine whether a point in world coordinates is inside or outside of the current clipping
-* established for this context.
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PickContext::_IsPointVisible(DPoint3dCP worldPt)
-    {
-    return IsWorldPointVisible(*worldPt, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1263,11 +1253,9 @@ StatusInt PickContext::_VisitDgnModel(DgnModelP inDgnModel)
     if (&inDgnModel->GetDgnDb() != &GetDgnDb() && !m_options.GetDisableDgnDbFilter())
         return ERROR;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Make sure the test point is within the clipping region of this file.
-    if (m_output._IsPointVisible(&m_output._GetPickPointWorld()))
+    // Make sure the test point is within the clipping region.
+    if (IsWorldPointVisible(_GetPickPointWorld(), true))
         return T_Super::_VisitDgnModel(inDgnModel);
-#endif
 
     return ERROR;
     }
