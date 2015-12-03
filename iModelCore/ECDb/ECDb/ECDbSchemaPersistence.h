@@ -60,40 +60,6 @@ struct DbECSchemaInfo : DbInfoBase
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECClassInfo : DbInfoBase
-    {
-    public:
-        enum Columns
-            {
-            COL_Id = 0x000001,
-            COL_Name = 0x000002,
-            COL_Description = 0x000004,
-            COL_IsDomainClass = 0x000008,
-            COL_IsStruct = 0x000010,
-            COL_IsCustomAttribute = 0x000020,
-            COL_RelationStrength = 0x000800,
-            COL_DisplayLabel = 0x004000,
-            COL_SchemaId = 0x008000,
-            COL_IsRelationship = 0x010000,
-            COL_RelationStrengthDirection = 0x020000,
-            COL_ALL = 0xffffffff
-            };
-        ECClassId                  m_ecClassId;
-        ECSchemaId                 m_ecSchemaId;
-        Utf8String                 m_name;
-        Utf8String                 m_displayLabel;
-        Utf8String                 m_description;
-        bool                       m_isDomainClass;
-        bool                       m_isStruct;
-        bool                       m_isCustomAttribute;
-        StrengthType               m_relationStrength;
-        ECRelatedInstanceDirection m_relationStrengthDirection;
-        bool                       m_isRelationship;
-    };
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct DbBaseClassInfo : DbInfoBase
     {
     public:
@@ -307,13 +273,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECDbSchemaPersistence
     {
-    private:
-        static int ToInt(ECN::ECRelatedInstanceDirection direction);
-        static int ToInt(ECN::StrengthType strengthType);
-        static ECN::ECRelatedInstanceDirection ToECRelatedInstanceDirection(int relatedInstanceDirection);
-        static ECN::StrengthType ToStrengthType(int strengthType);
-
-
     public:
         typedef bvector<ECN::ECClassId>   ECClassIdList;
         typedef ECClassIdList*            ECClassIdListP;
@@ -324,7 +283,7 @@ struct ECDbSchemaPersistence
 
         //Insert new item
         static  DbResult InsertECSchema(ECDbCR, DbECSchemaInfo const&);
-        static  BentleyStatus InsertECClass(ECDbCR, DbECClassInfo const&);
+        static  BentleyStatus InsertECClass(ECDbCR, ECN::ECClassCR);
         static  BentleyStatus InsertBaseClass(ECDbCR, DbBaseClassInfo const&);
         static  BentleyStatus InsertECProperty(ECDbCR, DbECPropertyInfo const&);
         static  BentleyStatus InsertECRelationshipConstraint(ECDbCR, DbECRelationshipConstraintInfo const&);
@@ -336,9 +295,6 @@ struct ECDbSchemaPersistence
         //Find ECSchemaInfo
         static  BentleyStatus FindECSchema(BeSQLite::CachedStatementPtr&, ECDbCR, DbECSchemaInfo const&);
         static  BeSQLite::DbResult Step(DbECSchemaInfo&, BeSQLite::Statement&);
-        //Find ECClassInfo
-        static  BentleyStatus FindECClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbECClassInfo const&);
-        static  BeSQLite::DbResult Step(DbECClassInfo&, BeSQLite::Statement&);
         //Find BaseClass
         static  BentleyStatus FindBaseClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbBaseClassInfo const&);
         static  BeSQLite::DbResult Step(DbBaseClassInfo&, BeSQLite::Statement&);

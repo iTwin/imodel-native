@@ -85,18 +85,20 @@ bool DynamicSelectClauseECClass::IsGeneratedProperty (ECPropertyCR selectClauseP
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::Initialize ()
+ECSqlStatus DynamicSelectClauseECClass::Initialize()
     {
     if (m_schema != nullptr)
         return ECSqlStatus::Success;
 
-    if (ECObjectsStatus::Success != ECSchema::CreateSchema (m_schema, SCHEMANAME, 1, 0))
+    if (ECObjectsStatus::Success != ECSchema::CreateSchema(m_schema, SCHEMANAME, 1, 0))
         return ECSqlStatus::Error;
 
-    if (ECObjectsStatus::Success == m_schema->CreateEntityClass(m_class, CLASSNAME)) // WIP_EC3 - confirm this really is an entity class
-        return ECSqlStatus::Success;
-    else
+    if (ECObjectsStatus::Success != m_schema->CreateEntityClass(m_class, CLASSNAME))
         return ECSqlStatus::Error;
+
+    //is never instantiated
+    m_class->SetClassModifier(ECClassModifier::Abstract);
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

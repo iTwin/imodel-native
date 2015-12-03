@@ -23,7 +23,6 @@ private:
     explicit ECDbSchemaWriter(ECDbR ecdb) : m_ecdb(ecdb) {}
 
     DbResult CreateECSchemaEntry(ECSchemaCR, ECSchemaId);
-    BentleyStatus CreateECClassEntry(ECClassCR, ECClassId);
     BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index);
     BentleyStatus CreateECPropertyEntry(ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index);
     BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);

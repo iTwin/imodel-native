@@ -1078,32 +1078,20 @@ TEST_F (ECDbInstances, DeleteWithRelationshipBetweenStructs)
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
 
-    auto struct1Inst = ECDbTestUtility::CreateArbitraryECInstance(*struct1, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter1 (ecdb, *struct1);
-    ASSERT_TRUE (inserter1.IsValid ());
-    auto insertStatus = inserter1.Insert (*struct1Inst);
-
-    auto struct2Inst = ECDbTestUtility::CreateArbitraryECInstance(*struct2, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
+    ASSERT_FALSE (inserter1.IsValid ()) << "Cannot insert into structs";
+ 
     ECInstanceInserter inserter2 (ecdb, *struct2);
-    ASSERT_TRUE (inserter2.IsValid ());
-    insertStatus = inserter2.Insert (*struct2Inst);
+    ASSERT_FALSE (inserter2.IsValid ()) << "Cannot insert into structs";
 
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relationshipClass);
     ASSERT_TRUE (relationshipEnabler.IsValid());
 
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
-    relationshipInstance->SetSource (struct1Inst.get());
-    relationshipInstance->SetTarget (struct2Inst.get());
-    relationshipInstance->SetInstanceId ("source->target");
-    
     ECInstanceInserter inserter3 (ecdb, *relationshipClass);
     ASSERT_TRUE (inserter3.IsValid ());
-    insertStatus = inserter3.Insert (*relationshipInstance);
 
     ECInstanceDeleter deleter1 (ecdb, *struct1);
-    auto deleteStatus = deleter1.Delete (*struct1Inst);
-    ASSERT_EQ (SUCCESS, deleteStatus);
-
+    ASSERT_FALSE(deleter1.IsValid()) << "Cannot delete from structs";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1167,40 +1155,6 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
 
     BeTest::SetFailOnAssert(true);
     }
-
-//---------------------------------------------------------------------------------------
-// Test for TFS 99872, inserting classes that are Domain, Custom Attribute and Struct
-// @bsimethod                                   Majd.Uddin                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbInstances, DomainCustomAttributeStructCombinations)
-{
-    ECDb& db = SetupECDb("ClassCombinations.ecdb", BeFileName(L"TryClassCombinations.01.00.ecschema.xml"));
-
-    
-    //Trying all combinations where IsDomain is True. IsDomain False are Abstract classes and are not instantiated.
-    ECClassCP allTrue = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_T_D_T");
-    ASSERT_TRUE (allTrue != nullptr);
-    IECInstancePtr instance;
-    instance = ECDbTestUtility::CreateArbitraryECInstance(*allTrue, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter(db, *allTrue);
-    ECInstanceKey instanceKey;
-    auto sms = inserter.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-
-    ECClassCP Test1 = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_F_D_T");
-    ASSERT_TRUE (Test1 != nullptr);
-    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test1, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter2(db, *Test1);
-    sms = inserter2.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-
-    ECClassCP Test2 = db.Schemas().GetECClass("TryClassCombinations", "S_F_CA_T_D_T");
-    ASSERT_TRUE (Test2 != nullptr);
-    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test2, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter3(db, *Test2);
-    sms = inserter3.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Ramanujam.Raman                   10/15

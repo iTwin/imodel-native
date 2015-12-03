@@ -1064,6 +1064,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTable
                           "    </ECClass>"
                           "</ECSchema>", false, "");
     ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", testSchema);
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECInstanceId fi1Id;
     {

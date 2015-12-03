@@ -171,7 +171,7 @@ private:
     virtual Utf8String _GetUsage () const override;
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
 
-    void RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFolder) const;
+    void RunExportSchema (ECSqlConsoleSession& session, Utf8CP outFolder, bool useECXmlV2) const;
     void RunExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const;
 
     void ExportTables (ECSqlConsoleSession& session, Utf8CP jsonFile) const;

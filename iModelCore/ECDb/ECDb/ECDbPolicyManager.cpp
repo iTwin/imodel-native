@@ -161,12 +161,12 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy (IClassMap const& classMap, IsVal
                 case ECSqlType::Insert:
                     {
                     //Inserting into abstract classes is not possible (by definition of abstractness)
-                    if (classMap.IsAbstractECClass ())
+                    if (ecClass.GetClassModifier() == ECClassModifier::Abstract)
                         return ECDbPolicy::CreateNotSupported ("ECClass is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.");
 
-                    //Inserting into non-domain structs is not possible (by definition structs are not instantiable)
-                    if (ecClass.IsStructClass() && ECClassModifier::Abstract == ecClass.GetClassModifier()) // WIP_EC3 - Make sure this check is correct
-                        return ECDbPolicy::CreateNotSupported ("ECClass is a non-domain-class struct which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.");
+                    //Inserting into structs is not possible (by definition structs are not instantiable)
+                    if (ecClass.IsStructClass())
+                        return ECDbPolicy::CreateNotSupported ("ECClass is a struct which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.");
                     }
             }
         }

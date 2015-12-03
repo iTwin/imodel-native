@@ -307,41 +307,22 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
 struct ConsistentClassHierarchyRule : ECSchemaValidationRule
     {
 private:
-    enum class ClassKind
-        {
-        Regular,
-        Abstract,
-        Struct,
-        CustomAttribute,
-        Relationship
-        };
-
     //=======================================================================================
     // @bsiclass                                                Krischan.Eberle      07/2015
     //+===============+===============+===============+===============+===============+======
     struct Error : ECSchemaValidationRule::Error
         {
     private:
-        struct InvalidClass
-            {
-        private:
-            ECN::ECClassCP m_class;
-            ClassKind m_kind;
-
-        public:
-            InvalidClass(ECN::ECClassCR ecclass, ClassKind kind) : m_class(&ecclass), m_kind(kind) {}
-            Utf8String ToString() const;
-            };
-
-        std::vector<std::pair<InvalidClass, InvalidClass>> m_inconsistencies;
-        
+        std::vector<std::pair<ECN::ECClassCP, ECN::ECClassCP>> m_inconsistencies;
         virtual Utf8String _ToString() const override;
+
+        static Utf8CP ClassTypeToString(ECN::ECClassType);
 
     public:
         explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
         ~Error() {}
 
-        void AddInconsistency(ECN::ECClassCR baseClass, ClassKind baseClassKind, ECN::ECClassCR subclass, ClassKind subclassKind);
+        void AddInconsistency(ECN::ECClassCR baseClass, ECN::ECClassCR subclass);
 
         bool HasInconsistencies() const { return !m_inconsistencies.empty(); }
         };
@@ -350,8 +331,6 @@ private:
 
     virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
     virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
-
-    static ClassKind DetermineClassKind(ECN::ECClassCR);
     
 public:
     ConsistentClassHierarchyRule();
