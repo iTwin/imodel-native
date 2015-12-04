@@ -45,6 +45,7 @@ AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbClient::ConnectToRepository(R
 DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo)
     : m_clientInfo(clientInfo)
     {
+    m_locks = DgnDbLocks::Create(clientInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -69,6 +70,7 @@ void DgnDbClient::SetServerURL(Utf8StringCR serverUrl)
 void DgnDbClient::SetCredentials(DgnClientFx::Utils::CredentialsCR credentials)
     {
     m_credentials = credentials;
+    m_locks->SetCredentials(credentials);
     }
 
 //---------------------------------------------------------------------------------------
@@ -355,15 +357,15 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                             if (BeSQLite::DbResult::BE_SQLITE_OK == status)
                                 {
                                 bvector<Dgn::DgnRevisionPtr> revisions = pullTask->GetResult().GetValue();
-                                BentleyStatus mergeStatus = BentleyStatus::SUCCESS;
+                                RevisionStatus mergeStatus = RevisionStatus::Success;
                                 if (!revisions.empty())
                                     {
                                     mergeStatus = db->Revisions().MergeRevisions(revisions);
                                     db->CloseDb();
                                     }
                                 Dgn::DgnPlatformLib::ForgetHost();
-                                if (BentleyStatus::SUCCESS != status)
-                                    finalResult->SetError(Error::RevisionsMerge);
+                                if (RevisionStatus::Success != mergeStatus)
+                                    finalResult->SetError(mergeStatus);
                                 else
                                     finalResult->SetSuccess(filePath);
                                 }
@@ -397,4 +399,12 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+Dgn::ILocksServer* DgnDbClient::GetLocksServerP()
+    {
+    return dynamic_cast<Dgn::ILocksServer*>(m_locks.get());
     }

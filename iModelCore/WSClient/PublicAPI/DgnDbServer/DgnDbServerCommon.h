@@ -32,6 +32,11 @@ public:
         m_message = error.GetMessage();
         m_description = error.GetDescription();
         }
+
+    DgnDbServerError(Dgn::RevisionStatus const& status)
+        {
+
+        }
     };
 template<typename AnyValue> using DgnDbServerResult = DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>;
 template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>;

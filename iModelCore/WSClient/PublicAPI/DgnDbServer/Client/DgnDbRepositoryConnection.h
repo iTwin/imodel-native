@@ -23,7 +23,8 @@ typedef DgnClientFx::Utils::AsyncResult<uint64_t, DgnDbServerError> DgnDbUInt64R
 typedef DgnClientFx::Utils::AsyncResult<uint32_t, DgnDbServerError> DgnDbUInt32Result;
 typedef DgnClientFx::Utils::AsyncResult<Dgn::LockLevel, DgnDbServerError> DgnDbLockLevelResult;
 typedef DgnClientFx::Utils::AsyncResult<Dgn::DgnLockSet, DgnDbServerError> DgnDbLockSetResult;
-
+typedef DgnClientFx::Utils::AsyncResult<Dgn::LockRequest::Response, DgnDbServerError> DgnLockResponseResult;
+typedef DgnClientFx::Utils::AsyncResult<Dgn::DgnLockOwnership, DgnDbServerError> DgnDbOwnershipResult;
 
 //=======================================================================================
 //! Connection to a repository on server.
@@ -64,6 +65,14 @@ private:
 
     //! Get the index from a revisionId.
     DgnClientFx::Utils::AsyncTaskPtr<DgnDbUInt64Result> GetRevisionIndex(Utf8StringCR revisionId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> QueryLocksHeld(bool& held, Dgn::LockRequestCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnLockResponseResult> AcquireLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> RelinquishLocks(const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbOwnershipResult> QueryOwnership(Dgn::LockableId lockId, const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbLockLevelResult> QueryLockLevel(Dgn::LockableId lockId, const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbLockSetResult> QueryLocks(const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> ReleaseLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
 
     DgnDbRepositoryConnection(RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
 public:

@@ -12,6 +12,7 @@
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
+#include <DgnDbServer/Client/DgnDbLocks.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 typedef std::shared_ptr<struct DgnDbClient> DgnDbClientPtr;
@@ -29,6 +30,7 @@ struct DgnDbClient
 {
 //__PUBLISH_SECTION_END__
 private:
+    DgnDbLocksPtr m_locks;
     Utf8String m_serverUrl;
     DgnClientFx::Utils::Credentials m_credentials;
     WebServices::ClientInfoPtr m_clientInfo;
@@ -91,5 +93,7 @@ public:
     //! @see AquireBriefcase
     //! @note This method uses serverUrl from local values in the DgnDb that was written during AquireBriefcase instead of the value set in client.
     DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbBriefcaseResult> OpenBriefcase(Dgn::DgnDbPtr db, bool doSync = false, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+
+    DGNDBSERVERCLIENT_EXPORT Dgn::ILocksServer* GetLocksServerP();
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

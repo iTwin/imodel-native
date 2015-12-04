@@ -123,3 +123,13 @@ BeSQLite::DbResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, const Rep
         status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryId, repositoryInfo.GetId());
     return status;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+bool RepositoryInfo::operator==(RepositoryInfoCR rhs) const
+    {
+    if (rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL())
+        return true;
+    return false;
+    }
