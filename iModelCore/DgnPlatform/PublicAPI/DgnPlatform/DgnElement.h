@@ -1540,11 +1540,13 @@ protected:
 template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement<T_Base, ElementGeom3d>
 {
 protected:
+    typedef typename T_Base::CreateParams CreateParams;
+
     explicit GeometricElement3d(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
-        : GeometricElement(params, category, placement) { }
+        : GeometricElement<T_Base, ElementGeom3d>(params, category, placement) { }
 
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
-    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); m_geom.CopyFrom(rhs.ToGeometrySource3d()); }
+    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource3d()); }
 };
 
 //! Specialization of GeometricElement3d deriving directly from the dgn:Element ECClass.
@@ -1636,11 +1638,13 @@ public:
 template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement<T_Base, ElementGeom2d>
 {
 protected:
+    typedef typename T_Base::CreateParams CreateParams;
+
     explicit GeometricElement2d(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d())
-        : GeometricElement(params, category, placement) { }
+        : GeometricElement<T_Base, ElementGeom2d>(params, category, placement) { }
 
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); m_geom.CopyFrom(rhs.ToGeometrySource2d()); }
+    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource2d()); }
 };
 
 //! Specialization of GeometricElement2d deriving directly from the dgn:Element ECClass.
