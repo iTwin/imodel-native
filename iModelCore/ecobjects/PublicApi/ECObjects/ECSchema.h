@@ -978,7 +978,7 @@ public:
 
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
-typedef bvector<ECClassP> ECConstraintClassesList;
+typedef bvector<ECEntityClassP> ECConstraintClassesList;
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 struct SchemaXmlReader;
 struct SchemaXmlWriter;
@@ -1547,18 +1547,18 @@ struct ECRelationshipConstraintClass : NonCopyableClass
     {
 private:
     bvector<Utf8String> m_keys;
-    ECClassCP m_ecClass;
+    ECEntityClassCP m_ecClass;
 
 public:
 #ifndef DOCUMENTATION_GENERATOR 
-    explicit ECRelationshipConstraintClass(ECClassCR ecClass);
+    explicit ECRelationshipConstraintClass(ECEntityClassCR ecClass);
 #endif
 
     ECRelationshipConstraintClass(ECRelationshipConstraintClass&& rhs);
     ECRelationshipConstraintClass& operator= (ECRelationshipConstraintClass&& rhs);
     
     //! Gets the constraint's ECClass
-    ECClassCR GetClass() const { return *m_ecClass; }
+    ECEntityClassCR GetClass() const { return *m_ecClass; }
     //! Gets the constraint's key property names
     bvector<Utf8String> const& GetKeys() const { return m_keys; }
     //! Adds name of key property.
@@ -1622,13 +1622,13 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
         //! will replace the current class applied to the constraint with the new class.
         //! @param[out] classConstraint ECRelationshipConstraintClass for current ECClass
         //! @param[in] ecClass  The class to add
-        ECOBJECTS_EXPORT ECObjectsStatus            Add(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass);
+        ECOBJECTS_EXPORT ECObjectsStatus            Add(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass);
         //! Clears the vector Constraint classes
         ECOBJECTS_EXPORT ECObjectsStatus            clear();
         //! Clears the vector Constraint classes
         ECOBJECTS_EXPORT uint32_t            size()const;
         //! Removes specified ECClass from Constraint class vector
-        ECOBJECTS_EXPORT ECObjectsStatus            Remove(ECClassCR);
+        ECOBJECTS_EXPORT ECObjectsStatus            Remove(ECEntityClassCR);
         ~ECRelationshipConstraintClassList();
            
     };
@@ -1711,20 +1711,21 @@ public:
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
     //! will replace the current class applied to the constraint with the new class.
     //! @param[in] classConstraint  The class to add
-    ECOBJECTS_EXPORT ECObjectsStatus            AddClass(ECClassCR classConstraint);
+    ECOBJECTS_EXPORT ECObjectsStatus            AddClass(ECEntityClassCR classConstraint);
     //! Adds the specified class to the constraint.
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
     //! will replace the current class applied to the constraint with the new class.
+    //! @note Only Entity classes are allowed as constraints.
     //! @param[in] ecClass  The class to add
-    //! @param[out] classConstraint  list of contraint classes
-    ECOBJECTS_EXPORT ECObjectsStatus            AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass);
+    //! @param[out] classConstraint  list of constraint classes
+    ECOBJECTS_EXPORT ECObjectsStatus            AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass);
 
     //! Removes the specified class from the constraint.
     //! @param[in] classConstraint  The class to remove
-    ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECClassCR classConstraint);
+    ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECEntityClassCR classConstraint);
 
     //! Returns the classes applied to the constraint.
-    ECOBJECTS_EXPORT const bvector<ECClassP> GetClasses() const;
+    ECOBJECTS_EXPORT const ECConstraintClassesList GetClasses() const;
 
     //! Returns the classes applied to the constraint.
     ECOBJECTS_EXPORT ECRelationshipConstraintClassList const & GetConstraintClasses() const;
@@ -1738,7 +1739,7 @@ public:
     //! Returns whether the relationship is ordered on this constraint.
     ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
 
-    //! Returns the storage mode of the OrderId for this contraint.
+    //! Returns the storage mode of the OrderId for this constraint.
     ECOBJECTS_EXPORT OrderIdStorageMode         GetOrderIdStorageMode () const;
 
     //! Gets the name of the OrderId property for this constraint.

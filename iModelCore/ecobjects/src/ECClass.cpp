@@ -2016,8 +2016,16 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
                 CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (constraintClassName).c_str(), Utf8String (className).c_str(), Utf8String (resolvedSchema->GetName()).c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
+        ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
+        if (nullptr == constraintAsEntity)
+            {
+            LOG.warningv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
+                         CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String(constraintClassName).c_str(), Utf8String(className).c_str(), Utf8String(resolvedSchema->GetName()).c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
         ECRelationshipConstraintClassP ecRelationshipconstaintClass;
-        m_constraintClasses.Add(ecRelationshipconstaintClass, *constraintClass);
+        m_constraintClasses.Add(ecRelationshipconstaintClass, *constraintAsEntity);
         if (ecRelationshipconstaintClass != nullptr)
             {
             for (BeXmlNodeP keyNode = constraintClassNode->GetFirstChild(); nullptr != keyNode; keyNode = keyNode->GetNextSibling())
@@ -2082,7 +2090,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstraint)
     {
 
     ECRelationshipConstraintClassP ecRelationShipconstraintClass;
@@ -2091,7 +2099,7 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                       MUHAMMAD.ZAIGHUM                             01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass)
+ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass)
     {
     return  m_constraintClasses.Add(classConstraint, ecClass);
 
@@ -2100,7 +2108,7 @@ ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECClassCR classConstraint)
+ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECEntityClassCR classConstraint)
     {
     return m_constraintClasses.Remove(classConstraint);
     }
@@ -2113,7 +2121,7 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
     ECConstraintClassesList listOfClasses;
     for (auto const &constraintClassIterator : m_constraintClasses)
         {
-        listOfClasses.push_back (const_cast<ECClassP>(&constraintClassIterator->GetClass ()));
+        listOfClasses.push_back (const_cast<ECEntityClassP>(&constraintClassIterator->GetClass ()));
         }
     return listOfClasses;
     }
@@ -2286,8 +2294,11 @@ ECRelationshipConstraintR toRelationshipConstraint
             if (ECObjectsStatus::Success != status)
                 return status;
             }
+        ECEntityClassP destAsEntity = destConstraintClass->GetEntityClassP();
+        if (nullptr == destAsEntity)
+            return ECObjectsStatus::DataTypeNotSupported;
 
-        status = toRelationshipConstraint.AddClass(*destConstraintClass);
+        status = toRelationshipConstraint.AddClass(*destAsEntity);
         if (ECObjectsStatus::Success != status)
             return status;
         }
@@ -2754,11 +2765,11 @@ uint32_t ECRelationshipConstraintClassList::size()const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constainClass)
+ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECEntityClassCR constraintClass)
     {
     for (auto itor = m_constraintClasses.begin(); itor != m_constraintClasses.end(); itor++)
         {
-        if (&itor->get()->GetClass() == &constainClass)
+        if (&itor->get()->GetClass() == &constraintClass)
             {
             m_constraintClasses.erase(itor);
             return ECObjectsStatus::Success;
@@ -2771,7 +2782,7 @@ ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constainClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass)
+ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass)
     {
     classConstraint = nullptr;
     if (&(ecClass.GetSchema()) != &(m_relClass->GetSchema()))
@@ -2806,7 +2817,7 @@ ECRelationshipConstraintClassList::~ECRelationshipConstraintClassList()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECClassCR ecClass) : m_ecClass(&ecClass)
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECEntityClassCR ecClass) : m_ecClass(&ecClass)
     {}
 
 /*---------------------------------------------------------------------------------**//**

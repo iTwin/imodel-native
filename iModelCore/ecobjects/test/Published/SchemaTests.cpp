@@ -1735,12 +1735,14 @@ TEST_F (SchemaCreationTest, CanFullyCreateASchema)
     testSchema->AddReferencedSchema (*schema2);
 
     ECEntityClassP class1;
+    ECEntityClassP class2;
     ECEntityClassP baseClass;
     ECStructClassP structClass;
     ECEntityClassP relatedClass;
     ECRelationshipClassP relationshipClass;
 
-    testSchema->CreateEntityClass (class1, "TestClass");
+    testSchema->CreateEntityClass(class1, "TestClass");
+    testSchema->CreateEntityClass(class2, "TestClass2");
     testSchema->CreateStructClass (structClass, "StructClass");
     schema2->CreateEntityClass (baseClass, "BaseClass");
     testSchema->CreateEntityClass (relatedClass, "RelatedClass");
@@ -1884,17 +1886,15 @@ TEST_F (SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ (0, relationshipClass->GetSource ().GetClasses ().size ());
     EXPECT_EQ (0, relationshipClass->GetTarget ().GetClasses ().size ());
 
-    relationshipClass->GetSource ().AddClass (*structClass);
-    EXPECT_EQ (1, relationshipClass->GetSource ().GetClasses ().size ());
     relationshipClass->GetSource ().AddClass (*class1);
-    EXPECT_EQ (2, relationshipClass->GetSource ().GetClasses ().size ());
+    EXPECT_EQ (1, relationshipClass->GetSource ().GetClasses ().size ());
 
     relationshipClass->GetTarget ().AddClass (*relatedClass);
     EXPECT_EQ (1, relationshipClass->GetTarget ().GetClasses ().size ());
     relationshipClass->GetTarget ().AddClass (*relatedClass);
     EXPECT_EQ (1, relationshipClass->GetTarget ().GetClasses ().size ());
-    relationshipClass->GetTarget ().AddClass (*structClass);
-    EXPECT_EQ (2, relationshipClass->GetTarget ().GetClasses ().size ());
+    relationshipClass->GetTarget().AddClass(*class2);
+    EXPECT_EQ(2, relationshipClass->GetTarget().GetClasses().size());
 
     EXPECT_EQ (0, relationshipClass->GetSource ().GetCardinality ().GetLowerLimit ());
     EXPECT_EQ (0, relationshipClass->GetTarget ().GetCardinality ().GetLowerLimit ());
