@@ -143,37 +143,37 @@ struct IECDiffNode
 public:
     //! Return diff node type. It represent a meta schema id for facet that represent current diff node.
     //! @return return diff node type
-    ECOBJECTS_EXPORT virtual DiffNodeId                  GetId() const = 0;
+    virtual DiffNodeId                  GetId() const = 0;
     //! Return access string for the current node. Access string is a meta schema path for current diff node.
     //! @return access string for current node
-    ECOBJECTS_EXPORT virtual Utf8String                  GetAccessString() const =0;
+    virtual Utf8String                  GetAccessString() const =0;
     //! Return constant string representation of current diff node.
     //! @return name of current node.
-    ECOBJECTS_EXPORT virtual Utf8StringCR                GetName() const = 0;
+    virtual Utf8StringCR                GetName() const = 0;
     //! If current node is a array element e.g. BaseClasses it will also have a index
     //! @return index of current node if its array. Return -1 if if its not.
-    ECOBJECTS_EXPORT virtual int                         GetIndex() const = 0;
+    virtual int                         GetIndex() const = 0;
     //! Return list of childe node pointers for current diff node. This method computes child nodes so it would nice idea to keep it value in local variable for performance reasons.
     //! @return list of child node pointers
-    ECOBJECTS_EXPORT virtual DiffNodeList                GetChildren() const = 0;
+    virtual DiffNodeList                GetChildren() const = 0;
    //! Return child by knownDiffNodeId
     //! @param[in] id The id of child diff node.
     //! @return if successfully will return child node otherwise nullptr
-    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildById(DiffNodeId id) const = 0;
+    virtual IECDiffNodeCP               GetChildById(DiffNodeId id) const = 0;
     //! Return child by accessString
     //! @param[in] accessString The accessString of child diff node.
     //! @return if successfully will return child node otherwise nullptr
-    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildByAccessString(Utf8CP accessString) const = 0;
+    virtual IECDiffNodeCP               GetChildByAccessString(Utf8CP accessString) const = 0;
     //! Returns diff type for current diff node
     //! @param[in] bRecursively If true it will compute accumulative diff type of sub tree.
     //! @return DiffType for current node or accumulative one if bRecursively was true.
-    ECOBJECTS_EXPORT virtual DiffType                    GetDiffType(bool bRecursively =false) const = 0;
+    virtual DiffType                    GetDiffType(bool bRecursively =false) const = 0;
     //! Return left value for current diff node. GetDiffType() can be use to determine type of diff to see which one (Left or Right) need to be called.
     //! @return ECValue for current node left value from left schema
-    ECOBJECTS_EXPORT virtual ECN::ECValue                GetValueLeft() const = 0;
+    virtual ECN::ECValue                GetValueLeft() const = 0;
     //! Return right value for current diff node. GetDiffType() can be use to determine type of diff to see which one (Left or Right) need to be called.
     //! @return ECValue for current node left value from right schema
-    ECOBJECTS_EXPORT virtual ECN::ECValue                GetValueRight() const = 0;
+    virtual ECN::ECValue                GetValueRight() const = 0;
 
     virtual ~IECDiffNode(){};
     };
