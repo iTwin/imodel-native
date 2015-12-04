@@ -930,7 +930,7 @@ public:
 struct NavigationECProperty : public ECProperty
     {
 DEFINE_T_SUPER(ECProperty)
-//__PUBLISH_SECTION_END__
+
 friend struct ECEntityClass;
 friend struct ECClass;
 private:
@@ -959,12 +959,11 @@ protected:
 
     virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
 
-//__PUBLISH_SECTION_START__
 public:
     // !Gets the relationship class used to determine what related instance this navigation property points to
-    ECOBJECTS_EXPORT ECRelationshipClassCP      GetRelationshipClass() const { return m_relationshipClass; }
+    ECRelationshipClassCP      GetRelationshipClass() const { return m_relationshipClass; }
     // !Gets the direction used to determine what related instance this navigation property points to
-    ECOBJECTS_EXPORT ECRelatedInstanceDirection GetDirection() const { return m_direction; }
+    ECRelatedInstanceDirection GetDirection() const { return m_direction; }
     // !Sets the relationship and direction used by the navigation property
     // @param[in]   relClass    The relationship this navigation property will represent
     // @param[in]   direction   The direction the relationship will be traversed.  Forward if the class containing this property is a source constraint, Backward if the class is a target constraint
