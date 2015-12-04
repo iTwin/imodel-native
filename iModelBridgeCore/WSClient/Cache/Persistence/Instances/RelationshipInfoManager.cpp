@@ -228,7 +228,7 @@ ECInstanceKeyR targetOut
             "FROM ONLY %s rel "
             "WHERE rel.[ECInstanceId] = ? "
             "LIMIT 1 ",
-            relationshipClass->GetECSqlName()
+            relationshipClass->GetECSqlName().c_str()
             );
         });
 

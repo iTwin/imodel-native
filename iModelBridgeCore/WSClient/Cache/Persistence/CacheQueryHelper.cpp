@@ -210,9 +210,9 @@ ECRelationshipClassCR relationshipClass
         "WHERE source.ECInstanceId = ? "
         "%s",
         selectClause.c_str(),
-        targetClass.GetECSqlName(),
-        sourceClass.GetECSqlName(),
-        relationshipClass.GetECSqlName(),
+        targetClass.GetECSqlName().c_str(),
+        sourceClass.GetECSqlName().c_str(),
+        relationshipClass.GetECSqlName().c_str(),
         orderByClause.c_str()
         );
 
@@ -246,7 +246,7 @@ Utf8StringCR optionalWhereClause
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] IN (%s) %s"
         "%s",
         selectClause.c_str(),
-        ecClass.GetECSqlName(),
+        ecClass.GetECSqlName().c_str(),
         commaSeperatedRemoteIds.c_str(),
         optionalAndClause.c_str(),
         orderByClause.c_str()
@@ -273,7 +273,7 @@ const ClassReadInfo& info
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "%s",
         selectClause.c_str(),
-        ecClass.GetECSqlName(),
+        ecClass.GetECSqlName().c_str(),
         orderByClause.c_str()
         );
     return ecSql;
@@ -306,7 +306,7 @@ Utf8StringCR customWhereClause
         "WHERE %s "
         "%s",
         selectClause.c_str(),
-        ecClass.GetECSqlName(),
+        ecClass.GetECSqlName().c_str(),
         infoJoin.c_str(),
         customWhereClause.c_str(),
         orderByClause.c_str()
@@ -330,7 +330,7 @@ ECRelationshipClassCR relationshipClass
         "JOIN ONLY " ECSql_CachedObjectInfoRelationshipClass " targetInfoRel ON targetInfo.ECInstanceId = targetInfoRel.SourceECInstanceId "
         "JOIN ONLY %s relationship ON targetInfoRel.TargetECInstanceId = relationship.TargetECInstanceId "
         "WHERE relationship.SourceECInstanceId = ?",
-        relationshipClass.GetECSqlName()
+        relationshipClass.GetECSqlName().c_str()
         );
     return ecSql;
     }
@@ -346,7 +346,7 @@ Utf8String CacheQueryHelper::ECSql::SelectAllPropertiesAndRemoteIdByECInstanceId
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
         "WHERE instance.ECInstanceId = ? "
         "LIMIT 1 ",
-        cachedInstanceClass.GetECSqlName()
+        cachedInstanceClass.GetECSqlName().c_str()
         );
     return ecSql;
     }
@@ -362,7 +362,7 @@ Utf8String CacheQueryHelper::ECSql::SelectAllPropertiesByRemoteId(ECClassCR cach
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "LIMIT 1 ",
-        cachedInstanceClass.GetECSqlName()
+        cachedInstanceClass.GetECSqlName().c_str()
         );
     return ecSql;
     }
@@ -378,7 +378,7 @@ Utf8String CacheQueryHelper::ECSql::SelectECInstanceIdByRemoteId(ECClassCR cache
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
         "LIMIT 1 ",
-        cachedInstanceClass.GetECSqlName()
+        cachedInstanceClass.GetECSqlName().c_str()
         );
     return ecSql;
     }
@@ -397,7 +397,7 @@ Utf8StringCR commaSeperatedECInstanceIds
         "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] FROM ONLY %s instance "
         "JOIN ONLY " ECSql_CachedObjectInfoClass " info USING " ECSql_CachedObjectInfoRelationshipClass " "
         "WHERE instance.ECInstanceId IN (%s) ",
-        cachedInstanceClass.GetECSqlName(),
+        cachedInstanceClass.GetECSqlName().c_str(),
         commaSeperatedECInstanceIds.c_str()
         );
     return ecSql;
