@@ -117,9 +117,14 @@ TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfPrimitiveClassWithNullV
     InsertInstances("PrimitiveClass", "KitchenSink", 100, false);
     }
 
-TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfStructClass)
+TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     {
-    InsertInstances("Struct2", "KitchenSink", 100, true);
+    ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+
+    ECClassCP structClass = ecdb.Schemas().GetECClass("KitchenSink", "Struct1");
+    ASSERT_TRUE(structClass != nullptr);
+    ECInstanceInserter inserter(ecdb, *structClass);
+    ASSERT_FALSE(inserter.IsValid());
     }
 
 TEST_F(ECInstanceInserterTests, InsertSingleRelationshipInstance)

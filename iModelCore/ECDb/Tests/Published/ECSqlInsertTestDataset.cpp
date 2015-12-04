@@ -294,11 +294,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::IntoTests ()
     //*******************************************************
     // Inserting into structs
     //*******************************************************
-    //structs which are domain classes are insertible
-    ecsql = "INSERT INTO ecsql.SAStruct (PStructProp.i, PStructProp.l, PStructProp.dt, PStructProp.b) VALUES (123, 1000000, DATE '2013-10-10', False)";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql);
-
-    //structs which are not domain classes are not insertible
+    //structs are not insertible
     ecsql = "INSERT INTO ecsql.PStruct (i, l, dt, b) VALUES (123, 1000000, DATE '2013-10-10', False)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 

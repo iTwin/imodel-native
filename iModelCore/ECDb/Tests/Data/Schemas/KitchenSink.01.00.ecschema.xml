@@ -76,7 +76,7 @@
         <ECProperty propertyName="Struct1IntMember" typeName="int" />
     </ECClass>
     
-    <ECClass typeName="Struct2" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Struct2" isStruct="True">
         <ECProperty propertyName="Struct2StringMember" typeName="string" />
         <ECProperty propertyName="Struct2DoubleMember" typeName="double" />
         <ECArrayProperty propertyName="NestedArray" typeName="Struct1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
@@ -96,7 +96,7 @@
         <ECProperty propertyName="MyLongMember" typeName="long" />
     </ECRelationshipClass>
     
-    <ECClass typeName="Struct3" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Struct3" isStruct="True">
         <ECProperty propertyName="Struct3DoubleMember" typeName="double" />
         <ECProperty propertyName="Struct3IntMember" typeName="int" />
         <ECProperty propertyName="Struct3BoolMember" typeName="boolean" />

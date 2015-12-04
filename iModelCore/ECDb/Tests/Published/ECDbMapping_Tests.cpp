@@ -756,7 +756,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p2' typeName='string' />"
                                    "    </ECClass>"
-                                   "    <ECClass typeName='isStructClass' isStruct='True' isDomainClass='True'>"
+                                   "    <ECClass typeName='isStructClass' isStruct='True'>"
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p3' typeName='string' />"
                                    "    </ECClass>"

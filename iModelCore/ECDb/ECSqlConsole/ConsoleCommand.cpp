@@ -705,6 +705,7 @@ void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFold
     else
         BeFileName::CreateNewDirectory(outFolder.GetName());
 
+    int ecxmlMajorVersion = useECXmlV2 ? 2 : 3;
     for (auto schema : schemas)
         {
         WString fileName;
@@ -713,7 +714,7 @@ void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFold
 
         BeFileName outPath(outFolder);
         outPath.AppendToPath(fileName.c_str());
-        schema->WriteToXmlFile(outPath.GetName());
+        schema->WriteToXmlFile(outPath.GetName(), ecxmlMajorVersion);
         Console::WriteLine("Saved ECSchema '%s' to disk", outPath.GetNameUtf8().c_str());
         }
     }

@@ -3199,7 +3199,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
         }
 
         {
-        auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp.Geometry, PASpatialProp.Geometry_Array) VALUES(?,?)";
+        auto ecsql = "INSERT INTO ecsql.SSpatial (SpatialStructProp.Geometry, SpatialStructProp.Geometry_Array) VALUES(?,?)";
 
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
@@ -3221,7 +3221,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
         }
 
         {
-        auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp) VALUES(?)";
+        auto ecsql = "INSERT INTO ecsql.SSpatial (SpatialStructProp) VALUES(?)";
 
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
@@ -3278,7 +3278,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
     ASSERT_EQ (1, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT PASpatialProp.Geometry_Array, PASpatialProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT SpatialStructProp.Geometry_Array, SpatialStructProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed";
     rowCount = 0;
     while (statement.Step () == BE_SQLITE_ROW)
         {
@@ -3291,19 +3291,19 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
             IGeometryPtr actualGeom = arrayElem->GetGeometry ();
             ASSERT_TRUE (actualGeom != nullptr);
 
-            AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.PASpatialProp.Geometry_Array");
+            AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.SpatialStructProp.Geometry_Array");
             i++;
             }
         ASSERT_EQ ((int) expectedGeoms.size (), i);
 
         IGeometryPtr actualGeom = statement.GetValueGeometry (1);
         ASSERT_TRUE (actualGeom != nullptr);
-        AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.PASpatialProp.Geometry");
+        AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.SpatialStructProp.Geometry");
         }
     ASSERT_EQ (2, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT PASpatialProp FROM ecsql.SSpatial")) << "Preparation failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT SpatialStructProp FROM ecsql.SSpatial")) << "Preparation failed";
     rowCount = 0;
     while (statement.Step () == BE_SQLITE_ROW)
         {
@@ -3317,7 +3317,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
             if (structMemberName.Equals ("Geometry"))
                 {
                 IGeometryPtr actualGeom = structMemberVal.GetGeometry ();
-                AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.PASpatialProp > Geometry");
+                AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.SpatialStructProp > Geometry");
                 }
             else if (structMemberName.Equals ("Geometry_Array"))
                 {
@@ -3328,7 +3328,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
                     IGeometryPtr actualGeom = arrayElem->GetGeometry ();
                     ASSERT_TRUE (actualGeom != nullptr);
 
-                    AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.PASpatialProp > Geometry_Array");
+                    AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.SpatialStructProp > Geometry_Array");
                     i++;
                     }
                 ASSERT_EQ ((int) expectedGeoms.size (), i);
@@ -3347,7 +3347,7 @@ TEST_F(ECSqlStatementTestFixture, GetGeometryWithInvalidBlobFormat)
 
     // insert invalid geom blob
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_PASpatial_Array (ECInstanceId, Geometry) VALUES (1,?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_PASpatial (ECInstanceId, Geometry) VALUES (1,?)"));
     double dummyValue = 3.141516;
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindBlob(1, &dummyValue, (int) sizeof(dummyValue), Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -3606,7 +3606,7 @@ TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
     {
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
-    auto ecsql = "INSERT INTO ecsql.SAStruct (PStructProp.i) VALUES(2)";
+    auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStructProp.i) VALUES(2)";
 
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
@@ -3615,33 +3615,33 @@ TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
     ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
         {
-        auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
+        auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SA");
         ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
         ECInstanceECSqlSelectAdapter classPReader(statement);
         while (statement.Step() == BE_SQLITE_ROW)
             {
             auto inst = classPReader.GetInstance();
             ECValue v;
-            inst->GetValue(v, "PStructProp.i");
+            inst->GetValue(v, "SAStructProp.PStructProp.i");
             ASSERT_EQ(2, v.GetInteger());
             }
         }
     statement.Finalize();
-    ecsql = "UPDATE  ONLY ecsql.SAStruct SET PStructProp.i = 3 ";
+    ecsql = "UPDATE ONLY ecsql.SA SET SAStructProp.PStructProp.i = 3 ";
     stat = statement.Prepare(ecdb, ecsql);
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     stepStatus = statement.Step();
     ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
-    auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
+    auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader(statement);
     while (statement.Step() == BE_SQLITE_ROW)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
-        inst->GetValue(v, "PStructProp.i");
+        inst->GetValue(v, "SAStructProp.PStructProp.i");
         ASSERT_EQ(3, v.GetInteger());
         }
     }
@@ -3730,7 +3730,7 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
     SchemaItem schemaXml("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                      "    <ECClass typeName='Struct' isDomainClass='True' isStruct='True'>"
+                      "    <ECClass typeName='Struct' isStruct='True'>"
                       "        <ECProperty propertyName='P1' typeName='string' />"
                       "        <ECProperty propertyName='P2' typeName='int' />"
                       "    </ECClass>"

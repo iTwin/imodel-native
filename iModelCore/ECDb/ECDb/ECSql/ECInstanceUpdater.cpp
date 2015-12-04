@@ -242,6 +242,12 @@ ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint3
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     {
+    if (!GetECClass().IsEntityClass() && !GetECClass().IsRelationshipClass())
+        {
+        m_isValid = false;
+        return;
+        }
+
     if (propertiesToBind.size() < 1)
         {
         LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.",

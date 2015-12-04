@@ -135,21 +135,21 @@
     </ECClass>
 
     <!-- ************* For DateTimeInfo tests ************************** -->
-    <ECClass typeName="DateTimeStruct" isStruct="True" isDomainClass="True">
+    <ECClass typeName="DateTimeStruct" isStruct="True" isDomainClass="False">
         <ECProperty propertyName="nodatetimeinfo" typeName="dateTime" />
         <ECProperty propertyName="utc" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="dateonly" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Date</DateTimeComponent>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Date</DateTimeComponent>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
     </ECClass>
     <ECClass typeName="Empty" isDomainClass="True" />
@@ -164,10 +164,10 @@
         <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
                     <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
                 </DateTimeInfo>
-</ECCustomAttributes>
+            </ECCustomAttributes>
         </ECArrayProperty>
         <ECArrayProperty propertyName="I_Array" typeName="int" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="L_Array" typeName="long" minOccurs="0" maxOccurs="unbounded" />
@@ -175,7 +175,7 @@
         <ECArrayProperty propertyName="P2D_Array" typeName="point2d" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="P3D_Array" typeName="point3d" minOccurs="0" maxOccurs="unbounded" />
     </ECClass>
-    <ECClass typeName="PASpatial" description="Class including a CommonGeometry prop and a CommonGeometry array prop" isStruct="True" isDomainClass="True">
+    <ECClass typeName="PASpatial" description="Class including a CommonGeometry prop and a CommonGeometry array prop" isDomainClass="True">
         <ECProperty propertyName="B" typeName="boolean" />
         <ECProperty propertyName="D" typeName="double" />
         <ECProperty propertyName="I" typeName="int" />
@@ -183,6 +183,12 @@
         <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry" />
         <ECArrayProperty propertyName="Geometry_Array" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded" />
     </ECClass>
+
+    <ECClass typeName="SpatialStruct" description="Struct including a CommonGeometry prop and a CommonGeometry array prop" isStruct="True">
+        <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry" />
+        <ECArrayProperty propertyName="Geometry_Array" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    
     <ECClass typeName="PSA" description="Class with primitive, struct, and array properties (default mappings)" isDomainClass="True">
         <ECProperty propertyName="B" typeName="boolean" />
         <ECProperty propertyName="Bi" typeName="binary" />
@@ -190,10 +196,10 @@
         <ECProperty propertyName="Dt" typeName="dateTime" />
         <ECProperty propertyName="DtUtc" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
                     <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
                 </DateTimeInfo>
-</ECCustomAttributes>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="L" typeName="long" />
@@ -207,10 +213,10 @@
         <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
                     <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
                 </DateTimeInfo>
-</ECCustomAttributes>
+            </ECCustomAttributes>
         </ECArrayProperty>
         <ECArrayProperty propertyName="I_Array" typeName="int" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="L_Array" typeName="long" minOccurs="0" maxOccurs="unbounded" />
@@ -255,7 +261,7 @@
             <Class class="PSA" />
         </Target>
     </ECRelationshipClass>
-    <ECClass typeName="SAStruct" description="Struct with struct and struct array properties (default mappings)" isStruct="True" isDomainClass="True">
+    <ECClass typeName="SAStruct" description="Struct with struct and struct array properties (default mappings)" isStruct="True" isDomainClass="False">
         <ECStructProperty propertyName="PStructProp" typeName="PStruct" />
         <ECArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>
@@ -304,58 +310,58 @@
         <ECProperty propertyName="nodatetimeinfo" typeName="dateTime" />
         <ECProperty propertyName="emptydatetimeinfo" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="utc" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="unspecified" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Unspecified</DateTimeKind>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Unspecified</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="local" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Local</DateTimeKind>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Local</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="dateonly" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Date</DateTimeComponent>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Date</DateTimeComponent>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="garbagekind" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Garbage</DateTimeKind>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Garbage</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="garbagecomponent" typeName="dateTime">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Garbage</DateTimeComponent>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Garbage</DateTimeComponent>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECProperty>
         <ECArrayProperty propertyName="utcarray" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
-            </DateTimeInfo>
-</ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
         </ECArrayProperty>
         <ECStructProperty propertyName="structwithdatetimes" typeName="DateTimeStruct" />
         <ECArrayProperty propertyName="arrayofstructwithdatetimes" typeName="DateTimeStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
@@ -469,7 +475,7 @@
         <ECProperty propertyName="S" typeName="string" />
     </ECClass>
     <ECClass typeName="SSpatial" description="Class containing a struct which contains a CommonGeometry prop and a CommonGeometry array prop" isDomainClass="True">
-        <ECStructProperty propertyName="PASpatialProp" typeName="PASpatial" />
+        <ECStructProperty propertyName="SpatialStructProp" typeName="SpatialStruct" />
     </ECClass>
     <ECClass typeName="Sub1" isDomainClass="True">
         <BaseClass>Abstract</BaseClass>
