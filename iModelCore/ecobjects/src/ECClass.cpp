@@ -177,13 +177,6 @@ ECClassType ECClass::GetClassType() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsEntityClass() const
-    {
-    return ECClassType::Entity == GetClassType();
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECEntityClassCP ECClass::GetEntityClassCP() const
@@ -197,14 +190,6 @@ ECEntityClassCP ECClass::GetEntityClassCP() const
 ECEntityClassP ECClass::GetEntityClassP()
     {
     return _GetEntityClassP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsCustomAttributeClass() const
-    {
-    return ECClassType::CustomAttribute == GetClassType();
     }
 
 //---------------------------------------------------------------------------------------
@@ -224,14 +209,6 @@ ECCustomAttributeClassP ECClass::GetCustomAttributeClassP()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsStructClass() const
-    {
-    return ECClassType::Struct == GetClassType();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECStructClassCP ECClass::GetStructClassCP() const
@@ -245,14 +222,6 @@ ECStructClassCP ECClass::GetStructClassCP() const
 ECStructClassP ECClass::GetStructClassP()
     {
     return _GetStructClassP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsRelationshipClass() const
-    {
-    return ECClassType::Relationship == GetClassType();
     }
 
 /*---------------------------------------------------------------------------------**//**

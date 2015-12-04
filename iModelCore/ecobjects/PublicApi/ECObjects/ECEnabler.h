@@ -204,12 +204,12 @@ private:
     virtual uint32_t                _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const { return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const { return m_enabler->GetPropertyIndices (indices, parentIndex); }
 
-    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
-    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (Utf8CP accessString) const { return m_enabler->LookupECProperty (accessString); }
-    ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (uint32_t propertyIndex) const { return m_enabler->IsPropertyReadOnly (propertyIndex); }
+    virtual ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
+    virtual ECPropertyCP   _LookupECProperty (Utf8CP accessString) const { return m_enabler->LookupECProperty (accessString); }
+    virtual bool           _IsPropertyReadOnly (uint32_t propertyIndex) const { return m_enabler->IsPropertyReadOnly (propertyIndex); }
 
     // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
+    virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, ECN::PrimitiveType primType, IPropertyProcessor const& processor, PropertyProcessingOptions opts) const

@@ -273,9 +273,9 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     protected:
         ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
 
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (Utf8CP name) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) = 0;
+        virtual BentleyStatus  _SetName (Utf8CP name) = 0;
+        virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) = 0;
+        virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) = 0;
 
 //__PUBLISH_SECTION_START__
     public:
