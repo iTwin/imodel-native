@@ -43,24 +43,24 @@ struct MockWSClient : public IWSClient
 
         MOCK_CONST_METHOD1(GetServerInfo, AsyncTaskPtr<WSInfoResult>
             (
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD1(SendGetInfoRequest, AsyncTaskPtr<WSInfoResult>
             (
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD1(SendGetRepositoriesRequest, AsyncTaskPtr<WSRepositoriesResult>
             (
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
 
         MOCK_CONST_METHOD3(SendGetRepositoriesRequest, AsyncTaskPtr<WSRepositoriesResult>
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ));
     };
 #endif

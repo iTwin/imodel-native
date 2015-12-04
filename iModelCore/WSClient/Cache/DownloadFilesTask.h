@@ -57,7 +57,7 @@ struct DownloadFilesTask : public CachingTaskBase
             bset<ObjectId> filesToDownload,
             FileCache fileCacheLocation,
             CachingDataSource::LabeledProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
     };
 

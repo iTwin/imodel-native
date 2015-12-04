@@ -19,14 +19,14 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct Upgrader
     {
     private:
-        ECDbAdapter m_adapter;
+        ObservableECDb& m_db;
         CacheEnvironment m_environment;
 
     private:
         BentleyStatus UpgradeCascade(int oldVersion);
 
     public:
-        Upgrader(ObservableECDb& m_db, CacheEnvironmentCR environment);
+        Upgrader(ObservableECDb& db, CacheEnvironmentCR environment);
         BentleyStatus Upgrade(int oldVersion);
 
         static BentleyStatus FinalizeUpgradeIfNeeded(BeFileNameCR oldCachePath, CacheEnvironmentCR environment);

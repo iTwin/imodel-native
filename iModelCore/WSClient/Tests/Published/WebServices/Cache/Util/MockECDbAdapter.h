@@ -75,9 +75,9 @@ struct MockECDbAdapter : public IECDbAdapter
         MOCK_METHOD3 (ExtractJsonInstanceFromStatement,
             BentleyStatus (ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstanceOut));
         MOCK_METHOD4 (ExtractECIdsFromStatement,
-            BentleyStatus (ECSqlStatement& statement, int ecInstanceIdcolumn, bvector<ECInstanceId>& ecIdsOut, ICancellationTokenPtr cancellationToken));
+            BentleyStatus (ECSqlStatement& statement, int ecInstanceIdcolumn, bvector<ECInstanceId>& ecIdsOut, ICancellationTokenPtr ct));
         MOCK_METHOD5 (ExtractECInstanceKeyMultiMapFromStatement,
-            BentleyStatus (ECSqlStatement& statement, int ecInstanceIdcolumn, ECClassId classId, ECInstanceKeyMultiMap& keysOut, ICancellationTokenPtr cancellationToken));
+            BentleyStatus (ECSqlStatement& statement, int ecInstanceIdcolumn, ECClassId classId, ECInstanceKeyMultiMap& keysOut, ICancellationTokenPtr ct));
         MOCK_METHOD1 (CountClassInstances,
             int (ECClassCP ecClass));
         MOCK_METHOD2 (FindInstance,

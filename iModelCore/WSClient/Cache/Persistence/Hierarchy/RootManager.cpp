@@ -32,8 +32,8 @@ m_hierarchyManager(hierarchyManager),
 m_objectInfoManager(objectInfoManager),
 
 m_rootClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_Root)),
-m_rootHoldingRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_RootRelationship)),
-m_rootWeakRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_WeakRootRelationship)),
+m_rootHoldingRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_RootRelationship)),
+m_rootWeakRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_WeakRootRelationship)),
 
 m_rootInserter(dbAdapter.GetECDb(), *m_rootClass),
 m_rootUpdater(dbAdapter.GetECDb(), *m_rootClass)
@@ -571,15 +571,14 @@ BentleyStatus RootManager::RemoveAllRoots()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::RemoveRoots(Utf8CP whereClause)
     {
-    ECSqlSelectBuilder builder;
-    builder.Select("ECInstanceId").From(*m_rootClass);
+    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " ECSql_RootClass " ";
     if (nullptr != whereClause)
         {
-        builder.Where(whereClause);
+        ecsql += "WHERE " + Utf8String(whereClause);
         }
 
     ECSqlStatement statement;
-    if (SUCCESS != m_dbAdapter.PrepareStatement(statement, builder))
+    if (SUCCESS != m_dbAdapter.PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }

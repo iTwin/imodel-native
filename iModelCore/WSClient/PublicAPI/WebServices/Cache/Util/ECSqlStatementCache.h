@@ -18,6 +18,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
+typedef std::shared_ptr<ECSqlStatement> ECSqlStatementPtr;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                             Benediktas.Lipnickas    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -29,7 +31,7 @@ struct ECSqlStatementCache : IECDbSchemaChangeListener
 
     private:
         ObservableECDb* m_ecDb;
-        std::map<Utf8String, std::shared_ptr<ECSqlStatement>> m_cache;
+        std::map<Utf8String, ECSqlStatementPtr> m_cache;
 
     public:
         WSCACHE_EXPORT ECSqlStatementCache(ObservableECDb& ecDb);
@@ -42,7 +44,7 @@ struct ECSqlStatementCache : IECDbSchemaChangeListener
         //! @param key - identifier for statement. Cached statement is returned if such key is found or callback called in other case.
         //! @param createECSqlCallback - callback to create ECSql string if statement is not cached yet.
         //! @return - prepared statement if successful or invalid statement if error occurred. Will not return nullptr.
-        WSCACHE_EXPORT std::shared_ptr<ECSqlStatement> GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback);
+        WSCACHE_EXPORT ECSqlStatementPtr GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback);
 
         //! Clear statement cache.
         WSCACHE_EXPORT void Clear();

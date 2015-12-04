@@ -63,7 +63,7 @@ struct WebApiV1 : public WebApi
 
         static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut);
         static WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response);
-        static WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className);
+        static WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId);
         static WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response);
         static WSObjectsResult ResolveObjectsResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
         static WSFileResult ResolveFileResponse(HttpResponse& response, BeFileName filePath);
@@ -75,13 +75,13 @@ struct WebApiV1 : public WebApi
         static void GetParametersFromObjectCreationJson
             (
             JsonValueCR objectCreationJson,
-            Utf8StringR schemaNameOut,
-            Utf8StringR classNameOut,
+            ObjectIdR newObjectId,
             Utf8StringR propertiesOut,
+            ObjectIdR relObjectId,
             ObjectIdR parentObjectIdOut
             );
 
-        AsyncTaskPtr<SchemaInfoResult> GetSchemaInfo(ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<SchemaInfoResult> GetSchemaInfo(ICancellationTokenPtr ct) const;
 
         SchemaInfo GetCachedSchemaInfo() const;
         void SetCachedSchemaInfo(SchemaInfo schemaInfo) const;
@@ -96,7 +96,7 @@ struct WebApiV1 : public WebApi
             HttpBodyPtr body,
             Utf8StringCR eTag,
             HttpRequest::ProgressCallbackCR downloadProgressCallback,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) const;
 
         AsyncTaskPtr<WSFileResult> GetSchema
@@ -104,7 +104,7 @@ struct WebApiV1 : public WebApi
             BeFileNameCR filePath,
             Utf8StringCR eTag,
             HttpRequest::ProgressCallbackCR downloadProgressCallback,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) const;
 
         virtual Utf8String GetSchemaUrl() const;
@@ -114,7 +114,7 @@ struct WebApiV1 : public WebApi
             ObjectIdCR parentObjectId,
             Utf8StringCR propertiesQuery,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const;
 
     public:
@@ -127,14 +127,14 @@ struct WebApiV1 : public WebApi
             (
             const bvector<Utf8String>& types,
             const bvector<Utf8String>& providerIds,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) const override;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
@@ -142,7 +142,7 @@ struct WebApiV1 : public WebApi
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
@@ -151,27 +151,28 @@ struct WebApiV1 : public WebApi
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
             HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            Utf8StringCR skipToken = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
@@ -179,7 +180,7 @@ struct WebApiV1 : public WebApi
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
@@ -188,13 +189,13 @@ struct WebApiV1 : public WebApi
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
@@ -202,7 +203,7 @@ struct WebApiV1 : public WebApi
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
     };
 
