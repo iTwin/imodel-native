@@ -936,3 +936,51 @@ DgnFontPtr DgnFontPersistence::Missing::CreateMissingFont(DgnFontType type, Utf8
     BeAssert(false);
     return nullptr;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+DgnFontId DgnImportContext::RemapFont(DgnFontId srcId)
+    {
+#ifdef WIP_FONT
+    /*
+        General theory:
+            - If destination already has a font by the type and name, assume it's the same and remap to its existing ID.
+                While it is technically possible that the destination font has different metadata or glyph data, it should be so rare that I don't feel it's worth the complexity to detect and code around it.
+            - Otherwise create a deep copy of the font entry.
+                Also deep-copy the glyph data if it was already present in the source.
+    */
+    
+    // Alreay remapped once? Use cached result.
+    DgnFontId dstId = m_remap.Find(srcId);
+    if (dstId.IsValid())
+        return dstId;
+    
+    DgnFontCP srcFont = m_sourceDb.Fonts().FindFontById(srcId);
+    if (nullptr == srcFont)
+        {
+        // Invalid source ID? Options might include:
+        //      (a) simply retain the ID -- bad because who knows if this ID is or will become valid in the destination and thus result in different behavior
+        //      (b) remap to 0 (the invalid ID) -- would effectively keep behavior, but also not great because we'd be propagating junk into the destination
+        //      (c) remap to a last resort font -- change in display and behavior, but would ensure usable data is written to the destination
+        //  I'll side with (c) right now... as a "least bad" option.
+        BeDataAssert(false);
+        srcFont = &T_HOST.GetFontAdmin().GetAnyLastResortFont();
+        }
+
+    // Already exist in the destination?
+    DgnFontCP dstFont = m_destDb.Fonts().FindFontByTypeAndName(srcFont->GetType(), srcFont->GetName().c_str());
+    if (nullptr != dstFont)
+        {
+        dstId = m_destDb.Fonts().FindId(*dstFont);
+        BeDataAssert(dstId.IsValid()); // If FindFontByTypeAndName returned a font, it'd better have an ID. No good way to recover anyway.
+        return m_remap.Add(srcId, dstId);
+        }
+    
+    // Doesn't exist in the destination? Create a copy.
+    // If the source had embedded glyph data, copy it as well -- copy data first so that when we clone the font it can resolve data from its own DB.
+    if (m_sourceDb.Fonts().DbFaceData().Exists)
+#else
+    return DgnFontId();
+#endif
+    }
