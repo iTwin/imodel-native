@@ -345,6 +345,21 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbBriefcase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -752,6 +767,24 @@
     <ClInclude Include="Cache\Persistence\Core\Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryConnection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\RepositoryInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\DgnDbServerCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -768,7 +801,6 @@
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
     <None Include="ClientLib.mke" />
-    <None Include="ClientLibPolicy.mki" />
     <None Include="xliffs.mke" />
     <None Include="ClientPrewire.mke" />
     <None Include="Licensing\Licensing.mki" />
@@ -776,11 +808,14 @@
     <None Include="Configuration\Configuration.mki" />
     <None Include="Cache\Cache.mki" />
     <None Include="CacheLib.mke" />
-    <None Include="CacheLibPolicy.mki" />
     <None Include="CachePrewire.mke" />
     <None Include="l10n-WSClient.mke" />
     <None Include="CacheSchemasDelivery.mke" />
     <None Include="TestAssetsDelivery.mke" />
     <None Include="UnZip.py" />
+    <None Include="ClientLibCompileOptions.mki" />
+    <None Include="BentleyDesktopClientCCApi.prewire.mke" />
+    <None Include="DgnDbServerClientLib.mke" />
+    <None Include="DgnDbServerClientPrewire.mke" />
   </ItemGroup>
 </Project>

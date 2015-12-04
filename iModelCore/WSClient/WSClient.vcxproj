@@ -141,6 +141,11 @@
     <ClCompile Include="Connect\ConnectSpaces.cpp" />
     <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbBriefcase.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbClient.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
+    <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
     <ClCompile Include="Licensing\MobileTracking.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
     <ClCompile Include="Connect\Passport.cpp" />
@@ -214,6 +219,12 @@
     <ClInclude Include="Client\ClientConfiguration.h" />
     <ClInclude Include="Client\ClientConnection.h" />
     <ClInclude Include="Configuration\BuddiError.xliff.h" />
+    <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcase.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbClient.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryConnection.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\RepositoryInfo.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\DgnDbServerCommon.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\ICachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\IQueryProvider.h" />
@@ -317,17 +328,19 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />
-    <None Include="CacheLibPolicy.mki" />
     <None Include="CachePrewire.mke" />
     <None Include="Cache\Cache.mki" />
     <None Include="ClientLib.mke" />
-    <None Include="ClientLibPolicy.mki" />
+    <None Include="ClientLibCompileOptions.mki" />
     <None Include="Client\Client.mki" />
     <None Include="Configuration\Configuration.mki" />
     <None Include="Connect\Connect.mki" />
     <None Include="ClientPrewire.mke" />
     <None Include="CacheSchemasDelivery.mke" />
+    <None Include="DgnDbServerClientLib.mke" />
+    <None Include="DgnDbServerClientPrewire.mke" />
     <None Include="l10n-WSClient.mke" />
     <None Include="Licensing\Licensing.mki" />
     <None Include="TestAssetsDelivery.mke" />
