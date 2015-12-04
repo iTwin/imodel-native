@@ -110,19 +110,22 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
 
         //! Saves query response to cache
         //! @param[in] responseKey - key used to store response data
-        //! @param[in] response - contains information about instances
+        //! @param[in] response - contains information about instances. Will trim to current page index if response is final.
         //! @param[out] rejectedOut - returns ObjectIds that are protected by full persistence and were not updated with partial instances. 
         //! Required when specifying query.
         //! @param[in] query - when specified, is used to determine instances that are partial and thus not overriding already fully 
         //! cached instances. Null results in all instances treated as full that overrides existing data.
-        //! @param[in] cancellationToken - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
+        //! FinalizeCachedResponse needs to be called later if non-null value is passed.
+        //! @param[in] page - page index being cached
+        //! @param[in] ct - if supplied and canceled, will return ERROR and caller is responsible for rollbacking transaction
         virtual BentleyStatus CacheResponse
             (
             CachedResponseKeyCR responseKey,
             WSObjectsResponseCR response,
             bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            uint64_t page = 0,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Cache instances and link to specified root
@@ -154,7 +157,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             Utf8StringCR rootName,
             ECInstanceKeyMultiMap* cachedInstanceKeysOut = nullptr,
             bool weakLinkToRoot = false,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Updates existing instance. instanceResult.IsModified() == false will result in updating cached date
@@ -166,7 +169,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             WSObjectsResponseCR response,
             bset<ObjectId>* notFoundOut = nullptr,
             bset<ECInstanceKey>* cachedInstancesOut = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) = 0;
@@ -237,13 +240,14 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! @param[out] fileSize will be filled with file size property value or 0 if not found.
         virtual BentleyStatus ReadFileProperties(ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize) = 0;
 
+        //! Check if final response page was cached and caching is finished for it.
         virtual bool IsResponseCached(CachedResponseKeyCR responseKey) = 0;
 
-        virtual Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey) = 0;
+        virtual Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey, uint64_t page = 0) = 0;
         virtual Utf8String ReadInstanceCacheTag(ObjectIdCR objectId) = 0;
         virtual Utf8String ReadFileCacheTag(ObjectIdCR objectId) = 0;
 
-        virtual DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey) = 0;
+        virtual DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey, uint64_t page = 0) = 0;
         virtual DateTime ReadInstanceCachedDate(ObjectIdCR objectId) = 0;
         virtual DateTime ReadFileCachedDate(ObjectIdCR objectId) = 0;
 

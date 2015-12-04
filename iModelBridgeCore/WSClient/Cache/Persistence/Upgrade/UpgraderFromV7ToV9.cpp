@@ -31,25 +31,3 @@ BentleyStatus UpgraderFromV7ToV9::Upgrade()
 
     return SUCCESS;
     }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UpgraderFromV7ToV9::ExecuteStatement(Utf8CP ecSql)
-    {
-    ECSqlStatement statement;
-    if (SUCCESS != m_adapter.PrepareStatement(statement, ecSql))
-        {
-        return ERROR;
-        }
-
-    DbResult status;
-    while (BE_SQLITE_ROW == (status = statement.Step()));
-
-    if (BE_SQLITE_DONE != status)
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }

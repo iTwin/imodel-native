@@ -26,9 +26,9 @@ CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
 SyncOptions options,
 CachingDataSource::SyncProgressCallback&& onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) :
-CachingTaskBase(cachingDataSource, cancellationToken),
+CachingTaskBase(cachingDataSource, ct),
 m_objectsToSyncPtr(objectsToSync),
 m_options(options),
 m_onProgressCallback(onProgress),
@@ -385,7 +385,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
                     WSQuery query(*newInstanceClass, true);
                     query.SetFilter("$id+eq+'" + newObjectId.remoteId + "'");
 
-                    m_ds->GetClient()->SendQueryRequest(query, nullptr, GetCancellationToken())
+                    m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetCancellationToken())
                         ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
                         {
                         if (!result.IsSuccess())

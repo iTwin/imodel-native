@@ -71,17 +71,17 @@ Json::Value StubInstances::ConvertStubRelationshipInstanceToJson(const StubRelat
     return instanceJson;
     }
 
-WSObjectsResponse StubInstances::ToWSObjectsResponse(Utf8StringCR eTag) const
+WSObjectsResponse StubInstances::ToWSObjectsResponse(Utf8StringCR eTag, Utf8StringCR skipToken) const
     {
     auto body = HttpStringBody::Create(ToJsonWebApiV2());
     auto reader = WSObjectsReaderV2::Create();
 
-    return WSObjectsResponse(reader, body, HttpStatus::OK, eTag);
+    return WSObjectsResponse(reader, body, HttpStatus::OK, eTag, skipToken);
     }
 
-WSObjectsResult StubInstances::ToWSObjectsResult(Utf8StringCR eTag) const
+WSObjectsResult StubInstances::ToWSObjectsResult(Utf8StringCR eTag, Utf8StringCR skipToken) const
     {
-    return WSObjectsResult::Success(ToWSObjectsResponse(eTag));
+    return WSObjectsResult::Success(ToWSObjectsResponse(eTag, skipToken));
     }
 
 WSChangesetResult StubInstances::ToWSChangesetResult() const

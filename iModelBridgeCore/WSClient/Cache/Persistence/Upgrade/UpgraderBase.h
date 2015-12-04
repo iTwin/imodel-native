@@ -23,6 +23,7 @@ struct UpgraderBase
     protected:
         UpgraderBase(ECDbAdapter& adapter);
         BentleyStatus UpgradeCacheSchema(int versionMajor, int versionMinor);
+        BentleyStatus ExecuteStatement(Utf8CP ecSql);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

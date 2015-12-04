@@ -315,20 +315,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -ax64 reb WSClientUnitTests BeGTestExe -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* UnitTests-Published Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSCLient -p WSClient-Gtest reb WSClient-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* UnitTests-Published Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);WSCLIENT_ENABLE_DUPLICATING_SYMBOLS</NMakePreprocessorDefinitions>
-    <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\begtest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\WSClient-Gtest\WSClientTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb -ax86 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSClient -p  WSClientUnitTests b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax86 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* UnitTests-Published Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WSClient-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* UnitTests-Published Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeOutput>$(OutRoot)Winx86\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx86\Product\WSClient-Gtest\WSClientTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx86\build\WSClient\PublishedApi\;$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\BeGTest\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>

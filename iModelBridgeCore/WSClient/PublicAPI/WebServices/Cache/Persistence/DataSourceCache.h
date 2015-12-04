@@ -97,7 +97,8 @@ struct DataSourceCache : public IDataSourceCache
             WSObjectsResponseCR response,
             bset<ObjectId>* rejectedOut = nullptr,
             const WSQuery* query = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            uint64_t page = 0,
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT BentleyStatus CacheInstanceAndLinkToRoot
@@ -121,7 +122,7 @@ struct DataSourceCache : public IDataSourceCache
             Utf8StringCR rootName,
             ECInstanceKeyMultiMap* cachedInstanceKeysOut = nullptr,
             bool weakLinkToRoot = false,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT BentleyStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) override;
@@ -131,7 +132,7 @@ struct DataSourceCache : public IDataSourceCache
             WSObjectsResponseCR response,
             bset<ObjectId>* notFoundOut = nullptr,
             bset<ECInstanceKey>* cachedInstancesOut = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) override;
 
         WSCACHE_EXPORT BentleyStatus CacheFile(ObjectIdCR objectId, WSFileResponseCR fileResult, FileCache cacheLocation) override;
@@ -178,11 +179,11 @@ struct DataSourceCache : public IDataSourceCache
 
         WSCACHE_EXPORT bool IsResponseCached(CachedResponseKeyCR responseKey) override;
 
-        WSCACHE_EXPORT Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey) override;
+        WSCACHE_EXPORT Utf8String ReadResponseCacheTag(CachedResponseKeyCR responseKey, uint64_t page = 0) override;
         WSCACHE_EXPORT Utf8String ReadInstanceCacheTag(ObjectIdCR objectId) override;
         WSCACHE_EXPORT Utf8String ReadFileCacheTag(ObjectIdCR objectId) override;
 
-        WSCACHE_EXPORT DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey) override;
+        WSCACHE_EXPORT DateTime ReadResponseCachedDate(CachedResponseKeyCR responseKey, uint64_t page = 0) override;
         WSCACHE_EXPORT DateTime ReadInstanceCachedDate(ObjectIdCR objectId) override;
         WSCACHE_EXPORT DateTime ReadFileCachedDate(ObjectIdCR objectId) override;
 

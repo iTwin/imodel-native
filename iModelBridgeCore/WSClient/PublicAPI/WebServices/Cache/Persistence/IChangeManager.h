@@ -86,7 +86,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
 
         //! Create new object in local cache
         //! object id should be unique (e.g. GUID) to later identify created instance.
-        //! TODO: remove the need for filling in remoteId. ECInstanceKey should be enough to find instance in cache. Remote id should be empty
         virtual ECInstanceKey CreateObject(ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
         //! Modify object properties

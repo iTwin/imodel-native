@@ -234,16 +234,30 @@ WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(HttpResponse& resp
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className)
+WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(HttpResponse& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId)
     {
     Utf8String remoteId = response.GetBody().AsJson()["id"].asString();
     if (HttpStatus::Created == response.GetHttpStatus() && !remoteId.empty())
         {
         Json::Value createdObject;
 
-        createdObject["changedInstance"]["instanceAfterChange"]["schemaName"] = schemaName;
-        createdObject["changedInstance"]["instanceAfterChange"]["className"] = className;
-        createdObject["changedInstance"]["instanceAfterChange"]["instanceId"] = remoteId;
+        auto& instance = createdObject["changedInstance"]["instanceAfterChange"];
+        instance["schemaName"] = newObjectId.schemaName;
+        instance["className"] = newObjectId.className;
+        instance["instanceId"] = remoteId;
+
+        if (!parentObjectId.IsEmpty())
+            {
+            auto& relationship = createdObject["changedInstance"]["instanceAfterChange"]["relationshipInstances"][0];
+            relationship["schemaName"] = relObjectId.schemaName;
+            relationship["className"] = relObjectId.className;
+            relationship["instanceId"] = "";
+
+            auto& related = relationship["relatedInstance"];
+            related["schemaName"] = relObjectId.schemaName;
+            related["className"] = relObjectId.className;
+            related["instanceId"] = "";
+            }
 
         return WSCreateObjectResult::Success(createdObject);
         }
@@ -285,7 +299,7 @@ WSObjectsResult WebApiV1::ResolveObjectsResponse(HttpResponse& response, Utf8Str
     auto body = response.GetContent()->GetBody();
     auto eTag = response.GetHeaders().GetETag();
 
-    return WSObjectsResult::Success(WSObjectsResponse(reader, body, response.GetHttpStatus(), eTag));
+    return WSObjectsResult::Success(WSObjectsResponse(reader, body, response.GetHttpStatus(), eTag, nullptr));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -348,27 +362,36 @@ bool WebApiV1::IsObjectCreationJsonSupported(JsonValueCR objectCreationJson)
 void WebApiV1::GetParametersFromObjectCreationJson
 (
 JsonValueCR objectCreationJson,
-Utf8StringR schemaNameOut,
-Utf8StringR classNameOut,
+ObjectIdR newObjectId,
 Utf8StringR propertiesOut,
+ObjectIdR relObjectId,
 ObjectIdR parentObjectIdOut
 )
     {
-    JsonValueCR instanceJson = objectCreationJson["instance"];
+    JsonValueCR instance = objectCreationJson["instance"];
 
-    schemaNameOut = instanceJson["schemaName"].asString();
-    classNameOut = instanceJson["className"].asString();
-    propertiesOut = Json::FastWriter::ToString(instanceJson["properties"]);
+    newObjectId.schemaName = instance["schemaName"].asString();
+    newObjectId.className = instance["className"].asString();
+    newObjectId.remoteId = instance["instanceId"].asString();
 
-    if (0 == instanceJson["relationshipInstances"].size())
+    propertiesOut = Json::FastWriter::ToString(instance["properties"]);
+
+    if (0 == instance["relationshipInstances"].size())
         {
+        relObjectId = ObjectId();
         parentObjectIdOut = ObjectId();
         }
     else
         {
-        parentObjectIdOut.schemaName = schemaNameOut;
-        parentObjectIdOut.className = instanceJson["relationshipInstances"][0]["relatedInstance"]["className"].asString();
-        parentObjectIdOut.remoteId = instanceJson["relationshipInstances"][0]["relatedInstance"]["instanceId"].asString();
+        auto& relationship = instance["relationshipInstances"][0];
+        relObjectId.schemaName = relationship["schemaName"].asString();;
+        relObjectId.className = relationship["className"].asString();
+        relObjectId.remoteId = relationship["instanceId"].asString();
+
+        auto& related = relationship["relatedInstance"];
+        parentObjectIdOut.schemaName = related["schemaName"].asString();
+        parentObjectIdOut.className = related["className"].asString();
+        parentObjectIdOut.remoteId = related["instanceId"].asString();
         }
     }
 
@@ -393,11 +416,11 @@ AsyncTaskPtr<WSRepositoriesResult> WebApiV1::SendGetRepositoriesRequest
 (
 const bvector<Utf8String>& types,
 const bvector<Utf8String>& providerIds,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     HttpRequest request = CreateGetRepositoriesRequest(types, providerIds);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoriesResult>([] (HttpResponse& httpResponse)
         {
         return ResolveGetRepositoriesResponse(httpResponse);
@@ -411,7 +434,7 @@ AsyncTaskPtr<WSObjectsResult> WebApiV1::SendGetObjectRequest
 (
 ObjectIdCR objectId,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     BeAssert(!objectId.IsEmpty() && "<Error> DataSource is not object");
@@ -422,7 +445,7 @@ ICancellationTokenPtr cancellationToken
     request.SetRetryOptions(HttpRequest::ResetTransfer, 1);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObject);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSObjectsResult>([objectId] (HttpResponse& httpResponse)
         {
@@ -438,10 +461,10 @@ AsyncTaskPtr<WSObjectsResult> WebApiV1::SendGetChildrenRequest
 ObjectIdCR parentObjectId,
 const bset<Utf8String>& propertiesToSelect,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
-    return SendGetChildrenRequest(parentObjectId, CreatePropertiesQuery(propertiesToSelect), eTag, cancellationToken);
+    return SendGetChildrenRequest(parentObjectId, CreatePropertiesQuery(propertiesToSelect), eTag, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -452,7 +475,7 @@ AsyncTaskPtr<WSObjectsResult> WebApiV1::SendGetChildrenRequest
 ObjectIdCR parentObjectId,
 Utf8StringCR propertiesQuery,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     if (!propertiesQuery.empty() && !m_info.IsWebApiSupported(BeVersion(1, 3)))
@@ -466,7 +489,7 @@ ICancellationTokenPtr cancellationToken
     request.SetRetryOptions(HttpRequest::ResetTransfer, 1);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     auto thisPtr = shared_from_this();
     auto masResponse = std::make_shared<WSObjectsResult>();
@@ -481,7 +504,7 @@ ICancellationTokenPtr cancellationToken
             return;
             }
 
-        GetSchemaInfo(cancellationToken)
+        GetSchemaInfo(ct)
             ->Then([=] (SchemaInfoResult& schemaInfoResult) mutable
             {
             if (!schemaInfoResult.IsSuccess())
@@ -502,7 +525,7 @@ ICancellationTokenPtr cancellationToken
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WebApiV1::SchemaInfoResult> WebApiV1::GetSchemaInfo(ICancellationTokenPtr cancellationToken) const
+AsyncTaskPtr<WebApiV1::SchemaInfoResult> WebApiV1::GetSchemaInfo(ICancellationTokenPtr ct) const
     {
     SchemaInfo info = GetCachedSchemaInfo();
     if (!info.name.empty())
@@ -513,7 +536,7 @@ AsyncTaskPtr<WebApiV1::SchemaInfoResult> WebApiV1::GetSchemaInfo(ICancellationTo
     auto schemaBody = HttpStringBody::Create();
 
     return
-        GetSchema(schemaBody, "", nullptr, cancellationToken)
+        GetSchema(schemaBody, "", nullptr, ct)
         ->Then<SchemaInfoResult>([=] (SchemaResult& result) mutable
         {
         if (!result.IsSuccess())
@@ -630,11 +653,11 @@ AsyncTaskPtr<WSFileResult> WebApiV1::GetSchema
 BeFileNameCR filePath,
 Utf8StringCR eTag,
 HttpRequest::ProgressCallbackCR downloadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return
-        GetSchema(HttpFileBody::Create(filePath), eTag, downloadProgressCallback, cancellationToken)
+        GetSchema(HttpFileBody::Create(filePath), eTag, downloadProgressCallback, ct)
         ->Then<WSFileResult>([filePath] (SchemaResult& result)
         {
         if (!result.IsSuccess())
@@ -655,12 +678,12 @@ ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR eTag,
 HttpRequest::ProgressCallbackCR downloadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     if (SchemaInfo::IsDummySchemaId(objectId))
         {
-        return GetSchema(filePath, eTag, downloadProgressCallback, cancellationToken);
+        return GetSchema(filePath, eTag, downloadProgressCallback, ct);
         }
 
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
@@ -671,7 +694,7 @@ ICancellationTokenPtr cancellationToken
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
     request.SetDownloadProgressCallback(downloadProgressCallback);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSFileResult>([filePath] (HttpResponse& httpResponse)
         {
@@ -687,7 +710,7 @@ AsyncTaskPtr<WebApiV1::SchemaResult> WebApiV1::GetSchema
 HttpBodyPtr body,
 Utf8StringCR eTag,
 HttpRequest::ProgressCallbackCR downloadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     BeFileName defaultSchemaPath = m_configuration->GetDefaultSchemaPath(m_info);
@@ -729,7 +752,7 @@ ICancellationTokenPtr cancellationToken
     request.SetResponseBody(body);
     request.GetHeaders().SetAccept("application/xml");
     request.SetDownloadProgressCallback(downloadProgressCallback);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<SchemaResult>([] (HttpResponse& httpResponse)
         {
@@ -812,13 +835,13 @@ Utf8String WebApiV1::GetSchemaUrl() const
 AsyncTaskPtr<WSObjectsResult> WebApiV1::SendGetSchemasRequest
 (
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     auto schemaBody = HttpStringBody::Create();
 
     return
-        GetSchema(schemaBody, eTag, nullptr, cancellationToken)
+        GetSchema(schemaBody, eTag, nullptr, ct)
         ->Then<WSObjectsResult>([=] (SchemaResult& result)
         {
         if (!result.IsSuccess())
@@ -863,7 +886,8 @@ AsyncTaskPtr<WSObjectsResult> WebApiV1::SendQueryRequest
 (
 WSQueryCR query,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+Utf8StringCR skipToken,
+ICancellationTokenPtr ct
 ) const
     {
     auto it = query.GetCustomParameters().find(WSQuery_CustomParameter_NavigationParentId);
@@ -885,7 +909,7 @@ ICancellationTokenPtr cancellationToken
                 }
             }
 
-        return SendGetChildrenRequest(parentId, CreatePropertiesQuery(query.GetSelect()), eTag, cancellationToken);
+        return SendGetChildrenRequest(parentId, CreatePropertiesQuery(query.GetSelect()), eTag, ct);
         }
 
     Utf8String schemaName = query.GetSchemaName();
@@ -897,7 +921,7 @@ ICancellationTokenPtr cancellationToken
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.GetHeaders().SetIfNoneMatch(eTag);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSObjectsResult>([schemaName] (HttpResponse& httpResponse)
         {
@@ -912,7 +936,7 @@ AsyncTaskPtr<WSChangesetResult> WebApiV1::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
@@ -926,7 +950,7 @@ AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     if (!IsObjectCreationJsonSupported(objectCreationJson) || !m_info.IsWebApiSupported(BeVersion(1, 2)))
@@ -934,27 +958,26 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
         }
 
-    Utf8String schemaName;
-    Utf8String className;
-    Utf8String properties;
-    ObjectId parentObjectId;
+    Utf8String propertiesStr;
+    ObjectId newObjectId, relObjectId, parentObjectId;
 
-    GetParametersFromObjectCreationJson(objectCreationJson, schemaName, className, properties, parentObjectId);
+    GetParametersFromObjectCreationJson
+        (objectCreationJson, newObjectId, propertiesStr, relObjectId, parentObjectId);
 
-    Utf8String url = GetUrl(SERVICE_Objects, className, CreateParentQuery(parentObjectId), "v1.2");
+    Utf8String url = GetUrl(SERVICE_Objects, newObjectId.className, CreateParentQuery(parentObjectId), "v1.2");
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(properties), "application/json");
+    request.SetHandshakeRequestBody(HttpStringBody::Create(propertiesStr), "application/json");
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
         }
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSCreateObjectResult>([schemaName, className] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSCreateObjectResult>([=] (HttpResponse& httpResponse)
         {
-        return ResolveCreateObjectResponse(httpResponse, schemaName, className);
+        return ResolveCreateObjectResponse(httpResponse, newObjectId, relObjectId, parentObjectId);
         });
     }
 
@@ -967,7 +990,7 @@ ObjectIdCR objectId,
 JsonValueCR propertiesJson,
 Utf8String eTag,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
@@ -979,7 +1002,7 @@ ICancellationTokenPtr cancellationToken
         request.GetHeaders().SetIfMatch(eTag);
         }
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(propertiesJson)));
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return request.PerformAsync()->Then<WSUpdateObjectResult>([] (HttpResponse& httpResponse)
@@ -994,13 +1017,13 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<WSDeleteObjectResult> WebApiV1::SendDeleteObjectRequest
 (
 ObjectIdCR objectId,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
     HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
 
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSDeleteObjectResult>([] (HttpResponse& httpResponse)
         {
@@ -1020,14 +1043,14 @@ AsyncTaskPtr<WSUpdateFileResult> WebApiV1::SendUpdateFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
 
     request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return request.PerformAsync()->Then<WSUpdateFileResult>([] (HttpResponse& httpResponse)
