@@ -151,10 +151,10 @@ private:
     void* m_osCV[BECONDITIONVARIABLE_DATA_ARRAY_LENGTH];
     mutable BeMutex m_mutex;
 
+public:
     void InfiniteWait(BeMutexHolder& holder);
     bool RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis);
 
-public:
     static const uint32_t Infinite = 0xFFFFFFFF;
 
     BENTLEYDLL_EXPORT BeConditionVariable();
@@ -195,11 +195,13 @@ public:
 
 #if defined (__APPLE__) || defined (ANDROID) || defined (__linux)
     typedef void* (*T_ThreadStart)(void*);
-    #define THREAD_MAIN_DECL static void*
+    #define THREAD_MAIN_IMPL void*
 #elif defined (_WIN32) // Windows && WinRT
     typedef unsigned (__stdcall *T_ThreadStart)(void*);
-    #define THREAD_MAIN_DECL static unsigned __stdcall 
+    #define THREAD_MAIN_IMPL unsigned __stdcall 
 #endif
+
+#define THREAD_MAIN_DECL static THREAD_MAIN_IMPL
 
 #if defined (BENTLEY_WINRT)
 typedef unsigned (__stdcall *T_ThreadStartHandler)(T_ThreadStart startAddr, void* arg);
@@ -267,7 +269,6 @@ public:
 };
 
 //__PUBLISH_SECTION_END__
-
 //=======================================================================================
 //! Hold a lock on the system BeMutex
 //  @bsiclass 
@@ -283,7 +284,6 @@ struct BeSystemMutexHolder : BeMutexHolder
     //! @remarks Program must call StartupInitializeSystemMutex before calling this function.
     BENTLEYDLL_EXPORT static BeMutex& GetSystemMutex();
 };
-
 //__PUBLISH_SECTION_START__
 
 END_BENTLEY_NAMESPACE
