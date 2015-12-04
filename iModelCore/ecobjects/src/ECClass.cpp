@@ -1373,6 +1373,13 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (SchemaReadStatus::Success != status)
                 return status;
             }
+        else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
+            {
+            ECPropertyP ecProperty = new NavigationECProperty(*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
+            if (SchemaReadStatus::Success != status)
+                return status;
+            }
         }
     
     // Add Custom Attributes
@@ -1463,7 +1470,8 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
         {
         xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, IsStructClass());
         xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass());
-        xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, this->GetClassModifier() != ECClassModifier::Abstract);
+        bool isConcrete = this->GetClassModifier() != ECClassModifier::Abstract;
+        xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
     else
         xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
@@ -1663,6 +1671,24 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVers
 
     else
         return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_ENTITYCLASS_ELEMENT, nullptr, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction)
+    {
+    ecProperty = new NavigationECProperty(*this);
+    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction);
+    if (ECObjectsStatus::Success == status)
+        status = AddProperty(ecProperty, name);
+
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecProperty;
+        ecProperty = nullptr;
+        }
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2163,6 +2189,23 @@ ECRelationshipConstraintClassList const& ECRelationshipConstraint::GetConstraint
 ECRelationshipConstraintClassList& ECRelationshipConstraint::GetConstraintClassesR() 
     {
     return m_constraintClasses;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
+    {
+    for (auto constraint : GetConstraintClasses())
+        {
+        ECClassCR constraintClass = constraint->GetClass();
+        if (constraintClass.GetName().EqualsI("AnyClass"))
+            return true;
+        
+        if (ECClass::ClassesAreEqualByName(&constraintClass, &ecClass) || (m_isPolymorphic && ecClass.Is(&constraintClass)))
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

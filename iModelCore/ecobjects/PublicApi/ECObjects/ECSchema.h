@@ -607,7 +607,7 @@ protected:
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr);
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr, bool writeType=true);
 
     virtual bool                        _IsPrimitive () const { return false; }
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -624,6 +624,10 @@ protected:
     virtual bool                        _IsStructArray() const { return false; }
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual StructArrayECPropertyP      _GetAsStructArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
+
+    virtual bool                        _IsNavigation() const { return false; }
+    virtual NavigationECPropertyCP      _GetAsNavigationPropertyCP() const  { return nullptr; } // used to avoid dynamic_cast
+    virtual NavigationECPropertyP       _GetAsNavigationPropertyP()         { return nullptr; } // used to avoid dynamic_cast
 
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
@@ -683,6 +687,8 @@ public:
     ECOBJECTS_EXPORT bool               GetIsPrimitive() const;
     //! Returns whether this property is a StructArray property
     ECOBJECTS_EXPORT bool               GetIsStructArray() const;
+    //! Returns whether this property is a NavigationECProperty
+    ECOBJECTS_EXPORT bool               GetIsNavigation() const;
 
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
@@ -738,6 +744,8 @@ public:
     ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP (); //!< Returns the property as a StructECProperty*
     ECOBJECTS_EXPORT StructArrayECPropertyCP GetAsStructArrayProperty() const; //! <Returns the property as a const StructArrayECProperty*
     ECOBJECTS_EXPORT StructArrayECPropertyP GetAsStructArrayPropertyP (); //! <Returns the property as a StructArrayECProperty*
+    ECOBJECTS_EXPORT NavigationECPropertyCP GetAsNavigationPropertyCP() const; //! <Returns the property as a const NavigationECProperty*
+    ECOBJECTS_EXPORT NavigationECPropertyP  GetAsNavigationPropertyP(); //! <Returns the property as a NavigationECProperty*
 
 };
 
@@ -916,6 +924,54 @@ public:
     };
 
 //=======================================================================================
+//! The in-memory representation of an ECNavigationProperty as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct NavigationECProperty : public ECProperty
+    {
+DEFINE_T_SUPER(ECProperty)
+//__PUBLISH_SECTION_END__
+friend struct ECEntityClass;
+friend struct ECClass;
+private:
+    ECRelationshipClassCP       m_relationshipClass;
+    ECRelatedInstanceDirection  m_direction;
+
+protected:
+    NavigationECProperty(ECClassCR ecClass)
+        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward) {};
+
+    ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
+    ECObjectsStatus                 SetDirection(Utf8CP directionString);
+    Utf8String                      GetRelationshipClassName() const;
+    bool                            VerifyRelationshipAndDirection(ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction) const;
+
+protected:
+    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
+
+    virtual bool                    _IsNavigation() const override { return true; }
+    virtual NavigationECPropertyCP  _GetAsNavigationPropertyCP() const override { return this; }
+    virtual NavigationECPropertyP   _GetAsNavigationPropertyP() override { return this; }
+
+    virtual Utf8String              _GetTypeName() const override;
+    virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
+
+    virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
+
+//__PUBLISH_SECTION_START__
+public:
+    // !Gets the relationship class used to determine what related instance this navigation property points to
+    ECOBJECTS_EXPORT ECRelationshipClassCP      GetRelationshipClass() const { return m_relationshipClass; }
+    // !Gets the direction used to determine what related instance this navigation property points to
+    ECOBJECTS_EXPORT ECRelatedInstanceDirection GetDirection() const { return m_direction; }
+    // !Sets the relationship and direction used by the navigation property
+    // @param[in]   relClass    The relationship this navigation property will represent
+    // @param[in]   direction   The direction the relationship will be traversed.  Forward if the class containing this property is a source constraint, Backward if the class is a target constraint
+    ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction);
+    };
+
+//=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
 //! @bsiclass
 //=======================================================================================
@@ -1036,7 +1092,6 @@ private:
     mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
 
     ECObjectsStatus AddProperty (ECPropertyP& pProperty);
-    ECObjectsStatus AddProperty (ECPropertyP pProperty, Utf8StringCR name);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
@@ -1063,6 +1118,8 @@ protected:
     //  of a schema.
     ECClass (ECSchemaCR schema);
     virtual ~ECClass();
+
+    ECObjectsStatus                     AddProperty(ECPropertyP pProperty, Utf8StringCR name);
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -1413,6 +1470,13 @@ protected:
     virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
     bool _IsEntityClass() const override { return true; }
 
+public:
+    //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
+    // @param[out]  ecProperty          Outputs the property if successfully created
+    // @param[in]   name                The name for the navigation property.  Must be a valid ECName
+    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint and the other endpoint must have a upper cardinality of 1.
+    // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction);
 };
 
 //---------------------------------------------------------------------------------------
@@ -1724,8 +1788,10 @@ public:
     //! Returns the classes applied to the constraint.
     ECOBJECTS_EXPORT ECRelationshipConstraintClassList const & GetConstraintClasses() const;
 
-    ECOBJECTS_EXPORT ECRelationshipConstraintClassList& GetConstraintClassesR() ;
+    //! Returns the classes applied to the constraint.
+    ECOBJECTS_EXPORT ECRelationshipConstraintClassList& GetConstraintClassesR();
 
+    ECOBJECTS_EXPORT bool SupportsClass(ECClassCR ecClass) const;
     
     //! Copies this constraint to the destination
     ECOBJECTS_EXPORT ECObjectsStatus            CopyTo(ECRelationshipConstraintR toRelationshipConstraint);

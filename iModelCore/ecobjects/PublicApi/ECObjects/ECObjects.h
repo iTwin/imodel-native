@@ -40,6 +40,7 @@ EC_TYPEDEFS(DateTimeInfo);
 EC_TYPEDEFS(StructECProperty);
 EC_TYPEDEFS(ArrayECProperty);
 EC_TYPEDEFS(StructArrayECProperty);
+EC_TYPEDEFS(NavigationECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
@@ -153,6 +154,7 @@ enum class ECObjectsStatus
     SchemaIsImmutable,
     DynamicSchemaCustomAttributeWasNotFound,
     Error,
+    RelationshipConstraintsNotCompatible,
     };
 
 //! Result status for deserializing an ECSchema from Xml
@@ -452,7 +454,8 @@ enum class CustomAttributeContainerType
     StructProperty          = (0x0001 << 6),
     ArrayProperty           = (0x0001 << 7),
     StructArrayProperty     = (0x0001 << 8),
-    AnyProperty             = PrimitiveProperty | StructProperty | ArrayProperty | StructArrayProperty,
+    NavigationProperty      = (0x0001 << 9),
+    AnyProperty             = PrimitiveProperty | StructProperty | ArrayProperty | StructArrayProperty | NavigationProperty,
     Any                     = Schema | AnyClass | AnyProperty 
     };
 
