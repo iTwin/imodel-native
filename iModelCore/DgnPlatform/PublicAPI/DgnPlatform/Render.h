@@ -71,6 +71,8 @@ private:
 public:
     DGNVIEW_EXPORT static void VerifyRenderThread(bool yesNo);
     DGNVIEW_EXPORT void AddTask(Render::Task&);
+    DGNVIEW_EXPORT void WaitForIdle();
+    void AddAndWait(Render::Task& task) {AddTask(task); WaitForIdle();}
 };
 
 //=======================================================================================
@@ -78,14 +80,18 @@ public:
 //=======================================================================================
 struct Task : RefCounted<NonCopyableClass>
 {
-    enum class Type {FullRender, DynamicRender,};
-    Type m_type;
-    TargetPtr m_target;
-    virtual void _Process() = 0;
-    virtual int _GetPriority() {return 0;}
-    virtual bool _CanReplace(Task& other) {return m_type == other.m_type;}
+    enum class Type {Initialize, CreateList, Paint,};
+    enum class Outcome {Waiting, Finished, Aborted, Abandoned,};
+    Type        m_type;
+    TargetPtr   m_target;
+    Outcome     m_outcome = Outcome::Waiting;
+    double      m_elapsedTime = 0.0; // in seconds. Only valid if m_outcome is Finished or Aborted
+                                                                                                 
+    virtual Utf8CP _GetName() const = 0;
+    virtual Outcome _Process() = 0;
+    virtual bool _CanReplace(Task& other) const {return m_type == other.m_type;}
     Target* GetTarget() const {return m_target.get();}
-    Task(Target& target, Type type) : m_target(&target), m_type(type) {}
+    Task(Target* target, Type type) : m_target(target), m_type(type) {}
 };
 
 //=======================================================================================
@@ -102,10 +108,9 @@ struct Plan
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-    
+
     DGNVIEW_EXPORT Plan(DgnViewportCR);
 };
-
 
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
