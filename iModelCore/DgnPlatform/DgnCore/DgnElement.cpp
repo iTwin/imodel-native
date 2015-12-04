@@ -2942,3 +2942,17 @@ void DgnEditElementCollector::RemoveChildren(DgnElementCR el, size_t maxDepth)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnEditElementCollector::Write()
+    {
+    for (auto el : m_elements)
+        {
+        DgnDbStatus status;
+        DgnElementCPtr updatedEl = el->GetElementId().IsValid()? el->Update(&status): el->Insert(&status);
+        if (!updatedEl.IsValid())
+            return status;
+        }
+    return DgnDbStatus::Success;
+    }

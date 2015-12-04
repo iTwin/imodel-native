@@ -2065,6 +2065,10 @@ public:
 
     //! Get an iterator pointing to the end of the collection
     bset<DgnElementP>::const_iterator end() const {return m_elements.end();}
+
+    //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Others are inserted. 
+    //! @return non-zero error status if any insert or update fails. In that case some elements in the collection may not be written.
+    DGNPLATFORM_EXPORT DgnDbStatus Write();
 };
 
 //=======================================================================================
