@@ -249,24 +249,32 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
     if (nullptr == m_findRelationshipClassesStatement)
         {
         // SQL supplied by Affan Khan
-        Utf8CP sql = R"(WITH RECURSIVE
-           RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel) AS
-           (
-           SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0
-               FROM ec_RelationshipConstraint RC
-                   INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd]
-           UNION
-           SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1
-               FROM RelationshipConstraintClasses RCC
-                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId
-               WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC
-           )
-        SELECT SRC.ECClassId
-           FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
-                WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ?
-                      AND TRG.ECRelationshipEnd = 1 AND TRG.RelationECClassId = ? )";
+        Utf8CP sql = R"(
+        WITH RECURSIVE 
+            RelationshipConstraintClasses (RelationshipClassId, RelationshipEnd, IsPolymorphic, ClassId, NestingLevel) AS
+            (
+            SELECT RC.RelationshipClassId, RCC.RelationshipEnd, RC.IsPolymorphic, RCC.ClassId, 0
+                FROM ec_RelationshipConstraint RC
+                INNER JOIN ec_RelationshipConstraintClass RCC
+                    ON  RC.RelationshipClassId = RCC.RelationshipClassId
+                    AND RC.RelationshipEnd = RCC.RelationshipEnd
+            UNION
+            SELECT RCC.RelationshipClassId, RCC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
+                FROM RelationshipConstraintClasses RCC
+                INNER JOIN ec_BaseClass BC
+                    ON BC.BaseClassId = RCC.ClassId
+                WHERE RCC.IsPolymorphic = 1
+                ORDER BY 2 DESC
+            )
+        SELECT SRC.RelationshipClassId
+            FROM RelationshipConstraintClasses SRC
+            INNER JOIN RelationshipConstraintClasses TRG 
+                ON SRC.RelationshipClassId = TRG.RelationshipClassId
+            WHERE
+                SRC.RelationshipEnd = 0
+                AND SRC.ClassId = ?
+                AND TRG.RelationshipEnd = 1
+                AND TRG.ClassId = ? )";
 
         m_findRelationshipClassesStatement = std::make_shared<Statement>();
 
