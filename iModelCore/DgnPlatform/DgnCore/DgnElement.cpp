@@ -875,94 +875,6 @@ void GeometrySource::SetInSelectionSet(bool yesNo) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_LoadFromDb()
-    {
-    DgnDbStatus stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    if (DgnDbStatus::Success != (stat = m_geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
-        return stat;
-
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
-    stmt->BindId(1, m_elementId);
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it must have an entry (with nulls) in the element geom table
-
-    m_categoryId = stmt->GetValueId<DgnCategoryId>(1);
-
-    if (stmt->IsColumnNull(0))
-        {
-        m_placement = Placement3d();
-        return DgnDbStatus::Success;
-        }
-
-    if (stmt->GetColumnBytes(0) != sizeof(m_placement))
-        {
-        BeAssert(false); 
-        return DgnDbStatus::ReadError;
-        }
-
-    memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_OnInsert()
-    {
-    if (!m_categoryId.IsValid())
-        return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
-        return DgnDbStatus::BadElement;
-    else
-        return T_Super::_OnInsert();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnElement3d::_InsertInDb()
-    {
-    DgnDbStatus stat;
-
-    if (DgnDbStatus::Success != (stat = T_Super::_InsertInDb()))
-        return stat;
-
-    return InsertGeomSourceInDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_OnUpdate(DgnElementCR original)
-    {
-    if (!m_categoryId.IsValid())
-        return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
-        return DgnDbStatus::BadElement;
-    else
-        return T_Super::_OnUpdate(original);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_UpdateInDb()
-    {
-    DgnDbStatus stat = T_Super::_UpdateInDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return UpdateGeomSourceInDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
@@ -981,11 +893,11 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom2d::Validate() const
+DgnDbStatus ElementGeomData::Validate() const
     {
     if (!m_categoryId.IsValid())
         return DgnDbStatus::InvalidCategory;
-    else if (m_geom.HasGeometry() && !m_placement.IsValid())
+    else if (m_geom.HasGeometry() && !_IsPlacementValid())
         return DgnDbStatus::BadElement;
     else
         return DgnDbStatus::Success;
@@ -994,7 +906,7 @@ DgnDbStatus ElementGeom2d::Validate() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom2d::LoadFromDb(DgnElementId elemId, DgnDbR db)
+DgnDbStatus ElementGeomData::LoadFromDb(DgnElementId elemId, DgnDbR db)
     {
     DgnDbStatus stat = m_geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elemId.GetValue());
     if (DgnDbStatus::Success != stat)
@@ -1008,23 +920,31 @@ DgnDbStatus ElementGeom2d::LoadFromDb(DgnElementId elemId, DgnDbR db)
 
     m_categoryId = stmt->GetValueId<DgnCategoryId>(1);
 
-    if (stmt->IsColumnNull(0))
-        {
-        m_placement = Placement2d();
-        return DgnDbStatus::Success;
-        }
-
-    if (stmt->GetColumnBytes(0) != sizeof(m_placement))
-        {
-        BeAssert(false);
-        return DgnDbStatus::ReadError;
-        }
-
-    memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
-
-    m_categoryId = stmt->GetValueId<DgnCategoryId>(1);
+    _SetPlacement(stmt->IsColumnNull(0) ? nullptr : stmt->GetValueBlob(0));
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeom2d::_SetPlacement(void const* placement)
+    {
+    if (nullptr != placement)
+        memcpy(&m_placement, placement, sizeof(m_placement));
+    else
+        m_placement = Placement2d();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeom3d::_SetPlacement(void const* placement)
+    {
+    if (nullptr != placement)
+        memcpy(&m_placement, placement, sizeof(m_placement));
+    else
+        m_placement = Placement3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1230,42 +1150,6 @@ DgnElementPtr DgnElement::Clone(DgnDbStatus* stat, DgnElement::CreateParams cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_CopyFrom(DgnElementCR other)
-    {
-    T_Super::_CopyFrom(other);
-
-    GeometrySource3dCP el3d = other.ToGeometrySource3d();
-    if (nullptr == el3d)
-        return;
-
-    m_placement = el3d->GetPlacement();
-    m_categoryId = el3d->GetCategoryId();
-    m_geom = el3d->GetGeomStream();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_RemapIds(DgnImportContext& importer)
-    {
-    BeAssert(importer.IsBetweenDbs());
-    T_Super::_RemapIds(importer);
-    m_categoryId = importer.RemapCategory(m_categoryId);
-    importer.RemapGeomStreamIds(m_geom);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
-    {
-    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
-    m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeom2d::AdjustPlacementForImport(DgnImportContext const& importer)
     {
     m_placement.GetOriginR().Add(importer.GetOriginOffset());
@@ -1275,17 +1159,42 @@ void ElementGeom2d::AdjustPlacementForImport(DgnImportContext const& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeom2d::CopyFrom(GeometrySource2dCR src)
+void ElementGeom3d::AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement = src.GetPlacement();
-    m_categoryId = src.GetCategoryId();
-    m_geom = src.GetGeomStream();
+    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
+    m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeom2d::RemapIds(DgnImportContext& importer)
+void ElementGeom2d::CopyFrom(GeometrySource2dCP src)
+    {
+    if (nullptr != src)
+        {
+        m_placement = src->GetPlacement();
+        m_categoryId = src->GetCategoryId();
+        m_geom = src->GetGeomStream();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeom3d::CopyFrom(GeometrySource3dCP src)
+    {
+    if (nullptr != src)
+        {
+        m_placement = src->GetPlacement();
+        m_categoryId = src->GetCategoryId();
+        m_geom = src->GetGeomStream();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomData::RemapIds(DgnImportContext& importer)
     {
     m_categoryId = importer.RemapCategory(m_categoryId);
     importer.RemapGeomStreamIds(m_geom);
@@ -2615,38 +2524,14 @@ DgnDbStatus DgnElement::_SetCode(Code const& code)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_SetCategoryId(DgnCategoryId catId)
-    {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCategory))
-        return DgnDbStatus::MissingHandler;
-
-    m_categoryId = catId;
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom2d::SetCategoryId(DgnCategoryId catId, DgnElementCR el)
+DgnDbStatus ElementGeomData::SetCategoryId(DgnCategoryId catId, DgnElementCR el)
     {
     if (el.GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::SetCategory))
         return DgnDbStatus::MissingHandler;
 
-    SetCategoryId(catId);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_SetPlacement(Placement3dCR placement)
-    {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Move))
-        return DgnDbStatus::MissingHandler;
-
-    m_placement = placement;
+    m_categoryId = catId;
     return DgnDbStatus::Success;
     }
 
@@ -2658,7 +2543,19 @@ DgnDbStatus ElementGeom2d::SetPlacement(Placement2dCR placement, DgnElementCR el
     if (el.GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::Move))
         return DgnDbStatus::MissingHandler;
 
-    SetPlacement(placement);
+    m_placement = placement;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementGeom3d::SetPlacement(Placement3dCR placement, DgnElementCR el)
+    {
+    if (el.GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::Move))
+        return DgnDbStatus::MissingHandler;
+
+    m_placement = placement;
     return DgnDbStatus::Success;
     }
 

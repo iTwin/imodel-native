@@ -388,15 +388,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <!-- A SystemElement is used to model functional systems -->
         <BaseClass>Element</BaseClass>
     </ECClass>
-    <ECClass typeName="Element3d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
-        <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
-    </ECClass>
     <ECClass typeName="PhysicalElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>Element3d</BaseClass>
+        <BaseClass>Element</BaseClass>
+        <BaseClass>GeometrySource</BaseClass>
     </ECClass>
     <ECClass typeName="VolumeElement" isDomainClass="True" >
         <ECCustomAttributes>
