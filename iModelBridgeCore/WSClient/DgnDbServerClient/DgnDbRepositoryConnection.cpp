@@ -7,11 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnPlatform/RevisionManager.h>
+#include <WebServices/Client/WSChangeset.h>
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 //---------------------------------------------------------------------------------------
@@ -140,6 +142,213 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadRevisionFile(Dgn::D
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcaseId& briefcaseId, const WSChangeset::ChangeState& changeState)
+    {
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    for (auto& lock : locks["Locks"])
+        {
+        Json::Value properties;
+        properties[ServerSchema::Property::Description] = locks["Description"];
+        properties[ServerSchema::Property::ObjectId] = lock["LockableId"]["Id"];
+        properties[ServerSchema::Property::LockType] = lock["LockableId"]["Type"];
+        properties[ServerSchema::Property::LockLevel] = lock["Level"];
+        properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
+        changeset->AddInstance(ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, ""), changeState, std::make_shared<Json::Value>(properties));
+        }
+    return changeset;
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::QueryLocksHeld(bool& held, LockRequestCR locksRequest, const BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+    {
+    return QueryLocks(briefcaseId, cancellationToken)->Then<DgnDbResult>([=, &held] (const DgnDbLockSetResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            auto& lockSet = result.GetValue();
+            for (const auto& lock : locksRequest)
+                {
+                if (lockSet.end() == lockSet.find(lock))
+                    {
+                    held = false;
+                    return DgnDbResult::Success();
+                    }
+                }
+            held = true;
+            return DgnDbResult::Success();
+            }
+        else
+            return DgnDbResult::Error(result.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnLockResponseResult> DgnDbRepositoryConnection::AcquireLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+    {
+    //How to set description here?
+    auto changeset = LockJsonRequest(locksRequest, briefcaseId, WSChangeset::ChangeState::Created);
+    Json::Value requestJson;
+    changeset->ToRequestJson(requestJson);
+
+    return m_wsRepositoryClient->SendChangesetRequest(HttpStringBody::Create(requestJson.toStyledString()), nullptr, cancellationToken)->Then<DgnLockResponseResult>([=] (const WSChangesetResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            LockRequest::Response response;
+            Json::Value responseJson;
+            responseJson["Status"] = static_cast<uint32_t>(LockStatus::Success);
+            response.FromJson(responseJson);
+            return DgnLockResponseResult::Success(response);
+            }
+        else
+            {
+            return DgnLockResponseResult::Error(result.GetError());
+            }
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::ReleaseLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+    {
+    //How to set description here?
+    auto changeset = LockJsonRequest(locksRequest, briefcaseId, WSChangeset::ChangeState::Deleted);
+    Json::Value requestJson;
+    changeset->ToRequestJson(requestJson);
+
+    return m_wsRepositoryClient->SendChangesetRequest(HttpStringBody::Create(requestJson.toStyledString()), nullptr, cancellationToken)->Then<DgnDbResult>([=] (const WSChangesetResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            return DgnDbResult::Success();
+            }
+        else
+            {
+            return DgnDbResult::Error(result.GetError());
+            }
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::RelinquishLocks(const BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+    {
+    Utf8String id;
+    id.Sprintf("DeleteAll-%d", briefcaseId.GetValue());
+    return m_wsRepositoryClient->SendDeleteObjectRequest(ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id), cancellationToken)->Then<DgnDbResult>([=] (const AsyncResult<void, WSError>& result)
+        {
+        if (result.IsSuccess())
+            return DgnDbResult::Success();
+        else
+            return DgnDbResult::Error(result.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbOwnershipResult> DgnDbRepositoryConnection::QueryOwnership(LockableId lockId, const BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
+    Utf8String id, briefcase;
+    id.Sprintf("%s+eq+%llu", ServerSchema::Property::ObjectId, lockId.GetId().GetValue());
+    briefcase.Sprintf("%s+eq+%lu", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
+    query.SetFilter(id);
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbOwnershipResult>([=] (const WSObjectsResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            if (result.GetValue().GetJsonValue()[ServerSchema::Instances].isValidIndex(0))
+                {
+                if (LockLevel::Exclusive == static_cast<LockLevel>(result.GetValue().GetJsonValue()[ServerSchema::Instances][0][ServerSchema::Properties][ServerSchema::Property::LockLevel].asUInt()))
+                    return DgnDbOwnershipResult::Success(DgnLockOwnership(BeBriefcaseId(result.GetValue().GetJsonValue()[ServerSchema::Instances][0][ServerSchema::Properties][ServerSchema::Property::BriefcaseId].asUInt())));
+                else
+                    {
+                    DgnLockOwnership ownership;
+                    for (auto const& lock : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+                        ownership.AddSharedOwner(BeBriefcaseId(lock[ServerSchema::Properties][ServerSchema::Property::BriefcaseId].asUInt()));
+                    return DgnDbOwnershipResult::Success(ownership);
+                    }
+                }
+            else
+                return DgnDbOwnershipResult::Success(DgnLockOwnership());
+            }
+        else
+            return DgnDbOwnershipResult::Error(result.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbLockLevelResult> DgnDbRepositoryConnection::QueryLockLevel(Dgn::LockableId lockId, const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
+    Utf8String id, briefcase;
+    id.Sprintf("%s+eq+%llu", ServerSchema::Property::ObjectId, lockId.GetId().GetValue());
+    briefcase.Sprintf("%s+eq+%lu", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
+    query.SetFilter(id);
+    query.SetFilter(briefcase);
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbLockLevelResult>([=] (const WSObjectsResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            if (result.GetValue().GetJsonValue()[ServerSchema::Instances].isValidIndex(0))
+                {
+                int32_t value = result.GetValue().GetJsonValue()[ServerSchema::Instances][0][ServerSchema::Properties][ServerSchema::Property::LockLevel].asInt();
+                LockLevel level = static_cast<LockLevel>(value);
+                return DgnDbLockLevelResult::Success(level);
+                }
+            else
+                return DgnDbLockLevelResult::Success(LockLevel::None);
+            }
+        else
+            return DgnDbLockLevelResult::Error(result.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocks(const BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
+    Utf8String briefcase;
+    briefcase.Sprintf("%s+eq+%lu", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
+    query.SetFilter(briefcase);
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbLockSetResult>([=] (const WSObjectsResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            DgnLockSet lockSet;
+            for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+                {
+                DgnLock lock;
+                Json::Value lockJson;
+                lockJson["Level"] = value[ServerSchema::Properties][ServerSchema::Property::LockLevel];
+                lockJson["LockableId"] = Json::objectValue;
+                lockJson["LockableId"]["Id"] = value[ServerSchema::Properties][ServerSchema::Property::ObjectId];
+                lockJson["LockableId"]["Type"] = value[ServerSchema::Properties][ServerSchema::Property::LockType];
+                lock.FromJson(lockJson);
+                lockSet.insert(lock);
+                }
+            return DgnDbLockSetResult::Success(lockSet);
+            }
+        else
+            return DgnDbLockSetResult::Error(result.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId(ICancellationTokenPtr cancellationToken)
@@ -166,16 +375,20 @@ struct IndexedRevision
 IndexedRevision ParseRevision(JsonValueCR jsonValue)
     {
     Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
-    DgnRevisionPtr revision = DgnRevision::Create(jsonValue[ServerSchema::Property::Id].asString(), jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString());
+    RevisionStatus status;
+    DgnRevisionPtr revision = DgnRevision::Create(&status, jsonValue[ServerSchema::Property::Id].asString(), jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString());
     Dgn::DgnPlatformLib::ForgetHost();
-    revision->SetSummary(jsonValue[ServerSchema::Property::Description].asCString());
-    DateTime pushDate = DateTime();
-    DateTime::FromString(pushDate, jsonValue[ServerSchema::Property::PushDate].asCString());
-    revision->SetDateTime(pushDate);
-    revision->SetUserName(jsonValue[ServerSchema::Property::UserCreated].asCString());
     IndexedRevision indexedRevision;
-    indexedRevision.index = jsonValue[ServerSchema::Property::Index].asUInt64();
-    indexedRevision.revision = revision;
+    if (RevisionStatus::Success == status)
+        {
+        revision->SetSummary(jsonValue[ServerSchema::Property::Description].asCString());
+        DateTime pushDate = DateTime();
+        DateTime::FromString(pushDate, jsonValue[ServerSchema::Property::PushDate].asCString());
+        revision->SetDateTime(pushDate);
+        revision->SetUserName(jsonValue[ServerSchema::Property::UserCreated].asCString());
+        indexedRevision.index = jsonValue[ServerSchema::Property::Index].asUInt64();
+        indexedRevision.revision = revision;
+        }
     return indexedRevision;
     }
 
@@ -229,7 +442,7 @@ AsyncTaskPtr<DgnDbRevisionResult> DgnDbRepositoryConnection::GetRevisionById(Utf
 AsyncTaskPtr<DgnDbRevisionsResult> DgnDbRepositoryConnection::RevisionsFromQuery(const WebServices::WSQuery& query, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, cancellationToken)->Then<DgnDbRevisionsResult>([=] (const WSObjectsResult& revisionsInfoResult)
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbRevisionsResult>([=] (const WSObjectsResult& revisionsInfoResult)
         {
         if (revisionsInfoResult.IsSuccess())
             {

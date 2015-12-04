@@ -40,6 +40,7 @@ public:
     //__PUBLISH_SECTION_END__
     static RepositoryInfoPtr ReadRepositoryInfo(Dgn::DgnDbCR db);
     static BeSQLite::DbResult WriteRepositoryInfo(Dgn::DgnDbR db, const RepositoryInfo& repositoryInfo, const BeSQLite::BeBriefcaseId& briefcaseId);
+    bool operator==(RepositoryInfoCR rhs) const;
     //__PUBLISH_SECTION_START__
 
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const; //!< Description taken from dgn_Proj Description property of the master file.

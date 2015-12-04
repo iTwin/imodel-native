@@ -57,17 +57,17 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(DgnClientFx::Utils::HttpR
         if (result.IsSuccess())
             {
             bvector<DgnRevisionPtr> revisions = result.GetValue();
-            BentleyStatus mergeStatus = BentleyStatus::SUCCESS;
+            RevisionStatus mergeStatus = RevisionStatus::Success;
             if (!revisions.empty())
                 {
                 Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
                 mergeStatus = m_db->Revisions().MergeRevisions(revisions);
                 Dgn::DgnPlatformLib::ForgetHost();
                 }
-            if (BentleyStatus::SUCCESS == mergeStatus)
+            if (RevisionStatus::Success == mergeStatus)
                 return DgnDbResult::Success();
             else
-                return DgnDbResult::Error(Error::RevisionsMerge);
+                return DgnDbResult::Error(mergeStatus);
             }
         else
             return DgnDbResult::Error(result.GetError());
@@ -115,15 +115,15 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(DgnClientFx::Utils::H
                     if (pushResult.IsSuccess())
                         {
                         Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
-                        BentleyStatus status = m_db->Revisions().FinishCreateRevision();
+                        Dgn::RevisionStatus status = m_db->Revisions().FinishCreateRevision();
                         m_db->SaveChanges();
                         Dgn::DgnPlatformLib::ForgetHost();
-                        if (BentleyStatus::SUCCESS == status)
+                        if (RevisionStatus::Success == status)
                             {
                             finalResult->SetSuccess();
                             }
                         else
-                            finalResult->SetError(Error::RevisionsFinish);
+                            finalResult->SetError(status);
                         }
                     else
                         {
