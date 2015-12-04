@@ -65,6 +65,12 @@ always:
         |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
         |  -------- --------
 
+
+#NEEDS_WORK_David Croom
+CCompOpts + -wd4302
+CCompOpts + -wd4311
+CCompOpts + -wd4312
+
 %include MultiCppCompileRule.mki
 
 $(o)actprj$(oext) : $(baseDir)actprj.cpp  ${MultiCompileDepends}
