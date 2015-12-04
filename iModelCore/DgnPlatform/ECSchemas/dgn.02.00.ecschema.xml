@@ -413,7 +413,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
 
-    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
+    <ECClass typeName="TextAnnotationData" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>

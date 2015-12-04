@@ -73,7 +73,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
-    RegisterHandler(dgn_AspectHandler::TextAnnotationItemHandler::GetHandler());
+    RegisterHandler(dgn_AspectHandler::TextAnnotationDataHandler::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
