@@ -35,9 +35,12 @@ struct CachedResponseManager : public IDeleteHandler
         ECClassCP               m_responseClass;
         ECRelationshipClassCP   m_responseToParentClass;
         ECRelationshipClassCP   m_responseToHolderClass;
-        ECRelationshipClassCP   m_responseToResultClass;
-        ECRelationshipClassCP   m_responseToResultWeakClass;
-        ECRelationshipClassCP   m_responseToRelInfoClass;
+        ECRelationshipClassCP   m_responseToResponsePageClass;
+
+        ECClassCP               m_responsePageClass;
+        ECRelationshipClassCP   m_responsePageToResultClass;
+        ECRelationshipClassCP   m_responsePageToResultWeakClass;
+        ECRelationshipClassCP   m_responsePageToRelInfoClass;
 
         ECSqlStatementCache* m_statementCache;
         ECSqlAdapterLoader<JsonInserter> m_responseInserter;
@@ -46,30 +49,46 @@ struct CachedResponseManager : public IDeleteHandler
         bset<ECInstanceKey> m_responsesToDelete;
 
     private:
-        BentleyStatus RelateResultInstancesToCachedResponseInfo
+        BentleyStatus RelateResultInstancesToPage
             (
-            CachedResponseInfoCR queryKey,
-            const InstanceCacheHelper::CachedInstances& cachedInstances
+            ECInstanceKeyCR responseParentKey,
+            ECInstanceKeyCR pageKey,
+            const InstanceCacheHelper::CachedInstances& instances
             );
 
-        BentleyStatus RelateResultRelationshipInstancesToCachedResponseInfo
+        BentleyStatus RelateResultRelationshipInstancesToPage
             (
-            ECInstanceKeyCR queryKey,
-            const InstanceCacheHelper::CachedInstances& cachedInstances
+            ECInstanceKeyCR pageKey,
+            const InstanceCacheHelper::CachedInstances& instances
             );
 
-        BentleyStatus ReadResponseObjectIds
+        BentleyStatus ReadPageObjectIds
             (
-            ECInstanceId cachedQueryInfoId,
+            ECInstanceKeyCR pageKey,
             ECRelationshipClassCP relationshipClass,
             bset<ObjectId>& objectIdsOut
             );
 
         BentleyStatus MarkTemporaryInstancesAsPartial
             (
-            const bset<ECInstanceId>& cachedQueryInfoKeys,
+            const bset<ECInstanceId>& responseKeys,
             ECRelationshipClassCP resultRelationshipClass,
             const ECInstanceKeyMultiMap& fullyPersistedInstances
+            );
+
+        BentleyStatus InsertInfo(CachedResponseInfoR info);
+        ECInstanceKey SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
+        ECInstanceKey FindPage(CachedResponseInfoCR info, uint64_t page);
+        bvector<ECInstanceKey> FindPages(ECInstanceKeyCR responseKey);
+        ECInstanceKey InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
+        BentleyStatus UpdatePage(ECInstanceId pageId, Utf8StringCR cacheTag);
+        BentleyStatus UpdatePageCacheDate(ECInstanceId pageId);
+        BentleyStatus ClearPageCacheTag(ECInstanceId pageId);
+        ECSqlStatementPtr GetSelectPagePropertyStatement
+            (
+            CachedResponseKeyCR responseKey,
+            uint64_t page,
+            Utf8StringCR propertyName
             );
 
     public:
@@ -87,54 +106,68 @@ struct CachedResponseManager : public IDeleteHandler
         BentleyStatus OnAfterDelete(bset<ECInstanceKey>& instancesToDeleteOut) override;
 
         //! Read query info instance
-        CachedResponseInfo ReadInfo(CachedResponseKeyCR key);
+        CachedResponseInfo ReadInfo(CachedResponseKeyCR responseKey);
         //! Find query info in cache
-        ECInstanceKey FindInfo(ECInstanceKeyCR parent, Utf8StringCR queryName);
+        ECInstanceKey FindInfo(CachedResponseKeyCR responseKey);
         //! Delete query info and any response instances that are not held anything else
-        BentleyStatus DeleteInfo(ECInstanceKeyCR parent, Utf8StringCR queryName);
+        BentleyStatus DeleteInfo(CachedResponseKeyCR responseKey);
         //! Delete responses that were accessed before date specified
-        BentleyStatus DeleteResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& instancesToLeave);
+        BentleyStatus DeleteResponses(Utf8StringCR responseName, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& instancesToLeave);
         //! Delete responses with same name
-        BentleyStatus DeleteResponses(Utf8StringCR name);
-        //! Save query info instance
-        BentleyStatus SaveInfo(CachedResponseInfoR queryInfo);
-        //! Save query info instance and relate response instances
-        BentleyStatus SaveInfo(CachedResponseInfoR queryInfo, const InstanceCacheHelper::CachedInstances& cachedInstances);
-        //! Read response instances. Callback will be called for each successfull query, caller is responsible for extracting data.
+        BentleyStatus DeleteResponses(Utf8StringCR responseName);
+        //! Save query info
+        BentleyStatus SaveInfo(CachedResponseInfoR info);
+        //! Insert query info and update page cache date
+        BentleyStatus UpdatePageCachedDate(CachedResponseKeyCR responseKey, uint64_t page);
+        //! Insert query info and update page cache date and relate response instances
+        BentleyStatus SavePage(CachedResponseKeyCR responseKey, uint64_t page, Utf8StringCR cacheTag, const InstanceCacheHelper::CachedInstances& instances);
+
+        //! Read response instances. Relationships not included. 
+        //! @param readCallback will be called for each successfull query, caller is responsible for extracting data.
         BentleyStatus ReadResponse
             (
-            CachedResponseInfoCR queryInfo,
+            CachedResponseInfoCR info,
             ISelectProviderCR selectProvider,
             const CacheQueryHelper::ReadCallback& readCallback
             );
 
-        //! Read keys from response instances.
+        //! Read response instance keys. Relationships not included.
         BentleyStatus ReadResponseInstanceKeys
             (
-            ECInstanceKeyCR cachedQueryInfoDesc,
+            ECInstanceKeyCR responseKey,
             ECInstanceKeyMultiMap& keysOut
             );
 
-        //! Read ObjectIds from response instances
+        //! Read response instance ObjectIds. Relationships not included.
         BentleyStatus ReadResponseObjectIds
             (
-            ECInstanceId cachedResponseInfoId,
+            ECInstanceKeyCR responseKey,
             bset<ObjectId>& objectIdsOut
             );
 
-        //! Read query results cache tag
-        Utf8String ReadResponseCacheTag(ECInstanceKeyCR parent, Utf8StringCR queryName);
-        //! Read query results cached date
-        DateTime ReadResponseCachedDate(ECInstanceKeyCR parent, Utf8StringCR queryName);
+        //! Set response completed when it has all pages cached
+        BentleyStatus SetResponseCompleted(CachedResponseKeyCR responseKey, bool isCompleted);
+
+        //! Check if response has all pages cached
+        bool IsResponseCompleted(CachedResponseKeyCR responseKey);
+
+        //! Read response page cache tag
+        Utf8String ReadResponsePageCacheTag(CachedResponseKeyCR responseKey, uint64_t page);
+        //! Read response page cache date
+        DateTime ReadResponsePageCachedDate(CachedResponseKeyCR responseKey, uint64_t page);
+
+        //! Trim pages to page count by index
+        BentleyStatus TrimPages(CachedResponseKeyCR responseKey, uint64_t maxPageIndex);
+
         //! Change temporary cached response statuses from Full to Partial
         BentleyStatus MarkTemporaryInstancesAsPartial
             (
-            const bset<ECInstanceId>& cachedQueryInfoIds,
+            const bset<ECInstanceId>& responseIds,
             const ECInstanceKeyMultiMap& fullyPersistedInstances
             );
 
         //! Invalidates cache tag for responses that contain specified instance
-        BentleyStatus InvalidateResponsesContainingInstance(ECInstanceKeyCR instanceKey);
+        BentleyStatus InvalidateResponsePagesContainingInstance(ECInstanceKeyCR instanceKey);
     };
 
 typedef const CachedResponseManager& QueryManagerCR;

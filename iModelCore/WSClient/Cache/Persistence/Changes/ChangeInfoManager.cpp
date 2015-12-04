@@ -263,7 +263,7 @@ int ChangeInfoManager::ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP st
         {
         return Utf8PrintfString(
             "SELECT info.[%s] FROM " ECSql_ChangeInfoClass " info "
-            "JOIN ONLY " ECSql_CachedObjectInfoRelationshipClass " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
+            "JOIN ONLY " ECSql_CachedObjectInfoToInstanceClass " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
             "WHERE infoRel.TargetECClassId = ? AND infoRel.TargetECInstanceId = ? "
             "LIMIT 1 ",
             statusPropertyName
@@ -409,7 +409,7 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, Utf8CP se
             return ERROR;
             }
 
-        auto relClass = m_dbAdapter->GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ChangeInfoToInstanceBackup);
+        auto relClass = m_dbAdapter->GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ChangeInfoToInstanceBackup);
         if (!m_dbAdapter->RelateInstances(relClass, info.GetInfoKey(), backupKey).IsValid())
             {
             return ERROR;

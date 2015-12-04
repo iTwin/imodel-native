@@ -643,7 +643,7 @@ WSObjectsResponseCR response,
 Utf8StringCR rootName,
 ECInstanceKeyMultiMap* cachedInstanceKeysOut,
 bool weakLinkToRoot,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     LogCacheDataForMethod();
@@ -656,7 +656,7 @@ ICancellationTokenPtr cancellationToken
 
     WSObjectsReader::Instances instances = response.GetInstances();
     InstanceCacheHelper::CachedInstances cachedInstances;
-    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, nullptr, cancellationToken))
+    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, nullptr, ct))
         {
         return ERROR;
         }
@@ -720,7 +720,7 @@ BentleyStatus DataSourceCache::UpdateInstances
 WSObjectsResponseCR response,
 bset<ObjectId>* notFoundOut,
 bset<ECInstanceKey>* cachedInstancesOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     LogCacheDataForMethod();
@@ -735,7 +735,7 @@ ICancellationTokenPtr cancellationToken
 
     InstanceCacheHelper::CachedInstances cachedInstances;
     InstanceCacheHelper::UpdateCachingState updateCachingState;
-    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, &updateCachingState, cancellationToken))
+    if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, &updateCachingState, ct))
         {
         return ERROR;
         }
@@ -924,7 +924,7 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
         return CacheStatus::DataNotCached;
         }
 
-    if (SUCCESS != m_state->GetCachedResponseManager().InvalidateResponsesContainingInstance(instance))
+    if (SUCCESS != m_state->GetCachedResponseManager().InvalidateResponsePagesContainingInstance(instance))
         {
         return CacheStatus::Error;
         }
@@ -1447,18 +1447,24 @@ CachedResponseKeyCR responseKey,
 WSObjectsResponseCR response,
 bset<ObjectId>* rejectedOut,
 const WSQuery* query,
+uint64_t page,
 ICancellationTokenPtr ct
 )
     {
     LogCacheDataForMethod();
-    if (!responseKey.GetParent().IsValid())
+    if (!responseKey.IsValid())
         {
         return ERROR;
         }
 
-    CachedResponseInfo queryInfo = m_state->GetCachedResponseManager().ReadInfo(responseKey);
-
-    if (response.IsModified())
+    if (!response.IsModified())
+        {
+        if (SUCCESS != m_state->GetCachedResponseManager().UpdatePageCachedDate(responseKey, page))
+            {
+            return ERROR;
+            }
+        }
+    else
         {
         ECInstanceKeyMultiMap fullyPersistedInstances;
         std::shared_ptr<InstanceCacheHelper::PartialCachingState> partialCachingState;
@@ -1470,10 +1476,12 @@ ICancellationTokenPtr ct
                 BeAssert(false);
                 return ERROR;
                 }
+
             if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
                 {
                 return ERROR;
                 }
+
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
                 m_state->GetECDbAdapter(),
@@ -1485,24 +1493,37 @@ ICancellationTokenPtr ct
 
         WSObjectsReader::Instances instances = response.GetInstances();
         InstanceCacheHelper::CachedInstances cachedInstances;
-        if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, partialCachingState.get(), nullptr, ct))
-            {
-            return ERROR;
-            }
 
-        queryInfo.SetCacheDate(DateTime::GetCurrentTimeUtc());
-        queryInfo.SetCacheTag(response.GetETag());
-
-        if (SUCCESS != m_state->GetCachedResponseManager().SaveInfo(queryInfo, cachedInstances))
+        if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, partialCachingState.get(), nullptr, ct) ||
+            SUCCESS != m_state->GetCachedResponseManager().SavePage(responseKey, page, response.GetETag(), cachedInstances))
             {
             return ERROR;
             }
         }
-    else
-        {
-        queryInfo.SetCacheDate(DateTime::GetCurrentTimeUtc());
 
-        if (SUCCESS != m_state->GetCachedResponseManager().SaveInfo(queryInfo))
+    if (response.IsFinal())
+        {
+        if (SUCCESS != m_state->GetCachedResponseManager().TrimPages(responseKey, page))
+            {
+            return ERROR;
+            }
+        }
+
+    bool wasCompleted = m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
+    bool nowCompleted = wasCompleted;
+    
+    if (response.IsFinal())
+        {
+        nowCompleted = true;
+        }
+    else if (response.IsModified())
+        {
+        nowCompleted = false;
+        }
+
+    if (wasCompleted != nowCompleted)
+        {
+        if (SUCCESS != m_state->GetCachedResponseManager().SetResponseCompleted(responseKey, nowCompleted))
             {
             return ERROR;
             }
@@ -1531,7 +1552,7 @@ BentleyStatus DataSourceCache::MarkTemporaryInstancesAsPartial(const std::vector
     bset<ECInstanceId> temporaryInfos;
     for (CachedResponseKeyCR responseKey : responseKeys)
         {
-        ECInstanceKey info = m_state->GetCachedResponseManager().FindInfo(responseKey.GetParent(), responseKey.GetName());
+        ECInstanceKey info = m_state->GetCachedResponseManager().FindInfo(responseKey);
         if (!info.IsValid())
             {
             continue;
@@ -1556,7 +1577,7 @@ BentleyStatus DataSourceCache::MarkTemporaryInstancesAsPartial(const std::vector
 BentleyStatus DataSourceCache::RemoveResponse(CachedResponseKeyCR responseKey)
     {
     LogCacheDataForMethod();
-    return m_state->GetCachedResponseManager().DeleteInfo(responseKey.GetParent(), responseKey.GetName());
+    return m_state->GetCachedResponseManager().DeleteInfo(responseKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1645,13 +1666,13 @@ CachedResponseKeyCR responseKey,
 bset<ObjectId>& instanceObjectIdsOut
 )
     {
-    ECInstanceKey infoKey = m_state->GetCachedResponseManager().FindInfo(responseKey.GetParent(), responseKey.GetName());
+    ECInstanceKey infoKey = m_state->GetCachedResponseManager().FindInfo(responseKey);
     if (!infoKey.IsValid())
         {
         return CacheStatus::DataNotCached;
         }
 
-    if (SUCCESS != m_state->GetCachedResponseManager().ReadResponseObjectIds(infoKey.GetECInstanceId(), instanceObjectIdsOut))
+    if (SUCCESS != m_state->GetCachedResponseManager().ReadResponseObjectIds(infoKey, instanceObjectIdsOut))
         {
         return CacheStatus::Error;
         }
@@ -1662,17 +1683,17 @@ bset<ObjectId>& instanceObjectIdsOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DataSourceCache::ReadResponseCacheTag(CachedResponseKeyCR responseKey)
+Utf8String DataSourceCache::ReadResponseCacheTag(CachedResponseKeyCR responseKey, uint64_t page)
     {
-    return m_state->GetCachedResponseManager().ReadResponseCacheTag(responseKey.GetParent(), responseKey.GetName());
+    return m_state->GetCachedResponseManager().ReadResponsePageCacheTag(responseKey, page);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime DataSourceCache::ReadResponseCachedDate(CachedResponseKeyCR responseKey)
+DateTime DataSourceCache::ReadResponseCachedDate(CachedResponseKeyCR responseKey, uint64_t page)
     {
-    return m_state->GetCachedResponseManager().ReadResponseCachedDate(responseKey.GetParent(), responseKey.GetName());
+    return m_state->GetCachedResponseManager().ReadResponsePageCachedDate(responseKey, page);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1680,8 +1701,7 @@ DateTime DataSourceCache::ReadResponseCachedDate(CachedResponseKeyCR responseKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DataSourceCache::IsResponseCached(CachedResponseKeyCR responseKey)
     {
-    ECInstanceKey infoKey = m_state->GetCachedResponseManager().FindInfo(responseKey.GetParent(), responseKey.GetName());
-    return infoKey.IsValid();
+    return m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -39,3 +39,25 @@ BentleyStatus UpgraderBase::UpgradeCacheSchema(int versionMajor, int versionMino
     return m_adapter.GetECDb().Schemas()
         .ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UpgraderBase::ExecuteStatement(Utf8CP ecSql)
+    {
+    ECSqlStatement statement;
+    if (SUCCESS != m_adapter.PrepareStatement(statement, ecSql))
+        {
+        return ERROR;
+        }
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()));
+
+    if (BE_SQLITE_OK != status)
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }

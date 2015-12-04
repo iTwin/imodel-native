@@ -90,12 +90,12 @@ void ServerInfoProvider::UpdateInfo(WSInfoCR info) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr cancellationToken) const
+AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct) const
     {
     auto finalResult = std::make_shared<WSInfoResult>();
 
     // WSG 2.0 +
-    return GetInfoFromPage("/v2.0/Plugins", cancellationToken)->Then([=] (WSInfoHttpResult& result)
+    return GetInfoFromPage("/v2.0/Plugins", ct)->Then([=] (WSInfoHttpResult& result)
         {
         if (result.IsSuccess())
             {
@@ -114,7 +114,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr can
             }
 
         // WSG R2 - R3.5
-        GetInfoFromPage("/v1.2/Info", cancellationToken)->Then([=] (WSInfoHttpResult& result)
+        GetInfoFromPage("/v1.2/Info", ct)->Then([=] (WSInfoHttpResult& result)
             {
             if (result.IsSuccess())
                 {
@@ -138,7 +138,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr can
                 return;
                 }
 
-            GetInfoFromPage("/Pages/About.aspx", cancellationToken)->Then([=] (WSInfoHttpResult& result)
+            GetInfoFromPage("/Pages/About.aspx", ct)->Then([=] (WSInfoHttpResult& result)
                 {
                 if (result.IsSuccess())
                     {
@@ -159,10 +159,10 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr can
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr cancellationToken) const
+AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr ct) const
     {
     HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(m_configuration->GetServerUrl() + page);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSInfoHttpResult>([=] (HttpResponse& response)
         {
@@ -181,7 +181,7 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR 
 AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo
 (
 bool forceQuery,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_thread->ExecuteAsync <WSInfoResult>([=]
@@ -192,7 +192,7 @@ ICancellationTokenPtr cancellationToken
             }
 
         // Block so additional GetServerInfo tasks would queue to m_thread
-        WSInfoResult result = GetInfo(cancellationToken)->GetResult();
+        WSInfoResult result = GetInfo(ct)->GetResult();
 
         if (!result.IsSuccess())
             {
