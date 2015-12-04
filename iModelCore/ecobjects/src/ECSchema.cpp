@@ -696,7 +696,7 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-inline ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
+ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -969,7 +969,7 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP& pEnumeration)
+ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP& pEnumeration)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
