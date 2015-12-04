@@ -8,6 +8,7 @@
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -764,7 +765,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p4' typeName='string' />"
                                    "    </ECClass>"
-                                   "</ECSchema>", false, "Struct in class hierarchy with SharedTable (polymorphic) map strategy is expected to be not supported."));
+                                   "</ECSchema>", false, "Struct in class hierarchy with SharedTable (applies to subclasses) map strategy is expected to be not supported."));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"

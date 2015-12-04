@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
+
 #include <limits>
 #include <initializer_list>
 USING_NAMESPACE_BENTLEY_EC
