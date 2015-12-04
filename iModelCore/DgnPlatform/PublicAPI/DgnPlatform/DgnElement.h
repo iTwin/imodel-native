@@ -963,6 +963,7 @@ protected:
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
+    virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual SystemElementCP _ToSystemElement() const {return nullptr;}
@@ -994,6 +995,7 @@ public:
     DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
     DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
 
+    DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();} //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();} //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
@@ -1004,6 +1006,7 @@ public:
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
 
+    DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());} //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
@@ -1013,6 +1016,7 @@ public:
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
     bool Is2d() const {return nullptr != ToGeometrySource2d();}                     //!< Determine whether this element is 2d or not
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is geometric or not
+    bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsSystemElement() const {return nullptr != ToSystemElement();}             //!< Determine whether this element is a SystemElement or not
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
@@ -1686,22 +1690,35 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement, IElementGroupOf<DgnEle
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
 
 protected:
-    Dgn::IElementGroupCP _ToIElementGroup() const override {return this;}
-    virtual Dgn::DgnElementCP _ToGroupElement() const override {return this;}
+    Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
+    virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
 
 public:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
-//! A resource element which resides in (and only in) the dictionary model.
+//! A DefinitionElement which resides in (and only in) a DefinitionModel.
+//! @ingroup DgnElementGroup
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+
+protected:
+    virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
+    explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A DefinitionElement which resides in (and only in) the dictionary model.
 //! Typically represents a style or similar resource used by other elements throughout
 //! the DgnDb.
 //! @ingroup DgnElementGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DictionaryElement : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE DictionaryElement : DefinitionElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DEFINE_T_SUPER(DefinitionElement);
 public:
     //! Parameters used to construct a DictionaryElement
     struct CreateParams : T_Super::CreateParams
@@ -1725,7 +1742,7 @@ public:
     };
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    virtual DictionaryElementCP _ToDictionaryElement() const override { return this; }
+    virtual DictionaryElementCP _ToDictionaryElement() const override final { return this; }
 
     explicit DictionaryElement(CreateParams const& params) : T_Super(params) { }
 };
