@@ -657,7 +657,9 @@ void WebMercatorTileDisplayHelper::DrawTile (ViewContextR context, WebMercatorTi
         DrawTileAsBox (context, tileid, z, false);
     #endif
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetCurrentGraphicR().AddMosaic (1,1, &textureId, uvPts);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

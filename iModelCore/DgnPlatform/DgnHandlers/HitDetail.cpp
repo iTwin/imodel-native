@@ -417,6 +417,7 @@ bool HitDetail::ShouldFlashCurveSegment(ViewContextR context) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::FlashCurveSegment(ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (nullptr == GetGeomDetail().GetCurvePrimitive())
         return;
 
@@ -461,6 +462,7 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
         context.GetCurrentGraphicR().AddCurveVector(*curve, false);
     else
         context.GetCurrentGraphicR().AddCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

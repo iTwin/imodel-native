@@ -443,7 +443,9 @@ void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, 
     elemMatSymb.SetLineColor(vp->AdjustColorForContrast(color, vp->GetBackgroundColor()));
     elemMatSymb.SetWidth(vp->GetIndexedLineWidth(weight));
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetCurrentGraphicR().ActivateMatSymb(&elemMatSymb);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

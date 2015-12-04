@@ -27,6 +27,7 @@ void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
     m_leaderLayout = rhs.m_leaderLayout;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
@@ -189,12 +190,14 @@ static CurveVectorPtr createEffectiveLineGeometry(CurveVectorCR originalLineGeom
     // Most code (notably draw code) does not know how to handle partial curves; use CloneDereferenced to create "real" primitives again.
     return effectiveLineGeometry->CloneDereferenced(true, true);
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     AnnotationLeaderStylePtr leaderStyle = m_leaderLayout->GetLeader().CreateEffectiveStyle();
     if ((AnnotationLeaderLineType::None == leaderStyle->GetLineType()) && (AnnotationLeaderTerminatorType::None == leaderStyle->GetTerminatorType()))
         return SUCCESS;
@@ -239,4 +242,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         }
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }

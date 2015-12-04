@@ -833,6 +833,7 @@ virtual StatusInt _InitContextForView() override
     if (SUCCESS != T_Super::_InitContextForView())
         return ERROR;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_params.m_rMatrix || m_viewport)
         {
         Transform transform;
@@ -841,6 +842,7 @@ virtual StatusInt _InitContextForView() override
         PushTransform(transform);
         m_transformClipStack.Clear(); // It is important to clear after PushTransform (TFS# 16267)
         }
+#endif
 
     return SUCCESS;
     }

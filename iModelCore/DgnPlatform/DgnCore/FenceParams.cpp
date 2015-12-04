@@ -166,6 +166,7 @@ void GetTestDirectionWorld(DVec3dR fenceDir)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GetBoresiteLocations(bvector<DRay3d>& out)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // NOTE: Can't test a single loop point when there are masks...
     ClipVectorPtr   clip = m_fp->GetClipVector();
 
@@ -185,6 +186,7 @@ void GetBoresiteLocations(bvector<DRay3d>& out)
 
         out.push_back(boresite);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,6 +229,7 @@ void            CheckCurrentAccept()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransformCP GetCurrentFenceAcceptTransform(TransformP transformP)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     TransformCP placementTransP = m_context->GetCurrLocalToWorldTransformCP ();
 
     if (placementTransP)
@@ -235,6 +238,11 @@ TransformCP GetCurrentFenceAcceptTransform(TransformP transformP)
         transformP->InitIdentity();
 
     return transformP;
+#else
+    *transformP = m_localToWorldTransform;
+
+    return &m_localToWorldTransform;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -705,7 +713,7 @@ public:
         DELETE_AND_CLEAR (m_nonVisibleViewport);
         }
 
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_graphic;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2013
@@ -743,8 +751,10 @@ virtual void _DrawAreaPattern(ClipStencil& boundary) override
 
     if (FenceClipMode::None == fp->GetClipMode()) // Need to draw patterns for interior overlap check when clipping...
         {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         // Attempt to short circuit fence accept using boundary...only check symbol geometry for interior overlap...
         boundary.GetGeomSource().Stroke(*this);
+#endif
 
         // Element never rejected by pattern...so if boundary is acceptable we can skip drawing the pattern...
         if (_CheckStop() || m_graphic->GetCurrentAccept())

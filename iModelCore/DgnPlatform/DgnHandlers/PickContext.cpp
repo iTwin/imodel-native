@@ -107,7 +107,7 @@ static double getAdjustedViewZ (ViewContextR context, DPoint4dCR viewPt)
 * @see          HitList
 * @bsimethod                                                    KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority priority)
+void PickContext::_AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriority priority)
     {
     // NOTE: Only reason to have ElemTopology for non-element hit is to allow locate/snap...
     if (nullptr == m_currentGeomSource && nullptr == GetElemTopology())
@@ -118,14 +118,16 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     if (hitPtLocal)
         localPt = *hitPtLocal;
     else
-        ViewToLocal(&localPt, &hitPtScreen, 1);
+        m_graphic->ViewToLocal(&localPt, &hitPtView, 1);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // if the point is not visible in the current view, skip this hit (skip when drawing base geom after getting lstyle hit!)
     if (!(TEST_LSTYLE_BaseGeom == m_testingLStyle && m_unusableLStyleHit))
         {
         if (!IsLocalPointVisible(localPt, false))
             return;
         }
+#endif
 
     // Use override priority if it's been set...
     if (HitPriority::Highest != m_hitPriorityOverride)
@@ -163,15 +165,14 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
         }
 
     DPoint3d    hitPtWorld;
-    Transform   localToWorld;
+    Transform   localToWorld = m_graphic->GetLocalToWorldTransform();
 
-    GetCurrLocalToWorldTrans(localToWorld);
     localToWorld.Multiply(&hitPtWorld, &localPt, 1);
 
     m_currGeomDetail.SetClosestPoint(hitPtWorld);
     m_currGeomDetail.SetLocatePriority(priority);
-    m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtScreen, m_pickPointView)));
-    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtScreen) + GetCurrentGeometryParams().GetNetDisplayPriority());
+    m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtView, m_pickPointView)));
+    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtView) + GetCurrentGeometryParams().GetNetDisplayPriority());
     m_currGeomDetail.SetGeomStreamEntryId(GetGeomStreamEntryId());
 
     RefCountedPtr<HitDetail> thisHit = new HitDetail(*GetViewport(), m_currentGeomSource, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
@@ -194,16 +195,6 @@ void PickContext::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
         m_doneSearching = true;
 
     m_hitList->RemoveHit(-1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* determine whether a point in world coordinates is inside or outside of the current clipping
-* established for this context.
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PickContext::_IsPointVisible(DPoint3dCP worldPt)
-    {
-    return IsWorldPointVisible(*worldPt, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,9 +221,9 @@ DRay3d PickContext::_GetBoresite() const
     {
     DRay3d      boresite;
     DPoint3d    localPt;
-    DMatrix4d   viewToLocal = GetViewToLocal();
+    DMatrix4d   viewToLocal = m_graphic->GetViewToLocal();
 
-    ViewToLocal(&localPt, &_GetPickPointView(), 1);
+    m_graphic->ViewToLocal(&localPt, &_GetPickPointView(), 1);
     InitBoresite(boresite, localPt, viewToLocal);
 
     return boresite;
@@ -272,16 +263,15 @@ void PickContext::AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
     DVec3d      saveNormal = m_currGeomDetail.GetSurfaceNormal();
     DVec3d      hitNormalWorld = hitNormalLocal;
     DPoint4d    viewPt;
-    Transform   localToWorld;
+    Transform   localToWorld = m_graphic->GetLocalToWorldTransform();
 
-    GetCurrLocalToWorldTrans(localToWorld);
     localToWorld.MultiplyMatrixOnly(hitNormalWorld);
     hitNormalWorld.Normalize();
 
     m_currGeomDetail.SetGeomType(HitGeomType::Surface);
     m_currGeomDetail.SetSurfaceNormal(hitNormalWorld);
 
-    LocalToView(&viewPt, &hitPtLocal, 1);
+    m_graphic->LocalToView(&viewPt, &hitPtLocal, 1);
     _AddHit(viewPt, &hitPtLocal, priority);
 
     m_currGeomDetail.SetSurfaceNormal(saveNormal);
@@ -333,7 +323,8 @@ bool PickContext::TestGraphics(Graphic* qvElem, HitPriority priority)
 bool PickContext::TestPoint(DPoint3dCR localPt, HitPriority priority)
     {
     DPoint4d    viewPt;
-    LocalToView(&viewPt, &localPt, 1);
+
+    m_graphic->LocalToView(&viewPt, &localPt, 1);
 
     if (!PointWithinTolerance(viewPt))
         return false;
@@ -355,7 +346,7 @@ bool PickContext::TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority
         {
         DPoint4d    viewPt;
 
-        LocalToView(&viewPt, &localPts[i], 1);
+        m_graphic->LocalToView(&viewPt, &localPts[i], 1);
 
         if (!PointWithinTolerance(viewPt))
             continue;
@@ -399,7 +390,7 @@ bool PickContext::TestIndexedPolyEdge(DPoint3dCP vertsP, DPoint4dCP hVertsP, int
         }
     else    // transform source dpoint3d on the spot
         {
-        DMatrix4d localToView = GetLocalToView();
+        DMatrix4d localToView = m_graphic->GetLocalToView();
 
         bsiDMatrix4d_multiplyWeightedDPoint3dArray(&localToView, hEdge, edge, NULL, 2);
         }
@@ -429,7 +420,7 @@ bool PickContext::TestIndexedPolyEdge(DPoint3dCP vertsP, DPoint4dCP hVertsP, int
         CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
 
         tmpCurve->SetId(newId.get());
-        m_currGeomDetail.SetCurvePrimitive(tmpCurve.get(), GetCurrLocalToWorldTransformCP());
+        m_currGeomDetail.SetCurvePrimitive(tmpCurve.get(), &m_graphic->GetLocalToWorldTransform());
         _AddHit(proximity.closePoint, NULL, priority);
 
         return true;
@@ -491,9 +482,9 @@ bool PickContext::TestCurveVector(CurveVectorCR curves, HitPriority priority)
     {
     DPoint3d    pickPtLocal;
     DPoint4d    pickPtView = _GetPickPointView();
-    DMatrix4d   localToView = GetLocalToView();
+    DMatrix4d   localToView = m_graphic->GetLocalToView();
 
-    ViewToLocal(&pickPtLocal, &pickPtView, 1);
+    m_graphic->ViewToLocal(&pickPtLocal, &pickPtView, 1);
 
     CurveLocationDetail  location;
 
@@ -502,14 +493,14 @@ bool PickContext::TestCurveVector(CurveVectorCR curves, HitPriority priority)
 
     DPoint4d    hitPtView;
 
-    LocalToView(&hitPtView, &location.point, 1);
+    m_graphic->LocalToView(&hitPtView, &location.point, 1);
 
     double      pickDistSquared = distSquaredXY (hitPtView, pickPtView);
 
     if (!((m_pickApertureSquared > pickDistSquared) || (TEST_LSTYLE_BaseGeom == m_testingLStyle && m_unusableLStyleHit)))
         return false;
 
-    m_currGeomDetail.SetCurvePrimitive(location.curve, GetCurrLocalToWorldTransformCP());
+    m_currGeomDetail.SetCurvePrimitive(location.curve, &m_graphic->GetLocalToWorldTransform());
     _AddHit(hitPtView, &location.point, priority);
 
     return true;
@@ -527,13 +518,13 @@ StatusInt PickContext::ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool c
             DEllipse3dCP  ellipse = primitive.GetArcCP ();
             DPoint4d      viewPt;
 
-            LocalToView(&viewPt, &ellipse->center, 1);
+            m_graphic->LocalToView(&viewPt, &ellipse->center, 1);
 
             if (!PointWithinTolerance(viewPt))
                 break;
 
             // NOTE: Need to set curve to create curve topo associations to arc centers!
-            m_currGeomDetail.SetCurvePrimitive(&primitive, GetCurrLocalToWorldTransformCP(), HitGeomType::Point);
+            m_currGeomDetail.SetCurvePrimitive(&primitive, &m_graphic->GetLocalToWorldTransform(), HitGeomType::Point);
             _AddHit(viewPt, &ellipse->center, ellipse->IsFullEllipse() ? HitPriority::Origin : HitPriority::Interior);
             break;
             }
@@ -745,7 +736,7 @@ StatusInt PickContext::ProcessFacetSet(PolyfaceQueryCR meshData, bool filled)
     // The one-based vertex index is also the referenced vertex count ...
     if (maxVert1 <= MAX_BUFFER_VERTS)
         {
-        DMatrix4d      localToView = GetLocalToView(); 
+        DMatrix4d      localToView = m_graphic->GetLocalToView(); 
         hVertBufferP = (DPoint4d *)_alloca(maxVert1 * sizeof (DPoint4d));
 
         bsiDMatrix4d_multiplyWeightedDPoint3dArray(&localToView, hVertBufferP, verts, NULL, maxVert1);
@@ -875,10 +866,10 @@ void PickOutput::_AddTextString(TextStringCR text, double* zDepth)
 
     DPoint4d    hitPtView;
                     
-    m_context->LocalToView(&hitPtView, &intersectPt, 1);
+    LocalToView(&hitPtView, &intersectPt, 1);
 
     // Treat this as a curve hit, need bounding shape for correct snappping behavior (center/bisector/midpoint)...
-    m_pick.m_currGeomDetail.SetCurvePrimitive(&(*tmpCurve->front()), m_context->GetCurrLocalToWorldTransformCP());
+    m_pick.m_currGeomDetail.SetCurvePrimitive(&(*tmpCurve->front()), &GetLocalToWorldTransform());
     m_pick._AddHit(hitPtView, &intersectPt, HitPriority::TextBox);
     }
 
@@ -1187,7 +1178,7 @@ void PickContext::_OnPreDrawTransient()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_OutputElement(GeometrySourceCR element)
+Render::GraphicPtr PickContext::_OutputElement(GeometrySourceCR element)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
@@ -1196,7 +1187,7 @@ void PickContext::_OutputElement(GeometrySourceCR element)
 #endif
 
     // do per-element test
-    T_Super::_OutputElement(element);
+    return T_Super::_OutputElement(element);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Reset hit priority override in case it's been set...
@@ -1263,11 +1254,9 @@ StatusInt PickContext::_VisitDgnModel(DgnModelP inDgnModel)
     if (&inDgnModel->GetDgnDb() != &GetDgnDb() && !m_options.GetDisableDgnDbFilter())
         return ERROR;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Make sure the test point is within the clipping region of this file.
-    if (m_output._IsPointVisible(&m_output._GetPickPointWorld()))
+    // Make sure the test point is within the clipping region.
+    if (IsWorldPointVisible(_GetPickPointWorld(), true))
         return T_Super::_VisitDgnModel(inDgnModel);
-#endif
 
     return ERROR;
     }

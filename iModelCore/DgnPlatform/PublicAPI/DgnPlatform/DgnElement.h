@@ -1267,7 +1267,7 @@ protected:
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
     virtual GeomStreamCR _GetGeomStream() const = 0;
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
-    DGNPLATFORM_EXPORT virtual void _Stroke(ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _Stroke(ViewContextR, double pixelSize) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
@@ -1298,7 +1298,7 @@ public:
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
 
     Render::GraphicSet& Graphics() const {return _Graphics();}
-    void Stroke(ViewContextR context) const {_Stroke(context);}
+    Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
     bool DrawHit(HitDetailCR hit, ViewContextR context) const {return _DrawHit(hit, context);}
     void GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(hit, descr, delimiter);}
     SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}

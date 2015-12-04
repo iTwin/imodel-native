@@ -27,6 +27,7 @@ void AnnotationFrameDraw::CopyFrom(AnnotationFrameDrawCR rhs)
     m_frameLayout = rhs.m_frameLayout;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
@@ -72,12 +73,14 @@ static void setFillSymbology(ViewContextR context, AnnotationColorType colorType
 
     context.CookGeometryParams();
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     AnnotationFrameStylePtr frameStyle = m_frameLayout->GetFrame().CreateEffectiveStyle();
     
     // Invisible?
@@ -108,4 +111,7 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
         }
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
