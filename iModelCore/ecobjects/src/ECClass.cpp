@@ -81,12 +81,12 @@ Utf8CP ECClass::GetFullName () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECClass::GetECSqlName() const
+Utf8StringCR ECClass::GetECSqlName() const
     {
     if (m_ecsqlName.empty())
         m_ecsqlName.append("[").append(GetSchema().GetName()).append("].[").append(GetName()).append("]");
 
-    return m_ecsqlName.c_str();
+    return m_ecsqlName;
     }
 
 /*---------------------------------------------------------------------------------**//**
