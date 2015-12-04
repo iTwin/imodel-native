@@ -152,10 +152,10 @@ private:
     mutable BeMutex m_mutex;
 
 public:
-    void InfiniteWait(BeMutexHolder& holder);
-    bool RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis);
+    BENTLEYDLL_EXPORT void InfiniteWait(BeMutexHolder& holder);
+    BENTLEYDLL_EXPORT bool RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis);
 
-    static const uint32_t Infinite = 0xFFFFFFFF;
+    static const uint32_t Infinite = 0xffffffff;
 
     BENTLEYDLL_EXPORT BeConditionVariable();
     BENTLEYDLL_EXPORT ~BeConditionVariable();
