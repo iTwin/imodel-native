@@ -1442,7 +1442,7 @@ DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placemen
 //! @private
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct ElementGeomData
+struct EXPORT_VTABLE_ATTRIBUTE ElementGeomData
 {
 protected:
     DgnCategoryId   m_categoryId;
@@ -1468,7 +1468,7 @@ public:
 //! @private
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct ElementGeom3d : ElementGeomData
+struct EXPORT_VTABLE_ATTRIBUTE ElementGeom3d : ElementGeomData
 {
     typedef Placement3d T_Placement;
     typedef GeometrySource3d T_GeometrySource;
@@ -1609,7 +1609,7 @@ public:
 //! @private
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct ElementGeom2d : ElementGeomData
+struct EXPORT_VTABLE_ATTRIBUTE ElementGeom2d : ElementGeomData
 {
     typedef Placement2d T_Placement;
     typedef GeometrySource2d T_GeometrySource;
