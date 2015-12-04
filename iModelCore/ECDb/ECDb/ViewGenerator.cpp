@@ -127,8 +127,13 @@ BentleyStatus ViewGenerator::GetRootClasses (std::vector<IClassMap const*>& root
             if (ecClass->GetDerivedClasses().empty())
                 {
                 IClassMap const* classMap = db.GetECDbImplR().GetECDbMap ().GetClassMap (*ecClass);
-                BeAssert (classMap != nullptr);
-                if (!ECDbPolicyManager::GetClassPolicy (*classMap, IsValidInECSqlPolicyAssertion::Get ()).IsSupported ())
+                if (classMap == nullptr)
+                    {
+                    BeAssert(classMap != nullptr);
+                    return ERROR;
+                    }
+                
+                if (classMap->GetClassMapType() == IClassMap::Type::Unmapped)
                     continue;
 
                 rootClassMaps.push_back(classMap);
@@ -145,14 +150,8 @@ BentleyStatus ViewGenerator::GetRootClasses (std::vector<IClassMap const*>& root
 BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, ECDbMapCR map, ECClassCR ecClass, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables, bool ensureDerivedClassesAreLoaded)
     {
     IClassMap const* classMap = map.GetClassMap(ecClass);
-    if (classMap == nullptr)
+    if (classMap == nullptr || classMap->GetClassMapType() == IClassMap::Type::Unmapped)
         return SUCCESS;
-
-    if (!classMap->IsRelationshipClassMap())
-        {
-        if (!ECDbPolicyManager::GetClassPolicy(*classMap, IsValidInECSqlPolicyAssertion::Get()).IsSupported())
-            return SUCCESS;
-        }
 
     if (!classMap->GetMapStrategy().IsNotMapped())
         {
@@ -400,21 +399,16 @@ BentleyStatus ViewGenerator::GetAllChildRelationships (std::vector<RelationshipC
     for (ECClassCP childClass : map.GetECDbR ().Schemas ().GetDerivedECClasses (baseRelationMap.GetClass()))
         {
         IClassMap const* childClassMap = map.GetClassMap (*childClass);
-        if (childClassMap == nullptr)
+        if (childClassMap == nullptr || childClassMap->GetClassMapType() == IClassMap::Type::Unmapped)
             continue;
 
-        ECDbPolicy policy = ECDbPolicyManager::GetClassPolicy (*childClassMap, IsValidInECSqlPolicyAssertion::Get ());
-        if (policy.IsSupported ())
+        if (!childClassMap->IsRelationshipClassMap())
             {
-            if (!childClassMap->IsRelationshipClassMap ())
-                {
-                LOG.errorv ("ECDb does not support relationships that have derived non-relationship classes.");
-                BeAssert (childClassMap->IsRelationshipClassMap ());
-                return ERROR;
-                }
-
-            relationshipMaps.push_back (static_cast<RelationshipClassMapCP>(childClassMap));
+            BeAssert(false);
+            return ERROR;
             }
+
+        relationshipMaps.push_back (static_cast<RelationshipClassMapCP>(childClassMap));
 
         if (SUCCESS != GetAllChildRelationships(relationshipMaps, map, prepareContext, *childClassMap))
             return ERROR;

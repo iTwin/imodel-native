@@ -1077,25 +1077,25 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
     //select from structs 
     //*******************************************************
     ecsql = "SELECT i, s FROM ecsql.PStruct";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::SupportedButMightBecomeInvalid, "Querying from an ECStruct which is not a domain class is invalid and will be unsupported in the future.", 2, 0);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in FROM clause.");
 
     ecsql = "SELECT i, s FROM ONLY ecsql.PStruct";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::SupportedButMightBecomeInvalid, "Querying from an ECStruct which is not a domain class is invalid and will be unsupported in the future.", 2, 0);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in FROM clause.");
 
     ecsql = "SELECT * FROM ecsql.PStruct";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::SupportedButMightBecomeInvalid, "Querying from an ECStruct which is not a domain class is invalid and will be unsupported in the future.", 11, 0);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in FROM clause.");
 
     ecsql = "SELECT * FROM ONLY ecsql.PStruct";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::SupportedButMightBecomeInvalid, "Querying from an ECStruct which is not a domain class is invalid and will be unsupported in the future.", 11, 0);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in FROM clause.");
 
     //*******************************************************
     //select from CAs
     //*******************************************************
     ecsql = "SELECT * FROM bsca.DateTimeInfo";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Custom Attributes which are no domain classes are invalid in FROM clause.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Custom Attributes are invalid in FROM clause.");
 
     ecsql = "SELECT * FROM ONLY bsca.DateTimeInfo";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Custom Attributes which are no domain classes are invalid in FROM clause.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Custom Attributes are invalid in FROM clause.");
 
     //*******************************************************
     // Abstract classes

@@ -42,12 +42,6 @@ bool ECInstanceDeleter::IsValid () const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceDeleter::Initialize()
     {
-    if (!m_ecClass.IsEntityClass() && !m_ecClass.IsRelationshipClass())
-        {
-        m_isValid = false;
-        return;
-        }
-
     Utf8String ecsql ("DELETE FROM ONLY ");
     ecsql.append (m_ecClass.GetECSqlName()).append (" WHERE ECInstanceId=?");
 

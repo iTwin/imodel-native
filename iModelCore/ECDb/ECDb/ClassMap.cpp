@@ -176,32 +176,6 @@ bool IClassMap::IsRelationshipClassMap() const
     return type == Type::RelationshipEndTable || type == Type::RelationshipLinkTable;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//---------------------------------------------------------------------------------------
-bool IClassMap::IsAbstractECClass() const
-    {
-    return IsAbstractECClass(GetClass());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-//static
-bool IClassMap::IsAbstractECClass(ECClassCR ecclass)
-    {
-    if (ECClassModifier::Abstract == ecclass.GetClassModifier() && !ecclass.IsStructClass() && !ecclass.IsCustomAttributeClass())
-        return true;
-
-    //for relationship classes there is another criterion for abstractness: if one of the constraints doesn't have
-    //any classes, then it is abstract. So check for that here now
-    ECRelationshipClassCP relClass = ecclass.GetRelationshipClassCP();
-    if (relClass == nullptr)
-        return false;
-        
-    return relClass->GetSource().GetClasses().empty() || relClass->GetTarget().GetClasses().empty();
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2014

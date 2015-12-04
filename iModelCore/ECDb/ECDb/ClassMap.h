@@ -188,7 +188,6 @@ public:
     StorageDescription const& GetStorageDescription() const;
     bool IsMappedToSecondaryTable () const;
     bool IsRelationshipClassMap () const;
-    bool IsAbstractECClass () const;
     Utf8String GetECSqlName() const
         {
         return (GetClass().GetSchema().GetNamespacePrefix().empty() ? GetClass().GetSchema().GetName() : GetClass().GetSchema().GetNamespacePrefix()) + "." + GetClass().GetName();
@@ -199,7 +198,6 @@ public:
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR);
-    static bool IsAbstractECClass (ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
     };
 

@@ -104,26 +104,19 @@ ECInstanceInserter::Impl::Impl (ECDbCR ecdb, ECClassCR ecClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserter::Impl::Initialize ()
     {
-    if (!m_ecClass.IsEntityClass() && !m_ecClass.IsRelationshipClass())
-        {
-        m_isValid = false;
-        return;
-        }
-
-    ECSqlInsertBuilder builder;
-    builder.InsertInto (m_ecClass);
+    Utf8String ecsql("INSERT INTO ");
+    //add ECInstanceId. If NULL is bound to it, ECDb will auto-generate one
+    ecsql.append(m_ecClass.GetECSqlName()).append("(ECInstanceId");
+    Utf8String valuesClause(") VALUES(?");
 
     int parameterIndex = 1;
-
-    //add ECInstanceId. If NULL is bound to it, ECDb will auto-generate one
-    builder.AddValue (ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty::ECInstanceId), "?");
     //cache the binding info as we later need to set the user provided instance id (if available)
     m_ecinstanceIdBindingInfo = m_ecValueBindingInfos.AddBindingInfo (ECValueBindingInfo::SystemPropertyKind::ECInstanceId, parameterIndex);
     parameterIndex++;
 
     ECPropertyCP currentTimeStampProp = nullptr;
     bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, m_ecClass);
-
+    
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties (true))
         {
         //Current time stamp props are populated by SQLite, so ignore them here.
@@ -133,9 +126,8 @@ void ECInstanceInserter::Impl::Initialize ()
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 
-        Utf8String propNameSnippet ("[");
-        propNameSnippet.append (ecProperty->GetName ()).append ("]");
-        builder.AddValue (propNameSnippet.c_str (), "?");
+        ecsql.append(",[").append(ecProperty->GetName()).append("]");
+        valuesClause.append(",?");
         if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo (m_ecClass, *ecProperty, parameterIndex))
             {
             m_isValid = false;
@@ -145,26 +137,30 @@ void ECInstanceInserter::Impl::Initialize ()
         parameterIndex++;
         }
 
-    const bool isRelationshipClass = m_ecClass.GetRelationshipClassCP () != nullptr;
-    if (isRelationshipClass)
+    if (m_ecClass.IsRelationshipClass())
         {
-        builder.AddValue (ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty::SourceECInstanceId), "?");
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::SourceECInstanceId));
+        valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo (ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId, parameterIndex);
 
         parameterIndex++;
-        builder.AddValue (ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty::SourceECClassId), "?");
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::SourceECClassId));
+        valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo (ECValueBindingInfo::SystemPropertyKind::SourceECClassId, parameterIndex);
 
         parameterIndex++;
-        builder.AddValue (ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty::TargetECInstanceId), "?");
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::TargetECInstanceId));
+        valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo (ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId, parameterIndex);
 
         parameterIndex++;
-        builder.AddValue (ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty::TargetECClassId), "?");
+        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty::TargetECClassId));
+        valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo (ECValueBindingInfo::SystemPropertyKind::TargetECClassId, parameterIndex);
         }
 
-    const auto stat = m_statement.Prepare (m_ecdb, builder.ToString ().c_str ());
+    ecsql.append(valuesClause).append(")");
+    const auto stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
     m_isValid = stat.IsSuccess();
     }
 

@@ -134,44 +134,52 @@ ECDbPolicy ECDbPolicyManager::GetClassPolicy (IClassMap const& classMap, ECDbPol
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetClassPolicy (IClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion)
     {
-    auto const& ecClass = classMap.GetClass ();
-    auto const& className = ecClass.GetName ();
+    ECClassCR ecClass = classMap.GetClass();
+    Utf8StringCR className = ecClass.GetName();
     //generally not supported - regardless of ECSqlType
-    if (classMap.GetMapStrategy().IsNotMapped ())
+    if (!ecClass.IsEntityClass() && !ecClass.IsRelationshipClass())
         {
         Utf8String notSupportedMessage;
-        notSupportedMessage.Sprintf ("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."
-                        " The ECClass might have been marked with 'NotMapped' in the ECSchema or is generally not supported by ECDb."
-                        " In that case, please see the log for details about why the class was not mapped.", 
-                        Utf8String (className).c_str ());
-        return ECDbPolicy::CreateNotSupported (notSupportedMessage.c_str ());
+        notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it neither an entity class nor a relationship class.",
+                                    className.c_str());
+        return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
         }
 
-    BeAssert (!ecClass.GetSchema ().IsStandardSchema () || (!className.Equals ("AnyClass") && !className.Equals ("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
+    if (classMap.GetMapStrategy().IsNotMapped())
+        {
+        Utf8String notSupportedMessage;
+        notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."
+                                    " The ECClass might have been marked with 'NotMapped' in the ECSchema or is generally not supported by ECDb."
+                                    " In that case, please see the log for details about why the class was not mapped.",
+                                    className.c_str());
+        return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+        }
+
+    BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
 
     //if policy for specific ECSQL type was requested, check that now
-    if (assertion.UseECSqlTypeFilter ())
+    if (assertion.UseECSqlTypeFilter())
         {
-        // currently, polymorphism doesn't affect the policies.
-
-        switch (assertion.GetECSqlType ())
+        switch (assertion.GetECSqlType())
             {
                 case ECSqlType::Insert:
+                {
+                //Inserting into abstract classes is not possible (by definition of abstractness)
+                if (ecClass.GetClassModifier() == ECClassModifier::Abstract)
                     {
-                    //Inserting into abstract classes is not possible (by definition of abstractness)
-                    if (ecClass.GetClassModifier() == ECClassModifier::Abstract)
-                        return ECDbPolicy::CreateNotSupported ("ECClass is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.");
+                    Utf8String notSupportedMessage;
+                    notSupportedMessage.Sprintf("ECClass '%s' is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.",
+                                                className.c_str());
 
-                    //Inserting into structs is not possible (by definition structs are not instantiable)
-                    if (ecClass.IsStructClass())
-                        return ECDbPolicy::CreateNotSupported ("ECClass is a struct which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.");
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
                     }
+                }
             }
         }
 
-    return ECDbPolicy::CreateSupported ();
+    return ECDbPolicy::CreateSupported();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
