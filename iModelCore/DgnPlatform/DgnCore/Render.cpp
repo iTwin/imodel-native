@@ -58,23 +58,22 @@ StatusInt CreateSceneContext::_InitContextForView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateSceneContext::_SaveGraphic()
+void CreateSceneContext::_SaveGraphic(Render::GraphicR graphic)
     {
-    if (!m_currGraphic.IsValid())
-        return;
-
-    m_currGraphic->Close(); // save the graphic on the element, even if this fails so we don't attempt to stroke it again.
-    m_currentGeomSource->Graphics().Save(*m_currGraphic);
+    graphic.Close(); // save the graphic on the element, even if this fails so we don't attempt to stroke it again.
+    m_currentGeomSource->Graphics().Save(graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateSceneContext::_OutputElement(GeometrySourceCR element)
+Render::GraphicPtr CreateSceneContext::_OutputElement(GeometrySourceCR element)
     {
-    T_Super::_OutputElement(element);
-    if (m_currGraphic.IsValid())
-        m_scene.AddGraphic(*m_currGraphic);
+    Render::GraphicPtr graphic = T_Super::_OutputElement(element);
+    if (graphic.IsValid())
+        m_scene.AddGraphic(*graphic);
+
+    return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -331,7 +331,11 @@ protected:
     virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
     virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
     virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _OutputGraphics(ViewContextR context) override {m_stroker.Stroke(context);}
+#else
+    virtual void _OutputGraphics(ViewContextR context) override {}
+#endif
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Brien.Bastings  11/13
@@ -347,8 +351,13 @@ protected:
 
         m_boundary = curves.Clone();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         if (NULL != m_context->GetCurrLocalToWorldTransformCP ())
             m_boundary->TransformInPlace(*m_context->GetCurrLocalToWorldTransformCP ());
+#else
+        if (!m_currentTransform.IsIdentity())
+            m_boundary->TransformInPlace(m_currentTransform);
+#endif
 
         return SUCCESS;
         }
@@ -966,7 +975,9 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 DPoint3d    tmpPt;
 
                 cellTrans.GetTranslation(tmpPt);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 context.GetCurrentGraphicR().AddPointString(1, &tmpPt, NULL);
+#endif
                 }
             else
                 {
@@ -1639,9 +1650,11 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
 
     DPoint3d    origin = params->origin;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())
         return boundary.GetGeomSource().Stroke(*this);
+#endif
 
     IPickGeom*  pickGeom = GetIPickGeom();
     GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail() : NULL;

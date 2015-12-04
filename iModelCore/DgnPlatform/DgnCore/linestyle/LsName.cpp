@@ -58,7 +58,9 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 //---------------------------------------------------------------------------------------
 virtual void _OutputGraphics(ViewContext& context) override
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_stroker.Stroke(context);
+#endif
     }
 
 //---------------------------------------------------------------------------------------

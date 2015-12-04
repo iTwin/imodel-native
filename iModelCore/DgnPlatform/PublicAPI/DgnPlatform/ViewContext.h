@@ -224,7 +224,6 @@ protected:
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     GeometrySourceCP        m_currentGeomSource;
-    Render::GraphicPtr      m_currGraphic;
     Render::GeometryParams  m_currGeometryParams;
     Render::GraphicParams   m_graphicParams;
     Render::OvrGraphicParams      m_ovrMatSymb;
@@ -241,9 +240,9 @@ protected:
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometrySourceCR);
-    virtual Render::Graphic* _GetCachedGraphic(double pixelSize) {return nullptr;}
-    virtual void _SaveGraphic() {}
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _OutputElement(GeometrySourceCR);
+    virtual Render::GraphicP _GetCachedGraphic(double pixelSize) {return nullptr;}
+    virtual void _SaveGraphic(Render::GraphicR graphic) {}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*);
@@ -259,10 +258,11 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements(bool includeTransients);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
-    DGNPLATFORM_EXPORT virtual void _PushTransform(TransformCR trans);
+//    DGNPLATFORM_EXPORT virtual void _PushTransform(TransformCR trans);
     DGNPLATFORM_EXPORT virtual void _PushClip(ClipVectorCR clip);
-    DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin(DPoint3dCP origin);
-    DGNPLATFORM_EXPORT virtual void _PopTransformClip();
+//    DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin(DPoint3dCP origin);
+//    DGNPLATFORM_EXPORT virtual void _PopTransformClip();
+    DGNPLATFORM_EXPORT virtual void _PopClip();    
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual void _OnPreDrawTransient() {}
@@ -295,8 +295,8 @@ public:
     void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputElement may not be called...
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
-    DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
-    DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
+//    DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
+//    DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
     StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
@@ -308,7 +308,7 @@ public:
     DGNPLATFORM_EXPORT void DrawBox(DPoint3dP box, bool is3d);
     StatusInt InitContextForView() {return _InitContextForView();}
     DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
-    DGNPLATFORM_EXPORT bool IsLocalPointVisible(DPoint3dCR localPoint, bool boresite);
+//    DGNPLATFORM_EXPORT bool IsLocalPointVisible(DPoint3dCR localPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
     DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
@@ -316,8 +316,6 @@ public:
     double GetArcTolerance() const {return m_arcTolerance;}
     void SetArcTolerance(double tol) {m_arcTolerance = tol;}
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
-    Render::GraphicPtr GetCurrentGraphic() {return m_currGraphic;}
-    Render::GraphicR GetCurrentGraphicR() {return *m_currGraphic.get();}
     double GetMinLOD() const {return m_minLOD;}
     void SetMinLOD(double lod) {m_minLOD = lod;}
     Byte& GetFilterLODFlag() {return m_filterLOD;}
@@ -335,6 +333,7 @@ public:
     /// @name Coordinate Query and Conversion
     //@{
 
+#if defined (NOT_NOW)
     //! Transform an array of points in the current local coordinate system into DgnCoordSystem::World coordinates.
     //! @param[out]     worldPts    An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
     //! @param[in]      localPts    Input array in current local coordinates,
@@ -370,6 +369,7 @@ public:
     //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
     //! @param[in]      nPts        Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const;
+#endif
 
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
     //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
@@ -419,6 +419,7 @@ public:
     //! @param[in]      nPts        Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
+#if defined (NOT_NOW)
     //! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
     //! @return   nullptr if no transform present.
     TransformCP GetCurrLocalToWorldTransformCP() const {return m_transformClipStack.GetTransformCP();}
@@ -438,6 +439,7 @@ public:
     //! @param[in]      index  Index into transform stack to return transform for.
     //! @return   SUCCESS if there is a local coordinate system.
     BentleyStatus GetLocalToWorldTrans(TransformR trans, size_t index) const {return m_transformClipStack.GetTransformFromIndex(trans, index);}
+#endif
 
     //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
     //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
@@ -447,13 +449,13 @@ public:
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
 
     //! Get transform aligned with current view rotation.
-    DGNPLATFORM_EXPORT void GetViewIndependentTransform(TransformP trans, DPoint3dCP originLocal);
+//    DGNPLATFORM_EXPORT void GetViewIndependentTransform(TransformP trans, DPoint3dCP originLocal);
 
     //! Check whether the current transform is view independent. Several MicroStation element types can display
     //! as "View independent" (e.g. text, text nodes, point cells). They do this by pushing the inverse of the current
     //! view-to-local transformation via #PushViewIndependentOrigin.
     //! @return   true if the current local coordinate system is a view independent transform.
-    bool IsViewIndependent() {return m_transformClipStack.IsViewIndependent();}
+//    bool IsViewIndependent() {return m_transformClipStack.IsViewIndependent();}
     //@}
 
     /// @name Pushing and Popping Transforms and Clips
@@ -461,7 +463,7 @@ public:
     //! Push a Transform, creating a new local coordinate system.
     //! @param[in]      trans       The transform to push.
     //! @see   PopTransformClip
-    void PushTransform(TransformCR trans) {_PushTransform(trans);}
+//    void PushTransform(TransformCR trans) {_PushTransform(trans);}
 
     /// @name Pushing and Popping Transforms and Clips
     //@{
@@ -475,6 +477,7 @@ public:
     //! @see   PopTransformClip
     DGNPLATFORM_EXPORT void PushClipPlanes(ClipPlaneSetCR clipPlanes);
 
+#if defined (NOT_NOW)
     //! Push a transform such that the X,Y plane of the new local coordinate system will be aligned with the X,Y plane of the
     //! view coordinate system, oriented about the given origin.
     //! @param[in]      origin      Origin for rotation, in the \e current local coordinate system.
@@ -482,6 +485,9 @@ public:
 
     //! Remove the most recently pushed coordinate system and clip, restoring the local coordinate system to its previous state.
     void PopTransformClip() {_PopTransformClip();}
+#else
+    void PopClip() {_PopClip();}
+#endif
     //@}
 
     /// @name Query Methods
@@ -648,9 +654,9 @@ struct CreateSceneContext : ViewContext
     DEFINE_T_SUPER(ViewContext);
 private:
     Render::Scene& m_scene;
-    virtual void _OutputElement(GeometrySourceCR) override;
-    virtual Render::Graphic* _GetCachedGraphic(double pixelSize) override;
-    virtual void _SaveGraphic() override;
+    virtual Render::GraphicPtr _OutputElement(GeometrySourceCR) override;
+    virtual Render::GraphicP _GetCachedGraphic(double pixelSize) override;
+    virtual void _SaveGraphic(Render::GraphicR) override;
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_scene.GetRenderTarget().CreateGraphic(params);}
     virtual StatusInt _InitContextForView();
 

@@ -180,6 +180,7 @@ void ViewContext::_PushClip(ClipVectorCR clip)
 #endif
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -217,6 +218,21 @@ void ViewContext::_PopTransformClip()
 
     m_transformClipStack.Pop(*this);
     }
+#else
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::_PopClip()
+    {
+    if (m_transformClipStack.IsEmpty())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_transformClipStack.Pop(*this);
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
@@ -295,6 +311,7 @@ void ViewContext::_Detach()
     m_currentGeomSource = nullptr;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -331,6 +348,7 @@ void ViewContext::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) 
     {
     GetViewToLocal().MultiplyAndRenormalize(localPts, viewPts, nPts);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
@@ -383,6 +401,7 @@ void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) 
     m_worldToView.M1.MultiplyAndRenormalize(worldPts, viewPts, nPts);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -453,6 +472,7 @@ void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP origi
     // get transform about origin
     trans->InitFromMatrixAndFixedPoint(rMatrix, *originLocal);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
@@ -475,7 +495,9 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     {
     Frustum polyhedron = GetFrustum();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     WorldToLocal(polyhedron.GetPtsP(), polyhedron.GetPts(), 8);
+#endif
 
     // get enclosing bounding box around polyhedron (outside scan range).
     DRange3d scanRange = polyhedron.ToRange();
@@ -527,33 +549,38 @@ bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputElement(GeometrySourceCR source)
+Render::GraphicPtr ViewContext::_OutputElement(GeometrySourceCR source)
     {
-    m_currentGeomSource = &source;
-    m_currGraphic = nullptr;
-
     if (!source.HasGeometry())
-        return;
+        return nullptr;
 
-    Transform placementTrans = source.GetPlacementTransform();
+    m_currentGeomSource = &source;
+
     DPoint3d origin;
-    placementTrans.GetTranslation(origin);
-
+    source.GetPlacementTransform().GetTranslation(origin);
     DgnViewportCP vp = GetViewport();
     double pixelSize = (nullptr != vp ? vp->GetPixelSizeAtPoint(&origin) : 0.0);
 
-    m_currGraphic = _GetCachedGraphic(pixelSize);
-    if (m_currGraphic.IsValid())
-        return;
+    Render::GraphicPtr graphic = _GetCachedGraphic(pixelSize);
 
-    m_currGraphic = _BeginGraphic(Graphic::CreateParams(vp, placementTrans, pixelSize));
+    if (!graphic.IsValid())
+        {
+#if defined (NOT_NOW)
+        graphic = _BeginGraphic(Graphic::CreateParams(vp, placementTrans, pixelSize));
 
-    if (nullptr != vp)
-        vp->GetViewControllerR()._StrokeGeometry(*this, source);
-    else
-        source.Stroke(*this);
+        if (nullptr != vp)
+            vp->GetViewControllerR()._StrokeGeometry(*this, source);
+        else
+            source.Stroke(*this);
+#else
+        graphic = source.Stroke(*this, pixelSize);
+#endif
 
-    _SaveGraphic();
+        _SaveGraphic(*graphic);
+        }
+
+    m_currentGeomSource = nullptr;
+    return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -618,8 +645,10 @@ void ViewContext::CookGeometryParams()
         lsSym.ConvertLineStyleToTexture(*this, true);
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Activate the matsymb in the IDrawGeom
     GetCurrentGraphicR().ActivateMatSymb(&m_graphicParams);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -629,12 +658,10 @@ void ViewContext::ResetContextOverrides()
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_rasterDisplayParams.SetFlags(ViewContext::RasterDisplayParams::RASTER_PARAM_None); // NEEDSWORK_RASTER_DISPLAY - Not sure how this fits into new continuous update approach?!?
-#endif
 
     // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_graphicParams as they are not valid.
     m_ovrMatSymb.Clear();
     _AddContextOverrides(m_ovrMatSymb);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
 #endif
     }
@@ -652,6 +679,7 @@ bool ViewContext::IsUndisplayed(GeometrySourceCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::DrawBox(DPoint3dP box, bool is3d)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     GraphicR drawGeom = GetCurrentGraphicR();
     DPoint3d    tmpPts[9];
 
@@ -687,6 +715,7 @@ void ViewContext::DrawBox(DPoint3dP box, bool is3d)
     tmpPts[4] = box[0];
 
     drawGeom.AddLineString(5, tmpPts, nullptr);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -702,6 +731,7 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
 
     _OutputElement(source);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Output element or local range for debugging if requested...
     switch (GetDrawPurpose())
         {
@@ -731,9 +761,7 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
             m_ovrMatSymb.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_graphicParams.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
             m_ovrMatSymb.SetWidth(1);
             _AddContextOverrides(m_ovrMatSymb);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
-#endif
 
             PushTransform(placementTrans);
             DrawBox(p, nullptr != source.ToGeometrySource3d());
@@ -743,8 +771,8 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
             break;
             }
         }
+#endif
 
-    m_currentGeomSource = nullptr;
     return SUCCESS;
     }
 
@@ -800,13 +828,41 @@ ScanCriteria::Result  ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    localPoint;
 
     WorldToLocal(&localPoint, &worldPoint, 1);
 
     return IsLocalPointVisible(localPoint, boresite);
+#else
+    if (m_transformClipStack.IsEmpty())
+        return true;
+
+    if (!boresite)
+        return m_transformClipStack.TestPoint(worldPoint);
+
+    DVec3d      worldZVec;
+
+    if (IsCameraOn())
+        {
+        worldZVec.NormalizedDifference(worldPoint, GetViewport()->GetCamera().GetEyePoint());
+        }
+    else
+        {
+        DPoint3d    zPoints[2];
+
+        zPoints[0].Zero();
+        zPoints[1].Init(0.0, 0.0, 1.0);
+
+        NpcToWorld(zPoints, zPoints, 2);
+        worldZVec.NormalizedDifference(zPoints[1], zPoints[0]);
+        }
+
+    return m_transformClipStack.TestRay(worldPoint, worldZVec);
+#endif
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -848,6 +904,7 @@ bool ViewContext::IsLocalPointVisible(DPoint3dCR localPoint, bool boresite)
 
     return  m_transformClipStack.TestRay(localPoint, localZVec);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/2011
@@ -956,7 +1013,11 @@ bool ViewContext::_VisitAllModelElements(bool includeTransients)
     m_viewport->GetViewControllerR().DrawView(*this);
 
     if (clipVector.IsValid())
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         PopTransformClip();
+#else
+        PopClip();
+#endif
 
     if (includeTransients) // Give post-update IViewTransients a chance to display even if aborted the element draw...
         _VisitTransientGraphics(false);
@@ -980,6 +1041,7 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (nPts < 1)
         return;
 
@@ -996,6 +1058,7 @@ void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
         GetCurrentGraphicR().AddShape(nPts, pts, false, range);
     else
         GetCurrentGraphicR().AddLineString(nPts, pts, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1003,6 +1066,7 @@ void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double priority, DPoint2dCP range, bool closed)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (nPts < 1)
         return;
 
@@ -1019,6 +1083,7 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
         GetCurrentGraphicR().AddShape2d(nPts, pts, false, priority, range);
     else
         GetCurrentGraphicR().AddLineString2d(nPts, pts, priority, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1026,6 +1091,7 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1041,6 +1107,7 @@ void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
         }
 
     GetCurrentGraphicR().AddArc(ellipse, isEllipse, false, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1048,6 +1115,7 @@ void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1064,6 +1132,7 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
         }
 
     GetCurrentGraphicR().AddArc2d(ellipse, isEllipse, false, zDepth, range);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1071,6 +1140,7 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1081,6 +1151,7 @@ void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
         }
 
     GetCurrentGraphicR().AddBSplineCurve(bcurve, false);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1088,6 +1159,7 @@ void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDepth)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
@@ -1117,8 +1189,10 @@ void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDep
         }
 
     GetCurrentGraphicR().AddBSplineCurve2d(bcurve, false, zDepth);
+#endif
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1152,6 +1226,7 @@ DMatrix4d ViewContext::GetLocalToView() const
 
     return localToView;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/03
@@ -1161,7 +1236,13 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     DPoint3d    vec[2];
 
     if (nullptr != inPoint)
+        {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         LocalToView(vec, inPoint, 1); // convert point to pixels
+#else
+        WorldToView(vec, inPoint, 1); // convert point to pixels
+#endif
+        }
     else
         {
         DPoint3d    center = {.5, .5, .5};   // if they didn't give a point, use center of view.
@@ -1171,8 +1252,13 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     vec[1] = vec[0];
     vec[1].x += 1.0;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Convert pixels back to local coordinates and use the length as tolerance
     ViewToLocal(vec, vec, 2);
+#else
+    // Convert pixels back to world coordinates and use the length as tolerance
+    ViewToWorld(vec, vec, 2);
+#endif
 
     return vec[0].Distance(vec[1]);
     }
@@ -1753,12 +1839,14 @@ void GeometryParams::Resolve(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddTextString(TextStringCR text)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     text.GetGlyphSymbology(GetCurrentGeometryParams());
     CookGeometryParams();
 
     double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
     GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments(*this);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

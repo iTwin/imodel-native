@@ -354,7 +354,9 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     element.Stroke(context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -913,7 +915,9 @@ StatusInt SectionDrawingViewController::_VisitHit(HitDetailCR hit, ViewContextR 
     context.PushTransform(GetFlatteningMatrixIf2D(context));
 #endif
     StatusInt status = T_Super::_VisitHit(hit, context);
+#if defined(NEEDS_WORK_ELEMENTS_API)
     context.PopTransformClip();
+#endif
     return status;
     }
 
@@ -926,7 +930,9 @@ void SectionDrawingViewController::_DrawView(ViewContextR context)
     context.PushTransform(GetFlatteningMatrixIf2D(context));
 #endif
     T_Super::_DrawView(context);
+#if defined(NEEDS_WORK_ELEMENTS_API)
     context.PopTransformClip();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

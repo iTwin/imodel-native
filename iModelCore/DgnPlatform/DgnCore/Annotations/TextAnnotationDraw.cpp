@@ -27,6 +27,7 @@ void TextAnnotationDraw::CopyFrom(TextAnnotationDrawCR rhs)
     m_documentTransform = rhs.m_documentTransform;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
@@ -44,12 +45,14 @@ public:
     void CallThenCancel() { Pop(); Cancel(); }
     void Cancel() { m_isCancelled = true; }
 };
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
 BentleyStatus TextAnnotationDraw::Draw(ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BentleyStatus status = SUCCESS;
     
     //.............................................................................................
@@ -93,4 +96,7 @@ BentleyStatus TextAnnotationDraw::Draw(ViewContextR context) const
         }
 
     return status;
+#else
+    return ERROR;
+#endif
     }

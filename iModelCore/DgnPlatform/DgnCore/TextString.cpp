@@ -384,6 +384,7 @@ void TextString::GetGlyphSymbology(GeometryParamsR params) const
 //---------------------------------------------------------------------------------------
 void TextString::DrawTextAdornments(ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (DrawPurpose::RegionFlood == context.GetDrawPurpose())
         return;
 
@@ -413,6 +414,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
     context.CookGeometryParams();
     output.AddLineString(2, pts, NULL);
     context.PopTransformClip();
+#endif
     }
 
 static const uint8_t CURRENT_STYLE_MAJOR_VERSION = 1;
