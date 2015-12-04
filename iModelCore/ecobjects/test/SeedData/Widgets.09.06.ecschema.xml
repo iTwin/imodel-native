@@ -74,16 +74,6 @@
             <Class class="Test2Class"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ClonedRelationshipClassWithNormalBaseClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <BaseClass>BaseClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">
-            <Class class="TestClass"/>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Struct2"/>
-            <Class class="Test2Class"/>
-        </Target>
-    </ECRelationshipClass>
     <ECRelationshipClass typeName="ExplicitRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <BaseClass>BaseRelationshipClass</BaseClass>
         <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">

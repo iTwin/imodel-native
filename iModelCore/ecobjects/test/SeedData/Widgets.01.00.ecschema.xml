@@ -222,17 +222,6 @@
             <Class class="Test2Class" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ClonedRelationshipClassWithNormalBaseClass" strength="referencing">
-        <!-- Base class is a normal ECClass instead of being another ECRelationshipClass -->
-        <BaseClass>BaseClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">
-            <Class class="TestClass" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Struct2" />
-            <Class class="Test2Class" />
-        </Target>
-    </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ExplicitRelationshipClass" strength="referencing">
         <BaseClass>BaseRelationshipClass</BaseClass>

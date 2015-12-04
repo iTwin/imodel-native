@@ -1145,10 +1145,6 @@ protected:
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual ECClassType                  _GetClassType() const { return ECClassType::Entity;} // default type
-    virtual bool                         _IsEntityClass() const { return false; }
-    virtual bool                         _IsStructClass() const { return false; }
-    virtual bool                         _IsCustomAttributeClass() const { return false; }
-    virtual bool                         _IsRelationshipClass() const { return false; }
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
@@ -1418,14 +1414,26 @@ friend struct SchemaXmlReaderImpl;
         ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
         //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
         ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
-        //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
+        //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
+        //! is no namespace prefix.  Otherwise, the enumeration's schema must be a referenced schema in the passed in schema
+        //! @param[in]  primarySchema   The schema used to lookup the namespace prefix of the class's schema
+        //! @param[in]  ecEnumeration         The enumeration whose schema should be searched for
+        //! @return WString    The namespace prefix if the enumeration's schema is not the primarySchema
+        ECOBJECTS_EXPORT static Utf8String GetQualifiedEnumerationName(ECSchemaCR primarySchema, ECEnumerationCR ecEnumeration);
+        //! Given a qualified enum name, will parse out the schema's namespace prefix and the enum name.
+        //! @param[out] prefix  The namespace prefix of the schema
+        //! @param[out] enumName   The name of the enum
+        //! @param[in]  qualifiedEnumName  The qualified name of the enum, in the format of ns:enumName
+        //! @return A status code indicating whether the qualified name was successfully parsed or not
+        ECOBJECTS_EXPORT static ECObjectsStatus ParseEnumerationName(Utf8StringR prefix, Utf8StringR enumName, Utf8StringCR qualifiedEnumName);
+        //! Sets the PrimitiveType of this Enumeration.  The default type is ::PRIMITIVETYPE_Integer
         ECOBJECTS_EXPORT ECObjectsStatus    SetType(PrimitiveType value);
         //! Gets the PrimitiveType of this ECProperty
         ECOBJECTS_EXPORT PrimitiveType      GetType() const;
         //! Gets the name of the backing primitive type.
-        Utf8String                          GetTypeName() const;
+        ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
         //! Sets the backing primitive type by its name.
-        ECObjectsStatus                     SetTypeName(Utf8StringCR typeName);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8StringCR typeName);
         //! Whether the display label is explicitly defined or not
         ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
         //! Sets the display label of this ECClass
@@ -1468,7 +1476,6 @@ protected:
     virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
     virtual ECEntityClassP _GetEntityClassP() override { return this; }
     virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
-    bool _IsEntityClass() const override { return true; }
 
 public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
@@ -1504,7 +1511,6 @@ protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
     ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
-    bool _IsCustomAttributeClass() const override { return true; }
     ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
     ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
 
@@ -1535,7 +1541,6 @@ private:
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
     virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
-    virtual bool _IsStructClass() const override { return true; }
     virtual ECStructClassCP _GetStructClassCP() const override { return this;}
     virtual ECStructClassP _GetStructClassP() override { return this; }
 
@@ -1838,9 +1843,9 @@ protected:
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor) override;
-    virtual bool                        _IsRelationshipClass() const override { return true;}
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
+    virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -2686,9 +2691,11 @@ public:
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
+    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml
     //          will contain the serialized schema.  Otherwise, ecSchemaXml will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlString (WStringR ecSchemaXml, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0) const;
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
@@ -2700,18 +2707,22 @@ public:
 
     //! Serializes an ECXML schema to a file
     //! @param[in]  ecSchemaXmlFile  The absolute path of the file to serialize the schema to
+    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, bool utf16 = false) const;
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0, bool utf16 = false) const;
 
 
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
+    //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
+    //! @param[in]  ecXmlVersionMinor   The minor version of the ECXml spec to be used for serializing this schema
     //! @param[in]  utf16            'false' (the default) to use utf-8 encoding
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, bool utf16 = false);
+    ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0, bool utf16 = false);
 
 
     //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.

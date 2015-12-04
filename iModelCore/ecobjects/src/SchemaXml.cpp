@@ -609,6 +609,18 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     readingClassStubs.Stop();
     LOG.tracev("Reading class stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
 
+    StopWatch readingEnumerations(L"Reading enumerations", true);
+    status = reader->ReadEnumerationsFromXml(schemaOut, *schemaNode);
+
+    if (SchemaReadStatus::Success != status)
+        {
+        m_schemaContext.RemoveSchema(*schemaOut);
+        schemaOut = nullptr;
+        return status;
+        }
+    readingEnumerations.Stop();
+    LOG.tracev("Reading enumerations stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingEnumerations.GetElapsedSeconds());
+
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     StopWatch readingClassContents(L"Reading class contents", true);
     if (SchemaReadStatus::Success != (status = reader->ReadClassContentsFromXml(schemaOut, classes)))
@@ -765,9 +777,13 @@ SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaXmlWriter::Serialize()
+SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     {
-    m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    if (utf16)
+        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF16LE);
+    else
+        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+
     Utf8PrintfString ns("%s.%d.%d", ECXML_URI, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());
 

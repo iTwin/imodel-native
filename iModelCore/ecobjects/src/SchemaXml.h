@@ -52,7 +52,7 @@ struct SchemaXmlWriter
 
     public:
         SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0);
-        virtual SchemaWriteStatus Serialize();
+        virtual SchemaWriteStatus Serialize(bool utf16 = false);
     };
 
 

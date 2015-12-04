@@ -696,7 +696,7 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-inline ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
+ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -969,7 +969,7 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP& pEnumeration)
+ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP& pEnumeration)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -2089,14 +2089,14 @@ ECSchemaReadContextR schemaContext
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
+SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml, int ecXmlVersionMajor, int ecXmlVersionMinor) const
     {
     ecSchemaXml.clear();
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
 
     SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this);
+    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersionMajor, ecXmlVersionMinor);
     if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
         return status;
 
@@ -2128,23 +2128,17 @@ SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml, int ecXml
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlFile
-(
-WCharCP ecSchemaXmlFile,
-bool    utf16
-) const
+SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, int ecXmlVersionMajor, int ecXmlVersionMinor, bool utf16) const
     {
     BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
     xmlWriter->SetIndentation(4);
 
     SchemaWriteStatus status;
-    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this);
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
+    SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersionMajor, ecXmlVersionMinor);
+    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize(utf16)))
         return status;
 
     return SchemaWriteStatus::Success;
-    //return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted),
-    //    utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) ? SchemaWriteStatus::Success : SchemaWriteStatus::FailedToWriteFile;
     }
 
 #if defined (NEEDSWORK_LIBXML)
