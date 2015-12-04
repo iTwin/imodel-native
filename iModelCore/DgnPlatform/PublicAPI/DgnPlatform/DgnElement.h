@@ -2073,18 +2073,18 @@ public:
 //=======================================================================================
 struct DgnElementTransformer
 {
-    DGNPLATFORM_EXPORT static DgnDbStatus ApplyTransformTo(DgnElementR el, Transform& t); 
+    DGNPLATFORM_EXPORT static DgnDbStatus ApplyTransformTo(DgnElementR el, Transform const& t); 
 
     template<typename COLL>
-    static DgnDbStatus ApplyTransformToAll(COLL& collection) 
+    static DgnDbStatus ApplyTransformToAll(COLL& collection, Transform const& t) 
         {
         for (auto& item : collection)
             {
-            DgnDbStatus status = ApplyTransformTo(item);
+            DgnDbStatus status = ApplyTransformTo(*item, t);
             if (DgnDbStatus::Success != status)
                 return status;
             }
-        DgnDbStatus::Success;
+        return DgnDbStatus::Success;
         }
 };
 

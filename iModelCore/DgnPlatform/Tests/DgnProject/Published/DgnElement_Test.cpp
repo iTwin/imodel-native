@@ -146,11 +146,116 @@ TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, DgnElementTransformer)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_DgnEditElementCollector.idgndb", Db::OpenMode::ReadWrite);
+
+    if (true)
+        {
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        TestElementCPtr c11 = AddChild(*parent1);
+        TestElementCPtr c12 = AddChild(*parent1);
+
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::FromZero()));
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
+            }
+
+        Transform offsetby1 = Transform::FromIdentity();
+        offsetby1.SetTranslation(DPoint3d::From(1,0,0));
+
+        DgnElementTransformer::ApplyTransformToAll(all, offsetby1);
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(1,0,0)));
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees()) << "yaw should be unaffected";
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetPitch().Degrees()) << "pitch should be unaffected";
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetRoll().Degrees()) << "roll should be unaffected";
+            }
+        }
+
+    if (true)
+        {
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        TestElementCPtr c11 = AddChild(*parent1);
+        TestElementCPtr c12 = AddChild(*parent1);
+
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(0,0,0)));
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
+            }
+
+        DgnElementTransformer::ApplyTransformToAll(all, Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0, 0, msGeomConst_piOver4));
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(0,0,0)));
+            ASSERT_EQ(45, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetPitch().Degrees()) << "pitch should be unaffected";
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetRoll().Degrees()) << "roll should be unaffected";
+            }
+        }
+
+
+    //  Now try a more interesting assembly
+    if (true)
+        {
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        TestElementCPtr c11 = AddChild(*parent1);
+            {
+            DgnElementPtr ec11 = c11->CopyForEdit();
+            Transform offsetUpAndOver = Transform::FromIdentity();
+            offsetUpAndOver.SetTranslation(DPoint3d::From(1,1,0));
+            DgnElementTransformer::ApplyTransformTo(*ec11, offsetUpAndOver);
+            ec11->Update();
+            }
+        //     [c]
+        //  [p]
+        ASSERT_TRUE(c11->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(1,1,0)));
+        ASSERT_EQ(0, c11->GetPlacement().GetAngles().GetYaw().Degrees());
+        ASSERT_EQ(0, c11->GetPlacement().GetAngles().GetPitch().Degrees());
+        ASSERT_EQ(0, c11->GetPlacement().GetAngles().GetRoll().Degrees());
+
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+
+        //  Rotate them around the zaxis, so that child swings up and around to the left.
+        //    \c
+        //  \p
+        DRay3d flagPole = DRay3d::FromOriginAndVector(DPoint3d::FromZero(), DVec3d::From(0,0,1));
+        Transform rotateAroundFlagPole = Transform::FromAxisAndRotationAngle(flagPole, msGeomConst_piOver4);
+        DgnElementTransformer::ApplyTransformToAll(all, rotateAroundFlagPole);
+
+        DgnElementPtr eparent1 = all.FindElementById(parent1->GetElementId());
+        DgnElementPtr ec11 = all.FindElementById(c11->GetElementId());
+        Placement3d eparentplacement = eparent1->ToGeometrySource3dP()->GetPlacement();
+        Placement3d ec11placement = ec11->ToGeometrySource3dP()->GetPlacement();
+        ASSERT_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
+        ASSERT_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
+        ASSERT_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
+        ASSERT_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
+        ASSERT_TRUE(eparentplacement.GetOrigin().AlmostEqual(DPoint3d::FromZero()));
+        ASSERT_TRUE(ec11placement.GetOrigin().AlmostEqual(DPoint3d::From(0,sqrt(2),0)));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, DgnEditElementCollector)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_DgnEditElementCollector.idgndb", Db::OpenMode::ReadWrite);
 
-    DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
     ASSERT_TRUE(parent1.IsValid());
 
     // single element
@@ -249,6 +354,21 @@ TEST_F(DgnElementTests, DgnEditElementCollector)
         ASSERT_EQ(4, onlyChildrenAll.size());
         onlyChildrenAll.AddChildren(*parent1);
         ASSERT_EQ(4, onlyChildrenAll.size()) << "no dup children allowed in the collection";
+
+        // Test iterator
+        size_t count = 0;
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el != nullptr);
+            ++count;
+            }
+        ASSERT_EQ(all.size(), count);
+
+        // apply various std algorithms to the collection
+        auto eparent1 = all.FindElementById(parent1->GetElementId());
+        auto ifind = std::find(all.begin(), all.end(), eparent1.get());
+        ASSERT_TRUE(ifind != all.end());
+        ASSERT_EQ(*ifind, eparent1.get());
 
         // Test removal of children
         all.RemoveChildren(*c11);

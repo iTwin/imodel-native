@@ -2804,7 +2804,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform& transform)
+DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform const& transformIn)
     {
     Transform   placementTrans;
 
@@ -2816,7 +2816,8 @@ DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform& t
     DPoint3d    originPt;
     RotMatrix   rMatrix;
 
-    transform.InitProduct(transform, placementTrans);
+    Transform transform;
+    transform.InitProduct(transformIn, placementTrans);
     transform.GetTranslation(originPt);
     transform.GetMatrix(rMatrix);
             
