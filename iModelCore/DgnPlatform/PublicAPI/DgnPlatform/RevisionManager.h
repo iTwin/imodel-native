@@ -43,10 +43,11 @@ protected:
 
 public:
     //! Create a new DgnRevision object
+    //! @param[out] status Optional error return status (pass null if status is not needed)
     //! @param[in] revisionId Revision Id of this revision.
     //! @param[in] parentRevisionId Revision Id of the parent revision (pass empty string if it's the first revision)
     //! @param[in] dbGuid GUID of the Db that the revision belongs to (used for validation)
-    DGNPLATFORM_EXPORT static DgnRevisionPtr Create(Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid);
+    DGNPLATFORM_EXPORT static DgnRevisionPtr Create(RevisionStatus* status, Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid);
 
     //! Get the Revision Id
     //! @remarks The Revision Id is a 40 character HEX string that is initialized based on the parentId and contents of the revision
@@ -81,7 +82,7 @@ public:
 
     //! Validate the contents of the revision
     //! @remarks Validates the contents of the ChangeStreamFile against the revision Id.
-    DGNPLATFORM_EXPORT bool Validate(DgnDbCR dgndb) const;
+    DGNPLATFORM_EXPORT RevisionStatus Validate(DgnDbCR dgndb) const;
 
     //! Dump to stdout for debugging purposes.
     DGNPLATFORM_EXPORT void Dump(DgnDbCR dgndb) const;
@@ -131,14 +132,14 @@ private:
     DgnRevisionPtr m_currentRevision;
     TxnManager::TxnId m_currentRevisionEndTxnId; // If valid, currently creating a revision with all transactions upto *but* excluding this id
 
-    BentleyStatus SetParentRevisionId(Utf8StringCR revisionId);
+    RevisionStatus SetParentRevisionId(Utf8StringCR revisionId);
 
     Utf8String GetInitialParentRevisionId() const;
-    BentleyStatus UpdateInitialParentRevisionId();
+    RevisionStatus UpdateInitialParentRevisionId();
 
-    BentleyStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
-    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup& changeGroup);
-    static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
+    RevisionStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
+    DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup);
+    static RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
 public:
     //! Constructor
@@ -155,8 +156,8 @@ public:
 
     //! Merge an ordered collection of revisions to the Db
     //! @param[in] mergeRevisions Ordered collection of revisions to be merged
-    //! @return SUCCESS if the revisions were found to be valid, and were successfully merged, ERROR otherwise. 
-    DGNPLATFORM_EXPORT BentleyStatus MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions);
+    //! @return RevisionStatus::Success if the revisions were successfully merged, error status otherwise. 
+    DGNPLATFORM_EXPORT RevisionStatus MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions);
 
     //! Returns true if a revision can be created. 
     DGNPLATFORM_EXPORT bool CanCreateRevision() const;
@@ -172,17 +173,19 @@ public:
     //! <li> Unless AbandonCreateRevision is subsequently called, transactions cannot be
     //! undone anymore. 
     //! </ul>
+    //! @param[out] status Optional (can pass null). Set to RevisionStatus::Success if the revision was successfully 
+    //! finished or some error status otherwise.
     //! @see FinishCreateRevision, AbandonCreateRevision
-    DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision();
+    DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision(RevisionStatus* status = nullptr);
     
     //! Return true if in the process of creating a revision
     bool IsCreatingRevision() const { return m_currentRevision.IsValid(); }
 
     //! Finish creating a new revision
-    //! @return SUCCESS if the revision was successfully finished, ERROR otherwise. 
+    //! @return RevisionStatus::Success if the revision was successfully finished or some error status otherwise.
     //! @remarks Upon successful return, the transaction table is flushed and cannot be undone. 
     //! @see StartCreateRevision
-    DGNPLATFORM_EXPORT BentleyStatus FinishCreateRevision();
+    DGNPLATFORM_EXPORT RevisionStatus FinishCreateRevision();
 
     //! Abandon creating a new revision
     //! @see StartCreateRevision

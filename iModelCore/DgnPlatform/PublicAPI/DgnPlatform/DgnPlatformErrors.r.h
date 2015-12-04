@@ -28,6 +28,7 @@ enum DgnErrorCategories
     GEOREFERENCE_ERROR_BASE         = 0x13000,
     MARKUPPROJECT_ERROR_BASE        = 0x14000,
     LOCK_ERROR_BASE                 = 0x15000,
+    REVISION_ERROR_BASE             = 0x16000,
     };
 
 //=======================================================================================
@@ -72,7 +73,7 @@ enum class DgnDbStatus : int
     ParentBlockedChange,
     ReadError,
     ReadOnly,
-    RevisionStarted,
+    IsCreatingRevision,
     SQLiteError,
     TransactionActive,
     UnitsMissing,
@@ -129,6 +130,26 @@ enum class LockStatus : int
     CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
     InvalidRequest, //!< Request to server not understood
 };
+
+//! Status codes for the Revision API
+enum class RevisionStatus : int
+    {
+    Success = SUCCESS, //!< Success
+    ChangeTrackingNotEnabled = REVISION_ERROR_BASE + 1, //!< Change tracking has not been enabled. The Revision API mandates this.
+    CorruptedChangeStream, //!< Contents of the change stream does not match the Revision
+    FileNotFound, //!< File containing the changes to the revision is not found
+    FileWriteError, //!< Error writing the contents of the revision to the backing change stream file
+    InvalidId, //!< Invalid Revision Id
+    InDynamicTransaction, //!< Cannot perform the operation since system is in the middle of a dynamic transaction
+    IsCreatingRevision, //!< Cannot perform operation since system is in the middle of a creating a revision
+    IsNotCreatingRevision, //!< Cannot perform operation since the system is not creating a revision
+    MergeError, //!< Error merging changes from the revision to the Db
+    NothingToMerge, //!< No revisions to merge
+    NoTransactions, //!< No transactions are available to create a revision
+    SQLiteError, //!< Error performing a SQLite operation on the Db
+    TransactionHasUnsavedChanges, //!< Cannot perform the operation since current transaction has unsaved changes
+    WrongDgnDb, //!< Revision originated in a different Db
+    };
 
 /** @cond BENTLEY_SDK_Publisher */
 

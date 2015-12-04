@@ -119,9 +119,6 @@ public:
     //! Get elements that have updated geometries
     DGNPLATFORM_EXPORT void GetElementsWithGeometryUpdates(DgnElementIdSet& elementIds);
 
-    //! Get elements that have updated items
-    DGNPLATFORM_EXPORT void GetElementsWithItemUpdates(DgnElementIdSet& elementIds);
-
     //! Get an iterator over elements that have changed
     //! @param[in]      opcodes Optionally filters changes by operation (delete, insert, update)
     //! @return An iterator over the elements which have changed.

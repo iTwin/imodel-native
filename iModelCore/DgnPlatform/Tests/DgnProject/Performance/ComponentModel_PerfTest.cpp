@@ -136,7 +136,7 @@ void CloseComponentDb() {m_componentDb->CloseDb(); m_componentDb=nullptr;}
 void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode);}
 void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Client_ImportCM(Utf8CP componentName);
-void Client_SolveAndCapture(PhysicalElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8StringCR);
+void Client_SolveAndCapture(DgnElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8StringCR);
 
 void PlaceInstances(int ninstances, int boxCount, DPoint3d boxSize);
 void PlaceElements(int ninstances, int boxCount, DPoint3d boxSize);
@@ -273,7 +273,7 @@ void ComponentModelPerfTest::Client_ImportCM(Utf8CP componentName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelPerfTest::Client_SolveAndCapture(PhysicalElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8StringCR ciname)
+void ComponentModelPerfTest::Client_SolveAndCapture(DgnElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8StringCR ciname)
     {
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
@@ -347,7 +347,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     parameters["D"] = boxSize.z;
     parameters["box_count"] = boxCount;
     DgnElementId w1;
-    PhysicalElementCPtr catalogItem;
+    DgnElementCPtr catalogItem;
     Client_SolveAndCapture(catalogItem, *catalogModel, TEST_BOXES_COMPONENT_NAME, parameters, "catalog_item_name");
 
     DgnDbStatus status;
@@ -356,9 +356,13 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     //  Place instances of this solution
     for (int i=0; i<ninstances; ++i)
         {
+        DgnElementCPtr instance = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem);
+
+        PhysicalElementPtr pinst = instance->MakeCopy<PhysicalElement>();
         Placement3d placement;
         placement.GetOriginR() = DPoint3d::From(-i,-i,-i);
-        ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem, placement);
+        pinst->SetPlacement(placement);
+        pinst->Update();
         }
     timer.Stop();
     NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());

@@ -701,8 +701,8 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
     DgnElementPtr Create2dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
-        return DrawingElement::Create(DrawingElement::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
+        DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation::GetHandler());
+        return AnnotationElement::Create(AnnotationElement::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
         }
 };
 
@@ -1383,9 +1383,20 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
         if (BE_SQLITE_OK != m_db->SaveChanges())
             return DgnDbStatus::WriteError;
 
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision();
+        RevisionStatus revStat;
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
         if (rev.IsNull())
-            return DgnDbStatus::BadRequest;
+            {
+            if (RevisionStatus::NoTransactions == revStat)
+                {
+                req.Clear();
+                return DgnDbStatus::Success;
+                }
+            else
+                {
+                return DgnDbStatus::BadRequest;
+                }
+            }
 
         ChangeStreamFileReader stream(rev->GetChangeStreamFile());
         DgnDbStatus status = req.FromChangeSet(stream, *m_db);

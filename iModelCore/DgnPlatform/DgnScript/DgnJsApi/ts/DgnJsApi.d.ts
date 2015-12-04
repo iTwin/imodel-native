@@ -31,6 +31,20 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static Message(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>, message: Bentley_Utf8String): void;
     }
 
+    class Placement3d implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsPlacement3d ***/
+        constructor(origin: DPoint3dP, angles: YawPitchRollAnglesP);
+
+        Origin: DPoint3dP;
+        Angles: YawPitchRollAnglesP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type Placement3dP = cxx_pointer<Placement3d>;
+
     //! Script Management Utilities
     class Script implements BeJsProjection_SuppressConstructor {
 
@@ -43,10 +57,51 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static ReportError(description: Bentley_Utf8String): void;
     }
 
-    //! A wrapper for BentleyApi::Dgn::DgnElement.
+    class DgnDb implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnDb ***/
+        Models: DgnModelsP;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnDbP = cxx_pointer<DgnDb>;
+
+    //! A wrapper for 64-bit element ids, etc.
+    class DgnObjectIdValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnObjectId = cxx_pointer<DgnObjectIdValue>;
+
+    class AuthorityIssuedCodeValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsAuthorityIssuedCode ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type AuthorityIssuedCode = cxx_pointer<AuthorityIssuedCodeValue>;
+
+    class DgnModels implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnModels ***/
+        QueryModelId(name: AuthorityIssuedCode): DgnObjectId;
+        GetModel(id: DgnObjectId): DgnModelP;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnModelsP = cxx_pointer<DgnModels>;
+
     class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
-        GetElementId(): Bentley_Utf8String;
+        ElementId: DgnObjectId;
+        Code: AuthorityIssuedCode;
+        Model: DgnModelP;
         Insert(): cxx_int32_t;
         Update(): cxx_int32_t;
         SetParent(parent: cxx_pointer<DgnElement>): void;
@@ -56,18 +111,48 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnElementP = cxx_pointer<DgnElement>;
 
-    //! A wrapper for BentleyApi::Dgn::DgnModel. There is no constructor. The native caller must supply one.
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        /*** NATIVE_TYPE_NAME = JsDgnModel ***/ 
-        GetModelId(): Bentley_Utf8String;
+        /*** NATIVE_TYPE_NAME = JsDgnModel ***/
+        ModelId: DgnObjectId;
+        Code: AuthorityIssuedCode;
+        DgnDb: DgnDbP;
         CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): DgnElementP;
+        static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
         DeleteAllElements(): void;
         OnDispose(): void;
         Dispose(): void;
     }
 
-    //! A wrapper for BentleyApi::Dgn::ElementGeometryBuilder. There is no constructor. The user must call the Create method to create a new one.
-    class ElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    type DgnModelP = cxx_pointer<DgnModel>;
+
+    class ComponentModel extends DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsComponentModel ***/
+        Name: Bentley_Utf8String;
+
+        /** Find a component model by name 
+         * @param db The DgnDB that contains the component model
+         * @param name The name of the component model to search for.
+         * @return A pointer to the component model with that name or null if not found.
+         */
+        static FindModelByName(db: DgnDbP, name: Bentley_Utf8String): ComponentModelP;
+
+        /** Place an instance of a component 
+         * @param targetModel The model where the new instance will be placed.
+         * @param capturedSolutionName Optional. The name of the captured solution to copy. If not specified, then \a params must be specified.
+         * @param params Optional. The parameters to use to look up or to generate the instance. If \a capturedSolutionName is specified, then params may be null.
+         * @param code Optional. The code for the new instance. If not specified, then the newly created element will have no Code.
+         * @return A new, persistent element that is an instance of the specified solution of the specified component, or null if the component could not supply that solution.
+         */
+        MakeInstanceOfSolution(targetModel: DgnModelP, capturedSolutionName: Bentley_Utf8String, params: Bentley_Utf8String, code: AuthorityIssuedCode): DgnElementP;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ComponentModelP = cxx_pointer<ComponentModel>;
+
+    class ElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
         /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;

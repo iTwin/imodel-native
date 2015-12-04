@@ -278,7 +278,6 @@ void DgnChangeSummaryTestFixture::CompareSessions(DgnChangeSummaryTestFixture::C
     dgnChangeSummary.GetChangedElements(changedElements.m_inserts, ChangeSummary::QueryDbOpcode::Insert);
     dgnChangeSummary.GetChangedElements(changedElements.m_deletes, ChangeSummary::QueryDbOpcode::Delete);
     dgnChangeSummary.GetChangedElements(changedElements.m_businessUpdates, ChangeSummary::QueryDbOpcode::Update);
-    dgnChangeSummary.GetElementsWithItemUpdates(changedElements.m_businessUpdates);
     dgnChangeSummary.GetElementsWithGeometryUpdates(changedElements.m_geometryUpdates);
 
     /*

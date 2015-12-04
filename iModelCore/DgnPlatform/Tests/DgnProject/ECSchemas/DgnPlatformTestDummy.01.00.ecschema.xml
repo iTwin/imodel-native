@@ -10,8 +10,4 @@
         <BaseClass>dgn:PhysicalElement</BaseClass>
     </ECClass>
 
-    <ECClass typeName="DummyTestItem" isDomainClass="True">
-        <BaseClass>dgn:ElementItem</BaseClass>
-    </ECClass>
-
 </ECSchema>

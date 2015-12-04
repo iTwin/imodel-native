@@ -27,6 +27,7 @@
 #endif
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
+#define DGN_CLASSNAME_AnnotationElement     "AnnotationElement"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
@@ -35,7 +36,6 @@
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
-#define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_Link                  "Link"
@@ -50,6 +50,7 @@
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
 #define DGN_CLASSNAME_ResourceModel         "ResourceModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
+#define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
 #define DGN_CLASSNAME_SystemElement         "SystemElement"
@@ -75,7 +76,6 @@
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
-#define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
