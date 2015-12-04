@@ -339,7 +339,7 @@ DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
+DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)
     {
     auto status = T_Super::_OnInsertElement(el);
     if (DgnDbStatus::Success == status && el.IsGeometricElement())

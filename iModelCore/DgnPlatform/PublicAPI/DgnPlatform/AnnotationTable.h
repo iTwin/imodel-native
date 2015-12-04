@@ -1501,14 +1501,14 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationTableElement : DrawingElement
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationTableElement : AnnotationElement
 {
 //__PUBLISH_SECTION_END__
 friend AnnotationTableSerializer;
 //__PUBLISH_SECTION_START__
 
 private:
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, DrawingElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationElement) 
 
     TableHeaderAspect                       m_tableHeader;
     SymbologyDictionary                     m_symbologyDictionary;
@@ -1775,9 +1775,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The ElementHandler for AnnotationTableElement
     //=======================================================================================
-    struct AnnotationTableHandler : Drawing
+    struct AnnotationTableHandler : Annotation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationTableElement, AnnotationTableHandler, Drawing, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationTableElement, AnnotationTableHandler, Annotation, DGNPLATFORM_EXPORT);
     };
 };
 

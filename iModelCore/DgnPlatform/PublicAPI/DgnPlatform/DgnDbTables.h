@@ -25,8 +25,10 @@
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #endif
+#define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
+#define DGN_CLASSNAME_AnnotationElement     "AnnotationElement"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
@@ -47,8 +49,8 @@
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
-#define DGN_CLASSNAME_ResourceModel         "ResourceModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
+#define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
 #define DGN_CLASSNAME_SystemElement         "SystemElement"
@@ -701,7 +703,7 @@ public:
 };
 
 //=======================================================================================
-// Links are shared resources, referenced by elements. 
+// Links are shared definitions, referenced by elements. 
 //! @see DgnDb::Links
 // @bsiclass
 //=======================================================================================
