@@ -33,7 +33,7 @@ HANDLER_DEFINE_MEMBERS(PlanarPhysical)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(StreetMap)
 HANDLER_DEFINE_MEMBERS(WebMercator)
-HANDLER_DEFINE_MEMBERS(Resource)
+HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Model2d)
 HANDLER_DEFINE_MEMBERS(System)
@@ -75,7 +75,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
-    RegisterHandler(dgn_AspectHandler::TextAnnotationItemHandler::GetHandler());
+    RegisterHandler(dgn_AspectHandler::TextAnnotationDataHandler::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
@@ -88,7 +88,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::PhysicalRedline::GetHandler());
     RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Resource::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
     RegisterHandler(dgn_ModelHandler::System::GetHandler());
 

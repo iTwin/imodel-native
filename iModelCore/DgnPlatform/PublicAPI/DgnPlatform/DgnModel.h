@@ -16,7 +16,7 @@
 #include <DgnPlatform/DgnProperties.h>
 
 DGNPLATFORM_TYPEDEFS(GeometricModel)
-DGNPLATFORM_TYPEDEFS(ResourceModel)
+DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(DgnModel2d)
 DGNPLATFORM_TYPEDEFS(DgnModel3d)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
@@ -26,7 +26,7 @@ DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
 DGNPLATFORM_TYPEDEFS(SystemModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
-DGNPLATFORM_REF_COUNTED_PTR(ResourceModel)
+DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 DGNPLATFORM_REF_COUNTED_PTR(SystemModel)
 
@@ -389,7 +389,7 @@ protected:
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
-    virtual ResourceModelCP _ToResourceModel() const {return nullptr;}
+    virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
@@ -493,7 +493,7 @@ public:
     //! @name Dynamic casting to DgnModel subclasses
     //@{
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
-    ResourceModelCP ToResourceModel() const {return _ToResourceModel();} //!< more efficient substitute for dynamic_cast<ResourceModelCP>(model)
+    DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
     DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
     DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
@@ -501,7 +501,7 @@ public:
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     SystemModelCP ToSystemModel() const {return _ToSystemModel();} //!< more efficient substitute for dynamic_cast<SystemModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
-    ResourceModelP ToResourceModelP() {return const_cast<ResourceModelP>(_ToResourceModel());} //!< more efficient substitute for dynamic_cast<ResourceModelP>(model)
+    DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
     DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());} //!< more efficient substitute for dynamic_cast<DgnModel3dP>(model)
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
@@ -513,7 +513,7 @@ public:
     bool IsPhysicalModel() const { return nullptr != ToPhysicalModel(); }
     bool Is2dModel() const { return nullptr != ToDgnModel2d(); }
     bool Is3dModel() const { return nullptr != ToDgnModel3d(); }
-    bool IsResourceModel() const { return nullptr != ToResourceModel(); }
+    bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
     bool IsSystemModel() const { return nullptr != ToSystemModel(); }
@@ -612,7 +612,7 @@ public:
     //!     -# Insert
     //!     -# _CopyContentsFrom
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
-    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
+    //! @param importer     Enables the model to copy the definitions that it needs (if copying between DgnDbs)
     //! @param sourceModel The model to copy
     //! @return the copied model, already inserted into the destination Db.
     DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, DgnModelCR sourceModel, DgnImportContext& importer);
@@ -620,7 +620,7 @@ public:
     //! Make a copy of the specified model, including all of the contents of the model, where the destination may be a different DgnDb.
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
     //! @param sourceModel  The model to copy
-    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
+    //! @param importer     Enables the model to copy the definitions that it needs (if copying between DgnDbs)
     //! @return the copied model
     //! @see ImportModel
     template<typename T>
@@ -816,24 +816,24 @@ public:
 };
 
 //=======================================================================================
-//! A model which holds only non-geometric resources.
+//! A model which holds only definitions.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ResourceModel : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
 protected:
-    ResourceModelCP _ToResourceModel() const override {return this;}
+    DefinitionModelCP _ToDefinitionModel() const override {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
-    explicit ResourceModel(CreateParams const& params) : T_Super(params) { }
+    explicit DefinitionModel(CreateParams const& params) : T_Super(params) { }
 
-    static ResourceModelPtr Create(CreateParams const& params) { return new ResourceModel(params); }
+    static DefinitionModelPtr Create(CreateParams const& params) { return new DefinitionModel(params); }
 };
 
 //=======================================================================================
-//! A resource model which holds resources like materials and styles which are used
+//! A definition model which holds definitions like materials and styles which are used
 //! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
 //! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
 //! DictionaryElement can @em only reside in a DictionaryModel.
@@ -843,9 +843,9 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : ResourceModel
+struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
-    DEFINE_T_SUPER(ResourceModel);
+    DEFINE_T_SUPER(DefinitionModel);
 protected:
     virtual DgnDbStatus _OnDelete() override { return DgnDbStatus::WrongModel; }
     virtual void _OnDeleted() override { BeAssert(false && "The dictionary model cannot be deleted"); }
@@ -1354,16 +1354,16 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for ResourceModel
-    struct EXPORT_VTABLE_ATTRIBUTE Resource : Model
+    //! The ModelHandler for DefinitionModel
+    struct EXPORT_VTABLE_ATTRIBUTE Definition : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ResourceModel, ResourceModel, Resource, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DefinitionModel, Definition, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DictionaryModel
-    struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Resource
+    struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Resource, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for Model2d

@@ -20,7 +20,7 @@ namespace dgn_ElementHandler
 
 namespace dgn_AspectHandler
 {
-    HANDLER_DEFINE_MEMBERS(TextAnnotationItemHandler);
+    HANDLER_DEFINE_MEMBERS(TextAnnotationDataHandler);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -28,7 +28,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus TextAnnotationItem::_UpdateProperties(DgnElementCR el)
+DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el)
     {
     // T_Super::_UpdateProperties is pure; it is a link error to call super, so don't.
     
@@ -39,7 +39,7 @@ DgnDbStatus TextAnnotationItem::_UpdateProperties(DgnElementCR el)
             return DgnDbStatus::WriteError;
         }
 
-    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationItem) " SET TextAnnotation=? WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationData) " SET TextAnnotation=? WHERE ECInstanceId=?");
     if (!update.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -59,11 +59,11 @@ DgnDbStatus TextAnnotationItem::_UpdateProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
+DgnDbStatus TextAnnotationData::_LoadProperties(DgnElementCR el)
     {
     // T_Super::_LoadProperties is pure; it is a link error to call super, so don't.
     
-    CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationItem) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationData) " WHERE ECInstanceId=?");
     if (!select.IsValid())
         return DgnDbStatus::ReadError;
 
@@ -95,7 +95,7 @@ DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationItem::GenerateElementGeometry(GeometrySourceR source, GenerateReason reason) const
+void TextAnnotationData::GenerateElementGeometry(GeometrySourceR source, GenerateReason reason) const
     {
     // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
     if (m_isGeometrySuppressed)
@@ -113,24 +113,24 @@ void TextAnnotationItem::GenerateElementGeometry(GeometrySourceR source, Generat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-static TextAnnotationItemR getItemR(DgnElementR el)
+static TextAnnotationDataR getItemR(DgnElementR el)
     {
-    TextAnnotationItemP item = TextAnnotationItem::GetP(el);
+    TextAnnotationDataP item = TextAnnotationData::GetP(el);
     if (nullptr == item)
         {
-        item = new TextAnnotationItem();
-        TextAnnotationItem::SetAspect(el, *item);
+        item = new TextAnnotationData();
+        TextAnnotationData::SetAspect(el, *item);
         }
 
     return *item;
     }
-TextAnnotationItemR TextAnnotationElement::GetItemR() { return getItemR(*this); }
-TextAnnotationItemR PhysicalTextAnnotationElement::GetItemR() { return getItemR(*this); }
+TextAnnotationDataR TextAnnotationElement::GetItemR() { return getItemR(*this); }
+TextAnnotationDataR PhysicalTextAnnotationElement::GetItemR() { return getItemR(*this); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     10/2015
 //---------------------------------------------------------------------------------------
-static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, DgnElementR el, TextAnnotationItemCP item, DgnElement::UniqueAspect::GenerateReason reason)
+static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, DgnElementR el, TextAnnotationDataCP item, DgnElement::UniqueAspect::GenerateReason reason)
     {
     if (DgnDbStatus::Success != superStatus)
         return superStatus;

@@ -226,7 +226,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
         -->
     </ECClass>
-    <ECClass typeName="ResourceModel" isDomainClass="True">
+    <ECClass typeName="DefinitionModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
@@ -236,7 +236,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>ResourceModel</BaseClass>
+        <BaseClass>DefinitionModel</BaseClass>
     </ECClass>
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
         <ECCustomAttributes>
@@ -381,8 +381,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
              Note this is intended to serve as a relationship endpoint, but ECDb doesn't support an abstract relationship endpoint (needs primary key)... -->
     </ECClass>
 
-    <ECClass typeName="DictionaryElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+    <ECClass typeName="DefinitionElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <BaseClass>Element</BaseClass>
+    </ECClass>
+    <ECClass typeName="DictionaryElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <BaseClass>DefinitionElement</BaseClass>
     </ECClass>
     <ECClass typeName="SystemElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- A SystemElement is used to model functional systems -->
@@ -426,7 +429,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>GeometrySource</BaseClass>
     </ECClass>
 
-    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
+    <ECClass typeName="TextAnnotationData" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
