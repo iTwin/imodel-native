@@ -10,5 +10,5 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class ExtendedDataAdapterTests : public ::testing::Test
+class ExtendedDataAdapterTests : public WSClientBaseTest
     {};

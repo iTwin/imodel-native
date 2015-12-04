@@ -10,5 +10,5 @@
 
 #include "../../Utils/WebServicesTestsHelper.h"
 
-class WSQueryTests : public ::testing::Test
+class WSQueryTests : public WSClientBaseTest
     {};
