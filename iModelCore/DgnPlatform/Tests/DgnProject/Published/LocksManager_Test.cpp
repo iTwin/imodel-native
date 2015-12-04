@@ -701,8 +701,8 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
     DgnElementPtr Create2dElement(DgnModelR model)
         {
         DgnDbR db = model.GetDgnDb();
-        DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
-        return DrawingElement::Create(DrawingElement::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
+        DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation::GetHandler());
+        return AnnotationElement::Create(AnnotationElement::CreateParams(db, model.GetModelId(), classId, DgnCategory::QueryHighestCategoryId(db)));
         }
 };
 

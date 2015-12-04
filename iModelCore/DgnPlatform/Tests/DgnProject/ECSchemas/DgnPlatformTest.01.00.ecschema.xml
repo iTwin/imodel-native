@@ -18,7 +18,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:DrawingElement</BaseClass>
+        <BaseClass>dgn:AnnotationElement</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
     </ECClass>
 

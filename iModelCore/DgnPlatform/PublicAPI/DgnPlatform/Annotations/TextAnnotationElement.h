@@ -84,9 +84,9 @@ namespace dgn_AspectHandler
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationElement : DrawingElement
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationElement : AnnotationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, DrawingElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, AnnotationElement);
 
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
@@ -119,9 +119,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct TextAnnotationHandler : Drawing
+    struct TextAnnotationHandler : Annotation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, TextAnnotationElement, TextAnnotationHandler, Drawing, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, TextAnnotationElement, TextAnnotationHandler, Annotation, DGNPLATFORM_EXPORT);
     };
 }
 
