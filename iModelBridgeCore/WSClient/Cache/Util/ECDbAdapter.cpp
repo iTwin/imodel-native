@@ -349,9 +349,9 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
             continue;
 
         if ((DoesConstraintSupportECClass(relClass->GetSource(), *sourceClass, true) &&
-            DoesConstraintSupportECClass(relClass->GetTarget(), *targetClass, true)) ||
+             DoesConstraintSupportECClass(relClass->GetTarget(), *targetClass, true)) ||
             (DoesConstraintSupportECClass(relClass->GetSource(), *targetClass, true) &&
-            DoesConstraintSupportECClass(relClass->GetTarget(), *sourceClass, true)) )
+             DoesConstraintSupportECClass(relClass->GetTarget(), *sourceClass, true)))
             {
             classes.push_back(relClass);
             }
@@ -470,9 +470,9 @@ ECInstanceKey ECDbAdapter::GetInstanceKeyFromJsonInstance(JsonValueCR ecInstance
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstancesArrayOut, ICancellationTokenPtr cancellationToken)
+BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstancesArrayOut, ICancellationTokenPtr ct)
     {
-    if (cancellationToken && cancellationToken->IsCanceled())
+    if (ct && ct->IsCanceled())
         {
         return ERROR;
         }
@@ -484,7 +484,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement&
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {
-        if (cancellationToken && cancellationToken->IsCanceled())
+        if (ct && ct->IsCanceled())
             {
             return ERROR;
             }
@@ -535,13 +535,13 @@ BentleyStatus ECDbAdapter::ExtractECIdsFromStatement
 ECSqlStatement& statement,
 int ecInstanceIdcolumn,
 bvector<ECInstanceId>& ecIdsOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {
-        if (cancellationToken && cancellationToken->IsCanceled())
+        if (ct && ct->IsCanceled())
             {
             return ERROR;
             }
@@ -559,13 +559,13 @@ ECSqlStatement& statement,
 int ecInstanceIdcolumn,
 ECClassId classId,
 ECInstanceKeyMultiMap& keysOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {
-        if (cancellationToken && cancellationToken->IsCanceled())
+        if (ct && ct->IsCanceled())
             {
             return ERROR;
             }
@@ -620,11 +620,10 @@ BentleyStatus ECDbAdapter::BindParameters(ECSqlStatement& statement, const bvect
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ECDbAdapter::CountClassInstances(ECClassCP ecClass)
     {
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.Select("NULL").From(*ecClass, false);
+    Utf8String ecsql = "SELECT NULL FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass);
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return 0;
         }
@@ -640,23 +639,22 @@ int ECDbAdapter::CountClassInstances(ECClassCP ecClass)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceId ECDbAdapter::FindInstance(ECClassCP ecClass, Utf8CP whereQuery)
+ECInstanceId ECDbAdapter::FindInstance(ECClassCP ecClass, Utf8CP whereClause)
     {
     if (nullptr == ecClass)
         {
         return ECInstanceId();
         }
 
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.Select("ECInstanceId").From(*ecClass, false).Limit("1");
-
-    if (nullptr != whereQuery)
+    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+    if (nullptr != whereClause)
         {
-        sqlBuilder.Where(whereQuery);
+        ecsql += "WHERE " + Utf8String(whereClause) + " ";
         }
+    ecsql += "LIMIT 1 ";
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ECInstanceId();
         }
@@ -672,20 +670,18 @@ ECInstanceId ECDbAdapter::FindInstance(ECClassCP ecClass, Utf8CP whereQuery)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<ECInstanceId> ECDbAdapter::FindInstances(ECClassCP ecClass, Utf8CP whereQuery)
+bset<ECInstanceId> ECDbAdapter::FindInstances(ECClassCP ecClass, Utf8CP whereClause)
     {
     bset<ECInstanceId> ids;
 
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.Select("ECInstanceId").From(*ecClass, false);
-
-    if (nullptr != whereQuery)
+    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+    if (nullptr != whereClause)
         {
-        sqlBuilder.Where(whereQuery);
+        ecsql += "WHERE " + Utf8String(whereClause);
         }
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ids;
         }
@@ -711,11 +707,10 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECInstanceKeyCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR jsonOut, ECClassCP ecClass, ECInstanceId ecId)
     {
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.SelectAll().From(*ecClass, false).Where("ECInstanceId = ?");
+    Utf8String ecsql = "SELECT * FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " WHERE ECInstanceId = ? LIMIT 1 ";
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }
@@ -728,27 +723,27 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR jsonOut, ECClassCP ecClass
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP optionalWhereQuery, Utf8CP optionalSelect)
+BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereClause, Utf8CP select)
     {
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.From(*ecClass, false).Limit("1");
-
-    if (nullptr != optionalWhereQuery)
+    Utf8String ecsql;
+    if (nullptr != select)
         {
-        sqlBuilder.Where(optionalWhereQuery);
-        }
-
-    if (nullptr != optionalSelect)
-        {
-        sqlBuilder.Select(optionalSelect);
+        ecsql = "SELECT " + Utf8String(select) + " ";
         }
     else
         {
-        sqlBuilder.SelectAll();
+        ecsql = "SELECT * ";
+        }
+
+    ecsql += "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+
+    if (nullptr != whereClause)
+        {
+        ecsql += "WHERE " + Utf8String(whereClause);
         }
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }
@@ -759,21 +754,18 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecCla
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::GetJsonInstances(JsonValueR jsonOut, ECClassCP ecClass, Utf8CP whereQuery, ICancellationTokenPtr cancellationToken)
+BentleyStatus ECDbAdapter::GetJsonInstances(JsonValueR jsonOut, ECClassCP ecClass, Utf8CP whereClause, ICancellationTokenPtr ct)
     {
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.Select("*");
-    sqlBuilder.From(*ecClass, false);
-
-    if (whereQuery != nullptr)
+    Utf8String ecsql = "SELECT * FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+    if (whereClause != nullptr)
         {
-        sqlBuilder.Where(whereQuery);
+        ecsql += "WHERE " + Utf8String(whereClause);
         }
 
     ECSqlStatement statement;
-    PrepareStatement(statement, sqlBuilder);
+    PrepareStatement(statement, ecsql);
 
-    return GetJsonInstances(jsonOut, ecClass, statement, cancellationToken);
+    return GetJsonInstances(jsonOut, ecClass, statement, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -784,10 +776,10 @@ BentleyStatus ECDbAdapter::GetJsonInstances
 JsonValueR jsonOut,
 ECClassCP ecClass,
 ECSqlStatement& statement,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    return ExtractJsonInstanceArrayFromStatement(statement, ecClass, jsonOut, cancellationToken);
+    return ExtractJsonInstanceArrayFromStatement(statement, ecClass, jsonOut, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -916,16 +908,15 @@ BentleyStatus ECDbAdapter::GetRelatedTargetIds(ECRelationshipClassCP relClass, E
         return ERROR;
         }
 
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder
-        .Select("t.ECInstanceId")
-        .From(*targetClass, "t", false)
-        .Join(*sourceClass, "s", false)
-        .Using(*relClass, JoinDirection::Reverse)
-        .Where("s.ECInstanceId = ?");
+    Utf8String ecsql =
+        "SELECT t.ECInstanceId "
+        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
+        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
+        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " REVERSE "
+        "WHERE s.ECInstanceId = ? ";
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }
@@ -947,16 +938,15 @@ BentleyStatus ECDbAdapter::GetRelatedSourceIds(ECRelationshipClassCP relClass, E
         return ERROR;
         }
 
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder
-        .Select("s.ECInstanceId")
-        .From(*sourceClass, "s", false)
-        .Join(*targetClass, "t", false)
-        .Using(*relClass, JoinDirection::Forward)
-        .Where("t.ECInstanceId = ?");
+    Utf8String ecsql =
+        "SELECT s.ECInstanceId "
+        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
+        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
+        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " FORWARD "
+        "WHERE t.ECInstanceId = ? ";
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }
@@ -978,16 +968,15 @@ BentleyStatus ECDbAdapter::GetJsonRelatedSources(JsonValueR arrayOut, ECRelation
         return ERROR;
         }
 
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder
-        .Select("s.*")
-        .From(*sourceClass, "s", false)
-        .Join(*targetClass, "t", false)
-        .Using(*relClass, JoinDirection::Forward)
-        .Where("t.ECInstanceId = ?");
+    Utf8String ecsql =
+        "SELECT s.* "
+        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
+        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
+        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " FORWARD "
+        "WHERE t.ECInstanceId = ? ";
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }
@@ -1000,7 +989,7 @@ BentleyStatus ECDbAdapter::GetJsonRelatedSources(JsonValueR arrayOut, ECRelation
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::GetJsonRelatedTargets(JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP targetClass, ECInstanceKeyCR source, Utf8CP optionalOrderBy)
+BentleyStatus ECDbAdapter::GetJsonRelatedTargets(JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP targetClass, ECInstanceKeyCR source, Utf8CP orderBy)
     {
     ECClassCP sourceClass = GetECClass(source);
 
@@ -1009,21 +998,20 @@ BentleyStatus ECDbAdapter::GetJsonRelatedTargets(JsonValueR arrayOut, ECRelation
         return ERROR;
         }
 
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder
-        .Select("t.*")
-        .From(*targetClass, "t", false)
-        .Join(*sourceClass, "s", false)
-        .Using(*relClass, JoinDirection::Reverse)
-        .Where("s.ECInstanceId = ?");
+    Utf8String ecsql =
+        "SELECT t.* "
+        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
+        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
+        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " REVERSE "
+        "WHERE s.ECInstanceId = ? ";
 
-    if (nullptr != optionalOrderBy)
+    if (nullptr != orderBy)
         {
-        sqlBuilder.OrderBy(optionalOrderBy);
+        ecsql += " ORDER BY " + Utf8String(orderBy);
         }
 
     ECSqlStatement statement;
-    if (SUCCESS != PrepareStatement(statement, sqlBuilder))
+    if (SUCCESS != PrepareStatement(statement, ecsql))
         {
         return ERROR;
         }

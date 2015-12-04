@@ -17,9 +17,9 @@ SyncCachedInstancesSeperatelyTask::SyncCachedInstancesSeperatelyTask
 (
 CachingDataSourcePtr ds,
 const bset<ObjectId>& objects,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) :
-CachingTaskBase(ds, cancellationToken),
+CachingTaskBase(ds, ct),
 m_objectsLeftToCache(objects.begin(), objects.end())
     {}
 

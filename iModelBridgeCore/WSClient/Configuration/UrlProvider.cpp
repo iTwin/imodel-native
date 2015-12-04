@@ -79,7 +79,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     "Mobile.PunchListWsg",
     "https://dev-punchlist-eus.cloudapp.net",
     "https://qa-punchlist-eus.cloudapp.net",
-    "https://connect-wsg20.bentley.com",
+    "https://connect-punchlist.bentley.com",
     &s_urlRegistry
     );
 
@@ -87,7 +87,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
     "Mobile.ClashIssuesWsg",
     "https://dev-punchlist-eus.cloudapp.net",
     "https://qa-punchlist-eus.cloudapp.net",
-    "",
+    "https://connect-punchlist.bentley.com",
     &s_urlRegistry
     );
 

@@ -68,6 +68,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Core/ECDbFileInfoSchema.h               \
     $(CacheMkiSourceDir)Persistence/Core/SchemaContext.h                    \
     $(CacheMkiSourceDir)Persistence/Core/SchemaManager.h                    \
+    $(CacheMkiSourceDir)Persistence/Core/Version.h                          \
     $(CacheMkiSourceDir)Persistence/Files/FileStorage.h                     \
     $(CacheMkiSourceDir)Persistence/Files/FileInfo.h                        \
     $(CacheMkiSourceDir)Persistence/Files/FileInfoManager.h                 \
@@ -90,6 +91,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV4ToV5.h            \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV5ToCurrent.h       \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV7ToV9.h            \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV9ToV10.h           \
     $(CacheMkiSourceDir)SyncCachedDataTask.h                                \
     $(CacheMkiSourceDir)SyncCachedInstancesSeperatelyTask.h                 \
     $(CacheMkiSourceDir)SyncCachedInstancesTask.h                           \
@@ -207,6 +209,8 @@ $(o)UpgraderFromV4ToV5$(oext)                   : $(CacheMkiSourceDir)Persistenc
 $(o)UpgraderFromV5ToCurrent$(oext)              : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV5ToCurrent.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)UpgraderFromV7ToV9$(oext)                   : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV7ToV9.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderFromV9ToV10$(oext)                  : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV9ToV10.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 
 $(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}

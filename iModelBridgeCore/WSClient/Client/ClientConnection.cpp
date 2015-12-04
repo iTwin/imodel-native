@@ -56,11 +56,11 @@ void ClientConnection::UnregisterServerInfoListener(std::weak_ptr<IWSClient::ISe
 AsyncTaskPtr<WSInfoResult> ClientConnection::GetServerInfo
 (
 bool forceQuery,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     auto thisPtr = shared_from_this();
-    return m_infoProvider->GetServerInfo(forceQuery, cancellationToken)
+    return m_infoProvider->GetServerInfo(forceQuery, ct)
         ->Then<WSInfoResult>([thisPtr] (WSInfoResult& result)
         {
         return result;
@@ -80,11 +80,11 @@ AsyncTaskPtr<void> ClientConnection::InvalidateInfo() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WebApiResult> ClientConnection::GetWebApi
 (
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     auto thisPtr = shared_from_this();
-    return GetServerInfo(false, cancellationToken)
+    return GetServerInfo(false, ct)
         ->Then<WebApiResult>([this, thisPtr] (WSInfoResult& result)
         {
         if (!result.IsSuccess())

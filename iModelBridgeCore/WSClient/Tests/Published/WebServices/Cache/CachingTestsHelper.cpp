@@ -15,14 +15,14 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 bool operator <= (const DateTime& lhs, const DateTime& rhs)
     {
     DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
-    BeAssert(DateTime::CompareResult::Error != result);
+    EXPECT_TRUE(DateTime::CompareResult::Error != result);
     return result == DateTime::CompareResult::Equals || result == DateTime::CompareResult::EarlierThan;
     }
 
 bool operator >= (const DateTime& lhs, const DateTime& rhs)
     {
     DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
-    BeAssert(DateTime::CompareResult::Error != result);
+    EXPECT_TRUE(DateTime::CompareResult::Error != result);
     return result == DateTime::CompareResult::Equals || result == DateTime::CompareResult::LaterThan;
     }
 
@@ -117,23 +117,23 @@ WSFileResult StubWSFileResultNotModified()
     return WSFileResult::Success(StubWSFileResponseNotModified());
     }
 
-WSObjectsResponse StubWSObjectsResponseNotModified()
+WSObjectsResponse StubWSObjectsResponseNotModified(Utf8StringCR skipToken)
     {
     auto body = HttpStringBody::Create();
     auto reader = WSObjectsReaderV2::Create();
-    return WSObjectsResponse(reader, body, HttpStatus::NotModified, "");
+    return WSObjectsResponse(reader, body, HttpStatus::NotModified, "", skipToken);
     }
 
 WSObjectsResponse StubWSObjectsResponseV2(Utf8StringCR jsonBody, Utf8StringCR eTag)
     {
     auto body = HttpStringBody::Create(jsonBody);
     auto reader = WSObjectsReaderV2::Create();
-    return WSObjectsResponse(reader, body, HttpStatus::OK, eTag);
+    return WSObjectsResponse(reader, body, HttpStatus::OK, eTag, "");
     }
 
-WSObjectsResult StubWSObjectsResultNotModified()
+WSObjectsResult StubWSObjectsResultNotModified(Utf8StringCR skipToken)
     {
-    return WSObjectsResult::Success(StubWSObjectsResponseNotModified());
+    return WSObjectsResult::Success(StubWSObjectsResponseNotModified(skipToken));
     }
 
 WSObjectsResult StubWSObjectsResultInvalidInstances()
@@ -182,7 +182,7 @@ WSObjectsResult StubWSObjectsResultInvalidInstances()
                 }
         };
 
-    WSObjectsResponse response(StubReader::Create(), HttpStringBody::Create("{}"), HttpStatus::OK, nullptr);
+    WSObjectsResponse response(StubReader::Create(), HttpStringBody::Create("{}"), HttpStatus::OK, "", "");
     return WSObjectsResult::Success(response);
     }
 

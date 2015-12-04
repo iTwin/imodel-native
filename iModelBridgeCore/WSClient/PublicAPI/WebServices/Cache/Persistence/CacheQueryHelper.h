@@ -74,7 +74,7 @@ struct CacheQueryHelper
             const ClassReadInfo& info,
             ECSqlStatement& statement,
             JsonValueR jsonInstanceOut,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             );
 
         //! Reader function specificlly to handle selected RemoteId property
@@ -83,7 +83,7 @@ struct CacheQueryHelper
             const ClassReadInfo& info,
             ECSqlStatement& statement,
             JsonValueR jsonInstancesArrayOut,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             );
 
         //! Functions for creating different purpose ECSql

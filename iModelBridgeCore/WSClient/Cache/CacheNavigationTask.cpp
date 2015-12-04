@@ -28,10 +28,10 @@ bvector<ObjectId>&& navigationTreesToCacheFully,
 bvector<ObjectId>&& navigationTreesToUpdateOnly,
 std::shared_ptr<const ISelectProvider> updateSelectProvider,
 CachingDataSource::LabeledProgressCallback&& onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
 :
-CachingTaskBase(cachingDataSource, cancellationToken),
+CachingTaskBase(cachingDataSource, ct),
 m_navigationTreesToCacheFully(navigationTreesToCacheFully),
 m_navigationTreesToUpdateOnly(navigationTreesToUpdateOnly),
 m_updateSelectProvider(nullptr == updateSelectProvider ? std::make_shared<ISelectProvider>() : updateSelectProvider),
@@ -394,7 +394,7 @@ bool retrievingFullData
 
     if (retrievingFullData)
         {
-        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), nullptr, nullptr, GetCancellationToken()))
+        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), nullptr, nullptr, 0, GetCancellationToken()))
             {
             SetError({CachingDataSource::Status::InternalCacheError, GetCancellationToken()});
             return;
@@ -408,7 +408,7 @@ bool retrievingFullData
         WSQuery query("", "");
         query.SetSelect("$id");
 
-        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), &rejected, &query, GetCancellationToken()))
+        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), &rejected, &query, 0, GetCancellationToken()))
             {
             SetError({CachingDataSource::Status::InternalCacheError, GetCancellationToken()});
             return;
@@ -484,14 +484,12 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
     Utf8PrintfString key("IsObjectFileBacked:%lld", instance.GetECClassId());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
-        ECSqlSelectBuilder builder;
-        builder
-            .Select("NULL")
-            .From(*objectClass, "fileClass", false)
-            .Where(Utf8PrintfString("ECInstanceId = ? AND fileClass.[%s] IS NOT NULL AND fileClass.[%s] != ''",
-            fileNameProperty.c_str(), fileNameProperty.c_str()));
-
-        return builder.ToString();
+        return
+            "SELECT NULL "
+            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*objectClass) + " file "
+            "WHERE ECInstanceId = ? "
+            "  AND file.[" + fileNameProperty + "] IS NOT NULL "
+            "  AND file.[" + fileNameProperty + "] != ''";
         });
 
     statement->BindId(1, instance.GetECInstanceId());
