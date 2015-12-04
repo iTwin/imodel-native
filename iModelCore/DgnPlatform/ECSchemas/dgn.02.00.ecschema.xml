@@ -430,7 +430,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>ElementItem</BaseClass>
+        <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TextAnnotation" typeName="binary"/>
     </ECClass>
     <ECClass typeName="TextAnnotationElement" isDomainClass="True">
@@ -1279,42 +1279,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
-
-    <ECClass typeName="ElementItem" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
-        <!-- WIP: Deprecated, replaced by TBD Item classes -->
-        <!-- The aspect that holds the intrinsic characteristics of the element (properties that are independent of the functional spec which is stored directly on the Element). ElementItem adds the additional constraint that an element can have only one item, regardless of the sub-class of the item. -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <!-- All subclasses of ElementItem will share the same table -->
-                    <Strategy>SharedTable</Strategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <!-- WIP: Deprecated -->
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="True">
-            <Class class="ElementItem">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ModelDrivesModel" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <!-- Deprecated? Replaced by ModelDescribesItem relationship? -->

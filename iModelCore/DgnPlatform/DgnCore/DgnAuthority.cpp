@@ -615,7 +615,7 @@ void DgnAuthority::Code::From(DgnAuthorityId id, Utf8StringCR value, Utf8StringC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnAuthority::Code::operator<(Code const& rhs) const
+bool AuthorityIssuedCode::operator<(AuthorityIssuedCode const& rhs) const
     {
     if (GetAuthority().GetValueUnchecked() != rhs.GetAuthority().GetValueUnchecked())
         return GetAuthority().GetValueUnchecked() < rhs.GetAuthority().GetValueUnchecked();

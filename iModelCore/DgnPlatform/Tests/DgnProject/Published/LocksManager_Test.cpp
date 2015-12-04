@@ -1383,9 +1383,20 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
         if (BE_SQLITE_OK != m_db->SaveChanges())
             return DgnDbStatus::WriteError;
 
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision();
+        RevisionStatus revStat;
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
         if (rev.IsNull())
-            return DgnDbStatus::BadRequest;
+            {
+            if (RevisionStatus::NoTransactions == revStat)
+                {
+                req.Clear();
+                return DgnDbStatus::Success;
+                }
+            else
+                {
+                return DgnDbStatus::BadRequest;
+                }
+            }
 
         ChangeStreamFileReader stream(rev->GetChangeStreamFile());
         DgnDbStatus status = req.FromChangeSet(stream, *m_db);

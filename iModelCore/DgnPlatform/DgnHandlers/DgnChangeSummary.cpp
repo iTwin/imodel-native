@@ -251,16 +251,6 @@ AuthorityIssuedCode DgnChangeSummary::ModelEntry::GetCode(bool old) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    09/2015
 //---------------------------------------------------------------------------------------
-void DgnChangeSummary::GetElementsWithItemUpdates(DgnElementIdSet& elementIds)
-    {
-    // Element -> ElementOwnsItem -> ElementItem
-    BentleyStatus status = GetElementsWithAspectUpdates(elementIds, "dgn.Element", "dgn.ElementOwnsItem", "dgn.ElementItem");
-    BeAssert(status == SUCCESS);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    09/2015
-//---------------------------------------------------------------------------------------
 BentleyStatus DgnChangeSummary::ParseClassFullName(Utf8StringR schemaName, Utf8StringR className, Utf8CP classFullName)
     {
     bvector<Utf8String> classParts;
