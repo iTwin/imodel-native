@@ -13,6 +13,10 @@
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
 
+BEGIN_BENTLEY_DGN_NAMESPACE
+    struct ViewManager;
+END_BENTLEY_DGN_NAMESPACE
+
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
@@ -50,16 +54,58 @@ DEFINE_REF_COUNTED_PTR(Texture)
 DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Window)
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Queue
+{
+    friend struct ViewManager;
+
+private:
+    BeConditionVariable m_cv;
+    std::deque<TaskPtr> m_tasks;
+    Render::TaskPtr WaitForWork();
+    void Process();
+    THREAD_MAIN_DECL Main(void*);
+
+public:
+    DGNVIEW_EXPORT static void VerifyRenderThread(bool yesNo);
+    DGNVIEW_EXPORT void AddTask(Render::Task&);
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
 struct Task : RefCounted<NonCopyableClass>
 {
-    virtual Target& _GetTarget() = 0;
-    virtual void _Render() = 0;
-    virtual int _GetPriority() = 0;
+    enum class Type {FullRender, DynamicRender,};
+    Type m_type;
+    TargetPtr m_target;
+    virtual void _Process() = 0;
+    virtual int _GetPriority() {return 0;}
+    virtual bool _CanReplace(Task& other) {return m_type == other.m_type;}
+    Target* GetTarget() const {return m_target.get();}
+    Task(Target& target, Type type) : m_target(&target), m_type(type) {}
 };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
+struct Plan
+{
+    enum class AntiAliasPref {Detect=0, On=1, Off=2};
+
+    ViewFlags     m_viewFlags;
+    bool          m_is2d;
+    Frustum       m_frustum;
+    double        m_fraction;
+    ColorDef      m_bgColor;
+    AntiAliasPref m_aaLines;
+    AntiAliasPref m_aaText;
+    
+    DGNVIEW_EXPORT Plan(DgnViewportCR);
+};
+
 
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
@@ -913,13 +959,15 @@ public:
     bool IsQuickVision() const {return _IsQuickVision();}
 };
 
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct Scene : NonCopyableClass
 {
 protected:
-    bvector<GraphicPtr> m_scene;
+    Target& m_target;
+    bvector<GraphicPtr> m_graphics;
 
     virtual void _SetToViewCoords(bool yesNo) = 0;
     virtual void _ActivateOverrideMatSymb(OvrGraphicParamsCP ovrMatSymb) = 0;
@@ -929,14 +977,17 @@ protected:
     virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
     virtual void _Create() = 0;
-    virtual void _Paint() = 0;
-    virtual Target& _GetRenderTarget() = 0;
-    DGNPLATFORM_EXPORT virtual void _AddGraphic(Graphic& graphic);
-    DGNPLATFORM_EXPORT virtual void _DropGraphic(Graphic& graphic);
-    DGNPLATFORM_EXPORT virtual void _Clear();
+    virtual void _Paint(Render::Plan const&) = 0;
+    DGNVIEW_EXPORT virtual void _AddGraphic(Graphic& graphic);
+    DGNVIEW_EXPORT virtual void _DropGraphic(Graphic& graphic);
+    DGNVIEW_EXPORT virtual void _Clear();
     virtual ~Scene() {_Clear();}
 
 public:
+    Scene(Target& target) : m_target(target) {}
+
+    Target& GetTarget() {return m_target;}
+
     //! Set an GraphicParams to be the "active override" GraphicParams for this IDrawGeom.
     //! @param[in]          ovrMatSymb  The new active override GraphicParams.
     //!                                     value in ovrMatSymb will be used instead of the value set by ActivateMatSymb.
@@ -984,9 +1035,7 @@ public:
     void DropGraphic(Graphic& graphic) {_DropGraphic(graphic);}
     void Clear() {_Clear();}
     void Create() {return _Create();}
-    void Paint() {return _Paint();}
-
-    Target& GetRenderTarget() {return _GetRenderTarget();}
+    void Paint(Render::Plan const& plan) {return _Paint(plan);}
 
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
 
@@ -1071,7 +1120,6 @@ public:
     bool IsEraseMode() const {return (m_drawMode == DgnDrawMode::Erase);}
 };
 
-enum class AntiAliasPref {Detect=0, On=1, Off=2};
 
 //=======================================================================================
 //! The "system context" is the main window for the rendering system.
@@ -1129,12 +1177,10 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr m_device;
+    DevicePtr     m_device;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
-    virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
-    virtual void _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
     virtual void _OnResized() {}
     virtual ByteStream _FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
@@ -1151,11 +1197,8 @@ public:
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
-    void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, aaLines, aaText);}
     DeviceCP GetRenderDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
-    void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
-    void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}
     ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}

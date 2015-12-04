@@ -37,7 +37,6 @@ static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
 DgnViewport::DgnViewport(Render::Target* target) : m_renderTarget(target)
     {
     m_minLOD            = DEFAULT_MINUMUM_LOD;
-    m_targetParamsSet   = false;
     m_isCameraOn        = false;
     m_needsRefresh      = false;
     m_zClipAdjusted     = false;
@@ -69,20 +68,8 @@ void DgnViewport::DestroyViewport()
     {
     m_progressiveDisplay.clear();
     m_viewController = nullptr;
-    m_targetParamsSet = false;
     m_frustumValid = false;
     m_renderTarget = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::InitViewSettings(bool useBgTexture)
-    {
-    BeAssert(m_renderTarget.IsValid());
-
-    m_renderTarget->SetViewAttributes(GetViewFlags(), GetBackgroundColor(), useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
-    m_targetParamsSet = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -293,7 +280,7 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 * definition specified by camera, origin, delta, and rMatrix.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressionFraction, CameraInfo const* camera,
+StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, CameraInfo const* camera,
                                             DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot) const
     {
     DVec3d    xVector, yVector, zVector;
@@ -301,7 +288,6 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
 
     DPoint3d xExtent, yExtent, zExtent;
     DPoint3d origin;
-    double   frustFraction;
 
     // Compute root vectors along edges of view frustum.
     if (camera)
@@ -342,6 +328,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         // z out back of eye ====> origin z coordinates are negative.  (Back plane more negative than front plane)
         double backFraction  = -zBack  / focusDistance;         // Perspective fraction at back clip plane.
         double frontFraction = -zFront / focusDistance;         // Perspective fraction at front clip plane.
+        frustFraction = frontFraction / backFraction;
 
          // delta.x,delta.y are view rectangle sizes at focus distance.  Scale to back plane:
         xExtent.Scale(xVector, delta.x * backFraction);                                // xExtent at back == delta.x * backFraction.
@@ -358,7 +345,6 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         origin.z = eyeToOrigin.z;
         viewRot.MultiplyTranspose(origin);                                             // Rotate back to root coordinates
         origin.Add(camera->GetEyePoint());                                             // Add the eye point.
-        frustFraction = frontFraction / backFraction;
         }
     else
         {
@@ -371,7 +357,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
 
     // calculate the root-to-npc mapping (using expanded frustum)
     DMap4d  newRootToNpc;
-    if (!bsiDMap4d_initFromVectorFrustum(&newRootToNpc, &origin, &xExtent, &yExtent, &zExtent, frustFraction))
+    if (!bsiDMap4d_initFromVectorFrustum(&newRootToNpc, &origin, &xExtent, &yExtent, &zExtent, m_frustFraction))
         {
 #if defined (NO_TEST_VIEW_FRUSTUM)
         BeAssert(0);
@@ -380,31 +366,8 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         }
 
     rootToNpc = newRootToNpc;           // Don't screw this up if we are returning ERROR (TR# 251771).
-    if (compressionFraction)
-        *compressionFraction = frustFraction;
-
     return  SUCCESS;
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::_ConnectRenderTarget()
-    {
-    if (m_deviceAssigned)
-        return SUCCESS;
-
-    if (!m_renderTarget.IsValid())
-        return ERROR;
-
-    StatusInt status = m_renderTarget->AssignRenderDevice(*this);
-    if (SUCCESS == status)
-        m_deviceAssigned = true;
-
-    return status;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * calculate the NPC-to-view transformation matrix.
@@ -414,31 +377,6 @@ void DgnViewport::CalcNpcToView(DMap4dR npcToView)
     {
     DRange3d corners = GetViewCorners();
     npcToView.InitFromRanges(s_NpcCorners[NPC_000], s_NpcCorners[NPC_111], corners.low, corners.high);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Andrew.Edge     08/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction)
-    {
-    DPoint3d frustum[4];
-    frustum[0] = rootBox[NPC_000];
-    frustum[1] = rootBox[NPC_100];
-    frustum[2] = rootBox[NPC_010];
-    frustum[3] = rootBox[NPC_001];
-
-    // Temporary - I don't know what to do about the front/back planes for a 3d view where we want to enforce top (e.g. mapping)
-    // this works for now, but the value for GetMaxDisplayPriority is bogus.
-    bool use3d = Allow3dManipulations();
-    if (!use3d)
-        {
-        // for 2d models, make sure the z range includes all possible display priority values
-        frustum[3].z = GetMaxDisplayPriority();
-        frustum[0].z = frustum[1].z = frustum[2].z = -frustum[3].z;
-        }
-
-    if (m_renderTarget.IsValid())
-        m_renderTarget->DefineFrustum(*frustum, compressionFraction, !use3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,20 +579,14 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     if (!m_renderTarget.IsValid())
         return ViewportStatus::InvalidViewport;
 
-    double compressionFraction;
-    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
+    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, m_frustFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
         return  ViewportStatus::InvalidViewport;
-
-    DPoint3d rootBox[NPC_CORNER_COUNT];
-    NpcToWorld(rootBox, s_NpcCorners, NPC_CORNER_COUNT);
 
     DMap4d      npcToView;
     CalcNpcToView(npcToView);
     m_rootToView.InitProduct(npcToView, m_rootToNpc);
 
-    _SetFrustumFromRootCorners(rootBox, compressionFraction);
     m_needSynchWithViewController = false;
-
     m_frustumValid = true;
 
     return ViewportStatus::Success;
@@ -796,7 +728,8 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
         {
         // to get unexpanded box, we have to go recompute rootToNpc from original viewController.
         DMap4d  ueRootToNpc;
-        RootToNpcFromViewDef(ueRootToNpc, nullptr, IsCameraOn() ? &m_camera : nullptr, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix);
+        double compression;
+        RootToNpcFromViewDef(ueRootToNpc, compression, IsCameraOn() ? &m_camera : nullptr, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix);
 
         // get the root corners of the unexpanded box
         DPoint3d  ueRootBox[NPC_CORNER_COUNT];
@@ -1452,59 +1385,6 @@ void DgnViewport::CheckForChanges()
     m_currentBaseline = curr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::UpdateView(FullUpdateInfo& info)
-    {
-    if (!IsActive() || !IsVisible())
-        return false;
-
-    ClearProgressiveDisplay();
-
-    CreateSceneContext sceneContext(*m_renderTarget->_GetMainScene());
-
-    GetViewControllerR().OnFullUpdate(*this, sceneContext);
-    sceneContext.CreateScene(*this);
-
-    InitViewSettings(true);
-    m_renderTarget->_GetMainScene()->Create(); // TEMPORARY - should be on other thread
-    m_renderTarget->_GetMainScene()->Paint(); // TEMPORARY - should be on other thread
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-UpdateAbort DgnViewport::UpdateViewDynamic(DynamicUpdateInfo& info)
-    {
-    ClearProgressiveDisplay();
-
-    InitViewSettings(true);
-    CreateSceneContext sceneContext(*m_renderTarget->_GetMainScene());
-    GetViewControllerR().OnDynamicUpdate(*this, sceneContext, info);
-    m_renderTarget->_GetMainScene()->Paint(); // TEMPORARY - should be on other thread
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Let BeSQLite detect operations that may block on a range tree query.
-    BeSQLite::wt_GraphicsAndQuerySequencerDiagnosticsEnabler highPriorityRequired;
-
-    if (!IsActive())
-        return UpdateAbort::BadView;
-
-    CreateSceneContext sceneContext(*m_renderTarget->_GetMainScene());
-    GetViewControllerR().OnDynamicUpdate(*this, sceneContext, info);
-    sceneContext.CreateScene(*this);
-
-    InitViewSettings(true);
-    m_renderTarget->_GetMainScene()->Render(); // TEMPORARY - should be on other thread
-
-    UpdateContext context;
-    return context._DoDynamicUpdate(*this, info);
-#endif
-    return UpdateAbort::None;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/02

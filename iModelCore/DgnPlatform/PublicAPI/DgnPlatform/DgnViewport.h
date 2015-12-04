@@ -349,7 +349,6 @@ private:
     StopEvents          m_stopEvents;
     bool                m_doBackingStore;
     bool                m_deferShadows;
-    int                 m_maxFrameTime;
     int                 m_dynamicsStopInterval;
     int                 m_dynamicsMotionTolerance;
     int                 m_minLodDelta;
@@ -368,7 +367,6 @@ public:
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
     void SetDoBackingStore(bool doBackingStore) {m_doBackingStore = doBackingStore;}
     void SetDeferShadows(bool deferShadows) {m_deferShadows = deferShadows;}
-    void SetMaxFrameTime(int maxFrameTime) {m_maxFrameTime = maxFrameTime;}
     void SetMinLODDelta(int minLodDelta) {m_minLodDelta = minLodDelta;}
     void SetDynamicsStopInterval(int dynamicsStopInterval) {m_dynamicsStopInterval = dynamicsStopInterval;}
     void SetDynamicsMotionTolerance(int dynamicsMotionTolerance) {m_dynamicsMotionTolerance = dynamicsMotionTolerance;}
@@ -428,7 +426,6 @@ protected:
     bool            m_zClipAdjusted;          // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView;               // view is of a 3d model
     bool            m_isCameraOn;             // view is 3d and the camera is turned on.
-    bool            m_targetParamsSet;
     bool            m_invertY;
     bool            m_frustumValid;
     bool            m_needSynchWithViewController;
@@ -447,6 +444,7 @@ protected:
     Render::TargetPtr m_renderTarget;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
+    double          m_frustFraction;
     double          m_minLOD;                   // default level of detail filter size
     Utf8String      m_viewTitle;
     ToolGraphicsHandler* m_toolGraphicsHandler;
@@ -466,8 +464,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CallDecorators(bool& stopFlag);
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
-    virtual Render::AntiAliasPref _WantAntiAliasLines() const {return Render::AntiAliasPref::Detect;}
-    virtual Render::AntiAliasPref _WantAntiAliasText() const {return Render::AntiAliasPref::Detect;}
+    virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Detect;}
+    virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual ColorDef _GetHiliteColor() const {return ColorDef::Magenta();}
     virtual void _SynchViewTitle() {}
@@ -476,7 +474,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
-    DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
     DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
@@ -486,8 +483,11 @@ public:
     DGNPLATFORM_EXPORT DgnViewport(Render::Target*);
     virtual ~DgnViewport() {DestroyViewport();}
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
+    double GetFrustumFraction() const {return m_frustFraction;}
     bool CheckNeedsRefresh() const {return m_needsRefresh;}
     bool IsVisible() {return _IsVisible();}
+    Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
+    Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     ViewFlagsP GetViewFlagsP() {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
@@ -503,17 +503,15 @@ public:
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
     DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
+    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
     DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
-    DGNPLATFORM_EXPORT void InitViewSettings(bool useBgTexture);
     DGNPLATFORM_EXPORT void SetDisplayFlagFill(bool fill);
     DGNPLATFORM_EXPORT void SetDisplayFlagPatterns(bool patternsOn);
     DGNPLATFORM_EXPORT void SetDisplayFlagLevelSymb(bool levelSymbOn);
     ViewportStatus SetupFromViewController() {return _SetupFromViewController();}
-    DGNPLATFORM_EXPORT void SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
@@ -542,7 +540,7 @@ public:
     DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground();
-    DGNVIEW_EXPORT bool IsSuspended() const;
+
     //  SetViewingToolActive to true if the tool uses viewing dynamics.  Set
     //  it false if the tool draws decorations.  Setting it true blocks healing. If a tool
     //  needs to draw decorations then it relies on the backing store being valid since
@@ -877,8 +875,8 @@ public:
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
-    DGNPLATFORM_EXPORT UpdateAbort UpdateViewDynamic(DynamicUpdateInfo& info);
-    DGNPLATFORM_EXPORT bool UpdateView(FullUpdateInfo& info);
+    DGNVIEW_EXPORT UpdateAbort UpdateViewDynamic(DynamicUpdateInfo& info);
+    DGNVIEW_EXPORT bool UpdateView(FullUpdateInfo& info);
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter();}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
@@ -905,7 +903,6 @@ protected:
         }
 #endif
 
-    virtual void _SetFrustumFromRootCorners(DPoint3dCP worldBox, double compressFraction) override {}
     virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:

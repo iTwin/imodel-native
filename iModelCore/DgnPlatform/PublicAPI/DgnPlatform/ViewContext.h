@@ -640,22 +640,4 @@ public:
 
 /** @endGroup */
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   10/15
-//=======================================================================================
-struct CreateSceneContext : ViewContext
-{
-    DEFINE_T_SUPER(ViewContext);
-private:
-    Render::Scene& m_scene;
-    virtual void _OutputElement(GeometrySourceCR) override;
-    virtual Render::Graphic* _GetCachedGraphic(double pixelSize) override;
-    virtual void _SaveGraphic() override;
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_scene.GetRenderTarget().CreateGraphic(params);}
-    virtual StatusInt _InitContextForView();
-
-public:
-    CreateSceneContext(Render::Scene& scene) : m_scene(scene) {}
-    bool CreateScene(DgnViewportR);
-};
 END_BENTLEY_DGN_NAMESPACE
