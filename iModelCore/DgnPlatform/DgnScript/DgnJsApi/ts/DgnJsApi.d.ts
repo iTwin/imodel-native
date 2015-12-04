@@ -144,7 +144,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @param code Optional. The code for the new instance. If not specified, then the newly created element will have no Code.
          * @return A new, persistent element that is an instance of the specified solution of the specified component, or null if the component could not supply that solution.
          */
-        MakeInstanceOfSolution(targetModel: DgnModelP, capturedSolutionName: Bentley_Utf8String, params: Bentley_Utf8String, code: AuthorityIssuedCode): DgnElementP;
+        MakeInstance(targetModel: DgnModelP, capturedSolutionName: Bentley_Utf8String, params: Bentley_Utf8String, code: AuthorityIssuedCode): DgnElementP;
         OnDispose(): void;
         Dispose(): void;
     }

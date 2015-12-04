@@ -2800,3 +2800,144 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
 
     return outputDgnElement0->ToPhysicalElementP();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform& transform)
+    {
+    Transform   placementTrans;
+
+    if (el.Is3d())
+        placementTrans = el.ToGeometrySource3d()->GetPlacement().GetTransform();
+    else
+        placementTrans = el.ToGeometrySource2d()->GetPlacement().GetTransform();
+
+    DPoint3d    originPt;
+    RotMatrix   rMatrix;
+
+    transform.InitProduct(transform, placementTrans);
+    transform.GetTranslation(originPt);
+    transform.GetMatrix(rMatrix);
+            
+    YawPitchRollAngles  angles;
+
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix))
+        return DgnDbStatus::BadArg;
+
+    if (el.Is3d())
+        {
+        Placement3d placement = el.ToGeometrySource3d()->GetPlacement();
+
+        placement.GetOriginR() = originPt;
+        placement.GetAnglesR() = angles;
+
+        return el.ToGeometrySource3dP()->SetPlacement(placement);
+        }
+        
+    Placement2d placement = el.ToGeometrySource2d()->GetPlacement();
+
+    placement.GetOriginR() = DPoint2d::From(originPt);
+    placement.GetAngleR() = angles.GetYaw();
+
+    return el.ToGeometrySource2dP()->SetPlacement(placement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnEditElementCollector::DgnEditElementCollector() 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnEditElementCollector::~DgnEditElementCollector() 
+    {
+    for (auto el : m_elements)
+        el->Release();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnEditElementCollector::AddElement(DgnElementR el) 
+    {
+    DgnElementId eid = el.GetElementId();
+    if (eid.IsValid())
+        {
+        auto existing = FindElementById(eid);   // If we already have a copy of this element, return that.
+        if (existing.IsValid())
+            return existing;
+        }
+
+    auto ins = m_elements.insert(&el);
+    if (!ins.second) // not inserted, because it's already in there?
+        return *ins.first;
+
+    // This element is new. Insert it into the collection.
+    el.AddRef();
+
+    if (eid.IsValid())
+        m_ids[eid] = &el;
+
+    return &el;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::AddChildren(DgnElementCR el, size_t maxDepth) 
+    {
+    if (0 ==maxDepth)
+        return;
+
+    for (auto childid : el.QueryChildren())
+        {
+        auto child = el.GetDgnDb().Elements().GetForEdit<DgnElement>(childid);
+        if (child.IsValid())
+            AddAssembly(*child, maxDepth-1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnEditElementCollector::FindElementById(DgnElementId eid)
+    {
+    auto i = m_ids.find(eid);
+    return (i == m_ids.end())? nullptr: i->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::RemoveElement(DgnElementR el) 
+    {
+    if (0 == m_elements.erase(&el))
+        return;
+
+    DgnElementId eid = el.GetElementId();
+    if (eid.IsValid())
+        m_ids.erase(eid);
+
+    el.Release();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::RemoveChildren(DgnElementCR el, size_t maxDepth) 
+    {
+    if (0 ==maxDepth)
+        return;
+
+    for (auto childid : el.QueryChildren())
+        {
+        auto child = FindElementById(childid);
+        if (child.IsValid())
+            RemoveAssembly(*child, maxDepth-1);
+        }
+    }
+

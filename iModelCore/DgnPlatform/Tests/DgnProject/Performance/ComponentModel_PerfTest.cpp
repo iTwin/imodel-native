@@ -356,7 +356,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     //  Place instances of this solution
     for (int i=0; i<ninstances; ++i)
         {
-        DgnElementCPtr instance = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem);
+        DgnElementCPtr instance = ComponentModel::MakeInstance(&status, *targetModel, *catalogItem);
 
         PhysicalElementPtr pinst = instance->MakeCopy<PhysicalElement>();
         Placement3d placement;

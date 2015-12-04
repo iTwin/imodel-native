@@ -14,6 +14,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //----------------------------------------------------------------------------------------
 struct DgnElementTests : public DgnDbTestFixture
     {
+    TestElementCPtr AddChild(DgnElementCR parent);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,6 +128,164 @@ TEST_F (DgnElementTests, UpdateElement)
 
     EXPECT_STREQ("Updated Test Element", dynamic_cast<TestElement const*>(updatedElement.get())->GetTestElementProperty().c_str());
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
+    {
+    TestElementPtr child = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+    child->SetParentId(parent.GetElementId());
+    auto el = child->Insert();
+    if (!el.IsValid())
+        return nullptr;
+    return dynamic_cast<TestElement const*>(el.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, DgnEditElementCollector)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_DgnEditElementCollector.idgndb", Db::OpenMode::ReadWrite);
+
+    DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    ASSERT_TRUE(parent1.IsValid());
+
+    // single element
+        {
+        DgnEditElementCollector coll;
+        auto eparent1 = coll.EditElement(*parent1);
+        ASSERT_TRUE(eparent1.IsValid());
+        ASSERT_TRUE(eparent1->GetElementId() == parent1->GetElementId());
+
+        auto eparent1cc1 = coll.EditElement(*eparent1);
+        ASSERT_TRUE(eparent1cc1.get() == eparent1.get()) << "no dups allowed in the collection";
+        ASSERT_TRUE(eparent1cc1 == eparent1) << "no dups allowed in the collection";
+
+        auto eparent1cc2 = coll.EditElement(*parent1);
+        ASSERT_TRUE(eparent1cc2.get() == eparent1.get()) << "no dups allowed in the collection";
+        ASSERT_TRUE(eparent1cc2 == eparent1) << "no dups allowed in the collection";
+
+        ASSERT_EQ(1, coll.size());
+
+        // FindByElementId
+        auto found = coll.FindElementById(parent1->GetElementId());
+        ASSERT_TRUE(found.get() == eparent1.get());
+        ASSERT_TRUE(found->GetElementId() == parent1->GetElementId());
+
+        // Remove
+        coll.RemoveElement(*found);
+        ASSERT_EQ(0, coll.size());
+        coll.RemoveElement(*found);
+        ASSERT_EQ(0, coll.size());
+        }
+
+    // single element (childless)
+        {
+        DgnEditElementCollector coll;
+        coll.EditAssembly(*parent1);
+        ASSERT_EQ(1, coll.size());
+        }
+
+    // Add some children
+    TestElementCPtr c11 = AddChild(*parent1);
+    ASSERT_EQ(c11->GetParentId(), parent1->GetElementId());
+    TestElementCPtr c12 = AddChild(*parent1);
+    ASSERT_EQ(c12->GetParentId(), parent1->GetElementId());
+    ASSERT_EQ(2, parent1->QueryChildren().size());
+
+    //  element with children
+        {
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+        ASSERT_EQ(3, all.size());
+
+        DgnEditElementCollector noChildren;
+        noChildren.EditAssembly(*parent1, 0);
+        ASSERT_EQ(1, noChildren.size());
+
+        DgnEditElementCollector onlyElement;
+        onlyElement.EditElement(*parent1);
+        ASSERT_EQ(1, onlyElement.size());
+
+        DgnEditElementCollector onlyChildren;
+        onlyChildren.AddChildren(*parent1);
+        ASSERT_EQ(2, onlyChildren.size());
+        onlyChildren.AddChildren(*parent1);
+        ASSERT_EQ(2, onlyChildren.size()) << "no dup children allowed in the collection";
+        }
+
+    // Add nested children
+    TestElementCPtr c111 = AddChild(*c11);
+    ASSERT_EQ(c111->GetParentId(), c11->GetElementId());
+    TestElementCPtr c112 = AddChild(*c11);
+    ASSERT_EQ(c112->GetParentId(), c11->GetElementId());
+    ASSERT_EQ(2, c11->QueryChildren().size());
+
+    //  element with children
+        {
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+        ASSERT_EQ(5, all.size());
+
+        DgnEditElementCollector noChildren;
+        noChildren.EditAssembly(*parent1, 0);
+        ASSERT_EQ(1, noChildren.size());
+
+        DgnEditElementCollector onlyElement;
+        onlyElement.EditElement(*parent1);
+        ASSERT_EQ(1, onlyElement.size());
+
+        DgnEditElementCollector onlyChildren1;
+        onlyChildren1.AddChildren(*parent1, 1);
+        ASSERT_EQ(2, onlyChildren1.size());
+        onlyChildren1.AddChildren(*parent1, 1);
+        ASSERT_EQ(2, onlyChildren1.size()) << "no dup children allowed in the collection";
+
+        DgnEditElementCollector onlyChildrenAll;
+        onlyChildrenAll.AddChildren(*parent1);
+        ASSERT_EQ(4, onlyChildrenAll.size());
+        onlyChildrenAll.AddChildren(*parent1);
+        ASSERT_EQ(4, onlyChildrenAll.size()) << "no dup children allowed in the collection";
+
+        // Test removal of children
+        all.RemoveChildren(*c11);
+        ASSERT_EQ(3, all.size());
+        all.RemoveChildren(*c11);
+        ASSERT_EQ(3, all.size());
+
+        all.RemoveChildren(*parent1);
+        ASSERT_EQ(1, all.size());
+        all.RemoveChildren(*parent1);
+        ASSERT_EQ(1, all.size());
+
+        all.RemoveElement(*all.FindElementById(parent1->GetElementId()));
+        ASSERT_EQ(0, all.size());
+        all.RemoveElement(*all.FindElementById(parent1->GetElementId()));
+        ASSERT_EQ(0, all.size());
+        all.RemoveChildren(*c11);
+        ASSERT_EQ(0, all.size());
+        }
+
+    // mixture of persistent and non-persistent elements
+        {
+        DgnElementPtr nonPersistent = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+
+        DgnEditElementCollector coll;
+        DgnElementPtr eparent1 = coll.EditElement(*parent1);
+        DgnElementPtr enonPersistent = coll.AddElement(*nonPersistent);
+        ASSERT_EQ(enonPersistent.get(), nonPersistent.get());
+        ASSERT_EQ(2, coll.size());
+        DgnElementPtr enonPersistentcc = coll.EditElement(*nonPersistent);
+        ASSERT_NE(enonPersistentcc.get(), nonPersistent.get()) << "you can add a second copy of a non-persistent element -- we can't tell it's a copy.";
+        ASSERT_EQ(3, coll.size());
+
+        ASSERT_TRUE(coll.FindElementById(parent1->GetElementId()).IsValid());
+        ASSERT_FALSE(coll.FindElementById(nonPersistent->GetElementId()).IsValid());
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
