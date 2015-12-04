@@ -10,6 +10,6 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class FileUtilTests : public ::testing::Test
+class FileUtilTests : public WSClientBaseTest
     {
     };

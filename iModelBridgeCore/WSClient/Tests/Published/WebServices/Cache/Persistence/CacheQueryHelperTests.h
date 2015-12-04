@@ -10,7 +10,7 @@
 
 #include "BaseCacheTest.h"
 
-class CacheQueryHelperTests : public ::testing::Test
+class CacheQueryHelperTests : public WSClientBaseTest
     {
     protected:
         ECSchemaPtr GetTestSchema();

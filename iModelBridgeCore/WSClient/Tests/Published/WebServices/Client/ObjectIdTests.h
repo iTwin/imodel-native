@@ -10,5 +10,5 @@
 
 #include "../../Utils/WebServicesTestsHelper.h"
 
-class ObjectIdTests : public ::testing::Test
+class ObjectIdTests : public WSClientBaseTest
     {};

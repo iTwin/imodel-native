@@ -10,6 +10,6 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class WSObjectsReaderV2Tests : public ::testing::Test
+class WSObjectsReaderV2Tests : public WSClientBaseTest
     {
     };

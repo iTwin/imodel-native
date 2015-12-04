@@ -10,5 +10,5 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class DataReadOptionsTests : public ::testing::Test
+class DataReadOptionsTests : public WSClientBaseTest
     {};
