@@ -391,7 +391,7 @@ protected:
     virtual bool                                _Is3d() const = 0;
     virtual IECInstanceCP                       _GetECInstance() const = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, Utf8CP accessString, uint32_t arrayIndex) const;
-    ECOBJECTS_EXPORT virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
+    virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
     ECOBJECTS_EXPORT virtual EvaluationOptions  _GetEvaluationOptions () const;
     ECOBJECTS_EXPORT virtual void               _SetEvaluationOptions (EvaluationOptions evalOptions);
 
@@ -654,8 +654,8 @@ public:
     bool                                IsForSupplementation() const { return m_forSupplementation; }
 
     //! Intended to be called by ECDb or a similar system
-    ECOBJECTS_EXPORT void SetId(ECPropertyId id) { BeAssert (0 == m_ecPropertyId); m_ecPropertyId = id; };
-    ECOBJECTS_EXPORT bool HasId() const { return m_ecPropertyId != 0; };
+    void SetId(ECPropertyId id) { BeAssert (0 == m_ecPropertyId); m_ecPropertyId = id; };
+    bool HasId() const { return m_ecPropertyId != 0; };
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -1168,8 +1168,8 @@ public:
     ECSchemaR                               GetSchemaR() { return const_cast<ECSchemaR>(m_schema); }
 
     //! Intended to be called by ECDb or a similar system
-    ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert(UNSET_ECCLASSID == m_ecClassId); m_ecClassId = id; };
-    ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != UNSET_ECCLASSID; };
+    void SetId(ECClassId id) { BeAssert(UNSET_ECCLASSID == m_ecClassId); m_ecClassId = id; };
+    bool HasId() const { return m_ecClassId != UNSET_ECCLASSID; };
 
 public:
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
@@ -1181,16 +1181,16 @@ public:
     ECOBJECTS_EXPORT ECClassType           GetClassType() const;
 
     //! Is the class an entity class
-    ECOBJECTS_EXPORT bool                  IsEntityClass() const;
+    bool                                   IsEntityClass() const { return ECClassType::Entity == GetClassType(); }
 
     //! Is the class a struct class
-    ECOBJECTS_EXPORT bool                  IsStructClass() const;
+    bool                                   IsStructClass() const { return ECClassType::Struct == GetClassType();}
 
     //! Is the class a custom attribute class
-    ECOBJECTS_EXPORT bool                  IsCustomAttributeClass() const;
+    bool                                   IsCustomAttributeClass() const { return ECClassType::CustomAttribute == GetClassType(); }
 
     //! Is the class a relationship class
-    ECOBJECTS_EXPORT bool                  IsRelationshipClass() const;
+    bool                                   IsRelationshipClass() const { return ECClassType::Relationship == GetClassType(); }
 
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
@@ -1954,10 +1954,10 @@ struct SchemaKey
         return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
         }
 /*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT Utf8StringCR GetName() const {return m_schemaName;}
+    Utf8StringCR GetName() const {return m_schemaName;}
     ECOBJECTS_EXPORT Utf8String GetFullSchemaName() const;
-    ECOBJECTS_EXPORT uint32_t GetVersionMajor() const { return m_versionMajor; };
-    ECOBJECTS_EXPORT uint32_t GetVersionMinor() const { return m_versionMinor; };
+    uint32_t GetVersionMajor() const { return m_versionMajor; };
+    uint32_t GetVersionMinor() const { return m_versionMinor; };
 
 /*__PUBLISH_SECTION_START__*/
     };
@@ -2485,8 +2485,8 @@ protected:
 public:
     ECOBJECTS_EXPORT void               ReComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
-    ECOBJECTS_EXPORT void SetId(ECSchemaId id) { BeAssert (0 == m_ecSchemaId); m_ecSchemaId = id; };
-    ECOBJECTS_EXPORT bool HasId() const { return m_ecSchemaId != 0; };
+    void SetId(ECSchemaId id) { BeAssert (0 == m_ecSchemaId); m_ecSchemaId = id; };
+    bool HasId() const { return m_ecSchemaId != 0; };
 
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
     ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, Utf8CP newName);
@@ -2907,7 +2907,7 @@ public:
 struct IECClassLocater /*: RefCountedBase*/
     {
     protected:
-        ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) = 0;
+        virtual ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) = 0;
     public:
         ECClassCP LocateClass (Utf8CP schemaName, Utf8CP className)
             {
