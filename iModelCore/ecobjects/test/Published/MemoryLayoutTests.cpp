@@ -14,9 +14,6 @@
 #include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
 
-#define EXPECT_STATUS(STATUS, EXPR) EXPECT_EQ (ECObjectsStatus:: ## STATUS , (EXPR))
-#define EXPECT_SUCCESS(EXPR) EXPECT_STATUS(Success, (EXPR))
-
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 #define FIXED_COUNT_ARRAYS_ARE_SUPPORTED 0
@@ -2706,7 +2703,7 @@ struct DefaultStandaloneEnablerTests : ECTestFixture
     StandaloneECInstancePtr CreateInstanceWithArray(Utf8CP arrayAccessString) const
         {
         auto instance = CreateInstance();
-        EXPECT_SUCCESS(instance->AddArrayElements(arrayAccessString, 1));
+        EXPECT_EQ(ECObjectsStatus::Success, instance->AddArrayElements(arrayAccessString, 1));
         return instance;
         }
 
@@ -2725,21 +2722,21 @@ TEST_F(DefaultStandaloneEnablerTests, ReadOnly)
     {
     PrimitiveECPropertyP prop;
     m_class->CreatePrimitiveProperty(prop, "Prop");
-    EXPECT_SUCCESS(SetValue("Prop", "abc"));
+    EXPECT_EQ(ECObjectsStatus::Success, SetValue("Prop", "abc"));
     prop->SetIsReadOnly(true);
         {
         // An initial SetValue() will succeed, because the property is null
         auto instance = CreateInstance();
-        EXPECT_SUCCESS(instance->SetValue("Prop", ECValue("def", false)));
+        EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("def", false)));
         // Setting a non-null read-only property will fail
-        EXPECT_STATUS(UnableToSetReadOnlyProperty, instance->SetValue("Prop", ECValue("uvw", false)));
+        EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->SetValue("Prop", ECValue("uvw", false)));
         }
 
     prop->SetIsReadOnly(false);
         {
         auto instance = CreateInstance();
-        EXPECT_SUCCESS(instance->SetValue("Prop", ECValue("xyz", false)));  // set from null
-        EXPECT_SUCCESS(instance->SetValue("Prop", ECValue("abc", false)));  // set from non-null
+        EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("xyz", false)));  // set from null
+        EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("abc", false)));  // set from non-null
         }
     }
 
@@ -2750,25 +2747,25 @@ TEST_F(DefaultStandaloneEnablerTests, Type)
     {
     PrimitiveECPropertyP primProp;
     m_class->CreatePrimitiveProperty(primProp, "Prim");
-    EXPECT_SUCCESS(SetValue("Prim", "abc"));
+    EXPECT_EQ(ECObjectsStatus::Success, SetValue("Prim", "abc"));
     primProp->SetType(PRIMITIVETYPE_Integer);
-    EXPECT_STATUS(DataTypeMismatch, SetValue("Prim", "def"));
-    EXPECT_SUCCESS(SetValue("Prim", 123));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, SetValue("Prim", "def"));
+    EXPECT_EQ(ECObjectsStatus::Success, SetValue("Prim", 123));
 
     ECStructClassP oldStruct = CreateStructClass("OldStruct", "Old");
     StructECPropertyP structProp;
     m_class->CreateStructProperty(structProp, "Struct", *oldStruct);
-    EXPECT_SUCCESS(SetValue("Struct.Old", "abc"));
+    EXPECT_EQ(ECObjectsStatus::Success, SetValue("Struct.Old", "abc"));
     structProp->SetType(*CreateStructClass("NewStruct", "New"));
-    EXPECT_STATUS(PropertyNotFound, SetValue("Struct.Old", "def"));
-    EXPECT_SUCCESS(SetValue("Struct.New", "xyz"));
+    EXPECT_EQ(ECObjectsStatus::PropertyNotFound, SetValue("Struct.Old", "def"));
+    EXPECT_EQ(ECObjectsStatus::Success, SetValue("Struct.New", "xyz"));
 
     ArrayECPropertyP arrayProp;
     m_class->CreateArrayProperty(arrayProp, "Array", PRIMITIVETYPE_String);
-    EXPECT_SUCCESS(SetValue("Array", "abc", 0));
+    EXPECT_EQ(ECObjectsStatus::Success, SetValue("Array", "abc", 0));
     arrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Integer);
-    EXPECT_STATUS(DataTypeMismatch, SetValue("Array", "def", 0));
-    EXPECT_SUCCESS(SetValue("Array", 123, 0));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, SetValue("Array", "def", 0));
+    EXPECT_EQ(ECObjectsStatus::Success, SetValue("Array", 123, 0));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
