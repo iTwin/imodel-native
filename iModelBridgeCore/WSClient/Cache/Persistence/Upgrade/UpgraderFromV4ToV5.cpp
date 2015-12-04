@@ -267,7 +267,7 @@ BentleyStatus UpgraderFromV4ToV5::ReadInstances(bvector<UpgradeInstance>& instan
         return ERROR;
         }
 
-    Utf8String ecsql = "SELECT * FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass);
+    Utf8String ecsql = "SELECT * FROM ONLY " + ecClass->GetECSqlName();
 
     ECSqlStatement statement;
     if (SUCCESS != m_adapter.PrepareStatement(statement, ecsql))
