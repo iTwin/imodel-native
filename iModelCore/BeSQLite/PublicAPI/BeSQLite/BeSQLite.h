@@ -940,30 +940,17 @@ public:
 struct StatementDiagnostics
     {
 private:
-    static const NativeLogging::SEVERITY s_sev = NativeLogging::LOG_DEBUG;
-
-    static bool s_isEnabled;
-
     StatementDiagnostics();
-    ~StatementDiagnostics();
-
-    static NativeLogging::ILogger* GetLoggerIfEnabledForSeverity(WCharCP loggerName);
-
-    static bool ExcludeSqlFromExplainQuery(Utf8CP sql);
 
 public:
-#if !defined (DOCUMENTATION_GENERATOR)
-    static void Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile, bool suppressDiagnostics);
-#endif
     //! Globally turn on or off statement diagnostics. If turned on, the logging configuration
     //! determines what is actually logged and what not. So use this method to globally disable
     //! diagnostics from code which you are not interested in.
     //! @param[in] isEnabled if true, diagnostics is enabled. If false, diagnostics is disabled.
-    static void SetIsEnabled(bool isEnabled) { s_isEnabled = isEnabled; }
+    BE_SQLITE_EXPORT static void SetIsEnabled(bool isEnabled);
 
     //! @param[in] comment Comment to add to diagnostics output
     BE_SQLITE_EXPORT static void LogComment(Utf8CP comment);
-
     };
 #endif
 

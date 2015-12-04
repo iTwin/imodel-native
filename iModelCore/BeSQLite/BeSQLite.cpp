@@ -201,36 +201,56 @@ BentleyStatus BeGuid::FromString(Utf8CP uuid_str)
 #ifdef NDEBUG
  #define LOG_STATEMENT_DIAGNOSTICS(sql, prepareStat, dbFile, suppressDiagnostics)
 #else
- #define LOG_STATEMENT_DIAGNOSTICS(sql, prepareStat, dbFile, suppressDiagnostics) StatementDiagnostics::Log(sql, prepareStat, dbFile, suppressDiagnostics)
+ #define LOG_STATEMENT_DIAGNOSTICS(sql, prepareStat, dbFile, suppressDiagnostics) logStatementDiagnostics(sql, prepareStat, dbFile, suppressDiagnostics)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------
-//static
-bool StatementDiagnostics::s_isEnabled = true;
+BEGIN_UNNAMED_NAMESPACE
+static bool s_diagIsEnabled = true;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------
-//static
-void StatementDiagnostics::Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile, bool suppressDiagnostics)
+static NativeLogging::ILogger* getLoggerIfEnabledForSeverity(WCharCP loggerName)
     {
-    if (!s_isEnabled || suppressDiagnostics)
+    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger(loggerName);
+    BeAssert(logger != nullptr);
+    if (logger->isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        return logger;
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+static bool excludeSqlFromExplainQuery(Utf8CP sql)
+    {
+    return BeStringUtilities::Strnicmp("explain", sql, 7) == 0 || BeStringUtilities::Strnicmp("pragma", sql, 6) == 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+static void logStatementDiagnostics(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile, bool suppressDiagnostics)
+    {
+    if (!s_diagIsEnabled || suppressDiagnostics)
         return;
 
-    NativeLogging::ILogger* prepareLogger = GetLoggerIfEnabledForSeverity(DIAGNOSTICS_PREPARE_LOGGER_NAME);
+    NativeLogging::ILogger* prepareLogger = getLoggerIfEnabledForSeverity(DIAGNOSTICS_PREPARE_LOGGER_NAME);
     if (prepareLogger != nullptr)
-        prepareLogger->message(s_sev, sql);
+        prepareLogger->message(NativeLogging::LOG_DEBUG, sql);
 
     //only do query plan diagnostics if preparation succeeded
     if (BE_SQLITE_OK == prepareStat)
         {
-        NativeLogging::ILogger* queryPlanLogger = GetLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLAN_LOGGER_NAME);
-        NativeLogging::ILogger* queryPlanWithTableScansLogger = GetLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME);
+        NativeLogging::ILogger* queryPlanLogger = getLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLAN_LOGGER_NAME);
+        NativeLogging::ILogger* queryPlanWithTableScansLogger = getLoggerIfEnabledForSeverity(DIAGNOSTICS_QUERYPLANWITHTABLESCANS_LOGGER_NAME);
         if (queryPlanLogger == nullptr && queryPlanWithTableScansLogger == nullptr)
             return;
 
-        if (!ExcludeSqlFromExplainQuery(sql))
+        if (!excludeSqlFromExplainQuery(sql))
             {
             Utf8String queryPlan = dbFile.ExplainQuery(sql, true, true);
 
@@ -243,23 +263,23 @@ void StatementDiagnostics::Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile
                 }
 
             if (queryPlanLogger != nullptr)
-                queryPlanLogger->messagev(s_sev, "%s | %s", truncatedSql.c_str(), queryPlan.c_str());
+                queryPlanLogger->messagev(NativeLogging::LOG_DEBUG, "%s | %s", truncatedSql.c_str(), queryPlan.c_str());
 
             if (queryPlanWithTableScansLogger != nullptr && queryPlan.find("SCAN TABLE") != queryPlan.npos)
                 {
-                queryPlanWithTableScansLogger->messagev(s_sev, "%s | %s", truncatedSql.c_str(), queryPlan.c_str());
+                queryPlanWithTableScansLogger->messagev(NativeLogging::LOG_DEBUG, "%s | %s", truncatedSql.c_str(), queryPlan.c_str());
                 }
             }
         }
     }
+END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------
-//static
 void StatementDiagnostics::LogComment(Utf8CP comment)
     {
-    if (!s_isEnabled || Utf8String::IsNullOrEmpty(comment))
+    if (!s_diagIsEnabled || Utf8String::IsNullOrEmpty(comment))
         return;
 
     bvector<WCharCP> loggerNames;
@@ -269,36 +289,17 @@ void StatementDiagnostics::LogComment(Utf8CP comment)
 
     for (WCharCP loggerName : loggerNames)
         {
-        NativeLogging::ILogger* logger = GetLoggerIfEnabledForSeverity(loggerName);
+        NativeLogging::ILogger* logger = getLoggerIfEnabledForSeverity(loggerName);
         if (logger != nullptr)
-            logger->message(s_sev, comment);
+            logger->message(NativeLogging::LOG_DEBUG, comment);
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2015
-//---------------------------------------------------------------------------------------
-//static
-NativeLogging::ILogger* StatementDiagnostics::GetLoggerIfEnabledForSeverity(WCharCP loggerName)
-    {
-    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger(loggerName);
-    BeAssert(logger != nullptr);
-    if (logger->isSeverityEnabled(s_sev))
-        return logger;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void StatementDiagnostics::SetIsEnabled(bool isEnabled) {s_diagIsEnabled=isEnabled;}
 
-    return nullptr;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2015
-//---------------------------------------------------------------------------------------
-//static
-bool StatementDiagnostics::ExcludeSqlFromExplainQuery(Utf8CP sql)
-    {
-    return BeStringUtilities::Strnicmp("explain", sql, 7) == 0 ||
-        BeStringUtilities::Strnicmp("pragma", sql, 6) == 0;
-    }
 #endif
 
 void        Statement::Finalize() { if (m_stmt) { sqlite3_finalize(m_stmt); m_stmt = nullptr; } }
