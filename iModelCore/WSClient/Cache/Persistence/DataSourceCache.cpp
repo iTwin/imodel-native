@@ -368,7 +368,7 @@ BentleyStatus DataSourceCache::Reset()
         auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
             {
             return Utf8PrintfString("SELECT %lld, ECInstanceId FROM ONLY %s", ecClass->GetId(),
-                                    ecClass->GetECSqlName());
+                                    ecClass->GetECSqlName().c_str());
             });
 
         if (SUCCESS != m_state->GetHierarchyManager().DeleteInstances(*statement))
@@ -1783,7 +1783,7 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
             "SELECT %s n, %s s FROM ONLY %s WHERE ECInstanceId = ? LIMIT 1",
             fileNamePropertyName.empty() ? "NULL" : ("[" + fileNamePropertyName + "]").c_str(),
             fileSizePropertyName.empty() ? "NULL" : ("[" + fileSizePropertyName + "]").c_str(),
-            ecClass->GetECSqlName()
+            ecClass->GetECSqlName().c_str()
             );
         return ecSql;
         });

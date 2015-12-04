@@ -817,7 +817,7 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
         {
         return Utf8PrintfString(
             "INSERT INTO %s (SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId) VALUES (?,?,?,?)",
-            relClass->GetECSqlName()
+            relClass->GetECSqlName().c_str()
             );
         });
 
@@ -857,7 +857,7 @@ ECInstanceKey ECDbAdapter::FindRelationship(ECRelationshipClassCP relClass, ECIn
             "FROM ONLY %s "
             "WHERE SourceECClassId = ? AND SourceECInstanceId = ? AND TargetECClassId = ? AND TargetECInstanceId = ? "
             "LIMIT 1 ",
-            relClass->GetECSqlName()
+            relClass->GetECSqlName().c_str()
             );
         });
 
@@ -1047,7 +1047,7 @@ BentleyStatus ECDbAdapter::GetRelatedTargetKeys(ECRelationshipClassCP relClass, 
         "SELECT rel.TargetECClassId, rel.TargetECInstanceId "
         "FROM ONLY %s rel "
         "WHERE rel.SourceECClassId = ? AND rel.SourceECInstanceId = ?",
-        relClass->GetECSqlName()
+        relClass->GetECSqlName().c_str()
         );
 
     ECSqlStatement statement;
