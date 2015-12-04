@@ -380,7 +380,7 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         ECClassId newTargetClassId =  relationshipInstance->GetTarget()->GetClass().GetId();
 
         Utf8String ecSql("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ");
-        ecSql.append(GetECClass().GetECSqlName()).append (" WHERE ECInstanceId = ?");
+        ecSql.append(GetECClass().GetECSqlName()).append (" WHERE ECInstanceId=?");
         ECSqlStatement statement;
         ECSqlStatus status = statement.Prepare (m_ecdb, ecSql.c_str ());
         if (!status.IsSuccess())

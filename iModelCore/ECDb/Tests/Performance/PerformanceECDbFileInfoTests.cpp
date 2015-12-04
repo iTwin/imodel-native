@@ -94,7 +94,7 @@ protected:
 
                     Utf8String ecsql;
                     ecsql.Sprintf("SELECT ECInstanceId, GetECClassId() FROM ONLY %s LIMIT %d",
-                                  ecclass->GetECSqlName(), s_fileInfoCountPerClass);
+                                  ecclass->GetECSqlName().c_str(), s_fileInfoCountPerClass);
 
                     ECSqlStatement stmt;
                     if (ECSqlStatus::Success != stmt.Prepare(GetECDb(), ecsql.c_str()))
@@ -167,7 +167,7 @@ protected:
         if (ownerClass == nullptr)
             return ERROR;
 
-        Utf8CP ecclassECSqlToken = ownerClass->GetECSqlName();
+        Utf8CP ecclassECSqlToken = ownerClass->GetECSqlName().c_str();
         Utf8String getCountECSql;
         getCountECSql.Sprintf("SELECT count(*) FROM ONLY %s", ecclassECSqlToken);
         ECSqlStatement getCountStmt;
