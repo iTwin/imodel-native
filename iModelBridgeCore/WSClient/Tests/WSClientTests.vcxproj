@@ -263,7 +263,8 @@
     <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="dependencies.mki" />
+    <None Include="BuildTests.mke" />
+    <None Include="Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
