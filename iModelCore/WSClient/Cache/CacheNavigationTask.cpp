@@ -486,7 +486,7 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
         {
         return
             "SELECT NULL "
-            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*objectClass) + " file "
+            "FROM ONLY " + objectClass->GetECSqlName() + " file "
             "WHERE ECInstanceId = ? "
             "  AND file.[" + fileNameProperty + "] IS NOT NULL "
             "  AND file.[" + fileNameProperty + "] != ''";

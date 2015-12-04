@@ -108,7 +108,7 @@ CachedResponseInfo CachedResponseManager::ReadInfo(CachedResponseKeyCR key)
         return 
             "SELECT response.* "
             "FROM ONLY " ECSql_CachedResponseInfoClass " response "
-            "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*parentClass) + " parent "
+            "JOIN ONLY " + parentClass->GetECSqlName() + " parent "
             "USING " ECSql_ResponseToParentClass " FORWARD "
             "WHERE parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ? "
             "LIMIT 1 ";
@@ -151,7 +151,7 @@ ECInstanceKey CachedResponseManager::FindInfo(CachedResponseKeyCR responseKey)
         return
             "SELECT response.ECInstanceId "
             "FROM ONLY " ECSql_CachedResponseInfoClass " response "
-            "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*parentClass) + " parent "
+            "JOIN ONLY " + parentClass->GetECSqlName() + " parent "
             "USING " ECSql_ResponseToParentClass " FORWARD "
             "WHERE parent.ECInstanceId = ? AND response.[" CLASS_CachedResponseInfo_PROPERTY_Name "] = ? "
             "LIMIT 1 ";
@@ -837,9 +837,9 @@ const ECInstanceKeyMultiMap& fullyPersistedInstances
 
     Utf8String ecsql =
         "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId, info.* "
-        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*instanceInfoClass) + " info "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*instanceInfoRelationshipClass) + " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*resultRelationshipClass) + " pageToResultRel ON pageToResultRel.TargetECInstanceId = infoRel.TargetECInstanceId "
+        "FROM ONLY " + instanceInfoClass->GetECSqlName() + " info "
+        "JOIN ONLY " + instanceInfoRelationshipClass->GetECSqlName() + " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
+        "JOIN ONLY " + resultRelationshipClass->GetECSqlName() + " pageToResultRel ON pageToResultRel.TargetECInstanceId = infoRel.TargetECInstanceId "
         "JOIN ONLY " + ECSql_ResponseToResponsePageClass + " responseToPageRel ON responseToPageRel.TargetECInstanceId = pageToResultRel.SourceECInstanceId "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceState "] = ? "
         "  AND responseToPageRel.SourceECInstanceId IN (" + StringHelper::Join(responseIds.begin(), responseIds.end(), ',') + ")";

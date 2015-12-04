@@ -422,7 +422,7 @@ ECInstanceKeyMultiMap& keysOut
         {
         return 
             "SELECT rel.TargetECClassId, rel.TargetECInstanceId "
-            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*relationshipClass) +  " rel "
+            "FROM ONLY " + relationshipClass->GetECSqlName() +  " rel "
             "WHERE rel.SourceECClassId = ? AND rel.SourceECInstanceId = ? ";
         });
 

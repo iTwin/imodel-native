@@ -393,8 +393,8 @@ bset<CachedRelationshipKey>& cachedRelationshipsOut
             "   info.[" CLASS_CachedRelationshipInfo_PROPERTY_RelClassId "], "
             "   info.[" CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId "] "
             "FROM ONLY " ECSql_CachedRelationshipInfoClass " info "
-            "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*holderClass) + " holder "
-            "USING " + ECSqlBuilder::ToECSqlSnippet(*holderToInfoRelClass) + " "
+            "JOIN ONLY " + holderClass->GetECSqlName() + " holder "
+            "USING " + holderToInfoRelClass->GetECSqlName() + " "
             "WHERE holder.ECInstanceId = ? ";
         });
 

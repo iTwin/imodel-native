@@ -620,7 +620,7 @@ BentleyStatus ECDbAdapter::BindParameters(ECSqlStatement& statement, const bvect
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ECDbAdapter::CountClassInstances(ECClassCP ecClass)
     {
-    Utf8String ecsql = "SELECT NULL FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass);
+    Utf8String ecsql = "SELECT NULL FROM ONLY " + ecClass->GetECSqlName();
 
     ECSqlStatement statement;
     if (SUCCESS != PrepareStatement(statement, ecsql))
@@ -646,7 +646,7 @@ ECInstanceId ECDbAdapter::FindInstance(ECClassCP ecClass, Utf8CP whereClause)
         return ECInstanceId();
         }
 
-    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " + ecClass->GetECSqlName() + " ";
     if (nullptr != whereClause)
         {
         ecsql += "WHERE " + Utf8String(whereClause) + " ";
@@ -674,7 +674,7 @@ bset<ECInstanceId> ECDbAdapter::FindInstances(ECClassCP ecClass, Utf8CP whereCla
     {
     bset<ECInstanceId> ids;
 
-    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " + ecClass->GetECSqlName() + " ";
     if (nullptr != whereClause)
         {
         ecsql += "WHERE " + Utf8String(whereClause);
@@ -707,7 +707,7 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECInstanceKeyCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR jsonOut, ECClassCP ecClass, ECInstanceId ecId)
     {
-    Utf8String ecsql = "SELECT * FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " WHERE ECInstanceId = ? LIMIT 1 ";
+    Utf8String ecsql = "SELECT * FROM ONLY " + ecClass->GetECSqlName() + " WHERE ECInstanceId = ? LIMIT 1 ";
 
     ECSqlStatement statement;
     if (SUCCESS != PrepareStatement(statement, ecsql))
@@ -735,7 +735,7 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecCla
         ecsql = "SELECT * ";
         }
 
-    ecsql += "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+    ecsql += "FROM ONLY " + ecClass->GetECSqlName() + " ";
 
     if (nullptr != whereClause)
         {
@@ -756,7 +756,7 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetJsonInstances(JsonValueR jsonOut, ECClassCP ecClass, Utf8CP whereClause, ICancellationTokenPtr ct)
     {
-    Utf8String ecsql = "SELECT * FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*ecClass) + " ";
+    Utf8String ecsql = "SELECT * FROM ONLY " + ecClass->GetECSqlName() + " ";
     if (whereClause != nullptr)
         {
         ecsql += "WHERE " + Utf8String(whereClause);
@@ -910,9 +910,9 @@ BentleyStatus ECDbAdapter::GetRelatedTargetIds(ECRelationshipClassCP relClass, E
 
     Utf8String ecsql =
         "SELECT t.ECInstanceId "
-        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
-        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " REVERSE "
+        "FROM ONLY " + targetClass->GetECSqlName() + " t "
+        "JOIN ONLY " + sourceClass->GetECSqlName() + " s "
+        "USING " + relClass->GetECSqlName() + " REVERSE "
         "WHERE s.ECInstanceId = ? ";
 
     ECSqlStatement statement;
@@ -940,9 +940,9 @@ BentleyStatus ECDbAdapter::GetRelatedSourceIds(ECRelationshipClassCP relClass, E
 
     Utf8String ecsql =
         "SELECT s.ECInstanceId "
-        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
-        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " FORWARD "
+        "FROM ONLY " + sourceClass->GetECSqlName() + " s "
+        "JOIN ONLY " + targetClass->GetECSqlName() + " t "
+        "USING " + relClass->GetECSqlName() + " FORWARD "
         "WHERE t.ECInstanceId = ? ";
 
     ECSqlStatement statement;
@@ -970,9 +970,9 @@ BentleyStatus ECDbAdapter::GetJsonRelatedSources(JsonValueR arrayOut, ECRelation
 
     Utf8String ecsql =
         "SELECT s.* "
-        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
-        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " FORWARD "
+        "FROM ONLY " + sourceClass->GetECSqlName() + " s "
+        "JOIN ONLY " + targetClass->GetECSqlName() + " t "
+        "USING " + relClass->GetECSqlName() + " FORWARD "
         "WHERE t.ECInstanceId = ? ";
 
     ECSqlStatement statement;
@@ -1000,9 +1000,9 @@ BentleyStatus ECDbAdapter::GetJsonRelatedTargets(JsonValueR arrayOut, ECRelation
 
     Utf8String ecsql =
         "SELECT t.* "
-        "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*targetClass) + " t "
-        "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*sourceClass) + " s "
-        "USING " + ECSqlBuilder::ToECSqlSnippet(*relClass) + " REVERSE "
+        "FROM ONLY " + targetClass->GetECSqlName() + " t "
+        "JOIN ONLY " + sourceClass->GetECSqlName() + " s "
+        "USING " + relClass->GetECSqlName() + " REVERSE "
         "WHERE s.ECInstanceId = ? ";
 
     if (nullptr != orderBy)

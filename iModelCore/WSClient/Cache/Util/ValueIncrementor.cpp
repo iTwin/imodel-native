@@ -40,7 +40,7 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
         {
         return 
             "SELECT ECInstanceId, [" + m_propertyName + "] "
-            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*propertyClass) + " LIMIT 1 ";
+            "FROM ONLY " + propertyClass->GetECSqlName() + " LIMIT 1 ";
         });
 
     ECInstanceId instanceId;
@@ -54,7 +54,7 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
     if (!instanceId.IsValid())
         {
         Utf8String ecsql = 
-            "INSERT INTO " + ECSqlBuilder::ToECSqlSnippet(*propertyClass) + " "
+            "INSERT INTO " + propertyClass->GetECSqlName() + " "
             "([" + m_propertyName + "]) VALUES (1) ";
 
         ECSqlStatement statement;
@@ -79,7 +79,7 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
     statement = m_statementCache->GetPreparedStatement(key + "Update", [&]
         {
         return
-            "UPDATE ONLY " + ECSqlBuilder::ToECSqlSnippet(*propertyClass) + " "
+            "UPDATE ONLY " + propertyClass->GetECSqlName() + " "
             "SET [" + m_propertyName + "] = ? ";
         });
 
