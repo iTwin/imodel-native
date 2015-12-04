@@ -1441,6 +1441,8 @@ public:
 //=======================================================================================
 struct ElementGeom3d : ElementGeomData
 {
+    typedef Placement3d T_Placement;
+    typedef GeometrySource3d T_GeometrySource;
 private:
     Placement3d     m_placement;
 
@@ -1459,31 +1461,35 @@ public:
 
 //=======================================================================================
 //! Parameterized base class for direct or indirect subclasses of DgnElement with
-//! 3D geometry.
+//! 2D or 3D geometry.
+//! This template allows any subclass of DgnElement to introduce geometry regardless of
+//! its position within the class hierarchy.
+//! Specializations exist for 2d and 3d geometry (GeometricElement2d, GeometricElement3d).
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : T_Base, GeometrySource3d
+template<typename T_Base, typename T_Geom> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : T_Base, T_Geom::T_GeometrySource
 {
 protected:
-    ElementGeom3d m_geom;
+    T_Geom m_geom;
 
     typedef typename T_Base::CreateParams CreateParams;
+    typedef typename T_Geom::T_Placement T_Placement;
 
-    explicit GeometricElement3d(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
+    explicit GeometricElement(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement())
         : T_Base(params), m_geom(category, placement) { }
 
     virtual DgnDbR _GetSourceDgnDb() const override final {return this->GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
-    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
 
     virtual DgnCategoryId _GetCategoryId() const override final {return m_geom.GetCategoryId();}
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return m_geom.SetCategoryId(categoryId, *this); }
     virtual GeomStreamCR _GetGeomStream() const override final {return m_geom.GetGeomStream();}
 
-    virtual Placement3dCR _GetPlacement() const override final {return m_geom.GetPlacement();}
-    virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override { return m_geom.SetPlacement(placement, *this); }
+    virtual T_Placement const& _GetPlacement() const override final {return m_geom.GetPlacement();}
+    virtual DgnDbStatus _SetPlacement(T_Placement const& placement) override { return m_geom.SetPlacement(placement, *this); }
+    virtual void _AdjustPlacementForImport(DgnImportContext const& importer) override { m_geom.AdjustPlacementForImport(importer); }
 
     virtual DgnDbStatus _OnInsert() override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status; }
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status; }
@@ -1492,11 +1498,28 @@ protected:
     virtual DgnDbStatus _InsertInDb() override { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? this->InsertGeomSourceInDb() : status; }
     virtual DgnDbStatus _UpdateInDb() override { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? this->UpdateGeomSourceInDb() : status; }
 
-    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); m_geom.CopyFrom(rhs.ToGeometrySource3d()); }
     virtual void _RemapIds(DgnImportContext& importer) override { T_Base::_RemapIds(importer); m_geom.RemapIds(importer); }
-
     virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
 };
+
+//=======================================================================================
+//! Parameterized base class for direct or indirect subclasses of DgnElement with
+//! 3D geometry.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Paul.Connelly   12/15
+//=======================================================================================
+template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement<T_Base, ElementGeom3d>
+{
+protected:
+    explicit GeometricElement3d(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d())
+        : GeometricElement(params, category, placement) { }
+
+    virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
+    virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); m_geom.CopyFrom(rhs.ToGeometrySource3d()); }
+};
+
+//! Specialization of GeometricElement3d deriving directly from the dgn:Element ECClass.
+typedef GeometricElement3d<DgnElement> DgnElement3d;
 
 //=======================================================================================
 //! CreateParams used for constructing geometric elements
@@ -1528,9 +1551,9 @@ typedef GeometricElementCreateParams<Placement3d> ElementCreateParams3d;
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : GeometricElement3d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, GeometricElement3d<DgnElement>)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, DgnElement3d)
 
 protected:
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
@@ -1557,6 +1580,8 @@ public:
 //=======================================================================================
 struct ElementGeom2d : ElementGeomData
 {
+    typedef Placement2d T_Placement;
+    typedef GeometrySource2d T_GeometrySource;
 private:
     Placement2d     m_placement;
 
@@ -1579,49 +1604,27 @@ public:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : T_Base, GeometrySource2d
+template<typename T_Base> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement<T_Base, ElementGeom2d>
 {
 protected:
-    ElementGeom2d m_geom;
-
-    typedef typename T_Base::CreateParams CreateParams;
-
     explicit GeometricElement2d(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d())
-        : T_Base(params), m_geom(category, placement) { }
+        : GeometricElement(params, category, placement) { }
 
-    virtual DgnDbR _GetSourceDgnDb() const override final {return this->GetDgnDb();}
-    virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
-
-    virtual DgnCategoryId _GetCategoryId() const override final {return m_geom.GetCategoryId();}
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return m_geom.SetCategoryId(categoryId, *this); }
-    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom.GetGeomStream();}
-
-    virtual Placement2dCR _GetPlacement() const override final {return m_geom.GetPlacement();}
-    virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override { return m_geom.SetPlacement(placement, *this); }
-
-    virtual DgnDbStatus _OnInsert() override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status; }
-    virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status; }
-
-    virtual DgnDbStatus _LoadFromDb() override { auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadFromDb(this->GetElementId(), this->GetDgnDb()) : status; }
-    virtual DgnDbStatus _InsertInDb() override { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? this->InsertGeomSourceInDb() : status; }
-    virtual DgnDbStatus _UpdateInDb() override { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? this->UpdateGeomSourceInDb() : status; }
-
     virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); m_geom.CopyFrom(rhs.ToGeometrySource2d()); }
-    virtual void _RemapIds(DgnImportContext& importer) override { T_Base::_RemapIds(importer); m_geom.RemapIds(importer); }
-
-    virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
 };
+
+//! Specialization of GeometricElement2d deriving directly from the dgn:Element ECClass.
+typedef GeometricElement2d<DgnElement> DgnElement2d;
 
 //=======================================================================================
 //! A 2-dimensional geometric element used to annotate drawings and sheets.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : GeometricElement2d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : DgnElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, GeometricElement2d<DgnElement>)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, DgnElement2d)
     friend struct dgn_ElementHandler::Annotation;
 public:
     typedef ElementCreateParams2d CreateParams;
@@ -1639,9 +1642,9 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : GeometricElement2d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, GeometricElement2d<DgnElement>)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d)
     friend struct dgn_ElementHandler::Drawing;
 public:
     typedef ElementCreateParams2d CreateParams;
@@ -1659,9 +1662,9 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GeometricElement2d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE SheetElement : DgnElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GeometricElement2d<DgnElement>)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, DgnElement2d)
     friend struct dgn_ElementHandler::Sheet;
 public:
     typedef ElementCreateParams2d CreateParams;
