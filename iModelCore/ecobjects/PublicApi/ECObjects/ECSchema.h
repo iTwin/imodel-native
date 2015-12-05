@@ -2402,8 +2402,7 @@ private:
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
 
-    template<typename T>
-    ECObjectsStatus                     AddClass (T& pClass, bool deleteClassIfDuplicate = true);
+    ECObjectsStatus                     AddClass (ECClassP pClass, bool deleteClassIfDuplicate = true);
     ECObjectsStatus                     AddEnumeration(ECEnumerationP& pEnumeration);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);

@@ -695,8 +695,7 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
+ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool deleteClassIfDuplicate)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -748,8 +747,10 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
         pClass = nullptr;
         return status;
         }
-
-    return AddClass (pClass);
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        pClass = nullptr;
+    
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -768,7 +769,10 @@ ECObjectsStatus ECSchema::CreateStructClass (ECStructClassP& pClass, Utf8StringC
         return status;
         }
 
-    return AddClass (pClass);
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        pClass = nullptr;
+    
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -787,7 +791,10 @@ ECObjectsStatus ECSchema::CreateCustomAttributeClass (ECCustomAttributeClassP& p
         return status;
         }
 
-    return AddClass (pClass);
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        pClass = nullptr;
+    
+    return status;
     }
 
 
