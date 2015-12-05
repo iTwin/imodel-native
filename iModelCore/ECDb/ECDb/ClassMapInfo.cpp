@@ -75,7 +75,7 @@ MapStatus ClassMapInfo::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus ClassMapInfo::_EvaluateMapStrategy()
     {
-    if (m_ecClass.IsCustomAttributeClass() && ECClassModifier::Abstract == m_ecClass.GetClassModifier()) // WIP_EC3 - verify this check
+    if (m_ecClass.IsCustomAttributeClass())
         {
         LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute which is never mapped to a table in ECDb.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);

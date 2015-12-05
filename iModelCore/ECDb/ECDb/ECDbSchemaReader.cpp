@@ -249,20 +249,20 @@ BentleyStatus ECDbSchemaReader::FindECSchemaIdInDb(ECSchemaId& ecSchemaId, Utf8C
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECSchemaClassesFromDb(DbECSchemaEntry* ecSchemaKey, std::set<DbECSchemaEntry*>& fullyLoadedSchemas)
     {
-    BeAssert (ecSchemaKey != nullptr);
+    BeAssert(ecSchemaKey != nullptr);
     if (!ecSchemaKey)
         return ERROR;
 
-    if (fullyLoadedSchemas.find (ecSchemaKey) != fullyLoadedSchemas.end ())
+    if (fullyLoadedSchemas.find(ecSchemaKey) != fullyLoadedSchemas.end())
         return SUCCESS;
 
     //Enure all reference schemas also loaded
-    for (auto& refSchemaKey : ecSchemaKey->m_resolvedECSchema->GetReferencedSchemas ())
+    for (auto& refSchemaKey : ecSchemaKey->m_resolvedECSchema->GetReferencedSchemas())
         {
         DbECSchemaEntry* key = nullptr;
-        ECSchemaId referenceECSchemaId = refSchemaKey.second->GetId ();
-        DbECSchemaMap::const_iterator schemaIterator = m_ecSchemaByECSchemaIdLookup.find (referenceECSchemaId);
-        if (schemaIterator != m_ecSchemaByECSchemaIdLookup.end ())
+        ECSchemaId referenceECSchemaId = refSchemaKey.second->GetId();
+        DbECSchemaMap::const_iterator schemaIterator = m_ecSchemaByECSchemaIdLookup.find(referenceECSchemaId);
+        if (schemaIterator != m_ecSchemaByECSchemaIdLookup.end())
             key = schemaIterator->second;
 
         if (SUCCESS != LoadECSchemaClassesFromDb(key, fullyLoadedSchemas))
@@ -270,22 +270,21 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaClassesFromDb(DbECSchemaEntry* ecSch
         }
 
     //Ensure load all the classes in the schema
-    fullyLoadedSchemas.insert (ecSchemaKey);
-    if (ecSchemaKey->IsFullyLoaded ())
+    fullyLoadedSchemas.insert(ecSchemaKey);
+    if (ecSchemaKey->IsFullyLoaded())
         return SUCCESS;
 
-    DbECClassInfo info;
-    info.ColsWhere = DbECClassInfo::COL_SchemaId;
-    info.ColsSelect = DbECClassInfo::COL_Id;
-    info.m_ecSchemaId = ecSchemaKey->m_ecSchemaId;
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != ECDbSchemaPersistence::FindECClass(stmt, m_db, info))
+    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT Id FROM ec_Class WHERE SchemaId=?");
+    if (stmt == nullptr)
         return ERROR;
-      
-    while (ECDbSchemaPersistence::Step(info, *stmt) == BE_SQLITE_ROW)
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaKey->m_ecSchemaId))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
         {
         ECClassP ecClass = nullptr;
-        if (SUCCESS != ReadECClass (ecClass, info.m_ecClassId))
+        if (SUCCESS != ReadECClass(ecClass, (ECClassId) stmt->GetValueInt64(0)))
             return ERROR;
 
         if (ecSchemaKey->IsFullyLoaded())
@@ -338,66 +337,91 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECS
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassId ecClassId, ECSchemaR ecSchemaIn)
     {
-    DbECClassInfo info;
-    info.ColsWhere = DbECClassInfo::COL_Id;
-    info.ColsSelect =
-        DbECClassInfo::COL_Name                      |
-        DbECClassInfo::COL_DisplayLabel              |
-        DbECClassInfo::COL_Description               |
-        DbECClassInfo::COL_IsCustomAttribute         |
-        DbECClassInfo::COL_IsStruct                  |
-        DbECClassInfo::COL_IsDomainClass             |
-        DbECClassInfo::COL_IsRelationship            |
-        DbECClassInfo::COL_RelationStrength          |
-        DbECClassInfo::COL_RelationStrengthDirection;
+    const int nameColIx = 0;
+    const int displayLabelColIx = 1;
+    const int descriptionColIx = 2;
+    const int typeColIx = 3;
+    const int modifierColIx = 4;
+    const int relStrengthColIx = 5;
+    const int relStrengthDirColIx = 6;
 
-    info.m_ecClassId = ecClassId;
-
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != ECDbSchemaPersistence::FindECClass (stmt, m_db, info))
+    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT Name,DisplayLabel,Description,Type,Modifier,RelationStrength,RelationStrengthDirection FROM ec_Class WHERE Id=?");
+    if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_ROW != ECDbSchemaPersistence::Step(info, *stmt))
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecClassId))
         return ERROR;
 
-    ECRelationshipClassP ecRelationshipClass = nullptr;
-    ECEntityClassP ecEntityClass = nullptr;
-    ECCustomAttributeClassP ecCAClass = nullptr;
-    ECStructClassP ecStructClass = nullptr;
-    if (info.m_isRelationship)
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ERROR;
+
+    Utf8CP className = stmt->GetValueText(nameColIx);
+    Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
+    Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
+    ECClassType classType = Enum::FromInt<ECClassType>(stmt->GetValueInt(typeColIx));
+    ECClassModifier classModifier = Enum::FromInt<ECClassModifier>(stmt->GetValueInt(modifierColIx));
+
+    switch (classType)
         {
-        if ( ecSchemaIn.CreateRelationshipClass (ecRelationshipClass, info.m_name.c_str()) != ECObjectsStatus::Success )
-            return ERROR;
-        ecClassOut = ecRelationshipClass;
-        ecRelationshipClass->SetStrength          (info.m_relationStrength);
-        ecRelationshipClass->SetStrengthDirection (info.m_relationStrengthDirection);
-        }
-    else if (info.m_isStruct)
-        {
-        if ( ecSchemaIn.CreateStructClass (ecStructClass, info.m_name.c_str()) != ECObjectsStatus::Success )
-            return ERROR;
-        ecClassOut = ecStructClass;
-        }
-    else if (info.m_isCustomAttribute)
-        {
-        if (ecSchemaIn.CreateCustomAttributeClass(ecCAClass, info.m_name.c_str()) != ECObjectsStatus::Success)
-            return ERROR;
-        ecClassOut = ecCAClass;
-        }
-    else
-        {
-        if (ecSchemaIn.CreateEntityClass(ecEntityClass, info.m_name.c_str()) != ECObjectsStatus::Success)
-            return ERROR;
-        ecClassOut = ecEntityClass;
+            case ECClassType::CustomAttribute:
+            {
+            ECCustomAttributeClassP newClass = nullptr;
+            if (ecSchemaIn.CreateCustomAttributeClass(newClass, className) != ECObjectsStatus::Success)
+                return ERROR;
+
+            ecClassOut = newClass;
+            break;
+            }
+
+            case ECClassType::Entity:
+            {
+            ECEntityClassP newClass = nullptr;
+            if (ecSchemaIn.CreateEntityClass(newClass, className) != ECObjectsStatus::Success)
+                return ERROR;
+
+            ecClassOut = newClass;
+            break;
+            }
+
+            case ECClassType::Struct:
+            {
+            ECStructClassP newClass = nullptr;
+            if (ecSchemaIn.CreateStructClass(newClass, className) != ECObjectsStatus::Success)
+                return ERROR;
+
+            ecClassOut = newClass;
+            break;
+            }
+
+            case ECClassType::Relationship:
+            {
+            ECRelationshipClassP newClass = nullptr;
+            if (ecSchemaIn.CreateRelationshipClass(newClass, className) != ECObjectsStatus::Success)
+                return ERROR;
+
+            BeAssert(!stmt->IsColumnNull(relStrengthColIx) && !stmt->IsColumnNull(relStrengthDirColIx));
+            newClass->SetStrength(Enum::FromInt<StrengthType>(stmt->GetValueInt(relStrengthColIx)));
+            newClass->SetStrengthDirection(Enum::FromInt<ECRelatedInstanceDirection>(stmt->GetValueInt(relStrengthDirColIx)));
+            ecClassOut = newClass;
+            break;
+            }
+
+            default:
+                BeAssert(false);
+                return ERROR;
         }
 
-    if (!(info.ColsNull & DbECClassInfo::COL_DisplayLabel))
-        ecClassOut->SetDisplayLabel(info.m_displayLabel.c_str());
+    ecClassOut->SetId(ecClassId);
+    ecClassOut->SetClassModifier(classModifier);
 
-    ecClassOut->SetId (ecClassId);
-    ecClassOut->SetDescription(info.m_description.c_str());
-    if (!info.m_isDomainClass)
-        ecClassOut->SetClassModifier(ECClassModifier::Abstract); // WIP_EC3 - Need to change flags to handle ClassModifier: Abstract/Sealed
+    if (!Utf8String::IsNullOrEmpty(displayLabel))
+        ecClassOut->SetDisplayLabel(displayLabel);
+
+    if (!Utf8String::IsNullOrEmpty(description))
+        ecClassOut->SetDescription(description);
+
+    BeAssert(stmt->Step() == BE_SQLITE_DONE);
+    stmt = nullptr; //to release it, so that it can be reused without repreparation
 
     if (SUCCESS != LoadBaseClassesFromDb(ecClassOut, ecClassId))
         return ERROR;
@@ -408,12 +432,13 @@ BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassI
     if (SUCCESS != LoadCAFromDb(*ecClassOut, ecClassId, ECContainerType::Class))
         return ERROR;
 
-    if (ecRelationshipClass != nullptr)
+    ECRelationshipClassP relClass = ecClassOut->GetRelationshipClassP();
+    if (relClass != nullptr)
         {
-        if (SUCCESS != LoadECRelationshipConstraintFromDb(ecRelationshipClass, ecClassId, ECRelationshipEnd_Source))
+        if (SUCCESS != LoadECRelationshipConstraintFromDb(relClass, ecClassId, ECRelationshipEnd_Source))
             return ERROR;
 
-        if (SUCCESS != LoadECRelationshipConstraintFromDb(ecRelationshipClass, ecClassId, ECRelationshipEnd_Target))
+        if (SUCCESS != LoadECRelationshipConstraintFromDb(relClass, ecClassId, ECRelationshipEnd_Target))
             return ERROR;
         }
 

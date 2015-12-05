@@ -18,7 +18,7 @@ ECInstanceDeleter::ECInstanceDeleter
 (
 ECDbCR ecdb,
 ECClassCR ecClass
-) : m_ecdb (ecdb), m_ecClass (ecClass)
+) : m_ecdb (ecdb), m_ecClass (ecClass), m_isValid(false)
     {
     Initialize ();
     }
@@ -42,9 +42,14 @@ bool ECInstanceDeleter::IsValid () const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceDeleter::Initialize()
     {
+    if (!m_ecClass.IsEntityClass() && !m_ecClass.IsRelationshipClass())
+        {
+        m_isValid = false;
+        return;
+        }
+
     Utf8String ecsql ("DELETE FROM ONLY ");
-    ecsql.append (m_ecClass.GetECSqlName());
-    ecsql.append (" WHERE ").append (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).append (" = ?");
+    ecsql.append (m_ecClass.GetECSqlName()).append (" WHERE ECInstanceId=?");
 
     ECSqlStatus stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
     m_isValid = (stat.IsSuccess());

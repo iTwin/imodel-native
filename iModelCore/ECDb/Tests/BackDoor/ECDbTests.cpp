@@ -179,7 +179,6 @@ ECN::ECSchemaCachePtr ECDbTestUtility::ReadECSchemaFromString(Utf8CP ecschemaXml
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema = nullptr;
     ECSchema::ReadFromXmlString(schema, ecschemaXmlString, *context);
-
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*schema);
 

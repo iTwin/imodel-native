@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 

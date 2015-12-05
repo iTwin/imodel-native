@@ -734,36 +734,16 @@ BentleyStatus PropertyMapToTable::_Load(ECDbClassMapInfo const& classMapInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
-    ECClassCP tableECType = nullptr;
-    ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
     StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
-    if (arrayProperty)
+    if (structArrayProperty == nullptr)
         {
-        ArrayKind kind =  arrayProperty->GetKind();
-        if (kind == ARRAYKIND_Primitive)
-            {
-            BeAssert(false && "not yet supported");
-            tableECType = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecDbMap.GetECDbR(), arrayProperty->GetPrimitiveElementType());
-            }
-        else if (kind == ARRAYKIND_Struct && nullptr != structArrayProperty)
-            tableECType = structArrayProperty->GetStructElementType();
-        else
-            BeAssert(false && "Expected a struct array but property not found"); // WIP_EC3 - is this check correct?
+        BeAssert(false && "Expecting a struct array property when using PropertyMapToTable");
+        return nullptr;
         }
-    else
-        BeAssert (false && "Expecting an array when using PropertyMapToTable");
 
-    return new PropertyMapToTable (ecProperty, *tableECType, propertyAccessString, primaryTable, parentPropertyMap);
+    ECClassCP structType = structArrayProperty->GetStructElementType();
+    return new PropertyMapToTable (ecProperty, *structType, propertyAccessString, primaryTable, parentPropertyMap);
     }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapToTable::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
-    {
-    }
-
        
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     11/2013

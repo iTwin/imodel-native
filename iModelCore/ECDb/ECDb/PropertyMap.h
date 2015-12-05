@@ -331,7 +331,6 @@ protected:
         {
         }
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const override { return this; }
-    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const override;
     virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override;
 public:

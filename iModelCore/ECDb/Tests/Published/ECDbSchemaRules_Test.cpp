@@ -298,7 +298,7 @@ TEST_F(ECDbSchemaRules, Relationship)
         "  <ECClass typeName='B'>"
         "    <ECProperty propertyName='Id' typeName='string' />"
         "  </ECClass>"
-        "  <ECRelationshipClass typeName='Rel1' isDomainClass='True' isStruct='True'>"
+        "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class='bsc:AnyClass'/>"
         "    </Source>"
@@ -317,7 +317,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "  <ECClass typeName='B'>"
                    "    <ECProperty propertyName='Id' typeName='string' />"
                    "  </ECClass>"
-                   "  <ECRelationshipClass typeName='Rel1' isDomainClass='True' isStruct='True'>"
+                   "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
                    "    <Source cardinality='(0,1)' polymorphic='True'>"
                    "      <Class class='A'/>"
                    "    </Source>"
@@ -336,7 +336,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "  <ECClass typeName='B'>"
                    "    <ECProperty propertyName='Id' typeName='string' />"
                    "  </ECClass>"
-                   "  <ECRelationshipClass typeName='Rel1' isDomainClass='True' isStruct='True'>"
+                   "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
                    "    <Source cardinality='(0,N)' polymorphic='True'>"
                    "      <Class class='A'/>"
                    "    </Source>"
@@ -355,7 +355,7 @@ TEST_F(ECDbSchemaRules, Relationship)
         "  <ECClass typeName='B'>"
         "    <ECProperty propertyName='Id' typeName='string' />"
         "  </ECClass>"
-        "  <ECRelationshipClass typeName='Rel1' isDomainClass='True' isStruct='True'>"
+        "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class='A'/>"
         "    </Source>"
@@ -977,17 +977,6 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "  </ECClass>"
                  "</ECSchema>",
                  false, "A domain base class must not have struct subclasses."),
-
-        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"A\" isDomainClass='True'>"
-                 "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-                 "  </ECClass>"
-                 "  <ECClass typeName=\"B\" isDomainClass='True' isStruct='True'>"
-                 "    <BaseClass>A</BaseClass>"
-                 "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
-                 "  </ECClass>"
-                 "</ECSchema>",
-                 false, "A domain base class must not have struct subclasses, even if the subclass is a struct and a domain class at the same time."),
 
         SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"

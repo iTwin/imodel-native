@@ -42,11 +42,6 @@ RelationshipStrength.ForwardEmbedDeleteThirdLevelParentWithTwoLinks
 RelationshipStrength.DeleteInstanceOfMultipleRelationsPath
 RelationshipStrength.ForwardEmbeddingWithMultipleLevelChildrens
 
-
-# WIP_EC3 - mapping logic needs to be fixed with respect to baseclasses and shared tables and struct/CA classes
-ECDbMappingTestFixture.ECDbMapTests 
-ECDbSchemaRules.ConsistentClassHierarchy
-
 # WIP_EC3 - test schema uses UnitSpecification as a CA
 ECDbSchemas.SchemaDiff
 ECDbSchemas.ClassDiff

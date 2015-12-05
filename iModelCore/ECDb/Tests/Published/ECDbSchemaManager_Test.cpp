@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC

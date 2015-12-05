@@ -862,18 +862,18 @@ void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
     if (m_loadedFlags.m_anyClassReplacementsLoaded)
         return;
 
-    Utf8CP sql1 =
-        "SELECT ec_Class.Id  FROM ec_PropertyMap "
+    Utf8String sql;
+    sql.Sprintf("SELECT ec_Class.Id  FROM ec_PropertyMap "
         "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-		"WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
-        "GROUP BY ec_Class.Id";
+        "WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.Type <> %d AND ec_Table.IsVirtual = 0 "
+        "GROUP BY ec_Class.Id", Enum::ToInt(ECN::ECClassType::Relationship));
 
 
-    auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
+    auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
     while (stmt1->Step () == BE_SQLITE_ROW)
         {
         ECClassId id = stmt1->GetValueInt64 (0);
@@ -1021,8 +1021,8 @@ void ECDbMap::LightweightCache::LoadRelationshipByTable ()  const
     if (m_loadedFlags.m_relationshipPerTableLoaded)
         return;
 
-    Utf8CP sql0 =
-        "SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy FROM ec_Column "
+    Utf8String sql;
+    sql.Sprintf("SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy FROM ec_Column "
         "INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
         "INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id "
         "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
@@ -1031,9 +1031,9 @@ void ECDbMap::LightweightCache::LoadRelationshipByTable ()  const
         "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "WHERE ec_ClassMap.MapStrategy  <> 0 AND " 
         "(ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = 0) AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) AND "
-        "ec_Class.IsRelationship = 1 AND ec_Table.IsVirtual = 0";
+        "ec_Class.Type=%d AND ec_Table.IsVirtual = 0", Enum::ToInt(ECClassType::Relationship));
 
-    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
+    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
     while (stmt->Step () == BE_SQLITE_ROW)
         {
         auto relationshipClassId = stmt->GetValueInt64 (0);

@@ -319,16 +319,16 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
         {
         Utf8String ecsql;
 
-        ecsql.Sprintf ("%s WHERE PASpatialProp.I = 123 AND PASpatialProp.Geometry IS NULL", testClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE SpatialStructProp.Geometry IS NULL", testClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE PASpatialProp.I = 123 AND PASpatialProp.Geometry IS NOT NULL", testClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE SpatialStructProp.Geometry IS NOT NULL", testClassECSqlStub.c_str ());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        ecsql.Sprintf ("%s WHERE PASpatialProp.I = 123 AND PASpatialProp.Geometry_Array IS NULL", testClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE SpatialStructProp.Geometry_Array IS NULL", testClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
-        ecsql.Sprintf ("%s WHERE PASpatialProp.I = 123 AND PASpatialProp.Geometry_Array IS NOT NULL", testClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE SpatialStructProp.Geometry_Array IS NOT NULL", testClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 

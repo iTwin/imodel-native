@@ -143,112 +143,48 @@ DbResult ECDbSchemaPersistence::Step(DbECSchemaInfo& info, BeSQLite::Statement& 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::InsertECClass(ECDbCR db, DbECClassInfo const& info)
+BentleyStatus ECDbSchemaPersistence::InsertECClass(ECDbCR db, ECClassCR ecclass)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_Class (Id, SchemaId, Name, DisplayLabel, Description, IsDomainClass, IsStruct, IsCustomAttribute, RelationStrength, RelationStrengthDirection, IsRelationship) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_Class(Id,SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationStrength,RelationStrengthDirection) "
+                                              "VALUES(?,?,?,?,?,?,?,?,?)"))
         return ERROR;
 
-    if (info.ColsInsert & DbECClassInfo::COL_Id) stmt->BindInt64(1, info.m_ecClassId);
-    if (info.ColsInsert & DbECClassInfo::COL_SchemaId) stmt->BindInt64(2, info.m_ecSchemaId);
-    if (info.ColsInsert & DbECClassInfo::COL_Name) stmt->BindText(3, info.m_name, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECClassInfo::COL_DisplayLabel) stmt->BindText(4, info.m_displayLabel, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECClassInfo::COL_Description) stmt->BindText(5, info.m_description, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECClassInfo::COL_IsDomainClass) stmt->BindInt(6, info.m_isDomainClass ? 1 : 0);
-    if (info.ColsInsert & DbECClassInfo::COL_IsStruct) stmt->BindInt(7, info.m_isStruct ? 1 : 0);
-    if (info.ColsInsert & DbECClassInfo::COL_IsCustomAttribute) stmt->BindInt(8, info.m_isCustomAttribute ? 1 : 0);
-    if (info.ColsInsert & DbECClassInfo::COL_RelationStrength) stmt->BindInt(9, ToInt(info.m_relationStrength));
-    if (info.ColsInsert & DbECClassInfo::COL_RelationStrengthDirection) stmt->BindInt(10, ToInt(info.m_relationStrengthDirection));
-    if (info.ColsInsert & DbECClassInfo::COL_IsRelationship) stmt->BindInt(11, info.m_isRelationship ? 1 : 0);
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecclass.GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(2, ecclass.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(3, ecclass.GetName().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (ecclass.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecclass.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindText(5, ecclass.GetDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(6, Enum::ToInt(ecclass.GetClassType())))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(7, Enum::ToInt(ecclass.GetClassModifier())))
+        return ERROR;
+
+    ECRelationshipClassCP relClass = ecclass.GetRelationshipClassCP();
+    if (relClass != nullptr)
+        {
+        if (BE_SQLITE_OK != stmt->BindInt(8, Enum::ToInt(relClass->GetStrength())))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindInt(9, Enum::ToInt(relClass->GetStrengthDirection())))
+            return ERROR;
+        }
 
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::FindECClass(BeSQLite::CachedStatementPtr& stmt, ECDbCR db, DbECClassInfo const& info)
-    {
-    //prepare select list
-    SqlClauseBuilder selectClause(",");
-    if (info.ColsSelect & DbECClassInfo::COL_Id) selectClause.AddItem("Id");
-    if (info.ColsSelect & DbECClassInfo::COL_SchemaId) selectClause.AddItem("SchemaId");
-    if (info.ColsSelect & DbECClassInfo::COL_Name) selectClause.AddItem("Name");
-    if (info.ColsSelect & DbECClassInfo::COL_DisplayLabel) selectClause.AddItem("DisplayLabel");
-    if (info.ColsSelect & DbECClassInfo::COL_Description) selectClause.AddItem("Description");
-    if (info.ColsSelect & DbECClassInfo::COL_IsDomainClass) selectClause.AddItem("IsDomainClass");
-    if (info.ColsSelect & DbECClassInfo::COL_IsStruct) selectClause.AddItem("IsStruct");
-    if (info.ColsSelect & DbECClassInfo::COL_IsCustomAttribute) selectClause.AddItem("IsCustomAttribute");
-    if (info.ColsSelect & DbECClassInfo::COL_RelationStrength) selectClause.AddItem("RelationStrength");
-    if (info.ColsSelect & DbECClassInfo::COL_RelationStrengthDirection) selectClause.AddItem("RelationStrengthDirection");
-    if (info.ColsSelect & DbECClassInfo::COL_IsRelationship) selectClause.AddItem("IsRelationship");
-
-    BeAssert(!selectClause.IsEmpty());
-
-    Utf8String sql("SELECT ");
-    sql.append(selectClause.ToString()).append(" FROM ec_Class");
-
-    //prepare where
-    SqlClauseBuilder whereClause("AND");
-    if (info.ColsWhere & DbECClassInfo::COL_Id) whereClause.AddItem("Id=?");
-    if (info.ColsWhere & DbECClassInfo::COL_SchemaId) whereClause.AddItem("SchemaId=?");
-    if (info.ColsWhere & DbECClassInfo::COL_Name) whereClause.AddItem("Name=?");
-    if (info.ColsWhere & DbECClassInfo::COL_IsDomainClass) whereClause.AddItem("IsDomainClass=?");
-    if (info.ColsWhere & DbECClassInfo::COL_IsStruct) whereClause.AddItem("IsStruct=?");
-    if (info.ColsWhere & DbECClassInfo::COL_IsCustomAttribute) whereClause.AddItem("IsCustomAttribute=?");
-
-    if (!whereClause.IsEmpty())
-        sql.append(" WHERE ").append(whereClause.ToString());
-
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, sql.c_str()))
-        return ERROR;
-
-    int nCol = 1;
-    if (info.ColsWhere & DbECClassInfo::COL_Id) stmt->BindInt64(nCol++, info.m_ecClassId);
-    if (info.ColsWhere & DbECClassInfo::COL_SchemaId) stmt->BindInt64(nCol++, info.m_ecSchemaId);
-    if (info.ColsWhere & DbECClassInfo::COL_Name) stmt->BindText(nCol++, info.m_name, Statement::MakeCopy::No);
-    if (info.ColsWhere & DbECClassInfo::COL_Description) stmt->BindText(nCol++, info.m_description, Statement::MakeCopy::No);
-    if (info.ColsWhere & DbECClassInfo::COL_IsDomainClass) stmt->BindInt(nCol++, info.m_isDomainClass ? 1 : 0);
-    if (info.ColsWhere & DbECClassInfo::COL_IsStruct) stmt->BindInt(nCol++, info.m_isStruct ? 1 : 0);
-    if (info.ColsWhere & DbECClassInfo::COL_IsCustomAttribute) stmt->BindInt(nCol++, info.m_isCustomAttribute ? 1 : 0);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::Step (DbECClassInfo& info,  BeSQLite::Statement& stmt)
-    {
-    DbResult r;
-    if ((r = stmt.Step()) == BE_SQLITE_ROW)
-        {
-        int nCol = 0;
-        info.ColsNull = 0;
-        if (info.ColsSelect & DbECClassInfo::COL_Id                )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_Id;                        nCol++; } else info.m_ecClassId                 = stmt.GetValueInt64(nCol++);
-        if (info.ColsSelect & DbECClassInfo::COL_SchemaId               )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_SchemaId;                nCol++; } else info.m_ecSchemaId                = stmt.GetValueInt64(nCol++);
-        if (info.ColsSelect & DbECClassInfo::COL_Name                     )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_Name;                      nCol++; } else info.m_name                      = stmt.GetValueText (nCol++);
-        if (info.ColsSelect & DbECClassInfo::COL_DisplayLabel             )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_DisplayLabel;              nCol++; } else info.m_displayLabel              = stmt.GetValueText (nCol++);
-        if (info.ColsSelect & DbECClassInfo::COL_Description              )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_Description;               nCol++; } else info.m_description               = stmt.GetValueText (nCol++);
-        if (info.ColsSelect & DbECClassInfo::COL_IsDomainClass            )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_IsDomainClass;             nCol++; } else info.m_isDomainClass             = stmt.GetValueInt  (nCol++) == 1;
-        if (info.ColsSelect & DbECClassInfo::COL_IsStruct                 )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_IsStruct;                  nCol++; } else info.m_isStruct                  = stmt.GetValueInt  (nCol++) == 1;
-        if (info.ColsSelect & DbECClassInfo::COL_IsCustomAttribute        )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_IsCustomAttribute;         nCol++; } else info.m_isCustomAttribute         = stmt.GetValueInt  (nCol++) == 1;
-        if (info.ColsSelect & DbECClassInfo::COL_RelationStrength         )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_RelationStrength;          nCol++; } else info.m_relationStrength          = (StrengthType)stmt.GetValueInt (nCol++);
-        if (info.ColsSelect & DbECClassInfo::COL_RelationStrengthDirection)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_RelationStrengthDirection; nCol++; }  else info.m_relationStrengthDirection= ToECRelatedInstanceDirection (stmt.GetValueInt (nCol++));
-        if (info.ColsSelect & DbECClassInfo::COL_IsRelationship           )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_IsRelationship;            nCol++; } else info.m_isRelationship            = stmt.GetValueInt  (nCol++) == 1;
-        }
-    return r;
     }
 
 
@@ -958,72 +894,6 @@ BentleyStatus ECDbSchemaPersistence::GetECClassKeys(ECClassKeys& keys, ECSchemaI
         }
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle        04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-int ECDbSchemaPersistence::ToInt (ECN::ECRelatedInstanceDirection direction)
-    {
-    switch (direction)
-        {
-        case ECRelatedInstanceDirection::Forward:
-            return 1;
-        case ECRelatedInstanceDirection::Backward:
-            return 2;
-        default:
-            BeAssert (false && "ECRelatedInstanceDirection has a new value. ECDbSchemaPersistence::ToInt needs to adopt to it.");
-            return -1;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle        04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (int relatedInstanceDirection)
-    {
-    BeAssert ((relatedInstanceDirection == 1 || relatedInstanceDirection == 2) &&"Integer cannot be converted to ECRelatedInstanceDirection.");
-
-    if (relatedInstanceDirection == 2)
-        return ECRelatedInstanceDirection::Backward;
-
-    return ECRelatedInstanceDirection::Forward;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-//static
-int ECDbSchemaPersistence::ToInt(ECN::StrengthType strengthType)
-    {
-    switch (strengthType)
-        {
-        case StrengthType::Embedding:
-            return 2;
-        case StrengthType::Holding:
-            return 1;
-        case StrengthType::Referencing:
-            return 0;
-        default:
-            BeAssert(false && "StrengthType has a new value.  ECDbSchemaPersistence::ToInt needs to adopt to it.");
-            return -1;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-StrengthType ECDbSchemaPersistence::ToStrengthType(int strengthType)
-    {
-    BeAssert((0 == strengthType || 1 == strengthType || 2 == strengthType) && "Integer cannot be converted to StrengthType");
-
-    if (2 == strengthType)
-        return StrengthType::Embedding;
-    if (1 == strengthType)
-        return StrengthType::Holding;
-    return StrengthType::Referencing;
     }
 
 /*---------------------------------------------------------------------------------------

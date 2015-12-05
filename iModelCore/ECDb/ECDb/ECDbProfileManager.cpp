@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 5, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 6, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -450,12 +450,10 @@ Db& db
         "Name TEXT NOT NULL, "
         "DisplayLabel TEXT, "
         "Description TEXT, "
-        "IsDomainClass BOOL NOT NULL CHECK (IsDomainClass IN (0, 1)), "
-        "IsStruct BOOL NOT NULL CHECK (IsStruct IN (0, 1)), "
-        "IsCustomAttribute BOOL NOT NULL CHECK (IsCustomAttribute IN (0, 1)), "
+        "Type INTEGER NOT NULL,"
+        "Modifier INTEGER NOT NULL,"
         "RelationStrength INTEGER, "
-        "RelationStrengthDirection INTEGER, "
-        "IsRelationship BOOL NOT NULL CHECK (IsRelationship IN (0, 1))"
+        "RelationStrengthDirection INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)

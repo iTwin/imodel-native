@@ -933,7 +933,7 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         return *(itor->second);
 
     Storage& storage = GetStorage (classMap);
-    if (classMap.GetClass ().IsStructClass()) // WIP_EC3 - Do we need another class type here for CustomAttributes?
+    if (classMap.GetClass ().IsStructClass())
         m_classes[classMap.GetClass ().GetId ()] = Struct::Ptr (new Struct (classMap, storage, nullptr));
     else
         m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, nullptr));
@@ -1124,16 +1124,15 @@ BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass (RelationshipClassMapCR 
 //---------------------------------------------------------------------------------------
 const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
     {
-    Utf8CP sql0 =
-        "SELECT C.Id"
-        "	FROM ec_Class C "
-        "   	INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
-        "       LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
-        "	WHERE B.BaseClassId IS NULL And C.IsRelationship = 0";
+    Utf8String sql;
+    sql.Sprintf("SELECT C.Id FROM ec_Class C "
+                "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
+                "LEFT JOIN ec_BaseClass B ON B.ClassId=C.Id "
+                "WHERE B.BaseClassId IS NULL And C.Type<>%d", Enum::ToInt(ECN::ECClassType::Relationship));
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
-    stmt.Prepare (GetMap ().GetECDbR (), sql0);
+    stmt.Prepare (GetMap ().GetECDbR (), sql.c_str());
     while (stmt.Step () == BE_SQLITE_ROW)
         classIds.push_back (stmt.GetValueInt64 (0));
 
@@ -1145,16 +1144,15 @@ const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
 //---------------------------------------------------------------------------------------
 const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds () const
     {
-    Utf8CP sql0 =
-        "SELECT C.Id"
-        "	FROM ec_Class C "
-        "   	INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
-        "       LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
-        "	WHERE B.BaseClassId IS NULL And C.IsRelationship = 1";
+    Utf8String sql;
+    sql.Sprintf("SELECT C.Id FROM ec_Class C "
+                "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
+                "LEFT JOIN ec_BaseClass B ON B.ClassId=C.Id "
+                "WHERE B.BaseClassId IS NULL And C.Type=%d", Enum::ToInt(ECN::ECClassType::Relationship));
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
-    stmt.Prepare (GetMap ().GetECDbR (), sql0);
+    stmt.Prepare (GetMap ().GetECDbR (), sql.c_str());
     while (stmt.Step () == BE_SQLITE_ROW)
         classIds.push_back (stmt.GetValueInt64 (0));
 

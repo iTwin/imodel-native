@@ -104,6 +104,12 @@ ECInstanceInserter::Impl::Impl (ECDbCR ecdb, ECClassCR ecClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceInserter::Impl::Initialize ()
     {
+    if (!m_ecClass.IsEntityClass() && !m_ecClass.IsRelationshipClass())
+        {
+        m_isValid = false;
+        return;
+        }
+
     ECSqlInsertBuilder builder;
     builder.InsertInto (m_ecClass);
 

@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
+
 #include <limits>
 #include <initializer_list>
 USING_NAMESPACE_BENTLEY_EC
@@ -1102,40 +1104,6 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
 
     BeTest::SetFailOnAssert(true);
     }
-
-//---------------------------------------------------------------------------------------
-// Test for TFS 99872, inserting classes that are Domain, Custom Attribute and Struct
-// @bsimethod                                   Majd.Uddin                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbInstances, DomainCustomAttributeStructCombinations)
-{
-    ECDb& db = SetupECDb("ClassCombinations.ecdb", BeFileName(L"TryClassCombinations.01.00.ecschema.xml"));
-
-    
-    //Trying all combinations where IsDomain is True. IsDomain False are Abstract classes and are not instantiated.
-    ECClassCP allTrue = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_T_D_T");
-    ASSERT_TRUE (allTrue != nullptr);
-    IECInstancePtr instance;
-    instance = ECDbTestUtility::CreateArbitraryECInstance(*allTrue, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter(db, *allTrue);
-    ECInstanceKey instanceKey;
-    auto sms = inserter.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-
-    ECClassCP Test1 = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_F_D_T");
-    ASSERT_TRUE (Test1 != nullptr);
-    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test1, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter2(db, *Test1);
-    sms = inserter2.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-
-    ECClassCP Test2 = db.Schemas().GetECClass("TryClassCombinations", "S_F_CA_T_D_T");
-    ASSERT_TRUE (Test2 != nullptr);
-    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test2, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter3(db, *Test2);
-    sms = inserter3.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Ramanujam.Raman                   10/15

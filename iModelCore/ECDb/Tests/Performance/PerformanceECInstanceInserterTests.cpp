@@ -388,7 +388,7 @@ void RunPerformanceComparison (bool& hasRun, double& insertTimingSecs, Utf8CP te
         for (auto ecClass : schema->GetClasses ())
             {
             //filter out relationships to keep it simple and filter out non-domainclasses as ECPersistence doesn't support them
-            if (ecClass->IsEntityClass () && ECClassModifier::Abstract != ecClass->GetClassModifier()) // WIP_EC3 - are structs allowed?
+            if (ecClass->IsEntityClass () && ECClassModifier::Abstract != ecClass->GetClassModifier())
                 testClasses.push_back (ecClass);
             }
         }

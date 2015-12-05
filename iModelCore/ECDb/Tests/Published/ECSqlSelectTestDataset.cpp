@@ -543,16 +543,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::CommonGeometryTests (int rowCountPerCla
     ecsql = "SELECT * FROM ecsql.SSpatial";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
-    ecsql = "SELECT PASpatialProp.I FROM ecsql.SSpatial";
+    ecsql = "SELECT SpatialStructProp FROM ecsql.SSpatial";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT PASpatialProp FROM ecsql.SSpatial";
+    ecsql = "SELECT SpatialStructProp.Geometry FROM ecsql.SSpatial";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT PASpatialProp.Geometry FROM ecsql.SSpatial";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-
-    ecsql = "SELECT PASpatialProp.Geometry_Array FROM ecsql.SSpatial";
+    ecsql = "SELECT SpatialStructProp.Geometry_Array FROM ecsql.SSpatial";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
     return dataset;
     }
@@ -1079,14 +1076,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
     //*******************************************************
     //select from structs 
     //*******************************************************
-    //domain class struct
-    ecsql = "SELECT ECInstanceId FROM ecsql.SAStruct";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-
-    ecsql = "SELECT ECInstanceId FROM ONLY ecsql.SAStruct";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-
-    //non-domain class struct
     ecsql = "SELECT i, s FROM ecsql.PStruct";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::SupportedButMightBecomeInvalid, "Querying from an ECStruct which is not a domain class is invalid and will be unsupported in the future.", 2, 0);
 
@@ -1782,9 +1771,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::MiscTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 13, rowCountPerClass);
 
     ecsql = "SELECT * FROM ecsql.SA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
-
-    ecsql = "SELECT * FROM ecsql.SAStruct";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
 
 
@@ -2908,19 +2894,19 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ecsql = "SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.P UNION ALL SELECT B, Bi, I, L, S, P2D, P3D FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 7, rowCountPerClass*2);
 
-    ecsql = "SELECT PStructProp FROM ecsql.PSA UNION SELECT PStructProp FROM ecsql.SAStruct";
+    ecsql = "SELECT PStructProp FROM ecsql.PSA UNION SELECT SAStructProp.PStructProp FROM ecsql.SA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 1);
 
     ecsql = "SELECT B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PSA UNION ALL SELECT B_Array, Bi_Array, D_Array, Dt_Array, I_Array, S_Array, P2D_Array, P3D_Array FROM ecsql.PA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8, rowCountPerClass*2);
 
-    ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT PStruct_Array FROM ecsql.SAStruct";
+    ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT SAStructProp.PStruct_Array FROM ecsql.SA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1,  20);
 
-    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SAStruct) GROUP BY ECClassId";
+    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 2);
 
-    ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId, 'SAStruct' Name FROM ecsql.SAStruct) GROUP BY ECClassId, Name";
+    ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId, 'SA' Name FROM ecsql.SA) GROUP BY ECClassId, Name";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 2);
 
 

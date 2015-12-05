@@ -633,18 +633,16 @@ ConsistentClassHierarchyRule::ConsistentClassHierarchyRule()
 //---------------------------------------------------------------------------------------
 bool ConsistentClassHierarchyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR baseClass)
     {
-    const ClassKind baseClassKind = DetermineClassKind(baseClass);
+    const ECClassType baseClassType = baseClass.GetClassType();
 
     bool valid = true;
-    for (ECN::ECClassCP subclass : baseClass.GetDerivedClasses())
+    for (ECN::ECClassCP subClass : baseClass.GetDerivedClasses())
         {
-        ClassKind subclassKind = DetermineClassKind(*subclass);
-        const bool baseIsRelationship = baseClassKind == ClassKind::Relationship;
-        const bool subIsRelationship = subclassKind == ClassKind::Relationship;
-        if (baseIsRelationship != subIsRelationship ||
-            (baseClassKind != ClassKind::Abstract && subclassKind != ClassKind::Abstract && baseClassKind != subclassKind))
+        BeAssert(baseClass.GetClassModifier() != ECClassModifier::Sealed);
+
+        if (baseClassType != subClass->GetClassType())
             {
-            m_error->AddInconsistency(baseClass, baseClassKind, *subclass, subclassKind);
+            m_error->AddInconsistency(baseClass, *subClass);
             valid = false;
             }
         }
@@ -665,27 +663,6 @@ std::unique_ptr<ECSchemaValidationRule::Error> ConsistentClassHierarchyRule::_Ge
     }
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-//static
-ConsistentClassHierarchyRule::ClassKind ConsistentClassHierarchyRule::DetermineClassKind(ECN::ECClassCR ecclass)
-    {
-    if (ecclass.GetRelationshipClassCP() != nullptr)
-        return ClassKind::Relationship;
-
-    if (ecclass.IsStructClass())
-        return ClassKind::Struct;
-
-    if (ecclass.IsCustomAttributeClass())
-        return ClassKind::CustomAttribute;
-
-    if (ECClassModifier::Abstract == ecclass.GetClassModifier()) // WIP_EC3 - do we need to consider Sealed, as well?
-        return ClassKind::Abstract;
-
-    return ClassKind::Regular;
-    }
-
 //**********************************************************************
 // ConsistentClassHierarchyRule::Error
 //**********************************************************************
@@ -693,9 +670,9 @@ ConsistentClassHierarchyRule::ClassKind ConsistentClassHierarchyRule::DetermineC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-void ConsistentClassHierarchyRule::Error::AddInconsistency(ECN::ECClassCR baseClass, ClassKind baseClassKind, ECN::ECClassCR subclass, ClassKind subclassKind)
+void ConsistentClassHierarchyRule::Error::AddInconsistency(ECN::ECClassCR baseClass, ECN::ECClassCR subclass)
     {
-    m_inconsistencies.push_back({InvalidClass(baseClass, baseClassKind), InvalidClass(subclass, subclassKind)});
+    m_inconsistencies.push_back({&baseClass, &subclass});
     }
 
 //---------------------------------------------------------------------------------------
@@ -708,12 +685,19 @@ Utf8String ConsistentClassHierarchyRule::Error::_ToString() const
 
     Utf8String str("Found ECClasses with a class hierarchy of inconsistent class types. Conflicting ECClasses: ");
     bool isFirstItem = true;
-    for (std::pair<InvalidClass,InvalidClass> const& inconsistency : m_inconsistencies)
+    for (std::pair<ECClassCP, ECClassCP> const& inconsistency : m_inconsistencies)
         {
         if (!isFirstItem)
             str.append("; ");
 
-        str.append("(Base: ").append(inconsistency.first.ToString()).append(", Derived: ").append(inconsistency.second.ToString()).append(")");
+        ECClassCP baseClass = inconsistency.first;
+        ECClassCP subClass = inconsistency.second;
+        Utf8String inconsistencyStr;
+        inconsistencyStr.Sprintf("(Base: %s (%s), Derived: %s (%s))",
+                    baseClass->GetFullName(), ClassTypeToString(baseClass->GetClassType()),
+            subClass->GetFullName(), ClassTypeToString(subClass->GetClassType()));
+
+        str.append(inconsistencyStr);
         isFirstItem = false;
         }
 
@@ -721,42 +705,29 @@ Utf8String ConsistentClassHierarchyRule::Error::_ToString() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
+// @bsimethod                                 Krischan.Eberle                    12/2015
 //---------------------------------------------------------------------------------------
-Utf8String ConsistentClassHierarchyRule::Error::InvalidClass::ToString() const
+//static
+Utf8CP ConsistentClassHierarchyRule::Error::ClassTypeToString(ECN::ECClassType type)
     {
-    Utf8CP kindStr = nullptr;
-    switch (m_kind)
+    switch (type)
         {
-            case ClassKind::Regular:
-                kindStr = "Domain class";
-                break;
+            case ECClassType::CustomAttribute:
+                return "CustomAttribute";
 
-            case ClassKind::Abstract:
-                kindStr = "Abstract";
-                break;
+            case ECClassType::Entity:
+                return "Entity class";
 
-            case ClassKind::Struct:
-                kindStr = "Struct";
-                break;
+            case ECClassType::Relationship:
+                return "Relationship";
 
-            case ClassKind::CustomAttribute:
-                kindStr = "CustomAttribute";
-                break;
-
-            case ClassKind::Relationship:
-                kindStr = "Relationship";
-                break;
+            case ECClassType::Struct:
+                return "Struct";
 
             default:
                 BeAssert(false);
-                kindStr = "";
-                break;
+                return "";
         }
-
-    Utf8String str(m_class->GetFullName());
-    str.append(" (").append(kindStr).append(")");
-    return std::move(str);
     }
 
 //**********************************************************************
