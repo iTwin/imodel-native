@@ -1442,8 +1442,8 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
         return (ECClassId) -1;
         }
 
-    ECRelationshipConstraintR endConsraint = (relEnd == ECRelationshipEnd_Source) ? relClass->GetSource() : relClass->GetTarget();
-    bvector<ECClassP> endClasses = endConsraint.GetClasses();
+    ECRelationshipConstraintR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass->GetSource() : relClass->GetTarget();
+    ECConstraintClassesList endClasses = endConstraint.GetClasses();
     if (endClasses.size() != 1)
         {
         BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");

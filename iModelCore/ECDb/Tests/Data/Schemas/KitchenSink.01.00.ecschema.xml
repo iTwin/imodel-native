@@ -82,15 +82,6 @@
         <ECArrayProperty propertyName="NestedArray" typeName="Struct1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>
     
-    <ECRelationshipClass typeName="BaseClassAsSourceRelationship" strength="referencing">
-        <Source cardinality="(1,1)" roleLabel="" polymorphic="True">
-            <Class class="BaseClass" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="" polymorphic="True">
-            <Class class="Struct2" />
-        </Target>
-    </ECRelationshipClass>
-    
     <ECRelationshipClass typeName="BaseRelationshipClass" strength="referencing" isDomainClass="False">
         <ECProperty propertyName="MyIntegerMember" typeName="int" />
         <ECProperty propertyName="MyLongMember" typeName="long" />
@@ -315,7 +306,6 @@
             <Class class="TestClass" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Struct2" />
             <Class class="Test2Class" />
         </Target>
     </ECRelationshipClass>
@@ -325,7 +315,6 @@
             <Class class="TestClass" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Struct2" />
             <Class class="Test2Class" />
         </Target>
     </ECRelationshipClass>

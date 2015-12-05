@@ -9,12 +9,12 @@
             <SchemaFullNameAtEditingStart>UserWorkBench.01.00</SchemaFullNameAtEditingStart>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECClass typeName="areas" displayLabel="Areas" isStruct="True" isDomainClass="False">
+    <ECClass typeName="areas" displayLabel="Areas" isDomainClass="False">
         <ECProperty propertyName="area_id" typeName="int" displayLabel="Area Id" />
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
         <ECProperty propertyName="province_id" typeName="int" displayLabel="Province Id" />
     </ECClass>
-    <ECClass typeName="towns" displayLabel="Towns" isStruct="True" isDomainClass="True">
+    <ECClass typeName="towns" displayLabel="Towns" isDomainClass="True">
         <ECProperty propertyName="area_id" typeName="int" displayLabel="Area Id" />
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
         <ECProperty propertyName="town_id" typeName="int" displayLabel="Town Id" />
@@ -189,7 +189,7 @@
         <ECProperty propertyName="code" typeName="string" displayLabel="Code" />
         <ECProperty propertyName="provider_id" typeName="int" displayLabel="Provider Id" />
     </ECClass>
-    <ECClass typeName="province" displayLabel="Province" isDomainClass="True" isCustomAttributeClass="True">
+    <ECClass typeName="province" displayLabel="Province" isDomainClass="True" >
         <ECProperty propertyName="region_id" typeName="string" displayLabel="Region Id" />
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
         <ECProperty propertyName="province_id" typeName="int" displayLabel="Province Id" />

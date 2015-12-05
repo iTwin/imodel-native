@@ -210,7 +210,7 @@ void RelationshipClassMap::ConstraintMap::CacheClassIds () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-void RelationshipClassMap::ConstraintMap::CacheClassIds (bvector<ECN::ECClassP> const& constraintClassList, bool constraintIsPolymorphic) const
+void RelationshipClassMap::ConstraintMap::CacheClassIds (ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const
     {
     //runs through all constraint classes, and if recursive is true through subclasses
     //and caches the class ids as this method here is expensive performance-wise.
@@ -228,7 +228,9 @@ void RelationshipClassMap::ConstraintMap::CacheClassIds (bvector<ECN::ECClassP> 
         if (constraintIsPolymorphic)
             {
             //call into schema manager to ensure that the derived classes are loaded if needed
-            auto const& derivedClasses = m_schemaManager.GetDerivedECClasses (*constraintClass);
+            ECConstraintClassesList derivedClasses;
+            for (auto derivedClass : m_schemaManager.GetDerivedECClasses(*constraintClass))
+                derivedClasses.push_back(derivedClass->GetEntityClassP());
             CacheClassIds (derivedClasses, constraintIsPolymorphic);
             }
         }
