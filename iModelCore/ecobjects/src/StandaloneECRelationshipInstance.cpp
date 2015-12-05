@@ -205,13 +205,10 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    for (auto source : GetRelationshipClass().GetSource().GetConstraintClasses())
+    if (GetRelationshipClass().GetSource().SupportsClass(instance->GetClass()))
         {
-        if (source->GetClass().GetName().EqualsI ("AnyClass") || instance->GetClass().Is(&source->GetClass()))
-            {
-            m_source = instance;
-            return;
-            }
+        m_source = instance;
+        return;
         }
 
     BeAssert(false && "Invalid source instance");
@@ -259,13 +256,10 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    for (auto target : this->GetRelationshipClass().GetTarget().GetConstraintClasses())
+    if (GetRelationshipClass().GetTarget().SupportsClass(instance->GetClass()))
         {
-        if (target->GetClass().GetName().EqualsI ("AnyClass") || instance->GetClass().Is(&target->GetClass()))
-            {
-            m_target = instance;
-            return;
-            }
+        m_target = instance;
+        return;
         }
 
     BeAssert(false && "Invalid target instance");

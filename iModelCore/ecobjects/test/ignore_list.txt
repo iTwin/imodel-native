@@ -21,3 +21,6 @@ SchemaTest.GetBaseClassProperty                     # References Units schema
 UnitsTest.TestUnitSpecifications                    # References Units schema
 SchemaDeserializationTest.ExpectSuccessWithDuplicateClassesInXml  # This is no longer allowed
 SchemaLocateTest.ExpectSuccessWhenLocatingStandardSchema # References Units schema
+
+NavigationECPropertyTests.InvalidXml                # Disabled until we figure out how to validate nav properties on deserialization
+
