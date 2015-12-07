@@ -35,7 +35,7 @@ DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnec
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -77,7 +77,8 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(DgnClientFx::Utils::HttpR
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR downloadCallback, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR uploadCallback, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback,
+    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -110,7 +111,8 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(DgnClientFx::Utils::H
                 Dgn::DgnPlatformLib::ForgetHost();
                 Utf8String revisionId = revision->GetId();
                 BeFileName revisionFile(m_db->GetDbFileName());
-                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then([=] (const DgnDbResult& pushResult)
+                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then([=]
+                    (const DgnDbResult& pushResult)
                     {
                     if (pushResult.IsSuccess())
                         {
