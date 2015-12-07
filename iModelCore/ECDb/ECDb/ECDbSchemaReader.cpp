@@ -697,8 +697,11 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRela
         if (SUCCESS != ReadECClass(constraintClass, constraintClassId))
             return ERROR;
 
+        ECEntityClassP constraintAsEntity = constraintClass->GetEntityClassP();
+        if (nullptr == constraintAsEntity)
+            return ERROR;
         ECRelationshipConstraintClassP constraintClassObj = nullptr;
-        constraint.AddConstraintClass(constraintClassObj, *constraintClass);
+        constraint.AddConstraintClass(constraintClassObj, *constraintAsEntity);
         if (constraintClassObj != nullptr)
             {
             CachedStatementPtr statement;

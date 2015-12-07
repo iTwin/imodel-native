@@ -904,59 +904,6 @@ TEST_F(ECDbInstances, SelectClause)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   03/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbInstances, DeleteWithRelationshipBetweenStructs)
-    {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create("structs.ecdb");
-
-    ECSchemaPtr structSchema;
-    ECSchema::CreateSchema(structSchema, "StructSchema", 1, 0);
-    structSchema->SetNamespacePrefix("ss");
-    structSchema->SetDescription("Schema with struct classes and a relationship between them");
-    structSchema->SetDisplayLabel("Struct Schema");
-
-    ECStructClassP struct1;
-    structSchema->CreateStructClass (struct1, "Struct1");
-    ECStructClassP struct2;
-    structSchema->CreateStructClass (struct2, "Struct2");
-    ECRelationshipClassP relationshipClass;
-    structSchema->CreateRelationshipClass (relationshipClass, "StructToStruct");
-
-    PrimitiveECPropertyP stringProp1;
-    struct1->CreatePrimitiveProperty (stringProp1, "StringMember1");
-    PrimitiveECPropertyP stringProp2;
-    struct2->CreatePrimitiveProperty (stringProp2, "StringMember2");
-
-    relationshipClass->GetSource().AddClass(*struct1);
-    relationshipClass->GetSource().SetCardinality(RelationshipCardinality::ZeroMany());
-    relationshipClass->GetTarget().AddClass(*struct2);
-    relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
-
-    // import
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-    schemaCache->AddSchema (*structSchema);
-
-    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
-
-    ECInstanceInserter inserter1 (ecdb, *struct1);
-    ASSERT_FALSE (inserter1.IsValid ()) << "Cannot insert into structs";
- 
-    ECInstanceInserter inserter2 (ecdb, *struct2);
-    ASSERT_FALSE (inserter2.IsValid ()) << "Cannot insert into structs";
-
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relationshipClass);
-    ASSERT_TRUE (relationshipEnabler.IsValid());
-
-    ECInstanceInserter inserter3 (ecdb, *relationshipClass);
-    ASSERT_TRUE (inserter3.IsValid ());
-
-    ECInstanceDeleter deleter1 (ecdb, *struct1);
-    ASSERT_FALSE(deleter1.IsValid()) << "Cannot delete from structs";
-    }
-
-//---------------------------------------------------------------------------------------
 // Test for TFS 112251, the Adapter should check for the class before operation
 // @bsimethod                                   Majd.Uddin                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------

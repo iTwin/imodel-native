@@ -32,7 +32,7 @@ protected:
         mutable std::set<ECN::ECClassId> m_ecClassIdCache;
 
         void CacheClassIds () const;
-        void CacheClassIds (bvector<ECN::ECClassP> const& constraintClassList, bool constraintIsPolymorphic) const;
+        void CacheClassIds (ECN::ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const;
 
         void CacheClassId (ECN::ECClassId classId) const;
         void SetAnyClassMatches () const;
