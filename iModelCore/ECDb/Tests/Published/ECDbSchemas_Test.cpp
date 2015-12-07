@@ -2213,7 +2213,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeOwnTableNonPolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_TRUE(db.TableExists("sm_B_Array"));
+    EXPECT_TRUE(db.TableExists("sm_B"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2237,7 +2237,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_TRUE(db.TableExists("sm_B_Array"));
+    EXPECT_TRUE(db.TableExists("sm_B"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2260,7 +2260,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_FALSE(db.TableExists("sm_B_Array"));
+    EXPECT_FALSE(db.TableExists("sm_B"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2283,9 +2283,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_TRUE (db.TableExists ("sm_B_Array"));
-    EXPECT_FALSE(db.TableExists("sm_b"));
-    EXPECT_FALSE(db.TableExists("sm_A_Array"));
+    EXPECT_TRUE (db.TableExists ("sm_B"));
     EXPECT_TRUE(db.TableExists("sm_a"));
     EXPECT_TRUE(db.TableExists("sm_C_Array"));
     }
