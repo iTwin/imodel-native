@@ -25,8 +25,10 @@
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #endif
+#define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
+#define DGN_CLASSNAME_AnnotationElement     "AnnotationElement"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
@@ -35,22 +37,24 @@
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
-#define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
+#define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
-#define DGN_CLASSNAME_ResourceModel         "ResourceModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
+#define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_SystemElement         "SystemElement"
+#define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 
@@ -72,7 +76,6 @@
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
-#define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
@@ -132,6 +135,10 @@ public:
     bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
     //! Determine if two Codes are equivalent
     bool operator==(AuthorityIssuedCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
+    //! Determine if two Codes are not equivalent
+    bool operator!=(AuthorityIssuedCode const& other) const {return !(*this == other);}
+    //! Perform ordered comparison, e.g. for inclusion in associative containers
+    DGNPLATFORM_EXPORT bool operator<(AuthorityIssuedCode const& rhs) const;
 
     //! Get the value for this Code
     Utf8StringCR GetValue() const {return m_value;}
@@ -144,6 +151,8 @@ public:
 
     void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace); //!< @private DO NOT EXPORT
 };
+
+typedef bset<AuthorityIssuedCode> AuthorityIssuedCodeSet;
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
@@ -694,7 +703,7 @@ public:
 };
 
 //=======================================================================================
-// Links are shared resources, referenced by elements. 
+// Links are shared definitions, referenced by elements. 
 //! @see DgnDb::Links
 // @bsiclass
 //=======================================================================================

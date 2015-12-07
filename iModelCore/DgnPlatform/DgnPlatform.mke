@@ -342,6 +342,8 @@ $(CoreObjs)DgnLink$(oext) :                         $(DgnCoreDir)DgnLink.cpp $(D
 
 $(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
+$(CoreObjs)VolumeElement$(oext) :                   $(DgnCoreDir)VolumeElement.cpp $(DgnPlatformAPISrc)VolumeElement.h ${MultiCompileDepends}
+
 $(CoreObjs)DgnHandlers$(oext) :                     $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 
 $(CoreObjs)HitDetail$(oext) :                       $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
@@ -351,8 +353,6 @@ $(CoreObjs)PickContext$(oext) :                     $(DgnHandlersDir)PickContext
 $(CoreObjs)RegionUtil$(oext) :                      $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) ${MultiCompileDepends}
 
 $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
-
-$(CoreObjs)NamedVolume$(oext) :                     $(DgnHandlersDir)NamedVolume.cpp $(DgnPlatformAPISrc)NamedVolume.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnChangeSummary$(oext) :                $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnPlatformAPISrc)DgnChangeSummary.h ${MultiCompileDepends}
 

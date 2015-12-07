@@ -135,7 +135,7 @@ TEST_F (DgnElementTests, UpdateElement)
 struct ElementGeomAndPlacementTests : DgnElementTests
 {
     ElementGeometryBuilderPtr CreateGeom();
-    RefCountedPtr<DgnElement3d> CreateElement(bool wantPlacement, bool wantGeom);
+    RefCountedPtr<PhysicalElement> CreateElement(bool wantPlacement, bool wantGeom);
     static bool AreEqualPlacements(Placement3dCR a, Placement3dCR b);
     void TestLoadElem(DgnElementId id, Placement3d const* placement, bool hasGeometry);
 };
@@ -187,7 +187,7 @@ bool ElementGeomAndPlacementTests::AreEqualPlacements(Placement3dCR a, Placement
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomAndPlacementTests::TestLoadElem(DgnElementId id, Placement3d const* placement, bool hasGeometry)
     {
-    auto el = m_db->Elements().Get<DgnElement3d>(id);
+    auto el = m_db->Elements().Get<PhysicalElement>(id);
     ASSERT_TRUE(el.IsValid());
     EXPECT_EQ(nullptr != placement, el->GetPlacement().IsValid());
     if (nullptr != placement)

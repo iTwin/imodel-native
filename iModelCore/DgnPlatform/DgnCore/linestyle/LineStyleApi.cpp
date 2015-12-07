@@ -642,18 +642,15 @@ bool                LsDefinition::IsSnappable ()          const {return _IsSnapp
 bool                LsDefinition::IsNoWidth ()            const {return 0 != (m_attributes & LSATTR_NOWIDTH);}
 bool                LsDefinition::IsPhysical ()           const {return 0 != (m_attributes & LSATTR_PHYSICAL);}
 bool                LsDefinition::IsInternal ()           const {return m_location.GetComponentType() == LsComponentType::Internal;}
-bool                LsDefinition::IsUnitsUOR()            const {return (LSATTR_UNITUOR == GetUnits());}
 bool                LsDefinition::IsUnitsMeters()         const {return (LSATTR_UNITMETERS == GetUnits());}
 bool                LsDefinition::IsUnitsDevice()         const {return (LSATTR_UNITDEV == GetUnits());}
 bool                LsDefinition::IsHardware()            const {return (m_hardwareLineCode > 0 ? true : false);}
-bool                LsDefinition::IsSCScaleIndependent()  const {return 0 != (m_attributes & LSATTR_SHAREDCELL_SCALE_INDEPENDENT);}
 
 void                LsDefinition::SetUnitsDefinition(double newValue)      { m_unitDef = newValue;}
 void                LsDefinition::SetUnitsType (LsUnit unitsType) { m_attributes = (m_attributes & ~LSATTR_UNITMASK)   |  static_cast<uint32_t>(unitsType);}
 void                LsDefinition::SetIsContinuous (bool newValue)  { m_attributes = (m_attributes & ~LSATTR_CONTINUOUS) | (newValue ? LSATTR_CONTINUOUS : 0);}
 void                LsDefinition::SetIsSnappable  (bool newValue)  { m_attributes = (m_attributes & ~LSATTR_NOSNAP)     | (!newValue ? LSATTR_NOSNAP : 0);}
 void                LsDefinition::SetIsPhysical   (bool newValue)  { m_attributes = (m_attributes & ~LSATTR_PHYSICAL)   | (newValue ? LSATTR_PHYSICAL : 0);}
-void                LsDefinition::SetIsSCScaleIndependent (bool newValue)  { m_attributes = (m_attributes & ~LSATTR_SHAREDCELL_SCALE_INDEPENDENT)   |  (newValue ? LSATTR_SHAREDCELL_SCALE_INDEPENDENT : 0);}
 
 size_t              LsCompoundComponent::GetNumberComponents()  const   {return m_components.size ();}
 LsComponentP        LsCompoundComponent::GetComponentP(size_t index) const   

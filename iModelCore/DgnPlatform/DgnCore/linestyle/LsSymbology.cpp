@@ -495,22 +495,6 @@ DPoint3dCP          endTangent
         if (nameRec->GetUnitsDefinition() > mgds_fc_epsilon)
             unitDef *= context.GetPixelSizeAtPoint (NULL);
         }
-    else if (nameRec->IsUnitsUOR ())
-        {
-        // Get True Scale factor
-        //  unitDef *= nameRec->GetTrueScale (nullptr);
-
-        // Historically distance shifts are stored in master units.  This used to match the line styles.  Now
-        // with imported styles, we need to convert the shift to UORs.
-        if (tmpLSParams.modifiers & STYLEMOD_DISTPHASE)
-            {
-            double uorPhase;
-#if defined (NEEDS_WORK_ELEMENT_REFACTOR)
-#endif
-            uorPhase = tmpLSParams.distPhase * 1000;
-            SetPhaseShift (true, uorPhase);
-            }
-        }
 
     scale *= unitDef;
 
