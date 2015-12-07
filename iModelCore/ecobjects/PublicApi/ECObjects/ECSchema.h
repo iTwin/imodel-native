@@ -1383,7 +1383,6 @@ public:
 //=======================================================================================
 struct EnumeratorIterable : public std::iterator<std::forward_iterator_tag, ECEnumeratorP>
     {
-    /*__PUBLISH_SECTION_END__*/
 
     friend struct ECEnumeration;
     
@@ -1391,7 +1390,6 @@ struct EnumeratorIterable : public std::iterator<std::forward_iterator_tag, ECEn
         EnumeratorIterable(EnumeratorList& list) : m_list(list) {}
         EnumeratorList&     m_list;
 
-    //__PUBLISH_SECTION_START__
     public:
         typedef EnumeratorList::const_iterator const_iterator;
         typedef EnumeratorList::iterator iterator;
@@ -1492,7 +1490,6 @@ friend struct SchemaXmlReaderImpl;
 //=======================================================================================
 struct ECEnumerator
     {
-    //__PUBLISH_SECTION_END__
     friend struct ECEnumeration;
 
     private:
@@ -1510,7 +1507,6 @@ struct ECEnumerator
         ECEnumerator(ECEnumerationCR parent, Utf8StringCR value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
         virtual ~ECEnumerator() {}
 
-        //__PUBLISH_SECTION_START__
     public:
         //! The ECEnumeration that this enumerator is defined in
         ECOBJECTS_EXPORT ECEnumerationCR    GetEnumeration() const { return m_enum; }
