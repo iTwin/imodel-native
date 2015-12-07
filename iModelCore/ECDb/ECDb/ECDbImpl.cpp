@@ -312,7 +312,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
             purgeOwnershipByOwnersECSql.append(" OR ");
 
         Utf8String whereSnippet;
-        whereSnippet.Sprintf("(OwnerECClassId=%lld AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId, ownerClass->GetECSqlName());
+        whereSnippet.Sprintf("(OwnerECClassId=%lld AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId, ownerClass->GetECSqlName().c_str());
         purgeOwnershipByOwnersECSql.append(whereSnippet);
 
         isFirstOwnerClassId = false;

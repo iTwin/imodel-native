@@ -270,8 +270,8 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     NativeSqlBuilder::List parentOfJoinedTableValues;
     NativeSqlBuilder::List parentOfJoinedTableProperties;
 
-    joinedTableECSQL.Append("INSERT INTO ").Append(classMap.GetECSqlName().c_str());
-    parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(rootClassMap->GetECSqlName().c_str());
+    joinedTableECSQL.Append("INSERT INTO ").Append(classMap.GetClass().GetECSqlName().c_str());
+    parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(rootClassMap->GetClass().GetECSqlName().c_str());
 
     auto propertyList = exp.GetPropertyNameListExp();
     auto valueList = exp.GetValuesExp();
@@ -380,8 +380,8 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     NativeSqlBuilder::List parentOfJoinedTableValues;
     NativeSqlBuilder::List parentOfJoinedTableProperties;
     bool isPolymorphic = exp.GetClassNameExp()->IsPolymorphic();
-    joinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(classMap.GetECSqlName().c_str()).Append(" SET ");
-    parentOfJoinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(rootClassMap->GetECSqlName().c_str()).Append(" SET ");
+    joinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(classMap.GetClass().GetECSqlName().c_str()).Append(" SET ");
+    parentOfJoinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(rootClassMap->GetClass().GetECSqlName().c_str()).Append(" SET ");
 
     auto assignmentList = exp.GetAssignmentListExp();
     ptr->m_userProvidedECInstanceId = false;

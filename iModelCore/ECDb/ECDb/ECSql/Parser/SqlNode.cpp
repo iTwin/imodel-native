@@ -1502,8 +1502,6 @@ namespace connectivity
     //-----------------------------------------------------------------------------
     OSQLParser::~OSQLParser()
         {
-
-        BeMutexHolder aGuard(getCriticalSection());
         OSL_ENSURE(s_nRefCount > 0, "OSQLParser::~OSQLParser() : suspicious call : have a refcount of 0 !");
         if (!--s_nRefCount)
             {

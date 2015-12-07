@@ -51,3 +51,5 @@ ECDbSchemas.PropertiesDiff
 #WIP_EC3 - Uses Rule schema which has classes that are both structs and CAs
 ECInstanceInserterTests.InsertSingleRuleInstance
 
+#TFS344205 (Affan)
+JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp

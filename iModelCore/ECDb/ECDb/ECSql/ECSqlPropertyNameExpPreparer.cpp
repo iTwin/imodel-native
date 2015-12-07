@@ -78,7 +78,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation (ECSqlPrepareContext::ExpSco
     const auto currentScopeECSqlType = currentScope.GetECSqlType ();
 
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    if (propertyMap.IsVirtual () || !propertyMap.IsMappedToPrimaryTable())
+    if (propertyMap.IsVirtual () || (!propertyMap.IsMappedToPrimaryTable() && currentScopeECSqlType != ECSqlType::Select))
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)

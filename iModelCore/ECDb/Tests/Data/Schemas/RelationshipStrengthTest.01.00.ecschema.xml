@@ -34,22 +34,31 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ParentHasAnyChild" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="True" roleLabel="Parent">
+	<ECRelationshipClass typeName="ChildrenHasSingleParent" isDomainClass="True" strength="embedding" strengthDirection="backward">
+        <Source cardinality="(0,N)" polymorphic="True" roleLabel="Children">
             <Class class="Person" />
         </Source>
-        <Target cardinality="(0,N)" polymorphic="True" roleLabel="Children">
-            <Class class="bsc:AnyClass" />
+        <Target cardinality="(1,1)" polymorphic="True" roleLabel="Single parent">
+            <Class class="Person" />
         </Target>
     </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ParentsHaveAnyChildren" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(1,N)" polymorphic="True" roleLabel="Parent">
+	
+	<ECRelationshipClass typeName="ChildrenHaveManyParents" isDomainClass="True" strength="holding" strengthDirection="backward">
+        <Source cardinality="(0,N)" polymorphic="True" roleLabel="Children">
             <Class class="Person" />
         </Source>
-        <Target cardinality="(0,N)" polymorphic="True" roleLabel="Children">
-            <Class class="bsc:AnyClass" />
+        <Target cardinality="(1,N)" polymorphic="True" roleLabel="Parents">
+            <Class class="Person" />
         </Target>
     </ECRelationshipClass>
-
+	
+	<ECRelationshipClass typeName="ParentHasSpouse_backward" isDomainClass="True" strength="referencing" strengthDirection="backward">
+        <Source cardinality="(0,1)" polymorphic="True" roleLabel="Parent">
+            <Class class="Person" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True" roleLabel="Spouse">
+            <Class class="Person" />
+        </Target>
+    </ECRelationshipClass>
+	
 </ECSchema>

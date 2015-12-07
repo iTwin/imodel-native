@@ -265,14 +265,24 @@ bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, 
         {
             case ECDbMapStrategy::Strategy::SharedTable:
                 {
+                const ECDbMapStrategy::Options parentOptions = parentStrategy.GetOptions();
+                const UserECDbMapStrategy::Options childOptions = childStrategy.GetOptions();
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
-                    !childStrategy.AppliesToSubclasses() && !Enum::Contains(childStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses) &&
-                    (!Enum::Intersects(childStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass | UserECDbMapStrategy::Options::SingleJoinedTableForSubclasses) ||
-                     !Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable));
+                    !childStrategy.AppliesToSubclasses();
+
+                if (isValid && Enum::Contains(parentOptions, ECDbMapStrategy::Options::SharedColumns))
+                    isValid = !Enum::Contains(childOptions, UserECDbMapStrategy::Options::SharedColumnsForSubclasses);
+
+                if (isValid)
+                    isValid = !Enum::Intersects(childOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass | UserECDbMapStrategy::Options::SingleJoinedTableForSubclasses) ||
+                             !Enum::Intersects(parentOptions, ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable);
 
                 if (!isValid)
-                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and Options must not specify " USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES
-                    " and must not specify " USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS " or " USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES " if it was already specified on a base class.";
+                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and "
+                                "Options must not specify " USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES " "
+                                "if 'shared columns' were already enabled on a base class, "
+                                "and must not specify " USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS " or " USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES " " 
+                                "if it was already specified on a base class.";
 
                 break;
                 }

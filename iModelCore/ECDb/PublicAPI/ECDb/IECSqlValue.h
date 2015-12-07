@@ -25,7 +25,7 @@ struct IECSqlArrayValue;
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    03/2014
 //+===============+===============+===============+===============+===============+======
-struct IECSqlValue : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
     {
 private:
     virtual ECSqlColumnInfoCR _GetColumnInfo() const = 0;
@@ -163,7 +163,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    03/2014
 //+===============+===============+===============+===============+===============+======
-struct IECSqlStructValue : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlStructValue : NonCopyableClass
     {
 private:
     virtual int _GetMemberCount() const = 0;
@@ -186,7 +186,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    03/2014
 //+===============+===============+===============+===============+===============+======
-struct IECSqlArrayValue : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE IECSqlArrayValue : NonCopyableClass
     {
 public:
     //=======================================================================================
