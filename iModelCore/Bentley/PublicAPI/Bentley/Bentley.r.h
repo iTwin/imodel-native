@@ -78,6 +78,7 @@
         typedef unsigned int        uint32_t;
         typedef long long           int64_t;
         typedef unsigned long long  uint64_t;
+        typedef unsigned short      wchar_t;
     #endif
 
     // Toolsets that don't have inttypes.h are of limited use anyway, so don't bother replicating inttypes.h here for them.
@@ -114,7 +115,7 @@ inline ENUMTYPE operator| (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE
 inline ENUMTYPE operator& (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE>(static_cast<std::underlying_type<ENUMTYPE>::type>(a) & static_cast<std::underlying_type<ENUMTYPE>::type>(b)); } \
 inline ENUMTYPE operator~ (ENUMTYPE a) { return static_cast<ENUMTYPE>(~(static_cast<std::underlying_type<ENUMTYPE>::type>(a))); }
 #else
-#define ENUM_IS_FLAGS (ENUMTYPE)
+#define ENUM_IS_FLAGS(ENUMTYPE)
 #endif
 typedef ALIGNMENT_ATTRIBUTE(8) double   T_Adouble;
 typedef ALIGNMENT_ATTRIBUTE(8) uint64_t T_AUInt64;

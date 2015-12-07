@@ -9,7 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #if !defined (__cplusplus)
-#error "This file is for C++ compilands only"
+  #if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
+    #error "This file is for C++ compilands only"
+  #endif
 #endif
 
 #if defined (__GNUC__) || defined (__clang__)
@@ -55,6 +57,7 @@
 
     //////////////////////////// MSVC /////////////////////////////////////////////
 
+  #if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
     #include "suppress_warnings.h"
 
     #if !defined (BENTLEY_WIN32) && !defined (BENTLEY_WINRT)
@@ -102,7 +105,7 @@
     #else /* !_M_X64 */
         typedef __w64 unsigned long  ULONG_PTR;
     #endif // WIN64
-
+  #endif
 
 #else
     #error unknown compiler
@@ -117,87 +120,98 @@
 #include "Bentley.r.h"
 
 // Define standard macros and types for integer limits
-#include <limits.h>
+#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
+    #include <limits.h>
 
-// We define these alias macros to clarify what symbol to use for a given fixed-size type. For example, if you use Int32, use INT32_MIN/MAX.
-#ifndef INT32_MAX
-#define INT32_MAX   INT_MAX
-#endif
-#ifndef UINT32_MAX
-#define UINT32_MAX  UINT_MAX
-#endif
-#ifndef INT64_MAX
-#define INT64_MAX   LLONG_MAX
-#endif
-#ifndef UINT64_MAX
-#define UINT64_MAX  ULLONG_MAX
-#endif
-#ifndef INT32_MIN
-#define INT32_MIN   INT_MIN
-#endif
-#ifndef INT64_MIN
-#define INT64_MIN   LLONG_MIN
-#endif
-
-/** @namespace BentleyApi Contains types defined by %Bentley Systems. 
-    The %Bentley API strategy includes a major-version-specific suffix on the top-level %Bentley namespace.
-    This prevents conflicts and allows a single process to link with multiple versions of the %Bentley API
-    (which is critical for data upgrade and conversion scenarios).  By default, a @c using for the %Bentley namespace
-    is configured when Bentley/Bentley.h is included.  A @c %BentleyApi namespace alias is also configured.
-    This makes it so a developer does not have to worry about the actual %Bentley namespace name.
-*/
-#if defined (DOCUMENTATION_GENERATOR)
-    // Hold the namespace name constant from an SDK documentation perspective
-    #define BENTLEY_NAMESPACE_NAME BentleyApi
-#else
-    // The actual version-specific namespace name from a code/type perspective
-    #define BENTLEY_NAMESPACE_NAME BentleyG06
-#endif
-
-#define BEGIN_BENTLEY_NAMESPACE namespace BENTLEY_NAMESPACE_NAME {
-#define END_BENTLEY_NAMESPACE   }
-#define USING_NAMESPACE_BENTLEY using namespace BENTLEY_NAMESPACE_NAME;
-
-// create the Bentley namespace
-BEGIN_BENTLEY_NAMESPACE
-END_BENTLEY_NAMESPACE
-
-#if !defined (DOCUMENTATION_GENERATOR)
-    // namespace alias that always refers to the current version.
-    namespace BentleyApi = BENTLEY_NAMESPACE_NAME;
-#endif
-
-// use unnamed namespace instead of static in C++ source files.
-#define BEGIN_UNNAMED_NAMESPACE namespace {
-#define END_UNNAMED_NAMESPACE   }
-
-// Define standard pointer types (P, CP, R, CR) in the current namespace for the specified struct
-#define DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) \
-    struct _structname_; \
-    typedef _structname_* _structname_##P, &_structname_##R; \
-    typedef _structname_ const* _structname_##CP; \
-    typedef _structname_ const& _structname_##CR; 
-
-// These macros should only be used for classes in the Bentley namespace (consider using DEFINE_POINTER_SUFFIX_TYPEDEFS instead)
-#define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
-    namespace BENTLEY_NAMESPACE_NAME {\
-    typedef structclass _namespace_ :: _sourceName_*          _name_##P, &_name_##R;  \
-    typedef structclass _namespace_ :: _sourceName_ const*    _name_##CP; \
-    typedef structclass _namespace_ :: _sourceName_ const&    _name_##CR; }
-
-#define ADD_BENTLEY_NAMESPACE_TYPEDEFS(_namespace_,_name_) ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_name_,_name_,struct)
-#define BENTLEY_NAMESPACE_TYPEDEF(t,tP)    namespace BENTLEY_NAMESPACE_NAME {struct t; typedef struct BENTLEY_NAMESPACE_NAME::t*   tP;}
-#define BENTLEY_NAMESPACE_TYPEDEFS(_name_) BEGIN_BENTLEY_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_NAMESPACE
-#define BENTLEY_REF_COUNTED_PTR(_sname_) namespace BENTLEY_NAMESPACE_NAME {struct _sname_; typedef RefCountedPtr<_sname_> _sname_##Ptr;}
-
-#if !defined (NULL)
-    #if (BENTLEY_CPLUSPLUS <= 199711L) || defined(_MANAGED)
-        #define NULL    0
-    #else
-        // nullptr is part C++11
-        #define NULL nullptr
+    // We define these alias macros to clarify what symbol to use for a given fixed-size type. For example, if you use Int32, use INT32_MIN/MAX.
+    #ifndef INT32_MAX
+    #define INT32_MAX   INT_MAX
     #endif
-#endif
+    #ifndef UINT32_MAX
+    #define UINT32_MAX  UINT_MAX
+    #endif
+    #ifndef INT64_MAX
+    #define INT64_MAX   LLONG_MAX
+    #endif
+    #ifndef UINT64_MAX
+    #define UINT64_MAX  ULLONG_MAX
+    #endif
+    #ifndef INT32_MIN
+    #define INT32_MIN   INT_MIN
+    #endif
+    #ifndef INT64_MIN
+    #define INT64_MIN   LLONG_MIN
+    #endif
+
+  /** @namespace BentleyApi Contains types defined by %Bentley Systems. 
+      The %Bentley API strategy includes a major-version-specific suffix on the top-level %Bentley namespace.
+      This prevents conflicts and allows a single process to link with multiple versions of the %Bentley API
+      (which is critical for data upgrade and conversion scenarios).  By default, a @c using for the %Bentley namespace
+      is configured when Bentley/Bentley.h is included.  A @c %BentleyApi namespace alias is also configured.
+      This makes it so a developer does not have to worry about the actual %Bentley namespace name.
+  */
+  #if defined (DOCUMENTATION_GENERATOR)
+      // Hold the namespace name constant from an SDK documentation perspective
+      #define BENTLEY_NAMESPACE_NAME BentleyApi
+  #else
+      // The actual version-specific namespace name from a code/type perspective
+      #define BENTLEY_NAMESPACE_NAME BentleyG06
+  #endif
+
+  #define BEGIN_BENTLEY_NAMESPACE namespace BENTLEY_NAMESPACE_NAME {
+  #define END_BENTLEY_NAMESPACE   }
+  #define USING_NAMESPACE_BENTLEY using namespace BENTLEY_NAMESPACE_NAME;
+
+  // create the Bentley namespace
+  BEGIN_BENTLEY_NAMESPACE
+  END_BENTLEY_NAMESPACE
+
+  #if !defined (DOCUMENTATION_GENERATOR)
+      // namespace alias that always refers to the current version.
+      namespace BentleyApi = BENTLEY_NAMESPACE_NAME;
+  #endif
+
+  // use unnamed namespace instead of static in C++ source files.
+  #define BEGIN_UNNAMED_NAMESPACE namespace {
+  #define END_UNNAMED_NAMESPACE   }
+
+  // Define standard pointer types (P, CP, R, CR) in the current namespace for the specified struct
+  #define DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) \
+      struct _structname_; \
+      typedef _structname_* _structname_##P, &_structname_##R; \
+      typedef _structname_ const* _structname_##CP; \
+      typedef _structname_ const& _structname_##CR; 
+
+  // These macros should only be used for classes in the Bentley namespace (consider using DEFINE_POINTER_SUFFIX_TYPEDEFS instead)
+  #define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \
+      namespace BENTLEY_NAMESPACE_NAME {\
+      typedef structclass _namespace_ :: _sourceName_*          _name_##P, &_name_##R;  \
+      typedef structclass _namespace_ :: _sourceName_ const*    _name_##CP; \
+      typedef structclass _namespace_ :: _sourceName_ const&    _name_##CR; }
+
+  #define ADD_BENTLEY_NAMESPACE_TYPEDEFS(_namespace_,_name_) ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_name_,_name_,struct)
+  #define BENTLEY_NAMESPACE_TYPEDEF(t,tP)    namespace BENTLEY_NAMESPACE_NAME {struct t; typedef struct BENTLEY_NAMESPACE_NAME::t*   tP;}
+  #define BENTLEY_NAMESPACE_TYPEDEFS(_name_) BEGIN_BENTLEY_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_NAMESPACE
+  #define BENTLEY_REF_COUNTED_PTR(_sname_) namespace BENTLEY_NAMESPACE_NAME {struct _sname_; typedef RefCountedPtr<_sname_> _sname_##Ptr;}
+
+  #if !defined (NULL)
+      #if (BENTLEY_CPLUSPLUS <= 199711L) || defined(_MANAGED)
+          #define NULL    0
+      #else
+          // nullptr is part C++11
+          #define NULL nullptr
+      #endif
+  #endif
+
+#else 
+  // make BENTLEY_NAMESPACE_TYPEDEF do nothing.
+  #define BENTLEY_NAMESPACE_TYPEDEF(t,tP)
+  #define BENTLEY_NAMESPACE_TYPEDEFS(_name_)
+  #define USING_NAMESPACE_BENTLEY
+
+#endif  // mdl_resource_compiler
+
+
 
 #if !defined (NO_BENTLEY_PUBLIC)
 #define Public
@@ -308,3 +322,7 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define BENTLEYDLL_EXPORT IMPORT_ATTRIBUTE
 //__PUBLISH_SECTION_END__
 #endif
+
+
+
+
