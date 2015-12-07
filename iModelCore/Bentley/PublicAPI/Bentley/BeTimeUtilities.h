@@ -123,8 +123,6 @@ struct BeTimeUtilities
     /// @}
     };
 
-
-#if !defined (DOCUMENTATION_GENERATOR)
 /*=================================================================================**//**
 * Measures elapsed time
 * @bsiclass
@@ -172,6 +170,5 @@ public:
     //! Get the elapsed seconds between Start() and Stop() on this timer.
     double GetElapsedSeconds() {return (m_stop - m_start) / (double)m_frequency;}
     };
-#endif // DOCUMENTATION_GENERATOR
 
 END_BENTLEY_NAMESPACE
