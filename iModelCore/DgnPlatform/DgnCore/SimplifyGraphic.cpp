@@ -101,7 +101,8 @@ static void setDefaultFacetOptions(IFacetOptionsP options, double chordTolerance
 +---------------+---------------+---------------+---------------+---------------+------*/
 SimplifyGraphic::SimplifyGraphic(bool addFacetNormals, bool addFacetParams)
     {
-    m_context = NULL;
+    m_context = nullptr;
+    m_localToWorldTransform.InitIdentity();
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewFlags viewFlags;
@@ -547,7 +548,11 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR curves, bool fille
             {
             bvector<CurveVectorPtr> insideCurves;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, curves, *GetCurrClip(), m_context->GetCurrLocalToWorldTransformCP()))
+#else
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, curves, *GetCurrClip(), &m_localToWorldTransform))
+#endif
                 {
                 for (CurveVectorPtr tmpCurves: insideCurves)
                     CurveVectorOutputProcessor(*tmpCurves, filled);
@@ -618,7 +623,13 @@ void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
 
         if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *_GetFacetOptions()))
             {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             m_context->PushTransform(entity.GetEntityTransform());
+#else
+            AutoRestore<Transform> saveLocalToWorld(&m_localToWorldTransform);
+
+            m_localToWorldTransform = Transform::FromProduct(m_localToWorldTransform, entity.GetEntityTransform());
+#endif
 
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
@@ -629,7 +640,9 @@ void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
                 FacetClipper(*this, false).ProcessDisposablePolyface(*polyfaces[i]);
                 }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             m_context->PopTransformClip();
+#endif
             }
 
         return;
@@ -642,9 +655,17 @@ void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
 
     polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_context->PushTransform(entity.GetEntityTransform());
+#else
+    AutoRestore<Transform> saveLocalToWorld(&m_localToWorldTransform);
+
+    m_localToWorldTransform = Transform::FromProduct(m_localToWorldTransform, entity.GetEntityTransform());
+#endif
     FacetClipper(*this, false).ProcessDisposablePolyface(*polyface);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_context->PopTransformClip();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -678,7 +699,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR entity, SimplifyDr
         }
     else if (_ProcessAsWireframe())
         {
-        WireframeGeomUtil::Draw(entity, *m_context);
+        WireframeGeomUtil::Draw(*this, entity, *m_context);
         }    
     }
 
@@ -725,7 +746,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR surface)
         }
     else if (_ProcessAsWireframe())
         {
-        WireframeGeomUtil::Draw(surface, *m_context);
+        WireframeGeomUtil::Draw(*this, surface, *m_context);
         }
     }
 
@@ -735,7 +756,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR surface)
 struct UnClippedSolidPrimitiveProcessor : SimplifyDrawUnClippedProcessor
 {
 SimplifyGraphic&   m_drawGeom;
-ISolidPrimitiveCR       m_primitive;
+ISolidPrimitiveCR  m_primitive;
 
 UnClippedSolidPrimitiveProcessor(SimplifyGraphic& drawGeom, ISolidPrimitiveCR primitive) : m_drawGeom(drawGeom), m_primitive(primitive) {}
 
@@ -769,7 +790,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR primitive)
         }
     else if (_ProcessAsWireframe())
         {
-        WireframeGeomUtil::Draw(primitive, *m_context);
+        WireframeGeomUtil::Draw(*this, primitive, *m_context);
         }
     }
 
@@ -970,7 +991,13 @@ void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoi
 void SimplifyGraphic::ClipAndProcessText(TextStringCR text, double* zDepth)
     {
     Transform drawTrans = text.ComputeTransform();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_context->PushTransform(drawTrans);
+#else
+    AutoRestore<Transform> saveLocalToWorld(&m_localToWorldTransform);
+
+    m_localToWorldTransform = Transform::FromProduct(m_localToWorldTransform, drawTrans);
+#endif
 
     // NOTE: Need text axes to compute gpa transform in _OnGlyphAnnounced...
     text.ComputeGlyphAxes(m_textAxes[0], m_textAxes[1]);
@@ -983,7 +1010,9 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text, double* zDepth)
     for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
         ClipAndProcessGlyph(font, *glyphs[iGlyph], glyphOrigins[iGlyph]);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_context->PopTransformClip();
+#endif
     }
 
 

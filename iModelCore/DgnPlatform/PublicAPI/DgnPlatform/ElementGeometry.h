@@ -60,7 +60,7 @@ public:
     DGNPLATFORM_EXPORT ISolidKernelEntityPtr GetAsISolidKernelEntity() const;
     DGNPLATFORM_EXPORT TextStringPtr GetAsTextString() const;
 
-    DGNPLATFORM_EXPORT void Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT void Draw(Render::GraphicR, ViewContextR) const;
     DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame(TransformR localToWorld) const;
     DGNPLATFORM_EXPORT bool GetLocalRange(DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
     DGNPLATFORM_EXPORT bool GetRange(DRange3dR range, TransformCP transform = nullptr) const;
@@ -205,7 +205,7 @@ enum class HeaderFlags : uint32_t
         bool Get(Operation const&, MSBsplineSurfacePtr&) const;
         bool Get(Operation const&, ISolidKernelEntityPtr&) const;
         bool Get(Operation const&, ElementGeometryPtr&) const;
-    bool Get(Operation const&, DgnGeomPartId&, TransformR) const;
+        bool Get(Operation const&, DgnGeomPartId&, TransformR) const;
         bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
     }; // Reader
@@ -255,7 +255,7 @@ enum class HeaderFlags : uint32_t
         const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
         const_iterator end() const {return const_iterator();}
         void GetGeomPartIds(IdSet<DgnGeomPartId>&, DgnDbR) const;
-        void Draw(ViewContextR, DgnCategoryId, ViewFlags) const;
+        void Draw(Render::GraphicR graphic, ViewContextR, DgnCategoryId, TransformCR elemToWorld) const;
     };
 
 //=======================================================================================
@@ -309,7 +309,6 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     size_t              m_dataOffset;
     size_t              m_totalDataSize;
     ViewContextP        m_context;
-    bool                m_geomToElemPushed;
     ElementGeometryPtr  m_elementGeometry;
     DgnGeomPartPtr      m_partGeometry;
     uint8_t const*      m_saveData;
@@ -319,7 +318,7 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
 
     DGNPLATFORM_EXPORT void ToNext ();
 
-    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context, BRepOutput bRep) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_geomToElemPushed(false), m_bRepOutput(bRep) {ToNext();}
+    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context, BRepOutput bRep) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_bRepOutput(bRep) {ToNext();}
     Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0), m_context(nullptr), m_bRepOutput(BRepOutput::BRep) {}
 
     friend struct ElementGeometryCollection;
@@ -404,7 +403,7 @@ bool                    m_is3d;
 Placement3d             m_placement3d;
 Placement2d             m_placement2d;
 DgnDbR                  m_dgnDb;
-Render::GeometryParams       m_elParams;
+Render::GeometryParams  m_elParams;
 ElementGeomIO::Writer   m_writer;
 
 ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);

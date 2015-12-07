@@ -1493,6 +1493,7 @@ bool RedlineViewController::GetDrawBorder() const {return m_drawBorder;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RedlineModel::DrawImage(ViewContextR context, DPoint3dCR viewOrg, DVec3dCR viewDelta, bool drawBorder)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Make sure texture is defined. (I think it could get deleted when we run low on memory, so we might have to re-create it on the fly.)
     LoadImageDataAndDefineTexture();
 
@@ -1500,6 +1501,7 @@ BentleyStatus RedlineModel::DrawImage(ViewContextR context, DPoint3dCR viewOrg, 
     int tilesY = (int)m_tileIds.size() / m_tilesX;
 
     context.GetCurrentGraphicR().AddMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
+#endif
 
     return BSISUCCESS;
     }

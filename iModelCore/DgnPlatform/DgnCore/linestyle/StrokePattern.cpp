@@ -1574,6 +1574,7 @@ bool            StrokeGenerator::IncrementSegment ()
     return false;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * extend first and last point by half of the widths
 * @bsimethod                                                    Keith.Bentley   02/03
@@ -1747,6 +1748,7 @@ static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double con
             }
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04
@@ -1774,7 +1776,11 @@ bool            segmentNotDiscernible (ViewContextP context, int numPoints, DPoi
         return false;
 
     DPoint3d    viewPts[2];
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context->LocalToView (viewPts, points, 2);
+#else
+    context->WorldToView (viewPts, points, 2);
+#endif
 
     double      size = xySize (viewPts, viewPts+1);
     return (size < MIN_LOD);
@@ -1813,6 +1819,7 @@ void            Centerline::AddPoint (DPoint3dCP pt, double width, double length
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int nPts = GetCount();
     if (nPts <= 0)
         return;
@@ -1869,6 +1876,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
 
     bool    polyLengthNotDiscernible = (nPts > 2 ? false : segmentNotDiscernible (context, nPts, m_pts+start));
     outputPolygon (&output, nPts-start, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, endTangent, polyLengthNotDiscernible);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

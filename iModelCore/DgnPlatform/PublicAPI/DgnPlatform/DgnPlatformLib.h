@@ -533,19 +533,21 @@ public:
             virtual BentleyStatus _FacetBody(IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options) const {return _FacetBody(out, in, 0.0);}
 
             //! Output a ISolidKernelEntity as one or more closed planar shapes (may have holes) and surfaces to the supplied view context.
+            //! @param[out] graphic The graphic to append the surface geometry to.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] context The context to output the body to.
             //! @param[in] simplify if true faces are output as simple types (CurveVector, SolidPrimitive, and MSBSplineSurface) instead of sheet bodies.
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsSurfaces(ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsSurfaces(Render::GraphicR graphic, ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
 
             //! Output a ISolidKernelEntity as a wireframe representation.
+            //! @param[out] graphic The graphic to append the edge and face hatch curve geometry to.
             //! @param[in] in The solid kernel entity.
             //! @param[in] context The context to output the body to.
             //! @param[in] includeEdges Include wire geometry for body edges.
             //! @param[in] includeFaceIso Include wire geometry for face isoparametrics.
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsWireframe(ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsWireframe(Render::GraphicR graphic, ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
 
             //! Return a CurveVector representation for a sheet body with a single planar face.
             //! @param[in] in The solid kernel entity.

@@ -202,7 +202,7 @@ struct RegionGraphicsContext : RefCountedBase
     DEFINE_T_SUPER(NullContext)
 protected:
 
-RegionGraphicsDrawGeom  m_output;
+RefCountedPtr<RegionGraphicsDrawGeom> m_output;
 
 RegionType              m_operation;
 RegionLoops             m_regionLoops;
@@ -215,6 +215,8 @@ bool                    m_cullRedundantLoop;
 DgnModelP               m_targetModel;
 bvector<FloodSeed>      m_floodSeeds;
 FloodSeed               m_dynamicFaceSeed;
+
+virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
 
 DgnModelP GetViewTarget () {return m_targetModel;}
 
@@ -235,7 +237,7 @@ public:
 DGNPLATFORM_EXPORT               RegionGraphicsContext ();
 
                    bool          IsGraphInitialized () {return NULL != GetViewTarget();}
-                   RegionErrors  GetRegionError () {return m_output.GetRegionError ();}
+                   RegionErrors  GetRegionError () {return m_output->GetRegionError ();}
 DGNPLATFORM_EXPORT void          SetAbortFunction (RGC_AbortFunction abort);
                    void          SetAssociativeRegionUpdate () {m_updateAssocRegion = true;}
                    void          SetCullRedundantLoops () {m_cullRedundantLoop = true;}
@@ -243,16 +245,16 @@ DGNPLATFORM_EXPORT void          SetAbortFunction (RGC_AbortFunction abort);
 DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnViewportP vp, DgnElementCPtrVec const* in);
 DGNPLATFORM_EXPORT BentleyStatus PopulateGraph (DgnModelR targetModel, DgnElementCPtrVec const& in, TransformCP inTrans);
 DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints (DPoint3dCP seedPoints, size_t numSeed);
-DGNPLATFORM_EXPORT void          AddFaceLoopsByInwardParitySearch (bool parityWithinComponent, bool vertexContactSufficient) {m_output.CollectByInwardParitySearch (parityWithinComponent, vertexContactSufficient);}
+DGNPLATFORM_EXPORT void          AddFaceLoopsByInwardParitySearch (bool parityWithinComponent, bool vertexContactSufficient) {m_output->CollectByInwardParitySearch (parityWithinComponent, vertexContactSufficient);}
 DGNPLATFORM_EXPORT bool          ToggleFaceAtPoint (DPoint3dCR seedPoint);
 DGNPLATFORM_EXPORT bool          GetFaceAtPoint (CurveVectorPtr& region, DPoint3dCR seedPoint);
 DGNPLATFORM_EXPORT int           GetCurrentFaceNodeId (); // NOTE: Valid after calling GetFaceAtPoint...
 DGNPLATFORM_EXPORT bool          GetActiveFaces (CurveVectorPtr& region);
 DGNPLATFORM_EXPORT bool          IsFaceAtPointSelected (DPoint3dCR seedPoint);
 
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots) {return m_output.GetRoots (regionRoots);}                                 // No duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, CurveVectorCR region) {return m_output.GetRoots (regionRoots, region);}   // May contain duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curve) {return m_output.GetRoots (regionRoots, curve);} // May contain duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots) {return m_output->GetRoots (regionRoots);}                                 // No duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, CurveVectorCR region) {return m_output->GetRoots (regionRoots, region);}   // May contain duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots (bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curve) {return m_output->GetRoots (regionRoots, curve);} // May contain duplicates...
 
 void                             EnableOriginalLoopSymbology () {m_setLoopSymbology = true;} // Legacy behavior of create grouped hole tool...
 

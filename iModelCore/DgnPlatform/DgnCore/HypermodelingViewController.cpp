@@ -35,6 +35,7 @@ double static getSizeofPixelInDrawing (ViewContextR context, DrawingViewControll
     }
 #endif
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  03/14
 //--------------+------------------------------------------------------------------------
@@ -69,6 +70,7 @@ Transform static getTransformToForemostCutPlane (SectioningViewControllerCR sect
 
     return xlat;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
@@ -84,8 +86,10 @@ void HypermodelingViewController::PushClipsForPhysicalView (ViewContextR context
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HypermodelingViewController::PopClipsForPhysicalView (ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     for (auto drawing : m_drawings)
         context.PopTransformClip ();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,6 +97,7 @@ void HypermodelingViewController::PopClipsForPhysicalView (ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR context, SectionDrawingViewControllerCR drawing) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (PASS_Hatch != m_pass && "The Hatch pass is drawing with just the toWorld transform -- do it yourself");
 
     //  3. Finally, translate section graphics to the foremost cut plane
@@ -120,6 +125,7 @@ void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR co
         context.PushTransform (drawing.GetFlatteningMatrix (pixelOffset));
         }
 #endif
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,6 +133,7 @@ void HypermodelingViewController::PushClipsForInContextViewPass (ViewContextR co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR context, SectionDrawingViewControllerCR drawing) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (PASS_Hatch != m_pass && "The Hatch pass is drawing with just the toWorld transform -- do it yourself");
 
     //  3. Finally, translate section graphics to the foremost cut plane
@@ -139,6 +146,7 @@ void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR con
     //  1. First, smash the section graphics onto a plane. (Yes, we store z-coordinates in the drawing model.)
     if (s_flatten)
         context.PopTransformClip();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,6 +216,7 @@ DRange3d HypermodelingViewController::GetDrawingRange (DrawingViewControllerR dr
 //--------------+------------------------------------------------------------------------
 void HypermodelingViewController::DrawFakeSheetBorder (ViewContextR context, DrawingViewControllerR drawing) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewContext::ContextMark mark (&context);
     auto range3d = GetDrawingRange (drawing);
     auto range = DRange2d::From (DPoint2d::From(range3d.low.x,range3d.low.y), DPoint2d::From(range3d.high.x,range3d.high.y));
@@ -216,6 +225,7 @@ void HypermodelingViewController::DrawFakeSheetBorder (ViewContextR context, Dra
     std::swap (box[2], box[3]);
     //SetOverrideMatSymb (context);
     context.GetCurrentGraphicR().AddShape2d (_countof(box), box, /*filled*/true, 0, &range.low);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -223,6 +233,7 @@ void HypermodelingViewController::DrawFakeSheetBorder (ViewContextR context, Dra
 //--------------+------------------------------------------------------------------------
 void HypermodelingViewController::_DrawView (ViewContextR context) 
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_passesToDraw = (Pass)(PASS_Cut|PASS_Annotation|PASS_Hatch); // *** TEST TEST TEST
 
     //  Draw the embedded drawings
@@ -307,6 +318,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
     PushClipsForPhysicalView (context);
     m_currentViewController->DrawView (context);
     PopClipsForPhysicalView (context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -314,12 +326,15 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HypermodelingViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+
 #if defined (NEEDS_WORK_DGNITEM)
     if (m_pass != PASS_None && !ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler (elIter.GetHandler()))
 /*<==*/ return;
 #endif
 
     T_Super::_StrokeGeometry(context, element);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -181,6 +181,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, V
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationTextBlockDraw::Draw(ViewContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BentleyStatus status = SUCCESS;
 
     for (auto const& line : m_layout->GetLines())
@@ -222,4 +223,7 @@ BentleyStatus AnnotationTextBlockDraw::Draw(ViewContextR context) const
         }
 
     return status;
+#else
+    return ERROR;
+#endif
     }

@@ -72,7 +72,11 @@ bool LsComponent::IsWidthDiscernible (ViewContextP context, Render::LineStyleSym
     vec[0] = pt;
     vec[1].SumOf (*vec,max);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context->LocalToView (vec, vec, 2);
+#else
+    context->WorldToView (vec, vec, 2);
+#endif
 
     double      minLODSize = context->GetMinLOD()*0.25;
 
@@ -107,7 +111,11 @@ DPoint3dCR      pt
     vec[0] = pt;
     vec[1].SumOf (*vec,max);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context->LocalToView (vec, vec, 2);
+#else
+    context->WorldToView (vec, vec, 2);
+#endif
 
     double      minLODSize = context->GetMinLOD()*0.25;
 
@@ -119,6 +127,7 @@ DPoint3dCR      pt
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double      totalLength;
     int         disconnect=0;
 
@@ -181,6 +190,9 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
 #endif
 
     return false;
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -221,6 +233,7 @@ static inline bool biggerThanPixel (double val, double pixelSize)
 BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, LineStyleSymbCP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
                                         double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     bool filled = false;        // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
 
     bool isWidthDiscernible = IsWidthDiscernible (context, lsSymb, *origin);
@@ -313,6 +326,9 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
         }
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -356,7 +372,11 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 
     if (NULL != context->GetViewport ())
         {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         context->LocalToView (vec, vec, 2);
+#else
+        context->WorldToView (vec, vec, 2);
+#endif
 
         double  dist = vec[0].Distance (vec[1]);
 
@@ -427,6 +447,7 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    firstPt;
     curve->FractionToPoint (firstPt, 0.0);
 
@@ -488,6 +509,9 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
 
 
     return status;
+#else
+    return ERROR;
+#endif
     }
 
 LsComponentId       LsComponent::GetId ()const {return m_location.GetComponentId ();}

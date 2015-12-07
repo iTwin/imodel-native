@@ -184,7 +184,11 @@ void SectioningViewController::_DrawView(ViewContextR context)
 
     context.PushClip(*insideForward);
     DrawViewInternal(context);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
+#else
+    context.PopClip();
+#endif
 
     //  Draw the clip planes themselves
     m_clip->Draw(context);
@@ -193,12 +197,20 @@ void SectioningViewController::_DrawView(ViewContextR context)
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::InsideBackward));
     SetOverrideMatSymb(context);
     DrawViewInternal(context);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
+#else
+    context.PopClip();
+#endif
 
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::Outside));
     SetOverrideMatSymb(context);
     DrawViewInternal(context);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
+#else
+    context.PopClip();
+#endif
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetOverrideMatSymb()->Clear();
@@ -211,6 +223,7 @@ void SectioningViewController::_DrawView(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_pass == ClipVolumePass::InsideForward)
         {
         T_Super::_StrokeGeometry(context, element);
@@ -219,6 +232,7 @@ void SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySou
 
     SetOverrideMatSymb(context);
     element.Stroke(context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

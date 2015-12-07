@@ -30,6 +30,7 @@ protected:
     bool                m_inTextDraw;
     bool                m_inThicknessDraw;
     bool                m_processingMaterialGeometryMap;
+    Transform           m_localToWorldTransform;
 
 private:
     void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
@@ -92,8 +93,86 @@ public:
     DGNPLATFORM_EXPORT SimplifyGraphic(bool addNormals = false, bool addParameters = false);
     virtual ~SimplifyGraphic() {}
 
-    ViewContextP GetViewContext() {return m_context;};
+    ViewContextP GetViewContext() const {return m_context;};
     void SetViewContext(ViewContextP context) {m_context = context;} // NOTE: Required!!!
+
+    TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
+    void SetLocalToWorldTransform(TransformCR transform) {m_localToWorldTransform = transform;}
+
+    DMatrix4d GetLocalToView() const
+        {
+        DMatrix4d   localToWorld = DMatrix4d::From(m_localToWorldTransform);
+        DMatrix4d   worldToView = m_context->GetWorldToView().M0;
+        DMatrix4d   localToView;
+
+        localToView.InitProduct(worldToView, localToWorld);
+
+        return localToView;
+        }
+
+    DMatrix4d GetViewToLocal() const
+        {
+        Transform   worldToLocalTrans;
+
+        worldToLocalTrans.InverseOf(m_localToWorldTransform);
+
+        DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
+        DMatrix4d   viewToWorld = m_context->GetWorldToView().M1;
+        DMatrix4d   viewToLocal;
+
+        viewToLocal.InitProduct(worldToLocal, viewToWorld);
+
+        return viewToLocal;
+        }
+
+    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
+    //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      localPts    Input array in current local coordinates,
+    //! @param[in]      nPts        Number of points in both arrays.
+    void LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
+        {
+        GetLocalToView().Multiply(viewPts, localPts, nullptr, nPts);
+        }
+
+    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
+    //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      localPts    Input array in current local coordinates,
+    //! @param[in]      nPts        Number of points in both arrays.
+    void LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
+        {
+        DMatrix4dCR  localToView = GetLocalToView();
+
+        if (nullptr != m_context->GetViewport() && m_context->GetViewport()->IsCameraOn())
+            localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
+        else
+            localToView.MultiplyAffine(viewPts, localPts, nPts);
+        }
+
+    //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
+    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
+    //! @param[in]      nPts        Number of points in both arrays.
+    void ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const
+        {
+        Transform   worldToLocal;
+
+        worldToLocal.InverseOf(m_localToWorldTransform);
+        m_context->ViewToWorld(localPts, viewPts, nPts);
+        worldToLocal.Multiply(localPts, localPts, nPts);
+        }
+
+    //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
+    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
+    //! @param[in]      nPts        Number of points in both arrays.
+    void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
+        {
+        Transform   worldToLocal;
+
+        worldToLocal.InverseOf(m_localToWorldTransform);
+        m_context->ViewToWorld(localPts, viewPts, nPts);
+        worldToLocal.Multiply(localPts, localPts, nPts);
+        }
 
     bool PerformClip();
     DGNPLATFORM_EXPORT ClipVectorCP GetCurrClip();
