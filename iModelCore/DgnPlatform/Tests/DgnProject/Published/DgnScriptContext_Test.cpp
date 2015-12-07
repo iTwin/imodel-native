@@ -135,7 +135,7 @@ TEST_F(DgnScriptTest, Test1)
     parms["Y"] = 2.0;
     parms["Z"] = 3.0;
 
-    StopWatch timeIt(L"", true);
+    StopWatch timeIt(true);
     int niters = 1000;
     for (int i=0; i<niters; ++i)
         {
