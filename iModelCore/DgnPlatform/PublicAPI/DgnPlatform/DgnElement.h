@@ -2158,7 +2158,7 @@ public:
 //=======================================================================================
 //! Utility to collect editable elements.
 //! Order is \em not preserved.
-//! You cannot more than one editable copy of the same element in the collection at the same time.
+//! The collection holds only one copy of an element with a given ElementId.
 // @bsiclass                                                BentleySystems
 //=======================================================================================
 struct DgnEditElementCollector
@@ -2171,43 +2171,50 @@ public:
     DGNPLATFORM_EXPORT DgnEditElementCollector();
     DGNPLATFORM_EXPORT ~DgnEditElementCollector();
 
-    //! Add an element to the collection. 
-    //! If the collection already contains an element with the same ID, then \a el is not added and the existing element is returned.
+    //! Add the specified editable copy of an element to the collection. 
+    //! @param el  The editable copy to be added
     //! @return The element that is in the collection. 
     DGNPLATFORM_EXPORT DgnElementPtr AddElement(DgnElementR el);
 
-    //! Add editable copies of its children to the collection. 
-    //! If the collection already contains a copy of a child element, it is retained and the new copy is not added. Only one copy of an element is held in the collection.
+    //! Add editable copies of the children of an element to the collection. 
+    //! @param el  The parent element to be queried
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void AddChildren(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max());
     
     //! Add an element and editable copies of its children to the collection
-    //! @param el       The element to add
+    //! @param el       The parent element to be added and queried
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void AddAssembly(DgnElement& el, size_t maxDepth = std::numeric_limits<size_t>::max()) {AddElement(el); AddChildren(el, maxDepth);}
 
     //! Add an editable copy of the specified element to the collection.
-    //! If the collection already contains an element with the same ID, then \a el is not added and the existing element is returned.
+    //! If the collection already contains an element with the same ElementId, then \a el is not added and the existing element is returned.
+    //! @param el  The element to be edited
     //! @return The element that is in the collection or nullptr if the element could not be copied for edit.
     DGNPLATFORM_EXPORT DgnElementPtr EditElement(DgnElementCR el) {auto ee = el.CopyForEdit(); if (ee.IsValid()) return AddElement(*ee); else return nullptr;}
     
     //! Add an editable copy of the specified element and its children to the collection.
-    //! @param el       The element to add
+    //! @param el       The element to be added
     //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void EditAssembly(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {auto ee = el.CopyForEdit(); if (ee.IsValid()) AddAssembly(*ee, maxDepth);}
 
-    //! Look up an element in the collection by its ID.
+    //! Look up the editable copy of an element in the collection by its ElementId.
     //! @return The element that is in the collection or nullptr if not found.
     DGNPLATFORM_EXPORT DgnElementPtr FindElementById(DgnElementId);
 
     //! Remove the specified editable copy of an element from the collection.
+    //! @param el  The editable copy of an element in the collection
+    //! @note \a el must be the editable copy of the element that is in this collection.
     //! @see FindElementById 
     DGNPLATFORM_EXPORT void RemoveElement(DgnElementR el);
 
     //! Remove an element's children (by ID) from the collection.
+    //! @param el  The parent element to query.
+    //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void RemoveChildren(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max());
     
     //! Remove the specified editable copy of an element and its children (by ID) from the collection.
+    //! @param el  The editable copy of the parent element to remove and to query.
+    //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
     DGNPLATFORM_EXPORT void RemoveAssembly(DgnElementR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {RemoveElement(el); RemoveChildren(el, maxDepth);}
 
     //! Get the number of elements currently in the collection
@@ -2219,7 +2226,7 @@ public:
     //! Get an iterator pointing to the end of the collection
     bset<DgnElementP>::const_iterator end() const {return m_elements.end();}
 
-    //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Others are inserted. 
+    //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Elements with no ElementIds are inserted. 
     //! @return non-zero error status if any insert or update fails. In that case some elements in the collection may not be written.
     DGNPLATFORM_EXPORT DgnDbStatus Write();
 };
