@@ -237,7 +237,8 @@ void ConnectSpaces::ResetEula(bool getNewToken)
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
         }
-    Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + m_credentials.GetUsername();
+    Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + 
+        ConnectAuthenticationPersistence::GetShared()->GetCredentials().GetUsername();
     HttpRequest request = m_client.CreatePostRequest(url);
     request.GetHeaders().SetValue("Content-Type", "application/json");
     m_credentialsCriticalSection.Enter();
