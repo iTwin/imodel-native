@@ -18,7 +18,8 @@
 #define USING_NAMESPACE_BENTLEY_DGNDBSERVER    using namespace BentleyApi::DgnDbServer;
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+struct DgnDbServerError : public AsyncError
     {
 public:
     DgnDbServerError() {}
@@ -38,10 +39,10 @@ public:
 
         }
     };
-template<typename AnyValue> using DgnDbServerResult = DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>;
-template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
-template<typename AnyValue> using DgnDbServerTask = DgnClientFx::Utils::PackagedAsyncTask<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
-template<typename AnyValue> using DgnDbServerTaskPtr = std::shared_ptr<DgnClientFx::Utils::PackagedAsyncTask<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>>;
+template<typename AnyValue> using DgnDbServerResult = AsyncResult<AnyValue, DgnDbServerError>;
+template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<AsyncResult<AnyValue, DgnDbServerError>>;
+template<typename AnyValue> using DgnDbServerTask = PackagedAsyncTask<AsyncResult<AnyValue, DgnDbServerError>>;
+template<typename AnyValue> using DgnDbServerTaskPtr = std::shared_ptr<PackagedAsyncTask<AsyncResult<AnyValue, DgnDbServerError>>>;
 END_BENTLEY_DGNDBSERVER_NAMESPACE
 
 

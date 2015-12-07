@@ -5,20 +5,20 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include <DgnDbServer/Client/DgnDbLocks.h>
+#include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
-DgnDbRepositoryConnectionPtr DgnDbLocks::Connect(DgnDbCR db)
+DgnDbResult DgnDbLocks::Connect(DgnDbCR db)
     {
     auto repository = RepositoryInfo::ReadRepositoryInfo(db);
     if (m_connection)
         {
         if (*repository == m_connection->GetRepositoryInfo())
-            return m_connection;
+            return DgnDbResult::Success();
         }
 
     auto result = DgnDbRepositoryConnection::Create(RepositoryInfo::ReadRepositoryInfo(db), m_credentials, m_clientInfo, m_cancellationToken)->GetResult();
@@ -26,18 +26,20 @@ DgnDbRepositoryConnectionPtr DgnDbLocks::Connect(DgnDbCR db)
         {
         DgnDbRepositoryConnectionPtr connection = result.GetValue();
         m_connection = connection;
-        return connection;
+        return DgnDbResult::Success();
         }
     else
-        return nullptr;
+        {
+        m_connection = nullptr;
+        return DgnDbResult::Error(result.GetError());
+        }
     }
 
 LockStatus DgnDbLocks::_QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db)
     {
-    auto connection = Connect(db);
-    if (connection)
+    if (m_connection)
         {
-        auto result = connection->QueryLocksHeld(held, locks, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        auto result = m_connection->QueryLocksHeld(held, locks, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             return LockStatus::Success;
@@ -53,13 +55,12 @@ LockStatus DgnDbLocks::_QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR d
 
 LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
     {
-    auto connection = Connect(db);
-    if (connection)
+    if (m_connection)
         {
         Json::Value locksRequest;
         locks.ToJson(locksRequest);
-        locksRequest["Description"] = "";
-        auto result = connection->AcquireLocks(locksRequest, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        locksRequest[Locks::Description] = "";
+        auto result = m_connection->AcquireLocks(locksRequest, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             return result.GetValue();
@@ -75,16 +76,15 @@ LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
 
 Dgn::LockStatus DgnDbLocks::_ReleaseLocks(Dgn::DgnLockSet const& locks, Dgn::DgnDbR db)
     {
-    auto connection = Connect(db);
-    if (connection)
+    if (m_connection)
         {
         Json::Value locksRequest;
-        locksRequest["Locks"] = Json::arrayValue;
+        locksRequest[Locks::Locks] = Json::arrayValue;
         int i = 0;
         for (auto& lock : locks)
-            lock.ToJson(locksRequest["Locks"][i++]);
-        locksRequest["Description"] = "";
-        auto result = connection->ReleaseLocks(locksRequest, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+            lock.ToJson(locksRequest[Locks::Locks][i++]);
+        locksRequest[Locks::Description] = "";
+        auto result = m_connection->ReleaseLocks(locksRequest, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             return LockStatus::Success;
@@ -100,10 +100,9 @@ Dgn::LockStatus DgnDbLocks::_ReleaseLocks(Dgn::DgnLockSet const& locks, Dgn::Dgn
 
 LockStatus DgnDbLocks::_RelinquishLocks(DgnDbR db)
     {
-    auto connection = Connect(db);
-    if (connection)
+    if (m_connection)
         {
-        auto result = connection->RelinquishLocks(db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        auto result = m_connection->RelinquishLocks(db.GetBriefcaseId(), m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             return LockStatus::Success;//NEEDSWORK: Can delete locks partially
@@ -119,10 +118,9 @@ LockStatus DgnDbLocks::_RelinquishLocks(DgnDbR db)
 
 LockStatus DgnDbLocks::_QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db)
     {
-    auto connection = Connect(db);
-    if (connection)
+    if (m_connection)
         {
-        auto result = connection->QueryLockLevel(lockId, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        auto result = m_connection->QueryLockLevel(lockId, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             level = result.GetValue();
@@ -139,10 +137,9 @@ LockStatus DgnDbLocks::_QueryLockLevel(LockLevel& level, LockableId lockId, DgnD
 
 LockStatus DgnDbLocks::_QueryLocks(DgnLockSet& locks, DgnDbR db)
     {
-    auto connection = Connect(db);
-    if (connection)
+    if (m_connection)
         {
-        auto result = connection->QueryLocks(db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        auto result = m_connection->QueryLocks(db.GetBriefcaseId(), m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             locks = result.GetValue();
@@ -157,12 +154,11 @@ LockStatus DgnDbLocks::_QueryLocks(DgnLockSet& locks, DgnDbR db)
         return LockStatus::ServerUnavailable;
     }
 
-LockStatus DgnDbLocks::_QueryOwnership(DgnLockOwnershipR ownership, Dgn::LockableId lockId, DgnDbR db)
+LockStatus DgnDbLocks::_QueryOwnership(DgnLockOwnershipR ownership, Dgn::LockableId lockId)
     {
-    auto connection = Connect(db);
-    if (connection)
+    if (m_connection)
         {
-        auto result = connection->QueryOwnership(lockId, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        auto result = m_connection->QueryOwnership(lockId, m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             ownership = result.GetValue();

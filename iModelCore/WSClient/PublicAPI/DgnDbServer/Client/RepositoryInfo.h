@@ -35,7 +35,8 @@ protected:
  //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id);
-    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
+    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description,
+    Utf8StringCR user, DateTimeCR date);
 
     //__PUBLISH_SECTION_END__
     static RepositoryInfoPtr ReadRepositoryInfo(Dgn::DgnDbCR db);
