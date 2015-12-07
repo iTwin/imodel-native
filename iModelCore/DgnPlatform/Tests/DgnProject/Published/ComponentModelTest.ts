@@ -130,7 +130,7 @@ module ComponentModelTest
 
             var gadgetComponentModel = be.ComponentModel.FindModelByName(db, TEST_GADGET_COMPONENT_NAME);
             var gparams: Gadget.Parameters = { Q: params.A + 1, W: params.B + 1, R: params.C + 1 };
-            var element2 = gadgetComponentModel.MakeInstanceOfSolution(model, "", JSON.stringify(gparams), null);
+            var element2 = gadgetComponentModel.MakeInstance(model, "", JSON.stringify(gparams), null);
 
             // *** TBD:
             //var gorigin = origin.Plus(new be.DVector3d(1, 0, 0));

@@ -513,7 +513,7 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     ASSERT_TRUE( targetModel.IsValid() );
 
     DgnDbStatus status;
-    DgnElementCPtr instanceElement = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, catalogItem);
+    DgnElementCPtr instanceElement = ComponentModel::MakeInstance(&status, *targetModel, catalogItem);
     ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
 
     ieid = instanceElement->GetElementId();
@@ -757,7 +757,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     params.GetParameterP("B")->SetValue(ECN::ECValue(2));
     params.GetParameterP("C")->SetValue(ECN::ECValue(3));
 
-    DgnElementCPtr instanceElement = nestingComponentModel->MakeInstanceOfSolution(&status, *targetModel, "", params); // create a unique/singleton instance with these parameters
+    DgnElementCPtr instanceElement = nestingComponentModel->MakeInstance(&status, *targetModel, "", params); // create a unique/singleton instance with these parameters
     ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
     Client_CheckComponentInstance(instanceElement->GetElementId(), 1, params.GetParameterP("A")->GetValue().GetDouble(), params.GetParameterP("B")->GetValue().GetDouble(), params.GetParameterP("C")->GetValue().GetDouble());
 
