@@ -15,12 +15,19 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 char const* UNIT_ITERATOR_OPTIONS_ERROR_STRING = "Either a unit was returned that shouldn't have, or one was inserted after this test was created.";
 
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct UnitManagerTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // UnitDefinition
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-TEST (UnitDefinition, GetStandardUnit)
+TEST_F (UnitManagerTest, GetStandardUnit)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition def;
     def = UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters);
     
@@ -39,9 +46,8 @@ TEST (UnitDefinition, GetStandardUnit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetStandardUnit_NULL)
+TEST_F (UnitManagerTest, GetStandardUnit_NULL)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition def;
     def = UnitDefinition::GetStandardUnit (StandardUnit::None);
     
@@ -51,9 +57,8 @@ TEST (UnitDefinition, GetStandardUnit_NULL)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetStandardUnitByName)
+TEST_F (UnitManagerTest, GetStandardUnitByName)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition def;
     
     WChar const* buffer = LOCALIZED_STR(L"meter");
@@ -68,9 +73,8 @@ TEST (UnitDefinition, GetStandardUnitByName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetStandardUnitByName_None)
-    {    
-    ScopedDgnHost autoDgnHost;
+TEST_F (UnitManagerTest, GetStandardUnitByName_None)
+    {
     UnitDefinition def;
     
     WChar const* buffer = LOCALIZED_STR(L"none");
@@ -82,9 +86,8 @@ TEST (UnitDefinition, GetStandardUnitByName_None)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, IsStandardUnit)
-    {    
-    ScopedDgnHost autoDgnHost;
+TEST_F (UnitManagerTest, IsStandardUnit)
+    {
     UnitDefinition def(UnitBase::Meter, UnitSystem::Metric, 100.0, 1.0, LOCALIZED_STR(L"def"));
 
     ASSERT_TRUE (StandardUnit::MetricCentimeters == def.IsStandardUnit());
@@ -93,9 +96,8 @@ TEST (UnitDefinition, IsStandardUnit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetStandardLabel)
-    {    
-    ScopedDgnHost autoDgnHost;
+TEST_F (UnitManagerTest, GetStandardLabel)
+    {
     WString label = UnitDefinition::GetStandardLabel (StandardUnit::AngleGrads);
 
     ASSERT_TRUE (label == WString(LOCALIZED_STR(L"grad")));
@@ -104,9 +106,8 @@ TEST (UnitDefinition, GetStandardLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetStandardName)
+TEST_F (UnitManagerTest, GetStandardName)
     {
-    ScopedDgnHost autoDgnHost;
     WString name = UnitDefinition::GetStandardName (StandardUnit::NoSystemLightYears, false);
 
     ASSERT_TRUE (name == WString(LOCALIZED_STR(L"Light Years")));
@@ -115,9 +116,8 @@ TEST (UnitDefinition, GetStandardName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetStandardName_None)
+TEST_F (UnitManagerTest, GetStandardName_None)
     {
-    ScopedDgnHost autoDgnHost;
     WString name = UnitDefinition::GetStandardName (StandardUnit::Custom, false);
 
     ASSERT_TRUE (name == WString(L""));
@@ -126,9 +126,8 @@ TEST (UnitDefinition, GetStandardName_None)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, CreateStandardUnitIterator)
-    {    
-    ScopedDgnHost autoDgnHost;
+TEST_F (UnitManagerTest, CreateStandardUnitIterator)
+    {
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
     
@@ -222,12 +221,18 @@ void InsertArrayIntoVector (StandardUnit const in[], size_t const sz, bvector<St
         out.push_back (in[i]);
     }
 
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct UnitIteratorOptionsTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIteratorOptions, SetAllowSingleBase)
+TEST_F (UnitIteratorOptionsTest, SetAllowSingleBase)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions options;
     options.SetAllowSingleBase(UnitBase::Degree);
 
@@ -241,9 +246,8 @@ TEST (UnitIteratorOptions, SetAllowSingleBase)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIteratorOptions, SetAllowAdditionalBase)
+TEST_F (UnitIteratorOptionsTest, SetAllowAdditionalBase)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions options;
     options.SetAllowSingleBase(UnitBase::Degree);
     options.SetAllowAdditionalBase(UnitBase::None);
@@ -266,9 +270,8 @@ TEST (UnitIteratorOptions, SetAllowAdditionalBase)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIteratorOptions, SetAllowAdditionalSystem)
+TEST_F (UnitIteratorOptionsTest, SetAllowAdditionalSystem)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions options;
     options.SetAllowSingleBase (UnitBase::Meter);
     options.SetAllowSingleSystem (UnitSystem::USSurvey);
@@ -299,9 +302,8 @@ TEST (UnitIteratorOptions, SetAllowAdditionalSystem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIteratorOptions, SetSizeCriteria)
+TEST_F (UnitIteratorOptionsTest, SetSizeCriteria)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition def = UnitDefinition::GetStandardUnit (StandardUnit::MetricNanometers);
     
     UnitIteratorOptions options;
@@ -324,11 +326,10 @@ TEST (UnitIteratorOptions, SetSizeCriteria)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 * TODO: same test as:
-*    TEST (UnitDefinition, CreateStandardUnitIterator)
+*    TEST_F (UnitManagerTest, CreateStandardUnitIterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (UnitIterator, GetUnitDef)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
 
@@ -348,7 +349,6 @@ TEST (UnitIterator, GetUnitDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (UnitIterator, GetNumber)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
 
@@ -362,7 +362,6 @@ TEST (UnitIterator, GetNumber)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (UnitIterator, GetName)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
 

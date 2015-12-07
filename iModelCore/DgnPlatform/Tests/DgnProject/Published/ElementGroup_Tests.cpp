@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
 
+USING_NAMESPACE_BENTLEY_DPTEST
+
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Group 
 * @bsimethod                                                    Umar.Hayat      09/15

@@ -18,7 +18,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId model, DgnClassId classId, DgnCategoryId cat, DgnElementId parentId=DgnElementId())
     {
-    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnElement::Code(), DgnElementId(), parentId);
+    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnElement::Code(), nullptr, parentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,7 +142,8 @@ struct MissingHandlerTest : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId MissingHandlerTest::CreatePhysicalElement(DgnDbR db, DgnElementId parentId)
     {
-    PhysicalElement elem(makeCreateParams(db, m_defaultModelId, PhysicalElement::QueryClassId(db), m_defaultCategoryId, parentId));
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
+    PhysicalElement elem(makeCreateParams(db, m_defaultModelId, classId, m_defaultCategoryId, parentId));
     elem.Insert();
     return elem.GetElementId();
     }

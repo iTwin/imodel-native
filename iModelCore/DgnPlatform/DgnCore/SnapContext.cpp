@@ -518,14 +518,14 @@ virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled) o
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics (ViewContextR context) override
     {
-    SnapDetailP snap = m_snapContext.GetSnapDetail();
-    IElemTopologyCP elemTopo = snap->GetElemTopology();
-    ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
+    SnapDetailP      snap = m_snapContext.GetSnapDetail();
+    IElemTopologyCP  elemTopo = snap->GetElemTopology();
+    GeometrySourceCP geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
 
-    if (nullptr == transientHandler)
+    if (nullptr == geom)
         return;
 
-    transientHandler->_DrawTransient(*snap, m_snapContext);
+    geom->DrawHit(*snap, m_snapContext);
     }
 
 public:

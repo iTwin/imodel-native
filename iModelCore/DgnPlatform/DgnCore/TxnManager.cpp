@@ -38,6 +38,13 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
         {
         if (opcode == DbOpcode::Delete)      // a delete that is already gone. 
             return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+        if (opcode == DbOpcode::Update)
+            return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
+        }
+    else if (ConflictCause::Data == cause)
+        {
+        if (DbOpcode::Delete == opcode)
+            return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
         }
 
     BeAssert(false);
@@ -733,7 +740,7 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowPrevious)
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
         BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
-        return DgnDbStatus::RevisionStarted;
+        return DgnDbStatus::IsCreatingRevision;
         }
 
     if (!pos.IsValid() || (allowPrevious == AllowCrossSessions::No && !PrepareForUndo()))
@@ -801,7 +808,7 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrev
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
         BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
-        return DgnDbStatus::RevisionStarted;
+        return DgnDbStatus::IsCreatingRevision;
         }
 
     if (allowPrevious == AllowCrossSessions::No && !PrepareForUndo())
@@ -841,7 +848,7 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
         BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
-        return DgnDbStatus::RevisionStarted;
+        return DgnDbStatus::IsCreatingRevision;
         }
 
     if (!PrepareForUndo())

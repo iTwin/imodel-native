@@ -8,7 +8,7 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_DPTEST
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15

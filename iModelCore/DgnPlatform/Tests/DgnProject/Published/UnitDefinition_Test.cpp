@@ -62,12 +62,20 @@ UnitDefinition GenerateMeter_0_0 ()
 };
 
 using namespace UnitDefinitionSeeds;
+
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct UnitDefinitionTest : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, DefaultConstructor)
+TEST_F (UnitDefinitionTest, DefaultConstructor)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition def;
 
     ASSERT_FALSE (def.IsValid());
@@ -76,9 +84,8 @@ TEST (UnitDefinition, DefaultConstructor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, IsEqual_True)
+TEST_F (UnitDefinitionTest, IsEqual_True)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition same = GenerateMeter_1_10();
 
@@ -88,9 +95,8 @@ TEST (UnitDefinition, IsEqual_True)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, IsEqual_False)
+TEST_F (UnitDefinitionTest, IsEqual_False)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s2 = GenerateDegree_1_10();
 
     ASSERT_FALSE (GenerateMeter_1_10().IsEqual (s2));
@@ -99,9 +105,8 @@ TEST (UnitDefinition, IsEqual_False)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, AreComparable_True)
+TEST_F (UnitDefinitionTest, AreComparable_True)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s3 = GenerateMeter_10_10();
 
     ASSERT_TRUE (GenerateMeter_1_10().AreComparable (s3));
@@ -110,9 +115,8 @@ TEST (UnitDefinition, AreComparable_True)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, AreComparable_False)
+TEST_F (UnitDefinitionTest, AreComparable_False)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s2 = GenerateDegree_1_10();
 
     ASSERT_FALSE (GenerateMeter_1_10().AreComparable (s2));
@@ -121,9 +125,8 @@ TEST (UnitDefinition, AreComparable_False)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, AreComparable_False2)
+TEST_F (UnitDefinitionTest, AreComparable_False2)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s5 = GenerateMeter_0_0();
 
     ASSERT_FALSE (GenerateMeter_1_10().AreComparable (s5));
@@ -132,9 +135,8 @@ TEST (UnitDefinition, AreComparable_False2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, IsValid_True)
+TEST_F (UnitDefinitionTest, IsValid_True)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s2 = GenerateDegree_1_10();
     UnitDefinition s3 = GenerateMeter_10_10();
@@ -145,18 +147,16 @@ TEST (UnitDefinition, IsValid_True)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, IsValid_False)
+TEST_F (UnitDefinitionTest, IsValid_False)
     {
-    ScopedDgnHost autoDgnHost;
     ASSERT_FALSE (GenerateMeter_0_0().IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, CompareByScale_Error)
+TEST_F (UnitDefinitionTest, CompareByScale_Error)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s2 = GenerateDegree_1_10();
 
@@ -166,9 +166,8 @@ TEST (UnitDefinition, CompareByScale_Error)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, CompareByScale_Neg1)
+TEST_F (UnitDefinitionTest, CompareByScale_Neg1)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s3 = GenerateMeter_10_10();
 
@@ -178,9 +177,8 @@ TEST (UnitDefinition, CompareByScale_Neg1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, CompareByScale_0)
+TEST_F (UnitDefinitionTest, CompareByScale_0)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s  = GenerateMeter_1_10();
 
@@ -190,9 +188,8 @@ TEST (UnitDefinition, CompareByScale_0)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, CompareByScale_1)
+TEST_F (UnitDefinitionTest, CompareByScale_1)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s4 = GenerateMeter_1Tenth_10();
 
@@ -202,9 +199,8 @@ TEST (UnitDefinition, CompareByScale_1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, GetConversionFactorFrom)
+TEST_F (UnitDefinitionTest, GetConversionFactorFrom)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s3 = GenerateMeter_10_10();
     double result = s3.GetConversionFactorFrom(s1);
@@ -216,9 +212,8 @@ TEST (UnitDefinition, GetConversionFactorFrom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, ConvertDistanceFrom)
+TEST_F (UnitDefinitionTest, ConvertDistanceFrom)
     {
-    ScopedDgnHost autoDgnHost;
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s3 = GenerateMeter_10_10();
 
@@ -230,9 +225,8 @@ TEST (UnitDefinition, ConvertDistanceFrom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitDefinition, AssignLabel)
+TEST_F (UnitDefinitionTest, AssignLabel)
     {
-    ScopedDgnHost autoDgnHost;
     const WCharCP label = L"TestLabel";
     UnitDefinition def;
     def.SetLabel(label);

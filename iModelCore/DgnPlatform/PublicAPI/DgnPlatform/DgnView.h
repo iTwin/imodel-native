@@ -72,8 +72,8 @@ public:
     struct CreateParams : T_Super::CreateParams
     {
     protected:
-        CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Data const& data, DgnElementId id=DgnElementId(), DgnElementId parentId=DgnElementId())
-            : T_Super(db, DgnModel::DictionaryId(), classId, code, id, parentId), m_data(data) { }
+        CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Data const& data, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId())
+            : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId), m_data(data) {}
 
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data);
     public:

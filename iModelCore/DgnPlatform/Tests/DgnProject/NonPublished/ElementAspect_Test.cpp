@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -15,65 +15,12 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
 
-BEGIN_UNNAMED_NAMESPACE
-
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      06/15
 +===============+===============+===============+===============+===============+======*/
-struct ElementItemTests : public ::testing::Test
+struct ElementItemTests : public DgnDbTestFixture
 {
-public:
-    ScopedDgnHost m_host;
-    DgnDbPtr      m_db;
-    DgnModelId    m_defaultModelId;
-    DgnCategoryId m_defaultCategoryId;
-
-    ElementItemTests();
-    ~ElementItemTests();
-    void CloseDb() {m_db->CloseDb();}
-    DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
 };
-
-END_UNNAMED_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementItemTests::ElementItemTests()
-    {
-    DgnPlatformTestDomain::Register(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementItemTests::~ElementItemTests()
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .dgndb project file after copying it to out
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
-    {
-    BeFileName outFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, projFile, testFile, __FILE__));
-    DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(mode));
-    ASSERT_TRUE(m_db.IsValid());
-    ASSERT_TRUE( result == BE_SQLITE_OK);
-
-    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
-
-    m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_TRUE(defaultModel.IsValid());
-    GetDefaultModel().FillModel();
-
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
-    }
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 /*---------------------------------------------------------------------------------**//**

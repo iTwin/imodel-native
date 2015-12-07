@@ -46,6 +46,7 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDRay3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dDVector3dDVector3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsAngle.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDgnXXXDetail.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDSegment3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDEllipse3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsCurvePrimitive.h\

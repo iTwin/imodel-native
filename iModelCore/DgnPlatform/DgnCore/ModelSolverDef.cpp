@@ -294,15 +294,16 @@ void ModelSolverDef::RelocateToDestinationDb(DgnImportContext& context)
 
     Utf8String scriptText;
     DgnScriptType stypeFound;
-    if (DgnDbStatus::Success == scriptAdmin._FetchScript(scriptText, stypeFound, context.GetDestinationDb(), scriptName.c_str(), DgnScriptType::JavaScript))
+    DateTime lmt;
+    if (DgnDbStatus::Success == scriptAdmin._FetchScript(scriptText, stypeFound, lmt, context.GetDestinationDb(), scriptName.c_str(), DgnScriptType::JavaScript))
         return; // we already have this script
 
-    if (DgnDbStatus::Success != scriptAdmin._FetchScript(scriptText, stypeFound, context.GetSourceDb(), scriptName.c_str(), DgnScriptType::JavaScript))
+    if (DgnDbStatus::Success != scriptAdmin._FetchScript(scriptText, stypeFound, lmt, context.GetSourceDb(), scriptName.c_str(), DgnScriptType::JavaScript))
         {
         BeDataAssert(false && "source script is missing");
         return;
         }
 
     DgnScriptLibrary scriptLib(context.GetDestinationDb());
-    scriptLib.RegisterScript(scriptName.c_str(), scriptText.c_str(), stypeFound, false);
+    scriptLib.RegisterScript(scriptName.c_str(), scriptText.c_str(), stypeFound, lmt, false);
     }

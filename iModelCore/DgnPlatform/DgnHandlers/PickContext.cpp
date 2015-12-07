@@ -1440,15 +1440,17 @@ bool PickContext::PickElements(DgnViewportR vp, DPoint3dCR pickPointWorld, doubl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestHitStatus PickContext::TestHit(HitDetailCR hit, DgnViewportR vp, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList)
     {
-    DgnElementCPtr element = hit.GetElement();
+    DgnElementCPtr   element = hit.GetElement();
+    GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+    IElemTopologyCP  elemTopo = nullptr;
 
-    if (!element.IsValid())
-        return TestHitStatus::NotOn;
+    if (nullptr == geom)
+        {
+        elemTopo = hit.GetElemTopology();
 
-    GeometrySourceCP source = element->ToGeometrySource();
-
-    if (nullptr == source)
-        return TestHitStatus::NotOn;
+        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+            return TestHitStatus::NotOn;
+        }
 
     InitNpcSubRect(pickPointWorld, pickApertureScreen, vp); // Initialize prior to attach so frustum planes are set correctly.
 
@@ -1459,7 +1461,11 @@ TestHitStatus PickContext::TestHit(HitDetailCR hit, DgnViewportR vp, DPoint3dCR 
     m_options.SetHitSource(HitDetailType::Hit <= hit.GetHitType() ? hit.GetLocateSource() : HitSource::None);
 
     InitSearch(pickPointWorld, pickApertureScreen, hitList);
-    VisitElement(*source);
+
+    SetElemTopology(elemTopo); // Preserve IElemTopology from non-element HitDetail...
+    VisitElement(*geom);
+    SetElemTopology(nullptr);
+
     _Detach();
 
     return WasAborted() ? TestHitStatus::Aborted : ((m_output.GetHitList()->GetCount() > 0) ? TestHitStatus::IsOn : TestHitStatus::NotOn);

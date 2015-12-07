@@ -376,9 +376,8 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), catId), m_data(app, descr)
+    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), nullptr, catId), m_data(app, descr)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**

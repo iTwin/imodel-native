@@ -48,9 +48,9 @@ enum class OrientationMode
 enum class UiOrientation
 {
     Portrait            = 0,    //!< Up vector is positive device y, right vector is positive device x
-    LandscapeRight      = 1,    //!< Up vector is negative device x, right vector is positive device y
+    LandscapeRight      = 1,    //!< Up vector is positive device x, right vector is negative device y
     PortraitUpsideDown  = 2,    //!< Up vector is negative device y, right vector is negative device x
-    LandscapeLeft       = 3,    //!< Up vector is positive device x, right vector is negative device y
+    LandscapeLeft       = 3,    //!< Up vector is negative device x, right vector is positive device y
 };
 
 //=======================================================================================
@@ -98,7 +98,7 @@ public:
      - etc.
 
 <h3>View Controller types and sub-types</h3>
-A ViewController has a DgnViewType, indicating in broad terms what kind of view it is. There are only a few different DgnViewTypes.
+A ViewController belongs to one of only a few different "categories" of views, indicating in broad terms what kind of view it is.
 There are many specific types of ViewController within each view type category. ViewController defines a number of convenience methods
 to dynamic_cast a controller to a subclass. See ViewController::ToPhysicalViewController, ViewController::ToCameraViewController,
 ViewController::ToDrawingViewController.
@@ -139,7 +139,7 @@ the ViewDefinition::LoadViewController method, like this:
 
 <h3>Defining a subclass of ViewController</h3>
 
-To create a subclass of ViewController, create a ViewHandler and implement _SupplyController.
+To create a subclass of ViewController, create a subclass of ViewDefinition and implement _SupplyController.
 
 */
 //=======================================================================================
@@ -494,7 +494,7 @@ public:
     DGNPLATFORM_EXPORT ColorDef ResolveBGColor() const;
     DGNPLATFORM_EXPORT bool IsViewChanged(Utf8StringCR base) const;
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point);
-    DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui);
+    DGNPLATFORM_EXPORT bool OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);

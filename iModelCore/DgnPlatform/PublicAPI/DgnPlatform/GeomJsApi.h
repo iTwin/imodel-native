@@ -21,6 +21,19 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct _JsStructName_;  \
 typedef struct _JsStructName_ * _JsStructName_##P;
 
+// Templatized wrapper for a native value class.
+// A Js wrapper instantiates this as a base class.
+// This instance implements:
+//   1) A copy of the native structure as private member var m_data
+//   2) A "copy out" Get() method.
+//      REMARK: The Get() method ensures Js-side classes that have Js members can readily get to (copies of)
+//            their native data.
+//      REMARK: This is really important for macros to implement consistent Point/Vector ops.
+//      REMARK: In "that case" (the point/Vector ops) the cost of "copy out" is insignificant.
+//      REMARK: When used for DgnXXXDetail solid that contain CurveVectorPtr, "copy out" has
+//                 the (tolerable?) side effect of making ref counts do gymnastics.
+//  3) Hence add a GetR() method to get a reference.  As with all "return a reference" methods,
+//       caller takes responsibility for (restricting) the life of the reference.
 template<typename NativeType>
 struct JsGeomWrapperBase : RefCountedBase   
 {
@@ -28,6 +41,8 @@ protected:
 NativeType m_data;
 public:
 NativeType Get () const {return m_data;}
+NativeType &GetR () {return m_data;}
+NativeType const &GetCR () const {return m_data;}
 };
 
 
@@ -49,12 +64,20 @@ JSSTRUCT(JsAngle);
 JSSTRUCT(JsYawPitchRollAngles);
 JSSTRUCT(JsRotMatrix);
 JSSTRUCT(JsTransform);
-
 JSSTRUCT(JsDPoint3dArray)
 JSSTRUCT(JsDoubleArray)
 
 JSSTRUCT(JsPolyfaceMesh)
 JSSTRUCT(JsPolyfaceVisitor)
+
+
+JSSTRUCT(JsDgnConeDetail)
+JSSTRUCT(JsDgnSphereDetail)
+JSSTRUCT(JsDgnTorusPipeDetail)
+JSSTRUCT(JsDgnBoxDetail)
+JSSTRUCT(JsSolidPrimitive)
+
+
 // Forward declare access methods so JsDPoint2d and JsDPoint3d can query their vector peers.
 DVec3d GetData (JsDVector3dP);
 DVec2d GetData (JsDVector2dP);
@@ -132,6 +155,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceVisitor.h>
+#include <DgnPlatform/GeomJsTypes/JsDgnXXXDetail.h>
 
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

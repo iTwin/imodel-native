@@ -15,6 +15,7 @@
 #define DGN_ELEMENT_CODESTRUCT_AuthorityId "AuthorityId"
 #define DGN_ELEMENT_CODESTRUCT_Namespace "Namespace"
 #define DGN_ELEMENT_CODESTRUCT_Value "Value"
+#define DGN_ELEMENT_PROPNAME_Label "Label"
 #define DGN_ELEMENT_PROPNAME_ParentId "ParentId"
 #define DGN_ELEMENT_PROPNAME_LastMode "LastMod"
 
@@ -127,14 +128,6 @@ void QvKey32::DeleteQvElem(QvElem* qvElem)
     {
     if (qvElem && qvElem != INVALID_QvElem)
         T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DgnElement::QueryClassId(DgnDbR db)
-    {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -411,6 +404,7 @@ void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParams& params)
     params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
     params.Add(DGN_ELEMENT_PROPNAME_Code, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(DGN_ELEMENT_PROPNAME_Label, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(DGN_ELEMENT_PROPNAME_ParentId, ECSqlClassParams::StatementType::InsertUpdate);
     }
 
@@ -434,6 +428,11 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
     if ((ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_AuthorityId).BindId(m_code.GetAuthority())) ||
         (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Namespace).BindText(m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
+
+    if (HasLabel())
+        statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label), GetLabel(), IECSqlBinder::MakeCopy::No);
+    else
+        statement.BindNull(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label));
 
     if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ParentId), m_parentId))
         return DgnDbStatus::BadArg;
@@ -876,211 +875,76 @@ void GeometrySource::SetInSelectionSet(bool yesNo) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_LoadFromDb()
-    {
-    DgnDbStatus stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    if (DgnDbStatus::Success != (stat = m_geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
-        return stat;
-
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
-    stmt->BindId(1, m_elementId);
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it must have an entry (with nulls) in the element geom table
-
-    m_categoryId = stmt->GetValueId<DgnCategoryId>(1);
-
-    if (stmt->IsColumnNull(0))
-        {
-        m_placement = Placement3d();
-        return DgnDbStatus::Success;
-        }
-
-    if (stmt->GetColumnBytes(0) != sizeof(m_placement))
-        {
-        BeAssert(false); 
-        return DgnDbStatus::ReadError;
-        }
-
-    memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_OnInsert()
-    {
-    if (!m_categoryId.IsValid())
-        return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
-        return DgnDbStatus::BadElement;
-    else
-        return T_Super::_OnInsert();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnElement3d::_InsertInDb()
-    {
-    DgnDbStatus stat;
-
-    if (DgnDbStatus::Success != (stat = T_Super::_InsertInDb()))
-        return stat;
-
-    return InsertGeomSourceInDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_OnUpdate(DgnElementCR original)
-    {
-    if (!m_categoryId.IsValid())
-        return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
-        return DgnDbStatus::BadElement;
-    else
-        return T_Super::_OnUpdate(original);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_UpdateInDb()
-    {
-    DgnDbStatus stat = T_Super::_UpdateInDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return UpdateGeomSourceInDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
     {
-    if (!categoryId.IsValid())
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
+
+    if (!classId.IsValid() || !categoryId.IsValid())
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
+    return new PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId PhysicalElement::QueryClassId(DgnDbR db)
+DgnDbStatus ElementGeomData::Validate() const
     {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+    if (!m_categoryId.IsValid())
+        return DgnDbStatus::InvalidCategory;
+    else if (m_geom.HasGeometry() && !_IsPlacementValid())
+        return DgnDbStatus::BadElement;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId DrawingElement::QueryClassId(DgnDbR db)
+DgnDbStatus ElementGeomData::LoadFromDb(DgnElementId elemId, DgnDbR db)
     {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement2d::_LoadFromDb()
-    {
-    DgnDbStatus stat = T_Super::_LoadFromDb();
+    DgnDbStatus stat = m_geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elemId.GetValue());
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    if (DgnDbStatus::Success != (stat = m_geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
-        return stat;
-
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
-    stmt->BindId(1, m_elementId);
+    CachedStatementPtr stmt=db.Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
+    stmt->BindId(1, elemId);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it still must have an entry in the element geom table (with nulls)
 
     m_categoryId = stmt->GetValueId<DgnCategoryId>(1);
 
-    if (stmt->IsColumnNull(0))
-        {
-        m_placement = Placement2d();
-        return DgnDbStatus::Success;
-        }
-
-    if (stmt->GetColumnBytes(0) != sizeof(m_placement))
-        {
-        BeAssert(false);
-        return DgnDbStatus::ReadError;
-        }
-
-    memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
-
-    m_categoryId = stmt->GetValueId<DgnCategoryId>(1);
+    _SetPlacement(stmt->IsColumnNull(0) ? nullptr : stmt->GetValueBlob(0));
 
     return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement2d::_OnInsert()
+void ElementGeom2d::_SetPlacement(void const* placement)
     {
-    if (!m_categoryId.IsValid())
-        return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
-        return DgnDbStatus::BadElement;
+    if (nullptr != placement)
+        memcpy(&m_placement, placement, sizeof(m_placement));
     else
-        return T_Super::_OnInsert();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnElement2d::_InsertInDb()
-    {
-    DgnDbStatus stat;
-
-    if (DgnDbStatus::Success != (stat = T_Super::_InsertInDb()))
-        return stat;
-
-    return InsertGeomSourceInDb();
+        m_placement = Placement2d();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement2d::_OnUpdate(DgnElementCR original)
+void ElementGeom3d::_SetPlacement(void const* placement)
     {
-    if (!m_categoryId.IsValid())
-        return DgnDbStatus::InvalidCategory;
-    else if (HasGeometry() && !m_placement.IsValid())
-        return DgnDbStatus::BadElement;
+    if (nullptr != placement)
+        memcpy(&m_placement, placement, sizeof(m_placement));
     else
-        return T_Super::_OnUpdate(original);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement2d::_UpdateInDb()
-    {
-    DgnDbStatus stat = T_Super::_UpdateInDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return UpdateGeomSourceInDb();
+        m_placement = Placement3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1131,7 +995,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* inStat, DgnElement::CreateParams c
             }
         }
 
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), Code(), DgnElementId()));
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), Code(), GetLabel()));
     if (!cloneElem.IsValid())
         {
         stat = DgnDbStatus::BadRequest;
@@ -1183,8 +1047,9 @@ void DgnElement::_CopyFrom(DgnElementCR other)
         return;
 
     // Copying between DgnDbs is allowed. Caller must do Id remapping.
-    m_code       = other.m_code;
-    m_parentId   = other.m_parentId;
+    m_code      = other.m_code;
+    m_label     = other.m_label;
+    m_parentId  = other.m_parentId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1219,6 +1084,39 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
         parms.RelocateToDestinationDb(importer);
 
     return parms;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementImporter::ElementImporter(DgnImportContext& c) : m_context(c), m_copyChildren(true)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR destModel, DgnElementCR sourceElement)
+    {
+    DgnElementCPtr destElement = sourceElement.Import(statusOut, destModel, m_context);
+    if (!destElement.IsValid())
+        return nullptr;
+
+    if (m_copyChildren)
+        {
+        for (auto sourceChildid : sourceElement.QueryChildren())
+            {
+            DgnElementCPtr sourceChildElement = sourceElement.GetDgnDb().Elements().GetElement(sourceChildid);
+            if (!sourceChildElement.IsValid())
+                continue;
+
+            Placement3d childPlacement; // *** WIP COPY - compute offset and rotation of source child relative to source parent 
+
+            ImportElement(statusOut, destModel, *sourceChildElement);
+            }
+        }
+
+    return destElement;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1263,6 +1161,9 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
 
     ccp->_OnImported(*this, importer);
 
+    // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
+    ComponentModel::OnElementImported(*ccp, *this, importer);
+
     return ccp;
     }
 
@@ -1285,71 +1186,52 @@ DgnElementPtr DgnElement::Clone(DgnDbStatus* stat, DgnElement::CreateParams cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_CopyFrom(DgnElementCR other)
-    {
-    T_Super::_CopyFrom(other);
-
-    GeometrySource3dCP el3d = other.ToGeometrySource3d();
-    if (nullptr == el3d)
-        return;
-
-    m_placement = el3d->GetPlacement();
-    m_categoryId = el3d->GetCategoryId();
-    m_geom = el3d->GetGeomStream();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_RemapIds(DgnImportContext& importer)
-    {
-    BeAssert(importer.IsBetweenDbs());
-    T_Super::_RemapIds(importer);
-    m_categoryId = importer.RemapCategory(m_categoryId);
-    importer.RemapGeomStreamIds(m_geom);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
-    {
-    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
-    m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement2d::_AdjustPlacementForImport(DgnImportContext const& importer)
+void ElementGeom2d::AdjustPlacementForImport(DgnImportContext const& importer)
     {
     m_placement.GetOriginR().Add(importer.GetOriginOffset());
     m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement2d::_CopyFrom(DgnElementCR other)
+void ElementGeom3d::AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    T_Super::_CopyFrom(other);
-
-    GeometrySource2dCP el2d = other.ToGeometrySource2d();
-    if (nullptr == el2d)
-        return;
-
-    m_placement = el2d->GetPlacement();
-    m_categoryId = el2d->GetCategoryId();
-    m_geom = el2d->GetGeomStream();
+    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
+    m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement2d::_RemapIds(DgnImportContext& importer)
+void ElementGeom2d::CopyFrom(GeometrySource2dCP src)
     {
-    BeAssert(importer.IsBetweenDbs());
-    T_Super::_RemapIds(importer);
+    if (nullptr != src)
+        {
+        m_placement = src->GetPlacement();
+        m_categoryId = src->GetCategoryId();
+        m_geom = src->GetGeomStream();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeom3d::CopyFrom(GeometrySource3dCP src)
+    {
+    if (nullptr != src)
+        {
+        m_placement = src->GetPlacement();
+        m_categoryId = src->GetCategoryId();
+        m_geom = src->GetGeomStream();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomData::RemapIds(DgnImportContext& importer)
+    {
     m_categoryId = importer.RemapCategory(m_categoryId);
     importer.RemapGeomStreamIds(m_geom);
     }
@@ -1367,7 +1249,10 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, GetCode(), m_elementId, m_parentId));
+    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetLabel(), m_parentId);
+    createParams.SetElementId(GetElementId());
+
+    DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
     BeAssert(typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
     newEl->_CopyFrom(*this);
     return newEl;
@@ -2282,7 +2167,7 @@ DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el, G
         placement = e3d->GetPlacement();
     else
         {
-        DgnElement2dP e2d = el.ToElement2dP();
+        AnnotationElementP e2d = el.ToAnnotationElementP();
         Placement2d p2d = e2d->GetPlacement();
         DPoint3d o3d = DPoint3d::From(p2d.GetOrigin().x, p2d.GetOrigin().y, 0);
         YawPitchRollAngles a3d = YawPitchRollAngles::FromDegrees(p2d.GetAngle().Degrees(), 0, 0);
@@ -2544,85 +2429,6 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAutho
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::Key const& DgnElement::LabelAspect::GetAppDataKey()
-    {
-    static Key s_appDataKey;
-    return s_appDataKey;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::LabelAspectPtr DgnElement::LabelAspect::Create(Utf8CP label)
-    {
-    if (!label || !*label)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return new DgnElement::LabelAspect(label);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::LabelAspect::_OnInserted(DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " (ECInstanceId,[Label]) VALUES (?,?)");
-    if (!statement.IsValid())
-        return DgnElement::AppData::DropMe::Yes;
-
-    statement->BindId(1, element.GetElementId());
-    statement->BindText(2, GetLabel(), IECSqlBinder::MakeCopy::No);
-
-    ECInstanceKey key;
-    if (BE_SQLITE_DONE != statement->Step(key))
-        {
-        BeAssert(false);
-        }
-
-    return DgnElement::AppData::DropMe::Yes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::LabelAspect::Query(Utf8StringR name, DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Label] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " WHERE ECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::ReadError;
-
-    statement->BindId(1, element.GetElementId());
-
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnDbStatus::ReadError;
-
-    name.AssignOrClear(statement->GetValueText(0));
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::LabelAspect::Delete(DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " WHERE ECInstanceId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::WriteError;
-
-    statement->BindId(1, element.GetElementId());
-
-    if (BE_SQLITE_DONE != statement->Step())
-        return DgnDbStatus::WriteError;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::Key const& DgnElement::DescriptionAspect::GetAppDataKey()
     {
     static Key s_appDataKey;
@@ -2702,10 +2508,9 @@ DgnDbStatus DgnElement::DescriptionAspect::Delete(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId)
-    : T_Super(db, DgnModel::DictionaryId(), classId, code, DgnElementId(), parentId) 
+DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Utf8CP label, DgnElementId parentId)
+    : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId) 
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2755,11 +2560,11 @@ DgnDbStatus DgnElement::_SetCode(Code const& code)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_SetCategoryId(DgnCategoryId catId)
+DgnDbStatus ElementGeomData::SetCategoryId(DgnCategoryId catId, DgnElementCR el)
     {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCategory))
+    if (el.GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::SetCategory))
         return DgnDbStatus::MissingHandler;
 
     m_categoryId = catId;
@@ -2769,21 +2574,9 @@ DgnDbStatus DgnElement3d::_SetCategoryId(DgnCategoryId catId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement2d::_SetCategoryId(DgnCategoryId catId)
+DgnDbStatus ElementGeom2d::SetPlacement(Placement2dCR placement, DgnElementCR el)
     {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCategory))
-        return DgnDbStatus::MissingHandler;
-
-    m_categoryId = catId;
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement3d::_SetPlacement(Placement3dCR placement)
-    {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Move))
+    if (el.GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::Move))
         return DgnDbStatus::MissingHandler;
 
     m_placement = placement;
@@ -2791,11 +2584,11 @@ DgnDbStatus DgnElement3d::_SetPlacement(Placement3dCR placement)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement2d::_SetPlacement(Placement2dCR placement)
+DgnDbStatus ElementGeom3d::SetPlacement(Placement3dCR placement, DgnElementCR el)
     {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Move))
+    if (el.GetElementHandler()._IsRestrictedAction(DgnElement::RestrictedAction::Move))
         return DgnDbStatus::MissingHandler;
 
     m_placement = placement;
@@ -2805,48 +2598,209 @@ DgnDbStatus DgnElement2d::_SetPlacement(Placement2dCR placement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementCopier::ElementCopier() 
+ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, PhysicalModelR targetModel, PhysicalElementCR templateItem,
-    DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& icode)
+DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR sourceElement, DgnElement::Code const& icode, DgnElementId newParentId)
     {
+    DgnElementId alreadyCopied = m_context.FindElementId(sourceElement.GetElementId());
+    if (alreadyCopied.IsValid())
+        return targetModel.GetDgnDb().Elements().Get<PhysicalElement>(alreadyCopied);
+    
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
-    Placement3d placement(origin, angles, templateItem.GetPlacement().GetElementBox());
+    DgnElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), sourceElement.GetElementClassId(), icode);
 
-    PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), templateItem.GetElementClassId(), templateItem.GetCategoryId(), placement, icode);
-
-    DgnElementPtr instanceDgnElement0 = templateItem.Clone(&status, &iparams);
-    if (!instanceDgnElement0.IsValid())
+    DgnElementPtr outputDgnElement0 = sourceElement.Clone(&status, &iparams);
+    if (!outputDgnElement0.IsValid())
         return nullptr;
 
-    PhysicalElementPtr instanceElement0 = instanceDgnElement0->ToPhysicalElementP();
-    if (!instanceElement0.IsValid())
+    if (!newParentId.IsValid())
         {
-        status = DgnDbStatus::WrongClass;
-        BeAssert(false);
+        DgnElementId remappedParentId = m_context.FindElementId(outputDgnElement0->GetParentId());
+        if (remappedParentId.IsValid())
+            newParentId = remappedParentId;
+        }
+    outputDgnElement0->SetParentId(newParentId);
+
+    DgnElementCPtr outputDgnElement = outputDgnElement0->Insert(&status);
+    if (!outputDgnElement.IsValid())
         return nullptr;
+
+    // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
+    ComponentModel::OnElementCopied(*outputDgnElement->ToPhysicalElement(), sourceElement, m_context);
+
+    if (m_copyChildren)
+        {
+        for (auto sourceChildid : sourceElement.QueryChildren())
+            {
+            PhysicalElementCPtr sourceChildElement = sourceElement.GetDgnDb().Elements().Get<PhysicalElement>(sourceChildid);
+            if (!sourceChildElement.IsValid())
+                continue;
+
+            MakeCopy(&status, targetModel, *sourceChildElement, DgnElement::Code(), outputDgnElement->GetElementId());
+            }
         }
 
-    // *** WIP_CLONE - work-around problem with CreateParams slicing
-    instanceElement0->SetPlacement(placement);
+    return outputDgnElement0->ToPhysicalElementP();
+    }
 
-    DgnElementCPtr instanceDgnElement = instanceElement0->Insert(&status);
-    if (!instanceDgnElement.IsValid())
-        return nullptr;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElementTransformer::ApplyTransformTo(DgnElementR el, Transform const& transformIn)
+    {
+    Transform   placementTrans;
 
-    PhysicalElementCPtr instanceElement = instanceDgnElement->ToPhysicalElement();
-    if (!instanceElement.IsValid())
+    if (el.Is3d())
+        placementTrans = el.ToGeometrySource3d()->GetPlacement().GetTransform();
+    else
+        placementTrans = el.ToGeometrySource2d()->GetPlacement().GetTransform();
+
+    DPoint3d    originPt;
+    RotMatrix   rMatrix;
+
+    Transform transform;
+    transform.InitProduct(transformIn, placementTrans);
+    transform.GetTranslation(originPt);
+    transform.GetMatrix(rMatrix);
+            
+    YawPitchRollAngles  angles;
+
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix))
+        return DgnDbStatus::BadArg;
+
+    if (el.Is3d())
         {
-        status = DgnDbStatus::WrongClass;
-        BeAssert(false);
-        return nullptr;
+        Placement3d placement = el.ToGeometrySource3d()->GetPlacement();
+
+        placement.GetOriginR() = originPt;
+        placement.GetAnglesR() = angles;
+
+        return el.ToGeometrySource3dP()->SetPlacement(placement);
+        }
+        
+    Placement2d placement = el.ToGeometrySource2d()->GetPlacement();
+
+    placement.GetOriginR() = DPoint2d::From(originPt);
+    placement.GetAngleR() = angles.GetYaw();
+
+    return el.ToGeometrySource2dP()->SetPlacement(placement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnEditElementCollector::DgnEditElementCollector() 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnEditElementCollector::~DgnEditElementCollector() 
+    {
+    for (auto el : m_elements)
+        el->Release();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnEditElementCollector::AddElement(DgnElementR el) 
+    {
+    DgnElementId eid = el.GetElementId();
+    if (eid.IsValid())
+        {
+        auto existing = FindElementById(eid);   // If we already have a copy of this element, return that.
+        if (existing.IsValid())
+            return existing;
         }
 
-    return instanceElement;
+    auto ins = m_elements.insert(&el);
+    if (!ins.second) // not inserted, because it's already in there?
+        return *ins.first;
+
+    // This element is new. Insert it into the collection.
+    el.AddRef();
+
+    if (eid.IsValid())
+        m_ids[eid] = &el;
+
+    return &el;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::AddChildren(DgnElementCR el, size_t maxDepth) 
+    {
+    if (0 ==maxDepth)
+        return;
+
+    for (auto childid : el.QueryChildren())
+        {
+        auto child = el.GetDgnDb().Elements().GetForEdit<DgnElement>(childid);
+        if (child.IsValid())
+            AddAssembly(*child, maxDepth-1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnEditElementCollector::FindElementById(DgnElementId eid)
+    {
+    auto i = m_ids.find(eid);
+    return (i == m_ids.end())? nullptr: i->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::RemoveElement(DgnElementR el) 
+    {
+    if (0 == m_elements.erase(&el))
+        return;
+
+    DgnElementId eid = el.GetElementId();
+    if (eid.IsValid())
+        m_ids.erase(eid);
+
+    el.Release();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::RemoveChildren(DgnElementCR el, size_t maxDepth) 
+    {
+    if (0 ==maxDepth)
+        return;
+
+    for (auto childid : el.QueryChildren())
+        {
+        auto child = FindElementById(childid);
+        if (child.IsValid())
+            RemoveAssembly(*child, maxDepth-1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnEditElementCollector::Write()
+    {
+    for (auto el : m_elements)
+        {
+        DgnDbStatus status;
+        DgnElementCPtr updatedEl = el->GetElementId().IsValid()? el->Update(&status): el->Insert(&status);
+        if (!updatedEl.IsValid())
+            return status;
+        }
+    return DgnDbStatus::Success;
     }
