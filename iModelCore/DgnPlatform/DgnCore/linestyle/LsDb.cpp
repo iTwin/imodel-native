@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#define PROPNAME_Descr "Descr"
+#define PROPNAME_Data "Data"
+
 static Utf8CP DGNPROPERTYBLOB_CompId                = "compId";
 static Utf8CP DGNPROPERTYBLOB_CompType              = "compType";
 static Utf8CP DGNPROPERTYBLOB_Flags                 = "flags";
@@ -240,3 +243,122 @@ void LsComponent::QueryComponentIds(bset<LsComponentTypeAndId>& ids, DgnDbCR pro
         ids.insert(componentId);
         };
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus LineStyleElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
+        Utf8String data = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Data));
+
+        //  m_data.Init(baseModelId, source, descr);
+        }
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LineStyleElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto other = dynamic_cast<LineStyleElementCP>(&el);
+    BeAssert(nullptr != other);
+    if (nullptr == other)
+        return;
+
+    m_data = other->m_data;
+    m_description = other->m_description;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus LineStyleElement::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
+    {
+    BeAssert(0 < m_data.size());
+    if (m_data.size() <= 0)
+        return DgnDbStatus::BadArg;
+
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Data), m_data.c_str(), IECSqlBinder::MakeCopy::No))
+        return DgnDbStatus::BadArg;
+
+    if (m_description.SizeInBytes() > 0 && ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_description.c_str(), IECSqlBinder::MakeCopy::No))
+        return DgnDbStatus::BadArg;
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus LineStyleElement::_BindInsertParams(BeSQLite::EC::ECSqlStatement&stmt)
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus LineStyleElement::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&stmt)
+    {
+    auto status = T_Super::_BindUpdateParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+size_t LineStyleElement::QueryCount(DgnDbR db)
+    {
+    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_LineStyle));
+    if (!select.IsValid())
+        return 0;
+    
+    if (BE_SQLITE_ROW != select->Step())
+        return 0;
+
+    return static_cast<size_t>(select->GetValueInt(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LineStyleElement::Iterator LineStyleElement::MakeIterator(DgnDbR db)
+    {
+    Iterator iter;
+    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr, Data FROM " DGN_SCHEMA(DGN_CLASSNAME_LineStyle), 0);
+
+    return iter;
+    }
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+namespace dgn_ElementHandler
+{
+HANDLER_DEFINE_MEMBERS(LineStyleHandler);
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LineStyleHandler::_GetClassParams(ECSqlClassParams& params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(PROPNAME_Data);
+    params.Add(PROPNAME_Descr);
+    }
+}
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+

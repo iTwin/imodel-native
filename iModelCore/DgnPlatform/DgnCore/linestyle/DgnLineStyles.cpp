@@ -21,23 +21,23 @@ using namespace std;
 //--------------+------------------------------------------------------------------------
 BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
     {
-    // Don't assert to ensure an invalid ID.
-    // Consider the case of cloning a style object, modifying, and then inserting it as a new style. The Clone keeps the ID, and I don't think it's worth having an overload of Clone to expose this detail.
-
     Json::Value jsonObj(Json::objectValue);
     LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, flags, unitDefinition);
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
-    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetServerIssuedId(newStyleId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
-
-    Statement insert;
-    insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Style) " (Id,Type,Name,Data) VALUES (?," DGN_STYLE_TYPE_Line ",?,?)");
-    insert.BindId(1, newStyleId);
-    insert.BindText(2, name, Statement::MakeCopy::No);
-    insert.BindBlob(3, (void const*)&data[0], (int)data.size() + 1, Statement::MakeCopy::No);
-
-    POSTCONDITION(BE_SQLITE_DONE == insert.Step(), ERROR);
+    LineStyleElementPtr lsElement = LineStyleElement::Create(m_dgndb);
+    lsElement->SetName(name);
+    lsElement->SetDescription(nullptr);   //  NEEDSWORK_LINESTYLES -- add Description arg to Insert
+    lsElement->SetData(data.c_str());
+    LineStyleElementCPtr constLs = lsElement->Insert();
+    if (!constLs.IsValid())
+        {
+        newStyleId = DgnStyleId();
+        return ERROR;
+        }
     
+    newStyleId = DgnStyleId(constLs->GetElementId().GetValue());
+
     return SUCCESS;
     }
 
@@ -46,6 +46,7 @@ BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComp
 //--------------+------------------------------------------------------------------------
 BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
     {
+#if defined(NEEDSWORK_LINESTYLES)
     PRECONDITION(styleId.IsValid(), ERROR);
 
     Json::Value jsonObj(Json::objectValue);
@@ -61,6 +62,8 @@ BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponen
     POSTCONDITION(BE_SQLITE_DONE == update.Step(), ERROR);
 
     return SUCCESS;
+#endif
+    return ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -87,19 +90,3 @@ LsCacheP DgnLineStyles::GetLsCacheP (bool loadIfNull)
     return m_lineStyleMap.get();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2015
-//---------------------------------------------------------------------------------------
-void DgnLineStyles::PrepareToQueryLineStyle(BeSQLite::Statement & stmt, DgnStyleId styleId)
-    {
-    stmt.Prepare(m_dgndb, "SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type = " DGN_STYLE_TYPE_Line " AND Id=?");
-    stmt.BindId(1, styleId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2015
-//---------------------------------------------------------------------------------------
-void DgnLineStyles::PrepareToQueryAllLineStyles(BeSQLite::Statement & stmt)
-    {
-    stmt.Prepare(m_dgndb, "SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type = " DGN_STYLE_TYPE_Line );
-    }

@@ -614,34 +614,6 @@ DgnDbCR    LsCache::GetDgnDb () const
     return m_dgnDb;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2015
-//---------------------------------------------------------------------------------------
-LineStyleStatus DgnLineStyles::LoadStyle(LsDefinitionP&style, DgnStyleId styleId)
-    {
-    style = nullptr;
-    if (!styleId.IsValid())
-        return LINESTYLE_STATUS_BadArgument;
-
-    Statement stmt;
-    PrepareToQueryLineStyle(stmt, styleId);
-
-    DbResult    dbResult = stmt.Step();
-    if (dbResult != BE_SQLITE_ROW)
-        return LINESTYLE_STATUS_StyleNotFound;
-
-    Utf8String name(stmt.GetValueText(2));
-    Utf8String  data ((Utf8CP)stmt.GetValueBlob(4));
-
-    Json::Value  jsonObj (Json::objectValue);
-    if (!Json::Reader::Parse(data, jsonObj))
-        return LINESTYLE_STATUS_Error;
-
-    style = new LsDefinition (name.c_str(), m_dgndb, jsonObj, styleId);
-
-    return LINESTYLE_STATUS_Success;
-    }
-
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    ChuckKirschman  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -654,14 +626,11 @@ BentleyStatus       LsCache::Load ()
     wt_OperationForGraphics  opForGraphics;
     TreeLoaded ();
 
-    Statement stmt;
-    m_dgnDb.Styles().LineStyles().PrepareToQueryAllLineStyles(stmt);
-
-    while (stmt.Step() == BE_SQLITE_ROW)
+    for (auto const& ls : LineStyleElement::MakeIterator(m_dgnDb))
         {
-        DgnStyleId  styleId (stmt.GetValueUInt64(0));
-        Utf8String name(stmt.GetValueText(2));
-        Utf8String  data ((Utf8CP)stmt.GetValueBlob(4));
+        DgnStyleId  styleId (ls.GetElementId().GetValue());
+        Utf8String name(ls.GetName());
+        Utf8String  data (ls.GetData());
 
         Json::Value  jsonObj (Json::objectValue);
         if (!Json::Reader::Parse(data, jsonObj))

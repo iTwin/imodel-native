@@ -14,6 +14,9 @@
 //__PUBLISH_SECTION_END__
 #include "ViewContext.h"  // For ILineStyleComponent
 #include "DgnPlatform.r.h"
+#include <DgnPlatform/DgnElement.h>
+#include <DgnPlatform/ElementHandler.h>
+#include <DgnPlatform/ECSqlStatementIterator.h>
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
@@ -23,6 +26,9 @@
 #define LSID_HARDWARE       0x80000000
 #define LSID_HWMASK         0x0000000f
 #define IS_LINECODE(styleNo)    ((styleNo) >= MIN_LINECODE && (styleNo) <= MAX_LINECODE)
+
+DGNPLATFORM_TYPEDEFS(LineStyleElement);
+DGNPLATFORM_REF_COUNTED_PTR(LineStyleElement);
 
 //__PUBLISH_SECTION_START__
 
@@ -1684,9 +1690,6 @@ private:
 public:
     DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
     DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentType componentType, LsComponentId componentId);
-    DGNPLATFORM_EXPORT void PrepareToQueryAllLineStyles(BeSQLite::Statement& stmt);
-    DGNPLATFORM_EXPORT void PrepareToQueryLineStyle(BeSQLite::Statement& stmt, DgnStyleId styleId);
-    DGNPLATFORM_EXPORT LineStyleStatus LoadStyle(LsDefinitionP&style, DgnStyleId styleId);
 
 //__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
@@ -1698,6 +1701,99 @@ public:
     DGNPLATFORM_EXPORT LsCacheP GetLsCacheP (bool load=true);
     DGNPLATFORM_EXPORT LsCacheR ReloadMap();
 };
+
+//=======================================================================================
+//! Provides access to the line style data in the element table.
+//!  @ingroup LineStyleManagerModule
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DictionaryElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, DictionaryElement);
+    
+private:
+    Utf8String m_description;
+    Utf8String m_data;
+
+    DGNPLATFORM_EXPORT static Code CreateCodeFromName(Utf8CP);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
+    virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + m_data.size() + 2); }
+    virtual Code _GenerateDefaultCode() override { return Code(); }
+    virtual DgnDbStatus _SetCode(Code const&) override { return DgnDbStatus::BadArg; /* Restricted to an internal DgnAuthority; use GetName/SetName. */ }
+
+public:
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle); }
+    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
+    
+    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), Code())) {}
+    explicit LineStyleElement(CreateParams const& params) : T_Super(params) {}
+    static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
+    LineStyleElementPtr CreateCopy() const { return MakeCopy<LineStyleElement>(); }
+
+    Utf8String GetName() const { return GetCode().GetValue(); }
+    void SetName(Utf8CP value) { T_Super::_SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    Utf8StringCR GetDescription() const { return m_description; }
+    void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
+    Utf8StringCR GetData() const { return m_data; }
+    void SetData(Utf8CP value) { m_data.AssignOrClear(value); }
+    
+    //  DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
+
+    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCodeFromName(name)); }
+    static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
+    static LineStyleElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<LineStyleElement>(id); }
+    static LineStyleElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<LineStyleElement>(id); }
+    static LineStyleElementPtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
+    LineStyleElementCPtr Insert() { return GetDgnDb().Elements().Insert<LineStyleElement>(*this); }
+    LineStyleElementCPtr Update() { return GetDgnDb().Elements().Update<LineStyleElement>(*this); }
+
+    //=======================================================================================
+    // @bsiclass                                                   
+    //=======================================================================================
+    struct Entry : ECSqlStatementEntry
+    {
+        DEFINE_T_SUPER(ECSqlStatementEntry);
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct LineStyleElement;
+    
+    private:
+        Entry() : T_Super(nullptr) {}
+        Entry(BeSQLite::EC::ECSqlStatement* stmt) : T_Super(stmt) {}
+    
+    public:
+        DgnElementId GetElementId() const { return m_statement->GetValueId<DgnElementId>(0); }
+        Utf8CP GetName() const { return m_statement->GetValueText(1); }
+        Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
+        Utf8CP GetData() const { return m_statement->GetValueText(3); }
+    };
+
+    typedef ECSqlStatementIterator<Entry> Iterator;
+
+    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
+    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
+};
+
+namespace dgn_ElementHandler
+{
+    //=======================================================================================
+    //! The handler for annotation text styles
+    //! @bsistruct                                                  Paul.Connelly   10/15
+    //=======================================================================================
+    struct LineStyleHandler : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, LineStyleElement, LineStyleHandler, Element, DGNPLATFORM_EXPORT);
+
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
+    };
+}
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

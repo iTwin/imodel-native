@@ -533,6 +533,17 @@ DgnAuthority::Code AnnotationTextStyle::CreateCodeFromName(Utf8CP nameCP)
     return createResourceCode(name, DGN_CLASSNAME_AnnotationTextStyle);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnAuthority::Code LineStyleElement::CreateCodeFromName(Utf8CP nameCP)
+    {
+    Utf8String name;
+    name.AssignOrClear(nameCP);
+
+    return createResourceCode(name, DGN_CLASSNAME_LineStyle);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
