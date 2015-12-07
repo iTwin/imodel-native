@@ -38,10 +38,31 @@ public:
         {
         return ViewAttachment::CreateParams(*GetDgnDb(), mid, ViewAttachment::QueryClassId(*GetDgnDb()), cat, data, placement);
         }
-    ViewAttachmentCPtr InsertView(ViewAttachment::CreateParams const& params)
+    ViewAttachmentCPtr InsertAttachment(ViewAttachment::CreateParams const& params)
         {
         ViewAttachment attachment(params);
         return attachment.Insert();
+        }
+    ViewAttachmentCPtr UpdateAttachment(ViewAttachmentCR in, ViewAttachment::Data const& data)
+        {
+        auto pAttach = in.MakeCopy<ViewAttachment>();
+        pAttach->SetViewParams(data.m_origin, data.m_delta, data.m_scale);
+        return pAttach->Update();
+        }
+
+    void ExpectEqualPoints(DPoint3dCR a, DPoint3dCR b)
+        {
+        EXPECT_EQ(a.x, b.x);
+        EXPECT_EQ(a.y, b.y);
+        EXPECT_EQ(a.z, b.z);
+        }
+
+    void ExpectData(ViewAttachmentCR attach, ViewAttachment::Data const& data)
+        {
+        ExpectEqualPoints(attach.GetViewOrigin(), data.m_origin);
+        ExpectEqualPoints(attach.GetViewDelta(), data.m_delta);
+        EXPECT_EQ(attach.GetViewId(), data.m_viewId);
+        EXPECT_EQ(attach.GetViewScale(), data.m_scale);
         }
 };
 
@@ -84,21 +105,30 @@ TEST_F(ViewAttachmentTest, CRUD)
     // Test some invalid CreateParams
 
     // Invalid view id
-    EXPECT_INVALID(InsertView(MakeParams(MakeData(DgnViewId(),0,0,1,1,1), sheetId, attachmentCatId, MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(DgnViewId(),0,0,1,1,1), sheetId, attachmentCatId, MakePlacement())));
     // Invalid category
-    EXPECT_INVALID(InsertView(MakeParams(MakeData(viewId,0,0,1,1,1), sheetId, DgnCategoryId(), MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(viewId,0,0,1,1,1), sheetId, DgnCategoryId(), MakePlacement())));
     // Not a sheet model
-    EXPECT_INVALID(InsertView(MakeParams(MakeData(viewId,0,0,1,1,1), drawingId, attachmentCatId, MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(viewId,0,0,1,1,1), drawingId, attachmentCatId, MakePlacement())));
     // Negative scale
-    EXPECT_INVALID(InsertView(MakeParams(MakeData(viewId,0,0,1,1,-1), sheetId, attachmentCatId, MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(viewId,0,0,1,1,-1), sheetId, attachmentCatId, MakePlacement())));
     // Zero delta
-    EXPECT_INVALID(InsertView(MakeParams(MakeData(viewId,0,0,0,0,1), sheetId, attachmentCatId, MakePlacement())));
+    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(viewId,0,0,0,0,1), sheetId, attachmentCatId, MakePlacement())));
 
     // Create a valid view attachment
-    auto cpAttach = InsertView(MakeParams(MakeData(viewId,0,0,1,1,1), sheetId, attachmentCatId, MakePlacement()));
+    auto data = MakeData(viewId, -5.0, 2.5, 1.0, 0.5, 3.0);
+    auto cpAttach = InsertAttachment(MakeParams(data, sheetId, attachmentCatId, MakePlacement()));
     EXPECT_TRUE(cpAttach.IsValid());
 
-    // ...###TODO: Stuff...
+    // Confirm data as expected
+    ExpectData(*cpAttach, data);
+
+    // Modify
+    data.m_origin.x += 0.25;
+    data.m_delta.y -= 0.25;
+    data.m_scale *= 2;
+    cpAttach = UpdateAttachment(*cpAttach, data);
+    ExpectData(*cpAttach, data);
 
     // Deleting the view definition deletes attachments which reference it
     DgnElementId attachId = cpAttach->GetElementId();
@@ -108,9 +138,6 @@ TEST_F(ViewAttachmentTest, CRUD)
     EXPECT_EQ(DgnDbStatus::Success, view->Delete());
     EXPECT_EQ(BE_SQLITE_OK, db.SaveChanges());
 
-    view = nullptr;
-    cpAttach = nullptr;
-    db.Elements().Purge(0); // Seems elements deleted by foreign key constraints are not reflected in elements cache...
     EXPECT_INVALID(db.Elements().GetElement(attachId));
     EXPECT_INVALID(db.Elements().GetElement(viewId));
     }
