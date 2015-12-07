@@ -280,28 +280,6 @@ DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
 DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 /** @endcond */
 
-//__PUBLISH_SECTION_END__
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-// DO NOT USE: these MAX*LENGTH values are not portable or correct!
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-BEGIN_BENTLEY_NAMESPACE
-
-enum
-{
-    DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
-
-    MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
-    MAXDIRLENGTH          = 256,
-    MAXDEVICELENGTH       = 256,
-    MAXNAMELENGTH         = DGNPLATFORM_RESOURCE_MAXNAMELENGTH,
-    MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
-};
-
-END_BENTLEY_NAMESPACE
-
-//__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
