@@ -97,7 +97,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     TextStringPtr text = GeomHelper::CreateTextString();
     EXPECT_TRUE(builder->Append(*text));
 
-    EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
     }
 
@@ -127,7 +127,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
     EXPECT_FALSE(builder->Append(*cylinder));
     BeTest::SetFailOnAssert(true);
 
-    EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
     }

@@ -33,7 +33,7 @@ static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in SetGeomStreamAndPlacement
+    if (BSISUCCESS != builder->SetGeometryStreamAndPlacement(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in SetGeometryStreamAndPlacement
         return nullptr;
 
     return db.Elements().Insert(*gelem);
@@ -60,7 +60,7 @@ struct JsProg : ScopedDgnHost::FetchScriptCallback
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void checkGeomStream(GeometrySourceCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
+static void checkGeometryStream(GeometrySourceCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
     {
     //  Verify that item generated a line
     size_t count=0;
@@ -95,7 +95,7 @@ TEST_F(DgnScriptTest, Test1)
         RefCountedCPtr<DgnElement> newel = insertElement(*model);
         ASSERT_TRUE( newel.IsValid() );
 
-        checkGeomStream(*newel->ToGeometrySource(), ElementGeometry::GeometryType::CurvePrimitive, 1);
+        checkGeometryStream(*newel->ToGeometrySource(), ElementGeometry::GeometryType::CurvePrimitive, 1);
         ASSERT_TRUE( (*(ElementGeometryCollection (*newel->ToGeometrySource()).begin()))->GetAsICurvePrimitive()->GetLineStringCP() != nullptr ) << "Initial geometry should be a line";
 
         el = newel->CopyForEdit();
@@ -120,7 +120,7 @@ TEST_F(DgnScriptTest, Test1)
     function testEga(element, origin, angles, params) { \
         var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params[\"X\"], params[\"Y\"], params[\"Z\"]); \
-        builder.SetGeomStreamAndPlacement(element); \
+        builder.SetGeometryStreamAndPlacement(element); \
         return 0;\
     } \
     function testEgaBadReturn(element, origin, angles, params) { return 'abc'; }\
@@ -144,7 +144,7 @@ TEST_F(DgnScriptTest, Test1)
         ASSERT_EQ( DgnDbStatus::Success , xstatus );
         ASSERT_EQ( 0 , sres );
 
-        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         DgnBoxDetail box;
         ASSERT_TRUE( (*(ElementGeometryCollection (*el->ToGeometrySource()).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
         ASSERT_EQ( box.m_baseX , parms["X"].asDouble() );

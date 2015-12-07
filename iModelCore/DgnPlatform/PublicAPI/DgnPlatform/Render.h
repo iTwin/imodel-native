@@ -415,7 +415,7 @@ public:
     bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
     //! @endcond
 
-    //! Compare two ElemDisplayParam.
+    //! Compare two GeometryParams.
     DGNPLATFORM_EXPORT bool operator==(GeometryParamsCR rhs) const;
 
     //! copy operator
@@ -518,8 +518,8 @@ private:
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT int FromResolvedElemDisplayParams(GeometryParamsCR, ViewContextR context, DPoint3dCP, DPoint3dCP);
-    DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams(GeometryParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
+    DGNPLATFORM_EXPORT int FromResolvedGeometryParams(GeometryParamsCR, ViewContextR context, DPoint3dCP, DPoint3dCP);
+    DGNPLATFORM_EXPORT int FromNaturalGeometryParams(GeometryParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
     void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_texture = nullptr;}
@@ -979,7 +979,7 @@ protected:
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _SetToViewCoords(bool yesNo) = 0;
-    virtual void _ActivateOverrideMatSymb(OvrGraphicParamsCP ovrMatSymb) = 0;
+    virtual void _ActivateOverrideGraphicParams(OvrGraphicParamsCP ovrMatSymb) = 0;
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
     virtual bool _DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) = 0;
     virtual void _DrawTiledRaster(ITiledRaster* tiledRaster) = 0;
@@ -1003,7 +1003,7 @@ public:
     //! Set an GraphicParams to be the "active override" GraphicParams for this IDrawGeom.
     //! @param[in]          ovrMatSymb  The new active override GraphicParams.
     //!                                     value in ovrMatSymb will be used instead of the value set by ActivateMatSymb.
-    void ActivateOverrideMatSymb(OvrGraphicParamsCP ovrMatSymb) {_ActivateOverrideMatSymb(ovrMatSymb);}
+    void ActivateOverrideGraphicParams(OvrGraphicParamsCP ovrMatSymb) {_ActivateOverrideGraphicParams(ovrMatSymb);}
 
     //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,
     //! including all camera definitions. It is ONLY valid or useful for drawing "overlay" graphics while drawing View Decorations.

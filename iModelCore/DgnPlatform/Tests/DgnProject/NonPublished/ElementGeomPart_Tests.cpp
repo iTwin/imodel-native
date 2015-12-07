@@ -34,7 +34,7 @@ TEST_F(ElementGeomPartTests, CRUD)
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
     
     // Insert
     //
@@ -45,20 +45,20 @@ TEST_F(ElementGeomPartTests, CRUD)
     // Query
     EXPECT_TRUE(partId == geomPartTable.QueryGeomPartId("TestGeomPart"));
     DgnGeomPartPtr toFind = geomPartTable.LoadGeomPart(partId);
-    GeomStream stream = toFind->GetGeomStream();
+    GeometryStream stream = toFind->GetGeometryStream();
     EXPECT_TRUE(stream.HasGeometry());
     uint32_t size  = stream.GetSize();
-    EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() == size);
+    EXPECT_TRUE(geomPartPtr->GetGeometryStream().GetSize() == size);
 
     // Update
     builder->Append(*elGPtr);
-    builder->SetGeomStream(*geomPartPtr);
+    builder->SetGeometryStream(*geomPartPtr);
     ASSERT_TRUE(partId == geomPartPtr->GetId());
-    EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() > size);
+    EXPECT_TRUE(geomPartPtr->GetGeometryStream().GetSize() > size);
     ASSERT_TRUE(geomPartPtr->GetId().IsValid());
     ASSERT_EQ(SUCCESS  , geomPartTable.UpdateGeomPart(*geomPartPtr));
     
-    EXPECT_GT(geomPartTable.LoadGeomPart(partId)->GetGeomStream().GetSize() , size);
+    EXPECT_GT(geomPartTable.LoadGeomPart(partId)->GetGeometryStream().GetSize() , size);
 
     // Delete
     EXPECT_TRUE(SUCCESS == geomPartTable.DeleteGeomPart(partId) );
@@ -78,7 +78,7 @@ TEST_F(ElementGeomPartTests, CreateElements)
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
@@ -108,7 +108,7 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create();
     EXPECT_TRUE(geomPartPtr != NULL);
     ASSERT_STREQ("", geomPartPtr->GetCode());
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
@@ -138,7 +138,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
@@ -172,7 +172,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
@@ -205,7 +205,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
@@ -240,7 +240,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
@@ -279,7 +279,7 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
      

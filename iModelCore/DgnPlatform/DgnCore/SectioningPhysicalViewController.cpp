@@ -195,7 +195,7 @@ void SectioningViewController::_DrawView(ViewContextR context)
     
     //  Draw the stuff outside of the clip
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::InsideBackward));
-    SetOverrideMatSymb(context);
+    SetOverrideGraphicParams(context);
     DrawViewInternal(context);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
@@ -204,7 +204,7 @@ void SectioningViewController::_DrawView(ViewContextR context)
 #endif
 
     context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::Outside));
-    SetOverrideMatSymb(context);
+    SetOverrideGraphicParams(context);
     DrawViewInternal(context);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.PopTransformClip();
@@ -213,32 +213,27 @@ void SectioningViewController::_DrawView(ViewContextR context)
 #endif
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetOverrideMatSymb()->Clear();
-    context.GetCurrentGraphicR().ActivateOverrideMatSymb(context.GetOverrideMatSymb());
+    context.GetOverrideGraphicParams()->Clear();
+    context.GetCurrentGraphicR().ActivateOverrideGraphicParams(context.GetOverrideGraphicParams());
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_pass == ClipVolumePass::InsideForward)
-        {
-        T_Super::_StrokeGeometry(context, element);
-        return;
-        }
+        return T_Super::_StrokeGeometry(context, source, pixelSize);
 
-    SetOverrideMatSymb(context);
-    element.Stroke(context);
-#endif
+    SetOverrideGraphicParams(context);
+    return source.Stroke(context, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::SetOverrideMatSymb(ViewContextR context) const
+void SectioningViewController::SetOverrideGraphicParams(ViewContextR context) const
     {
     if (m_pass == ClipVolumePass::InsideForward)
         return;
@@ -247,13 +242,13 @@ void SectioningViewController::SetOverrideMatSymb(ViewContextR context) const
 
     ColorDef color = (m_pass == ClipVolumePass::InsideBackward)? ColorDef(0xcf00ffff) : ColorDef(0xcfffff00);
 
-    OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
+    OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
     overrideMatSymb->Clear();
     overrideMatSymb->SetLineColor(color);
     overrideMatSymb->SetFillColor(color);
     overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | OvrGraphicParams::FLAGS_FillColorTransparency);
     overrideMatSymb->SetWidth(0);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetCurrentGraphicR().ActivateOverrideMatSymb(overrideMatSymb);
+    context.GetCurrentGraphicR().ActivateOverrideGraphicParams(overrideMatSymb);
 #endif
     }

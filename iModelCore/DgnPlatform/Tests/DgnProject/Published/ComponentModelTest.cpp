@@ -103,7 +103,7 @@ struct FakeScriptLibrary : ScopedDgnHost::FetchScriptCallback
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void checkGeomStream(GeometrySourceCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
+static void checkGeometryStream(GeometrySourceCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
     {
     //  Verify that item generated a line
     size_t count=0;
@@ -298,14 +298,14 @@ void ComponentModelTest::Developer_CreateCMs()
         var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
         var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params['X'], params['Y'], params['Z']); \
-        builder.SetGeomStreamAndPlacement(element); \
+        builder.SetGeometryStreamAndPlacement(element); \
         element.Insert(); \
         var element2 = model.CreateElement('dgn.PhysicalElement', options.Category);\
         var origin2 = new Bentley.Dgn.DPoint3d(10,12,13);\
         var angles2 = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
         var builder2 = new Bentley.Dgn.ElementGeometryBuilder(element2, origin2, angles2); \
         builder2.AppendBox(params['X'], params['Y'], params['Z']); \
-        builder2.SetGeomStreamAndPlacement(element2); \
+        builder2.SetGeometryStreamAndPlacement(element2); \
         element2.Insert(); \
         element.SetParent(element2);\
         element.Update();\
@@ -318,7 +318,7 @@ void ComponentModelTest::Developer_CreateCMs()
         var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,45);\
         var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params['Q'], params['W'], params['R']); \
-        builder.SetGeomStreamAndPlacement(element); \
+        builder.SetGeometryStreamAndPlacement(element); \
         element.Insert(); \
         return 0;\
     } \
@@ -357,7 +357,7 @@ void ComponentModelTest::Developer_TestWidgetSolver()
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("X")->GetValue().GetDouble(), 
                                                         params.GetParameter("Y")->GetValue().GetDouble(),
                                                         params.GetParameter("Z")->GetValue().GetDouble());
@@ -389,7 +389,7 @@ void ComponentModelTest::Developer_TestGadgetSolver()
         ASSERT_EQ( 1 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("Q")->GetValue().GetDouble(), 
                                                         params.GetParameter("W")->GetValue().GetDouble(),
                                                         params.GetParameter("R")->GetValue().GetDouble());
@@ -453,7 +453,7 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
 void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedCount, double x, double y, double z)
     {
     DgnElementCPtr el = m_clientDb->Elements().Get<DgnElement>(eid);
-    checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedCount);
+    checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedCount);
     checkSlabDimensions(*el->ToGeometrySource(), x, y, z);
     }
 

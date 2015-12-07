@@ -634,7 +634,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
                 polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
-                faceAttachmentsVec->at(i).ToElemDisplayParams(m_context->GetCurrentGeometryParams());
+                faceAttachmentsVec->at(i).ToGeometryParams(m_context->GetCurrentGeometryParams());
                 m_context->CookGeometryParams();
 
                 FacetClipper(*this, false).ProcessDisposablePolyface(*polyfaces[i]);
@@ -1040,7 +1040,7 @@ void SimplifyGraphic::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, Transform
 
     AutoRestore <bool> saveInSymbolDraw(&m_inSymbolDraw, true);
     AutoRestore <GraphicParams> saveContextGraphicParams(m_context->GetGraphicParams());
-    AutoRestore <OvrGraphicParams> saveContextOvrGraphicParams(m_context->GetOverrideMatSymb());
+    AutoRestore <OvrGraphicParams> saveContextOvrGraphicParams(m_context->GetOverrideGraphicParams());
     AutoRestore <GeometryParams> saveContextDisplayParams(&m_context->GetCurrentGeometryParams());
 
 #if defined (NEEDS_WORK_DGNITEM)
@@ -1499,10 +1499,10 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicParamsR     SimplifyGraphic::GetCurrentMatSymb(GraphicParamsR matSymb)
+GraphicParamsR SimplifyGraphic::GetEffectiveGraphicParams(GraphicParamsR matSymb)
     {
     matSymb = *m_context->GetGraphicParams();
-    Render::OvrGraphicParams ovr =  *m_context->GetOverrideMatSymb();
+    Render::OvrGraphicParams ovr =  *m_context->GetOverrideGraphicParams();
 
     if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_Color))
         matSymb.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (matSymb.GetLineColor().GetValue() & 0xff000000)));
@@ -1691,7 +1691,7 @@ StatusInt SimplifyGraphic::ProcessGeometryMap(PolyfaceQueryCR facets)
     AutoRestore <GraphicParams>                   saveOutputGraphicParams(&m_currentMatSymb);
     AutoRestore <OvrGraphicParams>                    saveOutputOvrGraphicParams(&m_overrideMatSymb);
     AutoRestore <GraphicParams>                   saveContextGraphicParams(m_context->GetGraphicParams());
-    AutoRestore <OvrGraphicParams>                    saveContextOvrGraphicParams(m_context->GetOverrideMatSymb());
+    AutoRestore <OvrGraphicParams>                    saveContextOvrGraphicParams(m_context->GetOverrideGraphicParams());
     AutoRestore <GeometryParams>             saveContextDisplayParams(m_context->GetCurrentGeometryParams());
     XGraphicsRecorder*                          xGraphicsRecorder = NULL;
     Transform                                   localToElement, elementToRoot;

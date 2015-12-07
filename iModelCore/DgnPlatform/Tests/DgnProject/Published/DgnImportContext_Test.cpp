@@ -254,7 +254,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
         builder->Append(*customParms);
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*gelem->ToGeometrySourceP()))
         return nullptr;
 
     return db.Elements().Insert(*gelem);
@@ -263,11 +263,11 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static void getFirstElemDisplayParams(GeometryParams& ret, DgnElementCR gel)
+static void getFirstGeometryParams(GeometryParams& ret, DgnElementCR gel)
     {
     ElementGeometryCollection gcollection(gel);
     gcollection.begin(); // has the side-effect of setting up the current element display params on the collection
-    ret = gcollection.GetElemDisplayParams();
+    ret = gcollection.GetGeometryParams();
     }
 
 //---------------------------------------------------------------------------------------
@@ -368,10 +368,10 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
     ASSERT_EQ( sourceCat->GetCode(), destCat->GetCode() );
 
     Render::GeometryParams sourceDisplayParams;
-    getFirstElemDisplayParams(sourceDisplayParams, sourceElem);
+    getFirstGeometryParams(sourceDisplayParams, sourceElem);
 
     Render::GeometryParams destDisplayParams;
-    getFirstElemDisplayParams(destDisplayParams, *destElem);
+    getFirstGeometryParams(destDisplayParams, *destElem);
     
     DgnSubCategoryId destSubCategoryId = destDisplayParams.GetSubCategoryId();
     ASSERT_TRUE( destSubCategoryId.IsValid() );
@@ -429,7 +429,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     sourceDb->SaveChanges();
 
     GeometryParams sourceDisplayParams;
-    getFirstElemDisplayParams(sourceDisplayParams, *sourceElem);
+    getFirstGeometryParams(sourceDisplayParams, *sourceElem);
 
     ASSERT_EQ( sourceCategoryId , sourceElem->ToGeometrySource3d()->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above
     ASSERT_EQ( sourceSubCategory1Id , sourceDisplayParams.GetSubCategoryId() ); // check that the source element's geometry really was assigned to the SubCategory that I specified above

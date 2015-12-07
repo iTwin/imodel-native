@@ -31,7 +31,7 @@ struct DgnGeomPart : RefCountedBase
 private:
     DgnGeomPartId   m_id;       //!< Id of this geometry part.  Invalid until DgnGeomParts::InsertGeomPart is called or part is read from the DgnDb.
     Utf8String      m_code;     //!< Code of this geometry part for "named" look-ups. Code is optional.
-    GeomStream      m_geometry; //!< Geometry of part
+    GeometryStream      m_geometry; //!< Geometry of part
 
     explicit DgnGeomPart(Utf8CP code) {SetCode(code);}
 
@@ -40,8 +40,8 @@ private:
     
 protected:
 
-    //! Only ElementGeometryBuilder should have write access to the GeomStream...
-    GeomStreamR GetGeomStreamR() {return m_geometry;}
+    //! Only ElementGeometryBuilder should have write access to the GeometryStream...
+    GeometryStreamR GetGeometryStreamR() {return m_geometry;}
 
 public:
     //! Create a DgnGeomPart
@@ -57,7 +57,7 @@ public:
     Utf8CP GetCode() const {return m_code.c_str();}
 
     //! Get the geometry for this part (part local coordinates)
-    GeomStreamCR GetGeomStream() const {return m_geometry;}
+    GeometryStreamCR GetGeometryStream() const {return m_geometry;}
 };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -8441,7 +8441,7 @@ void AnnotationTableElement::UpdateGeometryRepresentation()
     CurveVectorPtr curveVector = CurveVector::Create(primitive, CurveVector::BOUNDARY_TYPE_Open);
 
     builder->Append (*curveVector);
-    builder->SetGeomStreamAndPlacement(*this);
+    builder->SetGeometryStreamAndPlacement(*this);
     }
 
 //---------------------------------------------------------------------------------------

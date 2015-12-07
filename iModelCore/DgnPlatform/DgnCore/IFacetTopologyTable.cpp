@@ -404,7 +404,7 @@ FaceAttachment::FaceAttachment (GeometryParamsCR sourceParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToElemDisplayParams (GeometryParamsR elParams) const
+void FaceAttachment::ToGeometryParams (GeometryParamsR elParams) const
     {
     elParams.SetCategoryId(m_categoryId);
     elParams.SetSubCategoryId(m_subCategoryId);

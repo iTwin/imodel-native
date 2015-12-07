@@ -513,7 +513,7 @@ bool Is3dCellSymbol()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ApplyElemDisplayParams(GeometryParamsCR elParams)
+void ApplyGeometryParams(GeometryParamsCR elParams)
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     ElementPropertiesSetter remapper;
@@ -737,7 +737,7 @@ static MaterialPtr CreateGeometryMapMaterial(ViewContextR context, PatternSymbol
 
     // NOTE: Need to setup pattern symbology on cell element and hide 0 length lines used as pattern cell extent markers, etc.
     PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyElemDisplayParams(*context.GetCurrentGeometryParams());
+    symbCell.ApplyGeometryParams(*context.GetCurrentGeometryParams());
 
     DRange2d range;
     DisplayHandler::GetDPRange(&range.low, &eh.GetElementCP ()->hdr.dhdr.range);
@@ -861,11 +861,11 @@ double          scale
         context.CookGeometryParams();
         }
 
-    OvrGraphicParamsP  ovrMatSymb = context.GetOverrideMatSymb();
+    OvrGraphicParamsP  ovrMatSymb = context.GetOverrideGraphicParams();
 
     ovrMatSymb->SetFillTransparency(0xff);
     ovrMatSymb->SetMaterial(appData->GetMaterial());
-    context.GetIDrawGeom().ActivateOverrideMatSymb(ovrMatSymb);
+    context.GetIDrawGeom().ActivateOverrideGraphicParams(ovrMatSymb);
 
     CurveVectorPtr  boundaryCurve = boundary.GetCurveVector();
 
@@ -1038,7 +1038,7 @@ DPoint3dR       origin
 
     // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
     PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyElemDisplayParams(*context.GetCurrentGeometryParams());
+    symbCell.ApplyGeometryParams(*context.GetCurrentGeometryParams());
 
     bool        drawFiltered = false;
     Transform   orgTrans;
@@ -1640,7 +1640,7 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
     if (!_WantAreaPatterns())
         return;
 
-    PatternParamsCP params = m_ovrMatSymb.GetPatternParams();
+    PatternParamsCP params = m_ovrGraphicParams.GetPatternParams();
 
     if (nullptr == params)
         params = m_graphicParams.GetPatternParams();

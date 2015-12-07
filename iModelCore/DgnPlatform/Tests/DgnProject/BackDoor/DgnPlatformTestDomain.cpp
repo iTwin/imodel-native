@@ -46,7 +46,7 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el, GenerateRea
     else
         return DgnDbStatus::WriteError;
     
-    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(el))
+    if (BSISUCCESS != builder->SetGeometryStreamAndPlacement(el))
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -98,7 +98,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
     builder->Append(*computeShape(shapeSize));
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*testElement))
         return nullptr;
 
     return testElement;
@@ -115,7 +115,7 @@ TestElementPtr TestElement::Create(Dgn::DgnDbR db, Render::GeometryParamsCR ep, 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
     EXPECT_TRUE(builder->Append(ep));
     EXPECT_TRUE(builder->Append(*computeShape(shapeSize)));
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*testElement))
         return nullptr;
 
     return testElement;
@@ -261,7 +261,7 @@ void TestElement::ChangeElement(double len)
     {
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*this);
     builder->Append(*computeShape(len));
-    builder->SetGeomStreamAndPlacement(*this);
+    builder->SetGeometryStreamAndPlacement(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -294,7 +294,7 @@ TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId 
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geom);
     builder->Append(*computeShape2d(length));
-    return (SUCCESS != builder->SetGeomStreamAndPlacement(*geom)) ? nullptr : geom;
+    return (SUCCESS != builder->SetGeometryStreamAndPlacement(*geom)) ? nullptr : geom;
 }
 
 /*---------------------------------------------------------------------------------**//**

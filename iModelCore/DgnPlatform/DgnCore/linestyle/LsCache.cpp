@@ -518,7 +518,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 
 #if defined (NEEDS_WORK_DGNITEM)
     // Keep GeometryParams and GraphicParams in synch...operations like drop lstyle use GeometryParams not GraphicParams.
-    ElemDisplayParamsStateSaver saveState (*context->GetCurrentGeometryParams (), false, false, false, true, false);
+    GeometryParamsStateSaver saveState (*context->GetCurrentGeometryParams (), false, false, false, true, false);
 #endif
 
     // It's important to set the style via GeometryParams, not GraphicParams, for printing to work correctly.
@@ -527,24 +527,24 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
     context->GetIDrawGeom ().ActivateMatSymb (context->GetGraphicParams ()); // Activate the new matsymb
 
     // Style override that caused this linestyle to be used needs to be cleared in order to use the correct raster pattern for the strokes. 
-    OvrGraphicParamsP ovrMatSymb = context->GetOverrideMatSymb ();
+    OvrGraphicParamsP ovrMatSymb = context->GetOverrideGraphicParams ();
     uint32_t    saveFlags = ovrMatSymb->GetFlags ();
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
         {
         ovrMatSymb->SetFlags (saveFlags & ~MATSYMB_OVERRIDE_Style);
-        context->GetIDrawGeom ().ActivateOverrideMatSymb (ovrMatSymb);
+        context->GetIDrawGeom ().ActivateOverrideGraphicParams (ovrMatSymb);
         }
 
     context->GetIDrawGeom ().AddLineString (nPoints, inPoints, NULL); // Draw the linestring
 
-    // Restore GraphicParams to previous state, GeometryParams will be restored in ElemDisplayParamsStateSaver destructor...
+    // Restore GraphicParams to previous state, GeometryParams will be restored in GeometryParamsStateSaver destructor...
     context->GetIDrawGeom ().ActivateMatSymb (&saveMatSymb);
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
         {
         ovrMatSymb->SetFlags (saveFlags);
-        context->GetIDrawGeom ().ActivateOverrideMatSymb (ovrMatSymb);
+        context->GetIDrawGeom ().ActivateOverrideGraphicParams (ovrMatSymb);
         }
 
     return SUCCESS;

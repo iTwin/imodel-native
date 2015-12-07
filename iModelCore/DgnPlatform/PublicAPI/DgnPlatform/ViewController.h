@@ -221,8 +221,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
 
     //! Stroke a single GeometrySource through a ViewContext.
-    //! An application can override _StrokeElement to change the symbology of a GeometrySource.
-    DGNPLATFORM_EXPORT virtual void _StrokeGeometry(ViewContextR, GeometrySourceCR);
+    //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize);
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.
@@ -841,11 +841,11 @@ protected:
     DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
 
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _StrokeGeometry(ViewContextR, GeometrySourceCR) override;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
-    void SetOverrideMatSymb(ViewContextR) const;
+    void SetOverrideGraphicParams(ViewContextR) const;
     void DrawViewInternal(ViewContextR);
     ClipVectorPtr GetClipVectorInternal(ClipVolumePass) const;
 
@@ -928,7 +928,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewControl
 
 protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _StrokeGeometry(ViewContextR, GeometrySourceCR) override;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
 
     mutable SectioningViewControllerPtr m_sectionView;  // transient
@@ -992,7 +992,7 @@ private:
     Pass m_passesToDraw;
 
     virtual void _DrawView(ViewContextR) override;
-    virtual void _StrokeGeometry(ViewContextR, GeometrySourceCR) override;
+    virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
     virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;
@@ -1024,7 +1024,7 @@ public:
     DGNPLATFORM_EXPORT HypermodelingViewController(DgnViewId, PhysicalViewControllerR, bvector<SectionDrawingViewControllerPtr> const&);
     bool ShouldDrawProxyGraphics(ClipVolumePass proxyGraphicsType, int planeIndex) const;
     bool ShouldDrawAnnotations() const;
-    DGNPLATFORM_EXPORT void SetOverrideMatSymb(ViewContextR) const;
+    DGNPLATFORM_EXPORT void SetOverrideGraphicParams(ViewContextR) const;
 
     DGNPLATFORM_EXPORT bvector<SectionDrawingViewControllerPtr> GetSectionDrawingViews() const;
     DGNPLATFORM_EXPORT SectionDrawingViewControllerPtr FindSectionDrawingViewById(DgnViewId) const;

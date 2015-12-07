@@ -91,7 +91,7 @@ virtual void        _AnnounceGraphicParams(Render::GraphicParamsCR matSymb) {}
 
 //! Supply the current symbology used to generate the ElemMatSym values.
 //! @param[in] displayParams The symbology to apply to subsequent process calls.
-virtual void        _AnnounceElemDisplayParams(Render::GeometryParamsCR displayParams) {}
+virtual void        _AnnounceGeometryParams(Render::GeometryParamsCR displayParams) {}
 
 //! Collect output as text.
 //! @param[in] text The text data.

@@ -84,7 +84,7 @@ DGNPLATFORM_TYPEDEFS (DgnViewport)
 DGNPLATFORM_TYPEDEFS (DisplayStyle)
 DGNPLATFORM_TYPEDEFS (DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS (DrawingElement)
-DGNPLATFORM_TYPEDEFS (GeomStream)
+DGNPLATFORM_TYPEDEFS (GeometryStream)
 DGNPLATFORM_TYPEDEFS (GeometrySource)
 DGNPLATFORM_TYPEDEFS (GeometrySource2d)
 DGNPLATFORM_TYPEDEFS (GeometrySource3d)
@@ -142,7 +142,7 @@ DGNPLATFORM_TYPEDEFS (FenceManager)
 DGNPLATFORM_TYPEDEFS (FenceParams)
 DGNPLATFORM_TYPEDEFS (Frustum)
 DGNPLATFORM_TYPEDEFS (GeomDetail)
-DGNPLATFORM_TYPEDEFS (GeomStreamEntryId)
+DGNPLATFORM_TYPEDEFS (GeometryStreamEntryId)
 DGNPLATFORM_TYPEDEFS (HatchLinkage)
 DGNPLATFORM_TYPEDEFS (HitList)
 DGNPLATFORM_TYPEDEFS (HitDetail)
@@ -363,9 +363,9 @@ struct DgnClassId : BeSQLite::BeInt64Id
 };
 
 //=======================================================================================
-//! The GeomStreamEntryId class identifies a geometric primitive in a GeomStream.
+//! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
 //=======================================================================================
-struct GeomStreamEntryId
+struct GeometryStreamEntryId
 {
     enum class Type
         {
@@ -380,12 +380,12 @@ private:
     uint32_t        m_partIndex;
 
 public:
-    GeomStreamEntryId() {Init();}
-    GeomStreamEntryId(GeomStreamEntryIdCR rhs) {m_type = rhs.m_type; m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
+    GeometryStreamEntryId() {Init();}
+    GeometryStreamEntryId(GeometryStreamEntryIdCR rhs) {m_type = rhs.m_type; m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
 
-    DGNPLATFORM_EXPORT bool operator==(GeomStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT bool operator!=(GeomStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT GeomStreamEntryIdR operator=(GeomStreamEntryIdCR rhs);
+    DGNPLATFORM_EXPORT bool operator==(GeometryStreamEntryIdCR rhs) const;
+    DGNPLATFORM_EXPORT bool operator!=(GeometryStreamEntryIdCR rhs) const;
+    DGNPLATFORM_EXPORT GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs);
 
     void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeomPartId();}
     void SetType(Type type) {m_type = type;}

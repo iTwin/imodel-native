@@ -500,7 +500,7 @@ int LineStyleSymb::FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR co
 * @return the hardware linestyle to be used.
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleSymb::FromResolvedElemDisplayParams (GeometryParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+int LineStyleSymb::FromResolvedGeometryParams (GeometryParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
     BeAssert (NULL == GetILineStyle());
     return FromResolvedStyle (elParams.GetLineStyle (), context, startTangent, endTangent);
@@ -511,11 +511,11 @@ int LineStyleSymb::FromResolvedElemDisplayParams (GeometryParamsCR elParams, Vie
 * @return the hardware linestyle to be used.
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-int LineStyleSymb::FromNaturalElemDisplayParams (GeometryParamsR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+int LineStyleSymb::FromNaturalGeometryParams (GeometryParamsR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
     elParams.Resolve (context);
 
-    return FromResolvedElemDisplayParams (elParams, context, startTangent, endTangent);
+    return FromResolvedGeometryParams (elParams, context, startTangent, endTangent);
     }
 
 /*---------------------------------------------------------------------------------**//**

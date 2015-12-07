@@ -352,11 +352,9 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    element.Stroke(context);
-#endif
+    return source.Stroke(context, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -938,7 +936,7 @@ void SectionDrawingViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr SectionDrawingViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
 #if defined(NEEDS_WORK_VIEW_CONTROLLER)
     if (context.GetViewport() != nullptr)
@@ -949,7 +947,7 @@ void SectionDrawingViewController::_StrokeGeometry(ViewContextR context, Geometr
         }
 #endif
 
-    T_Super::_StrokeGeometry(context, element);
+    return T_Super::_StrokeGeometry(context, source, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

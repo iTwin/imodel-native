@@ -175,7 +175,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnMo
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();
@@ -205,7 +205,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMode
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();
@@ -231,7 +231,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, Dg
     if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();

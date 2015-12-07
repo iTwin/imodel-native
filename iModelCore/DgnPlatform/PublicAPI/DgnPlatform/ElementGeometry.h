@@ -120,7 +120,7 @@ struct ElementGeomIO
 enum class HeaderFlags : uint32_t
     {
     None                    = 0,
-    UseCurrentDisplayParams = 1,    //!< Do not reinitialize GeometryParams before processing this GeomStream
+    UseCurrentDisplayParams = 1,    //!< Do not reinitialize GeometryParams before processing this GeometryStream
     };
 
     //=======================================================================================
@@ -271,19 +271,19 @@ struct IDebugOutput
 
     }; // IDebugOutput
 
-    //! Output contents of GeomStream for debugging purposes.
-    DGNPLATFORM_EXPORT static void Debug(IDebugOutput&, GeomStreamCR, DgnDbR, bool isPart=false);
+    //! Output contents of GeometryStream for debugging purposes.
+    DGNPLATFORM_EXPORT static void Debug(IDebugOutput&, GeometryStreamCR, DgnDbR, bool isPart=false);
 
-    //! Remap embedded IDs. The dest and source GeomStreams can be the same.
-    //! @param dest     The output GeomStream
-    //! @param source   The input GeomStream
+    //! Remap embedded IDs. The dest and source GeometryStreams can be the same.
+    //! @param dest     The output GeometryStream
+    //! @param source   The input GeometryStream
     //! @param remapper  The ID remapper
-    static DgnDbStatus Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& remapper);
+    static DgnDbStatus Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& remapper);
 
 }; // ElementGeomIO
 
 //=======================================================================================
-//! ElementGeometryCollection provides iterator for a Geometric Element's GeomStream.
+//! ElementGeometryCollection provides iterator for a Geometric Element's GeometryStream.
 //! @ingroup ElementGeometryGroup
 //=======================================================================================
 struct ElementGeometryCollection
@@ -352,13 +352,13 @@ const_iterator end   () const {return const_iterator ();}
 
 void SetBRepOutput(BRepOutput bRep) {m_bRepOutput = bRep;}
 
-DGNPLATFORM_EXPORT Render::GeometryParamsCR GetElemDisplayParams();
-DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId(); //!< Returns primitive id for current geometry
+DGNPLATFORM_EXPORT Render::GeometryParamsCR GetGeometryParams();
+DGNPLATFORM_EXPORT GeometryStreamEntryId GetGeometryStreamEntryId(); //!< Returns primitive id for current geometry
 DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToElement();
 
-DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, GeomStreamCR geom);
+DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, GeometryStreamCR geom);
 DGNPLATFORM_EXPORT ElementGeometryCollection (GeometrySourceCR source);
 DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
 
@@ -369,7 +369,7 @@ typedef RefCountedPtr<ElementGeometryBuilder> ElementGeometryBuilderPtr;
 ENUM_IS_FLAGS(ElementGeometryCollection::BRepOutput)
 
 //=======================================================================================
-//! ElementGeometryBuilder provides methods for setting up an element's GeomStream and Placement(2d/3d).
+//! ElementGeometryBuilder provides methods for setting up an element's GeometryStream and Placement(2d/3d).
 //! An element's geometry should always be stored relative to its placement. A placement defines the
 //! element to world transform.
 //!
@@ -386,7 +386,7 @@ ENUM_IS_FLAGS(ElementGeometryCollection::BRepOutput)
 //! an identity placement, append the geometry, and then just update the placement to reflect the element’s world coordinates and
 //! orientation. It’s not expected for the placement to remain identity unless the element is really at the origin.
 //!
-//! For repeated geometry that can be shared in a single GeomStream or by multiple GeomStreams, a DgnGeomPart should be
+//! For repeated geometry that can be shared in a single GeometryStream or by multiple GeometryStreams, a DgnGeomPart should be
 //! created. When appending a DgnGeomPartId you specify the part geometry to element transform in order to position the 
 //! part's geometry relative to the other geometry/parts display by the element.
 //! @ingroup ElementGeometryGroup
@@ -421,11 +421,11 @@ DgnDbR GetDgnDb() const {return m_dgnDb;} //!< @private
 bool Is3d() const {return m_is3d;} //!< @private
 Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private
 Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private
-DGNPLATFORM_EXPORT BentleyStatus GetGeomStream (GeomStreamR); //!< @private
-DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId() const; //! Return the primitive id of the geometry last added to the builder.
+DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream (GeometryStreamR); //!< @private
+DGNPLATFORM_EXPORT GeometryStreamEntryId GetGeometryStreamEntryId() const; //! Return the primitive id of the geometry last added to the builder.
 
-DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
-DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometrySourceR);
+DGNPLATFORM_EXPORT BentleyStatus SetGeometryStream (DgnGeomPartR);
+DGNPLATFORM_EXPORT BentleyStatus SetGeometryStreamAndPlacement (GeometrySourceR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
 DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);
@@ -443,7 +443,7 @@ DGNPLATFORM_EXPORT bool Append (TextAnnotationCR);
 DGNPLATFORM_EXPORT void SetUseCurrentDisplayParams(bool newValue);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
-DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeomStreamCR, DgnDbR db, bool ignoreSymbology = false); //!< @private
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false); //!< @private
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
