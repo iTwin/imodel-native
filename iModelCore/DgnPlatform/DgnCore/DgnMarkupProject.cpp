@@ -274,12 +274,12 @@ void PhysicalRedlineViewController::_DrawZBufferedGraphics(ViewContextR context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr PhysicalRedlineViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
     if (m_targetModelIsInSubjectView)
-        m_subjectView._StrokeGeometry(context, element);
+        return m_subjectView._StrokeGeometry(context, source, pixelSize);
     else
-        T_Super::_StrokeGeometry(context, element);
+        return T_Super::_StrokeGeometry(context, source, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

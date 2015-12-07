@@ -565,16 +565,10 @@ Render::GraphicPtr ViewContext::_OutputElement(GeometrySourceCR source)
 
     if (!graphic.IsValid())
         {
-#if defined (NOT_NOW)
-        graphic = _BeginGraphic(Graphic::CreateParams(vp, placementTrans, pixelSize));
-
         if (nullptr != vp)
-            vp->GetViewControllerR()._StrokeGeometry(*this, source);
+            graphic = vp->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize);
         else
-            source.Stroke(*this);
-#else
-        graphic = source.Stroke(*this, pixelSize);
-#endif
+            graphic = source.Stroke(*this, pixelSize);
 
         _SaveGraphic(*graphic);
         }

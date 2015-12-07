@@ -221,18 +221,13 @@ void SectioningViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR element)
+Render::GraphicPtr SectioningViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_pass == ClipVolumePass::InsideForward)
-        {
-        T_Super::_StrokeGeometry(context, element);
-        return;
-        }
+        return T_Super::_StrokeGeometry(context, source, pixelSize);
 
     SetOverrideMatSymb(context);
-    element.Stroke(context);
-#endif
+    return source.Stroke(context, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
