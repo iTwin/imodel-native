@@ -72,6 +72,7 @@
     <ClCompile Include="Published\InstanceXMLTests.cpp" />
     <ClCompile Include="Published\MacroTests.cpp" />
     <ClCompile Include="Published\MemoryLayoutTests.cpp" />
+    <ClCompile Include="Published\NavigationECPropertyTests.cpp" />
     <ClCompile Include="Published\SchemaTests.cpp" />
     <ClCompile Include="Published\DateTimeInfoCustomAttributeTests.cpp" />
     <ClCompile Include="Published\SupplementalSchemaTests.cpp" />

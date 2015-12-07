@@ -83,12 +83,12 @@ Utf8CP ECClass::GetFullName () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECClass::GetECSqlName() const
+Utf8StringCR ECClass::GetECSqlName() const
     {
     if (m_ecsqlName.empty())
         m_ecsqlName.append("[").append(GetSchema().GetName()).append("].[").append(GetName()).append("]");
 
-    return m_ecsqlName.c_str();
+    return m_ecsqlName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -177,13 +177,6 @@ ECClassType ECClass::GetClassType() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsEntityClass() const
-    {
-    return _IsEntityClass();
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECEntityClassCP ECClass::GetEntityClassCP() const
@@ -197,14 +190,6 @@ ECEntityClassCP ECClass::GetEntityClassCP() const
 ECEntityClassP ECClass::GetEntityClassP()
     {
     return _GetEntityClassP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsCustomAttributeClass() const
-    {
-    return _IsCustomAttributeClass();
     }
 
 //---------------------------------------------------------------------------------------
@@ -224,14 +209,6 @@ ECCustomAttributeClassP ECClass::GetCustomAttributeClassP()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsStructClass() const
-    {
-    return _IsStructClass();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECStructClassCP ECClass::GetStructClassCP() const
@@ -245,14 +222,6 @@ ECStructClassCP ECClass::GetStructClassCP() const
 ECStructClassP ECClass::GetStructClassP()
     {
     return _GetStructClassP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::IsRelationshipClass() const
-    {
-    return _IsRelationshipClass();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1373,6 +1342,13 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (SchemaReadStatus::Success != status)
                 return status;
             }
+        else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
+            {
+            ECPropertyP ecProperty = new NavigationECProperty(*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
+            if (SchemaReadStatus::Success != status)
+                return status;
+            }
         }
     
     // Add Custom Attributes
@@ -1463,7 +1439,8 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
         {
         xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, IsStructClass());
         xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, IsCustomAttributeClass());
-        xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, this->GetClassModifier() != ECClassModifier::Abstract);
+        bool isConcrete = this->GetClassModifier() != ECClassModifier::Abstract;
+        xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
     else
         xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
@@ -1663,6 +1640,24 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVers
 
     else
         return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_ENTITYCLASS_ELEMENT, nullptr, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction)
+    {
+    ecProperty = new NavigationECProperty(*this);
+    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction);
+    if (ECObjectsStatus::Success == status)
+        status = AddProperty(ecProperty, name);
+
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecProperty;
+        ecProperty = nullptr;
+        }
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2047,8 +2042,16 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
                 CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (constraintClassName).c_str(), Utf8String (className).c_str(), Utf8String (resolvedSchema->GetName()).c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
+        ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
+        if (nullptr == constraintAsEntity)
+            {
+            LOG.warningv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
+                         CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String(constraintClassName).c_str(), Utf8String(className).c_str(), Utf8String(resolvedSchema->GetName()).c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
         ECRelationshipConstraintClassP ecRelationshipconstaintClass;
-        m_constraintClasses.Add(ecRelationshipconstaintClass, *constraintClass);
+        m_constraintClasses.Add(ecRelationshipconstaintClass, *constraintAsEntity);
         if (ecRelationshipconstaintClass != nullptr)
             {
             for (BeXmlNodeP keyNode = constraintClassNode->GetFirstChild(); nullptr != keyNode; keyNode = keyNode->GetNextSibling())
@@ -2113,7 +2116,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstraint)
     {
 
     ECRelationshipConstraintClassP ecRelationShipconstraintClass;
@@ -2122,7 +2125,7 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                       MUHAMMAD.ZAIGHUM                             01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass)
+ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass)
     {
     return  m_constraintClasses.Add(classConstraint, ecClass);
 
@@ -2131,7 +2134,7 @@ ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECClassCR classConstraint)
+ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECEntityClassCR classConstraint)
     {
     return m_constraintClasses.Remove(classConstraint);
     }
@@ -2144,7 +2147,7 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
     ECConstraintClassesList listOfClasses;
     for (auto const &constraintClassIterator : m_constraintClasses)
         {
-        listOfClasses.push_back (const_cast<ECClassP>(&constraintClassIterator->GetClass ()));
+        listOfClasses.push_back (const_cast<ECEntityClassP>(&constraintClassIterator->GetClass ()));
         }
     return listOfClasses;
     }
@@ -2163,6 +2166,23 @@ ECRelationshipConstraintClassList const& ECRelationshipConstraint::GetConstraint
 ECRelationshipConstraintClassList& ECRelationshipConstraint::GetConstraintClassesR() 
     {
     return m_constraintClasses;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
+    {
+    for (auto constraint : GetConstraintClasses())
+        {
+        ECClassCR constraintClass = constraint->GetClass();
+        if (constraintClass.GetName().EqualsI("AnyClass"))
+            return true;
+        
+        if (ECClass::ClassesAreEqualByName(&constraintClass, &ecClass) || (m_isPolymorphic && ecClass.Is(&constraintClass)))
+            return true;
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2317,8 +2337,11 @@ ECRelationshipConstraintR toRelationshipConstraint
             if (ECObjectsStatus::Success != status)
                 return status;
             }
+        ECEntityClassP destAsEntity = destConstraintClass->GetEntityClassP();
+        if (nullptr == destAsEntity)
+            return ECObjectsStatus::DataTypeNotSupported;
 
-        status = toRelationshipConstraint.AddClass(*destConstraintClass);
+        status = toRelationshipConstraint.AddClass(*destAsEntity);
         if (ECObjectsStatus::Success != status)
             return status;
         }
@@ -2785,11 +2808,11 @@ uint32_t ECRelationshipConstraintClassList::size()const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constainClass)
+ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECEntityClassCR constraintClass)
     {
     for (auto itor = m_constraintClasses.begin(); itor != m_constraintClasses.end(); itor++)
         {
-        if (&itor->get()->GetClass() == &constainClass)
+        if (&itor->get()->GetClass() == &constraintClass)
             {
             m_constraintClasses.erase(itor);
             return ECObjectsStatus::Success;
@@ -2802,7 +2825,7 @@ ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constainClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass)
+ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass)
     {
     classConstraint = nullptr;
     if (&(ecClass.GetSchema()) != &(m_relClass->GetSchema()))
@@ -2837,7 +2860,7 @@ ECRelationshipConstraintClassList::~ECRelationshipConstraintClassList()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECClassCR ecClass) : m_ecClass(&ecClass)
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECEntityClassCR ecClass) : m_ecClass(&ecClass)
     {}
 
 /*---------------------------------------------------------------------------------**//**

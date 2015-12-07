@@ -17,3 +17,6 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
 SchemaDeserializationTest.ExpectSuccessWithDuplicateClassesInXml  # This is no longer allowed
+
+NavigationECPropertyTests.InvalidXml                # Disabled until we figure out how to validate nav properties on deserialization
+

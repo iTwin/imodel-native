@@ -2194,7 +2194,10 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         ECClassCP resolvedConstraintClass = ResolveClass(*itor);
         if (resolvedConstraintClass == NULL)
             return MERGESTATUS_ErrorClassNotFound;
-        mergedConstraint.AddClass (*resolvedConstraintClass);
+        if (nullptr == resolvedConstraintClass->GetEntityClassCP())
+            return MERGESTATUS_ErrorClassTypeMismatch;
+
+        mergedConstraint.AddClass (*resolvedConstraintClass->GetEntityClassCP());
         }
 
     ECDiffNodeP customAttributesDiffNode = diff.ImplGetChildById (DiffNodeId::CustomAttributes);
@@ -2762,7 +2765,9 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshi
         BeAssert (resolvedClass != NULL);
         if (resolvedClass == NULL)
             return MERGESTATUS_ErrorClassNotFound;
-        mergedRelationshipClassConstraint.AddClass(*resolvedClass);
+        if (nullptr == resolvedClass->GetEntityClassCP())
+            return MERGESTATUS_ErrorClassTypeMismatch;
+        mergedRelationshipClassConstraint.AddClass(*resolvedClass->GetEntityClassCP());
         }
     return MERGESTATUS_Success;
     }

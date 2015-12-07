@@ -986,6 +986,15 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
     EXPECT_STREQ("de", enumeration->GetDescription().c_str());
     EXPECT_STREQ("string", enumeration->GetTypeName().c_str());
 
+    ECEntityClassP entityClass;
+    status = schema->CreateEntityClass(entityClass, "EntityClass");
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    PrimitiveECPropertyP property;
+    status = entityClass->CreateEnumerationProperty(property, "EnumProperty", enumeration);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    ASSERT_TRUE(property != nullptr);
+    EXPECT_STREQ("Enumeration", property->GetTypeName().c_str());
+
     Utf8String ecSchemaXmlString;
     SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXmlString);
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
@@ -1001,6 +1010,16 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
     EXPECT_STREQ("dl", deserializedEnumeration->GetDisplayLabel().c_str());
     EXPECT_STREQ("de", deserializedEnumeration->GetDescription().c_str());
     EXPECT_STREQ("string", deserializedEnumeration->GetTypeName().c_str());
+
+    ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
+    ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("EnumProperty");
+    EXPECT_STREQ("Enumeration", deserializedProperty->GetTypeName().c_str());
+    PrimitiveECPropertyCP deserializedPrimitive = deserializedProperty->GetAsPrimitiveProperty();
+    ASSERT_TRUE(nullptr != deserializedPrimitive);
+
+    ECEnumerationCP propertyEnumeration = deserializedPrimitive->GetEnumeration();
+    ASSERT_TRUE(nullptr != propertyEnumeration);
+    EXPECT_STREQ("string", propertyEnumeration->GetTypeName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1184,6 +1203,60 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
 
     EXPECT_NE (SchemaReadStatus::Success, status);
     EXPECT_TRUE (schema.IsNull ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                                    Paul.Connelly   11/12
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaDeserializationTest, ExpectSuccessWithEnumerationInReferencedSchema)
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='ReferencedSchema' version='01.00' displayLabel='Display Label' description='Description' nameSpacePrefix='ref' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECEnumeration typeName='RevisionStatus' backingTypeName='int' description='...' displayLabel='Revision Status'>"
+        "       <ECEnumerator value='0' displayLabel='Undefined' />"
+        "       <ECEnumerator value='1' displayLabel='Planned' />"
+        "       <ECEnumerator value='2' displayLabel='Not Approved' />"
+        "       <ECEnumerator value='3' displayLabel='Approved' />"
+        "       <ECEnumerator value='4' displayLabel='Previous Revision' />"
+        "       <ECEnumerator value='5' displayLabel='Obsolete' />"
+        "   </ECEnumeration>"
+        "</ECSchema>";
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
+
+    ECSchemaPtr refSchema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (refSchema, schemaXML, *schemaContext);
+    EXPECT_EQ (SchemaReadStatus::Success, status);
+
+    schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Stuff' version='09.06' displayLabel='Display Label' description='Description' nameSpacePrefix='stuff' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchemaReference name='ReferencedSchema' version='01.00' prefix='ref' />"
+        "   <ECClass typeName='Document' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
+        "       <ECProperty propertyName='Name' typeName='string' displayLabel='Title' />"
+        "       <ECProperty propertyName='DateEffective' typeName='dateTime' displayLabel='Date Effective' />"
+        "       <ECProperty propertyName='DateObsolete' typeName='dateTime' displayLabel='Date Obsolete' />"
+        "       <ECProperty propertyName='IsTemplate' typeName='boolean' />"
+        "       <ECProperty propertyName='RevisionStatus' typeName='ref:RevisionStatus' displayLabel='Revision Status' />"
+        "   </ECClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    ECEnumerationP enumeration;
+    enumeration = refSchema->GetEnumerationP("RevisionStatus");
+    ASSERT_TRUE(enumeration != nullptr);
+    EXPECT_STREQ("int", enumeration->GetTypeName().c_str());
+
+    ECClassCP documentClass = schema->GetClassCP("Document");
+    ECPropertyP deserializedProperty = documentClass->GetPropertyP("RevisionStatus");
+    EXPECT_STREQ("ref:RevisionStatus", deserializedProperty->GetTypeName().c_str());
+    PrimitiveECPropertyCP deserializedPrimitive = deserializedProperty->GetAsPrimitiveProperty();
+    ASSERT_TRUE(nullptr != deserializedPrimitive);
+
+    ECEnumerationCP propertyEnumeration = deserializedPrimitive->GetEnumeration();
+    ASSERT_TRUE(nullptr != propertyEnumeration);
+    EXPECT_STREQ("int", propertyEnumeration->GetTypeName().c_str());
+    ASSERT_TRUE(enumeration == propertyEnumeration);
     }
 
 //--------------------------------------------------------------------------------------
@@ -1662,12 +1735,14 @@ TEST_F (SchemaCreationTest, CanFullyCreateASchema)
     testSchema->AddReferencedSchema (*schema2);
 
     ECEntityClassP class1;
+    ECEntityClassP class2;
     ECEntityClassP baseClass;
     ECStructClassP structClass;
     ECEntityClassP relatedClass;
     ECRelationshipClassP relationshipClass;
 
-    testSchema->CreateEntityClass (class1, "TestClass");
+    testSchema->CreateEntityClass(class1, "TestClass");
+    testSchema->CreateEntityClass(class2, "TestClass2");
     testSchema->CreateStructClass (structClass, "StructClass");
     schema2->CreateEntityClass (baseClass, "BaseClass");
     testSchema->CreateEntityClass (relatedClass, "RelatedClass");
@@ -1811,17 +1886,15 @@ TEST_F (SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ (0, relationshipClass->GetSource ().GetClasses ().size ());
     EXPECT_EQ (0, relationshipClass->GetTarget ().GetClasses ().size ());
 
-    relationshipClass->GetSource ().AddClass (*structClass);
-    EXPECT_EQ (1, relationshipClass->GetSource ().GetClasses ().size ());
     relationshipClass->GetSource ().AddClass (*class1);
-    EXPECT_EQ (2, relationshipClass->GetSource ().GetClasses ().size ());
+    EXPECT_EQ (1, relationshipClass->GetSource ().GetClasses ().size ());
 
     relationshipClass->GetTarget ().AddClass (*relatedClass);
     EXPECT_EQ (1, relationshipClass->GetTarget ().GetClasses ().size ());
     relationshipClass->GetTarget ().AddClass (*relatedClass);
     EXPECT_EQ (1, relationshipClass->GetTarget ().GetClasses ().size ());
-    relationshipClass->GetTarget ().AddClass (*structClass);
-    EXPECT_EQ (2, relationshipClass->GetTarget ().GetClasses ().size ());
+    relationshipClass->GetTarget().AddClass(*class2);
+    EXPECT_EQ(2, relationshipClass->GetTarget().GetClasses().size());
 
     EXPECT_EQ (0, relationshipClass->GetSource ().GetCardinality ().GetLowerLimit ());
     EXPECT_EQ (0, relationshipClass->GetTarget ().GetCardinality ().GetLowerLimit ());

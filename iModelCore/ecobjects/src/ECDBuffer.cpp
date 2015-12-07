@@ -878,7 +878,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassLayoutPtr    ClassLayout::Factory::DoBuildClassLayout ()
     { //ECLogger::Log->debugv (L"Building ClassLayout for ECClass %ls", m_ecClass->GetName().c_str());
-    m_underConstruction->m_isRelationshipClass = (dynamic_cast<ECRelationshipClassCP>(&m_ecClass) != NULL);
+    m_underConstruction->m_isRelationshipClass = m_ecClass.IsRelationshipClass();
 
     // Iterate through the ECProperties of the ECClass and build the layout
     AddProperties (m_ecClass, NULL, true);

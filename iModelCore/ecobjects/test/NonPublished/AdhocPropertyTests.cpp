@@ -16,10 +16,6 @@ using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-
-#define EXPECT_STATUS(STATUS, EXPR) EXPECT_EQ (ECObjectsStatus:: ## STATUS , (EXPR))
-#define EXPECT_SUCCESS(EXPR) EXPECT_STATUS (Success, (EXPR))
-
 static const WCharCP s_schemaXml =
     L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
     L"<ECSchema schemaName=\"AdhocSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -90,121 +86,121 @@ TEST_F (AdhocPropertyTest, AdhocInterface)
 
     // Name must be valid
     ECValue v;
-    EXPECT_STATUS (Error, adhocs.Add (nullptr, v));
-    EXPECT_STATUS (Error, adhocs.Add ("Not a Valid EC Name", v));
+    EXPECT_EQ(ECObjectsStatus::Error, adhocs.Add (nullptr, v));
+    EXPECT_EQ(ECObjectsStatus::Error, adhocs.Add ("Not a Valid EC Name", v));
     
     // Value must be null or primitive
     v.SetStruct (m_schema->GetClassP ("AdhocHolder")->GetDefaultStandaloneEnabler()->CreateInstance().get());
-    EXPECT_STATUS (DataTypeMismatch, adhocs.Add ("Struct", v));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, adhocs.Add ("Struct", v));
 
     // simple add
     v.SetUtf8CP ("one string", false);
-    EXPECT_STATUS (Success, adhocs.Add ("onestring", v, "ONE STRING"));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add ("onestring", v, "ONE STRING"));
     EXPECT_EQ (1, adhocs.GetCount());
     EXPECT_TRUE (adhocs.GetPropertyIndex (propIdx, "onestring"));
 
     //  -- test metadata
     bool isReadOnly;
-    EXPECT_SUCCESS (adhocs.IsReadOnly (isReadOnly, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.IsReadOnly (isReadOnly, propIdx));
     EXPECT_FALSE (isReadOnly);
 
     Utf8String str;
-    EXPECT_SUCCESS (adhocs.GetDisplayLabel (str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetDisplayLabel (str, propIdx));
     EXPECT_TRUE (str.Equals ("ONE STRING"));
     PrimitiveType type;
-    EXPECT_SUCCESS (adhocs.GetPrimitiveType (type, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetPrimitiveType (type, propIdx));
     EXPECT_TRUE (PRIMITIVETYPE_String == type);
-    EXPECT_SUCCESS (adhocs.GetUnitName (str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetUnitName (str, propIdx));
     EXPECT_TRUE (str.empty());
-    EXPECT_SUCCESS (adhocs.GetExtendedTypeName (str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetExtendedTypeName (str, propIdx));
     EXPECT_TRUE (str.empty());
 
     //  -- test value
-    EXPECT_SUCCESS (adhocs.GetValue (v, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue (v, propIdx));
     EXPECT_EQ (0, strcmp (v.GetUtf8CP(), "one string"));
 
     //  -- test value from instance
-    EXPECT_STATUS (PropertyNotFound, instance->GetValue (v, "onestring"));
-    EXPECT_SUCCESS (instance->GetValueOrAdhoc (v, "onestring"));    // include ad-hoc properties
+    EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->GetValue (v, "onestring"));
+    EXPECT_EQ(ECObjectsStatus::Success, instance->GetValueOrAdhoc (v, "onestring"));    // include ad-hoc properties
     EXPECT_EQ (0, strcmp (v.GetUtf8CP(), "one string"));
 
     // re-add the same property, which just sets the value of the existing adhoc value
     v.SetUtf8CP ("one string second time", false);
-    EXPECT_SUCCESS (adhocs.Add ("onestring", v, "One String"));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add ("onestring", v, "One String"));
     EXPECT_EQ (1, adhocs.GetCount());
     EXPECT_TRUE (adhocs.GetPropertyIndex (propIdx, "onestring"));
-    EXPECT_SUCCESS (adhocs.GetValue (v, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue (v, propIdx));
     EXPECT_EQ (0, strcmp (v.GetUtf8CP(), "one string second time"));
 
     // set the value
     v.SetUtf8CP ("set with property value", false);
-    EXPECT_SUCCESS (adhocs.SetValue (propIdx, v));
-    EXPECT_SUCCESS (adhocs.GetValue (v, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.SetValue (propIdx, v));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue (v, propIdx));
     EXPECT_EQ (0, strcmp ("set with property value", v.GetUtf8CP()));
 
     // add with additional optional metadata
     v.SetDouble (1234.0);
-    EXPECT_SUCCESS (adhocs.Add ("DoorHeight", v, "Door Height", "Meters", "Distance", true));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add ("DoorHeight", v, "Door Height", "Meters", "Distance", true));
     EXPECT_EQ (2, adhocs.GetCount());
     EXPECT_TRUE (adhocs.GetPropertyIndex (propIdx, "DoorHeight"));
-    EXPECT_SUCCESS (adhocs.GetName (str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetName (str, propIdx));
     EXPECT_TRUE (str.Equals ("DoorHeight"));
-    EXPECT_SUCCESS (adhocs.GetDisplayLabel (str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetDisplayLabel (str, propIdx));
     EXPECT_TRUE (str.Equals ("Door Height"));
-    EXPECT_SUCCESS (adhocs.GetPrimitiveType (type, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetPrimitiveType (type, propIdx));
     EXPECT_TRUE (PRIMITIVETYPE_Double == type);
-    EXPECT_SUCCESS (adhocs.GetExtendedTypeName (str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetExtendedTypeName (str, propIdx));
     EXPECT_TRUE (str.Equals ("Distance"));
-    EXPECT_SUCCESS (adhocs.GetUnitName (str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetUnitName (str, propIdx));
     EXPECT_TRUE (str.Equals ("Meters"));
-    EXPECT_SUCCESS (adhocs.IsReadOnly (isReadOnly, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.IsReadOnly (isReadOnly, propIdx));
     EXPECT_TRUE (isReadOnly);
-    EXPECT_SUCCESS (adhocs.GetValue (v, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue (v, propIdx));
     EXPECT_TRUE (v.IsDouble());
     EXPECT_EQ (v.GetDouble(), 1234.0);
 
     // Property is read-only
     v.SetDouble (5678.0);
     EXPECT_TRUE (instance->IsPropertyOrAdhocReadOnly ("DoorHeight"));
-    EXPECT_STATUS (PropertyNotFound, instance->SetValue ("DoorHeight", v));
-    EXPECT_STATUS (UnableToSetReadOnlyProperty, instance->SetValueOrAdhoc ("DoorHeight", v));
-    EXPECT_STATUS (PropertyNotFound, instance->ChangeValue ("DoorHeight", v));
-    EXPECT_STATUS (UnableToSetReadOnlyProperty, instance->ChangeValueOrAdhoc ("DoorHeight", v));
+    EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->SetValue ("DoorHeight", v));
+    EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->SetValueOrAdhoc ("DoorHeight", v));
+    EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->ChangeValue ("DoorHeight", v));
+    EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->ChangeValueOrAdhoc ("DoorHeight", v));
 
     // can set read-only property through adhoc API...probably?
-    EXPECT_SUCCESS (adhocs.SetValue (propIdx, v));
-    EXPECT_SUCCESS (adhocs.GetValue (v, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.SetValue (propIdx, v));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue (v, propIdx));
     EXPECT_EQ (v.GetDouble(), 5678.0);
 
     // not clear if managed implementation stores DateTime values in a format compatible with native. We want it to use the same
     // string representation it would use in ECInstanceXML
     v.SetDateTimeTicks (1234);
-    EXPECT_SUCCESS (adhocs.Add ("time", v));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add ("time", v));
     EXPECT_TRUE (adhocs.GetPropertyIndex (propIdx, "time"));
-    EXPECT_SUCCESS (adhocs.GetPrimitiveType (type, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetPrimitiveType (type, propIdx));
     EXPECT_TRUE (type == PRIMITIVETYPE_DateTime);
-    EXPECT_SUCCESS (adhocs.GetValue (v, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue (v, propIdx));
     EXPECT_EQ (v.GetDateTimeTicks(), 1234);
 
     // Test accessing ad-hocs using ECValueAccessor
     ECValueAccessor va;
-    EXPECT_STATUS (PropertyNotFound, ECValueAccessor::PopulateValueAccessor (va, instance->GetEnabler(), "onestring"));
-    EXPECT_STATUS (PropertyNotFound, ECValueAccessor::PopulateValueAccessor (va, *instance, "onestring", false));
-    EXPECT_SUCCESS (ECValueAccessor::PopulateValueAccessor (va, *instance, "onestring", true));
+    EXPECT_EQ(ECObjectsStatus::PropertyNotFound, ECValueAccessor::PopulateValueAccessor (va, instance->GetEnabler(), "onestring"));
+    EXPECT_EQ(ECObjectsStatus::PropertyNotFound, ECValueAccessor::PopulateValueAccessor (va, *instance, "onestring", false));
+    EXPECT_EQ(ECObjectsStatus::Success, ECValueAccessor::PopulateValueAccessor (va, *instance, "onestring", true));
 
-    EXPECT_SUCCESS (instance->SetValueUsingAccessor (va, ECValue ("set using accessor", false)));
-    EXPECT_SUCCESS (instance->GetValueUsingAccessor (v, va));
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValueUsingAccessor (va, ECValue ("set using accessor", false)));
+    EXPECT_EQ(ECObjectsStatus::Success, instance->GetValueUsingAccessor (v, va));
     EXPECT_EQ (0, strcmp (v.GetUtf8CP(), "set using accessor"));
 
     // Test removing an entry
     EXPECT_EQ (3, adhocs.GetCount());
-    EXPECT_SUCCESS (adhocs.Remove (propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Remove (propIdx));
     EXPECT_EQ (2, adhocs.GetCount());
     EXPECT_FALSE (adhocs.GetPropertyIndex (propIdx, "time"));
     EXPECT_TRUE (adhocs.GetPropertyIndex (propIdx, "onestring"));
 
     // Test removing all entries
-    EXPECT_SUCCESS (adhocs.Clear());
+    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Clear());
     EXPECT_EQ (0, adhocs.GetCount());
     }
 

@@ -231,17 +231,22 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
         else
             LOG.tracev("    Created ECEntityClass Stub: %s", ecClass->GetName().c_str());
 
-        Utf8String name = ecClass->GetName();
         ECObjectsStatus addStatus = schemaOut->AddClass(ecClass);
 
         if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)
             {
-            LOG.errorv("Duplicate class node for %s in schema %s.", name.c_str(), schemaOut->GetFullSchemaName().c_str());
+            LOG.errorv("Duplicate class node for %s in schema %s.", ecClass->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            delete ecClass;
+            ecClass = nullptr;
             return SchemaReadStatus::DuplicateTypeName;
             }
 
         if (ECObjectsStatus::Success != addStatus)
+            {
+            delete ecClass;
+            ecClass = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
         classes.push_back(make_bpair(ecClass, classNode));
         }
@@ -477,11 +482,17 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadEnumerationsFromXml(ECSchemaPtr& schem
         if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)
             {
             LOG.errorv("Duplicate enumeration node for %s in schema %s.", name.c_str(), schemaOut->GetFullSchemaName().c_str());
+            delete ecEnumeration;
+            ecEnumeration = nullptr;
             return SchemaReadStatus::DuplicateTypeName;
             }
 
         if (ECObjectsStatus::Success != addStatus)
+            {
+            delete ecEnumeration;
+            ecEnumeration = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
+            }
         }
     return status;
     }
@@ -777,9 +788,13 @@ SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaXmlWriter::Serialize()
+SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     {
-    m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    if (utf16)
+        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF16LE);
+    else
+        m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+
     Utf8PrintfString ns("%s.%d.%d", ECXML_URI, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());
 
