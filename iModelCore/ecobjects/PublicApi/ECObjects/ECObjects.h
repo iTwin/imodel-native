@@ -45,6 +45,7 @@ EC_TYPEDEFS(ECPropertyIterable);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
 EC_TYPEDEFS(ECEnumeration);
+EC_TYPEDEFS(ECEnumerator);
 EC_TYPEDEFS(ECEnumerationContainer);
 EC_TYPEDEFS(ECEntityClass);
 EC_TYPEDEFS(ECCustomAttributeClass);
