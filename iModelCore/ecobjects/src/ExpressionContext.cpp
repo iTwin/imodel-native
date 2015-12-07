@@ -1194,17 +1194,33 @@ void ValueSymbol::SetValue (ECValueCR value) { m_expressionValue = value; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertySymbol::PropertySymbol (Utf8CP name, RefCountedPtr<PropertySymbol::PropertyEvaluator> evaluator) 
-    : Symbol (name), m_evaluator (evaluator) 
+PropertySymbol::PropertySymbol(Utf8CP name, PropertySymbol::PropertyEvaluator& evaluator) 
+    : Symbol(name), m_valueEvaluator(&evaluator) 
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<PropertySymbol> PropertySymbol::Create (Utf8CP name, RefCountedPtr<PropertySymbol::PropertyEvaluator> evaluator)
+PropertySymbol::PropertySymbol(Utf8CP name, PropertySymbol::ContextEvaluator& evaluator) 
+    : Symbol(name), m_contextEvaluator(&evaluator) 
     {
-    return new PropertySymbol (name, evaluator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<PropertySymbol> PropertySymbol::Create(Utf8CP name, PropertySymbol::PropertyEvaluator& evaluator)
+    {
+    return new PropertySymbol(name, evaluator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<PropertySymbol> PropertySymbol::Create(Utf8CP name, PropertySymbol::ContextEvaluator& evaluator)
+    {
+    return new PropertySymbol(name, evaluator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1212,23 +1228,30 @@ RefCountedPtr<PropertySymbol> PropertySymbol::Create (Utf8CP name, RefCountedPtr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
-    if (primaryList.GetNumberOfOperators() > startIndex)
+    if (m_valueEvaluator.IsValid())
         {
-        ExpressionToken token = primaryList.GetOperation(startIndex);
-        if (ECN::TOKEN_Dot == token)
-            return ExpressionStatus::StructRequired;
+        if (primaryList.GetNumberOfOperators() > startIndex)
+            {
+            ExpressionToken token = primaryList.GetOperation(startIndex);
+            if (ECN::TOKEN_Dot == token)
+                return ExpressionStatus::StructRequired;
 
-        if (ECN::TOKEN_LParen == token)
-            return ExpressionStatus::MethodRequired;
+            if (ECN::TOKEN_LParen == token)
+                return ExpressionStatus::MethodRequired;
 
-        if (ECN::TOKEN_LeftBracket == token)
-            return ExpressionStatus::ArrayRequired;
+            if (ECN::TOKEN_LeftBracket == token)
+                return ExpressionStatus::ArrayRequired;
 
-        return ExpressionStatus::UnknownError;
+            return ExpressionStatus::UnknownError;
+            }
+
+        evalResult = m_valueEvaluator->_EvaluateProperty();
+        return ExpressionStatus::Success;
         }
 
-    evalResult = m_evaluator->EvaluateProperty ();
-    return ExpressionStatus::Success;
+    BeAssert(m_contextEvaluator.IsValid());
+    BeAssert(m_contextEvaluator->_GetContext().IsValid());
+    return m_contextEvaluator->_GetContext()->GetValue(evalResult, primaryList, globalContext, startIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
