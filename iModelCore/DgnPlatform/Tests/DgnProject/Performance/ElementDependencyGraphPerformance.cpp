@@ -231,6 +231,7 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
         m_db->CloseDb();
     }
 
+    //Copy the file and open that file
     BeFileName dgndbFilePath;
     BeTest::GetHost().GetOutputRoot(dgndbFilePath);
     dgndbFilePath.AppendToPath(destFileName);
@@ -241,6 +242,13 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
     m_db = DgnDb::OpenDgnDb(&status, dgndbFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
     ASSERT_TRUE(m_db.IsValid());
+
+    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
+    ASSERT_TRUE(defaultModel.IsValid());
+    GetDefaultModel().FillModel();
+
+    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
 }
 
 /*---------------------------------------------------------------------------------**//**

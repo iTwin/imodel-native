@@ -16,6 +16,8 @@ DGNPLATFORM_TYPEDEFS(DgnLockOwnership);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct DgnChangeSummary;
+
 //=======================================================================================
 //! Enumerates the types of objects that can be locked by a briefcase.
 // @bsiclass                                                      Paul.Connelly   10/15
@@ -302,6 +304,7 @@ public:
     };
 
     DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db, bool stopOnFirst); //!< @private
+    void FromChangeSummary(DgnChangeSummary const& changes, bool stopOnFirst=false); //!< @private
 };
 
 ENUM_IS_FLAGS(LockRequest::ResponseOptions);
@@ -328,7 +331,7 @@ private:
 protected:
     ILocksManager(DgnDbR db) : m_db(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly) = 0;
+    virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly, LockStatus* status) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
     virtual LockStatus _ReleaseLocks(DgnLockSet& locks) = 0;
@@ -347,7 +350,8 @@ public:
     DgnDbR GetDgnDb() const { return m_db; }
 
     //! Returns true if this briefcase owns all of the requested locks. Note this function may modify the LockRequest object.
-    bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false) { return _QueryLocksHeld(locks, localQueryOnly); }
+    //! This method always returns false if an error occurs while processing the query; check the optional LockStatus argument.
+    bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false, LockStatus* status=nullptr) { return _QueryLocksHeld(locks, localQueryOnly, status); }
 
     //! Attempts to acquire the specified locks. Note this function may modify the LockRequest object.
     LockRequest::Response AcquireLocks(LockRequestR locks) { return _AcquireLocks(locks); }
@@ -405,7 +409,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ILocksServer
 {
 protected:
-    virtual bool _QueryLocksHeld(LockRequestCR locks, DgnDbR db) = 0;
+    virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
     virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) = 0;
@@ -413,8 +417,8 @@ protected:
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
 public:
-    //! Returns true if all specified locks are held at or above the specified levels by the specified briefcase
-    bool QueryLocksHeld(LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(locks, db); }
+    //! Query whether all specified locks are held at or above the specified levels by the specified briefcase
+    LockStatus QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(held, locks, db); }
 
     //! Attempts to acquire the specified locks for the specified briefcase
     LockRequest::Response AcquireLocks(LockRequestCR locks, DgnDbR db) { return _AcquireLocks(locks, db); }
@@ -433,6 +437,27 @@ public:
 
     //! Queries the ownership of a lockable object
     LockStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) { return _QueryOwnership(ownership, lockId); }
+};
+
+//=======================================================================================
+//! Utilities for converting lock-related values to/from JSON.
+//! See also To/FromJson() methods on classes like LockRequest, LockableId, etc.
+// @bsiclass                                                      Paul.Connelly   12/15
+//=======================================================================================
+struct DgnLocksJson
+{
+public:
+    DGNPLATFORM_EXPORT static bool BriefcaseIdFromJson(BeSQLite::BeBriefcaseId& id, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool BeInt64IdFromJson(BeSQLite::BeInt64Id& id, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool LockLevelFromJson(LockLevel& level, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool LockStatusFromJson(LockStatus& status, JsonValueCR value);
+
+    DGNPLATFORM_EXPORT static void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
+    DGNPLATFORM_EXPORT static void BeInt64IdToJson(JsonValueR value, BeSQLite::BeInt64Id id);
+    DGNPLATFORM_EXPORT static void LockLevelToJson(JsonValueR value, LockLevel level);
+    DGNPLATFORM_EXPORT static void LockableTypeToJson(JsonValueR value, LockableType type);
+    DGNPLATFORM_EXPORT static void LockStatusToJson(JsonValueR value, LockStatus status);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

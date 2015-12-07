@@ -24,6 +24,7 @@ HANDLER_DEFINE_MEMBERS(TestItemHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
+HANDLER_DEFINE_MEMBERS(TestRequirementHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
@@ -309,6 +310,18 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestRequirementPtr TestRequirement::Create(DgnDbR db, DgnModelId modelId)
+    {
+    ElementHandlerR handler = TestRequirementHandler::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnElementPtr requirement = handler.Create(CreateParams(db, modelId, classId));
+    BeAssert(requirement.IsValid());
+    return static_cast<TestRequirementP>(requirement.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -440,6 +453,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
+    RegisterHandler(TestRequirementHandler::GetHandler());
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
     RegisterHandler(TestItemHandler::GetHandler());
 #endif
