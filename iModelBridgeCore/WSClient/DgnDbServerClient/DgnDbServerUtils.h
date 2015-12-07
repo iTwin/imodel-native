@@ -59,6 +59,21 @@ namespace ServerSchema
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
         }
+    static Utf8CP DeleteAllLocks = "DeleteAll";
+    }
+
+namespace Locks
+    {
+    static Utf8CP Description = "Description";
+    static Utf8CP Locks = "Locks";
+    static Utf8CP ObjectId = "LockableId";
+    namespace Object
+        {
+        static Utf8CP Id = "Id";
+        static Utf8CP Type = "Type";
+        }
+    static Utf8CP Level = "Level";
+    static Utf8CP Status = "Status";
     }
 
 namespace Db
