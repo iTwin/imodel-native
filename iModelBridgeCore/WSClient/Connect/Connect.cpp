@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 static ClientInfoPtr s_clientInfo;
 static IHttpHandlerPtr s_customHttpHandler;
 static bool s_connectInitialized = false;
+static bool s_tokenBasedAuthentication = false;
 
 /////////////////////////////////////////////////////////////
 // Authentication related stuff
@@ -32,7 +33,7 @@ static bool s_connectInitialized = false;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler)
+void Connect::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler, bool tokenBasedAuthentication)
     {
     BeAssert(nullptr != clientInfo);
 
@@ -41,6 +42,7 @@ void Connect::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHan
         s_clientInfo = clientInfo;
         s_customHttpHandler = customHttpHandler;
         s_connectInitialized = true;
+        s_tokenBasedAuthentication = tokenBasedAuthentication;
         }
     }
 
@@ -185,4 +187,12 @@ bool Connect::IsImsLoginRedirect(HttpResponseCR response)
         return false;
         }
     return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Connect::IsTokenBasedAuthorization()
+    {
+    return s_tokenBasedAuthentication;
     }
