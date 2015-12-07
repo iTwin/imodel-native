@@ -64,7 +64,9 @@ struct Queue
 private:
     BeConditionVariable m_cv;
     std::deque<TaskPtr> m_tasks;
-    Render::TaskPtr WaitForWork();
+    TaskPtr             m_currTask;
+
+    void WaitForWork();
     void Process();
     THREAD_MAIN_DECL Main(void*);
 

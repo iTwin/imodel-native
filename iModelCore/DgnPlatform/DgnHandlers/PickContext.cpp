@@ -1169,10 +1169,7 @@ void PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDept
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PickContext::_CheckStop()
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    return (WasAborted() ? true : AddAbortTest(m_output.GetDoneSearching() || (m_stopTester && m_stopTester->_CheckStopLocate())));
-#endif
-    return false;
+    return (WasAborted() ? true : AddAbortTest(GetDoneSearching() || (m_stopTester && m_stopTester->_CheckStopLocate())));
     }
 
 /*---------------------------------------------------------------------------------**//**
