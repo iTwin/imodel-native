@@ -2504,6 +2504,7 @@ private:
     BeXmlNodeR              m_xmlNode;
     ECSchemaCP              m_schema;
     ECInstanceReadContextR  m_context;
+    Utf8String              m_className;
 
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -2512,6 +2513,16 @@ public:
 InstanceXmlReader (ECInstanceReadContextR context, BeXmlNodeR xmlNode)
     : m_context (context), m_schema (NULL), m_xmlNode (xmlNode)
     {
+    m_className = m_xmlNode.GetName ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Basanta.Kharel                  10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceXmlReader (ECInstanceReadContextR context, BeXmlNodeR xmlNode, Utf8String className)
+    : m_context (context), m_schema (NULL), m_xmlNode (xmlNode)
+    {
+    m_className = className;
     }
 
 //-------------------------------------------------------------------------------------
@@ -2598,9 +2609,6 @@ InstanceReadStatus      ReadInstance (IECInstancePtr& ecInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInstance)
     {
-    // get the node name
-    Utf8String className (m_xmlNode.GetName());
-
     ECSchemaCP schema = NULL;
     
     // get the xmlns name, if there is one.
@@ -2620,9 +2628,9 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         }
 
     // see if we can find the class from the schema.
-    m_context.ResolveSerializedClassName (className, *schema);
+    m_context.ResolveSerializedClassName (m_className, *schema);
     ECClassCP    foundClass;
-    if (NULL == (foundClass = schema->GetClassCP (className.c_str())))
+    if (NULL == (foundClass = schema->GetClassCP (m_className.c_str ())))
         {
         ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
         SchemaKey key;
@@ -2630,20 +2638,20 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
             {
             ECSchemaReferenceList::const_iterator schemaIterator = refList.find (key);
             if (schemaIterator != refList.end())
-                foundClass = schemaIterator->second->GetClassCP (className.c_str());
+                foundClass = schemaIterator->second->GetClassCP (m_className.c_str ());
             }
         else
             {
             for (ECSchemaReferenceList::const_iterator schemaIterator = refList.begin(); schemaIterator != refList.end(); schemaIterator++)
                 {
-                if (NULL != (foundClass = schemaIterator->second->GetClassCP (className.c_str())))
+                if (NULL != (foundClass = schemaIterator->second->GetClassCP (m_className.c_str ())))
                     break;
                 }
             }
         }
     if (NULL == foundClass)
         {
-        LOG.errorv (L"Failed to find ECClass %ls in %ls", className.c_str(), m_fullSchemaName.c_str());
+        LOG.errorv (L"Failed to find ECClass %ls in %ls", m_className.c_str (), m_fullSchemaName.c_str ());
         return InstanceReadStatus::ECClassNotFound;
         }
 
@@ -2864,9 +2872,12 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             ECClassCP   thisMemberType;
             Utf8String  arrayMemberType (arrayValueNode->GetName());
             m_context.ResolveSerializedClassName (arrayMemberType, structMemberType->GetSchema());
-            if (NULL == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str(), structMemberType)))
+            if (NULL == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str (), structMemberType)))
+                {
+                LOG.warningv ("Incorrect structType found in %s.  Expected: %s  Found: %s",
+                    accessString.c_str (), structMemberType->GetName (), arrayValueNode->GetName ());
                 continue;
-
+                }
 
             InstanceReadStatus ixrStatus;
             if (InstanceReadStatus::Success != (ixrStatus = ReadStructArrayMember (*thisMemberType, ecInstance, accessString, index, *arrayValueNode)))
@@ -3237,7 +3248,155 @@ ECClassCP                       ValidateArrayStructType (Utf8CP typeFound, ECCla
     }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* In old unit schema some ecclass where treated as both struct and custom attribute
+* EC 3.0 doesnot allow this and it deserializes those classes to struct by default.
+* this class creates a customattribute for the same name with "Attr" suffix and loads 
+* the customattributes from xmlnode.
+* @bsistruct                                                    Basanta.Kharel   12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct NamedAttributeDeserializer : ICustomAttributeDeserializer
+    {
+    private:
+        Utf8String m_oldAttributeClassName;
+        Utf8String m_newClassName;
 
+        bool CreateCustomAttribute (ECSchemaReadContextR schemaContext, Utf8StringCR existingStructClassName, Utf8StringCR schemaName)
+            {
+            ECSchemaPtr schema = GetSchema (schemaName, schemaContext);
+            if (schema.IsNull ())
+                return false;
+
+            ECClassCP structClass = schema->GetClassCP (existingStructClassName.c_str ());
+            if (!structClass)
+                {
+                LOG.errorv ("Failed to inject customattribute class: \"%s\" to schema by copying struct class: \"%s\" which doesnot exist", m_newClassName, existingStructClassName);
+                BeAssert (false);
+                return false;
+                }
+
+            ECCustomAttributeClassP attributeClass = NULL;
+            if (ECObjectsStatus::Success != schema->CreateCustomAttributeClass (attributeClass, m_newClassName))
+                return false;
+
+            for (ECPropertyCP sourceProp : structClass->GetProperties (false))
+                {
+                ECPropertyP destProperty;
+                attributeClass->CopyProperty (destProperty, sourceProp, true);
+                }
+            return true;
+            }
+
+        Utf8String GetSchemaName (BeXmlNodeR xmlNode)
+            {
+            // get the xmlns name, if there is one.
+            Utf8CP  schemaName;
+            Utf8String fullSchemaName = "";
+            if (NULL != (schemaName = xmlNode.GetNamespace ()) && 0 != BeStringUtilities::Strnicmp (schemaName, ECXML_URI, strlen (ECXML_URI)))
+                {
+                fullSchemaName = schemaName;
+                }
+            return fullSchemaName;
+            }
+
+        bool ClassExists (Utf8StringCR className, Utf8StringCR schemaName, ECSchemaReadContextR schemaContext)
+            {
+            ECSchemaPtr schema = GetSchema (schemaName, schemaContext);
+            ECClassCP ecClass = schema->GetClassCP (className.c_str ());
+            if (ecClass)
+                return true;
+            return false;
+            }
+
+        ECSchemaPtr GetSchema (Utf8String schemaName, ECSchemaReadContextR context)
+            {
+            SchemaKey key;
+            if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName (key, schemaName.c_str ()))
+                return NULL;
+
+            return context.LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+            }
+        
+    public:
+
+        NamedAttributeDeserializer (Utf8String oldAttributeClassName, Utf8String newClassName)
+            :m_oldAttributeClassName (oldAttributeClassName), m_newClassName (newClassName)
+            {
+            }
+
+        InstanceReadStatus LoadCustomAttributeFromString (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context, ECSchemaReadContextR schemaContext, IECCustomAttributeContainerR customAttributeContainer)
+            {
+            Utf8String schemaName = GetSchemaName (xmlNode);
+
+            bool attributeExists = true;
+            if (!ClassExists (m_newClassName, schemaName, schemaContext))
+                attributeExists = CreateCustomAttribute (schemaContext, m_oldAttributeClassName, schemaName);
+
+            if (!attributeExists)
+                return InstanceReadStatus::BadElement;
+
+            InstanceXmlReader   reader (context, xmlNode, m_newClassName);
+            return reader.ReadInstance (ecInstance);
+            }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Basanta.Kharel                 12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomAttributeDeserializerManager::CustomAttributeDeserializerManager ()
+    {
+    // we could add needed deserializers here.
+    m_deserializers["UnitSpecification"] = new NamedAttributeDeserializer ("UnitSpecification", "UnitSpecificationAttr");
+    m_deserializers["DisplayUnitSpecification"] = new NamedAttributeDeserializer ("DisplayUnitSpecification", "DisplayUnitSpecificationAttr");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                    Basanta.Kharel                 12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomAttributeDeserializerManager::~CustomAttributeDeserializerManager ()
+    {
+    m_deserializers.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                    Basanta.Kharel                 12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus            CustomAttributeDeserializerManager::AddCustomDeserializer (Utf8CP deserializerName, ICustomAttributeDeserializerP deserializer)
+    {
+    if (GetCustomDeserializer (deserializerName))
+        return ERROR;
+
+    m_deserializers[Utf8String(deserializerName)] = deserializer;
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                    Basanta.Kharel                 12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomAttributeDeserializerManagerR                   CustomAttributeDeserializerManager::GetManager ()
+    {
+    static CustomAttributeDeserializerManagerP   s_deserializerManager = NULL;
+
+    if (NULL == s_deserializerManager)
+        s_deserializerManager = new CustomAttributeDeserializerManager ();
+        
+    return *s_deserializerManager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod                                    Basanta.Kharel                 12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ICustomAttributeDeserializerP                      CustomAttributeDeserializerManager::GetCustomDeserializer (Utf8CP deserializerName) const
+    {
+    if (m_deserializers.empty())
+        return NULL;
+
+    AttributeDeserializerMap::const_iterator it = m_deserializers.find (deserializerName);
+    if (it == m_deserializers.end())
+        return NULL;
+
+    return it->second;
+    }
 
 // =====================================================================================
 // InstanceXMLWriter class

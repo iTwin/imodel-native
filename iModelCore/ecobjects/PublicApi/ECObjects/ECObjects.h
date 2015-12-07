@@ -77,6 +77,8 @@ EC_TYPEDEFS(ECDBuffer);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
+EC_TYPEDEFS (ICustomAttributeDeserializer);
+EC_TYPEDEFS (CustomAttributeDeserializerManager);
 EC_TYPEDEFS (ECInstanceIterable);
 EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);

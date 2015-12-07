@@ -45,6 +45,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<Utf8String, ICustomECStructSerializerP> NameSerializerMap;
 
+//////////////////////////////////////////////////////////////////////////////////
+//  The following definitions are used to allow a attribute property to generate a
+//  instance from  XML This was required to support Units in EC3.0 
+//////////////////////////////////////////////////////////////////////////////////
+typedef bmap<Utf8String, ICustomAttributeDeserializerP> AttributeDeserializerMap;
+
 //! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
 //! to generate a custom XML representation of itself.
 struct ICustomECStructSerializer
@@ -99,6 +105,40 @@ public:
 };
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
+
+//! Interface for a custom ECSCustomAttribute Deserializer.
+struct ICustomAttributeDeserializer
+    {
+    //! Given an Xml string, deserializes the CustomAttribute and sets the value on the instance
+    //@remarks set the instance to null if it should not be instantiated as customattribute
+    virtual InstanceReadStatus            LoadCustomAttributeFromString (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context, ECSchemaReadContextR schemaContext, IECCustomAttributeContainerR customAttributeContainer) = 0;
+    };
+
+//! Used to manage multiple custom attribute deserializers
+struct CustomAttributeDeserializerManager
+    {
+    private:
+        AttributeDeserializerMap   m_deserializers;
+
+        CustomAttributeDeserializerManager ();
+        ~CustomAttributeDeserializerManager ();
+
+    public:
+
+        //! Given an deserializerName and an instance, returns the ICustomAttributeDeserializer
+        //! @param[in] deserializerName   name of the deserializer
+        //! @returns An ICustomAttributeDeserializer pointer if one has been added for this particular deserializerName, NULL otherwise
+        ECOBJECTS_EXPORT  ICustomAttributeDeserializerP GetCustomDeserializer (Utf8CP deserializerName) const;
+
+        //! Returns the static CustomStructDeserializerManager
+        ECOBJECTS_EXPORT  static CustomAttributeDeserializerManagerR GetManager ();
+
+        //! Adds a CustomAttributeDeserializer to the manager with the given serializer name
+        //! @param[in] deserializerName   Name of the custom deserializer.  
+        //! @param[in] deserializer   The ICustomAttributeDeserializer to add
+        ECOBJECTS_EXPORT  BentleyStatus                         AddCustomDeserializer (Utf8CP deserializerName, ICustomAttributeDeserializerP deserializer);
+    };
+
 //=======================================================================================
 //! An IECInstance represents an instance of an ECClass.
 //!

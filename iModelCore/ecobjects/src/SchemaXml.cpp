@@ -231,7 +231,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
         else
             LOG.tracev("    Created ECEntityClass Stub: %s", ecClass->GetName().c_str());
 
-        Utf8StringCR name = ecClass->GetName();
+        Utf8String name = ecClass->GetName();
         ECObjectsStatus addStatus = schemaOut->AddClass(ecClass);
 
         if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)

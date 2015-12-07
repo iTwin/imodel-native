@@ -550,14 +550,18 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
             IECInstancePtr  customAttributeInstance;
             Utf8String         customAttributeXmlString;
             customAttributeClassNode->GetXmlString (customAttributeXmlString);
-            InstanceReadStatus thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
+            InstanceReadStatus thisStatus = InstanceReadStatus::Success;
+            ICustomAttributeDeserializerP CustomAttributeDeserializerP = CustomAttributeDeserializerManager::GetManager ().GetCustomDeserializer (customAttributeClassNode->GetName());
+            if (CustomAttributeDeserializerP)
+                thisStatus = CustomAttributeDeserializerP->LoadCustomAttributeFromString (customAttributeInstance, *customAttributeClassNode, *context, schemaContext, *this);
+            else
+                thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
                 // skip this attribute, but continue processing any remaining.
                 if (InstanceReadStatus::Success == status)
                     status = thisStatus;
                 }
-
             if (customAttributeInstance.IsValid())
                 SetCustomAttribute (*customAttributeInstance);
             }

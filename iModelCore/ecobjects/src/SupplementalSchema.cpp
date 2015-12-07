@@ -673,7 +673,7 @@ Utf8StringCP consolidatedSchemaFullName
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
         if (customAttribute->GetClass().GetSchema().GetName().EqualsI("Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
             {
-            if (customAttribute->GetClass().GetName().EqualsI("UnitSpecification"))
+            if (customAttribute->GetClass().GetName().EqualsI("UnitSpecificationAttr")) //UnitSpecificationAttr is the new name for the attribute to make it not clash with UnitSpecification which is only a struct now.
                 status = MergeUnitSpecificationCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
             else if (customAttribute->GetClass().GetName().EqualsI("UnitSpecifications"))
                 status = MergeUnitSpecificationsCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
