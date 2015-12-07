@@ -2467,8 +2467,8 @@ private:
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
 
-    ECObjectsStatus                     AddClass (ECClassP pClass, bool deleteClassIfDuplicate = true);
-    ECObjectsStatus                     AddEnumeration(ECEnumerationP& pEnumeration);
+    ECObjectsStatus                     AddClass (ECClassP pClass);
+    ECObjectsStatus                     AddEnumeration(ECEnumerationP pEnumeration);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
