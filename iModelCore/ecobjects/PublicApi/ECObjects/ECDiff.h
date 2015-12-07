@@ -188,6 +188,7 @@ enum MergeStatus
     MERGESTATUS_Failed,
     MERGESTATUS_ErrorCreatingMergeSchema,
     MERGESTATUS_ErrorClassNotFound,
+    MERGESTATUS_ErrorClassTypeMismatch,
     MERGESTATUS_ErrorMergeClassAlreadyExist,
     MERGESTATUS_ErrorCreatingCopyOfCustomAttribute,
     MERGESTATUS_ErrorParsingRelationshipStrengthType,

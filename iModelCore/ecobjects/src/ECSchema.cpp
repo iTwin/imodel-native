@@ -688,15 +688,14 @@ ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
     ECClassP pClass = &ecClass;
     m_classMap.erase (iter);
     ECObjectsStatus renameStatus = ecClass.SetName (newName);
-    ECObjectsStatus addStatus = AddClass (pClass, false);
+    ECObjectsStatus addStatus = AddClass (pClass);
     return ECObjectsStatus::Success != renameStatus ? renameStatus : addStatus;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
+ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -705,13 +704,6 @@ ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
     if (enumerationIterator != m_enumerationMap.end())
         {
         LOG.warningv("Cannot create class '%s' because an enumeration with that name already exists in the schema", pClass->GetName().c_str());
-        if (deleteClassIfDuplicate)
-            {
-            // preserving weird existing behavior, added option to not do this...
-            delete pClass;
-            pClass = nullptr;
-            }
-
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
@@ -720,13 +712,6 @@ ECObjectsStatus ECSchema::AddClass(T& pClass, bool deleteClassIfDuplicate)
     if (resultPair.second == false)
         {
         LOG.warningv ("Cannot create class '%s' because it already exists in the schema", pClass->GetName().c_str());
-        if (deleteClassIfDuplicate)
-            {
-            // preserving weird existing behavior, added option to not do this...
-            delete pClass;
-            pClass = nullptr;
-            }
-
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
     //DebugDump(); wprintf(L"\n");
@@ -749,7 +734,13 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
         return status;
         }
 
-    return AddClass (pClass);
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        {
+        delete pClass;
+        pClass = nullptr;
+        }
+    
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -768,7 +759,13 @@ ECObjectsStatus ECSchema::CreateStructClass (ECStructClassP& pClass, Utf8StringC
         return status;
         }
 
-    return AddClass (pClass);
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        {
+        delete pClass;
+        pClass = nullptr;
+        }
+    
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -787,7 +784,13 @@ ECObjectsStatus ECSchema::CreateCustomAttributeClass (ECCustomAttributeClassP& p
         return status;
         }
 
-    return AddClass (pClass);
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        {
+        delete pClass;
+        pClass = nullptr;
+        }
+    
+    return status;
     }
 
 
@@ -962,14 +965,21 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
         return status;
         }
 
-    return AddEnumeration(ecEnumeration);
+    status = AddEnumeration(ecEnumeration);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecEnumeration;
+        ecEnumeration = nullptr;
+        }
+
+    return status;
     }
 
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP& pEnumeration)
+ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -978,8 +988,6 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP& pEnumeration)
     if (classIterator != m_classMap.end())
         {
         LOG.warningv("Cannot create enumeration '%s' because a class with that name already exists in the schema", pEnumeration->GetName().c_str());
-        delete pEnumeration;
-        pEnumeration = nullptr;
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
@@ -987,8 +995,6 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP& pEnumeration)
     if (resultPair.second == false)
         {
         LOG.warningv("Cannot create enumeration '%s' because it already exists in the schema", pEnumeration->GetName().c_str());
-        delete pEnumeration;
-        pEnumeration = nullptr;
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
