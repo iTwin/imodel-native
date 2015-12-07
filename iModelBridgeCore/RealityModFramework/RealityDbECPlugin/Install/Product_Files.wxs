@@ -101,6 +101,9 @@
   </Fragment>
   <Fragment>
     <ComponentGroup Id ="CG_BentleyFiles">
+      <Component Id="BaseGeoCoordG.dll" Directory="bin" Guid="{5A79AEE3-8957-4B8C-9BB3-896EF2DE8986}">
+        <File Id="BaseGeoCoordG.dll" KeyPath="yes" Source="$(var.ProductDir)BaseGeoCoordG.dll" />
+      </Component>
       <Component Id="BeCurlG.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
         <File Id="BeCurlG.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurlG.dll" />
       </Component>
@@ -116,6 +119,9 @@
       <Component Id="BentleyG.dll" Directory="bin" Guid="{761EFBFA-783D-4641-BFCD-D3BC2F465F4B}">
         <File Id="BentleyG.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyG.dll" />
       </Component>
+      <Component Id="BentleyGeomG.dll" Directory="bin" Guid="{66A8B1B7-650F-4BAA-B91C-A978420299E7}">
+        <File Id="BentleyGeomG.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyGeomG.dll" />
+      </Component>
       <Component Id="BeOpenSSLG.dll" Directory="bin" Guid="{335ABA3A-4B35-4FC0-82AC-5D3B69E4C5DA}">
         <File Id="BeOpenSSLG.dll" KeyPath="yes" Source="$(var.ProductDir)BeOpenSSLG.dll" />
       </Component>
@@ -127,6 +133,9 @@
       </Component>
       <Component Id="ImagePPG.dll" Directory="bin" Guid="{ADB2DF63-BB0F-463C-941A-05A8DC96CF5E}">
         <File Id="ImagePPG.dll" KeyPath="yes" Source="$(var.ProductDir)ImagePPG.dll" />
+      </Component>
+      <Component Id="NCSEcw.dll" Directory="bin" Guid="{20521954-2999-45EC-B45D-93F8DECB776B}">
+        <File Id="NCSEcw.dll" KeyPath="yes" Source="$(var.ProductDir)NCSEcw.dll" />
       </Component>
       <Component Id="RealityPackage.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
         <File Id="RealityPackage.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPackage.dll" />
