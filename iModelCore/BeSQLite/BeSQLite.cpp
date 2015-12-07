@@ -212,7 +212,6 @@ bool StatementDiagnostics::s_isEnabled = true;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------
-//static
 void StatementDiagnostics::Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile, bool suppressDiagnostics)
     {
     if (!s_isEnabled || suppressDiagnostics)
@@ -256,7 +255,6 @@ void StatementDiagnostics::Log(Utf8CP sql, DbResult prepareStat, DbFileCR dbFile
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------
-//static
 void StatementDiagnostics::LogComment(Utf8CP comment)
     {
     if (!s_isEnabled || Utf8String::IsNullOrEmpty(comment))
@@ -278,7 +276,6 @@ void StatementDiagnostics::LogComment(Utf8CP comment)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------
-//static
 NativeLogging::ILogger* StatementDiagnostics::GetLoggerIfEnabledForSeverity(WCharCP loggerName)
     {
     NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger(loggerName);
@@ -293,7 +290,6 @@ NativeLogging::ILogger* StatementDiagnostics::GetLoggerIfEnabledForSeverity(WCha
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
 //---------------------------------------------------------------------------------------
-//static
 bool StatementDiagnostics::ExcludeSqlFromExplainQuery(Utf8CP sql)
     {
     return BeStringUtilities::Strnicmp("explain", sql, 7) == 0 ||
@@ -397,7 +393,7 @@ void SchemaVersion::FromJson(Utf8CP val)
 DbResult Statement::TryPrepare(DbCR db, Utf8CP sql)
     {
     DbFileCR dbFile = *db.m_dbFile;
-    const DbResult stat = DoPrepare(dbFile, sql);
+    DbResult stat = DoPrepare(dbFile, sql);
     LOG_STATEMENT_DIAGNOSTICS(sql, stat, dbFile, false);
     return stat;
     }
@@ -418,7 +414,7 @@ DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostic
         return BE_SQLITE_ERROR_NoTxnActive;
         }
 
-    const DbResult stat = DoPrepare(dbFile, sql);
+    DbResult stat = DoPrepare(dbFile, sql);
     if (stat != BE_SQLITE_OK)
         {
         Utf8String lastError = dbFile.GetLastError(nullptr); // keep on separate line for debugging
@@ -4287,14 +4283,14 @@ DbResult RTreeAcceptFunction::Tester::StepRTree(Statement& stmt)
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
 static int zfsZlibBound(void *pCtx, int nByte){return compressBound(nByte);}
-static int zfsZlibCompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsZlibCompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
     {
     uLongf n = *pnDest;
     int rc = compress((Bytef*)aDest, &n,(Bytef*)aSrc, nSrc);
     *pnDest = n;
     return (rc==Z_OK ? SQLITE_OK : SQLITE_ERROR);
     }
-static int zfsZlibUncompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsZlibUncompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
     {
     uLongf n = *pnDest;
     int rc = uncompress((Bytef*)aDest, &n, (Bytef*)aSrc, nSrc);
@@ -4318,13 +4314,13 @@ static Utf8CP loadZlibVfs()
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
 static int zfsSnappyBound(void *pCtx, int nByte){return (int) snappy::MaxCompressedLength(nByte);}
-static int zfsSnappyCompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsSnappyCompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
     {
     snappy::RawCompress(aSrc, nSrc, aDest, (unsigned int*) pnDest);
     return SQLITE_OK;
     }
 
-static int zfsSnappyUncompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsSnappyUncompress(void *pCtx, char *aDest, int *pnDest, const char *aSrc, int nSrc)
     {
     size_t outSize;
     snappy::GetUncompressedLength(aSrc, nSrc, &outSize);

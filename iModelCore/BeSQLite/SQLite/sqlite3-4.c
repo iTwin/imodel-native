@@ -1890,9 +1890,10 @@ SQLITE_PRIVATE int sqlite3CodeSubselect(
 
 #ifndef SQLITE_OMIT_EXPLAIN
   if( pParse->explain==2 ){
-    char *zMsg = sqlite3MPrintf(
-        pParse->db, "EXECUTE %s%s SUBQUERY %d", jmpIfDynamic>=0?"":"CORRELATED ",
-        pExpr->op==TK_IN?"LIST":"SCALAR", pParse->iNextSelectId
+    char *zMsg = sqlite3MPrintf(pParse->db, "EXECUTE %s%s SUBQUERY %d",
+        jmpIfDynamic>=0?"":"CORRELATED ",
+        pExpr->op==TK_IN?"LIST":"SCALAR",
+        pParse->iNextSelectId
     );
     sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
   }
@@ -3818,7 +3819,7 @@ SQLITE_PRIVATE int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     }
     return 2;
   }
-  if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken ){
+  if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
     if( pA->op==TK_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
     }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
@@ -6063,7 +6064,7 @@ static void analyzeOneTable(
     /* Do not gather statistics on views or virtual tables */
     return;
   }
-  if( sqlite3_strnicmp(pTab->zName, "sqlite_", 7)==0 ){
+  if( sqlite3_strlike("sqlite_%", pTab->zName, 0)==0 ){
     /* Do not gather statistics on system tables */
     return;
   }
@@ -8193,12 +8194,7 @@ SQLITE_PRIVATE Table *sqlite3LocateTable(
     }
     pParse->checkSchema = 1;
   }
-#if SQLITE_USER_AUTHENTICATION
-  else if( pParse->db->auth.authLevel<UAUTH_User ){
-    sqlite3ErrorMsg(pParse, "user not authenticated");
-    p = 0;
-  }
-#endif
+
   return p;
 }
 
@@ -8866,18 +8862,19 @@ begin_table_error:
   return;
 }
 
-/*
-** This macro is used to compare two strings in a case-insensitive manner.
-** It is slightly faster than calling sqlite3StrICmp() directly, but
-** produces larger code.
-**
-** WARNING: This macro is not compatible with the strcmp() family. It
-** returns true if the two strings are equal, otherwise false.
+/* Set properties of a table column based on the (magical)
+** name of the column.
 */
-#define STRICMP(x, y) (\
-sqlite3UpperToLower[*(unsigned char *)(x)]==   \
-sqlite3UpperToLower[*(unsigned char *)(y)]     \
-&& sqlite3StrICmp((x)+1,(y)+1)==0 )
+SQLITE_PRIVATE void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
+#if SQLITE_ENABLE_HIDDEN_COLUMNS
+  if( sqlite3_strnicmp(pCol->zName, "__hidden__", 10)==0 ){
+    pCol->colFlags |= COLFLAG_HIDDEN;
+  }else if( pTab && pCol!=pTab->aCol && (pCol[-1].colFlags & COLFLAG_HIDDEN) ){
+    pTab->tabFlags |= TF_OOOHidden;
+  }
+#endif
+}
+
 
 /*
 ** Add a new column to the table currently being constructed.
@@ -8903,7 +8900,7 @@ SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName){
   z = sqlite3NameFromToken(db, pName);
   if( z==0 ) return;
   for(i=0; i<p->nCol; i++){
-    if( STRICMP(z, p->aCol[i].zName) ){
+    if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
       sqlite3DbFree(db, z);
       return;
@@ -8921,6 +8918,7 @@ SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
+  sqlite3ColumnPropertiesFromName(p, pCol);
  
   /* If there is no type specified, columns have the default affinity
   ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will
@@ -9089,6 +9087,30 @@ SQLITE_PRIVATE void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
 }
 
 /*
+** Backwards Compatibility Hack:
+** 
+** Historical versions of SQLite accepted strings as column names in
+** indexes and PRIMARY KEY constraints and in UNIQUE constraints.  Example:
+**
+**     CREATE TABLE xyz(a,b,c,d,e,PRIMARY KEY('a'),UNIQUE('b','c' COLLATE trim)
+**     CREATE INDEX abc ON xyz('c','d' DESC,'e' COLLATE nocase DESC);
+**
+** This is goofy.  But to preserve backwards compatibility we continue to
+** accept it.  This routine does the necessary conversion.  It converts
+** the expression given in its argument from a TK_STRING into a TK_ID
+** if the expression is just a TK_STRING with an optional COLLATE clause.
+** If the epxression is anything other than TK_STRING, the expression is
+** unchanged.
+*/
+static void sqlite3StringToId(Expr *p){
+  if( p->op==TK_STRING ){
+    p->op = TK_ID;
+  }else if( p->op==TK_COLLATE && p->pLeft->op==TK_STRING ){
+    p->pLeft->op = TK_ID;
+  }
+}
+
+/*
 ** Designate the PRIMARY KEY for the table.  pList is a list of names 
 ** of columns that form the primary key.  If pList is NULL, then the
 ** most recently added column of the table is the primary key.
@@ -9134,6 +9156,7 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
     for(i=0; i<nTerm; i++){
       Expr *pCExpr = sqlite3ExprSkipCollate(pList->a[i].pExpr);
       assert( pCExpr!=0 );
+      sqlite3StringToId(pCExpr);
       if( pCExpr->op==TK_ID ){
         const char *zCName = pCExpr->u.zToken;
         for(iCol=0; iCol<pTab->nCol; iCol++){
@@ -10673,30 +10696,6 @@ SQLITE_PRIVATE Index *sqlite3AllocateIndexObject(
 }
 
 /*
-** Backwards Compatibility Hack:
-** 
-** Historical versions of SQLite accepted strings as column names in
-** indexes and PRIMARY KEY constraints and in UNIQUE constraints.  Example:
-**
-**     CREATE TABLE xyz(a,b,c,d,e,PRIMARY KEY('a'),UNIQUE('b','c' COLLATE trim)
-**     CREATE INDEX abc ON xyz('c','d' DESC,'e' COLLATE nocase DESC);
-**
-** This is goofy.  But to preserve backwards compatibility we continue to
-** accept it.  This routine does the necessary conversion.  It converts
-** the expression given in its argument from a TK_STRING into a TK_ID
-** if the expression is just a TK_STRING with an optional COLLATE clause.
-** If the epxression is anything other than TK_STRING, the expression is
-** unchanged.
-*/
-static void sqlite3StringToId(Expr *p){
-  if( p->op==TK_STRING ){
-    p->op = TK_ID;
-  }else if( p->op==TK_COLLATE && p->pLeft->op==TK_STRING ){
-    p->pLeft->op = TK_ID;
-  }
-}
-
-/*
 ** Create a new index for an SQL table.  pName1.pName2 is the name of the index 
 ** and pTblList is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -11690,7 +11689,7 @@ SQLITE_PRIVATE void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pI
 ** table-valued-function.
 */
 SQLITE_PRIVATE void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
-  if( p && pList ){
+  if( p ){
     struct SrcList_item *pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
@@ -12835,7 +12834,8 @@ SQLITE_PRIVATE void sqlite3MaterializeView(
     assert( pFrom->a[0].pOn==0 );
     assert( pFrom->a[0].pUsing==0 );
   }
-  pSel = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
+  pSel = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 
+                          SF_IncludeHidden, 0, 0);
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
   sqlite3Select(pParse, pSel, &dest);
   sqlite3SelectDelete(db, pSel);
@@ -14397,6 +14397,13 @@ SQLITE_API int SQLITE_STDCALL sqlite3_strglob(const char *zGlobPattern, const ch
 }
 
 /*
+** The sqlite3_strlike() interface.
+*/
+SQLITE_API int SQLITE_STDCALL sqlite3_strlike(const char *zPattern, const char *zStr, unsigned int esc){
+  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc)==0;
+}
+
+/*
 ** Count the number of times that the LIKE operator (or GLOB which is
 ** just a variation of LIKE) gets called.  This is used for testing
 ** only.
@@ -14428,6 +14435,17 @@ static void likeFunc(
   int nPat;
   sqlite3 *db = sqlite3_context_db_handle(context);
 
+#ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB
+   || sqlite3_value_type(argv[1])==SQLITE_BLOB
+  ){
+#ifdef SQLITE_TEST
+    sqlite3_like_count++;
+#endif
+    sqlite3_result_int(context, 0);
+    return;
+  }
+#endif
   zB = sqlite3_value_text(argv[0]);
   zA = sqlite3_value_text(argv[1]);
 
@@ -17581,10 +17599,8 @@ SQLITE_PRIVATE void sqlite3Insert(
   /* Make sure the number of columns in the source data matches the number
   ** of columns to be inserted into the table.
   */
-  if( IsVirtual(pTab) ){
-    for(i=0; i<pTab->nCol; i++){
-      nHidden += (IsHiddenColumn(&pTab->aCol[i]) ? 1 : 0);
-    }
+  for(i=0; i<pTab->nCol; i++){
+    nHidden += (IsHiddenColumn(&pTab->aCol[i]) ? 1 : 0);
   }
   if( pColumn==0 && nColumn && nColumn!=(pTab->nCol-nHidden) ){
     sqlite3ErrorMsg(pParse, 
@@ -17680,15 +17696,14 @@ SQLITE_PRIVATE void sqlite3Insert(
 
     /* Create the new column data
     */
-    for(i=0; i<pTab->nCol; i++){
-      if( pColumn==0 ){
-        j = i;
-      }else{
+    for(i=j=0; i<pTab->nCol; i++){
+      if( pColumn ){
         for(j=0; j<pColumn->nId; j++){
           if( pColumn->a[j].idx==i ) break;
         }
       }
-      if( (!useTempTable && !pList) || (pColumn && j>=pColumn->nId) ){
+      if( (!useTempTable && !pList) || (pColumn && j>=pColumn->nId)
+            || (pColumn==0 && IsOrdinaryHiddenColumn(&pTab->aCol[i])) ){
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regCols+i+1);
       }else if( useTempTable ){
         sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, regCols+i+1); 
@@ -17696,6 +17711,7 @@ SQLITE_PRIVATE void sqlite3Insert(
         assert( pSelect==0 ); /* Otherwise useTempTable is true */
         sqlite3ExprCodeAndCache(pParse, pList->a[j].pExpr, regCols+i+1);
       }
+      if( pColumn==0 && !IsOrdinaryHiddenColumn(&pTab->aCol[i]) ) j++;
     }
 
     /* If this is an INSERT on a view with an INSTEAD OF INSERT trigger,
@@ -17779,7 +17795,6 @@ SQLITE_PRIVATE void sqlite3Insert(
       }
       if( pColumn==0 ){
         if( IsHiddenColumn(&pTab->aCol[i]) ){
-          assert( IsVirtual(pTab) );
           j = -1;
           nHidden++;
         }else{
@@ -18730,7 +18745,7 @@ static int xferOptimization(
     return 0;   /* The result set must have exactly one column */
   }
   assert( pEList->a[0].pExpr );
-  if( pEList->a[0].pExpr->op!=TK_ALL ){
+  if( pEList->a[0].pExpr->op!=TK_ASTERISK ){
     return 0;   /* The result set must be the special operator "*" */
   }
 
@@ -18766,6 +18781,13 @@ static int xferOptimization(
   for(i=0; i<pDest->nCol; i++){
     Column *pDestCol = &pDest->aCol[i];
     Column *pSrcCol = &pSrc->aCol[i];
+#ifdef SQLITE_ENABLE_HIDDEN_COLUMNS
+    if( (db->flags & SQLITE_Vacuum)==0 
+     && (pDestCol->colFlags | pSrcCol->colFlags) & COLFLAG_HIDDEN 
+    ){
+      return 0;    /* Neither table may have __hidden__ columns */
+    }
+#endif
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
@@ -19395,6 +19417,8 @@ struct sqlite3_api_routines {
   /* Version 3.9.0 and later */
   unsigned int (*value_subtype)(sqlite3_value*);
   void (*result_subtype)(sqlite3_context*,unsigned int);
+  /* Version 3.10.0 and later */
+  int (*strlike)(const char*,const char*,unsigned int);
 };
 
 /*
@@ -19634,6 +19658,8 @@ struct sqlite3_api_routines {
 /* Version 3.9.0 and later */
 #define sqlite3_value_subtype          sqlite3_api->value_subtype
 #define sqlite3_result_subtype         sqlite3_api->result_subtype
+/* Version 3.10.0 and later */
+#define sqlite3_strlike                sqlite3_api->strlike
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
@@ -20459,43 +20485,44 @@ SQLITE_PRIVATE void sqlite3AutoLoadExtensions(sqlite3 *db){
 #define PragTyp_FLAG                           2
 #define PragTyp_BUSY_TIMEOUT                   3
 #define PragTyp_CACHE_SIZE                     4
-#define PragTyp_CASE_SENSITIVE_LIKE            5
-#define PragTyp_COLLATION_LIST                 6
-#define PragTyp_COMPILE_OPTIONS                7
-#define PragTyp_DATA_STORE_DIRECTORY           8
-#define PragTyp_DATABASE_LIST                  9
-#define PragTyp_DEFAULT_CACHE_SIZE            10
-#define PragTyp_ENCODING                      11
-#define PragTyp_FOREIGN_KEY_CHECK             12
-#define PragTyp_FOREIGN_KEY_LIST              13
-#define PragTyp_INCREMENTAL_VACUUM            14
-#define PragTyp_INDEX_INFO                    15
-#define PragTyp_INDEX_LIST                    16
-#define PragTyp_INTEGRITY_CHECK               17
-#define PragTyp_JOURNAL_MODE                  18
-#define PragTyp_JOURNAL_SIZE_LIMIT            19
-#define PragTyp_LOCK_PROXY_FILE               20
-#define PragTyp_LOCKING_MODE                  21
-#define PragTyp_PAGE_COUNT                    22
-#define PragTyp_MMAP_SIZE                     23
-#define PragTyp_PAGE_SIZE                     24
-#define PragTyp_SECURE_DELETE                 25
-#define PragTyp_SHRINK_MEMORY                 26
-#define PragTyp_SOFT_HEAP_LIMIT               27
-#define PragTyp_STATS                         28
-#define PragTyp_SYNCHRONOUS                   29
-#define PragTyp_TABLE_INFO                    30
-#define PragTyp_TEMP_STORE                    31
-#define PragTyp_TEMP_STORE_DIRECTORY          32
-#define PragTyp_THREADS                       33
-#define PragTyp_WAL_AUTOCHECKPOINT            34
-#define PragTyp_WAL_CHECKPOINT                35
-#define PragTyp_ACTIVATE_EXTENSIONS           36
-#define PragTyp_HEXKEY                        37
-#define PragTyp_KEY                           38
-#define PragTyp_REKEY                         39
-#define PragTyp_LOCK_STATUS                   40
-#define PragTyp_PARSER_TRACE                  41
+#define PragTyp_CACHE_SPILL                    5
+#define PragTyp_CASE_SENSITIVE_LIKE            6
+#define PragTyp_COLLATION_LIST                 7
+#define PragTyp_COMPILE_OPTIONS                8
+#define PragTyp_DATA_STORE_DIRECTORY           9
+#define PragTyp_DATABASE_LIST                 10
+#define PragTyp_DEFAULT_CACHE_SIZE            11
+#define PragTyp_ENCODING                      12
+#define PragTyp_FOREIGN_KEY_CHECK             13
+#define PragTyp_FOREIGN_KEY_LIST              14
+#define PragTyp_INCREMENTAL_VACUUM            15
+#define PragTyp_INDEX_INFO                    16
+#define PragTyp_INDEX_LIST                    17
+#define PragTyp_INTEGRITY_CHECK               18
+#define PragTyp_JOURNAL_MODE                  19
+#define PragTyp_JOURNAL_SIZE_LIMIT            20
+#define PragTyp_LOCK_PROXY_FILE               21
+#define PragTyp_LOCKING_MODE                  22
+#define PragTyp_PAGE_COUNT                    23
+#define PragTyp_MMAP_SIZE                     24
+#define PragTyp_PAGE_SIZE                     25
+#define PragTyp_SECURE_DELETE                 26
+#define PragTyp_SHRINK_MEMORY                 27
+#define PragTyp_SOFT_HEAP_LIMIT               28
+#define PragTyp_STATS                         29
+#define PragTyp_SYNCHRONOUS                   30
+#define PragTyp_TABLE_INFO                    31
+#define PragTyp_TEMP_STORE                    32
+#define PragTyp_TEMP_STORE_DIRECTORY          33
+#define PragTyp_THREADS                       34
+#define PragTyp_WAL_AUTOCHECKPOINT            35
+#define PragTyp_WAL_CHECKPOINT                36
+#define PragTyp_ACTIVATE_EXTENSIONS           37
+#define PragTyp_HEXKEY                        38
+#define PragTyp_KEY                           39
+#define PragTyp_REKEY                         40
+#define PragTyp_LOCK_STATUS                   41
+#define PragTyp_PARSER_TRACE                  42
 #define PragFlag_NeedSchema           0x01
 #define PragFlag_ReadOnly             0x02
 static const struct sPragmaNames {
@@ -20537,14 +20564,14 @@ static const struct sPragmaNames {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "cache_size",
     /* ePragTyp:  */ PragTyp_CACHE_SIZE,
-    /* ePragFlag: */ 0,
+    /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "cache_spill",
-    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragTyp:  */ PragTyp_CACHE_SPILL,
     /* ePragFlag: */ 0,
-    /* iArg:      */ SQLITE_CacheSpill },
+    /* iArg:      */ 0 },
 #endif
   { /* zName:     */ "case_sensitive_like",
     /* ePragTyp:  */ PragTyp_CASE_SENSITIVE_LIKE,
@@ -21165,7 +21192,7 @@ SQLITE_PRIVATE const char *sqlite3JournalModename(int eMode){
 **
 ** Pragmas are of this form:
 **
-**      PRAGMA [database.]id [= value]
+**      PRAGMA [schema.]id [= value]
 **
 ** The identifier might also be a string.  The value is a string, and
 ** identifier, or a number.  If minusFlag is true, then the value is
@@ -21177,8 +21204,8 @@ SQLITE_PRIVATE const char *sqlite3JournalModename(int eMode){
 */
 SQLITE_PRIVATE void sqlite3Pragma(
   Parse *pParse, 
-  Token *pId1,        /* First part of [database.]id field */
-  Token *pId2,        /* Second part of [database.]id field, or NULL */
+  Token *pId1,        /* First part of [schema.]id field */
+  Token *pId2,        /* Second part of [schema.]id field, or NULL */
   Token *pValue,      /* Token for <value>, or NULL */
   int minusFlag       /* True if a '-' sign preceded <value> */
 ){
@@ -21199,7 +21226,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
   sqlite3VdbeRunOnlyOnce(v);
   pParse->nMem = 2;
 
-  /* Interpret the [database.] part of the pragma statement. iDb is the
+  /* Interpret the [schema.] part of the pragma statement. iDb is the
   ** index of the database this pragma is being applied to in db.aDb[]. */
   iDb = sqlite3TwoPartName(pParse, pId1, pId2, &pId);
   if( iDb<0 ) return;
@@ -21288,8 +21315,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
   
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
   /*
-  **  PRAGMA [database.]default_cache_size
-  **  PRAGMA [database.]default_cache_size=N
+  **  PRAGMA [schema.]default_cache_size
+  **  PRAGMA [schema.]default_cache_size=N
   **
   ** The first form reports the current persistent setting for the
   ** page cache size.  The value returned is the maximum number of
@@ -21340,8 +21367,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
 
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   /*
-  **  PRAGMA [database.]page_size
-  **  PRAGMA [database.]page_size=N
+  **  PRAGMA [schema.]page_size
+  **  PRAGMA [schema.]page_size=N
   **
   ** The first form reports the current setting for the
   ** database page size in bytes.  The second form sets the
@@ -21367,8 +21394,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]secure_delete
-  **  PRAGMA [database.]secure_delete=ON/OFF
+  **  PRAGMA [schema.]secure_delete
+  **  PRAGMA [schema.]secure_delete=ON/OFF
   **
   ** The first form reports the current setting for the
   ** secure_delete flag.  The second form changes the secure_delete
@@ -21393,8 +21420,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]max_page_count
-  **  PRAGMA [database.]max_page_count=N
+  **  PRAGMA [schema.]max_page_count
+  **  PRAGMA [schema.]max_page_count=N
   **
   ** The first form reports the current setting for the
   ** maximum number of pages in the database file.  The 
@@ -21405,7 +21432,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
   ** change.  The only purpose is to provide an easy way to test
   ** the sqlite3AbsInt32() function.
   **
-  **  PRAGMA [database.]page_count
+  **  PRAGMA [schema.]page_count
   **
   ** Return the number of pages in the specified database.
   */
@@ -21426,8 +21453,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]locking_mode
-  **  PRAGMA [database.]locking_mode = (normal|exclusive)
+  **  PRAGMA [schema.]locking_mode
+  **  PRAGMA [schema.]locking_mode = (normal|exclusive)
   */
   case PragTyp_LOCKING_MODE: {
     const char *zRet = "normal";
@@ -21472,8 +21499,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]journal_mode
-  **  PRAGMA [database.]journal_mode =
+  **  PRAGMA [schema.]journal_mode
+  **  PRAGMA [schema.]journal_mode =
   **                      (delete|persist|off|truncate|memory|wal|off)
   */
   case PragTyp_JOURNAL_MODE: {
@@ -21513,8 +21540,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]journal_size_limit
-  **  PRAGMA [database.]journal_size_limit=N
+  **  PRAGMA [schema.]journal_size_limit
+  **  PRAGMA [schema.]journal_size_limit=N
   **
   ** Get or set the size limit on rollback journal files.
   */
@@ -21533,8 +21560,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
   /*
-  **  PRAGMA [database.]auto_vacuum
-  **  PRAGMA [database.]auto_vacuum=N
+  **  PRAGMA [schema.]auto_vacuum
+  **  PRAGMA [schema.]auto_vacuum=N
   **
   ** Get or set the value of the database 'auto-vacuum' parameter.
   ** The value is one of:  0 NONE 1 FULL 2 INCREMENTAL
@@ -21585,7 +21612,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
 #endif
 
   /*
-  **  PRAGMA [database.]incremental_vacuum(N)
+  **  PRAGMA [schema.]incremental_vacuum(N)
   **
   ** Do N steps of incremental vacuuming on a database.
   */
@@ -21608,8 +21635,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
   /*
-  **  PRAGMA [database.]cache_size
-  **  PRAGMA [database.]cache_size=N
+  **  PRAGMA [schema.]cache_size
+  **  PRAGMA [schema.]cache_size=N
   **
   ** The first form reports the current local setting for the
   ** page cache size. The second form sets the local
@@ -21621,19 +21648,60 @@ SQLITE_PRIVATE void sqlite3Pragma(
   case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
-      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
       returnSingleInt(v, "cache_size", pDb->pSchema->cache_size);
     }else{
       int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
-      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     }
     break;
   }
 
   /*
-  **  PRAGMA [database.]mmap_size(N)
+  **  PRAGMA [schema.]cache_spill
+  **  PRAGMA cache_spill=BOOLEAN
+  **  PRAGMA [schema.]cache_spill=N
+  **
+  ** The first form reports the current local setting for the
+  ** page cache spill size. The second form turns cache spill on
+  ** or off.  When turnning cache spill on, the size is set to the
+  ** current cache_size.  The third form sets a spill size that
+  ** may be different form the cache size.
+  ** If N is positive then that is the
+  ** number of pages in the cache.  If N is negative, then the
+  ** number of pages is adjusted so that the cache uses -N kibibytes
+  ** of memory.
+  **
+  ** If the number of cache_spill pages is less then the number of
+  ** cache_size pages, no spilling occurs until the page count exceeds
+  ** the number of cache_size pages.
+  **
+  ** The cache_spill=BOOLEAN setting applies to all attached schemas,
+  ** not just the schema specified.
+  */
+  case PragTyp_CACHE_SPILL: {
+    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    if( !zRight ){
+      returnSingleInt(v, "cache_spill", 
+         (db->flags & SQLITE_CacheSpill)==0 ? 0 : 
+            sqlite3BtreeSetSpillSize(pDb->pBt,0));
+    }else{
+      int size = 1;
+      if( sqlite3GetInt32(zRight, &size) ){
+        sqlite3BtreeSetSpillSize(pDb->pBt, size);
+      }
+      if( sqlite3GetBoolean(zRight, size!=0) ){
+        db->flags |= SQLITE_CacheSpill;
+      }else{
+        db->flags &= ~SQLITE_CacheSpill;
+      }
+      setAllPagerFlags(db);
+    }
+    break;
+  }
+
+  /*
+  **  PRAGMA [schema.]mmap_size(N)
   **
   ** Used to set mapping size limit. The mapping size limit is
   ** used to limit the aggregate size of all memory mapped regions of the
@@ -21777,8 +21845,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
 
 #if SQLITE_ENABLE_LOCKING_STYLE
   /*
-  **   PRAGMA [database.]lock_proxy_file
-  **   PRAGMA [database.]lock_proxy_file = ":auto:"|"lock_file_path"
+  **   PRAGMA [schema.]lock_proxy_file
+  **   PRAGMA [schema.]lock_proxy_file = ":auto:"|"lock_file_path"
   **
   ** Return or set the value of the lock_proxy_file flag.  Changing
   ** the value sets a specific file to be used for database access locks.
@@ -21813,8 +21881,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */      
     
   /*
-  **   PRAGMA [database.]synchronous
-  **   PRAGMA [database.]synchronous=OFF|ON|NORMAL|FULL
+  **   PRAGMA [schema.]synchronous
+  **   PRAGMA [schema.]synchronous=OFF|ON|NORMAL|FULL
   **
   ** Return or set the local value of the synchronous flag.  Changing
   ** the local value does not make changes to the disk file and the
@@ -22210,7 +22278,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
   case PragTyp_PARSER_TRACE: {
     if( zRight ){
       if( sqlite3GetBoolean(zRight, 0) ){
-        sqlite3ParserTrace(stderr, "parser: ");
+        sqlite3ParserTrace(stdout, "parser: ");
       }else{
         sqlite3ParserTrace(0, 0);
       }
@@ -22530,16 +22598,16 @@ SQLITE_PRIVATE void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS
   /*
-  **   PRAGMA [database.]schema_version
-  **   PRAGMA [database.]schema_version = <integer>
+  **   PRAGMA [schema.]schema_version
+  **   PRAGMA [schema.]schema_version = <integer>
   **
-  **   PRAGMA [database.]user_version
-  **   PRAGMA [database.]user_version = <integer>
+  **   PRAGMA [schema.]user_version
+  **   PRAGMA [schema.]user_version = <integer>
   **
-  **   PRAGMA [database.]freelist_count = <integer>
+  **   PRAGMA [schema.]freelist_count = <integer>
   **
-  **   PRAGMA [database.]application_id
-  **   PRAGMA [database.]application_id = <integer>
+  **   PRAGMA [schema.]application_id
+  **   PRAGMA [schema.]application_id = <integer>
   **
   ** The pragma's schema_version and user_version are used to set or get
   ** the value of the schema-version and user-version, respectively. Both
@@ -22614,7 +22682,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_WAL
   /*
-  **   PRAGMA [database.]wal_checkpoint = passive|full|restart|truncate
+  **   PRAGMA [schema.]wal_checkpoint = passive|full|restart|truncate
   **
   ** Checkpoint the database.
   */
@@ -23828,7 +23896,7 @@ SQLITE_PRIVATE Select *sqlite3SelectNew(
     memset(pNew, 0, sizeof(*pNew));
   }
   if( pEList==0 ){
-    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ALL,0));
+    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ASTERISK,0));
   }
   pNew->pEList = pEList;
   if( pSrc==0 ) pSrc = sqlite3DbMallocZero(db, sizeof(*pSrc));
@@ -25050,7 +25118,8 @@ static const char *columnTypeImpl(
   char const *zOrigCol = 0;
 #endif
 
-  if( NEVER(pExpr==0) || pNC->pSrcList==0 ) return 0;
+  assert( pExpr!=0 );
+  assert( pNC->pSrcList!=0 );
   switch( pExpr->op ){
     case TK_AGG_COLUMN:
     case TK_COLUMN: {
@@ -25238,6 +25307,7 @@ static void generateColumnNames(
   }
 #endif
 
+  assert( pTabList!=0 );
   if( pParse->colNamesSet || NEVER(v==0) || db->mallocFailed ) return;
   pParse->colNamesSet = 1;
   fullNames = (db->flags & SQLITE_FullColNames)!=0;
@@ -25250,7 +25320,7 @@ static void generateColumnNames(
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
-    }else if( (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN) && pTabList ){
+    }else if( p->op==TK_COLUMN || p->op==TK_AGG_COLUMN ){
       Table *pTab;
       char *zCol;
       int iCol = p->iColumn;
@@ -25306,13 +25376,15 @@ SQLITE_PRIVATE int sqlite3ColumnsFromExprList(
 ){
   sqlite3 *db = pParse->db;   /* Database connection */
   int i, j;                   /* Loop counters */
-  int cnt;                    /* Index added to make the name unique */
+  u32 cnt;                    /* Index added to make the name unique */
   Column *aCol, *pCol;        /* For looping over result columns */
   int nCol;                   /* Number of columns in the result set */
   Expr *p;                    /* Expression for a single result column */
   char *zName;                /* Column name */
   int nName;                  /* Size of name in zName[] */
+  Hash ht;                    /* Hash table of column names */
 
+  sqlite3HashInit(&ht);
   if( pEList ){
     nCol = pEList->nExpr;
     aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
@@ -25321,16 +25393,16 @@ SQLITE_PRIVATE int sqlite3ColumnsFromExprList(
     nCol = 0;
     aCol = 0;
   }
+  assert( nCol==(i16)nCol );
   *pnCol = nCol;
   *paCol = aCol;
 
-  for(i=0, pCol=aCol; i<nCol; i++, pCol++){
+  for(i=0, pCol=aCol; i<nCol && !db->mallocFailed; i++, pCol++){
     /* Get an appropriate name for the column
     */
     p = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
-      zName = sqlite3DbStrDup(db, zName);
     }else{
       Expr *pColExpr = p;  /* The expression that is the result column name */
       Table *pTab;         /* Table associated with this expression */
@@ -25343,41 +25415,37 @@ SQLITE_PRIVATE int sqlite3ColumnsFromExprList(
         int iCol = pColExpr->iColumn;
         pTab = pColExpr->pTab;
         if( iCol<0 ) iCol = pTab->iPKey;
-        zName = sqlite3MPrintf(db, "%s",
-                 iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
+        zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
       }else if( pColExpr->op==TK_ID ){
         assert( !ExprHasProperty(pColExpr, EP_IntValue) );
-        zName = sqlite3MPrintf(db, "%s", pColExpr->u.zToken);
+        zName = pColExpr->u.zToken;
       }else{
         /* Use the original text of the column expression as its name */
-        zName = sqlite3MPrintf(db, "%s", pEList->a[i].zSpan);
+        zName = pEList->a[i].zSpan;
       }
     }
-    if( db->mallocFailed ){
-      sqlite3DbFree(db, zName);
-      break;
-    }
+    zName = sqlite3MPrintf(db, "%s", zName);
 
     /* Make sure the column name is unique.  If the name is not unique,
     ** append an integer to the name so that it becomes unique.
     */
-    nName = sqlite3Strlen30(zName);
-    for(j=cnt=0; j<i; j++){
-      if( sqlite3StrICmp(aCol[j].zName, zName)==0 ){
-        char *zNewName;
-        int k;
-        for(k=nName-1; k>1 && sqlite3Isdigit(zName[k]); k--){}
-        if( k>=0 && zName[k]==':' ) nName = k;
-        zName[nName] = 0;
-        zNewName = sqlite3MPrintf(db, "%s:%d", zName, ++cnt);
-        sqlite3DbFree(db, zName);
-        zName = zNewName;
-        j = -1;
-        if( zName==0 ) break;
+    cnt = 0;
+    while( zName && sqlite3HashFind(&ht, zName)!=0 ){
+      nName = sqlite3Strlen30(zName);
+      if( nName>0 ){
+        for(j=nName-1; j>0 && sqlite3Isdigit(zName[j]); j--){}
+        if( zName[j]==':' ) nName = j;
       }
+      zName = sqlite3MPrintf(db, "%.*z:%u", nName, zName, ++cnt);
+      if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
     }
     pCol->zName = zName;
+    sqlite3ColumnPropertiesFromName(0, pCol);
+    if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
+      db->mallocFailed = 1;
+    }
   }
+  sqlite3HashClear(&ht);
   if( db->mallocFailed ){
     for(j=0; j<i; j++){
       sqlite3DbFree(db, aCol[j].zName);
@@ -26081,7 +26149,7 @@ static int multiSelect(
         if( dest.eDest==SRT_Output ){
           Select *pFirst = p;
           while( pFirst->pPrior ) pFirst = pFirst->pPrior;
-          generateColumnNames(pParse, 0, pFirst->pEList);
+          generateColumnNames(pParse, pFirst->pSrc, pFirst->pEList);
         }
         iBreak = sqlite3VdbeMakeLabel(v);
         iCont = sqlite3VdbeMakeLabel(v);
@@ -26156,7 +26224,7 @@ static int multiSelect(
       if( dest.eDest==SRT_Output ){
         Select *pFirst = p;
         while( pFirst->pPrior ) pFirst = pFirst->pPrior;
-        generateColumnNames(pParse, 0, pFirst->pEList);
+        generateColumnNames(pParse, pFirst->pSrc, pFirst->pEList);
       }
       iBreak = sqlite3VdbeMakeLabel(v);
       iCont = sqlite3VdbeMakeLabel(v);
@@ -26771,7 +26839,7 @@ static int multiSelectOrderBy(
   if( pDest->eDest==SRT_Output ){
     Select *pFirst = pPrior;
     while( pFirst->pPrior ) pFirst = pFirst->pPrior;
-    generateColumnNames(pParse, 0, pFirst->pEList);
+    generateColumnNames(pParse, pFirst->pSrc, pFirst->pEList);
   }
 
   /* Reassembly the compound query so that it will be freed correctly
@@ -27336,6 +27404,7 @@ static int flattenSubquery(
     */
     for(i=0; i<nSubSrc; i++){
       sqlite3IdListDelete(db, pSrc->a[i+iFrom].pUsing);
+      assert( pSrc->a[i+iFrom].fg.isTabFunc==0 );
       pSrc->a[i+iFrom] = pSubSrc->a[i];
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
@@ -27651,7 +27720,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   if( pNewSrc==0 ) return WRC_Abort;
   *pNew = *p;
   p->pSrc = pNewSrc;
-  p->pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ALL, 0));
+  p->pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ASTERISK, 0));
   p->op = TK_SELECT;
   p->pWhere = 0;
   pNew->pGroupBy = 0;
@@ -27670,6 +27739,19 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
+/*
+** Check to see if the FROM clause term pFrom has table-valued function
+** arguments.  If it does, leave an error message in pParse and return
+** non-zero, since pFrom is not allowed to be a table-valued function.
+*/
+static int cannotBeFunction(Parse *pParse, struct SrcList_item *pFrom){
+  if( pFrom->fg.isTabFunc ){
+    sqlite3ErrorMsg(pParse, "'%s' is not a function", pFrom->zName);
+    return 1;
+  }
+  return 0;
+}
+
 #ifndef SQLITE_OMIT_CTE
 /*
 ** Argument pWith (which may be NULL) points to a linked list of nested 
@@ -27682,7 +27764,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
 ** object that the returned CTE belongs to.
 */
 static struct Cte *searchWith(
-  With *pWith,                    /* Current outermost WITH clause */
+  With *pWith,                    /* Current innermost WITH clause */
   struct SrcList_item *pItem,     /* FROM clause element to resolve */
   With **ppContext                /* OUT: WITH clause return value belongs to */
 ){
@@ -27713,11 +27795,12 @@ static struct Cte *searchWith(
 ** statement with which it is associated.
 */
 SQLITE_PRIVATE void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
-  assert( bFree==0 || pParse->pWith==0 );
+  assert( bFree==0 || (pParse->pWith==0 && pParse->pWithToFree==0) );
   if( pWith ){
+    assert( pParse->pWith!=pWith );
     pWith->pOuter = pParse->pWith;
     pParse->pWith = pWith;
-    pParse->bFreeWith = bFree;
+    if( bFree ) pParse->pWithToFree = pWith;
   }
 }
 
@@ -27764,6 +27847,7 @@ static int withExpand(
       sqlite3ErrorMsg(pParse, pCte->zCteErr, pCte->zName);
       return SQLITE_ERROR;
     }
+    if( cannotBeFunction(pParse, pFrom) ) return SQLITE_ERROR;
 
     assert( pFrom->pTab==0 );
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
@@ -27810,6 +27894,7 @@ static int withExpand(
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
     sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
+    pParse->pWith = pWith;
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
     pEList = pLeft->pEList;
@@ -27956,15 +28041,14 @@ static int selectExpander(Walker *pWalker, Select *p){
         return WRC_Abort;
       }
       pTab->nRef++;
+      if( !IsVirtual(pTab) && cannotBeFunction(pParse, pFrom) ){
+        return WRC_Abort;
+      }
 #if !defined(SQLITE_OMIT_VIEW) || !defined (SQLITE_OMIT_VIRTUALTABLE)
-      if( pTab->pSelect || IsVirtual(pTab) ){
+      if( IsVirtual(pTab) || pTab->pSelect ){
         i16 nCol;
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
-        if( pFrom->fg.isTabFunc && !IsVirtual(pTab) ){
-          sqlite3ErrorMsg(pParse, "'%s' is not a function", pTab->zName);
-          return WRC_Abort;
-        }
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         sqlite3SelectSetName(pFrom->pSelect, pTab->zName);
         nCol = pTab->nCol;
@@ -27990,19 +28074,20 @@ static int selectExpander(Walker *pWalker, Select *p){
   /* For every "*" that occurs in the column list, insert the names of
   ** all columns in all tables.  And for every TABLE.* insert the names
   ** of all columns in TABLE.  The parser inserted a special expression
-  ** with the TK_ALL operator for each "*" that it found in the column list.
-  ** The following code just has to locate the TK_ALL expressions and expand
-  ** each one to the list of all columns in all tables.
+  ** with the TK_ASTERISK operator for each "*" that it found in the column
+  ** list.  The following code just has to locate the TK_ASTERISK
+  ** expressions and expand each one to the list of all columns in
+  ** all tables.
   **
   ** The first loop just checks to see if there are any "*" operators
   ** that need expanding.
   */
   for(k=0; k<pEList->nExpr; k++){
     pE = pEList->a[k].pExpr;
-    if( pE->op==TK_ALL ) break;
+    if( pE->op==TK_ASTERISK ) break;
     assert( pE->op!=TK_DOT || pE->pRight!=0 );
     assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
-    if( pE->op==TK_DOT && pE->pRight->op==TK_ALL ) break;
+    if( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK ) break;
   }
   if( k<pEList->nExpr ){
     /*
@@ -28020,7 +28105,9 @@ static int selectExpander(Walker *pWalker, Select *p){
       pE = a[k].pExpr;
       pRight = pE->pRight;
       assert( pE->op!=TK_DOT || pRight!=0 );
-      if( pE->op!=TK_ALL && (pE->op!=TK_DOT || pRight->op!=TK_ALL) ){
+      if( pE->op!=TK_ASTERISK
+       && (pE->op!=TK_DOT || pRight->op!=TK_ASTERISK)
+      ){
         /* This particular expression does not need to be expanded.
         */
         pNew = sqlite3ExprListAppend(pParse, pNew, a[k].pExpr);
@@ -28072,12 +28159,13 @@ static int selectExpander(Walker *pWalker, Select *p){
               continue;
             }
 
-            /* If a column is marked as 'hidden' (currently only possible
-            ** for virtual tables), do not include it in the expanded
-            ** result-set list.
+            /* If a column is marked as 'hidden', omit it from the expanded
+            ** result-set list unless the SELECT has the SF_IncludeHidden
+            ** bit set.
             */
-            if( IsHiddenColumn(&pTab->aCol[j]) ){
-              assert(IsVirtual(pTab));
+            if( (p->selFlags & SF_IncludeHidden)==0
+             && IsHiddenColumn(&pTab->aCol[j]) 
+            ){
               continue;
             }
             tableSeen = 1;
@@ -28148,6 +28236,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 #if SQLITE_MAX_COLUMN
   if( p->pEList && p->pEList->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns in result set");
+    return WRC_Abort;
   }
 #endif
   return WRC_Continue;
@@ -30912,10 +31001,12 @@ SQLITE_PRIVATE void sqlite3Update(
   assert( chngPk==0 || chngPk==1 );
   chngKey = chngRowid + chngPk;
 
-  /* The SET expressions are not actually used inside the WHERE loop.
-  ** So reset the colUsed mask
+  /* The SET expressions are not actually used inside the WHERE loop.  
+  ** So reset the colUsed mask. Unless this is a virtual table. In that
+  ** case, set all bits of the colUsed mask (to ensure that the virtual
+  ** table implementation makes all columns available).
   */
-  pTabList->a[0].colUsed = 0;
+  pTabList->a[0].colUsed = IsVirtual(pTab) ? (Bitmask)-1 : 0;
 
   hasFK = sqlite3FkRequired(pParse, pTab, aXRef, chngKey);
 

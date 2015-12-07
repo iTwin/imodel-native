@@ -693,6 +693,7 @@ struct Fts5Config {
   int pgsz;                       /* Approximate page size used in %_data */
   int nAutomerge;                 /* 'automerge' setting */
   int nCrisisMerge;               /* Maximum allowed segments per level */
+  int nHashSize;                  /* Bytes of memory for in-memory hash */
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
 
@@ -1267,18 +1268,32 @@ static int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 #define FTS5_PLUS                            12
 #define FTS5_STAR                            13
 
-/* Driver template for the LEMON parser generator.
-** The author disclaims copyright to this source code.
+/*
+** 2000-05-29
 **
-** This version of "lempar.c" is modified, slightly, for use by SQLite.
-** The only modifications are the addition of a couple of NEVER()
-** macros to disable tests that are needed in the case of a general
-** LALR(1) grammar but which are always false in the
-** specific grammar used by SQLite.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** Driver template for the LEMON parser generator.
+**
+** The "lemon" program processes an LALR(1) input grammar file, then uses
+** this template to construct a parser.  The "lemon" program inserts text
+** at each "%%" line.  Also, any "P-a-r-s-e" identifer prefix (without the
+** interstitial "-" characters) contained in this template is changed into
+** the value of the %name directive from the grammar.  Otherwise, the content
+** of this template is copied straight through into the generate parser
+** source file.
+**
+** The following is the concatenation of all %include directives from the
+** input grammar file:
 */
-/* First off, code is included that follows the "include" declaration
-** in the input grammar file. */
 /* #include <stdio.h> */
+/************ Begin %include sections from the grammar ************************/
 
 /* #include "fts5Int.h" */
 /* #include "fts5parse.h" */
@@ -1294,44 +1309,54 @@ static int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 */
 #define fts5yytestcase(X) testcase(X)
 
-/* Next is all token values, in a form suitable for use by makeheaders.
-** This section will be null unless lemon is run with the -m switch.
+/*
+** Indicate that sqlite3ParserFree() will never be called with a null
+** pointer.
 */
-/* 
-** These constants (all generated automatically by the parser generator)
-** specify the various kinds of tokens (terminals) that the parser
-** understands. 
-**
-** Each symbol here is a terminal symbol in the grammar.
+#define fts5YYPARSEFREENOTNULL 1
+
+/*
+** Alternative datatype for the argument to the malloc() routine passed
+** into sqlite3ParserAlloc().  The default is size_t.
 */
-/* Make sure the INTERFACE macro is defined.
-*/
-#ifndef INTERFACE
-# define INTERFACE 1
-#endif
-/* The next thing included is series of defines which control
+#define fts5YYMALLOCARGTYPE  u64
+
+/**************** End of %include directives **********************************/
+/* These constants specify the various numeric values for terminal symbols
+** in a format understandable to "makeheaders".  This section is blank unless
+** "lemon" is run with the "-m" command-line option.
+***************** Begin makeheaders token definitions *************************/
+/**************** End makeheaders token definitions ***************************/
+
+/* The next sections is a series of control #defines.
 ** various aspects of the generated parser.
-**    fts5YYCODETYPE         is the data type used for storing terminal
-**                       and nonterminal numbers.  "unsigned char" is
-**                       used if there are fewer than 250 terminals
-**                       and nonterminals.  "int" is used otherwise.
-**    fts5YYNOCODE           is a number of type fts5YYCODETYPE which corresponds
-**                       to no legal terminal or nonterminal number.  This
-**                       number is used to fill in empty slots of the hash 
-**                       table.
+**    fts5YYCODETYPE         is the data type used to store the integer codes
+**                       that represent terminal and non-terminal symbols.
+**                       "unsigned char" is used if there are fewer than
+**                       256 symbols.  Larger types otherwise.
+**    fts5YYNOCODE           is a number of type fts5YYCODETYPE that is not used for
+**                       any terminal or nonterminal symbol.
 **    fts5YYFALLBACK         If defined, this indicates that one or more tokens
-**                       have fall-back values which should be used if the
-**                       original value of the token will not parse.
-**    fts5YYACTIONTYPE       is the data type used for storing terminal
-**                       and nonterminal numbers.  "unsigned char" is
-**                       used if there are fewer than 250 rules and
-**                       states combined.  "int" is used otherwise.
-**    sqlite3Fts5ParserFTS5TOKENTYPE     is the data type used for minor tokens given 
-**                       directly to the parser from the tokenizer.
-**    fts5YYMINORTYPE        is the data type used for all minor tokens.
+**                       (also known as: "terminal symbols") have fall-back
+**                       values which should be used if the original symbol
+**                       would not parse.  This permits keywords to sometimes
+**                       be used as identifiers, for example.
+**    fts5YYACTIONTYPE       is the data type used for "action codes" - numbers
+**                       that indicate what to do in response to the next
+**                       token.
+**    sqlite3Fts5ParserFTS5TOKENTYPE     is the data type used for minor type for terminal
+**                       symbols.  Background: A "minor type" is a semantic
+**                       value associated with a terminal or non-terminal
+**                       symbols.  For example, for an "ID" terminal symbol,
+**                       the minor type might be the name of the identifier.
+**                       Each non-terminal can have a different minor type.
+**                       Terminal symbols all have the same minor type, though.
+**                       This macros defines the minor type for terminal 
+**                       symbols.
+**    fts5YYMINORTYPE        is the data type used for all minor types.
 **                       This is typically a union of many types, one of
 **                       which is sqlite3Fts5ParserFTS5TOKENTYPE.  The entry in the union
-**                       for base tokens is called "fts5yy0".
+**                       for terminal symbols is called "fts5yy0".
 **    fts5YYSTACKDEPTH       is the maximum depth of the parser's stack.  If
 **                       zero the stack is dynamically sized using realloc()
 **    sqlite3Fts5ParserARG_SDECL     A static variable declaration for the %extra_argument
@@ -1350,6 +1375,10 @@ static int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 **    fts5YY_ACCEPT_ACTION   The fts5yy_action[] code for accept
 **    fts5YY_NO_ACTION       The fts5yy_action[] code for no-op
 */
+#ifndef INTERFACE
+# define INTERFACE 1
+#endif
+/************* Begin control #defines *****************************************/
 #define fts5YYCODETYPE unsigned char
 #define fts5YYNOCODE 27
 #define fts5YYACTIONTYPE unsigned char
@@ -1380,6 +1409,7 @@ typedef union {
 #define fts5YY_ERROR_ACTION      88
 #define fts5YY_ACCEPT_ACTION     89
 #define fts5YY_NO_ACTION         90
+/************* End control #defines *******************************************/
 
 /* The fts5yyzerominor constant is used to initialize instances of
 ** fts5YYMINORTYPE objects to zero. */
@@ -1448,7 +1478,8 @@ static const fts5YYMINORTYPE fts5yyzerominor = { 0 };
 **  fts5yy_reduce_ofst[]   For each state, the offset into fts5yy_action for
 **                     shifting non-terminals after a reduce.
 **  fts5yy_default[]       Default action for each state.
-*/
+**
+*********** Begin parsing tables **********************************************/
 #define fts5YY_ACTTAB_COUNT (78)
 static const fts5YYACTIONTYPE fts5yy_action[] = {
  /*     0 */    89,   15,   46,    5,   48,   24,   12,   19,   23,   14,
@@ -1492,9 +1523,10 @@ static const fts5YYACTIONTYPE fts5yy_default[] = {
  /*    10 */    87,   88,   87,   87,   88,   88,   88,   66,   80,   88,
  /*    20 */    81,   88,   88,   78,   88,   65,
 };
+/********** End of lemon-generated parsing tables *****************************/
 
-/* The next table maps tokens into fallback tokens.  If a construct
-** like the following:
+/* The next table maps tokens (terminal symbols) into fallback tokens.  
+** If a construct like the following:
 ** 
 **      %fallback ID X Y Z.
 **
@@ -1502,6 +1534,10 @@ static const fts5YYACTIONTYPE fts5yy_default[] = {
 ** and Z.  Whenever one of the tokens X, Y, or Z is input to the parser
 ** but it does not parse, the type of the token is changed to ID and
 ** the parse is retried before an error is thrown.
+**
+** This feature can be used, for example, to cause some keywords in a language
+** to revert to identifiers if they keyword does not apply in the context where
+** it appears.
 */
 #ifdef fts5YYFALLBACK
 static const fts5YYCODETYPE fts5yyFallback[] = {
@@ -1652,6 +1688,15 @@ static void fts5yyGrowStack(fts5yyParser *p){
 }
 #endif
 
+/* Datatype of the argument to the memory allocated passed as the
+** second argument to sqlite3Fts5ParserAlloc() below.  This can be changed by
+** putting an appropriate #define in the %include section of the input
+** grammar.
+*/
+#ifndef fts5YYMALLOCARGTYPE
+# define fts5YYMALLOCARGTYPE size_t
+#endif
+
 /* 
 ** This function allocates a new parser.
 ** The only argument is a pointer to a function which works like
@@ -1664,9 +1709,9 @@ static void fts5yyGrowStack(fts5yyParser *p){
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to sqlite3Fts5Parser and sqlite3Fts5ParserFree.
 */
-static void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(u64)){
+static void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(fts5YYMALLOCARGTYPE)){
   fts5yyParser *pParser;
-  pParser = (fts5yyParser*)(*mallocProc)( (u64)sizeof(fts5yyParser) );
+  pParser = (fts5yyParser*)(*mallocProc)( (fts5YYMALLOCARGTYPE)sizeof(fts5yyParser) );
   if( pParser ){
     pParser->fts5yyidx = -1;
 #ifdef fts5YYTRACKMAXSTACKDEPTH
@@ -1681,10 +1726,12 @@ static void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(u64)){
   return pParser;
 }
 
-/* The following function deletes the value associated with a
-** symbol.  The symbol can be either a terminal or nonterminal.
-** "fts5yymajor" is the symbol code, and "fts5yypminor" is a pointer to
-** the value.
+/* The following function deletes the "minor type" or semantic value
+** associated with a symbol.  The symbol can be either a terminal
+** or nonterminal. "fts5yymajor" is the symbol code, and "fts5yypminor" is
+** a pointer to the value to be deleted.  The code used to do the 
+** deletions is derived from the %destructor and/or %token_destructor
+** directives of the input grammar.
 */
 static void fts5yy_destructor(
   fts5yyParser *fts5yypParser,    /* The parser */
@@ -1700,9 +1747,10 @@ static void fts5yy_destructor(
     ** being destroyed before it is finished parsing.
     **
     ** Note: during a reduce, the only symbols destroyed are those
-    ** which appear on the RHS of the rule, but which are not used
+    ** which appear on the RHS of the rule, but which are *not* used
     ** inside the C code.
     */
+/********* Begin destructor definitions ***************************************/
     case 15: /* input */
 {
  (void)pParse; 
@@ -1732,6 +1780,7 @@ static void fts5yy_destructor(
  sqlite3Fts5ParsePhraseFree((fts5yypminor->fts5yy11)); 
 }
       break;
+/********* End destructor definitions *****************************************/
     default:  break;   /* If no destructor action specified: do nothing */
   }
 }
@@ -1741,49 +1790,37 @@ static void fts5yy_destructor(
 **
 ** If there is a destructor routine associated with the token which
 ** is popped from the stack, then call it.
-**
-** Return the major token number for the symbol popped.
 */
-static int fts5yy_pop_parser_stack(fts5yyParser *pParser){
-  fts5YYCODETYPE fts5yymajor;
-  fts5yyStackEntry *fts5yytos = &pParser->fts5yystack[pParser->fts5yyidx];
-
-  /* There is no mechanism by which the parser stack can be popped below
-  ** empty in SQLite.  */
+static void fts5yy_pop_parser_stack(fts5yyParser *pParser){
+  fts5yyStackEntry *fts5yytos;
   assert( pParser->fts5yyidx>=0 );
+  fts5yytos = &pParser->fts5yystack[pParser->fts5yyidx--];
 #ifndef NDEBUG
-  if( fts5yyTraceFILE && pParser->fts5yyidx>=0 ){
+  if( fts5yyTraceFILE ){
     fprintf(fts5yyTraceFILE,"%sPopping %s\n",
       fts5yyTracePrompt,
       fts5yyTokenName[fts5yytos->major]);
   }
 #endif
-  fts5yymajor = fts5yytos->major;
-  fts5yy_destructor(pParser, fts5yymajor, &fts5yytos->minor);
-  pParser->fts5yyidx--;
-  return fts5yymajor;
+  fts5yy_destructor(pParser, fts5yytos->major, &fts5yytos->minor);
 }
 
 /* 
-** Deallocate and destroy a parser.  Destructors are all called for
+** Deallocate and destroy a parser.  Destructors are called for
 ** all stack elements before shutting the parser down.
 **
-** Inputs:
-** <ul>
-** <li>  A pointer to the parser.  This should be a pointer
-**       obtained from sqlite3Fts5ParserAlloc.
-** <li>  A pointer to a function used to reclaim memory obtained
-**       from malloc.
-** </ul>
+** If the fts5YYPARSEFREENEVERNULL macro exists (for example because it
+** is defined in a %include section of the input grammar) then it is
+** assumed that the input pointer is never NULL.
 */
 static void sqlite3Fts5ParserFree(
   void *p,                    /* The parser to be deleted */
   void (*freeProc)(void*)     /* Function used to reclaim memory */
 ){
   fts5yyParser *pParser = (fts5yyParser*)p;
-  /* In SQLite, we never try to destroy a parser that was not successfully
-  ** created in the first place. */
-  if( NEVER(pParser==0) ) return;
+#ifndef fts5YYPARSEFREENEVERNULL
+  if( pParser==0 ) return;
+#endif
   while( pParser->fts5yyidx>=0 ) fts5yy_pop_parser_stack(pParser);
 #if fts5YYSTACKDEPTH<=0
   free(pParser->fts5yystack);
@@ -1804,10 +1841,6 @@ static int sqlite3Fts5ParserStackPeak(void *p){
 /*
 ** Find the appropriate action for a parser given the terminal
 ** look-ahead token iLookAhead.
-**
-** If the look-ahead token is fts5YYNOCODE, then check to see if the action is
-** independent of the look-ahead.  If it is, return the action, otherwise
-** return fts5YY_NO_ACTION.
 */
 static int fts5yy_find_shift_action(
   fts5yyParser *pParser,        /* The parser */
@@ -1818,61 +1851,62 @@ static int fts5yy_find_shift_action(
  
   if( stateno>=fts5YY_MIN_REDUCE ) return stateno;
   assert( stateno <= fts5YY_SHIFT_COUNT );
-  i = fts5yy_shift_ofst[stateno];
-  if( i==fts5YY_SHIFT_USE_DFLT ) return fts5yy_default[stateno];
-  assert( iLookAhead!=fts5YYNOCODE );
-  i += iLookAhead;
-  if( i<0 || i>=fts5YY_ACTTAB_COUNT || fts5yy_lookahead[i]!=iLookAhead ){
-    if( iLookAhead>0 ){
+  do{
+    i = fts5yy_shift_ofst[stateno];
+    if( i==fts5YY_SHIFT_USE_DFLT ) return fts5yy_default[stateno];
+    assert( iLookAhead!=fts5YYNOCODE );
+    i += iLookAhead;
+    if( i<0 || i>=fts5YY_ACTTAB_COUNT || fts5yy_lookahead[i]!=iLookAhead ){
+      if( iLookAhead>0 ){
 #ifdef fts5YYFALLBACK
-      fts5YYCODETYPE iFallback;            /* Fallback token */
-      if( iLookAhead<sizeof(fts5yyFallback)/sizeof(fts5yyFallback[0])
-             && (iFallback = fts5yyFallback[iLookAhead])!=0 ){
-#ifndef NDEBUG
-        if( fts5yyTraceFILE ){
-          fprintf(fts5yyTraceFILE, "%sFALLBACK %s => %s\n",
-             fts5yyTracePrompt, fts5yyTokenName[iLookAhead], fts5yyTokenName[iFallback]);
-        }
-#endif
-        return fts5yy_find_shift_action(pParser, iFallback);
-      }
-#endif
-#ifdef fts5YYWILDCARD
-      {
-        int j = i - iLookAhead + fts5YYWILDCARD;
-        if( 
-#if fts5YY_SHIFT_MIN+fts5YYWILDCARD<0
-          j>=0 &&
-#endif
-#if fts5YY_SHIFT_MAX+fts5YYWILDCARD>=fts5YY_ACTTAB_COUNT
-          j<fts5YY_ACTTAB_COUNT &&
-#endif
-          fts5yy_lookahead[j]==fts5YYWILDCARD
-        ){
+        fts5YYCODETYPE iFallback;            /* Fallback token */
+        if( iLookAhead<sizeof(fts5yyFallback)/sizeof(fts5yyFallback[0])
+               && (iFallback = fts5yyFallback[iLookAhead])!=0 ){
 #ifndef NDEBUG
           if( fts5yyTraceFILE ){
-            fprintf(fts5yyTraceFILE, "%sWILDCARD %s => %s\n",
-               fts5yyTracePrompt, fts5yyTokenName[iLookAhead], fts5yyTokenName[fts5YYWILDCARD]);
+            fprintf(fts5yyTraceFILE, "%sFALLBACK %s => %s\n",
+               fts5yyTracePrompt, fts5yyTokenName[iLookAhead], fts5yyTokenName[iFallback]);
           }
-#endif /* NDEBUG */
-          return fts5yy_action[j];
+#endif
+          assert( fts5yyFallback[iFallback]==0 ); /* Fallback loop must terminate */
+          iLookAhead = iFallback;
+          continue;
         }
-      }
+#endif
+#ifdef fts5YYWILDCARD
+        {
+          int j = i - iLookAhead + fts5YYWILDCARD;
+          if( 
+#if fts5YY_SHIFT_MIN+fts5YYWILDCARD<0
+            j>=0 &&
+#endif
+#if fts5YY_SHIFT_MAX+fts5YYWILDCARD>=fts5YY_ACTTAB_COUNT
+            j<fts5YY_ACTTAB_COUNT &&
+#endif
+            fts5yy_lookahead[j]==fts5YYWILDCARD
+          ){
+#ifndef NDEBUG
+            if( fts5yyTraceFILE ){
+              fprintf(fts5yyTraceFILE, "%sWILDCARD %s => %s\n",
+                 fts5yyTracePrompt, fts5yyTokenName[iLookAhead],
+                 fts5yyTokenName[fts5YYWILDCARD]);
+            }
+#endif /* NDEBUG */
+            return fts5yy_action[j];
+          }
+        }
 #endif /* fts5YYWILDCARD */
+      }
+      return fts5yy_default[stateno];
+    }else{
+      return fts5yy_action[i];
     }
-    return fts5yy_default[stateno];
-  }else{
-    return fts5yy_action[i];
-  }
+  }while(1);
 }
 
 /*
 ** Find the appropriate action for a parser given the non-terminal
 ** look-ahead token iLookAhead.
-**
-** If the look-ahead token is fts5YYNOCODE, then check to see if the action is
-** independent of the look-ahead.  If it is, return the action, otherwise
-** return fts5YY_NO_ACTION.
 */
 static int fts5yy_find_reduce_action(
   int stateno,              /* Current state number */
@@ -1915,8 +1949,10 @@ static void fts5yyStackOverflow(fts5yyParser *fts5yypParser, fts5YYMINORTYPE *ft
    while( fts5yypParser->fts5yyidx>=0 ) fts5yy_pop_parser_stack(fts5yypParser);
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
+/******** Begin %stack_overflow code ******************************************/
 
   assert( 0 );
+/******** End %stack_overflow code ********************************************/
    sqlite3Fts5ParserARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 
@@ -1926,15 +1962,13 @@ static void fts5yyStackOverflow(fts5yyParser *fts5yypParser, fts5YYMINORTYPE *ft
 #ifndef NDEBUG
 static void fts5yyTraceShift(fts5yyParser *fts5yypParser, int fts5yyNewState){
   if( fts5yyTraceFILE ){
-    int i;
     if( fts5yyNewState<fts5YYNSTATE ){
-      fprintf(fts5yyTraceFILE,"%sShift %d\n",fts5yyTracePrompt,fts5yyNewState);
-      fprintf(fts5yyTraceFILE,"%sStack:",fts5yyTracePrompt);
-      for(i=1; i<=fts5yypParser->fts5yyidx; i++)
-        fprintf(fts5yyTraceFILE," %s",fts5yyTokenName[fts5yypParser->fts5yystack[i].major]);
-      fprintf(fts5yyTraceFILE,"\n");
+      fprintf(fts5yyTraceFILE,"%sShift '%s', go to state %d\n",
+         fts5yyTracePrompt,fts5yyTokenName[fts5yypParser->fts5yystack[fts5yypParser->fts5yyidx].major],
+         fts5yyNewState);
     }else{
-      fprintf(fts5yyTraceFILE,"%sShift *\n",fts5yyTracePrompt);
+      fprintf(fts5yyTraceFILE,"%sShift '%s'\n",
+         fts5yyTracePrompt,fts5yyTokenName[fts5yypParser->fts5yystack[fts5yypParser->fts5yyidx].major]);
     }
   }
 }
@@ -1943,7 +1977,7 @@ static void fts5yyTraceShift(fts5yyParser *fts5yypParser, int fts5yyNewState){
 #endif
 
 /*
-** Perform a shift action.  Return the number of errors.
+** Perform a shift action.
 */
 static void fts5yy_shift(
   fts5yyParser *fts5yypParser,          /* The parser to be shifted */
@@ -2033,28 +2067,11 @@ static void fts5yy_reduce(
   if( fts5yyTraceFILE && fts5yyruleno>=0 
         && fts5yyruleno<(int)(sizeof(fts5yyRuleName)/sizeof(fts5yyRuleName[0])) ){
     fts5yysize = fts5yyRuleInfo[fts5yyruleno].nrhs;
-    fprintf(fts5yyTraceFILE, "%sReduce [%s] -> state %d.\n", fts5yyTracePrompt,
+    fprintf(fts5yyTraceFILE, "%sReduce [%s], go to state %d.\n", fts5yyTracePrompt,
       fts5yyRuleName[fts5yyruleno], fts5yymsp[-fts5yysize].stateno);
   }
 #endif /* NDEBUG */
-
-  /* Silence complaints from purify about fts5yygotominor being uninitialized
-  ** in some cases when it is copied into the stack after the following
-  ** switch.  fts5yygotominor is uninitialized when a rule reduces that does
-  ** not set the value of its left-hand side nonterminal.  Leaving the
-  ** value of the nonterminal uninitialized is utterly harmless as long
-  ** as the value is never used.  So really the only thing this code
-  ** accomplishes is to quieten purify.  
-  **
-  ** 2007-01-16:  The wireshark project (www.wireshark.org) reports that
-  ** without this code, their parser segfaults.  I'm not sure what there
-  ** parser is doing to make this happen.  This is the second bug report
-  ** from wireshark this week.  Clearly they are stressing Lemon in ways
-  ** that it has not been previously stressed...  (SQLite ticket #2172)
-  */
-  /*memset(&fts5yygotominor, 0, sizeof(fts5yygotominor));*/
   fts5yygotominor = fts5yyzerominor;
-
 
   switch( fts5yyruleno ){
   /* Beginning here are the reduction cases.  A typical example
@@ -2065,6 +2082,7 @@ static void fts5yy_reduce(
   **  #line <lineno> <thisfile>
   **     break;
   */
+/********** Begin reduce actions **********************************************/
       case 0: /* input ::= expr */
 { sqlite3Fts5ParseFinished(pParse, fts5yymsp[0].minor.fts5yy18); }
         break;
@@ -2167,6 +2185,7 @@ static void fts5yy_reduce(
         break;
       default:
         break;
+/********** End reduce actions ************************************************/
   };
   assert( fts5yyruleno>=0 && fts5yyruleno<sizeof(fts5yyRuleInfo)/sizeof(fts5yyRuleInfo[0]) );
   fts5yygoto = fts5yyRuleInfo[fts5yyruleno].lhs;
@@ -2211,6 +2230,8 @@ static void fts5yy_parse_failed(
   while( fts5yypParser->fts5yyidx>=0 ) fts5yy_pop_parser_stack(fts5yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser fails */
+/************ Begin %parse_failure code ***************************************/
+/************ End %parse_failure code *****************************************/
   sqlite3Fts5ParserARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 #endif /* fts5YYNOERRORRECOVERY */
@@ -2225,10 +2246,12 @@ static void fts5yy_syntax_error(
 ){
   sqlite3Fts5ParserARG_FETCH;
 #define FTS5TOKEN (fts5yyminor.fts5yy0)
+/************ Begin %syntax_error code ****************************************/
 
   sqlite3Fts5ParseError(
     pParse, "fts5: syntax error near \"%.*s\"",FTS5TOKEN.n,FTS5TOKEN.p
   );
+/************ End %syntax_error code ******************************************/
   sqlite3Fts5ParserARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
@@ -2247,6 +2270,8 @@ static void fts5yy_accept(
   while( fts5yypParser->fts5yyidx>=0 ) fts5yy_pop_parser_stack(fts5yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
+/*********** Begin %parse_accept code *****************************************/
+/*********** End %parse_accept code *******************************************/
   sqlite3Fts5ParserARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
@@ -2300,6 +2325,12 @@ static void sqlite3Fts5Parser(
     fts5yypParser->fts5yyerrcnt = -1;
     fts5yypParser->fts5yystack[0].stateno = 0;
     fts5yypParser->fts5yystack[0].major = 0;
+#ifndef NDEBUG
+    if( fts5yyTraceFILE ){
+      fprintf(fts5yyTraceFILE,"%sInitialize. Empty stack. State 0\n",
+              fts5yyTracePrompt);
+    }
+#endif
   }
   fts5yyminorunion.fts5yy0 = fts5yyminor;
 #if !defined(fts5YYERRORSYMBOL) && !defined(fts5YYNOERRORRECOVERY)
@@ -2309,7 +2340,7 @@ static void sqlite3Fts5Parser(
 
 #ifndef NDEBUG
   if( fts5yyTraceFILE ){
-    fprintf(fts5yyTraceFILE,"%sInput %s\n",fts5yyTracePrompt,fts5yyTokenName[fts5yymajor]);
+    fprintf(fts5yyTraceFILE,"%sInput '%s'\n",fts5yyTracePrompt,fts5yyTokenName[fts5yymajor]);
   }
 #endif
 
@@ -2423,7 +2454,12 @@ static void sqlite3Fts5Parser(
   }while( fts5yymajor!=fts5YYNOCODE && fts5yypParser->fts5yyidx>=0 );
 #ifndef NDEBUG
   if( fts5yyTraceFILE ){
-    fprintf(fts5yyTraceFILE,"%sReturn\n",fts5yyTracePrompt);
+    int i;
+    fprintf(fts5yyTraceFILE,"%sReturn. Stack=",fts5yyTracePrompt);
+    for(i=1; i<=fts5yypParser->fts5yyidx; i++)
+      fprintf(fts5yyTraceFILE,"%c%s", i==1 ? '[' : ' ', 
+              fts5yyTokenName[fts5yypParser->fts5yystack[i].major]);
+    fprintf(fts5yyTraceFILE,"]\n");
   }
 #endif
   return;
@@ -3306,6 +3342,7 @@ static int sqlite3Fts5IsBareword(char t){
 #define FTS5_DEFAULT_PAGE_SIZE   4050
 #define FTS5_DEFAULT_AUTOMERGE      4
 #define FTS5_DEFAULT_CRISISMERGE   16
+#define FTS5_DEFAULT_HASHSIZE    (1024*1024)
 
 /* Maximum allowed page size */
 #define FTS5_MAX_PAGE_SIZE (128*1024)
@@ -3501,34 +3538,53 @@ static int fts5ConfigParseSpecial(
   if( sqlite3_strnicmp("prefix", zCmd, nCmd)==0 ){
     const int nByte = sizeof(int) * FTS5_MAX_PREFIX_INDEXES;
     const char *p;
-    if( pConfig->aPrefix ){
-      *pzErr = sqlite3_mprintf("multiple prefix=... directives");
-      rc = SQLITE_ERROR;
-    }else{
+    int bFirst = 1;
+    if( pConfig->aPrefix==0 ){
       pConfig->aPrefix = sqlite3Fts5MallocZero(&rc, nByte);
+      if( rc ) return rc;
     }
+
     p = zArg;
-    while( rc==SQLITE_OK && p[0] ){
+    while( 1 ){
       int nPre = 0;
+
       while( p[0]==' ' ) p++;
+      if( bFirst==0 && p[0]==',' ){
+        p++;
+        while( p[0]==' ' ) p++;
+      }else if( p[0]=='\0' ){
+        break;
+      }
+      if( p[0]<'0' || p[0]>'9' ){
+        *pzErr = sqlite3_mprintf("malformed prefix=... directive");
+        rc = SQLITE_ERROR;
+        break;
+      }
+
+      if( pConfig->nPrefix==FTS5_MAX_PREFIX_INDEXES ){
+        *pzErr = sqlite3_mprintf(
+            "too many prefix indexes (max %d)", FTS5_MAX_PREFIX_INDEXES
+        );
+        rc = SQLITE_ERROR;
+        break;
+      }
+
       while( p[0]>='0' && p[0]<='9' && nPre<1000 ){
         nPre = nPre*10 + (p[0] - '0');
         p++;
       }
-      while( p[0]==' ' ) p++;
-      if( p[0]==',' ){
-        p++;
-      }else if( p[0] ){
-        *pzErr = sqlite3_mprintf("malformed prefix=... directive");
+
+      if( rc==SQLITE_OK && (nPre<=0 || nPre>=1000) ){
+        *pzErr = sqlite3_mprintf("prefix length out of range (max 999)");
         rc = SQLITE_ERROR;
+        break;
       }
-      if( rc==SQLITE_OK && (nPre==0 || nPre>=1000) ){
-        *pzErr = sqlite3_mprintf("prefix length out of range: %d", nPre);
-        rc = SQLITE_ERROR;
-      }
+
       pConfig->aPrefix[pConfig->nPrefix] = nPre;
       pConfig->nPrefix++;
+      bFirst = 0;
     }
+    assert( pConfig->nPrefix<=FTS5_MAX_PREFIX_INDEXES );
     return rc;
   }
 
@@ -3992,33 +4048,37 @@ static int sqlite3Fts5ConfigParseRank(
   *pzRank = 0;
   *pzRankArgs = 0;
 
-  p = fts5ConfigSkipWhitespace(p);
-  pRank = p;
-  p = fts5ConfigSkipBareword(p);
-
-  if( p ){
-    zRank = sqlite3Fts5MallocZero(&rc, 1 + p - pRank);
-    if( zRank ) memcpy(zRank, pRank, p-pRank);
-  }else{
+  if( p==0 ){
     rc = SQLITE_ERROR;
-  }
+  }else{
+    p = fts5ConfigSkipWhitespace(p);
+    pRank = p;
+    p = fts5ConfigSkipBareword(p);
 
-  if( rc==SQLITE_OK ){
-    p = fts5ConfigSkipWhitespace(p);
-    if( *p!='(' ) rc = SQLITE_ERROR;
-    p++;
-  }
-  if( rc==SQLITE_OK ){
-    const char *pArgs; 
-    p = fts5ConfigSkipWhitespace(p);
-    pArgs = p;
-    if( *p!=')' ){
-      p = fts5ConfigSkipArgs(p);
-      if( p==0 ){
-        rc = SQLITE_ERROR;
-      }else{
-        zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
-        if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
+    if( p ){
+      zRank = sqlite3Fts5MallocZero(&rc, 1 + p - pRank);
+      if( zRank ) memcpy(zRank, pRank, p-pRank);
+    }else{
+      rc = SQLITE_ERROR;
+    }
+
+    if( rc==SQLITE_OK ){
+      p = fts5ConfigSkipWhitespace(p);
+      if( *p!='(' ) rc = SQLITE_ERROR;
+      p++;
+    }
+    if( rc==SQLITE_OK ){
+      const char *pArgs; 
+      p = fts5ConfigSkipWhitespace(p);
+      pArgs = p;
+      if( *p!=')' ){
+        p = fts5ConfigSkipArgs(p);
+        if( p==0 ){
+          rc = SQLITE_ERROR;
+        }else{
+          zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
+          if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
+        }
       }
     }
   }
@@ -4050,6 +4110,18 @@ static int sqlite3Fts5ConfigSetValue(
       *pbBadkey = 1;
     }else{
       pConfig->pgsz = pgsz;
+    }
+  }
+
+  else if( 0==sqlite3_stricmp(zKey, "hashsize") ){
+    int nHashSize = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      nHashSize = sqlite3_value_int(pVal);
+    }
+    if( nHashSize<=0 ){
+      *pbBadkey = 1;
+    }else{
+      pConfig->nHashSize = nHashSize;
     }
   }
 
@@ -4113,6 +4185,7 @@ static int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
   pConfig->nAutomerge = FTS5_DEFAULT_AUTOMERGE;
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
+  pConfig->nHashSize = FTS5_DEFAULT_HASHSIZE;
 
   zSql = sqlite3Fts5Mprintf(&rc, zSelect, pConfig->zDb, pConfig->zName);
   if( zSql ){
@@ -7154,7 +7227,6 @@ struct Fts5Index {
   ** in-memory hash tables before they are flushed to disk.
   */
   Fts5Hash *pHash;                /* Hash table for in-memory data */
-  int nMaxPendingData;            /* Max pending data before flush to disk */
   int nPendingData;               /* Current bytes of pending data */
   i64 iWriteRowid;                /* Rowid for current doc being written */
   int bDelete;                    /* Current write is a delete */
@@ -11319,7 +11391,7 @@ static int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
   /* Flush the hash table to disk if required */
   if( iRowid<p->iWriteRowid 
    || (iRowid==p->iWriteRowid && p->bDelete==0)
-   || (p->nPendingData > p->nMaxPendingData) 
+   || (p->nPendingData > p->pConfig->nHashSize) 
   ){
     fts5IndexFlush(p);
   }
@@ -11385,7 +11457,6 @@ static int sqlite3Fts5IndexOpen(
   if( rc==SQLITE_OK ){
     p->pConfig = pConfig;
     p->nWorkUnit = FTS5_WORK_UNIT;
-    p->nMaxPendingData = 1024*1024;
     p->zDataTbl = sqlite3Fts5Mprintf(&rc, "%s_data", pConfig->zName);
     if( p->zDataTbl && bCreate ){
       rc = sqlite3Fts5CreateTable(
@@ -13058,6 +13129,15 @@ static int fts5InitVtab(
     rc = sqlite3Fts5ConfigDeclareVtab(pConfig);
   }
 
+  /* Load the initial configuration */
+  if( rc==SQLITE_OK ){
+    assert( pConfig->pzErrmsg==0 );
+    pConfig->pzErrmsg = pzErr;
+    rc = sqlite3Fts5IndexLoadConfig(pTab->pIndex);
+    sqlite3Fts5IndexRollback(pTab->pIndex);
+    pConfig->pzErrmsg = 0;
+  }
+
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab);
     pTab = 0;
@@ -13492,13 +13572,42 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   return rc;
 }
 
+
+static sqlite3_stmt *fts5PrepareStatement(
+  int *pRc,
+  Fts5Config *pConfig, 
+  const char *zFmt,
+  ...
+){
+  sqlite3_stmt *pRet = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+
+  if( *pRc==SQLITE_OK ){
+    int rc;
+    char *zSql = sqlite3_vmprintf(zFmt, ap);
+    if( zSql==0 ){
+      rc = SQLITE_NOMEM; 
+    }else{
+      rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pRet, 0);
+      if( rc!=SQLITE_OK ){
+        *pConfig->pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(pConfig->db));
+      }
+      sqlite3_free(zSql);
+    }
+    *pRc = rc;
+  }
+
+  va_end(ap);
+  return pRet;
+} 
+
 static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   Fts5Config *pConfig = pTab->pConfig;
   Fts5Sorter *pSorter;
   int nPhrase;
   int nByte;
   int rc = SQLITE_OK;
-  char *zSql;
   const char *zRank = pCsr->zRank;
   const char *zRankArgs = pCsr->zRankArgs;
   
@@ -13516,17 +13625,13 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   ** table, saving it creates a circular reference.
   **
   ** If SQLite a built-in statement cache, this wouldn't be a problem. */
-  zSql = sqlite3Fts5Mprintf(&rc, 
+  pSorter->pStmt = fts5PrepareStatement(&rc, pConfig,
       "SELECT rowid, rank FROM %Q.%Q ORDER BY %s(%s%s%s) %s",
       pConfig->zDb, pConfig->zName, zRank, pConfig->zName,
       (zRankArgs ? ", " : ""),
       (zRankArgs ? zRankArgs : ""),
       bDesc ? "DESC" : "ASC"
   );
-  if( zSql ){
-    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pSorter->pStmt, 0);
-    sqlite3_free(zSql);
-  }
 
   pCsr->pSorter = pSorter;
   if( rc==SQLITE_OK ){
@@ -15063,7 +15168,7 @@ static void fts5SourceIdFunc(
   sqlite3_value **apVal           /* Function arguments */
 ){
   assert( nArg==0 );
-  sqlite3_result_text(pCtx, "fts5: 2015-10-30 16:50:00 395a153ff7b3c7a72f3d02b6fe76d72383f4e480", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2015-12-02 20:40:26 d1a1278d7f3306536dc9cbd8fb300898f1e373e8", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){

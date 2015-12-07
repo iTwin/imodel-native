@@ -33,10 +33,42 @@
 #ifndef SQLITE_FCNTL_PRAGMA
 # define SQLITE_FCNTL_PRAGMA 14
 #endif
+#ifndef SQLITE_FCNTL_BUSYHANDLER
+# define SQLITE_FCNTL_BUSYHANDLER 15
+#endif
 
 #ifndef _ZIPVFS_H
 # include "zipvfs.h"
 #endif
+
+#ifdef SQLITE_DEBUG
+static int zipvfsIoError(int rc){
+  return rc;
+}
+#else
+# define zipvfsIoError(rc) (rc)
+#endif
+
+/*
+** An SQLite Pager interface changed names going from 3.9 to 3.10.  The
+** follow macro allows this code to work with either the old or the new
+** name.
+*/
+#if SQLITE_VERSION_NUMBER < 3010000
+# undef sqlite3PagerGet
+# define sqlite3PagerGet sqlite3PagerAcquire
+#endif
+
+/*
+** Specialized I/O error codes for ZIPVFS
+*/
+#define SQLITE_IOERR_ZIPVFS01   zipvfsIoError(SQLITE_IOERR | (137473<<8))
+#define SQLITE_IOERR_ZIPVFS02   zipvfsIoError(SQLITE_IOERR | (137474<<8))
+#define SQLITE_IOERR_ZIPVFS03   zipvfsIoError(SQLITE_IOERR | (137475<<8))
+#define SQLITE_IOERR_ZIPVFS04   zipvfsIoError(SQLITE_IOERR | (137476<<8))
+#define SQLITE_IOERR_ZIPVFS05   zipvfsIoError(SQLITE_IOERR | (137477<<8))
+#define SQLITE_IOERR_ZIPVFS06   zipvfsIoError(SQLITE_IOERR | (137478<<8))
+#define SQLITE_IOERR_ZIPVFS07   zipvfsIoError(SQLITE_IOERR | (137479<<8))
 
 /*
 ** This file contains the implementation of the zipvfs VFS extension. VFS
@@ -176,6 +208,14 @@
 #define ZIPVFS_DEFAULT_MAXFREE 100
 #define ZIPVFS_DEFAULT_MAXFRAG 200
 
+
+/*
+** Default cache size of the ZIPVFS pager
+*/
+#ifndef ZIPVFS_DEFAULT_CACHE_SIZE
+#  define ZIPVFS_DEFAULT_CACHE_SIZE 100
+#endif
+
 /*
 ** The maximum number of bytes allowed in the UTF-8 rendering of a zipvfs
 ** VFS name (the string passed as the first argumen to zipvfs_create_vfs()).
@@ -223,9 +263,23 @@ struct ZipvfsHdr {
 ** File handles opened using this VFS are structures of the following type.
 **
 ** inWriteTrans:
-**   Set to 0 when no transaction or a read transaction is open. Set to 1
-**   after a write-transaction has started (when SQLite requests a reserved
-**   lock). Set to 2 after SQLite requests an exclusive lock on the file.
+**   This variable is set to ZIPVFS_WRITE_NONE if no write transaction is
+**   open (there may or may not be a read transaction open). If the upper
+**   layer holds a RESERVED lock (has started a write transaction), this
+**   variable is set to ZIPVFS_WRITE_RESERVED. When an EXCLUSIVE lock is 
+**   obtained, this variable is set to ZIPVFS_WRITE_EXCLUSIVE. After  
+**   PagerCommitPhaseOne() is called it is set to ZIPVFS_WRITE_COMMIT.
+**
+** bIgnoreSync:
+**   This flag is only ever set for pass-through file handles, not zipvfs
+**   database files. If it is set, then calls to the xSync() method are
+**   not passed through to the lower level.
+**
+** nUsrPage:
+**   If there is no open write-transaction, this field is always set to 0.
+**   Or, if there is an open write-transaction and page 1 of the users 
+**   database has been written, this field contains number of pages in the
+**   users database according to the header field on page 1.
 */
 struct zipvfs_file {
   sqlite3_file base;              /* Base class */
@@ -235,7 +289,9 @@ struct zipvfs_file {
   DbPage *pPage1;                 /* Page 1 of file pPager */
   int nPgsz;                      /* Page-size used by pPager */
   int nBlocksize;                 /* Page-size configured by URI parameter */
+  int nCache;                     /* Cache size */
   int inWriteTrans;               /* Non-zero when in a write transaction */
+  int nUsrPage;                   /* Number of pages in user db (or zero) */
   int nMaxFree;                   /* Configured with ZIPVFS_CTRL_MAXFREE */
   int nMaxFrag;                   /* Configured using ZIPVFS_CTRL_MAXFRAG */
   ZipvfsVfs *pZipVfs;             /* Associated VFS */
@@ -249,15 +305,65 @@ struct zipvfs_file {
   u8 doIntegrityCheck;            /* Use expensive corruption detection */
   u8 bAutoDetect;                 /* True to detect compression type */
   u8 bGetMethodsDone;             /* True if methods.xCompressClose is req. */
+  u8 bIgnoreSync;                 /* True to ignore all xSync()s on this fd */
   zipvfs_file *pNext;             /* List of all main files for this VFS */
   int bOvwrPage1;                 /* Set after page 1 is written by vacuum */
-  u32 iOvwrNext;                  /* Next page vacuum may write */
+  int mVacuum;                    /* Mask of ZIPVFS_VACUUM_XXX values */
   int nAutoCheckpoint;            /* In WAL mode, the auto-checkpoint limit */
+  int (*xBusyHandler)(void *);    /* Pointer to busy-handler function */
+  void *pBusyHandlerArg;          /* Argument to pass to xBusyHandler */
+  i64 nDirectRead;                /* CTRL_DIRECT_READ value */
+  i64 nDirectBytes;               /* CTRL_DIRECT_BYTES value */
+
 #ifdef SQLITE_TEST
   int bCreateVersion0;            /* If true, create version 0 files */
   ZipvfsWriteCb xWrite;           /* Write callback (if any) */
 #endif
 };
+
+/*
+** Values for inWriteTrans.
+**
+** Once the zipvfs_file.inWriteTrans has been set to ZIPVFS_WRITE_EXCLUSIVE,
+** there are two ways in which the current write transaction may be committed
+** to disk. If the upper layer invokes the xSync() method on the database
+** file descriptor, the transaction is simply committed. This occurs if the
+** user level transaction is actually rolled back, or at the end of a backup
+** or VACUUM operation.
+**
+** The other way is used when the user level transaction is actually 
+** committed. In this case SQLite invokes the SQLITE_FCNTL_SYNC
+** file-control to indicate that zipvfs should perform phase one of the
+** transaction commit. The file-control may specify a master journal file
+** name. Once zipvfs has seen the SYNC file-control, inWriteTrans
+** is set to ZIPVFS_WRITE_COMMIT.
+**
+** Once inWriteTrans is set to ZIPVFS_WRITE_COMMIT, then any attempt by
+** the upper layer to write or truncate the database file returns an
+** SQLITE_IOERR error code. This only happens if some other error occurs
+** to interrupt a multi-db commit, so the user will never see this error
+** code. To complete committing the transaction, SQLite invokes the 
+** SQLITE_FCNTL_COMMIT_PHASETWO file-control. Upon receipt of this call,
+** zipvfs finishes committing the transaction.
+**
+** If SQLite makes an xUnlock() call when the inWriteTrans variable is
+** set to RESERVED, EXCLUSIVE or COMMIT, a rollback is performed and
+** inWriteTrans set to NONE.
+*/
+#define ZIPVFS_WRITE_NONE         0
+#define ZIPVFS_WRITE_RESERVED     1
+#define ZIPVFS_WRITE_EXCLUSIVE    2
+#define ZIPVFS_WRITE_COMMIT       3
+
+/*
+** The following bits are defined for the zipvfs_file.mVacuum mask. The
+** ZIPVFS_VACUUM_RUNNING bit is set whenever a VACUUM transaction is underway.
+** The other two bits are set after pages 1 and 2, respectively, are written
+** during a VACUUM transaction.
+*/
+#define ZIPVFS_VACUUM_RUNNING       0x01
+#define ZIPVFS_VACUUM_PAGE1_WRITTEN 0x02
+#define ZIPVFS_VACUUM_PAGE2_WRITTEN 0x04
 
 /*
 ** A call to zipvfs_create_vfs allocates a structure of the following type.
@@ -538,12 +644,12 @@ static int zipvfsError(int rc){
 ** should use the constant ZIPVFS_CORRUPT. This ensures that whenever 
 ** corruption occurs, a message is sent to the log.
 */
-static int zipvfsCorrupt(lineno){
+static int zipvfsCorrupt(int lineno){
   sqlite3_log(SQLITE_CORRUPT, 
       "zipvfs database is corrupt. Line %d of [%.10s]",
       lineno, 20+sqlite3_sourceid()
   );
-  return SQLITE_IOERR;
+  return SQLITE_IOERR_ZIPVFS07;
 }
 #define ZIPVFS_CORRUPT zipvfsCorrupt(__LINE__)
 
@@ -580,7 +686,7 @@ static int zipvfsWriteError(zipvfs_file *pZip, int rc){
   assert( rc!=SQLITE_BUSY );
   rc = zipvfsError(rc);
   if( pZip->pPager && rc!=SQLITE_OK ){
-    pZip->eErrorCode = SQLITE_IOERR;
+    pZip->eErrorCode = SQLITE_IOERR_ZIPVFS06;
   }
   return rc;
 }
@@ -664,7 +770,7 @@ static u8* zipvfsCompressionBuffer(
 }
 
 /*
-** This function is a wrapper around sqlite3PagerAcquire(). It remaps
+** This function is a wrapper around sqlite3PagerGet(). It remaps
 ** the page-space so that it is contiguous - all pages including the
 ** pending-byte page may be used.
 **
@@ -673,10 +779,10 @@ static u8* zipvfsCompressionBuffer(
 */
 static int zipvfsPagerAcquire(zipvfs_file *pZip, u32 iPg, DbPage **ppPg){ 
   assert( pZip->nPgsz );
-  if( iPg>=1+(PENDING_BYTE/pZip->nPgsz) ){
+  if( iPg>=(u32)(1+(PENDING_BYTE/pZip->nPgsz)) ){
     iPg += (pZip->hdr.iVersion ? (ZIPVFS_LOCKING_PAGE_SIZE / pZip->nPgsz) : 1);
   }
-  return sqlite3PagerAcquire(pZip->pPager, iPg, ppPg, 0);
+  return sqlite3PagerGet(pZip->pPager, iPg, ppPg, 0);
 }
 
 /*
@@ -687,14 +793,14 @@ static int zipvfsPagerAcquire(zipvfs_file *pZip, u32 iPg, DbPage **ppPg){
 */
 static void zipvfsPagerTruncateImage(zipvfs_file *pZip, u32 iPg){
   assert( pZip->nPgsz );
-  if( iPg>=1+(PENDING_BYTE/pZip->nPgsz) ){
+  if( iPg>=(u32)(1+(PENDING_BYTE/pZip->nPgsz)) ){
     iPg += (pZip->hdr.iVersion ? (ZIPVFS_LOCKING_PAGE_SIZE / pZip->nPgsz) : 1);
   }
   sqlite3PagerTruncateImage(pZip->pPager, iPg);
 }
 
 /*
-** Load raw data from the zipvfs file. This file just loads bytes of data
+** Load raw data from the zipvfs file. This routine just loads bytes of data
 ** from the disk, it does not do any decompression or interpretation of
 ** the data read.
 */
@@ -707,7 +813,7 @@ static void zipvfsLoadData(
 ){
   if( *pRc==SQLITE_OK ){
     int rc = SQLITE_OK;           /* Value to set *pRc to before returning */
-    if( pZip->inWriteTrans>1 || pZip->hdr.iVersion==2 ){
+    if( pZip->inWriteTrans>1 || sqlite3PagerWalFramesize(pZip->pPager)>0 ){
       int nRem = nByte;           /* Number of bytes still to load */
       while( nRem>0 ){
         u32 iPg;                  /* Page number of page file to load */
@@ -738,6 +844,9 @@ static void zipvfsLoadData(
       ** file address space. See zipvfsPagerAcquire() for more details.
       */
       sqlite3_file *fd = sqlite3PagerFile(pZip->pPager);
+
+      pZip->nDirectRead++;
+      pZip->nDirectBytes += nByte;
 
       if( iOffset<PENDING_BYTE ){
         int amt = MIN(nByte, PENDING_BYTE-iOffset);
@@ -1148,6 +1257,23 @@ static void zipvfsWritePageTo(
 }
 
 /*
+** If a compressed version of page iPg is currently stored in the zipvfs
+** file, move the slot it is occupying to the free-slot list.
+*/
+static void zipvfsFreeOldSlot(zipvfs_file *pZip, u32 iPg, int *pRc){
+  if( pZip->hdr.iSize>(iPg-1)*pZip->hdr.pgsz ){
+    i64 iOff = 0;                 /* Offset of existing page record */
+    int nByte = 0;                /* Size in bytes of existing page record */
+    int nPadding = 0;             /* Bytes of padding in existing page record */
+
+    zipvfsFindPage(pZip, iPg, &iOff, &nByte, &nPadding, pRc);
+    assert( *pRc || iOff || (iOff==0 && nByte==0 && nPadding==0) );
+    zipvfsFreelistAdd(pZip, iOff, nByte + nPadding, pRc);
+    pZip->hdr.nFreeFragment -= nPadding;
+  }
+}
+
+/*
 ** Write a compressed page into the file. Update the page-map accordingly.
 **
 ** The compressed page data is stored in buffer zBuf, length nBuf bytes.
@@ -1176,16 +1302,7 @@ static void zipvfsWritePage(
   int nSlotSize = 0;
 
   /* Find any existing slot for this page and add it to the free-list. */
-  if( pZip->hdr.iSize>(iPg-1)*pZip->hdr.pgsz ){
-    i64 iOff = 0;                 /* Offset of existing page record */
-    int nByte = 0;                /* Size in bytes of existing page record */
-    int nPadding = 0;             /* Bytes of padding in exising page record */
-
-    zipvfsFindPage(pZip, iPg, &iOff, &nByte, &nPadding, pRc);
-    assert( *pRc || iOff || (iOff==0 && nByte==0 && nPadding==0) );
-    zipvfsFreelistAdd(pZip, iOff, nByte + nPadding, pRc);
-    pZip->hdr.nFreeFragment -= nPadding;
-  }
+  zipvfsFreeOldSlot(pZip, iPg, pRc);
 
   /* If the appendOnly flag is not set, try to find a suitable free-slot to
   ** reuse for the new record.  */
@@ -1292,6 +1409,7 @@ static void zipvfsIntegrityCheck(zipvfs_file *pZip, int *pRc){
         
       zipvfsReadSlotHdr(pZip, iRec, &iPg, &nPayload, pRc);
       zipvfsFindPage(pZip, iPg, &iOff, &nByte, &nPadding, pRc);
+      if( *pRc!=SQLITE_OK ) break;
 
       if( iOff!=iRec ){
         /* A free slot. Make sure it is present in the free-list, and that 
@@ -1304,7 +1422,7 @@ static void zipvfsIntegrityCheck(zipvfs_file *pZip, int *pRc){
         ok = zipvfsFreelistTest(pZip, iRec, nPayload, 0, pRc);
         if( *pRc==SQLITE_OK && ok==0 ) *pRc = ZIPVFS_CORRUPT;
       }else{
-        if( *pRc==SQLITE_OK && nByte+nPadding!=nPayload ){
+        if( nByte+nPadding!=nPayload ){
           *pRc = ZIPVFS_CORRUPT;
         }
         nFreeFrag += nPadding;
@@ -1404,11 +1522,11 @@ static int zipvfsRead(
          || (iAmt==100 && iOfst==0)                         /* file-header */
     );
 #endif
-    assert( iAmt==100 || pZip->pPage1 );
+    assert( (iAmt==100 && iOfst==0) || pZip->pPage1 );
     assert( pZip->pPage1==0 || pZip->hdr.iSize==0 || pZip->hdr.pgsz>0 );
     assert( pZip->hdr.pgsz>=512 || pZip->hdr.iSize==0 );
 
-    if( iAmt==100 ){
+    if( pZip->pPage1==0 ){
       memset(zBuf, 0, iAmt);
     }else if( iOfst>=pZip->hdr.iSize ){
       /* Coverage: This case can only be hit during a VACUUM. */
@@ -1430,7 +1548,7 @@ static int zipvfsRead(
       zipvfsIntegrityCheck(pZip, &rc);
       zipvfsFindPage(pZip, iPg, &iOff, &nByte, 0, &rc);
       if( iOff ){
-        ZIPVFSTRACE(("read page[%d] from (%lld,%d)", iPg, iOfst, nByte));
+        ZIPVFSTRACE(("read page[%d] from (%lld,%d)", iPg, iOff, nByte));
         zipvfsLoadAndUncompress(pZip, zBuf, iAmt, iPgOff, nByte, iOff, &rc);
   
         /* If the amount of data requested is greater than the size of a page,
@@ -1462,6 +1580,20 @@ static int zipvfsRead(
 }
 
 /*
+** Return true if buffer pBuf (size nBuf bytes) consists entirely of
+** 0x00 bytes. Address pBuf is guaranteed to be aligned to a 4 byte 
+** boundary, and nBuf is guaranteed to be a multiple of 4.
+*/
+static int pageIsZeroed(const void *pBuf, int nBuf){
+  int i;
+  int *aInt = (int *)pBuf;
+  int nInt = nBuf/sizeof(int);
+  assert( nBuf==nInt*sizeof(int) );
+  for(i=0; i<nInt; i++) if( aInt[i] ) return 0;
+  return 1;
+}
+
+/*
 ** Write data to a zipvfs-file.
 */
 static int zipvfsWrite(
@@ -1486,12 +1618,14 @@ static int zipvfsWrite(
     assert( (iAmt&(iAmt-1))==0 && iAmt>=512 && iAmt<=65536 );
     assert( (iOfst&(iAmt-1))==0 );
 
-    if( pZip->inWriteTrans<2 ) return SQLITE_IOERR;
+    if( pZip->inWriteTrans!=ZIPVFS_WRITE_EXCLUSIVE ){
+      return SQLITE_IOERR_ZIPVFS01;
+    }
     if( /* pZip->hdr.iSize>0 && */ iOfst==0 ){
       int nPgsz = (int)zipvfsGetU16(&((u8 *)zBuf)[16]);
       if( nPgsz==1 ) nPgsz = 65536;
       if( iAmt!=nPgsz ){
-        return SQLITE_IOERR;
+        return SQLITE_IOERR_ZIPVFS02;
       }
     }
     pZip->hdr.pgsz = iAmt;
@@ -1500,16 +1634,15 @@ static int zipvfsWrite(
     /* Detect the upper layer attempting to rollback an FCNTL_OVERWRITE
     ** transaction. See comments in zipvfsFileControl() for further details.
     */
-    if( pZip->iOvwrNext ){
-      if( (iPg==1 && pZip->bOvwrPage1==1)
-       || (iPg!=1 && iPg!=pZip->iOvwrNext && iPg!=pZip->iOvwrNext+1) ){
-        rc = SQLITE_IOERR;
-      }else{
-        if( iPg==1 ){
-          pZip->bOvwrPage1 = 1;
-        }else{
-          pZip->iOvwrNext++;
-        }
+    if( pZip->mVacuum ){
+      assert( iPg>0 );
+      if( iPg<3 ){
+        assert( ZIPVFS_VACUUM_PAGE1_WRITTEN==0x02 );
+        assert( ZIPVFS_VACUUM_PAGE2_WRITTEN==0x04 );
+        if( pZip->mVacuum & (1 << iPg) ) rc = SQLITE_IOERR_ZIPVFS03;
+        pZip->mVacuum |= (1 << iPg);
+      }else if( 0==(pZip->mVacuum & ZIPVFS_VACUUM_PAGE2_WRITTEN) ){
+        rc = SQLITE_IOERR_ZIPVFS03;
       }
     }
 
@@ -1524,7 +1657,13 @@ static int zipvfsWrite(
     while( rc==SQLITE_OK && zipvfsPgmapEntry(iPg+1)>pZip->hdr.iDataStart ){
       int nByte = 0;              /* Number of bytes to extend page-map by */
    
-      if( pZip->hdr.iDataStart==pZip->hdr.iGapStart ){
+      if( pZip->hdr.iDataStart==pZip->hdr.iDataEnd ){
+        /* This branch is taken if this is the very first compressed page 
+        ** image written into the database file.  */
+        assert( pZip->hdr.iGapStart==0 && pZip->hdr.iGapEnd==0 );
+        assert( pZip->hdr.nFreeSlot==0 );
+        pZip->hdr.iDataStart = pZip->hdr.iDataEnd = zipvfsPgmapEntry(iPg+1);
+      }else if( pZip->hdr.iDataStart==pZip->hdr.iGapStart ){
         nByte = pZip->hdr.iGapEnd - pZip->hdr.iGapStart;
         if( nByte>128 ){
           nByte = 128;
@@ -1566,17 +1705,34 @@ static int zipvfsWrite(
     ** into the start of the zipvfs db file.  Also store the database file
     ** format name as a zero-padded string in bytes 0 through 15. */
     if( iPg==1 ){
+      int nHdr;
       u8 aPg1[92];
       memset(aPg1, 0, 16);
       sqlite3_snprintf(17, (char*)aPg1, "ZV-%s", pZip->methods.zHdr);
+      if( pZip->methods.zAuxHdr
+       && (nHdr = (int)strlen(pZip->methods.zHdr))<12
+      ){
+        sqlite3_snprintf(13-nHdr, (char*)aPg1+nHdr+4,
+                        "%s", pZip->methods.zAuxHdr);
+      }
       memcpy(&aPg1[16], &((u8*)zBuf)[16], 76);
       zipvfsStoreData(pZip, 0, aPg1, 92, &rc);
     }
 
     /* Compress the new page and write it into the file */
-    zipvfsCompress(pZip, (u8 *)zBuf, z, &n, &rc);
-    zipvfsWritePage(pZip, 0, iPg, z, n, &rc);
-    zipvfsIntegrityCheck(pZip, &rc);
+    if( pageIsZeroed(zBuf, iAmt) ){
+      static const u8 aPgmap[8] = {0,0,0,0,0,0,0,0};
+      assert( iPg!=1 );
+      zipvfsFreeOldSlot(pZip, iPg, &rc);
+      zipvfsStoreData(pZip, zipvfsPgmapEntry(iPg), aPgmap, sizeof(aPgmap), &rc);
+    }else{
+      if( iPg==1 ){
+        pZip->nUsrPage = (int)zipvfsGetU32(&((u8 *)zBuf)[28]);
+      }
+      zipvfsCompress(pZip, (u8 *)zBuf, z, &n, &rc);
+      zipvfsWritePage(pZip, 0, iPg, z, n, &rc);
+      zipvfsIntegrityCheck(pZip, &rc);
+    }
 
 #ifdef SQLITE_TEST
     if( rc==SQLITE_OK && pZip->xWrite.x ){
@@ -1595,6 +1751,39 @@ static int zipvfsWrite(
 }
 
 /*
+** Truncate the user databases to nPg pages.
+**
+** This function is a no-op if *pRc is not initially SQLITE_OK. If an error
+** occurs, then *pRc is set to the appropriate error code before returning.
+** Otherwise it is left unmodified.
+*/
+static void zipvfsTruncateUserdb(zipvfs_file *pZip, int nPg, int *pRc){
+  int rc = *pRc;             /* Error code */
+
+  if( rc==SQLITE_OK ){
+    u32 iPg;
+    u32 iFree = nPg+1;
+    u32 nPage = (pZip->hdr.iSize / pZip->hdr.pgsz);
+
+    assert( pZip->eErrorCode==SQLITE_OK );
+    for(iPg=iFree; iPg<=nPage; iPg++){
+      i64 iOff = -1;
+      int nByte;
+      int nPadding;
+      zipvfsFindPage(pZip, iPg, &iOff, &nByte, &nPadding, &rc);
+      assert( iOff>=0 || rc!=SQLITE_OK );
+      zipvfsFreelistAdd(pZip, iOff, nByte+nPadding, &rc);
+    }
+    zipvfsStoreData(pZip, zipvfsPgmapEntry(iFree), 0, 
+        zipvfsPgmapEntry(nPage+1)-zipvfsPgmapEntry(iFree), &rc
+    );
+    pZip->hdr.iSize = nPg * (sqlite3_int64)pZip->hdr.pgsz;
+  }
+
+  *pRc = rc;
+}
+
+/*
 ** Truncate a zipvfs-file.
 */
 static int zipvfsTruncate(sqlite3_file *pFile, sqlite_int64 size){
@@ -1604,28 +1793,15 @@ static int zipvfsTruncate(sqlite3_file *pFile, sqlite_int64 size){
   if( pZip->eErrorCode ){
     rc = pZip->eErrorCode;
   }else if( pZip->pPager ){
+    int nPg = ((size+pZip->hdr.pgsz-1) / pZip->hdr.pgsz);
     assert( size<pZip->hdr.iSize );
-    if( size%pZip->hdr.pgsz ){
-      rc = SQLITE_IOERR_TRUNCATE;
-    }else{
-      u32 iPg;
-      u32 iFree = (size/pZip->hdr.pgsz)+1;
-      u32 nPage = (pZip->hdr.iSize / pZip->hdr.pgsz);
-      for(iPg=iFree; iPg<=nPage; iPg++){
-        i64 iOff;
-        int nByte;
-        int nPadding;
-        zipvfsFindPage(pZip, iPg, &iOff, &nByte, &nPadding, &rc);
-        zipvfsFreelistAdd(pZip, iOff, nByte+nPadding, &rc);
-      }
-      zipvfsStoreData(pZip, zipvfsPgmapEntry(iFree), 0, 
-          zipvfsPgmapEntry(nPage+1)-zipvfsPgmapEntry(iFree), &rc
-      );
-      pZip->hdr.iSize = size;
-    }
+    if( pZip->inWriteTrans!=ZIPVFS_WRITE_EXCLUSIVE ) return SQLITE_OK;
+    zipvfsTruncateUserdb(pZip, nPg, &rc);
+    pZip->nUsrPage = 0;
   }else{
     rc = SYSFILE(pFile)->pMethods->xTruncate(SYSFILE(pFile), size);
   }
+
   return zipvfsWriteError(pZip, rc);
 }
 
@@ -1644,33 +1820,30 @@ static int zipvfsTruncate(sqlite3_file *pFile, sqlite_int64 size){
 ** It is not possible to simply change the page-size and continue, as 
 ** page 1 is currently in memory.
 */
-static int zipvfsGetPgsz(zipvfs_file *pZip, int *pRc){
+static int zipvfsGetPgsz(zipvfs_file *pZip){
   u32 pgsz = 0;
+  int nFramesize;               /* Page size in WAL file (or zero if n/a) */
 
-  if( *pRc==SQLITE_OK ){
-    int nFramesize;               /* Page size in WAL file (or zero if n/a) */
+  assert( sqlite3PagerRefcount(pZip->pPager)==1 );
+  nFramesize = sqlite3PagerWalFramesize(pZip->pPager);
+  (void)sqlite3PagerSetPagesize(pZip->pPager, &pgsz, -1);
 
-    assert( sqlite3PagerRefcount(pZip->pPager)==1 );
-    nFramesize = sqlite3PagerWalFramesize(pZip->pPager);
-    (void)sqlite3PagerSetPagesize(pZip->pPager, &pgsz, -1);
-
-    if( nFramesize ){
-      /* There exists a WAL file that already contains one or more frames.
-      ** The page size must be set to the same size as the frames already
-      ** in the WAL in this case.
-      */
-      pZip->nPgsz = nFramesize;
-    }else if( pZip->nBlocksize && pZip->hdr.iVersion>0 ){
-      /* A URI parameter specifies the page-size to use.  Use it only
-      ** if the file format version is greater than 0 */
-      pZip->nPgsz = pZip->nBlocksize;
-    }else{
-      /* If this is a version 0 database or if no block_size query
-      ** parameter is provided, then the page-size is determined by
-      ** the preferences of the pager.
-      */
-      pZip->nPgsz = pgsz;
-    }
+  if( nFramesize ){
+    /* There exists a WAL file that already contains one or more frames.
+    ** The page size must be set to the same size as the frames already
+    ** in the WAL in this case.
+    */
+    pZip->nPgsz = nFramesize;
+  }else if( pZip->nBlocksize && pZip->hdr.iVersion>0 ){
+    /* A URI parameter specifies the page-size to use.  Use it only
+    ** if the file format version is greater than 0 */
+    pZip->nPgsz = pZip->nBlocksize;
+  }else{
+    /* If this is a version 0 database or if no block_size query
+    ** parameter is provided, then the page-size is determined by
+    ** the preferences of the pager.
+    */
+    pZip->nPgsz = pgsz;
   }
 
   return( pZip->nPgsz!=pgsz );
@@ -1799,90 +1972,102 @@ static void zipvfsWriteHeader(zipvfs_file *pZip, int *pRc){
   }
 }
 
-/*
-** Update the contents of the header with the values currently stored
-** in pZip->hdr and commit the current transaction open on the zipvfs 
-** file to disk. 
-*/
-static void zipvfsCommitTransaction(zipvfs_file *pZip, int *pRc){
-  if( *pRc==SQLITE_OK && pZip->iOvwrNext ){
-    if( pZip->bOvwrPage1==0 ){
-      *pRc = SQLITE_IOERR;
+static void zipvfsCommitTransactionOne(
+  zipvfs_file *pZip, 
+  const char *zMaster,            /* Master-journal file name */
+  int *pRc
+){
+  if( *pRc==SQLITE_OK && pZip->mVacuum ){
+    if( (pZip->mVacuum & ZIPVFS_VACUUM_PAGE1_WRITTEN)==0 ){
+      *pRc = SQLITE_IOERR_ZIPVFS04;
     }else{
       zipvfsPagerTruncateImage(pZip, (pZip->hdr.iDataEnd/pZip->nPgsz)+1);
     }
   }
+  if( pZip->nUsrPage ){
+    zipvfsTruncateUserdb(pZip, pZip->nUsrPage, pRc);
+    pZip->nUsrPage = 0;
+  }
   zipvfsWriteHeader(pZip, pRc);
   if( *pRc==SQLITE_OK ){
-    Pager *p = pZip->pPager;
-    int rc = sqlite3PagerCommitPhaseOne(p, 0, 0);
-    if( rc==SQLITE_OK ){
-      rc = sqlite3PagerCommitPhaseTwo(p);
-      pZip->inWriteTrans = 0;
-      pZip->iOvwrNext = 0;
-      pZip->bOvwrPage1 = 0;
-    }
-    *pRc = rc;
+    *pRc = sqlite3PagerCommitPhaseOne(pZip->pPager, zMaster, 0);
   }
+}
+
+static void zipvfsCommitTransactionTwo(zipvfs_file *pZip, int *pRc){
+  if( *pRc==SQLITE_OK ){
+    *pRc = sqlite3PagerCommitPhaseTwo(pZip->pPager);
+    pZip->inWriteTrans = 0;
+    pZip->mVacuum = 0;
+  }
+}
+
+/*
+** Commit the current write-transaction to disk.
+**
+** There are two ways in which a write-transaction may be committed. If the
+** upper layer invokes the xSync() method of the file descriptor, this
+** function is called to commit the transaction. This may happen if a user
+** level is rolled back, or as part of a VACUUM or backup operation.
+**
+** See comments above the ZIPVFS_WRITE_XXX symbols for an explanation of
+** the other way in which transactions are committed.
+*/
+static void zipvfsCommitTransaction(zipvfs_file *pZip, int *pRc){
+  zipvfsCommitTransactionOne(pZip, 0, pRc);
+  zipvfsCommitTransactionTwo(pZip, pRc);
 }
 
 /*
 ** Sync a zipvfs-file. The zipvfsDoSync() function is invoked when SQLite
-** invokes the SQLITE_FCNTL_SYNC_OMITTED file-control.  SQLite issues that
-** file-control in rollback mode instead of syncing the database file
-** as part of transaction commit when PRAGMA synchronous=OFF.
-**
-** The zipvfsSync() function is the traditional xSync method that is
-** invoked when PRAGMA synchronous=NORMAL or =FULL.
+** invokes the SQLITE_FCNTL_SYNC file-control.
 */
-static int zipvfsDoSync(zipvfs_file *pZip){
+static int zipvfsDoSync(zipvfs_file *pZip, const char *zMaster){
   int rc = pZip->eErrorCode;
-  zipvfsCommitTransaction(pZip, &rc);
+
+  assert( zMaster==0 || pZip->inWriteTrans==ZIPVFS_WRITE_EXCLUSIVE );
+  if( rc==SQLITE_OK && pZip->inWriteTrans!=ZIPVFS_WRITE_EXCLUSIVE ){
+    /* This may occur if the zipvfs file is written to as part of a 
+    ** multi-file transaction. If this file is successfully synced
+    ** to disk, and then some other error occurs, the upper layer may
+    ** try to roll back the transaction by writing the contents of its
+    ** journal to the database file. Return an error in this case.
+    ** The zipvfsWrite() function contains the same logic.
+    **
+    ** This condition only occur if the upper layer has already encountered
+    ** some other error. For this reason, the SQLite user will never see
+    ** this error code. So it doesn't matter whether it is strictly
+    ** accurate or not, so long as it is an error.
+    */
+    rc = SQLITE_IOERR_ZIPVFS05;
+
+  }else if( zMaster ){
+    zipvfsCommitTransactionOne(pZip, zMaster, &rc);
+    if( rc==SQLITE_OK ){
+      pZip->inWriteTrans = ZIPVFS_WRITE_COMMIT;
+    }
+
+  }else{
+    zipvfsCommitTransaction(pZip, &rc);
+    rc = zipvfsWriteError(pZip, rc);
+  }
+
   return zipvfsWriteError(pZip, rc);
 }
-static int zipvfsSync(sqlite3_file *pFile, int flags){
-  zipvfs_file *pZip = (zipvfs_file*)pFile;
-  int rc;
-  if( pZip->pPager ){
-    rc = pZip->eErrorCode;
-    if( rc==SQLITE_OK && pZip->inWriteTrans<2 ){
-      /* This may occur if the zipvfs file is written to as part of a 
-      ** multi-file transaction. If this file is successfully synced
-      ** to disk, and then some other error occurs, the upper layer may
-      ** try to roll back the transaction by writing the contents of its
-      ** journal to the database file. Return an error in this case.
-      ** The zipvfsWrite() function contains the same logic.
-      **
-      ** This condition only occur if the upper layer has already encountered
-      ** some other error. For this reason, the SQLite user will never see
-      ** this error code. So it doesn't matter whether it is strictly
-      ** accurate or not, so long as it is an error.
-      */
-      rc = SQLITE_IOERR;
-    }else{
-      zipvfsCommitTransaction(pZip, &rc);
-      rc = zipvfsWriteError(pZip, rc);
-    }
-  }else{
-    rc = SYSFILE(pFile)->pMethods->xSync(SYSFILE(pFile), flags);
+
+static int zipvfsDoCommit(zipvfs_file *pZip){
+  int rc = SQLITE_OK;
+  if( pZip->inWriteTrans==ZIPVFS_WRITE_COMMIT ){
+    zipvfsCommitTransactionTwo(pZip, &rc);
   }
   return rc;
 }
 
-/*
-** Return the current file-size of a zipvfs-file. If the file is a main
-** database file, the size returned is the size of the users uncompressed 
-** database file.
-*/
-static int zipvfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
-  int rc;
-  zipvfs_file *pZip = (zipvfs_file *)pFile;
-  if( pZip->pPager ){
-    assert( pZip->pPage1 );
-    *pSize = pZip->hdr.iSize;
-    rc = SQLITE_OK;
-  }else{
-    rc = SYSFILE(pFile)->pMethods->xFileSize(SYSFILE(pFile), pSize);
+static int zipvfsSync(sqlite3_file *pFile, int flags){
+  zipvfs_file *pZip = (zipvfs_file*)pFile;
+  int rc = SQLITE_OK;
+  if( pZip->pPager==0 && pZip->bIgnoreSync==0 ){
+    rc = SYSFILE(pFile)->pMethods->xSync(SYSFILE(pFile), flags);
   }
   return rc;
 }
@@ -1901,7 +2086,8 @@ static int zipvfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 static int zipvfsLockFile(
   zipvfs_file *pZip,              /* Zipvfs file handle */
   int eLock,                      /* SHARED, RESERVED or EXCLUSIVE */
-  int bAllowWal                   /* True to open WAL file if iVersion==2 */
+  int bAllowWal,                  /* True to open WAL file if iVersion==2 */
+  int bNoPassthrough              /* Do not take any pass-through lock */
 ){
   int rc = SQLITE_OK;
 
@@ -1912,7 +2098,7 @@ static int zipvfsLockFile(
     assert( sqlite3PagerRefcount(pZip->pPager)==0 );
     rc = sqlite3PagerSharedLock(pZip->pPager);
     if( rc==SQLITE_OK ){
-      rc = sqlite3PagerAcquire(pZip->pPager, 1, &pZip->pPage1, 0);
+      rc = sqlite3PagerGet(pZip->pPager, 1, &pZip->pPage1, 0);
       if( zipvfsReadHeader(pZip, &rc) ){
         sqlite3_vfs *pVfs;      /* Underlying "real" VFS */
         sqlite3_file *pFd;      /* Real file handle to open */
@@ -1924,10 +2110,11 @@ static int zipvfsLockFile(
         sqlite3PagerClose(pZip->pPager);
         pZip->pPager = 0;
         rc = pVfs->xOpen(pVfs, pZip->zFilename, pFd, pZip->openFlags, &dummy);
-        if( rc!=SQLITE_OK ) return rc;
+        if( rc!=SQLITE_OK || bNoPassthrough ) return rc;
         return zipvfsLock((sqlite3_file *)pZip, eLock);
       }
 
+#ifndef SQLITE_OMIT_WAL
       if( rc==SQLITE_OK && pZip->hdr.iVersion==2 && bAllowWal ){
         int bOpen = 0;
         rc = sqlite3PagerOpenWal(pZip->pPager, &bOpen);
@@ -1936,8 +2123,9 @@ static int zipvfsLockFile(
           pZip->pPage1 = 0;
         }
       }
+#endif
       
-      if( rc==SQLITE_OK && pZip->pPage1 && zipvfsGetPgsz(pZip, &rc) ){
+      if( rc==SQLITE_OK && pZip->pPage1 && zipvfsGetPgsz(pZip) ){
         u32 pgsz = pZip->nPgsz;
         sqlite3PagerUnref(pZip->pPage1);
         rc = sqlite3PagerSetPagesize(pZip->pPager, &pgsz, -1);
@@ -1957,6 +2145,37 @@ static int zipvfsLockFile(
     if( rc==SQLITE_OK ) pZip->inWriteTrans = 2;
   }
 
+  return rc;
+}
+
+/*
+** Return the current file-size of a zipvfs-file. If the file is a main
+** database file, the size returned is the size of the users uncompressed 
+** database file.
+*/
+static int zipvfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
+  int rc;
+  zipvfs_file *pZip = (zipvfs_file *)pFile;
+
+  /* If this is invoked on an unlocked file and the connection is still
+  ** (potentially) in zipvfs mode, then the upper level pager must be 
+  ** running with either immutable=1 or nolock=1. In this case "lock" the 
+  ** file in order to determine whether this is a zipvfs or pass-through 
+  ** file. In either case, no locks will actually be taken (either because
+  ** the lower-level pager will respect the URI parameter or because the
+  ** 4th argumetn to zipvfsLockFile() below explicitly prevents it).  */
+  if( pZip->pPager && pZip->pPage1==0 ){
+    rc = zipvfsLockFile(pZip, SQLITE_LOCK_SHARED, 1, 1);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+
+  if( pZip->pPager ){
+    assert( pZip->pPage1 );
+    *pSize = pZip->hdr.iSize;
+    rc = SQLITE_OK;
+  }else{
+    rc = SYSFILE(pFile)->pMethods->xFileSize(SYSFILE(pFile), pSize);
+  }
   return rc;
 }
 
@@ -1988,7 +2207,7 @@ static int zipvfsLock(sqlite3_file *pFile, int eLock){
        || eLock==SQLITE_LOCK_EXCLUSIVE
   );
   if( pZip->pPager ){
-    rc = zipvfsLockFile(pZip, eLock, 1);
+    rc = zipvfsLockFile(pZip, eLock, 1, 0);
   }else{
     rc = SYSFILE(pFile)->pMethods->xLock(SYSFILE(pFile), eLock);
   }
@@ -2012,19 +2231,21 @@ static int zipvfsUnlock(sqlite3_file *pFile, int eLock){
     assert( eLock==SQLITE_LOCK_NONE || eLock==SQLITE_LOCK_SHARED );
     sqlite3PagerRollback(pZip->pPager);
     pZip->inWriteTrans = 0;
-    pZip->iOvwrNext = 0;
-    pZip->bOvwrPage1 = 0;
+    pZip->mVacuum = 0;
+    pZip->nUsrPage = 0;
     if( eLock==SQLITE_LOCK_NONE ){
       sqlite3PagerUnref(pZip->pPage1);
       pZip->pPage1 = 0;
       pZip->eErrorCode = SQLITE_OK;
 
+#ifndef SQLITE_OMIT_WAL
       /* Run auto-checkpoint, if required */
       if( pZip->nAutoCheckpoint>0
        && sqlite3PagerWalCallback(pZip->pPager)>=pZip->nAutoCheckpoint 
       ){
         sqlite3PagerCheckpoint(pZip->pPager, SQLITE_CHECKPOINT_PASSIVE, 0, 0);
       }
+#endif
     }
   }else{
     sqlite3_file *pSys = SYSFILE(pFile);
@@ -2304,7 +2525,7 @@ static int zipvfsJournalMode(
   ** switches between rollback and WAL mode is not incorrectly assumed
   ** to be a no-op by the code below.  */
   if( pZip->hdr.pgsz==0 ){
-    rc = zipvfsLockFile(pZip, SQLITE_LOCK_SHARED, 1);
+    rc = zipvfsLockFile(pZip, SQLITE_LOCK_SHARED, 1, 0);
     zipvfsUnlock((sqlite3_file *)pZip, SQLITE_LOCK_NONE);
   }
 
@@ -2316,6 +2537,9 @@ static int zipvfsJournalMode(
     ** switch between rollback and WAL modes.  */
     if( (eMode==PAGER_JOURNALMODE_WAL) != bWal ){
 
+#ifdef SQLITE_OMIT_WAL
+      rc = SQLITE_ERROR;
+#else
       /* If switching out of WAL mode, checkpoint, close and delete the
       ** WAL file. Then change the journal mode (so that the transaction
       ** in the next block is written using a rollback transaction, not
@@ -2326,7 +2550,7 @@ static int zipvfsJournalMode(
 
       /* Make sure a rollback-mode write transaction is open */
       if( rc==SQLITE_OK ){
-        rc = zipvfsLockFile(pZip, SQLITE_LOCK_EXCLUSIVE, 0);
+        rc = zipvfsLockFile(pZip, SQLITE_LOCK_EXCLUSIVE, 0, 0);
       }
 
       /* Modify the iVersion field in the zipvfs header */
@@ -2335,6 +2559,7 @@ static int zipvfsJournalMode(
         zipvfsCommitTransaction(pZip, &rc);
       }
       zipvfsUnlock((sqlite3_file *)pZip, SQLITE_LOCK_NONE);
+#endif /* !defined(SQLITE_OMIT_WAL) */
     }
 
     /* If successful, update the pager journal mode. */
@@ -2395,24 +2620,40 @@ static int zipvfsHandlePragma(
       );
       rc = SQLITE_ERROR;
     }
+  }else
 
   /*
   ** PRAGMA locking_mode = [normal|exclusive]
   **
   **   Prevent attempts to set locking_mode=EXCLUSIVE.
   */
-  }else if( sqlite3_stricmp("locking_mode", zPragma)==0 ){
+  if( sqlite3_stricmp("locking_mode", zPragma)==0 ){
     if( zPragmaArg && 0==sqlite3_stricmp("exclusive", zPragmaArg) ){
       *pzResult = sqlite3_mprintf(
           "locking_mode=exclusive may not be used with zipvfs"
       );
       rc = SQLITE_ERROR;
     }
+  }else
+
+  /*
+  ** PRAGMA zipvfs_cache_size = N
+  **
+  **   Set the cache-size for the ZIPVFS pager to N.
+  */
+  if( sqlite3_stricmp("zipvfs_cache_size", zPragma)==0 ){
+    if( zPragmaArg ){
+      pZip->nCache = sqlite3Atoi(zPragmaArg);
+      sqlite3PagerSetCachesize(pZip->pPager, pZip->nCache);
+    }
+    *pzResult = sqlite3_mprintf("%d", pZip->nCache);
+    rc = SQLITE_OK;
+  }else
 
   /*
   ** PRAGMA zipvfs_journal_mode = [delete|persist|truncate|memory|off|wal]
   */
-  }else if( sqlite3_stricmp("zipvfs_journal_mode", zPragma)==0 ){
+  if( sqlite3_stricmp("zipvfs_journal_mode", zPragma)==0 ){
     rc = SQLITE_OK;
 
     if( zPragmaArg ){
@@ -2427,21 +2668,26 @@ static int zipvfsHandlePragma(
       *pzResult = sqlite3_mprintf("%s", sqlite3JournalModename(eRet));
       if( *pzResult==0 ) rc = SQLITE_NOMEM;
     }
+  }else
 
   /*
   ** PRAGMA wal_autocheckpoint = N
   */
-  }else if( sqlite3_stricmp("wal_autocheckpoint", zPragma)==0 ){
+#ifndef SQLITE_OMIT_WAL
+  if( sqlite3_stricmp("wal_autocheckpoint", zPragma)==0 ){
     rc = SQLITE_OK;
     if( zPragmaArg ){
       pZip->nAutoCheckpoint = sqlite3Atoi(zPragmaArg);
     }
     *pzResult = sqlite3_mprintf("%d", pZip->nAutoCheckpoint);
+  }else
+#endif
 
   /*
   ** PRAGMA wal_checkpoint = [passive|full|restart]
   */
-  }else if( sqlite3_stricmp("wal_checkpoint", zPragma)==0 ){
+#ifndef SQLITE_OMIT_WAL
+  if( sqlite3_stricmp("wal_checkpoint", zPragma)==0 ){
     int eMode = SQLITE_CHECKPOINT_PASSIVE;
     if( zPragmaArg ){
       if( sqlite3_stricmp(zPragmaArg, "full")==0 ){
@@ -2453,11 +2699,49 @@ static int zipvfsHandlePragma(
     rc = sqlite3PagerCheckpoint(pZip->pPager, eMode, 0, 0);
     *pzResult = sqlite3_mprintf("%d", rc==SQLITE_BUSY);
     if( rc==SQLITE_BUSY ) rc = SQLITE_OK;
+  }else
+#endif
+
+  /*
+  ** PRAGMA zipvfs_block_size;
+  **
+  ** Report back the page size for the "lower" pager used by ZIPVFS
+  ** for preventing corruption following a crash.
+  */
+  if( sqlite3_stricmp("zipvfs_block_size", zPragma)==0 ){
+    rc = SQLITE_OK;
+    *pzResult = sqlite3_mprintf("%d", pZip->nPgsz);
   }
 
   return rc;
 }
 
+/*
+** Pass a file-control down to the next VFS in the stack.
+*/
+static int zipvfsFileControlPassdown(
+  zipvfs_file *pZip,
+  int op,
+  void *pArg
+){
+  sqlite3_file *pSysFile = sqlite3PagerFile(pZip->pPager);
+  const sqlite3_io_methods *pMethods = pSysFile->pMethods;
+  int rc;
+
+  rc = pMethods->xFileControl(pSysFile, op, pArg);
+  if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
+    assert( pZip->methods.zHdr );
+    if( pZip->methods.zAuxHdr ){
+      *(char**)pArg = sqlite3_mprintf("zipvfs(%s,%s)/%z",
+          pZip->methods.zHdr, pZip->methods.zAuxHdr, *(char**)pArg);
+    }else{
+      *(char**)pArg = sqlite3_mprintf("zipvfs(%s)/%z",
+          pZip->methods.zHdr, *(char**)pArg);
+    }
+  }
+  return rc;
+}
+  
 /*
 ** File control method. For custom operations on a zipvfs-file.
 */
@@ -2468,8 +2752,16 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
 
   if( pZip->pPager ){
     switch( op ){
-      case SQLITE_FCNTL_SYNC_OMITTED:
-        rc = zipvfsDoSync(pZip);
+      case SQLITE_FCNTL_ZIPVFS:
+        assert( rc==SQLITE_OK );
+        break;
+
+      case SQLITE_FCNTL_SYNC:
+        rc = zipvfsDoSync(pZip, (const char*)pArg);
+        break;
+
+      case SQLITE_FCNTL_COMMIT_PHASETWO:
+        rc = zipvfsDoCommit(pZip);
         break;
 
       case SQLITE_FCNTL_OVERWRITE:
@@ -2510,11 +2802,12 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
             ** lower level pager. To accomplish this, the zipvfs_file object
             ** enters the error state if it detects the upper layer attempting
             ** a rollback. Since FCNTL_OVERWRITE is only used during a
-            ** VACUUM, a rollback is easy to detect: It is the only reason
-            ** a single page would be written more than once. And since,
-            ** except for page 1 and the PENDING_BYTE page, pages are always
-            ** written in order, this can be easily detected within
-            ** the zipvfsWrite().
+            ** VACUUM, a rollback is easy to detect: During a vacuum the first
+            ** page written is always page 2. Therefore if a ROLLBACK is
+            ** attempted, page 2 must be written a second time. So, if
+            ** zipvfsWrite() detects an attempt to write to page 2 more than
+            ** once during a VACUUM trnasaction, it puts the zipvfs file into
+            ** the error state.
             **
             ** Related to the above is that the zipvfsDeviceCharacteristics()
             ** method may not return a mask with the IOCAP_UNDELETABLE_WHEN_OPEN
@@ -2528,8 +2821,7 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
             ** IOCAP_UNDELETABLE_WHEN_OPEN is not set, then SQLite must close
             ** the journal file when unlocking the zipvfs_file.
             */
-            pZip->iOvwrNext = 2;
-            assert( pZip->bOvwrPage1==0 );
+            pZip->mVacuum = ZIPVFS_VACUUM_RUNNING;
           }
           rc = zipvfsWriteError(pZip, rc);
         }
@@ -2569,7 +2861,8 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
         break;
 
       case ZIPVFS_CTRL_CACHESIZE:
-        sqlite3PagerSetCachesize(pZip->pPager, *(int *)pArg);
+        pZip->nCache = *(int*)pArg;
+        sqlite3PagerSetCachesize(pZip->pPager, pZip->nCache);
         break;
 
       case ZIPVFS_CTRL_STAT: {
@@ -2595,6 +2888,41 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
           memset(pStat, 0, sizeof(ZipvfsStat));
         }
 
+        break;
+      }
+
+      case ZIPVFS_CTRL_CACHE_USED: {
+        i64 *piOut = (i64 *)pArg;
+        *piOut = sqlite3PagerMemUsed(pZip->pPager);
+        break;
+      }
+      case ZIPVFS_CTRL_CACHE_HIT: 
+      case ZIPVFS_CTRL_CACHE_WRITE: 
+      case ZIPVFS_CTRL_CACHE_MISS: {
+        i64 *piOut = (i64 *)pArg;
+        int nRet = 0;
+        int op2 = op==ZIPVFS_CTRL_CACHE_MISS ? SQLITE_DBSTATUS_CACHE_MISS :
+                  op==ZIPVFS_CTRL_CACHE_WRITE ? SQLITE_DBSTATUS_CACHE_WRITE :
+                                               SQLITE_DBSTATUS_CACHE_HIT;
+
+        sqlite3PagerCacheStat(pZip->pPager, op2, (int)*piOut, &nRet);
+        *piOut = (i64)nRet;
+        break;
+      }
+
+      case ZIPVFS_CTRL_DIRECT_READ: {
+        i64 *piOut = (i64*)pArg;
+        int bReset = (int)*piOut;
+        *piOut = pZip->nDirectRead;
+        if( bReset ) pZip->nDirectRead = 0;
+        break;
+      }
+
+      case ZIPVFS_CTRL_DIRECT_BYTES: {
+        i64 *piOut = (i64*)pArg;
+        int bReset = (int)*piOut;
+        *piOut = pZip->nDirectBytes;
+        if( bReset ) pZip->nDirectBytes = 0;
         break;
       }
 
@@ -2625,7 +2953,7 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
         char **azArg = (char **)pArg;
 
         if( pZip->bGetMethodsDone==0 ){
-          rc = zipvfsLockFile(pZip, SQLITE_LOCK_SHARED, 1);
+          rc = zipvfsLockFile(pZip, SQLITE_LOCK_SHARED, 1, 0);
           if( rc!=SQLITE_OK ) break;
           assert( pZip->bGetMethodsDone || pZip->pPager==0 );
           zipvfsUnlock(pFile, SQLITE_LOCK_NONE);
@@ -2635,6 +2963,16 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
         }
 
         rc = zipvfsHandlePragma(pZip, azArg[1], azArg[2], &azArg[0]);
+        if( rc==SQLITE_NOTFOUND ){
+          rc = zipvfsFileControlPassdown(pZip, op, pArg);
+        }
+        break;
+      }
+
+      case SQLITE_FCNTL_BUSYHANDLER: {
+        void **ap = (void **)pArg;
+        pZip->xBusyHandler = (int(*)(void *))(ap[0]);
+        pZip->pBusyHandlerArg = ap[1];
         break;
       }
 
@@ -2705,18 +3043,15 @@ static int zipvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
       default: {
         /* Any other unrecognized file-control is passed through to the
         ** low-level VFS */
-        sqlite3_file *pSysFile = sqlite3PagerFile(pZip->pPager);
-        const sqlite3_io_methods *pMethods = pSysFile->pMethods;
-        if( pMethods ){
-          rc = pMethods->xFileControl(pSysFile, op, pArg);
-          if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
-            *(char**)pArg = sqlite3_mprintf("zipvfs/%z", *(char**)pArg);
-          }
-        }
+        rc = zipvfsFileControlPassdown(pZip, op, pArg);
+        break;
       }
     }
   }else{
-    rc = SYSFILE(pFile)->pMethods->xFileControl(SYSFILE(pFile), op, pArg);
+    sqlite3_file *pSys = SYSFILE(pFile);
+    if( pSys->pMethods ){
+      rc = pSys->pMethods->xFileControl(pSys, op, pArg);
+    }
   }
 
   zipvfsFCUnlock(pZip, doUnlock);
@@ -2779,12 +3114,12 @@ static int zipvfsDeviceCharacteristics(sqlite3_file *pFile){
 /*
 ** Busy handler function registered with the pager module used to write
 ** to the database file. 
-**
-** Currently, this function fails immediately (causing the pager to return
-** SQLITE_BUSY to the caller). It would be better if this invoked the 
-** busy-handler function registered with the user-level database handle.
 */
 static int zipvfsBusyHandler(void *p){
+  zipvfs_file *pZipFd = (zipvfs_file *)p;
+  if( pZipFd->xBusyHandler ){
+    return pZipFd->xBusyHandler(pZipFd->pBusyHandlerArg);
+  }
   return 0;
 }
 
@@ -2857,20 +3192,24 @@ static int zipvfsOpen(
     ** safely write to the database file without risking corruption in
     ** the event of a crash or power failure. 
     */
+    assert( zName && zName[0] );
     zipvfsSetAutoDetect(pZipFd, zName);
     zipvfsSetBlocksize(pZipFd, zName);
     pZipFd->pZipVfs = (ZipvfsVfs *)pVfs;
+    rc = sqlite3PagerOpen(
+        SYSVFS(pVfs), &pZipFd->pPager, zName, 0, 0,
+        SQLITE_OPEN_MAIN_DB|(flags&0x78047),
+        zipvfsReinitPage
+    );
+    assert( rc!=SQLITE_OK || sqlite3PagerFile(pZipFd->pPager)->pMethods );
     if( rc==SQLITE_OK ){
-      rc = sqlite3PagerOpen(
-          SYSVFS(pVfs), &pZipFd->pPager, zName, 0, 0,
-          SQLITE_OPEN_MAIN_DB|(flags&0x78047),
-          zipvfsReinitPage
+      sqlite3PagerSetBusyhandler(
+          pZipFd->pPager, zipvfsBusyHandler, (void *)pZipFd
       );
-    }
-    if( rc==SQLITE_OK ){
-      sqlite3PagerSetBusyhandler(pZipFd->pPager, zipvfsBusyHandler, 0);
       pZipFd->nMaxFree = ZIPVFS_DEFAULT_MAXFREE;
       pZipFd->nMaxFrag = ZIPVFS_DEFAULT_MAXFRAG;
+      pZipFd->nCache = ZIPVFS_DEFAULT_CACHE_SIZE;
+      sqlite3PagerSetCachesize(pZipFd->pPager, pZipFd->nCache);
       if( sqlite3_uri_parameter(zName, "excl")!=0 ){
         sqlite3PagerLockingMode(pZipFd->pPager, PAGER_LOCKINGMODE_EXCLUSIVE);
       }
@@ -2901,6 +3240,7 @@ static int zipvfsOpen(
       flags = SQLITE_OPEN_TEMP_JOURNAL | SQLITE_OPEN_DELETEONCLOSE
             | SQLITE_OPEN_READWRITE    | SQLITE_OPEN_CREATE;
       zName = 0;
+      pZipFd->bIgnoreSync = 1;
     }
     rc = SYSVFS(pVfs)->xOpen(SYSVFS(pVfs), zName, pRealFd, flags, pOutFlags);
   }
@@ -3022,6 +3362,7 @@ static int zipvfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeout){
 ** Return the current time as a Julian Day number in *pTimeOut.
 */
 static int zipvfsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeout){
+  assert( pVfs->iVersion>=2 );
   return SYSVFS(pVfs)->xCurrentTimeInt64(SYSVFS(pVfs), pTimeout);
 }
 
@@ -3040,6 +3381,12 @@ static int zipvfsCreateVfs(
   char *zCopy;                    /* Copy of zName */
   int nName;                      /* Number of bytes in zName */
   int rc;
+
+  /* This version of zipvfs does not work with SQLite releases earlier
+  ** than 3.8.3.  */
+#if !defined(SQLITE_CORE) || SQLITE_VERSION_NUMBER<3008003
+  if( sqlite3_libversion_number()<3008003 ) return SQLITE_ERROR;
+#endif
 
   pSys = sqlite3_vfs_find(zParent);
   if( !pSys ) return SQLITE_ERROR;
@@ -3071,7 +3418,9 @@ static int zipvfsCreateVfs(
   pNew->base.xSleep = zipvfsSleep;
   pNew->base.xCurrentTime = zipvfsCurrentTime;
   pNew->base.xGetLastError = zipvfsGetLastError;
-  pNew->base.xCurrentTimeInt64 = zipvfsCurrentTimeInt64;
+  if( pSys->iVersion>=2 && pSys->xCurrentTimeInt64 ){
+    pNew->base.xCurrentTimeInt64 = zipvfsCurrentTimeInt64;
+  }
 
   pNew->xGetMethods = xAutoDetect;
   pNew->pGetMethodsCtx = pCtx;
@@ -3149,8 +3498,8 @@ int zipvfs_create_vfs_v2(
   char const *zParent,
   void *pCtx,
   int (*xCompressBound)(void *, int),
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc),
+  int (*xUncompress)(void*, char *aDest, int *pnDest,const char *aSrc,int nSrc),
   int (*xLegacyOpen)(void*,const char*,void**),
   int (*xCompressClose)(void*)
 ){
@@ -3177,8 +3526,8 @@ int zipvfs_create_vfs(
   char const *zParent,
   void *pCtx,
   int (*xCompressBound)(void *, int),
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc)
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc),
+  int (*xUncompress)(void*, char *aDest, int *pnDest, const char *aSrc,int nSrc)
 ){
   return zipvfs_create_vfs_v2(
       zName, zParent, pCtx, xCompressBound, xCompress, xUncompress, 0, 0
@@ -4030,7 +4379,7 @@ static void zipvfsFreelistAdd(
 ){
   i64 iKey;                       /* Key value to add to B-Tree */
 
-  if( iOff==0 ) return;
+  if( *pRc!=SQLITE_OK || iOff==0 ) return;
   zipvfsFreelistIntegrity(pZip, pRc);
   pZip->hdr.nFreeSlot++;
   pZip->hdr.nFreeByte += nByte;
@@ -4669,13 +5018,12 @@ static void zipvfsFlIntegrity(
       if( bUsed ) (*pnFlag)++;
 
       if( nKeyPayload<ZIPVFS_MIN_PAYLOAD ) *pRc = ZIPVFS_CORRUPT;
-      if( *pRc==SQLITE_OK && iPrev!=0 && iKey<=iPrev ){
-        *pRc = ZIPVFS_CORRUPT;
-      }
       if( *pRc==SQLITE_OK && iLessThan!=0 && iKey>=iLessThan ){
         *pRc = ZIPVFS_CORRUPT;
       }
-      
+      if( *pRc==SQLITE_OK && iPrev!=0 && iKey<=iPrev ){
+        *pRc = ZIPVFS_CORRUPT;
+      }
 
       if( iHeight>1 ){
         i64 iChild = zipvfsGetU40(&aPayload[zipvfsFlNodeOffset(iHeight, i)+8]);
@@ -4734,9 +5082,12 @@ static void zipvfsShmBarrier(sqlite3_file *pFile){
   pMethods->xShmBarrier(SYSFILE(pFile));
 }
 static int zipvfsShmUnmap(sqlite3_file *pFile, int a){
-  const sqlite3_io_methods *pMethods = SYSFILE(pFile)->pMethods;
-  assert( ((zipvfs_file *)pFile)->pPager==0 );
-  return pMethods->xShmUnmap(SYSFILE(pFile), a);
+  int rc = SQLITE_OK;
+  if( ((zipvfs_file *)pFile)->pPager==0 ){
+    const sqlite3_io_methods *pMethods = SYSFILE(pFile)->pMethods;
+    rc = pMethods->xShmUnmap(SYSFILE(pFile), a);
+  }
+  return rc;
 }
 
 #if defined(SQLITE_TEST)
