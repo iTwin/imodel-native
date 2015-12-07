@@ -109,6 +109,11 @@ HttpResponse StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url)
     return HttpResponse(content, url.c_str(), ConnectionStatus::OK, httpStatus);
     }
 
+WSQuery StubWSQuery()
+    {
+    return WSQuery("TestSchema", "TestClass");
+    }
+
 HttpResponse StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, Utf8StringCR message, Utf8StringCR description)
     {
     Json::Value errorJson;

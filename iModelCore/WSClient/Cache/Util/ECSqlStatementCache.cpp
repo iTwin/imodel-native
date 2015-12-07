@@ -38,9 +38,9 @@ void WebServices::ECSqlStatementCache::OnSchemaChanged()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<ECSqlStatement> WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback)
+ECSqlStatementPtr WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback)
     {
-    std::shared_ptr<ECSqlStatement> statement;
+    ECSqlStatementPtr statement;
 
     auto it = m_cache.find(key);
     if (it == m_cache.end())

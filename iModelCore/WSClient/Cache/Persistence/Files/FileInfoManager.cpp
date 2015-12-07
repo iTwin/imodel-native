@@ -34,9 +34,9 @@ m_hierarchyManager(&hierarchyManager),
 m_objectInfoManager(&objectInfoManager),
 
 m_infoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedFileInfo)),
-m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedFileInfoRelationship)),
+m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedFileInfoToInstance)),
 m_externalFileInfoClass(dbAdapter.GetECClass(SCHEMA_ECDbFileInfo, CLASS_ExternalFileInfo)),
-m_externalFileInfoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_ECDbFileInfo, CLASS_REL_InstanceHasFileInfo)),
+m_externalFileInfoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_ECDbFileInfo, CLASS_InstanceHasFileInfo)),
 
 m_cachedInfoInserter(dbAdapter.GetECDb(), *m_infoClass),
 m_cachedInfoUpdater(dbAdapter.GetECDb(), *m_infoClass),
@@ -88,7 +88,7 @@ FileInfo FileInfoManager::ReadInfo(JsonValueCR infoJson)
         {
         return
             "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId "
-            "FROM ONLY " ECSql_CachedFileInfoRelationshipClass " infoRel "
+            "FROM ONLY " ECSql_CachedFileInfoToInstanceClass " infoRel "
             "WHERE infoRel.SourceECInstanceId = ? "
             "LIMIT 1 ";
         });
@@ -169,7 +169,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
             "SELECT efiRel.SourceECClassId, efiRel.SourceECInstanceId, efi.*, cfi.* "
             "FROM ONLY " ECSql_ExternalFileInfoClass " efi "
             "LEFT JOIN ONLY " ECSql_InstanceHasFileInfoClass " efiRel ON efiRel.TargetECInstanceId = efi.ECInstanceId "
-            "LEFT JOIN ONLY " ECSql_CachedFileInfoRelationshipClass " cfiRel ON cfiRel.TargetECInstanceId = efiRel.SourceECInstanceId "
+            "LEFT JOIN ONLY " ECSql_CachedFileInfoToInstanceClass " cfiRel ON cfiRel.TargetECInstanceId = efiRel.SourceECInstanceId "
             "LEFT JOIN ONLY " ECSql_CachedFileInfoClass " cfi ON cfi.ECInstanceId = cfiRel.SourceECInstanceId ";
         });
 
@@ -338,7 +338,7 @@ Json::Value FileInfoManager::ReadCachedInfoJson(ECInstanceKeyCR instanceKey)
         return
             "SELECT info.* "
             "FROM " ECSql_CachedFileInfoClass " info "
-            "LEFT JOIN ONLY " ECSql_CachedFileInfoRelationshipClass " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
+            "LEFT JOIN ONLY " ECSql_CachedFileInfoToInstanceClass " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
             "WHERE infoRel.TargetECClassId = ? AND infoRel.TargetECInstanceId = ? "
             "LIMIT 1 ";
         });

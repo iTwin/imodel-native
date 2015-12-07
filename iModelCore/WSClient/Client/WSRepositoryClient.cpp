@@ -10,6 +10,8 @@
 
 using namespace std::placeholders;
 
+const Utf8String IWSRepositoryClient::InitialSkipToken = "0";
+
 const uint32_t WSRepositoryClient::Timeout::Connection::Default = 30;
 
 const uint32_t WSRepositoryClient::Timeout::Transfer::GetObject = 30;
@@ -85,7 +87,7 @@ void WSRepositoryClient::SetCredentials(Credentials credentials)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> WSRepositoryClient::VerifyAccess
 (
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<AsyncResult<void, WSError>>([=] (WebApiPtr webApi)
@@ -93,7 +95,7 @@ ICancellationTokenPtr cancellationToken
         ObjectId fakeObject("NonExistingSchema.NonExistingClassForCredentialChecking", "nonId");
 
         return
-            webApi->SendGetObjectRequest(fakeObject, "", cancellationToken)
+            webApi->SendGetObjectRequest(fakeObject, "", ct)
             ->Then<AsyncResult<void, WSError>>([=] (WSObjectsResult& result)
             {
             if (WSError::Id::ClassNotFound == result.GetError().GetId() ||
@@ -103,7 +105,7 @@ ICancellationTokenPtr cancellationToken
                 }
             return AsyncResult<void, WSError>::Error(result.GetError());
             });
-        }, cancellationToken);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -113,13 +115,13 @@ AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetObjectRequest
 (
 ObjectIdCR objectId,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetObjectRequest(objectId, eTag, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendGetObjectRequest(objectId, eTag, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -129,11 +131,11 @@ AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetChildrenRequest
 (
 ObjectIdCR parentObjectId,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     bset<Utf8String> properties;
-    return SendGetChildrenRequest(parentObjectId, properties, eTag, cancellationToken);
+    return SendGetChildrenRequest(parentObjectId, properties, eTag, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -144,13 +146,13 @@ AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetChildrenRequest
 ObjectIdCR parentObjectId,
 const bset<Utf8String>& propertiesToSelect,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetChildrenRequest(parentObjectId, propertiesToSelect, eTag, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendGetChildrenRequest(parentObjectId, propertiesToSelect, eTag, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -162,16 +164,16 @@ ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR eTag,
 HttpRequest::ProgressCallbackCR downloadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_fileDownloadQueue.Push([=]
         {
         return m_connection->GetWebApiAndReturnResponse<WSFileResult>([=] (WebApiPtr webApi)
             {
-            return webApi->SendGetFileRequest(objectId, filePath, eTag, downloadProgressCallback, cancellationToken);
-            }, cancellationToken);
-        }, cancellationToken);
+            return webApi->SendGetFileRequest(objectId, filePath, eTag, downloadProgressCallback, ct);
+            }, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -180,13 +182,13 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetSchemasRequest
 (
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetSchemasRequest(eTag, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendGetSchemasRequest(eTag, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -196,13 +198,14 @@ AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendQueryRequest
 (
 WSQueryCR query,
 Utf8StringCR eTag,
-ICancellationTokenPtr cancellationToken
+Utf8StringCR skipToken,
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendQueryRequest(query, eTag, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendQueryRequest(query, eTag, skipToken, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -212,13 +215,13 @@ AsyncTaskPtr<WSChangesetResult> WSRepositoryClient::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSChangesetResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -229,13 +232,13 @@ AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequest
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -247,13 +250,13 @@ ObjectIdCR objectId,
 JsonValueCR propertiesJson,
 Utf8String eTag,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSUpdateObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, uploadProgressCallback, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, uploadProgressCallback, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -262,13 +265,13 @@ ICancellationTokenPtr cancellationToken
 AsyncTaskPtr<WSDeleteObjectResult> WSRepositoryClient::SendDeleteObjectRequest
 (
 ObjectIdCR objectId,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSDeleteObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendDeleteObjectRequest(objectId, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendDeleteObjectRequest(objectId, ct);
+        }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -279,11 +282,11 @@ AsyncTaskPtr<WSUpdateFileResult> WSRepositoryClient::SendUpdateFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSUpdateFileResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendUpdateFileRequest(objectId, filePath, uploadProgressCallback, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendUpdateFileRequest(objectId, filePath, uploadProgressCallback, ct);
+        }, ct);
     }

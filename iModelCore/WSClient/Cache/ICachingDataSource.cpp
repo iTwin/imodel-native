@@ -161,10 +161,10 @@ m_status(Status::InternalCacheError)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error(ICachingDataSource::Status status, ICancellationTokenPtr cancellationToken) :
+ICachingDataSource::Error::Error(ICachingDataSource::Status status, ICancellationTokenPtr ct) :
 Error(status)
     {
-    if (cancellationToken && cancellationToken->IsCanceled())
+    if (ct && ct->IsCanceled())
         {
         m_message.clear();
         m_description.clear();

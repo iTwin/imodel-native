@@ -26,9 +26,9 @@ CachingDataSourcePtr cachingDataSource,
 bset<ObjectId> filesToDownload,
 FileCache fileCacheLocation,
 CachingDataSource::LabeledProgressCallback onProgress,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) :
-CachingTaskBase(cachingDataSource, cancellationToken),
+CachingTaskBase(cachingDataSource, ct),
 m_filesToDownloadIds(std::move(filesToDownload)),
 m_fileCacheLocation(fileCacheLocation),
 m_onProgressCallback(std::move(onProgress)),

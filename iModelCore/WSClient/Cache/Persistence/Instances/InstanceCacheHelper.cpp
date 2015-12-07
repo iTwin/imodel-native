@@ -48,7 +48,7 @@ const WSObjectsReader::Instances& instances,
 CachedInstances& cachedInstancesInOut,
 PartialCachingState* partialCachingState,
 UpdateCachingState* updateCachingState,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
     if (!instances.IsValid())
@@ -59,7 +59,7 @@ ICancellationTokenPtr cancellationToken
     bvector<SelectPathElement> rootPath;
     for (WSObjectsReader::Instance instance : instances)
         {
-        if (SUCCESS != CacheInstance(instance, rootPath, cachedInstancesInOut, partialCachingState, updateCachingState, nullptr, cancellationToken))
+        if (SUCCESS != CacheInstance(instance, rootPath, cachedInstancesInOut, partialCachingState, updateCachingState, nullptr, ct))
             {
             LOG.errorv("Failed to cache instance %s", instance.GetObjectId().ToString().c_str());
             return ERROR;
@@ -80,10 +80,10 @@ CachedInstances& cachedInstancesInOut,
 PartialCachingState* partialCachingState,
 UpdateCachingState* updateCachingState,
 ECInstanceKey* cachedInstanceOut,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 )
     {
-    if (cancellationToken && cancellationToken->IsCanceled())
+    if (ct && ct->IsCanceled())
         {
         return ERROR;
         }
@@ -172,7 +172,7 @@ ICancellationTokenPtr cancellationToken
 
         ECInstanceKey relatedInstance;
         if (SUCCESS != CacheInstance(relationshipInstance.GetRelatedInstance(), relatedPath, cachedInstancesInOut, partialCachingState,
-            updateCachingState, &relatedInstance, cancellationToken))
+            updateCachingState, &relatedInstance, ct))
             {
             return ERROR;
             }

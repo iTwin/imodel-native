@@ -45,26 +45,26 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
 
         AsyncTaskPtr<WebApiResult> GetWebApi
             (
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) const;
 
         AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
             bool forceQuery,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) const;
 
         template<typename R>
         AsyncTaskPtr<R> GetWebApiAndReturnResponse
             (
             std::function<AsyncTaskPtr<R>(WebApiPtr)> requestCallback,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             ) const
             {
             auto thisPtr = shared_from_this();
             auto responsePtr = std::make_shared<R>();
 
-            return GetWebApi(cancellationToken)
+            return GetWebApi(ct)
                 ->Then([=] (WebApiResult& webApiResult)
                 {
                 if (!webApiResult.IsSuccess())

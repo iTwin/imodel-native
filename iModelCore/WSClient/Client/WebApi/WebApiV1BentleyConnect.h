@@ -34,7 +34,7 @@ struct WebApiV1BentleyConect : public WebApiV1
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
             HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
     };
 

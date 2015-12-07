@@ -1249,8 +1249,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "NonExisting"}), nullptr);
     EXPECT_NE(0, responseKey.GetParent().GetECClassId());
 
-    auto status = cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse());
-    EXPECT_EQ(ERROR, status);
+    EXPECT_EQ(ERROR, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_ParentInCache_ReturnsSuccess)
@@ -1259,8 +1258,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ParentInCache_ReturnsSuccess)
     cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "parent"});
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "parent"}), nullptr);
 
-    auto status = cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse());
-    EXPECT_EQ(SUCCESS, status);
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFullInstances)
@@ -1273,9 +1271,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
     instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "TestValueA"}});
     instances.Add({"TestSchema.TestClass2", "B"}, {{"TestProperty", "TestValueB"}});
 
-    BentleyStatus status = cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
-    EXPECT_EQ(SUCCESS, status);
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass2", "B"}).IsFullyCached());
 
@@ -1294,15 +1291,13 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPrevi
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
-    cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
 
     instances.Clear();
     instances.Add({"TestSchema.TestClass", "B"});
-    BentleyStatus status = cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
-
-    EXPECT_EQ(SUCCESS, status);
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
@@ -2514,7 +2509,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotCancelledCancellatioTokenPassed_Ca
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
 
-    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), nullptr, nullptr, token));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), nullptr, nullptr, 0, token));
     EXPECT_THAT(cache->IsResponseCached(responseKey), true);
     }
 
@@ -2527,7 +2522,331 @@ TEST_F(DataSourceCacheTests, CacheResponse_CancelledCancellatioTokenPassed_Retur
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
 
-    EXPECT_EQ(ERROR, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), nullptr, nullptr, token));
+    EXPECT_EQ(ERROR, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), nullptr, nullptr, 0, token));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_DifferentPages_Cached)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    // Act
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 42));
+
+    // Assert
+    ECInstanceKeyMultiMap instanceKeys;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(key, instanceKeys));
+
+    EXPECT_EQ(3, instanceKeys.size());
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instanceKeys));
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "B"}), instanceKeys));
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "C"}), instanceKeys));
+
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_SamePage_Overrides)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 42));
+
+    // Act
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 42));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 123456));
+
+    // Assert
+    ECInstanceKeyMultiMap instanceKeys;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(key, instanceKeys));
+
+    EXPECT_EQ(2, instanceKeys.size());
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "B"}), instanceKeys));
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "C"}), instanceKeys));
+
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_CachedPagesAndFinalResponseOnFirstPage_OverridesAllPreviousPages)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 42));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+
+    // Act
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    // Assert
+    ECInstanceKeyMultiMap instanceKeys;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(key, instanceKeys));
+
+    EXPECT_EQ(1, instanceKeys.size());
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "C"}), instanceKeys));
+
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndDefaultPage_KeepsOnlyFirstPageAndCompletesResponse)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+
+    // Act
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubWSObjectsResponseNotModified()));
+
+    // Assert
+    EXPECT_TRUE(cache->IsResponseCached(key));
+
+    ECInstanceKeyMultiMap instanceKeys;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(key, instanceKeys));
+
+    EXPECT_EQ(1, instanceKeys.size());
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instanceKeys));
+
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    }
+    
+TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndOnLastPage_SetsAsCached)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", ""), nullptr, nullptr, 1));
+    EXPECT_TRUE(cache->IsResponseCached(key));
+
+    // Act
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubWSObjectsResponseNotModified(), nullptr, nullptr, 1));
+    EXPECT_TRUE(cache->IsResponseCached(key));
+
+    // Assert
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedPageAndThenModifiedPageResponses_ModifiedResponseClearsIsResponseCachedFlag)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", ""), nullptr, nullptr, 42));
+    EXPECT_TRUE(cache->IsResponseCached(key));
+
+    // Act & Assert
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubWSObjectsResponseNotModified("NotFinal"), nullptr, nullptr, 0));
+    EXPECT_TRUE(cache->IsResponseCached(key));
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedPage_SetsAsIsResponseCached)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", ""), nullptr, nullptr, 42));
+    EXPECT_TRUE(cache->IsResponseCached(key));
+
+    // Act & Assert
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubWSObjectsResponseNotModified(), nullptr, nullptr, 42));
+    EXPECT_TRUE(cache->IsResponseCached(key));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_NotFinalAndNotModifiedPageAfterModifiedPage_DoesNotSetIsResponseCached)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", ""), nullptr, nullptr, 42));
+    EXPECT_TRUE(cache->IsResponseCached(key));
+
+    // Act & Assert
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubWSObjectsResponseNotModified("NotFinal"), nullptr, nullptr, 1));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndPageIndexZero_RemovesAllPreviousPages)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), nullptr, nullptr, 0));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), nullptr, nullptr, 1));
+
+    // Act
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse(), nullptr, nullptr, 0));
+
+    // Assert
+    ECInstanceKeyMultiMap instanceKeys;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(key, instanceKeys));
+
+    EXPECT_EQ(1, instanceKeys.size());
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "C"}), instanceKeys));
+
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePages_RemovesPagesOutsideOfFinalPageIndex)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 42));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "D"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 3));
+
+    // Act
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "E"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("Final", ""), nullptr, nullptr, 1));
+
+    // Assert
+    ECInstanceKeyMultiMap instanceKeys;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(key, instanceKeys));
+
+    EXPECT_EQ(2, instanceKeys.size());
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instanceKeys));
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "E"}), instanceKeys));
+
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "D"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "E"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePagesWihtSpacedOutIndexes_RemovesPagesOutsideOfPageIndex)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 42));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 4));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 2));
+
+    // Act
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "E"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("Final", ""), nullptr, nullptr, 4));
+
+    // Assert
+    ECInstanceKeyMultiMap instanceKeys;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(key, instanceKeys));
+
+    EXPECT_EQ(2, instanceKeys.size());
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "C"}), instanceKeys));
+    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "E"}), instanceKeys));
+
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "E"}).IsValid());
+    EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
@@ -2548,11 +2867,10 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseNotCachedButParentExists_F
 TEST_F(DataSourceCacheTests, IsResponseCached_ResponseCached_True)
     {
     auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
 
-    CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "Foo");
-
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
-    EXPECT_TRUE(cache->IsResponseCached(responseKey));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(key));
     }
 
 TEST_F(DataSourceCacheTests, IsResponseCached_ResponseWithHoldererCached_True)
@@ -2563,6 +2881,52 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseWithHoldererCached_True)
 
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
+    }
+
+TEST_F(DataSourceCacheTests, IsResponseCached_NoFinalPageCached_False)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    }
+
+TEST_F(DataSourceCacheTests, IsResponseCached_FinalPageCached_True)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", ""), nullptr, nullptr, 1));
+
+    EXPECT_TRUE(cache->IsResponseCached(key));
+    }
+
+TEST_F(DataSourceCacheTests, IsResponseCached_NotFinalPageCachedIntoFinalizedResponse_False)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", ""), nullptr, nullptr, 1));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    }
+
+TEST_F(DataSourceCacheTests, IsResponseCached_AllPagesCachedSecondTime_True)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", ""), nullptr, nullptr, 1));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("", ""), nullptr, nullptr, 1));
+
+    EXPECT_TRUE(cache->IsResponseCached(key));
     }
 
 TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQueryContainsFullyCachedInstanceInTemporaryRoot_SetsInstanceStateToPartial)
@@ -2966,6 +3330,32 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_TwoInstancesCachedAsResult_Re
     EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "B"));
     }
 
+TEST_F(DataSourceCacheTests, ReadResponseObjectIds_MultiplePages_ReturnsTheirObjectIds)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+
+    CachedResponseKey key({cache->FindOrCreateRoot(nullptr), "TestQuery"});
+
+    StubInstances instances;
+    auto response = instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+
+    // Act
+    bset<ObjectId> objectIds;
+    auto status = cache->ReadResponseObjectIds(key, objectIds);
+
+    // Assert
+    EXPECT_EQ(CacheStatus::OK, status);
+    EXPECT_EQ(2, objectIds.size());
+    EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "A"));
+    EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "B"));
+    }
+
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_ResultsContainParent_ReturnsParentObjectId)
     {
     auto cache = GetTestCache();
@@ -3083,6 +3473,31 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTag_Return
     EXPECT_EQ("FooTag", cache->ReadResponseCacheTag(responseKey));
     }
 
+TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedMultipleTimesWithTags_ReturnsLastTag)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse("A"));
+    cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse("B"));
+    cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse("C"));
+
+    EXPECT_EQ("C", cache->ReadResponseCacheTag(responseKey));
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedMultipleResponsesWithSameParentsWithTags_ReturnsSameTags)
+    {
+    auto cache = GetTestCache();
+    auto key1 = CachedResponseKey(cache->FindOrCreateRoot(nullptr), "A");
+    auto key2 = CachedResponseKey(cache->FindOrCreateRoot(nullptr), "B");
+
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse("A")));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse("B")));
+
+    EXPECT_EQ("A", cache->ReadResponseCacheTag(key1));
+    EXPECT_EQ("B", cache->ReadResponseCacheTag(key2));
+    }
+
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTagAndHolder_ReturnsSameTag)
     {
     auto cache = GetTestCache();
@@ -3093,7 +3508,44 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTagAndHold
     EXPECT_EQ("FooTag", cache->ReadResponseCacheTag(responseKey));
     }
 
-TEST_F(DataSourceCacheTests, ReadResponseCacheDate_NonExistingQueryResults_ReturnsInvalidDate)
+TEST_F(DataSourceCacheTests, ReadResponseCacheTag_NotExistingPage_ReturnsEmpty)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("Foo"), nullptr, nullptr, 1));
+
+    EXPECT_EQ("", cache->ReadResponseCacheTag(key, 2));
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCacheTag_DifferentPages_ReturnsTags)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("A", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("B", "NotFinal"), nullptr, nullptr, 1));
+
+    EXPECT_EQ("A", cache->ReadResponseCacheTag(key, 0));
+    EXPECT_EQ("B", cache->ReadResponseCacheTag(key, 1));
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PagesOvewritten_NoTagForRemovedPages)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("A", "NotFinal"), nullptr, nullptr, 0));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("B", "NotFinal"), nullptr, nullptr, 1));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, StubInstances().ToWSObjectsResponse("C"), nullptr, nullptr, 0));
+
+    // Assert
+    EXPECT_EQ("C", cache->ReadResponseCacheTag(key, 0));
+    EXPECT_EQ("", cache->ReadResponseCacheTag(key, 1));
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCachedDate_NonExistingQueryResults_ReturnsInvalidDate)
     {
     auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
@@ -3102,21 +3554,61 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheDate_NonExistingQueryResults_Retur
     EXPECT_FALSE(cache->ReadResponseCachedDate({root, "NonExisting"}).IsValid());
     }
 
-TEST_F(DataSourceCacheTests, ReadResponseCacheDate_PreviouslyCached_ReturnsCorrectCachedDate)
+TEST_F(DataSourceCacheTests, ReadResponseCachedDate_Cached_ReturnsCorrectCachedDate)
     {
     auto cache = GetTestCache();
     auto responseKey = StubCachedResponseKey(*cache);
 
     auto before = DateTime::GetCurrentTimeUtc();
     BeThreadUtilities::BeSleep(1); // DateTime persistence introduces rounding error in nano seconds
-    cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     BeThreadUtilities::BeSleep(1);
     auto after = DateTime::GetCurrentTimeUtc();
 
     EXPECT_BETWEEN(before, cache->ReadResponseCachedDate(responseKey), after);
     }
 
-TEST_F(DataSourceCacheTests, ReadResponseCacheDate_PreviouslyCachedWithHolder_ReturnsCorrectCachedDate)
+TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTime_ReturnsLatestCachedDate)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    auto dateTime1 = cache->ReadResponseCachedDate(responseKey);
+
+    BeThreadUtilities::BeSleep(1);
+    auto before = DateTime::GetCurrentTimeUtc();
+    BeThreadUtilities::BeSleep(1); // DateTime persistence introduces rounding error in nano seconds
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    BeThreadUtilities::BeSleep(1);
+    auto after = DateTime::GetCurrentTimeUtc();
+
+    auto dateTime2 = cache->ReadResponseCachedDate(responseKey);
+    EXPECT_NE(dateTime1, dateTime2);
+    EXPECT_BETWEEN(before, dateTime2, after);
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTimeAsNonModified_ReturnsLatestCachedDate)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    auto dateTime1 = cache->ReadResponseCachedDate(responseKey);
+
+    BeThreadUtilities::BeSleep(1);
+    auto before = DateTime::GetCurrentTimeUtc();
+    BeThreadUtilities::BeSleep(1); // DateTime persistence introduces rounding error in nano seconds
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified()));
+    BeThreadUtilities::BeSleep(1);
+    auto after = DateTime::GetCurrentTimeUtc();
+
+    auto dateTime2 = cache->ReadResponseCachedDate(responseKey);
+    EXPECT_NE(dateTime1, dateTime2);
+    EXPECT_BETWEEN(before, dateTime2, after);
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCachedDate_PreviouslyCachedWithHolder_ReturnsCorrectCachedDate)
     {
     auto cache = GetTestCache();
     CachedResponseKey responseKey(cache->FindOrCreateRoot(nullptr), "TestQuery", cache->FindOrCreateRoot("Holder"));
@@ -3128,6 +3620,41 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheDate_PreviouslyCachedWithHolder_Re
     auto after = DateTime::GetCurrentTimeUtc();
 
     EXPECT_BETWEEN(before, cache->ReadResponseCachedDate(responseKey), after);
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCachedDate_PageNotCached_ReturnsInvalid)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse(), nullptr, nullptr, 0));
+    EXPECT_TRUE(cache->ReadResponseCachedDate(responseKey, 0).IsValid());
+    EXPECT_FALSE(cache->ReadResponseCachedDate(responseKey, 1).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, ReadResponseCachedDate_DifferentPages_DifferentValues)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    auto before = DateTime::GetCurrentTimeUtc();
+    BeThreadUtilities::BeSleep(1); // DateTime persistence introduces rounding error in nano seconds
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 0));
+    BeThreadUtilities::BeSleep(1);
+    auto after = DateTime::GetCurrentTimeUtc();
+
+    auto dateTime1 = cache->ReadResponseCachedDate(responseKey, 0);
+    EXPECT_BETWEEN(before, dateTime1, after);
+
+    before = DateTime::GetCurrentTimeUtc();
+    BeThreadUtilities::BeSleep(1); // DateTime persistence introduces rounding error in nano seconds
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse("", "NotFinal"), nullptr, nullptr, 1));
+    BeThreadUtilities::BeSleep(1);
+    after = DateTime::GetCurrentTimeUtc();
+
+    auto dateTime2 = cache->ReadResponseCachedDate(responseKey, 1);
+    EXPECT_BETWEEN(before, dateTime2, after);
+    EXPECT_NE(dateTime1, dateTime2);
     }
 
 TEST_F(DataSourceCacheTests, ReadInstanceLabel_EmptyObjectId_ReturnsEmpty)

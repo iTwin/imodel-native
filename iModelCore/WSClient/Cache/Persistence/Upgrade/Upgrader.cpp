@@ -18,6 +18,7 @@
 #include "UpgraderFromV4ToV5.h"
 #include "UpgraderFromV5ToCurrent.h"
 #include "UpgraderFromV7ToV9.h"
+#include "UpgraderFromV9ToV10.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -25,7 +26,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 Upgrader::Upgrader(ObservableECDb& db, CacheEnvironmentCR environment) :
-m_adapter(db),
+m_db(db),
 m_environment(environment)
     {}
 
@@ -34,20 +35,23 @@ m_environment(environment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Upgrader::Upgrade(int oldVersion)
     {
+    ECDbAdapter adapter (m_db);
     switch (oldVersion)
         {
         case 3:
-            if (SUCCESS != UpgraderFromV3ToV4(m_adapter, m_environment).Upgrade()) return ERROR;
+            if (SUCCESS != UpgraderFromV3ToV4(adapter, m_environment).Upgrade()) return ERROR;
         case 4:
-            if (SUCCESS != UpgraderFromV4ToV5(m_adapter).Upgrade()) return ERROR;
+            if (SUCCESS != UpgraderFromV4ToV5(adapter).Upgrade()) return ERROR;
         case 5:
-            if (SUCCESS != UpgraderFromV5ToCurrent(m_adapter, m_environment).Upgrade()) return ERROR;
+            if (SUCCESS != UpgraderFromV5ToCurrent(adapter, m_environment).Upgrade()) return ERROR;
             return SUCCESS; // Upgraded to latest version, done
         case 6:
             return ERROR; // 5 to 6 handled in previous case
         case 7:
         case 8:
-            if (SUCCESS != UpgraderFromV7ToV9(m_adapter).Upgrade()) return ERROR;
+            if (SUCCESS != UpgraderFromV7ToV9(adapter).Upgrade()) return ERROR;
+        case 9:
+            if (SUCCESS != UpgraderFromV9ToV10(adapter).Upgrade()) return ERROR;
 
             // Current version, return
             return SUCCESS;

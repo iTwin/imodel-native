@@ -48,6 +48,9 @@ typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
 struct IWSRepositoryClient
     {
     public:
+        WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
+
+    public:
         WSCLIENT_EXPORT virtual ~IWSRepositoryClient();
 
         virtual IWSClientPtr GetWSClient() const = 0;
@@ -56,18 +59,18 @@ struct IWSRepositoryClient
         virtual void SetCredentials(Credentials credentials) = 0;
 
         //! Checks if supplied credentials are valid for this repository.
-        //! @param[in] cancellationToken
+        //! @param[in] ct
         //! @return success if credentials are valid for given repository, else error that occurred
         virtual std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> VerifyAccess
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         //! Send Navigation request. SendQueryRequest has backward support for WSG 1.x Navigation queries
@@ -75,7 +78,7 @@ struct IWSRepositoryClient
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
@@ -83,7 +86,7 @@ struct IWSRepositoryClient
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
@@ -92,37 +95,44 @@ struct IWSRepositoryClient
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
             HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         //! Send query request to retrieve ECInstances.
         //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters.
         //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query.
         //!         Select will be used as property list to select
+        //! @param query
+        //! @param eTag send previous eTag to check if data was modified and avoid sending if not.
+        //! @param skipToken allows using paged mechanism if supported by server and repository. Used to "skip" previous response data.
+        //! Supply IWSRepositoryClient::InitialSkipToken to start paged requests. 
+        //! For sequental page requests supply previous response skipToken if response was not final.
+        //! @param ct
         virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            Utf8StringCR skipToken = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         //! Send changeset for multiple created/modified/deleted instances at once.
         //! Supported from WSG 2.1, usage with older server versions will return "not supported" error.
         //! @param changeset JSON serialized to string. IIS defaults request size to 4MB (configurable) so string should accomodate to that
         //! @param uploadProgressCallback upload callback for changeset
-        //! @param cancellationToken 
+        //! @param ct 
         //! @return server response that includes changed instances JSON
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         //! Create object with any relationships or related objects. Optionally attach file.
@@ -136,7 +146,7 @@ struct IWSRepositoryClient
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
@@ -145,13 +155,13 @@ struct IWSRepositoryClient
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
@@ -159,7 +169,7 @@ struct IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const = 0;
     };
 
@@ -231,21 +241,21 @@ struct WSRepositoryClient : public IWSRepositoryClient
         //! Check if user can access repository
         WSCLIENT_EXPORT std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> VerifyAccess
             (
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
@@ -253,7 +263,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSFileResult> SendGetFileRequest
@@ -262,27 +272,28 @@ struct WSRepositoryClient : public IWSRepositoryClient
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
             HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            Utf8StringCR skipToken = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
@@ -290,7 +301,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
@@ -299,13 +310,13 @@ struct WSRepositoryClient : public IWSRepositoryClient
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
@@ -313,7 +324,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr cancellationToken = nullptr
+            ICancellationTokenPtr ct = nullptr
             ) const override;
     };
 

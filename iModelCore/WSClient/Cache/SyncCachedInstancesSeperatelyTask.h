@@ -31,7 +31,7 @@ struct SyncCachedInstancesSeperatelyTask : public CachingTaskBase
             (
             CachingDataSourcePtr ds,
             const bset<ObjectId>& objects,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
     };
 

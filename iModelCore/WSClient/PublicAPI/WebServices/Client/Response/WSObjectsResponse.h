@@ -25,6 +25,7 @@ struct WSObjectsResponse
         HttpBodyPtr m_httpBody;
         bool        m_isModified;
         Utf8String  m_eTag;
+        Utf8String  m_skipToken;
 
         mutable std::shared_ptr<Json::Value>         m_jsonValue;
         mutable std::shared_ptr<rapidjson::Document> m_rapidJsonDocument;
@@ -38,10 +39,22 @@ struct WSObjectsResponse
 
     public:
         WSCLIENT_EXPORT WSObjectsResponse();
-        WSCLIENT_EXPORT WSObjectsResponse(std::shared_ptr<WSObjectsReader> reader, HttpBodyPtr httpBody, HttpStatus status, Utf8String eTag);
+        WSCLIENT_EXPORT WSObjectsResponse
+            (
+            std::shared_ptr<WSObjectsReader> reader,
+            HttpBodyPtr httpBody,
+            HttpStatus status,
+            Utf8String eTag,
+            Utf8String skipToken
+            );
 
         WSCLIENT_EXPORT Utf8StringCR GetETag() const;
+        WSCLIENT_EXPORT Utf8StringCR GetSkipToken() const;
+
+        //! Check if response contains data or data was not modified and data is empty.
         WSCLIENT_EXPORT bool IsModified() const;
+        //! Check if response is final or contains additional pages of data.
+        WSCLIENT_EXPORT bool IsFinal() const;
 
         //! Lightweight wrapper to read object instances returned by server (WebApi version independant)
         WSCLIENT_EXPORT const WSObjectsReader::Instances& GetInstances() const;
