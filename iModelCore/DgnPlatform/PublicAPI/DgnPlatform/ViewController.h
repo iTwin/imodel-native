@@ -845,7 +845,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
-    void SetOverrideMatSymb(ViewContextR) const;
+    void SetOverrideGraphicParams(ViewContextR) const;
     void DrawViewInternal(ViewContextR);
     ClipVectorPtr GetClipVectorInternal(ClipVolumePass) const;
 
@@ -1024,7 +1024,7 @@ public:
     DGNPLATFORM_EXPORT HypermodelingViewController(DgnViewId, PhysicalViewControllerR, bvector<SectionDrawingViewControllerPtr> const&);
     bool ShouldDrawProxyGraphics(ClipVolumePass proxyGraphicsType, int planeIndex) const;
     bool ShouldDrawAnnotations() const;
-    DGNPLATFORM_EXPORT void SetOverrideMatSymb(ViewContextR) const;
+    DGNPLATFORM_EXPORT void SetOverrideGraphicParams(ViewContextR) const;
 
     DGNPLATFORM_EXPORT bvector<SectionDrawingViewControllerPtr> GetSectionDrawingViews() const;
     DGNPLATFORM_EXPORT SectionDrawingViewControllerPtr FindSectionDrawingViewById(DgnViewId) const;

@@ -198,7 +198,7 @@ public:
     StatusInt ProcessFacetSet(PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet(facets, filled);}
     StatusInt ProcessGeometryMapOrFacetSet(PolyfaceQueryCR facets, bool filled);
 
-    DGNPLATFORM_EXPORT Render::GraphicParamsR GetCurrentMatSymb(Render::GraphicParamsR matSymb);
+    DGNPLATFORM_EXPORT Render::GraphicParamsR GetEffectiveGraphicParams(Render::GraphicParamsR matSymb); // Get GraphicParams adjusted for overrides...
 
     IFacetOptionsP GetFacetOptions() {return _GetFacetOptions();}
 

@@ -544,7 +544,7 @@ struct GeomBlobHeader
 
     uint32_t m_signature;    // write this so we can detect errors on read
     uint32_t m_size;
-    GeomBlobHeader(GeomStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
+    GeomBlobHeader(GeometryStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
     GeomBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
@@ -587,7 +587,7 @@ void DgnElement2d::_OnReversedUpdate(DgnElementCR changed) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
+DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
     {
     SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
 
@@ -621,7 +621,7 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId)
+DgnDbStatus GeometryStream::ReadGeometryStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId)
     {
     auto& pool = dgnDb.Elements();
     SnappyFromBlob& snappy = pool.GetSnappyFrom();
@@ -655,7 +655,7 @@ static Utf8CP GEOM_Column = "Geom";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, GeomStreamCR geom, Placement3dCP placement3d, Placement2dCP placement2d)
+static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, GeometryStreamCR geom, Placement3dCP placement3d, Placement2dCP placement2d)
     {
     DgnElementId elementId = el.GetElementId();
     DgnDbR       dgnDb = el.GetDgnDb();
@@ -686,7 +686,7 @@ static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, G
         stmt->BindBlob(2, placement2d, sizeof(*placement2d), Statement::MakeCopy::No);
         }
 
-    DgnDbStatus stat = geom.WriteGeomStreamAndStep(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elementId.GetValue(), *stmt, 1);
+    DgnDbStatus stat = geom.WriteGeometryStreamAndStep(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elementId.GetValue(), *stmt, 1);
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -712,7 +712,7 @@ DgnDbStatus GeometrySource3d::InsertGeomSourceInDb()
     if (nullptr == (el = ToElement()))
         return DgnDbStatus::BadElement;
 
-    return insertGeomSource(*el, _GetCategoryId(), _GetGeomStream(), &_GetPlacement(), nullptr);
+    return insertGeomSource(*el, _GetCategoryId(), _GetGeometryStream(), &_GetPlacement(), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -725,13 +725,13 @@ DgnDbStatus GeometrySource2d::InsertGeomSourceInDb()
     if (nullptr == (el = ToElement()))
         return DgnDbStatus::BadElement;
 
-    return insertGeomSource(*el, _GetCategoryId(), _GetGeomStream(), nullptr, &_GetPlacement());
+    return insertGeomSource(*el, _GetCategoryId(), _GetGeometryStream(), nullptr, &_GetPlacement());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus updateGeomSource(DgnElementCR el, DgnCategoryId cat, GeomStreamCR geom, Placement3dCP placement3d, Placement2dCP placement2d)
+static DgnDbStatus updateGeomSource(DgnElementCR el, DgnCategoryId cat, GeometryStreamCR geom, Placement3dCP placement3d, Placement2dCP placement2d)
     {
     DgnElementId elementId = el.GetElementId();
     DgnDbR       dgnDb = el.GetDgnDb();
@@ -762,7 +762,7 @@ static DgnDbStatus updateGeomSource(DgnElementCR el, DgnCategoryId cat, GeomStre
         stmt->BindBlob(2, placement2d, sizeof(*placement2d), Statement::MakeCopy::No);
         }
 
-    DgnDbStatus stat = geom.WriteGeomStreamAndStep(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elementId.GetValue(), *stmt, 1);
+    DgnDbStatus stat = geom.WriteGeometryStreamAndStep(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elementId.GetValue(), *stmt, 1);
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -818,7 +818,7 @@ DgnDbStatus GeometrySource3d::UpdateGeomSourceInDb()
     if (nullptr == (el = ToElement()))
         return DgnDbStatus::BadElement;
 
-    return updateGeomSource(*el, _GetCategoryId(), _GetGeomStream(), &_GetPlacement(), nullptr);
+    return updateGeomSource(*el, _GetCategoryId(), _GetGeometryStream(), &_GetPlacement(), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -831,7 +831,7 @@ DgnDbStatus GeometrySource2d::UpdateGeomSourceInDb()
     if (nullptr == (el = ToElement()))
         return DgnDbStatus::BadElement;
 
-    return updateGeomSource(*el, _GetCategoryId(), _GetGeomStream(), nullptr, &_GetPlacement());
+    return updateGeomSource(*el, _GetCategoryId(), _GetGeometryStream(), nullptr, &_GetPlacement());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -892,7 +892,7 @@ DgnDbStatus DgnElement3d::_LoadFromDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    if (DgnDbStatus::Success != (stat = m_geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
+    if (DgnDbStatus::Success != (stat = m_geom.ReadGeometryStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
         return stat;
 
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
@@ -996,7 +996,7 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    if (DgnDbStatus::Success != (stat = m_geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
+    if (DgnDbStatus::Success != (stat = m_geom.ReadGeometryStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue())))
         return stat;
 
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
@@ -1337,7 +1337,7 @@ void DgnElement3d::_CopyFrom(DgnElementCR other)
 
     m_placement = el3d->GetPlacement();
     m_categoryId = el3d->GetCategoryId();
-    m_geom = el3d->GetGeomStream();
+    m_geom = el3d->GetGeometryStream();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1348,7 +1348,7 @@ void DgnElement3d::_RemapIds(DgnImportContext& importer)
     BeAssert(importer.IsBetweenDbs());
     T_Super::_RemapIds(importer);
     m_categoryId = importer.RemapCategory(m_categoryId);
-    importer.RemapGeomStreamIds(m_geom);
+    importer.RemapGeometryStreamIds(m_geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1382,7 +1382,7 @@ void DgnElement2d::_CopyFrom(DgnElementCR other)
 
     m_placement = el2d->GetPlacement();
     m_categoryId = el2d->GetCategoryId();
-    m_geom = el2d->GetGeomStream();
+    m_geom = el2d->GetGeometryStream();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1393,7 +1393,7 @@ void DgnElement2d::_RemapIds(DgnImportContext& importer)
     BeAssert(importer.IsBetweenDbs());
     T_Super::_RemapIds(importer);
     m_categoryId = importer.RemapCategory(m_categoryId);
-    importer.RemapGeomStreamIds(m_geom);
+    importer.RemapGeometryStreamIds(m_geom);
     }
 
 /*---------------------------------------------------------------------------------**//**

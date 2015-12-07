@@ -977,7 +977,7 @@ protected:
     bvector<GraphicPtr> m_graphics;
 
     virtual void _SetToViewCoords(bool yesNo) = 0;
-    virtual void _ActivateOverrideMatSymb(OvrGraphicParamsCP ovrMatSymb) = 0;
+    virtual void _ActivateOverrideGraphicParams(OvrGraphicParamsCP ovrMatSymb) = 0;
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
     virtual bool _DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) = 0;
     virtual void _DrawTiledRaster(ITiledRaster* tiledRaster) = 0;
@@ -998,7 +998,7 @@ public:
     //! Set an GraphicParams to be the "active override" GraphicParams for this IDrawGeom.
     //! @param[in]          ovrMatSymb  The new active override GraphicParams.
     //!                                     value in ovrMatSymb will be used instead of the value set by ActivateMatSymb.
-    void ActivateOverrideMatSymb(OvrGraphicParamsCP ovrMatSymb) {_ActivateOverrideMatSymb(ovrMatSymb);}
+    void ActivateOverrideGraphicParams(OvrGraphicParamsCP ovrMatSymb) {_ActivateOverrideGraphicParams(ovrMatSymb);}
 
     //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,
     //! including all camera definitions. It is ONLY valid or useful for drawing "overlay" graphics while drawing View Decorations.

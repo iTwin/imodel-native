@@ -2044,7 +2044,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
 
         DgnGeomPartPtr geomPart = DgnGeomPart::Create(geomPartCode.c_str());
         builder->CreateGeomPart(db, true);
-        builder->SetGeomStream(*geomPart);
+        builder->SetGeometryStream(*geomPart);
         if (BSISUCCESS != db.GeomParts().InsertGeomPart(*geomPart))
             {
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
@@ -2093,7 +2093,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    builder->SetGeomStreamAndPlacement(*catalogItem);
+    builder->SetGeometryStreamAndPlacement(*catalogItem);
 
     DgnElementCPtr persistentDgnElem = catalogItem->Insert(&status);
     if (!persistentDgnElem.IsValid())

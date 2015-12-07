@@ -45,16 +45,16 @@ virtual bool _ProcessAsBody(bool isCurved) const override {return m_dropObj->_Pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AnnounceCurrentState()
     {
-    GraphicParams currentMatSymb;
+    GraphicParams currentGraphicParams;
 
-    GetCurrentMatSymb(currentMatSymb);
+    GetEffectiveGraphicParams(currentGraphicParams);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_dropObj->_AnnounceTransform(m_context->GetCurrLocalToWorldTransformCP());
 #else
     m_dropObj->_AnnounceTransform(&m_localToWorldTransform);
 #endif
-    m_dropObj->_AnnounceGraphicParams(currentMatSymb);
+    m_dropObj->_AnnounceGraphicParams(currentGraphicParams);
     m_dropObj->_AnnounceGeometryParams(m_context->GetCurrentGeometryParams());
     }
 
@@ -283,7 +283,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
 
             for (ElementGeometryPtr elemGeom : collection)
                 {
-                context.SetGeomStreamEntryId(collection.GetGeomStreamEntryId());
+                context.SetGeometryStreamEntryId(collection.GetGeometryStreamEntryId());
 
                 context.GetCurrentGeometryParams() = collection.GetGeometryParams();
                 context.CookGeometryParams();

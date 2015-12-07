@@ -254,7 +254,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
         builder->Append(*customParms);
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem->ToGeometrySourceP()))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*gelem->ToGeometrySourceP()))
         return nullptr;
 
     return db.Elements().Insert(*gelem);

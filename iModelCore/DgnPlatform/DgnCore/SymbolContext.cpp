@@ -38,7 +38,7 @@ void            SymbolContext::_SetupOutputs()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            SymbolContext::_Detach()
     {
-    // Preserve current QVis state, i.e. don't call PopAll, ActivateOverrideMatSymb, ResynchColorMap, etc.
+    // Preserve current QVis state, i.e. don't call PopAll, ActivateOverrideGraphicParams, ResynchColorMap, etc.
     m_IViewDraw   = NULL;
     m_IDrawGeom   = NULL;
     m_ICachedDraw = NULL;

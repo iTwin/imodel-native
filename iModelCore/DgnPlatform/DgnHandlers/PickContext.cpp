@@ -173,7 +173,7 @@ void PickContext::_AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriori
     m_currGeomDetail.SetLocatePriority(priority);
     m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtView, m_pickPointView)));
     m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtView) + GetCurrentGeometryParams().GetNetDisplayPriority());
-    m_currGeomDetail.SetGeomStreamEntryId(GetGeomStreamEntryId());
+    m_currGeomDetail.SetGeometryStreamEntryId(GetGeometryStreamEntryId());
 
     RefCountedPtr<HitDetail> thisHit = new HitDetail(*GetViewport(), m_currentGeomSource, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
 

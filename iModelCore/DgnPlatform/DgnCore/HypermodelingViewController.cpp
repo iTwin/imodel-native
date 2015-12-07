@@ -223,7 +223,7 @@ void HypermodelingViewController::DrawFakeSheetBorder (ViewContextR context, Dra
     DPoint2d box[4];
     range.Get4Corners (box);
     std::swap (box[2], box[3]);
-    //SetOverrideMatSymb (context);
+    //SetOverrideGraphicParams (context);
     context.GetCurrentGraphicR().AddShape2d (_countof(box), box, /*filled*/true, 0, &range.low);
 #endif
     }
@@ -256,7 +256,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 #endif
             ViewContext::ContextMark mark (&context);
             m_pass = PASS_Hatch;
-            SetOverrideMatSymb (context);
+            SetOverrideGraphicParams (context);
             drawing.DrawView (context);
             context.PopTransformClip();
             if (context.WasAborted())
@@ -266,7 +266,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
         if (ShouldDraw (PASS_DrawingBackground))
             {
             m_pass = PASS_DrawingBackground;
-            SetOverrideMatSymb (context);
+            SetOverrideGraphicParams (context);
             PushClipsForInContextViewPass (context, drawing);
             DrawFakeSheetBorder (context, drawing);
             PopClipsForInContextViewPass (context, drawing);
@@ -278,7 +278,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
             {
             m_pass = PASS_Forward;
             ViewContext::ContextMark mark (&context);
-            SetOverrideMatSymb (context);
+            SetOverrideGraphicParams (context);
             PushClipsForInContextViewPass (context, drawing); 
             drawing.DrawView (context);
             PopClipsForInContextViewPass (context, drawing);
@@ -291,7 +291,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
             {
             m_pass = (Pass)(PASS_CutOrAnnotation & m_passesToDraw);
             ViewContext::ContextMark mark (&context);
-            SetOverrideMatSymb (context);
+            SetOverrideGraphicParams (context);
             ViewFlags flags = context.GetViewFlags();
             flags.hiddenEdges = flags.visibleEdges = true;
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -310,7 +310,7 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
         }
 
     m_pass = PASS_None;
-    SetOverrideMatSymb (context);
+    SetOverrideGraphicParams (context);
     m_currentViewController = m_physical.get();
 
     //  Draw the clipped physical view
@@ -521,12 +521,12 @@ AxisAlignedBox3d HypermodelingViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) const
+void HypermodelingViewController::SetOverrideGraphicParams (ViewContextR context) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_pass == PASS_Hatch)
         {
-        OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
         overrideMatSymb->SetLineColor (m_symbology.hatchColor);
         overrideMatSymb->SetFillColor (m_symbology.hatchColor);
         overrideMatSymb->SetFillTransparency (m_symbology.hatchColor.GetAlpha());
@@ -538,22 +538,22 @@ void HypermodelingViewController::SetOverrideMatSymb (ViewContextR context) cons
         //pattern->SetPrimarySpacing (GetDrawingRange(*m_drawings.front()).XLength()/100);
         //pattern->SetPrimaryAngle (msGeomConst_piOver4);
         //overrideMatSymb->SetPatternParams (pattern);
-        context.GetCurrentGraphicR ().ActivateOverrideMatSymb (overrideMatSymb);
+        context.GetCurrentGraphicR ().ActivateOverrideGraphicParams (overrideMatSymb);
         }
     else if (m_pass == PASS_DrawingBackground)
         {
-        OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
         overrideMatSymb->SetLineColor (m_symbology.drawingBackgroundColor);
         overrideMatSymb->SetFillColor (m_symbology.drawingBackgroundColor);
         overrideMatSymb->SetFlags (overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
         overrideMatSymb->SetWidth (0);
         }
-        context.GetCurrentGraphicR ().ActivateOverrideMatSymb (overrideMatSymb);
+        context.GetCurrentGraphicR ().ActivateOverrideGraphicParams (overrideMatSymb);
     else
         {
-        OvrGraphicParamsP overrideMatSymb = context.GetOverrideMatSymb();
+        OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
         overrideMatSymb->SetFlags (MATSYMB_OVERRIDE_None);
-        context.GetCurrentGraphicR ().ActivateOverrideMatSymb (overrideMatSymb);
+        context.GetCurrentGraphicR ().ActivateOverrideGraphicParams (overrideMatSymb);
         }
 #endif
     }

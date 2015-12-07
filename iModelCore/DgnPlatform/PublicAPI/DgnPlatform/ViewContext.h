@@ -226,12 +226,12 @@ protected:
     GeometrySourceCP        m_currentGeomSource;
     Render::GeometryParams  m_currGeometryParams;
     Render::GraphicParams   m_graphicParams;
-    Render::OvrGraphicParams      m_ovrMatSymb;
+    Render::OvrGraphicParams      m_ovrGraphicParams;
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     DgnElement::Hilited     m_hiliteState;
     IElemTopologyCPtr       m_currElemTopo;
-    GeomStreamEntryId       m_currGeomStreamEntryId;
+    GeometryStreamEntryId       m_currGeometryStreamEntryId;
     double                  m_levelOfDetail;
     double                  m_minLOD;             // minimum size of default level-of-detail test.
     double                  m_arcTolerance;
@@ -541,14 +541,14 @@ public:
 
     //! Get the current OvrGraphicParams.
     //! @return the current OvrGraphicParams.
-    Render::OvrGraphicParamsP GetOverrideMatSymb() {return &m_ovrMatSymb;}
+    Render::OvrGraphicParamsP GetOverrideGraphicParams() {return &m_ovrGraphicParams;}
 
     //! Get the current GeometryParams.
     //! @return the current GeometryParams.
     Render::GeometryParams& GetCurrentGeometryParams() {return m_currGeometryParams;}
 
     //! Clears current override flags and re-applies context overrides.
-    //! @note Calls ActivateOverrideMatSymb on the output.
+    //! @note Calls ActivateOverrideGraphicParams on the output.
     DGNPLATFORM_EXPORT void ResetContextOverrides();
 
     //! Gets the current level of detail.
@@ -574,11 +574,11 @@ public:
     //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
     void SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
 
-    //! Query the current GeomStreamEntryId.
-    GeomStreamEntryId GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
+    //! Query the current GeometryStreamEntryId.
+    GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_currGeometryStreamEntryId;}
 
-    //! Set the current GeomStreamEntryId.
-    void SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
+    //! Set the current GeometryStreamEntryId.
+    void SetGeometryStreamEntryId(GeometryStreamEntryId geomId) {m_currGeometryStreamEntryId = geomId;}
 
     //@}
 

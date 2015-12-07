@@ -100,7 +100,7 @@ private:
     bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
     double                  m_viewDist;                 // xy distance to hit (view coordinates).
     double                  m_viewZ;                    // z distance to hit (view coordinates).
-    GeomStreamEntryId       m_geomId;                   // id of geometric primitive that generated this hit.
+    GeometryStreamEntryId       m_geomId;                   // id of geometric primitive that generated this hit.
 
 public:
     DGNPLATFORM_EXPORT void Init();
@@ -124,9 +124,9 @@ public:
     void                    SetZValue(double value)                {m_viewZ = value;}
 
     //! @private
-    GeomStreamEntryId GetGeomStreamEntryId() const {return m_geomId;}
+    GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_geomId;}
     //! @private
-    void SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_geomId = geomId;}
+    void SetGeometryStreamEntryId(GeometryStreamEntryId geomId) {m_geomId = geomId;}
 
     DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool singleSegment = true) const;
     DGNPLATFORM_EXPORT bool     GetArc(DEllipse3dR) const;

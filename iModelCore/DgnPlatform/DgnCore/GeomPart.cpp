@@ -20,13 +20,13 @@ protected:
     void ExecStatement();
     void PrepareInsertStatement();
     void PrepareUpdateStatement();
-    StatusInt SaveGeomPartToRow(GeomStreamCR, Utf8CP code, DgnGeomPartId geomPartId);
+    StatusInt SaveGeomPartToRow(GeometryStreamCR, Utf8CP code, DgnGeomPartId geomPartId);
 
 public:
     DbGeomPartsWriter(DgnDbR db) : m_dgndb(db) {}
 
-    DgnGeomPartId InsertGeomPart(GeomStreamCR, Utf8CP code);
-    BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, GeomStreamCR, Utf8CP code);
+    DgnGeomPartId InsertGeomPart(GeometryStreamCR, Utf8CP code);
+    BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, GeometryStreamCR, Utf8CP code);
 
     static int GetColumnIndexForId()   {return 1;} // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
     static int GetColumnIndexForCode() {return 2;} // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
@@ -80,7 +80,7 @@ void DbGeomPartsWriter::ExecStatement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeomStreamCR geom, Utf8CP code, DgnGeomPartId geomPartId)
+StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeometryStreamCR geom, Utf8CP code, DgnGeomPartId geomPartId)
     {
     m_stmt->BindId(GetColumnIndexForId(), geomPartId);
 
@@ -95,13 +95,13 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeomStreamCR geom, Utf8CP code, D
         return SUCCESS; // Is this an error?!?
         }
 
-    return (DgnDbStatus::Success == geom.WriteGeomStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, GetColumnIndexForGeom()))? BSISUCCESS: BSIERROR;
+    return (DgnDbStatus::Success == geom.WriteGeometryStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, GetColumnIndexForGeom()))? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeomPartId DbGeomPartsWriter::InsertGeomPart(GeomStreamCR geom, Utf8CP code)
+DgnGeomPartId DbGeomPartsWriter::InsertGeomPart(GeometryStreamCR geom, Utf8CP code)
     {
     DgnGeomPartId geomPartId = m_dgndb.GeomParts().MakeNewGeomPartId();
 
@@ -116,7 +116,7 @@ DgnGeomPartId DbGeomPartsWriter::InsertGeomPart(GeomStreamCR geom, Utf8CP code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DbGeomPartsWriter::UpdateGeomPart(DgnGeomPartId geomPartId, GeomStreamCR geom, Utf8CP code)
+BentleyStatus DbGeomPartsWriter::UpdateGeomPart(DgnGeomPartId geomPartId, GeometryStreamCR geom, Utf8CP code)
     {
     if (!geomPartId.IsValid())
         return ERROR;
@@ -149,7 +149,7 @@ DgnGeomPartId DgnGeomParts::MakeNewGeomPartId()
 BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
     {
     DbGeomPartsWriter writer(GetDgnDb());
-    DgnGeomPartId geomPartId = writer.InsertGeomPart(geomPart.GetGeomStream(), geomPart.GetCode());
+    DgnGeomPartId geomPartId = writer.InsertGeomPart(geomPart.GetGeometryStream(), geomPart.GetCode());
 
     if (!geomPartId.IsValid())
         return BentleyStatus::ERROR;
@@ -165,7 +165,7 @@ BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
 BentleyStatus DgnGeomParts::UpdateGeomPart(DgnGeomPartR geomPart)
     {
     DbGeomPartsWriter writer(GetDgnDb());
-    return writer.UpdateGeomPart(geomPart.GetId(), geomPart.GetGeomStream(), geomPart.GetCode());
+    return writer.UpdateGeomPart(geomPart.GetId(), geomPart.GetGeometryStream(), geomPart.GetCode());
     }
 
 //---------------------------------------------------------------------------------------
@@ -211,9 +211,9 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
         return nullptr;
 
     DgnGeomPartPtr geomPartPtr = new DgnGeomPart(stmt->GetValueText(0));
-    GeomStreamR    geom = geomPartPtr->GetGeomStreamR();
+    GeometryStreamR    geom = geomPartPtr->GetGeometryStreamR();
 
-    if (DgnDbStatus::Success != geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
+    if (DgnDbStatus::Success != geom.ReadGeometryStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
         return nullptr;
 
     geomPartPtr->SetId(geomPartId);
@@ -281,7 +281,7 @@ DgnGeomPartId DgnImportContext::RemapGeomPartId(DgnGeomPartId source)
     if (!dest.IsValid())
         {
         DgnGeomPartPtr destGeomPart = DgnGeomPart::Create();
-        ElementGeomIO::Import(destGeomPart->GetGeomStreamR(), sourceGeomPart->GetGeomStream(), *this);
+        ElementGeomIO::Import(destGeomPart->GetGeometryStreamR(), sourceGeomPart->GetGeometryStream(), *this);
 
         if (BSISUCCESS != GetDestinationDb().GeomParts().InsertGeomPart(*destGeomPart))
             {

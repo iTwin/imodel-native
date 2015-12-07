@@ -55,7 +55,7 @@ static void setUpElement(PhysicalElementR el, DPoint3dCR origin, double yaw, ICu
     el.SetCode(elementCode);
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(el, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
     builder->Append(curve);
-    StatusInt status = builder->SetGeomStreamAndPlacement(el);
+    StatusInt status = builder->SetGeometryStreamAndPlacement(el);
     ASSERT_TRUE( SUCCESS == status );
     }
 

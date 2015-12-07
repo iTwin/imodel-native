@@ -168,8 +168,8 @@ public:
     //! Make sure that a LineStyle has been imported
     DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {BeAssert(false); return DgnStyleId();}
     //! Look up a copy of a Material
-    //! Make sure that any ids referenced by the supplied GeomStream have been imported
-    DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
+    //! Make sure that any ids referenced by the supplied GeometryStream have been imported
+    DGNPLATFORM_EXPORT DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom);
     //! @}
 
     //! @name GCS coordinate system shift
@@ -1146,13 +1146,13 @@ public:
 //! @ingroup ElementGeometryGroup
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-struct GeomStream : ByteStream
+struct GeometryStream : ByteStream
 {
 public:
-    bool HasGeometry() const {return HasData();}  //!< return false if this GeomStream is empty.
+    bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
 
-    DgnDbStatus WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
-    DgnDbStatus ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId);
+    DgnDbStatus WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
+    DgnDbStatus ReadGeometryStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId);
 };
 
 //=======================================================================================
@@ -1265,16 +1265,16 @@ protected:
     virtual GeometrySource3dCP _ToGeometrySource3d() const = 0; // Either this method or _ToGeometrySource2d must return non-null.
     virtual DgnCategoryId _GetCategoryId() const = 0;
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) = 0;
-    virtual GeomStreamCR _GetGeomStream() const = 0;
+    virtual GeometryStreamCR _GetGeometryStream() const = 0;
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _Stroke(ViewContextR, double pixelSize) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
-    GeomStreamR GetGeomStreamR() {return const_cast<GeomStreamR>(_GetGeomStream());} // Only ElementGeometryBuilder should have write access to the GeomStream...
+    GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only ElementGeometryBuilder should have write access to the GeometryStream...
 
 public:
-    bool HasGeometry() const {return _GetGeomStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
+    bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
     DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
     DgnElementCP ToElement() const {return _ToElement();} //! Caller must be prepared to this to return nullptr.
     DgnElementP ToElementP() {return const_cast<DgnElementP>(_ToElement());} //! Caller must be prepared to this to return nullptr.
@@ -1284,7 +1284,7 @@ public:
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(_ToGeometrySource3d());}
     DgnCategoryId GetCategoryId() const {return _GetCategoryId();}
     DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
-    GeomStreamCR GetGeomStream() const {return _GetGeomStream();}
+    GeometryStreamCR GetGeometryStream() const {return _GetGeometryStream();}
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
     DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
@@ -1365,7 +1365,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : DgnElement, GeometrySource3d
 protected:
     mutable Render::GraphicSet m_graphics;
     DgnCategoryId   m_categoryId;
-    GeomStream      m_geom;
+    GeometryStream      m_geom;
     Placement3d     m_placement;
 
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
@@ -1375,7 +1375,7 @@ protected:
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
     virtual DgnCategoryId _GetCategoryId() const final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId);
-    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
+    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override final;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
@@ -1417,7 +1417,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : DgnElement, GeometrySource2d
 protected:
     mutable Render::GraphicSet m_graphics;
     DgnCategoryId   m_categoryId;
-    GeomStream      m_geom;
+    GeometryStream      m_geom;
     Placement2d     m_placement;
 
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
@@ -1427,7 +1427,7 @@ protected:
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override;
-    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
+    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override final;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;

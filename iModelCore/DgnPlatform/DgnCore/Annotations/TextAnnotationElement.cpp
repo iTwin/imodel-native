@@ -107,7 +107,7 @@ void TextAnnotationItem::GenerateElementGeometry(GeometrySourceR source, Generat
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(source);
     
     builder->Append(*m_annotation);
-    builder->SetGeomStreamAndPlacement(source);
+    builder->SetGeometryStreamAndPlacement(source);
     }
 
 //---------------------------------------------------------------------------------------

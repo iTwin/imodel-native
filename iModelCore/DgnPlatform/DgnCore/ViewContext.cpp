@@ -90,7 +90,7 @@ StatusInt ViewContext::_InitContextForView()
     BeAssert(0 == GetTransClipDepth());
 
     m_graphicParams.Init();
-    m_ovrMatSymb.Clear();
+    m_ovrGraphicParams.Clear();
 
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
@@ -479,7 +479,7 @@ void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP origi
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
     {
-    LineStyleSymbR  tSymb = (m_ovrMatSymb.GetFlags() & OvrGraphicParams::FLAGS_Style) ? m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR() : m_graphicParams.GetLineStyleSymbR();
+    LineStyleSymbR  tSymb = (m_ovrGraphicParams.GetFlags() & OvrGraphicParams::FLAGS_Style) ? m_ovrGraphicParams.GetMatSymbR().GetLineStyleSymbR() : m_graphicParams.GetLineStyleSymbR();
 
     if (symb)
         *symb = &tSymb;
@@ -598,7 +598,7 @@ void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    // Modify m_ovrMatSymb for view flags...
+    // Modify m_ovrGraphicParams for view flags...
     _AddViewOverrides(ovrMatSymb); 
     }
 
@@ -654,9 +654,9 @@ void ViewContext::ResetContextOverrides()
     m_rasterDisplayParams.SetFlags(ViewContext::RasterDisplayParams::RASTER_PARAM_None); // NEEDSWORK_RASTER_DISPLAY - Not sure how this fits into new continuous update approach?!?
 
     // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_graphicParams as they are not valid.
-    m_ovrMatSymb.Clear();
-    _AddContextOverrides(m_ovrMatSymb);
-    GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
+    m_ovrGraphicParams.Clear();
+    _AddContextOverrides(m_ovrGraphicParams);
+    GetCurrentGraphicR().ActivateOverrideGraphicParams(&m_ovrGraphicParams);
 #endif
     }
 
@@ -752,10 +752,10 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
             p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
             p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
 
-            m_ovrMatSymb.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_graphicParams.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
-            m_ovrMatSymb.SetWidth(1);
-            _AddContextOverrides(m_ovrMatSymb);
-            GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
+            m_ovrGraphicParams.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_graphicParams.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
+            m_ovrGraphicParams.SetWidth(1);
+            _AddContextOverrides(m_ovrGraphicParams);
+            GetCurrentGraphicR().ActivateOverrideGraphicParams(&m_ovrGraphicParams);
 
             PushTransform(placementTrans);
             DrawBox(p, nullptr != source.ToGeometrySource3d());
@@ -1851,7 +1851,7 @@ void ViewContext::SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end)
     m_startTangent = start;
     m_endTangent = end;
     m_graphicParams.GetLineStyleSymbR().ClearContinuationData();
-    m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR().ClearContinuationData();
+    m_ovrGraphicParams.GetMatSymbR().GetLineStyleSymbR().ClearContinuationData();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -767,7 +767,7 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnImportContext::RemapGeomStreamIds(GeomStreamR geom)
+DgnDbStatus DgnImportContext::RemapGeometryStreamIds(GeometryStreamR geom)
     {
     return ElementGeomIO::Import(geom, geom, *this);
     }

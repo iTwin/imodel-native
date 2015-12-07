@@ -469,7 +469,7 @@ bool TestCurveLocation (CurveVectorCR curvesLocal)
 virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
     {
     // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId() != m_context->GetGeometryStreamEntryId())
         return SUCCESS;
 
     TestCurveLocation(curves);
@@ -483,7 +483,7 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled) override
     {
     // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId() != m_context->GetGeometryStreamEntryId())
         return SUCCESS;
 
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);

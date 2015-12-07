@@ -861,11 +861,11 @@ double          scale
         context.CookGeometryParams();
         }
 
-    OvrGraphicParamsP  ovrMatSymb = context.GetOverrideMatSymb();
+    OvrGraphicParamsP  ovrMatSymb = context.GetOverrideGraphicParams();
 
     ovrMatSymb->SetFillTransparency(0xff);
     ovrMatSymb->SetMaterial(appData->GetMaterial());
-    context.GetIDrawGeom().ActivateOverrideMatSymb(ovrMatSymb);
+    context.GetIDrawGeom().ActivateOverrideGraphicParams(ovrMatSymb);
 
     CurveVectorPtr  boundaryCurve = boundary.GetCurveVector();
 
@@ -1640,7 +1640,7 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
     if (!_WantAreaPatterns())
         return;
 
-    PatternParamsCP params = m_ovrMatSymb.GetPatternParams();
+    PatternParamsCP params = m_ovrGraphicParams.GetPatternParams();
 
     if (nullptr == params)
         params = m_graphicParams.GetPatternParams();

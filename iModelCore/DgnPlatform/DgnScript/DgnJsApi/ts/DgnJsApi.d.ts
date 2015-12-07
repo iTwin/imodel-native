@@ -72,7 +72,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
         AppendSphere(radius: cxx_double): void;
-        SetGeomStreamAndPlacement(element: DgnElementP): cxx_double;
+        SetGeometryStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;
     }
