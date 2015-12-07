@@ -7,7 +7,7 @@
             <TrackingEnabled>True</TrackingEnabled>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECClass typeName="Order" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Order" isStruct="True">
         <ECProperty propertyName="OrderId" typeName="int" />
         <ECProperty propertyName="OrderDate" typeName="dateTime" />
         <ECProperty propertyName="ProductDelivered" typeName="boolean" />

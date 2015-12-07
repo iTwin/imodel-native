@@ -1114,60 +1114,6 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblFoo, "arrayOfIntsFoo"));
     EXPECT_FALSE (db.ColumnExists(tblFoo, "arrayOfAnglesStructsFoo"));
     EXPECT_FALSE (db.ColumnExists(tblFoo, "anglesFoo"));
-
-    //========================[sc_StructDomainClass_Array]===========================================================
-    Utf8CP tbl = "sc_StructDomainClass_Array"; 
-    EXPECT_TRUE (db.TableExists(tbl));
-    EXPECT_EQ   (5, GetColumnCount(db, tbl));
-
-    EXPECT_TRUE (db.ColumnExists(tbl, "ECInstanceId"));
-    EXPECT_TRUE (db.ColumnExists(tbl, "ParentECInstanceId"));
-    //Local properties
-    EXPECT_TRUE (db.ColumnExists(tbl, "stringProp"));
-    EXPECT_TRUE (db.ColumnExists(tbl, "ECPropertyPathId"));
-    EXPECT_TRUE (db.ColumnExists(tbl, "ECArrayIndex"));
-
-    //========================[sc_StructNoneDomainClass_Array]===========================================================
-    tbl = "sc_StructNoneDomainClass_Array"; 
-    EXPECT_TRUE (db.TableExists(tbl));
-    EXPECT_EQ   (5, GetColumnCount(db, tbl));
-
-    EXPECT_TRUE (db.ColumnExists(tbl, "ECInstanceId"));
-    EXPECT_TRUE (db.ColumnExists(tbl, "ParentECInstanceId"));
-    //Local properties
-    EXPECT_TRUE (db.ColumnExists(tbl, "stringProp"));
-    EXPECT_TRUE (db.ColumnExists(tbl, "ECPropertyPathId"));
-    EXPECT_TRUE (db.ColumnExists(tbl, "ECArrayIndex"));
-    
-    //========================[sc_StructDomainClassWithNoProperties_Array]===========================================================
-    tbl = "sc_StructDomainClassWithNoProperties_Array"; 
-    EXPECT_TRUE (db.TableExists(tbl));
-    
-    //========================[sc_StructNoneDomainClassWithNoProperties_Array]===========================================================
-    tbl = "sc_StructNoneDomainClassWithNoProperties_Array"; 
-    EXPECT_TRUE (db.TableExists(tbl));
-
-    //========================[sc_DomainClass]===========================================================
-    tbl = "sc_DomainClass"; 
-    EXPECT_TRUE (db.TableExists(tbl));
-    EXPECT_EQ   (2, GetColumnCount(db, tbl));
-    
-    EXPECT_TRUE (db.ColumnExists(tbl, "ECInstanceId"));
-    //Local properties
-    EXPECT_TRUE (db.ColumnExists(tbl, "stringProp"));
-
-    //========================[sc_NoneDomainClass]===========================================================
-    tbl = "sc_NoneDomainClass"; 
-    EXPECT_FALSE (db.TableExists(tbl));
-    
-    //========================[sc_DomainClassWithNoProperties]===========================================================
-    tbl = "sc_DomainClassWithNoProperties"; 
-    EXPECT_TRUE (db.TableExists(tbl));
-    
-    //========================[sc_NoneDomainClassWithNoProperties]===========================================================
-    tbl = "sc_NoneDomainClassWithNoProperties"; 
-    EXPECT_FALSE (db.TableExists(tbl));
- 
     }
 
 //---------------------------------------------------------------------------------------
@@ -1873,9 +1819,6 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
         WriteECSchemaDiffToLog(*diff, NativeLogging::LOG_ERROR);
 
         }
-#if 0
-    EXPECT_EQ (diff->IsEmpty() , true);
-#endif   
 
     s1.Stop();
     LOG.infov ("Comparing Db %s to disk version Took : %.4lf seconds", openPlant3D->GetFullSchemaName().c_str(), s1.GetElapsedSeconds());
@@ -1885,7 +1828,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     ECClassKeys inSchemaClassKeys;
     EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys (inSchemaClassKeys, "StartupCompany"));
     LOG.infov("No of classes in StartupCompany is %d", (int)inSchemaClassKeys.size());
-    EXPECT_EQ (56, inSchemaClassKeys.size());
+    EXPECT_EQ (48, inSchemaClassKeys.size());
 
     StopWatch randomClassSW ("Loading Random Class", false);
     int maxClassesToLoad = 100;
@@ -2368,7 +2311,6 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
-    EXPECT_FALSE (db.TableExists ("sm_B_Array"));
     EXPECT_FALSE(db.TableExists("sm_B"));
     EXPECT_TRUE(db.TableExists("sm_A"));
     EXPECT_TRUE(db.TableExists("sm_C_Array"));
@@ -2401,11 +2343,6 @@ TEST(ECDbSchemas, Verify_TFS_14829_A)
    {
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
-    //auto fileName =saveTestProject.GetECDb().GetDbFileName();
-    //db.CloseDb();
-
-    //DbResult stat = db.OpenBeSQLiteDb (fileName, Db::OpenParams(Db::OpenMode::ReadWrite));
-    //EXPECT_EQ (BE_SQLITE_OK, stat);
 
     bool bUpdate = true;
     ECSchemaPtr ecSchema = nullptr;
@@ -2508,7 +2445,7 @@ TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
-        "<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
+        "<ECClass typeName=\"SimpleClass\" isDomainClass=\"True\">"
         "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
         "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
         "<ECCustomAttributes>"

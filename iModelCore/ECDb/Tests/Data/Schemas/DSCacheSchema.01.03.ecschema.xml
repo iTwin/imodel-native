@@ -20,7 +20,7 @@
     <ECClass typeName="NavigationBase" isDomainClass="True">
         <ECProperty propertyName="DataSourceCache_RemoteId" typeName="string" />
     </ECClass>
-    <ECClass typeName="CacheInfoStruct" isStruct="True" isDomainClass="False">
+    <ECClass typeName="CacheInfoStruct" isStruct="True">
         <ECProperty propertyName="CacheTag" typeName="string" />
         <ECProperty propertyName="CacheDate" typeName="dateTime" >
             <ECCustomAttributes>
@@ -30,7 +30,7 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="ChangeInfoStruct" isStruct="True" isDomainClass="False">
+    <ECClass typeName="ChangeInfoStruct" isStruct="True">
         <ECProperty propertyName="ChangeStatus" typeName="int" />
         <ECProperty propertyName="SyncStatus" typeName="int" />
         <ECProperty propertyName="Date" typeName="dateTime" >

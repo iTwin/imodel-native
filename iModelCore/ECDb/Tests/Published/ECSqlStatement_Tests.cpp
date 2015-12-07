@@ -2169,7 +2169,7 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
     {
     SchemaItem schema("<?xml version='1.0' encoding='utf-8' ?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                      "    <ECClass typeName='Name' isDomainClass='False' isStruct='True'>"
+                      "    <ECClass typeName='Name' isStruct='True'>"
                       "        <ECProperty propertyName='First' typeName='string' />"
                       "        <ECProperty propertyName='Last' typeName='string' />"
                       "    </ECClass>"

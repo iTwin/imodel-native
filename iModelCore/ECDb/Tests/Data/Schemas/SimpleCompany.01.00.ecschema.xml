@@ -16,7 +16,7 @@
         </SchemaMap>
     </ECCustomAttributes>
 
-    <ECClass typeName="EducationStruct" isStruct="True" isDomainClass="True">
+    <ECClass typeName="EducationStruct" isStruct="True">
         <ECProperty propertyName="Degree" typeName="string" />
         <ECProperty propertyName="Year" typeName="int" />
         <ECProperty propertyName="GPA" typeName="double" />

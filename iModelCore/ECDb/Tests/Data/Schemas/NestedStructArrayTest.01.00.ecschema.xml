@@ -13,24 +13,24 @@
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="T" typeName="string" />
     </ECClass>
-    <ECClass typeName="S4" isStruct="True" isDomainClass="True">
+    <ECClass typeName="S4" isStruct="True">
         <ECProperty propertyName="T" typeName="string" />
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="P3D" typeName="point3d" />
     </ECClass>
-    <ECClass typeName="S3" isStruct="True" isDomainClass="True">
+    <ECClass typeName="S3" isStruct="True">
         <ECProperty propertyName="T" typeName="string" />
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="P3D" typeName="point3d" />
         <ECArrayProperty propertyName="S4ARRAY" typeName="S4" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>
-    <ECClass typeName="S2" isStruct="True" isDomainClass="True">
+    <ECClass typeName="S2" isStruct="True">
         <ECProperty propertyName="T" typeName="string" />
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="P3D" typeName="point3d" />
         <ECArrayProperty propertyName="S3ARRAY" typeName="S3" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>
-    <ECClass typeName="S1" isStruct="True" isDomainClass="True">
+    <ECClass typeName="S1" isStruct="True">
         <ECProperty propertyName="T" typeName="string" />
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="P3D" typeName="point3d" />

@@ -29,7 +29,7 @@
         no suffix - class
         Struct suffix - struct
         -->
-    <ECClass typeName="PStruct" description="Struct with primitive props (default mappings)" isStruct="True" isDomainClass="False">
+    <ECClass typeName="PStruct" description="Struct with primitive props (default mappings)" isStruct="True">
         <ECProperty propertyName="b" typeName="boolean" />
         <ECProperty propertyName="bi" typeName="binary" />
         <ECProperty propertyName="d" typeName="double" />
@@ -51,15 +51,15 @@
         <ECArrayProperty propertyName="Prim_Array_Bounded" typeName="int" minOccurs="5" maxOccurs="10" />
         <ECArrayProperty propertyName="PStruct_Array_Bounded" typeName="PStruct" minOccurs="5" maxOccurs="10" isStruct="True" />
     </ECClass>
-    <ECClass typeName="Abstract" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+    <ECClass typeName="Abstract" isDomainClass="False" isStruct="False" >
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="S" typeName="string" />
     </ECClass>
-    <ECClass typeName="AbstractNoSubclasses" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+    <ECClass typeName="AbstractNoSubclasses" isDomainClass="False" isStruct="False" >
         <ECProperty propertyName="I" typeName="int" />
         <ECProperty propertyName="S" typeName="string" />
     </ECClass>
-    <ECClass typeName="AbstractTablePerHierarchy" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+    <ECClass typeName="AbstractTablePerHierarchy" isDomainClass="False" isStruct="False" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -135,7 +135,7 @@
     </ECClass>
 
     <!-- ************* For DateTimeInfo tests ************************** -->
-    <ECClass typeName="DateTimeStruct" isStruct="True" isDomainClass="False">
+    <ECClass typeName="DateTimeStruct" isStruct="True">
         <ECProperty propertyName="nodatetimeinfo" typeName="dateTime" />
         <ECProperty propertyName="utc" typeName="dateTime">
             <ECCustomAttributes>
@@ -261,7 +261,7 @@
             <Class class="PSA" />
         </Target>
     </ECRelationshipClass>
-    <ECClass typeName="SAStruct" description="Struct with struct and struct array properties (default mappings)" isStruct="True" isDomainClass="False">
+    <ECClass typeName="SAStruct" description="Struct with struct and struct array properties (default mappings)" isStruct="True">
         <ECStructProperty propertyName="PStructProp" typeName="PStruct" />
         <ECArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>

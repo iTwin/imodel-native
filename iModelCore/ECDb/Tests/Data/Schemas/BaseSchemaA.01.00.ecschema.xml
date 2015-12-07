@@ -8,14 +8,14 @@
             <SchemaFullNameAtEditingStart>BaseSchemaA.01.00</SchemaFullNameAtEditingStart>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECClass typeName="Address" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Address" isStruct="True">
         <ECProperty propertyName="Line1" typeName="string" />
         <ECProperty propertyName="Line2" typeName="string" />
         <ECArrayProperty propertyName="StringArray" typeName="string" minOccurs="0" maxOccurs="10" />
     </ECClass>
     <ECClass typeName="BaseAClass1" isDomainClass="True" />
     <ECClass typeName="BaseAClass2" isDomainClass="True" />
-    <ECClass typeName="BaseSchemaACustomAttribute" isDomainClass="True" isCustomAttributeClass="True">
+    <ECClass typeName="BaseSchemaACustomAttribute" isCustomAttributeClass="True">
         <ECProperty propertyName="StringValue" typeName="string" />
         <ECProperty propertyName="IntValue" typeName="int" />
         <ECProperty propertyName="DoubleValue" typeName="double" />

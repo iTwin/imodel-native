@@ -1363,29 +1363,5 @@
         </Target>
         <ECProperty propertyName="Created" typeName="dateTime"/>
     </ECRelationshipClass>
-
- 
-  
-    <ECClass typeName="StructDomainClass" isDomainClass="True" isStruct="true">
-     <ECProperty propertyName="stringProp" typeName="string" />
-    </ECClass>
-    <ECClass typeName="StructNoneDomainClass" isDomainClass="False" isStruct="true">
-     <ECProperty propertyName="stringProp" typeName="string" />
-    </ECClass>
-    <ECClass typeName="StructDomainClassWithNoProperties" isDomainClass="True" isStruct="true">
-    </ECClass>
-    <ECClass typeName="StructNoneDomainClassWithNoProperties" isDomainClass="False" isStruct="true">
-    </ECClass>
-	
-    <ECClass typeName="DomainClass" isDomainClass="True" isStruct="false">
-     <ECProperty propertyName="stringProp" typeName="string" />
-    </ECClass>
-    <ECClass typeName="NoneDomainClass" isDomainClass="False" isStruct="false">
-     <ECProperty propertyName="stringProp" typeName="string" />
-    </ECClass>
-    <ECClass typeName="DomainClassWithNoProperties" isDomainClass="True" isStruct="false">
-    </ECClass>
-    <ECClass typeName="NoneDomainClassWithNoProperties" isDomainClass="False" isStruct="false">
-    </ECClass>	
-  
+    
 </ECSchema>

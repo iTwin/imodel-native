@@ -107,7 +107,7 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="Location" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Location" isStruct="True">
         <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code">
             <ECCustomAttributes>
                 <Localizable xmlns="EditorCustomAttributes.01.00" />

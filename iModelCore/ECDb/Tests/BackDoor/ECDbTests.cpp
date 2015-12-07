@@ -219,9 +219,17 @@ void ECDbTestUtility::WriteECSchemaToDisk(ECSchemaCR ecSchema, WCharCP filenameN
 bool CompareRelationships(IECRelationshipInstanceCR a, IECRelationshipInstanceCR b)
     {
     if (a.GetSource() == nullptr || b.GetSource() == nullptr || a.GetSource()->GetInstanceId() != b.GetSource()->GetInstanceId())
+        {
+        LOG.trace("CompareECInstances> Relationship instances are not equal: differing source instance ids.");
         return false;
+        }
+
     if (a.GetTarget() == nullptr || b.GetTarget() == nullptr || a.GetTarget()->GetInstanceId() != b.GetTarget()->GetInstanceId())
-        return false;
+        {
+        LOG.trace("CompareECInstances> Relationship instances are not equal: differing target instance ids.");
+            return false;
+        }
+
     return true;
     }
 
@@ -238,10 +246,8 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
         if (expectedPropertyValue.HasChildValues())
             {
             if (!CompareProperties(actual, *expectedPropertyValue.GetChildValues()))
-                {
-                LOG.infov("CompareProperties - Failed for child of property %s", propertyName.c_str());
                 return false;
-                }
+
             continue;
             }
 
@@ -249,7 +255,7 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
         ECObjectsStatus status = actual.GetValueUsingAccessor(actualValue, valueAccessor);
         if (status != ECObjectsStatus::Success)
             {
-            LOG.infov("CompareProperties - GetValue failed for %s", propertyName.c_str());
+            BeAssert(false);
             return false;
             }
 
@@ -260,20 +266,15 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
         if (expectedValueIsNull != actualValueIsNull)
             {
             if (expectedValueIsNull)
-                {
-                LOG.infov("CompareProperties - Expected NULL value for property '%s' but the actual value was not NULL.", propertyName.c_str());
-                }
+                LOG.tracev("CompareProperties - Expected NULL value for property '%s' but the actual value was not NULL.", propertyName.c_str());
             else
-                {
-                LOG.infov("CompareProperties - Expected a non-NULL value for property '%s' but the actual value was NULL.", propertyName.c_str());
-                }
+                LOG.tracev("CompareProperties - Expected a non-NULL value for property '%s' but the actual value was NULL.", propertyName.c_str());
+            
             return false;
             }
 
         if (expectedValue.Equals(actualValue))
-            {
             continue;
-            }
 
         PrimitiveType actualType = actualValue.GetPrimitiveType();
         if (actualType == PRIMITIVETYPE_DateTime)
@@ -282,15 +283,14 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
             int64_t expectedECTicks = expectedValue.GetDateTimeTicks();
             int64_t actualECTicks = actualValue.GetDateTimeTicks();
             if (ECDbTestUtility::CompareECDateTimes(expectedECTicks, actualECTicks))
-                {
                 continue;
-                }
             }
 
         ValueKind actualKind = actualValue.GetKind();
         Utf8String expectedValueWStr = expectedValue.ToString();
         Utf8String actualValueWstr = actualValue.ToString();
-        LOG.infov("CompareProperties - Values not equal for property '%s' (%d %d) - actual %s expected %s", propertyName.c_str(), actualKind, actualType, actualValueWstr.c_str(), expectedValueWStr.c_str());
+        LOG.tracev("CompareECInstances> Instances are not equal: Differing property values property '%s' (%d %d): actual: %s, expected: %s", 
+                   propertyName.c_str(), actualKind, actualType, actualValueWstr.c_str(), expectedValueWStr.c_str());
         return false;
         }
 
@@ -307,7 +307,11 @@ bool ECDbTestUtility::CompareECInstances(IECInstanceCR expected, IECInstanceCR a
     if (relExpected != nullptr || relActual != nullptr)
         {
         if (relExpected == nullptr || relActual == nullptr)
+            {
+            LOG.trace("CompareECInstances> Instances are not equal. One is a relationship instance, the other is not.");
             return false; // both have to be non null
+            }
+
         if (!CompareRelationships(*relExpected, *relActual))
             return false;
         }
@@ -318,6 +322,7 @@ bool ECDbTestUtility::CompareECInstances(IECInstanceCR expected, IECInstanceCR a
     ECValuesCollectionPtr propertyValuesExpected = ECValuesCollection::Create(expected);
     if (propertyValuesExpected.IsNull())
         return false;
+
     return CompareProperties(actual, *propertyValuesExpected);
     }
 
@@ -656,11 +661,7 @@ void ECDbTestUtility::AssertECDateTime
 * @bsimethod                                   Krischan.Eberle                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-bool ECDbTestUtility::CompareECDateTimes
-(
-    int64_t expectedECTicks,
-    int64_t actualECTicks
-    )
+bool ECDbTestUtility::CompareECDateTimes(int64_t expectedECTicks, int64_t actualECTicks)
     {
     int64_t diff = expectedECTicks - actualECTicks;
     //get absolute diff
@@ -676,14 +677,14 @@ bool ECDbTestUtility::CompareECDateTimes
 
     if (diff < DATETIME_ACCURACY_TOLERANCE_HNS)
         {
-        LOG.debugv(L"DateTime value differs by %d hecto-nanoseconds but is within tolerance of %d hecto-nanoseconds.",
+        LOG.tracev("CompareECInstances> Instances are not equal: DateTime value differs by %d hecto-nanoseconds but is within tolerance of %d hecto-nanoseconds.",
                    diff,
                    DATETIME_ACCURACY_TOLERANCE_HNS);
         return true;
         }
     else
         {
-        LOG.infov(L"DateTime value differs by %d hecto-nanoseconds which is outside the tolerance of %d hecto-nanoseconds.",
+        LOG.tracev("CompareECInstances> Instances are not equal: DateTime value differs by %d hecto-nanoseconds which is outside the tolerance of %d hecto-nanoseconds.",
                   diff,
                   DATETIME_ACCURACY_TOLERANCE_HNS);
         return false;
@@ -909,10 +910,10 @@ BentleyStatus ECDbTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeF
 // @bsimethod                                                   Affan.Khan     03/12
 //---------------------------------------------------------------------------------------
 //static
-IECInstancePtr ECDbTestUtility::CreateArbitraryECInstance(ECClassCR ecClass, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+IECInstancePtr ECDbTestUtility::CreateArbitraryECInstance(ECClassCR ecClass, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays, bool skipReadOnlyProps)
     {
     IECInstancePtr instance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
-    PopulateECInstance(instance, populatePrimitiveValueCallback, skipStructs, skipArrays);
+    PopulateECInstance(instance, populatePrimitiveValueCallback, skipStructs, skipArrays, skipReadOnlyProps);
     return instance;
     }
 
@@ -922,11 +923,14 @@ IECInstancePtr ECDbTestUtility::CreateArbitraryECInstance(ECClassCR ecClass, Pop
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     03/12
 //---------------------------------------------------------------------------------------
-void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays, bool skipReadOnlyProps)
     {
     ECValue value;
     for (ECPropertyCP ecProperty : ecInstance->GetClass().GetProperties(true))
         {
+        if (ecProperty->GetIsReadOnly() && skipReadOnlyProps)
+            continue;
+
         if (!skipStructs && ecProperty->GetIsStruct())
             {
             PopulateStructValue(value, ecProperty->GetAsStructProperty()->GetType(), populatePrimitiveValueCallback);

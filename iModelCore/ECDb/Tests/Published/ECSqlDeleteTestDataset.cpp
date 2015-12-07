@@ -29,11 +29,11 @@ ECSqlTestDataset ECSqlDeleteTestDataset::FromTests (int rowCountPerClass)
     //*******************************************************
     //structs which are domain classes
     ecsql = "DELETE FROM ONLY ecsql.SAStruct";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in DELETE statements.");
 
     //structs which are not domain classes. They cannot be updated, so this always returns 0 rows affected.
     ecsql = "DELETE FROM ONLY ecsql.PStruct";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in DELETE statements.");
 
     //*******************************************************
     // Updating CAs

@@ -184,7 +184,7 @@ TEST_F(ECDbSchemaRules, Instantiability)
                       "<ECClass typeName='DomainClass' isDomainClass='True' isStruct='False' isCustomAttributeClass='False' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "</ECClass>"
-                      "<ECClass typeName='Struct' isDomainClass='False' isStruct='True' isCustomAttributeClass='False' >"
+                      "<ECClass typeName='Struct' isStruct='True' isCustomAttributeClass='False' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "</ECClass>"
                       "<ECRelationshipClass typeName = 'AbstractRel' isDomainClass = 'False' isStruct='False' isCustomAttributeClass='False' />"
@@ -227,14 +227,14 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
     {
     std::vector <SchemaItem> testItems {
         SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
+        "  <ECClass typeName=\"TestClass\" isStruct=\"true\">"
                  "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
                  "  </ECClass>"
                  "</ECSchema>",
                  false, "Property is of same type as class."),
 
         SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\" >"
+                 "  <ECClass typeName=\"Base\" isStruct=\"true\" >"
                  "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" isStruct=\"true\" />"
                  "  </ECClass>"
                  "  <ECClass typeName=\"Sub\" isStruct=\"true\">"
@@ -245,14 +245,14 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
                  false, "Property is of subtype of class."),
 
         SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
+                 "  <ECClass typeName=\"TestClass\" isStruct=\"true\">"
                  "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECClass>"
                  "</ECSchema>",
                  false, "Property is array of class."),
 
         SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
+                 "  <ECClass typeName=\"Base\" isStruct=\"true\">"
                  "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECClass>"
                  "  <ECClass typeName=\"Sub\" isStruct=\"true\">"
@@ -263,7 +263,7 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
                  false, "Property is of array of subclass of class."),
 
         SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
+                 "  <ECClass typeName=\"Base\" isStruct=\"true\">"
                  "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECClass>"
                  "  <ECClass typeName=\"Sub\" isStruct=\"true\">"
@@ -956,7 +956,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "  <ECClass typeName=\"A\" isDomainClass='True'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
-                 "  <ECClass typeName=\"B\" isStruct='True' isDomainClass='False'>"
+                 "  <ECClass typeName=\"B\" isStruct='True'>"
                  "    <BaseClass>A</BaseClass>"
                  "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
                  "  </ECClass>"
@@ -971,7 +971,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  "    <BaseClass>A</BaseClass>"
                  "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
                  "  </ECClass>"
-                 "  <ECClass typeName=\"C\" isStruct='True' isDomainClass='False'>"
+                 "  <ECClass typeName=\"C\" isStruct='True'>"
                  "    <BaseClass>B</BaseClass>"
                  "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
                  "  </ECClass>"
@@ -979,7 +979,7 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  false, "A domain base class must not have struct subclasses."),
 
         SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
+                 "  <ECClass typeName=\"A\" isStruct='True'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
                  "  <ECClass typeName=\"B\" isDomainClass='True'>"
@@ -990,10 +990,10 @@ TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
                  false, "A struct base class must have only struct subclasses."),
 
         SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
+                 "  <ECClass typeName=\"A\" isStruct='True'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"
-                 "  <ECClass typeName=\"B\" isStruct='True' isDomainClass='False'>"
+                 "  <ECClass typeName=\"B\" isStruct='True'>"
                  "    <BaseClass>A</BaseClass>"
                  "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
                  "  </ECClass>"
@@ -1021,7 +1021,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "  <ECClass typeName='Authority' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "  </ECClass>"
-                      "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                      "  <ECClass typeName='ElementCode' isStruct='True'>"
                       "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                       "    <ECProperty propertyName='Namespace' typeName='string' />"
                       "    <ECProperty propertyName='Code' typeName='string' />"
@@ -1049,7 +1049,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "  <ECClass typeName='Authority' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "  </ECClass>"
-                      "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                      "  <ECClass typeName='ElementCode' isStruct='True'>"
                       "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                       "    <ECProperty propertyName='Namespace' typeName='string' />"
                       "    <ECProperty propertyName='Code' typeName='string' />"
@@ -1077,7 +1077,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "  <ECClass typeName='Authority' >"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
-                 "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                 "  <ECClass typeName='ElementCode' isStruct='True'>"
                  "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                  "    <ECProperty propertyName='Namespace' typeName='string' />"
                  "    <ECProperty propertyName='Code' typeName='string' />"
@@ -1105,7 +1105,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "  <ECClass typeName='Authority' >"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECClass>"
-                 "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                 "  <ECClass typeName='ElementCode' isStruct='True'>"
                  "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                  "    <ECProperty propertyName='Namespace' typeName='string' />"
                  "    <ECProperty propertyName='Code' typeName='string' />"
@@ -1133,7 +1133,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "  <ECClass typeName='Authority' >"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
-                "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                "  <ECClass typeName='ElementCode' isStruct='True'>"
                 "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                 "    <ECProperty propertyName='Namespace' typeName='string' />"
                 "    <ECProperty propertyName='Code' typeName='string' />"
@@ -1161,7 +1161,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
             "  <ECClass typeName='Authority' >"
             "    <ECProperty propertyName='Name' typeName='string' />"
             "  </ECClass>"
-            "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+            "  <ECClass typeName='ElementCode' isStruct='True'>"
             "    <ECProperty propertyName='AuthorityId' typeName='int' />"
             "    <ECProperty propertyName='Namespace' typeName='string' />"
             "    <ECProperty propertyName='Code' typeName='string' />"
@@ -1189,7 +1189,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "  <ECClass typeName='Authority' >"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
-                "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                "  <ECClass typeName='ElementCode' isStruct='True'>"
                 "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                 "    <ECProperty propertyName='Namespace' typeName='string' />"
                 "    <ECProperty propertyName='Code' typeName='string' />"
@@ -1218,7 +1218,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "  <ECClass typeName='Authority' >"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
-                "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                "  <ECClass typeName='ElementCode' isStruct='True'>"
                 "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                 "    <ECProperty propertyName='Namespace' typeName='string' />"
                 "    <ECProperty propertyName='Code' typeName='string' />"

@@ -53,7 +53,7 @@
     </ECRelationshipClass>
 
 	<!-- Following is used with ONLY to see if ViewGeneration works for TablePerHierarchy-->
-    <ECClass typeName="SC" isDomainClass="True" isStruct="True">
+    <ECClass typeName="SC" isStruct="True">
         <ECProperty propertyName="I" typeName="long" />
         <ECProperty propertyName="I_ToBeDeletedInUpgrade" typeName="long" />     
         <ECArrayProperty propertyName="IA_ToBeDeletedInUpgrade" typeName="long" minOccurs="0" maxOccurs="unbounded" />    
