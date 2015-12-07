@@ -236,7 +236,7 @@ SchemaReadStatus SchemaXmlReader::ReadClassContentsFromXml(ECSchemaPtr& schemaOu
 SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t checkSum)
     {
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
-    StopWatch overallTimer(L"Overall schema de-serialization timer", true);
+    StopWatch overallTimer("Overall schema de-serialization timer", true);
 
     m_xmlDom.RegisterNamespace (EC_NAMESPACE_PREFIX, ECXML_URI_2_0);
 
@@ -289,7 +289,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     READ_OPTIONAL_XML_ATTRIBUTE ((*schemaNode), DESCRIPTION_ATTRIBUTE,                     schemaOut, Description)
     READ_OPTIONAL_XML_ATTRIBUTE ((*schemaNode), DISPLAY_LABEL_ATTRIBUTE,                   schemaOut, DisplayLabel)
 
-    StopWatch readingSchemaReferences(L"Reading Schema References", true);
+    StopWatch readingSchemaReferences("Reading Schema References", true);
     if (SCHEMA_READ_STATUS_Success != (status = ReadSchemaReferencesFromXml (schemaOut, *schemaNode)))
         {
         m_schemaContext.RemoveSchema(*schemaOut);
@@ -301,7 +301,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     LOG.tracev("Reading schema references for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingSchemaReferences.GetElapsedSeconds());
 
     ClassDeserializationVector classes;
-    StopWatch readingClassStubs(L"Reading class stubs", true);
+    StopWatch readingClassStubs("Reading class stubs", true);
     if (SCHEMA_READ_STATUS_Success != (status = ReadClassStubsFromXml (schemaOut, *schemaNode, classes)))
         {
         m_schemaContext.RemoveSchema(*schemaOut);
@@ -312,7 +312,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     LOG.tracev("Reading class stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
-    StopWatch readingClassContents(L"Reading class contents", true);
+    StopWatch readingClassContents("Reading class contents", true);
     if (SCHEMA_READ_STATUS_Success != (status = ReadClassContentsFromXml (schemaOut, classes)))
         {
         m_schemaContext.RemoveSchema(*schemaOut);
@@ -322,7 +322,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     readingClassContents.Stop();
     LOG.tracev("Reading class contents for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
-    StopWatch readingCustomAttributes(L"Reading custom attributes", true);
+    StopWatch readingCustomAttributes("Reading custom attributes", true);
     schemaOut->ReadCustomAttributes(*schemaNode, m_schemaContext, *schemaOut);
     readingCustomAttributes.Stop();
     LOG.tracev("Reading custom attributes for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());

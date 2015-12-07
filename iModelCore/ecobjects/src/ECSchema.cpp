@@ -1664,7 +1664,7 @@ uint32_t        CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext)
     {
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
     schemaOut = NULL;
 
@@ -1709,7 +1709,7 @@ Utf8CP               ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
     schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
@@ -1760,7 +1760,7 @@ WCharCP              ecSchemaXml,
 ECSchemaReadContextR schemaContext
 )
     {
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
     schemaOut = NULL;
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
