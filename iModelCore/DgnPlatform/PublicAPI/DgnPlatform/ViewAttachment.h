@@ -20,7 +20,7 @@ DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! A ViewAttachment is a reference to a View of a 2d model which can be placed on a sheet.
+//! A ViewAttachment is a reference to a View of a model which can be placed on a sheet.
 //! The attachment specifies the extents of the View and the scaling factor when placed
 //! onto a sheet.
 //! The geometry of a ViewAttachment is a snapshot of the view at the time they are generated.
@@ -40,30 +40,27 @@ public:
     struct Data
     {
         DgnViewId   m_viewId;
-        DPoint2d    m_origin;
-        DVec2d      m_delta;
-        double      m_angle;
+        DPoint3d    m_origin;
+        DVec3d      m_delta;
         double      m_scale;
 
         //! Constructor
         //! @param[in]      viewId The ID of the view to be attached
-        //! @param[in]      origin The lower-left corner of the viewing rectangle, in coordinates of the viewed model
-        //! @param[in]      delta  The extents of the viewing rectangle
-        //! @param[in]      angle  The rotation of the view
+        //! @param[in]      origin The lower-left corner of the viewing area, in coordinates of the viewed model
+        //! @param[in]      delta  The extents of the viewing area
         //! @param[in]      scale  Scale factor from viewed model to sheet
-        Data(DgnViewId viewId, DPoint2dCR origin, DVec2d delta, double angle=0.0, double scale=1.0) { Init(viewId, origin, delta, angle, scale); }
+        Data(DgnViewId viewId, DPoint3dCR origin, DVec3d delta, double scale=1.0) { Init(viewId, origin, delta, scale); }
 
         //! Default constructor
-        Data() : Data(DgnViewId(), DPoint2d::From(0.0, 0.0), DVec2d::From(1.0,1.0)) { }
+        Data() : Data(DgnViewId(), DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0,1.0,0.0)) { }
 
         //! Initialize from the specified values
         //! @param[in]      viewId The ID of the view to be attached
-        //! @param[in]      origin The lower-left corner of the viewing rectangle, in coordinates of the viewed model
-        //! @param[in]      delta  The extents of the viewing rectangle
-        //! @param[in]      angle  The rotation of the view
+        //! @param[in]      origin The lower-left corner of the viewing area, in coordinates of the viewed model
+        //! @param[in]      delta  The extents of the viewing area
         //! @param[in]      scale  Scale factor from viewed model to sheet
-        void Init(DgnViewId viewId, DPoint2dCR origin, DVec2d delta, double angle=0.0, double scale=1.0)
-            { m_viewId=viewId; m_origin=origin; m_delta=delta; m_angle=angle; m_scale=scale; }
+        void Init(DgnViewId viewId, DPoint3dCR origin, DVec3d delta, double scale=1.0)
+            { m_viewId=viewId; m_origin=origin; m_delta=delta; m_scale=scale; }
 
         DGNPLATFORM_EXPORT bool IsValid() const; //!< Queries whether the data is valid (e.g., refers to a valid ViewDefinition; has meaningful scale and extents; etc)
     };
@@ -120,22 +117,20 @@ public:
     explicit ViewAttachment(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
     DgnViewId GetViewId() const { return m_data.m_viewId; } //!< The ID of the view definition to be drawn by this attachment
-    DPoint2dCR GetViewOrigin() const { return m_data.m_origin; } //!< The lower-left corner of the viewing rectangle, in coordinates of the viewed model
-    DVec2dCR GetViewDelta() const { return m_data.m_delta; } //!< The extents of the viewing rectangle
-    double GetViewAngle() const { return m_data.m_angle; } //!< The rotation of the view
+    DPoint3dCR GetViewOrigin() const { return m_data.m_origin; } //!< The lower-left corner of the viewing area, in coordinates of the viewed model
+    DVec3dCR GetViewDelta() const { return m_data.m_delta; } //!< The extents of the viewing area
     double GetViewScale() const { return m_data.m_scale; } //!< Scale factor from model to sheet
 
     //! Look up the ViewDefinition to be drawn by this attachment
     ViewDefinitionCPtr GetViewDefinition() const { return ViewDefinition::QueryView(GetViewId(), GetDgnDb()); }
 
     void SetViewId(DgnViewId viewId) { m_data.m_viewId = viewId; } //!< Set the view definition to be drawn
-    void SetViewOrigin(DPoint2dCR origin) { m_data.m_origin = origin; } //!< Set the lower-left corner of the viewing rectangle, in coordinates of the viewed model
-    void SetViewDelta(DVec2dCR delta) { m_data.m_delta = delta; } //!< Set the extents of the viewing rectangle
-    void SetViewAngle(double angle) { m_data.m_angle = angle; } //!< Set the rotation of the view
+    void SetViewOrigin(DPoint3dCR origin) { m_data.m_origin = origin; } //!< Set the lower-left corner of the viewing area, in coordinates of the viewed model
+    void SetViewDelta(DVec3dCR delta) { m_data.m_delta = delta; } //!< Set the extents of the viewing area
     void SetViewScale(double scale) { m_data.m_scale = scale; } //!< Set the scale factor from model to sheet
 
     //! Change the properties of this attachment
-    void SetViewParams(DPoint2dCR origin, DVec2dCR delta, double angle=0.0, double scale=1.0) { m_data.Init(GetViewId(), origin, delta, angle, scale); }
+    void SetViewParams(DPoint3dCR origin, DVec3dCR delta, double scale=1.0) { m_data.Init(GetViewId(), origin, delta, scale); }
 
     //! Inserts this attachment into the DgnDb and returns the new persistent copy.
     ViewAttachmentCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<ViewAttachment>(*this, status); }

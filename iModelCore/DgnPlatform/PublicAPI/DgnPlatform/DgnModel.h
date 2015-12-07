@@ -1238,7 +1238,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
 {
     DEFINE_T_SUPER(PlanarPhysicalModel)
-
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
 };
@@ -1279,6 +1280,7 @@ protected:
 
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
 public:
     //! construct a new SheetModel
