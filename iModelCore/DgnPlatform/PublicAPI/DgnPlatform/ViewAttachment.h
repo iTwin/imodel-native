@@ -11,6 +11,7 @@
 
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewController.h>
 
 DGNPLATFORM_TYPEDEFS(ViewAttachment);
 DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
@@ -50,6 +51,11 @@ public:
         //! @param[in]      delta  The extents of the viewing area
         //! @param[in]      scale  Scale factor from viewed model to sheet
         Data(DgnViewId viewId, DPoint3dCR origin, DVec3d delta, double scale=1.0) { Init(viewId, origin, delta, scale); }
+
+        //! Construct from a ViewController.
+        //! @param[in]      controller The ViewController from which the view ID and viewing area will be obtained
+        //! @param[in]      scale      Scale from viewed model to sheet
+        explicit Data(ViewControllerCR controller, double scale=1.0) { Init(controller.GetViewId(), controller.GetOrigin(), controller.GetDelta(), scale); }
 
         //! Default constructor
         Data() : Data(DgnViewId(), DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0,1.0,0.0)) { }
