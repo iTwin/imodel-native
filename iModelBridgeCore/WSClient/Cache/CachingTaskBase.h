@@ -53,7 +53,7 @@ struct CachingTaskBase : public PackagedAsyncTask<void>
         CachingTaskBase
             (
             CachingDataSourcePtr cachingDataSource,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
 
         bool                              IsSuccess();

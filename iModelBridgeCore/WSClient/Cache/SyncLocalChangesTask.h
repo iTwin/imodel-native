@@ -104,7 +104,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
             SyncOptions options,
             CachingDataSource::SyncProgressCallback&& onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
     };
 

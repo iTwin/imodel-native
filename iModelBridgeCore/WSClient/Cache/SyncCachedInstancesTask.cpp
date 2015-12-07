@@ -49,7 +49,7 @@ void SyncCachedInstancesTask::CacheNextObjects()
 
     auto cancellationtoken = GetCancellationToken();
 
-    m_ds->GetClient()->SendQueryRequest(GetQuery(), nullptr, cancellationtoken)
+    m_ds->GetClient()->SendQueryRequest(GetQuery(), nullptr, nullptr, cancellationtoken)
         ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult& result)
         {
         if (IsTaskCanceled()) return;

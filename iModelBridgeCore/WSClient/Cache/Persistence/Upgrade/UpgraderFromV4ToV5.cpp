@@ -255,11 +255,10 @@ BentleyStatus UpgraderFromV4ToV5::ReadInstances(bvector<UpgradeInstance>& instan
         return ERROR;
         }
 
-    ECSqlSelectBuilder builder;
-    builder.SelectAll().From(*ecClass, false);
+    Utf8String ecsql = "SELECT * FROM ONLY " + ecClass->GetECSqlName();
 
     ECSqlStatement statement;
-    if (SUCCESS != m_adapter.PrepareStatement(statement, builder))
+    if (SUCCESS != m_adapter.PrepareStatement(statement, ecsql.c_str()))
         {
         return ERROR;
         }

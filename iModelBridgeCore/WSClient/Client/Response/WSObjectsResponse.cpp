@@ -22,10 +22,18 @@ m_reader(WSObjectsReaderV2::Create())
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsResponse::WSObjectsResponse(std::shared_ptr<WSObjectsReader> reader, HttpBodyPtr httpBody, HttpStatus status, Utf8String eTag) :
+WSObjectsResponse::WSObjectsResponse
+(
+std::shared_ptr<WSObjectsReader> reader,
+HttpBodyPtr httpBody,
+HttpStatus status,
+Utf8String eTag,
+Utf8String skipToken
+) :
 m_httpBody(httpBody),
 m_isModified(HttpStatus::OK == status),
 m_eTag(eTag),
+m_skipToken(skipToken),
 m_reader(reader)
     {
     BeAssert(m_httpBody != nullptr);
@@ -37,6 +45,22 @@ m_reader(reader)
 Utf8StringCR WSObjectsResponse::GetETag() const
     {
     return m_eTag;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR WSObjectsResponse::GetSkipToken() const
+    {
+    return m_skipToken;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WSObjectsResponse::IsFinal() const
+    {
+    return m_skipToken.empty();
     }
 
 /*--------------------------------------------------------------------------------------+

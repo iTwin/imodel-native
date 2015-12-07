@@ -68,10 +68,10 @@ void WSClient::UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> l
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSInfoResult> WSClient::GetServerInfo
 (
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetServerInfo(false, cancellationToken);
+    return m_connection->GetServerInfo(false, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -79,10 +79,10 @@ ICancellationTokenPtr cancellationToken
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSInfoResult> WSClient::SendGetInfoRequest
 (
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetServerInfo(true, cancellationToken);
+    return m_connection->GetServerInfo(true, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -90,7 +90,7 @@ ICancellationTokenPtr cancellationToken
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSRepositoriesResult> WSClient::SendGetRepositoriesRequest
 (
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return SendGetRepositoriesRequest(bvector<Utf8String>(), bvector<Utf8String>());
@@ -103,11 +103,11 @@ AsyncTaskPtr<WSRepositoriesResult> WSClient::SendGetRepositoriesRequest
 (
 const bvector<Utf8String>& types,
 const bvector<Utf8String>& providerIds,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSRepositoriesResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetRepositoriesRequest(types, providerIds, cancellationToken);
-        }, cancellationToken);
+        return webApi->SendGetRepositoriesRequest(types, providerIds, ct);
+        }, ct);
     }

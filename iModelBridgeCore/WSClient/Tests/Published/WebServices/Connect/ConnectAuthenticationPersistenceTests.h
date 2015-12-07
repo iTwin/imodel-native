@@ -10,6 +10,6 @@
 
 #include "ConnectTestsHelper.h"
 
-class ConnectAuthenticationPersistenceTests : public ::testing::Test
+class ConnectAuthenticationPersistenceTests : public WSClientBaseTest
     {
     };

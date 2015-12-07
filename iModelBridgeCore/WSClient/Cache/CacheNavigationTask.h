@@ -68,7 +68,7 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
             bvector<ObjectId>&& navigationTreesToUpdateOnly,
             std::shared_ptr<const ISelectProvider> updateSelectProvider,
             CachingDataSource::LabeledProgressCallback&& onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
 
         virtual void OnSchemaChanged() override;

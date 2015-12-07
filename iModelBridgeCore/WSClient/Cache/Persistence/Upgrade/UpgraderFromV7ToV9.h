@@ -17,9 +17,6 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UpgraderFromV7ToV9 : private UpgraderBase
     {
-    private:
-        BentleyStatus ExecuteStatement(Utf8CP ecSql);
-
     public:
         UpgraderFromV7ToV9(ECDbAdapter& adapter);
         BentleyStatus Upgrade();

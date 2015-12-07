@@ -19,6 +19,9 @@ $(SeedsOutputPath)7 : $(SeedsSourcePath)7.zip
 
 $(SeedsOutputPath)8 : $(SeedsSourcePath)8.zip
     @python $(UpgradePath)UnZip.py $< $@
+    
+$(SeedsOutputPath)9 : $(SeedsSourcePath)9.zip
+    @python $(UpgradePath)UnZip.py $< $@
 
 $(BuildContext)WSClientTestAssets/Cache/UpgradeSeeds/ : $(SeedsOutputPath)
     $(LinkFirstDepToFirstTargetAsDirectory)

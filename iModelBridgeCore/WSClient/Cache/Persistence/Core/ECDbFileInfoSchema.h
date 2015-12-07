@@ -26,7 +26,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ExternalFileInfo_PROPERTY_RootFolder          "RootFolder"
 #define CLASS_ExternalFileInfo_PROPERTY_RelativePath        "RelativePath"
 
-#define CLASS_REL_InstanceHasFileInfo                       "InstanceHasFileInfo"
+#define CLASS_InstanceHasFileInfo                           "InstanceHasFileInfo"
 
 #define ECSql_ExternalFileInfoClass                         "[ecdbf].[ExternalFileInfo]"
 #define ECSql_InstanceHasFileInfoClass                      "[ecdbf].[InstanceHasFileInfo]"

@@ -10,5 +10,5 @@
 
 #include "../../Utils/WebServicesTestsHelper.h"
 
-class ChangeGraphTests : public ::testing::Test
+class ChangeGraphTests : public WSClientBaseTest
     {};

@@ -46,7 +46,7 @@ struct SyncCachedDataTask : public CachingTaskBase
         void CacheRejectedInstances();
         void CacheFiles();
 
-        void RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, WSErrorCR error);
+        void RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, CachingDataSource::ErrorCR error);
 
     public:
         SyncCachedDataTask
@@ -56,7 +56,7 @@ struct SyncCachedDataTask : public CachingTaskBase
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
             ICachingDataSource::ProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr ct
             );
     };
 

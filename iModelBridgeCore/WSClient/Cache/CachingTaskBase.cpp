@@ -16,12 +16,12 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 CachingTaskBase::CachingTaskBase
 (
 CachingDataSourcePtr cachingDataSource,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) :
 PackagedAsyncTask<void>(nullptr),
 m_ds(cachingDataSource),
 m_errorCancellationToken(SimpleCancellationToken::Create()),
-m_userProvidedCancellationToken(cancellationToken),
+m_userProvidedCancellationToken(ct),
 m_cancellationToken(MergeCancellationToken::Create(m_userProvidedCancellationToken, m_errorCancellationToken))
     {}
 

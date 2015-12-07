@@ -38,8 +38,8 @@ struct ServerInfoProvider
         void UpdateInfo(WSInfoCR info) const;
         void NotifyServerInfoUpdated(WSInfoCR info) const;
 
-        AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr cancellationToken) const;
-        AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr ct) const;
+        AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr ct) const;
 
     public:
         ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration);
@@ -48,7 +48,7 @@ struct ServerInfoProvider
         void RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
         void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
-        AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr ct) const;
         AsyncTaskPtr<void> InvalidateInfo() const;
     };
 

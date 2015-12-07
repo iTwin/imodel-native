@@ -10,6 +10,6 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class JsonUtilTests : public ::testing::Test
+class JsonUtilTests : public WSClientBaseTest
     {
     };

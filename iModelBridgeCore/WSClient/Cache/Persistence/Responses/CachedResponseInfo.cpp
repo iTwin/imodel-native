@@ -105,22 +105,6 @@ Utf8CP CachedResponseInfo::GetName() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime CachedResponseInfo::GetCacheDate() const
-    {
-    return BeJsonUtilities::DateTimeFromValue(m_infoJson[CLASS_CachedResponseInfo_PROPERTY_CacheDate]);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CachedResponseInfo::SetCacheDate(DateTimeCR utcDate)
-    {
-    m_infoJson[CLASS_CachedResponseInfo_PROPERTY_CacheDate] = ECDbHelper::UtcDateToString(utcDate);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 DateTime CachedResponseInfo::GetAccessDate() const
     {
     return BeJsonUtilities::DateTimeFromValue(m_infoJson[CLASS_CachedResponseInfo_PROPERTY_AccessDate]);
@@ -132,25 +116,4 @@ DateTime CachedResponseInfo::GetAccessDate() const
 void CachedResponseInfo::SetAccessDate(DateTimeCR utcDate)
     {
     m_infoJson[CLASS_CachedResponseInfo_PROPERTY_AccessDate] = ECDbHelper::UtcDateToString(utcDate);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP CachedResponseInfo::GetCacheTag() const
-    {
-    JsonValueCR tagJson = m_infoJson[CLASS_CachedResponseInfo_PROPERTY_CacheTag];
-    if (tagJson.isNull())
-        {
-        return nullptr;
-        }
-    return tagJson.asCString();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CachedResponseInfo::SetCacheTag(Utf8StringCR tag)
-    {
-    m_infoJson[CLASS_CachedResponseInfo_PROPERTY_CacheTag] = tag;
     }

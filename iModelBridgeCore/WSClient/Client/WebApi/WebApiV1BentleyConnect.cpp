@@ -46,12 +46,12 @@ ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR eTag,
 HttpRequest::ProgressCallbackCR downloadProgressCallback,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr ct
 ) const
     {
     if (SchemaInfo::IsDummySchemaId(objectId))
         {
-        return GetSchema(filePath, eTag, downloadProgressCallback, cancellationToken);
+        return GetSchema(filePath, eTag, downloadProgressCallback, ct);
         }
 
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
@@ -59,7 +59,7 @@ ICancellationTokenPtr cancellationToken
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
-    request.SetCancellationToken(cancellationToken);
+    request.SetCancellationToken(ct);
 
     request.SetFollowRedirects(false);
 
@@ -84,7 +84,7 @@ ICancellationTokenPtr cancellationToken
         fileRequest.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
         fileRequest.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
         fileRequest.SetDownloadProgressCallback(downloadProgressCallback);
-        fileRequest.SetCancellationToken(cancellationToken);
+        fileRequest.SetCancellationToken(ct);
         fileRequest.GetHeaders().SetIfNoneMatch(eTag);
 
         fileRequest.PerformAsync()

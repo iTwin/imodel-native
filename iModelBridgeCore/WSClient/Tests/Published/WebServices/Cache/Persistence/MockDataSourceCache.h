@@ -71,8 +71,8 @@ struct MockDataSourceCache : public IDataSourceCache
             IChangeManagerR ());
         MOCK_CONST_METHOD1 (ObjectIdFromJsonInstance,
             ObjectId (JsonValueCR instance));
-        MOCK_METHOD5 (CacheResponse,
-            BentleyStatus (CachedResponseKeyCR responseKey, WSObjectsResponseCR response, bset<ObjectId>* rejectedOut, const WSQuery* query, ICancellationTokenPtr));
+        MOCK_METHOD6 (CacheResponse,
+            BentleyStatus (CachedResponseKeyCR responseKey, WSObjectsResponseCR response, bset<ObjectId>* rejectedOut, const WSQuery* query, uint64_t, ICancellationTokenPtr));
         MOCK_METHOD3 (CacheInstanceAndLinkToRoot,
             BentleyStatus (ObjectIdCR objectId, WSObjectsResponseCR response, Utf8StringCR rootName));
         MOCK_METHOD4 (CacheInstanceAndLinkToRoot,
@@ -113,14 +113,14 @@ struct MockDataSourceCache : public IDataSourceCache
             BentleyStatus (ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize));
         MOCK_METHOD1 (IsResponseCached,
             bool (CachedResponseKeyCR responseKey));
-        MOCK_METHOD1 (ReadResponseCacheTag,
-            Utf8String (CachedResponseKeyCR responseKey));
+        MOCK_METHOD2 (ReadResponseCacheTag,
+            Utf8String (CachedResponseKeyCR responseKey, uint64_t page));
         MOCK_METHOD1 (ReadInstanceCacheTag,
             Utf8String (ObjectIdCR objectId));
         MOCK_METHOD1 (ReadFileCacheTag,
             Utf8String (ObjectIdCR objectId));
-        MOCK_METHOD1 (ReadResponseCachedDate,
-            DateTime (CachedResponseKeyCR responseKey));
+        MOCK_METHOD2 (ReadResponseCachedDate,
+            DateTime (CachedResponseKeyCR responseKey, uint64_t page));
         MOCK_METHOD1 (ReadInstanceCachedDate,
             DateTime (ObjectIdCR objectId));
         MOCK_METHOD1 (ReadFileCachedDate,

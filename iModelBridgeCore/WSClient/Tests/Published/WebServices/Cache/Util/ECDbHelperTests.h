@@ -10,5 +10,5 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class ECDbHelperTests : public ::testing::Test
+class ECDbHelperTests : public WSClientBaseTest
     {};

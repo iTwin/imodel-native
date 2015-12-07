@@ -30,7 +30,7 @@ m_statementCache(&statementCache),
 m_hierarchyManager(&hierarchyManager),
 
 m_infoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfo)),
-m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_CachedObjectInfoRelationship)),
+m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfoToInstance)),
 
 m_infoInserter(dbAdapter.GetECDb(), *m_infoClass),
 m_infoUpdater(dbAdapter.GetECDb(), *m_infoClass)
@@ -327,7 +327,7 @@ BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
     {
     auto statement = m_statementCache->GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances-CachedObjects", [&]
         {
-        return "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId FROM ONLY " ECSql_CachedObjectInfoRelationshipClass " infoRel ";
+        return "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId FROM ONLY " ECSql_CachedObjectInfoToInstanceClass " infoRel ";
         });
 
     if (SUCCESS != m_hierarchyManager->DeleteInstances(*statement))
