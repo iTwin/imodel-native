@@ -1221,8 +1221,9 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
             forward.y = currForward.y;
             break;
         case OrientationMode::RelativeHeading:
-            //  device's Y is view X, device's X is view -Y, device's Z is view.Z.y, -view.Z.x, view.Z.z
             {
+            //  orientation is arranged in columns.  The axis from the home button to other end of tablet is Y.  Z is out of the screen.  X is Y cross Z.
+            //  Therefore, when the UiOrientation is Portrait, orientation Y is up and orientation X points to the right.
             ApplyGyroChangeToViewingVectors (ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
             break;
             }
