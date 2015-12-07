@@ -12,35 +12,36 @@
 #include <DgnPlatform/LocksManager.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 typedef std::shared_ptr<struct DgnDbLocks> DgnDbLocksPtr;
 //=======================================================================================
 //! 
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct DgnDbLocks : public Dgn::ILocksServer
+struct DgnDbLocks : public ILocksServer
     {
 private:
     DgnDbRepositoryConnectionPtr m_connection;
-    DgnClientFx::Utils::ICancellationTokenPtr m_cancellationToken;
-    DgnClientFx::Utils::Credentials m_credentials;
+    ICancellationTokenPtr m_cancellationToken;
+    Credentials m_credentials;
     WebServices::ClientInfoPtr m_clientInfo;
 
-private:
-    DgnDbRepositoryConnectionPtr Connect(Dgn::DgnDbCR db);
-
 protected:
-    virtual Dgn::LockStatus _QueryLocksHeld(bool& held, Dgn::LockRequestCR locks, Dgn::DgnDbR db) override;
-    virtual Dgn::LockRequest::Response _AcquireLocks(Dgn::LockRequestCR locks, Dgn::DgnDbR db) override;
-    virtual Dgn::LockStatus _ReleaseLocks(Dgn::DgnLockSet const& locks, Dgn::DgnDbR db) override;
-    virtual Dgn::LockStatus _RelinquishLocks(Dgn::DgnDbR db) override;
-    virtual Dgn::LockStatus _QueryLockLevel(Dgn::LockLevel& level, Dgn::LockableId lockId, Dgn::DgnDbR db) override;
-    virtual Dgn::LockStatus _QueryLocks(Dgn::DgnLockSet& locks, Dgn::DgnDbR db) override;
-    virtual Dgn::LockStatus _QueryOwnership(Dgn::DgnLockOwnershipR ownership, Dgn::LockableId lockId, Dgn::DgnDbR db) override;
+    virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) override;
+    virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) override;
+    virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) override;
+    virtual LockStatus _RelinquishLocks(DgnDbR db) override;
+    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
+    virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
+    virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
 
     DgnDbLocks(WebServices::ClientInfoPtr clientInfo);
 public:
     static DgnDbLocksPtr Create(WebServices::ClientInfoPtr clientInfo);
-    DGNDBSERVERCLIENT_EXPORT void SetCancellationToken(DgnClientFx::Utils::ICancellationTokenPtr cancellationToken);
-    void SetCredentials(DgnClientFx::Utils::CredentialsCR credentials) { m_credentials = credentials; }; //!< Credentials used to authenticate on the server.
+
+    DGNDBSERVERCLIENT_EXPORT DgnDbResult Connect(DgnDbCR db);
+    DGNDBSERVERCLIENT_EXPORT void SetCancellationToken(ICancellationTokenPtr cancellationToken);
+    void SetCredentials(CredentialsCR credentials) { m_credentials = credentials; };
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

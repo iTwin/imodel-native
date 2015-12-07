@@ -13,6 +13,8 @@
 #include <DgnPlatform/DgnDb.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 typedef std::shared_ptr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
 
 //=======================================================================================
@@ -39,14 +41,16 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> PullAndMerge(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> PullAndMerge(HttpRequest::ProgressCallbackCR callback = nullptr,
+    ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Pull and merge incomming revisions and then send the outgoing revisions.
     //! @param[in] downloadCallback Download progress callback.
     //! @param[in] uploadCallback Upload progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> PullMergeAndPush(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR downloadCallback = nullptr, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR uploadCallback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
+    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb(); //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnection(); //!< Connection to a repository on server.
