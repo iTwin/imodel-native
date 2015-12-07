@@ -43,10 +43,11 @@ bool operator()(Utf8CP s1, Utf8CP s2) const
     }
 };
 
-typedef bvector<ECPropertyP> PropertyList;
-typedef bmap<Utf8CP, ECPropertyP,    less_str> PropertyMap;
-typedef bmap<Utf8CP, ECClassP,       less_str> ClassMap;
-typedef bmap<Utf8CP, ECEnumerationP, less_str> EnumerationMap;
+typedef bvector<ECPropertyP>                    PropertyList;
+typedef bmap<Utf8CP, ECPropertyP,    less_str>  PropertyMap;
+typedef bmap<Utf8CP, ECClassP,       less_str>  ClassMap;
+typedef bmap<Utf8CP, ECEnumerationP, less_str>  EnumerationMap;
+typedef bvector<ECEnumeratorP>                  EnumeratorList;
 
 /*---------------------------------------------------------------------------------**//**
 * Used to hold property name and display label forECProperty, ECClass, and ECSchema.
@@ -1380,6 +1381,31 @@ public:
 //! The in-memory representation of an ECEnumeration as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
+struct EnumeratorIterable : public std::iterator<std::forward_iterator_tag, ECEnumeratorP>
+    {
+    /*__PUBLISH_SECTION_END__*/
+
+    friend struct ECEnumeration;
+    
+    private:
+        EnumeratorIterable(EnumeratorList& list) : m_list(list) {}
+        EnumeratorList&     m_list;
+
+    //__PUBLISH_SECTION_START__
+    public:
+        typedef EnumeratorList::const_iterator const_iterator;
+        typedef EnumeratorList::iterator iterator;
+
+        const_iterator       begin() const { return m_list.begin(); }
+        const_iterator       end() const { return m_list.end(); }
+        iterator             begin() { return m_list.begin(); }
+        iterator             end() { return m_list.end(); }
+    };
+
+//=======================================================================================
+//! The in-memory representation of an ECEnumeration as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
 struct ECEnumeration
     {
     //__PUBLISH_SECTION_END__
@@ -1388,11 +1414,13 @@ friend struct SchemaXmlWriter;
 friend struct SchemaXmlReaderImpl;
 
     private:
-        ECSchemaCR  m_schema;
+        ECSchemaCR                      m_schema;
         mutable Utf8String              m_fullName;
         ECValidatedName                 m_validatedName;
         PrimitiveType                   m_primitiveType;
         Utf8String                      m_description;
+        EnumeratorList                  m_enumeratorList;
+        EnumeratorIterable            m_enumeratorIterable;
 
     protected:
         //  Lifecycle management:  The schema implementation will
@@ -1411,7 +1439,7 @@ friend struct SchemaXmlReaderImpl;
         ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
         //! The name of this ECClass
         ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
-        //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
+        //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
         ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
         //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
         //! is no namespace prefix.  Otherwise, the enumeration's schema must be a referenced schema in the passed in schema
@@ -1427,7 +1455,7 @@ friend struct SchemaXmlReaderImpl;
         ECOBJECTS_EXPORT static ECObjectsStatus ParseEnumerationName(Utf8StringR prefix, Utf8StringR enumName, Utf8StringCR qualifiedEnumName);
         //! Sets the PrimitiveType of this Enumeration.  The default type is ::PRIMITIVETYPE_Integer
         ECOBJECTS_EXPORT ECObjectsStatus    SetType(PrimitiveType value);
-        //! Gets the PrimitiveType of this ECProperty
+        //! Gets the PrimitiveType of this ECEnumeration
         ECOBJECTS_EXPORT PrimitiveType      GetType() const;
         //! Gets the name of the backing primitive type.
         ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
@@ -1435,19 +1463,82 @@ friend struct SchemaXmlReaderImpl;
         ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8StringCR typeName);
         //! Whether the display label is explicitly defined or not
         ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
-        //! Sets the display label of this ECClass
+        //! Sets the display label of this ECEnumeration
         ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
-        //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
+        //! Gets the display label of this ECEnumeration.  If no display label has been set explicitly, it will return the name of the ECEnumeration
         ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
-        //! Gets the invariant display label for this ECClass.
+        //! Gets the invariant display label for this ECEnumeration.
         ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
 
         //! Sets the description of this ECEnumeration
         ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
         //! Gets the description of this ECEnumeration.  Returns the localized description if one exists.
         ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
-        //! Gets the invariant description for this ECClass.
+        //! Gets the invariant description for this ECEnumeration.
         ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
+
+        ECOBJECTS_EXPORT ECObjectsStatus        CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR value);
+        ECOBJECTS_EXPORT ECObjectsStatus        CreateEnumerator(ECEnumeratorP& enumerator, int32_t value);
+        ECOBJECTS_EXPORT ECEnumeratorP          FindEnumerator(int32_t value) const;
+        ECOBJECTS_EXPORT ECEnumeratorP          FindEnumerator(Utf8StringCR value) const;
+        ECOBJECTS_EXPORT ECObjectsStatus        DeleteEnumerator(ECEnumeratorR enumerator);
+        ECOBJECTS_EXPORT EnumeratorIterable     GetEnumerators() const;
+        ECOBJECTS_EXPORT size_t                 GetEnumeratorCount() const;
+    };
+
+//=======================================================================================
+//! The in-memory representation of an ECEnumerator which is a single element in an ECEnumeration
+//! @bsiclass
+//=======================================================================================
+struct ECEnumerator
+    {
+    //__PUBLISH_SECTION_END__
+    friend struct ECEnumeration;
+
+    private:
+        ECEnumerationCR                 m_enum;
+        int32_t                         m_intValue;
+        Utf8String                      m_stringValue;
+
+        Utf8String                      m_displayLabel;
+        bool                            m_hasExplicitDisplayLabel;
+
+    protected:
+        //  Lifecycle management:  The enumeration implementation will
+        //  serve as a factory for enumerators and will manage their lifecycle.
+        ECEnumerator(ECEnumerationCR parent, int32_t value) : m_enum(parent), m_intValue(value), m_hasExplicitDisplayLabel(false) {}
+        ECEnumerator(ECEnumerationCR parent, Utf8StringCR value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
+        virtual ~ECEnumerator() {}
+
+        //__PUBLISH_SECTION_START__
+    public:
+        //! The ECEnumeration that this enumerator is defined in
+        ECOBJECTS_EXPORT ECEnumerationCR    GetEnumeration() const { return m_enum; }
+        //! Whether the display label is explicitly defined or not
+        ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+        //! Sets the display label of this enumerator
+        ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
+        //! Gets the display label of this enumerator.  If no display label has been set explicitly, it will return the name of the enumerator
+        ECOBJECTS_EXPORT Utf8StringCP       GetDisplayLabel() const;
+        //! Gets the invariant display label for this enumerator. This will return nullptr if no label is available, and the value is not a string.
+        ECOBJECTS_EXPORT Utf8StringCP       GetInvariantDisplayLabel() const;
+
+        //!Returns true if this enumerator holds an integer value
+        ECOBJECTS_EXPORT bool               IsInteger() const;
+        //! Returns the integer value, if this ECEnumerator holds an Integer 
+        ECOBJECTS_EXPORT int32_t            GetInteger() const;
+        //! Sets the value of this ECEnumerator to the given integer
+        //! @param[in] integer  The value to set
+        ECOBJECTS_EXPORT ECObjectsStatus    SetInteger(int32_t integer);
+        //!Returns true if this enumerator holds an integer value
+        ECOBJECTS_EXPORT bool               IsString() const;
+        //! Gets the string content of this ECEnumerator in UTF-8 encoding.
+        //! @return string content in UTF-8 encoding
+        ECOBJECTS_EXPORT Utf8StringCP       GetString() const;
+        //! Sets the value of this ECEnumerator to the given string
+        //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
+        //! @param[in] string           The value to set
+        ECOBJECTS_EXPORT ECObjectsStatus    SetString(Utf8StringCR string);
     };
 
 //---------------------------------------------------------------------------------------
