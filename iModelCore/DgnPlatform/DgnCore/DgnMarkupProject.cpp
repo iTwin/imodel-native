@@ -349,10 +349,10 @@ void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info)
+void PhysicalRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo& info)
     {
-    T_Super::_OnDynamicUpdate(viewport, context, info);
-    m_subjectView._OnDynamicUpdate(viewport, context, info);
+    T_Super::_OnDynamicUpdate(viewport, info);
+    m_subjectView._OnDynamicUpdate(viewport, info);
     }
 
 //---------------------------------------------------------------------------------------

@@ -107,7 +107,7 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info)
+void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo& info)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
@@ -146,9 +146,8 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context
 #if defined (TRACE_QUERY_LOGIC)
     printf("_OnDynamicUpdate: calling StartSelectProcessing\n");
 #endif
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+
     StartSelectProcessing(vp, DrawPurpose::UpdateDynamic);
-#endif
     ComputeFps();
     }
 

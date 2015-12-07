@@ -244,7 +244,7 @@ protected:
 
     //! Used to notify derived classes when a dynamic update begins.
     //! <p>See QueryViewController::_OnDynamicUpdate
-    virtual void _OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info) {}
+    virtual void _OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo& info) {}
 
     //! Used to notify derived classes when a full update begins.
     //! <p>See QueryViewController::_OnFullUpdate
@@ -323,7 +323,7 @@ public:
     void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
     void OnFullUpdate(DgnViewportR vp, ViewContextR context) {_OnFullUpdate(vp,context);}
-    void OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info) {_OnDynamicUpdate(vp, context, info);}
+    void OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo& info) {_OnDynamicUpdate(vp, info);}
 
 public:
     DgnClassId GetClassId() const {return m_classId;}

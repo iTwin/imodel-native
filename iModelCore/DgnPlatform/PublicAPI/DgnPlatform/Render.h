@@ -34,6 +34,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(LineTexture)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
@@ -970,12 +971,13 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct Scene : NonCopyableClass
+struct Scene : RefCounted<NonCopyableClass>
 {
 protected:
-    Target& m_target;
-    bvector<GraphicPtr> m_graphics;
+    typedef std::deque<GraphicPtr> Graphics;
+    Graphics m_graphics;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _SetToViewCoords(bool yesNo) = 0;
     virtual void _ActivateOverrideMatSymb(OvrGraphicParamsCP ovrMatSymb) = 0;
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
@@ -985,14 +987,17 @@ protected:
     virtual void _PopClipStencil() = 0;
     virtual void _Create() = 0;
     virtual void _Paint(Render::Plan const&) = 0;
+#endif
     DGNVIEW_EXPORT virtual void _AddGraphic(Graphic& graphic);
     DGNVIEW_EXPORT virtual void _DropGraphic(Graphic& graphic);
     DGNVIEW_EXPORT virtual void _Clear();
     virtual ~Scene() {_Clear();}
 
 public:
-    Scene(Target& target) : m_target(target) {}
+    Scene() {}
+    Graphics& GetGraphics() {return m_graphics;}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Target& GetTarget() {return m_target;}
 
     //! Set an GraphicParams to be the "active override" GraphicParams for this IDrawGeom.
@@ -1037,14 +1042,17 @@ public:
 
     //! Pop the most recently pushed clip stencil boundary.
     void PopClipStencil() {_PopClipStencil();}
+#endif
 
     void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
     void DropGraphic(Graphic& graphic) {_DropGraphic(graphic);}
     void Clear() {_Clear();}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void Create() {return _Create();}
     void Paint(Render::Plan const& plan) {return _Paint(plan);}
 
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
+#endif
 
 };
 
@@ -1184,7 +1192,8 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr     m_device;
+    DevicePtr  m_device;
+    ScenePtr   m_currentScene;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
@@ -1193,13 +1202,17 @@ protected:
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
+    virtual void _SetCurrentScene(Scene&) = 0;
+    virtual void _Paint(PlanCR) = 0;
 
 public:
     virtual double _GetCameraFrustumNearScaleLimit() = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
-    virtual Scene* _GetMainScene() {return nullptr;} // TEMPORARY!
 
     Target(Device* device) : m_device(device) {}
+
+    void SetCurrentScene(SceneR scene) {_SetCurrentScene(scene);}
+    void Paint(PlanCR plan) {_Paint(plan);}
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}

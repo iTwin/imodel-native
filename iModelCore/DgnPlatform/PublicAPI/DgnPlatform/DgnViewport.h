@@ -348,9 +348,6 @@ private:
     friend struct ViewManager;
     StopEvents          m_stopEvents;
     bool                m_doBackingStore;
-    bool                m_deferShadows;
-    int                 m_dynamicsStopInterval;
-    int                 m_dynamicsMotionTolerance;
     int                 m_minLodDelta;
     bool                m_haveLastMotion;
     int                 m_lastTotalMotion;
@@ -359,17 +356,13 @@ private:
 public:
     DGNVIEW_EXPORT DynamicUpdateInfo();
     Point2d& GetLastCursorPos() {return m_lastCursorPos;}
-    int GetStopInterval() {return m_dynamicsStopInterval;}
     int GetMinLodDelta() {return m_minLodDelta;}
     bool GetDoBackingStore() {return m_doBackingStore;}
     StopEvents GetStopEvents() {return m_stopEvents;}
     void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
     void SetDoBackingStore(bool doBackingStore) {m_doBackingStore = doBackingStore;}
-    void SetDeferShadows(bool deferShadows) {m_deferShadows = deferShadows;}
     void SetMinLODDelta(int minLodDelta) {m_minLodDelta = minLodDelta;}
-    void SetDynamicsStopInterval(int dynamicsStopInterval) {m_dynamicsStopInterval = dynamicsStopInterval;}
-    void SetDynamicsMotionTolerance(int dynamicsMotionTolerance) {m_dynamicsMotionTolerance = dynamicsMotionTolerance;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 

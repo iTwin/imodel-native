@@ -180,45 +180,6 @@ void ViewContext::_PushClip(ClipVectorCR clip)
 #endif
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushTransform(TransformCR trans)
-    {
-    m_transformClipStack.PushTransform(trans);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    GetCurrentGraphicR()._PushTransClip(&trans , nullptr);
-#endif
-    m_transformClipStack.IncrementPushedToDrawGeom();
-    InvalidateScanRange();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PushViewIndependentOrigin(DPoint3dCP origin)
-    {
-    Transform   viTrans;
-    GetViewIndependentTransform(&viTrans, origin);
-    _PushTransform(viTrans);
-    m_transformClipStack.SetViewIndependent();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_PopTransformClip()
-    {
-    if (m_transformClipStack.IsEmpty())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_transformClipStack.Pop(*this);
-    }
-#else
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -232,7 +193,6 @@ void ViewContext::_PopClip()
 
     m_transformClipStack.Pop(*this);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
@@ -401,79 +361,6 @@ void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) 
     m_worldToView.M1.MultiplyAndRenormalize(worldPts, viewPts, nPts);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::LocalToWorld(DPoint3dP worldPts, DPoint3dCP localPts, int nPts) const
-    {
-    Transform   localToWorld;
-
-    if (SUCCESS == m_transformClipStack.GetTransform(localToWorld))
-        localToWorld.Multiply(worldPts, localPts, nPts);
-    else
-        memcpy(worldPts, localPts, nPts * sizeof(DPoint3d));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::WorldToLocal(DPoint3dP localPts, DPoint3dCP worldPts, int nPts) const
-    {
-    Transform   worldToLocal;
-
-    if (SUCCESS == m_transformClipStack.GetInverseTransform(worldToLocal))
-        worldToLocal.Multiply(localPts, worldPts, nPts);
-    else
-        memcpy(localPts, worldPts, nPts * sizeof(DPoint3d));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP originLocal)
-    {
-    RotMatrix   rMatrix;
-    DgnViewportP vp = GetViewport();
-    if (nullptr != vp)
-        {
-        // get two vectors from origin in VIEW x and y directions
-        DPoint4d    screenPt[2];
-        LocalToView(screenPt, originLocal, 1);
-
-        DPoint3d viewSize;
-        Frustum viewBox = vp->GetFrustum(DgnCoordSystem::View, true);
-        viewSize.DifferenceOf(viewBox.GetCorner(NPC_111), viewBox.GetCorner(NPC_000));
-
-        screenPt[1] = screenPt[0];
-        screenPt[0].x += viewSize.x;
-        screenPt[1].y += viewSize.y;
-
-        // convert to local coordinates
-        DPoint3d    localPt[2];
-        ViewToLocal(localPt, screenPt, 2);
-
-        // if we're in a 2d view, we remove any fuzz
-        if (!m_is3dView)
-            localPt[0].z = localPt[1].z = originLocal->z;
-
-        DVec3d  u, v;
-        u.NormalizedDifference(*localPt, *originLocal);
-        v.NormalizedDifference(localPt[1], *originLocal);
-
-        // convert to rmatrix
-        rMatrix.InitFrom2Vectors(u, v);
-        }
-    else
-        {
-        rMatrix.InitIdentity();
-        }
-
-    // get transform about origin
-    trans->InitFromMatrixAndFixedPoint(rMatrix, *originLocal);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -494,10 +381,6 @@ ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
 bool ViewContext::_ScanRangeFromPolyhedron()
     {
     Frustum polyhedron = GetFrustum();
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    WorldToLocal(polyhedron.GetPtsP(), polyhedron.GetPts(), 8);
-#endif
 
     // get enclosing bounding box around polyhedron (outside scan range).
     DRange3d scanRange = polyhedron.ToRange();

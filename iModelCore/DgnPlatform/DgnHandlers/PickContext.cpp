@@ -17,12 +17,12 @@ enum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double distSquaredXY (DPoint4dCR pVec1, DPoint4dCR pVec2)
+static double distSquaredXY(DPoint4dCR pVec1, DPoint4dCR pVec2)
     {
     DPoint3d    v1, v2;
 
-    pVec1.GetProjectedXYZ (v1);
-    pVec2.GetProjectedXYZ (v2);
+    pVec1.GetProjectedXYZ(v1);
+    pVec2.GetProjectedXYZ(v2);
 
     double dx = v1.x - v2.x;
     double dy = v1.y - v2.y;
@@ -88,11 +88,11 @@ static bool edgesVisible(HitDetailCP hit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double getAdjustedViewZ (ViewContextR context, DPoint4dCR viewPt)
+static double getAdjustedViewZ(ViewContextR context, DPoint4dCR viewPt)
     {
     DPoint3d    viewPt3d;
 
-    viewPt.GetProjectedXYZ (viewPt3d);
+    viewPt.GetProjectedXYZ(viewPt3d);
     return viewPt3d.z;
     }
 
@@ -202,7 +202,7 @@ void PickContext::_AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriori
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PickContext::PointWithinTolerance(DPoint4dCR testPt)
     {
-    return (m_pickApertureSquared >= distSquaredXY (testPt, _GetPickPointView()));
+    return m_pickApertureSquared >= distSquaredXY(testPt, _GetPickPointView());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -210,7 +210,7 @@ bool PickContext::PointWithinTolerance(DPoint4dCR testPt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d* PickContext::GetProjectedPickPointView(DPoint3dR point)
     {
-    _GetPickPointView().GetProjectedXYZ (point);
+    _GetPickPointView().GetProjectedXYZ(point);
     return &point;
     }
 
@@ -401,8 +401,8 @@ bool PickContext::TestIndexedPolyEdge(DPoint3dCP vertsP, DPoint4dCP hVertsP, int
     ProximityData   proximity;
 
     bsiProximityData_init(&proximity, &pickPt, -1, 0.0);
-    bsiProximityData_testXY (&proximity, &hEdge[0], 0.0, 0);
-    bsiProximityData_testXY (&proximity, &hEdge[1], 1.0, 0);
+    bsiProximityData_testXY(&proximity, &hEdge[0], 0.0, 0);
+    bsiProximityData_testXY(&proximity, &hEdge[1], 1.0, 0);
 
     DPoint4d    qPoint[2];
     double      qParam[2];
@@ -411,7 +411,7 @@ bool PickContext::TestIndexedPolyEdge(DPoint3dCP vertsP, DPoint4dCP hVertsP, int
     if (bsiBezierDPoint4d_allPerpendicularsFromDPoint4dExt(qParam, qPoint, &qCount, 2, hEdge, 2, &hPick, 2, false))
         {
         for (int i = 0; i < qCount; i++)
-            bsiProximityData_testXY (&proximity, &qPoint[i], qParam[i], 0);
+            bsiProximityData_testXY(&proximity, &qPoint[i], qParam[i], 0);
         }
 
     if (proximity.closeDistanceSquared < m_pickApertureSquared)
@@ -447,7 +447,7 @@ static bool boresiteToCurveVector(CurveVectorCR curves, DRay3dCR boresite, DPoin
     if (!boresite.IntersectZPlane(localToWorld, 0.0, uvw, t))
         return false;
 
-    CurveVector::InOutClassification inOut = curvesLocal->PointInOnOutXY (uvw);
+    CurveVector::InOutClassification inOut = curvesLocal->PointInOnOutXY(uvw);
 
     if (CurveVector::INOUT_In != inOut && CurveVector::INOUT_On != inOut)
         return false;
@@ -488,14 +488,14 @@ bool PickContext::TestCurveVector(CurveVectorCR curves, HitPriority priority)
 
     CurveLocationDetail  location;
 
-    if (!curves.ClosestPointBoundedXY (pickPtLocal, &localToView, location))
+    if (!curves.ClosestPointBoundedXY(pickPtLocal, &localToView, location))
         return false;
 
     DPoint4d    hitPtView;
 
     m_graphic->LocalToView(&hitPtView, &location.point, 1);
 
-    double      pickDistSquared = distSquaredXY (hitPtView, pickPtView);
+    double      pickDistSquared = distSquaredXY(hitPtView, pickPtView);
 
     if (!((m_pickApertureSquared > pickDistSquared) || (TEST_LSTYLE_BaseGeom == m_testingLStyle && m_unusableLStyleHit)))
         return false;
@@ -515,7 +515,7 @@ StatusInt PickContext::ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool c
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
             {
-            DEllipse3dCP  ellipse = primitive.GetArcCP ();
+            DEllipse3dCP  ellipse = primitive.GetArcCP();
             DPoint4d      viewPt;
 
             m_graphic->LocalToView(&viewPt, &ellipse->center, 1);
@@ -531,7 +531,7 @@ StatusInt PickContext::ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool c
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
             {
-            bvector<DPoint3d> const* points = primitive.GetPointStringCP ();
+            bvector<DPoint3d> const* points = primitive.GetPointStringCP();
 
             TestPointArray(points->size(), &points->front(), HitPriority::Vertex);
             break;
@@ -618,12 +618,12 @@ StatusInt PickContext::ProcessSolidPrimitive(ISolidPrimitiveCR primitive)
               i, intersectLocationDetail.size(),
               thisDetail.GetPickParameter(),
               thisDetail.GetPrimarySelector(), thisDetail.GetSecondarySelector(),
-              thisDetail.GetU (), thisDetail.GetV ()
+              thisDetail.GetU(), thisDetail.GetV()
               );
         PrintVector("Uvec", thisDetail.GetUDirection());
         PrintVector("Vvec", thisDetail.GetVDirection());
 #endif
-        AddSurfaceHit(thisDetail.GetXYZ (), normal, HitPriority::Interior);
+        AddSurfaceHit(thisDetail.GetXYZ(), normal, HitPriority::Interior);
         i++;
         }
 
@@ -711,12 +711,12 @@ StatusInt PickContext::ProcessFacetSet(PolyfaceQueryCR meshData, bool filled)
 
     int         polySize = meshData.GetNumPerFace();
     int         numIndices = static_cast<int>(meshData.GetPointIndexCount());
-    int const*  vertIndex = meshData.GetPointIndexCP ();
+    int const*  vertIndex = meshData.GetPointIndexCP();
 
     if (!vertIndex)
         return SUCCESS;
 
-    DPoint3dCP  verts = meshData.GetPointCP ();
+    DPoint3dCP  verts = meshData.GetPointCP();
     int         thisFaceSize = 0, thisIndex, firstIndex=0, prevIndex=0;
     DPoint3d    pickPt;
     DPoint4d    *hVertBufferP = NULL;       // Will point to _alloca buffer if within allowed size
@@ -1160,7 +1160,7 @@ void PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDept
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PickContext::_CheckStop()
     {
-    return (WasAborted() ? true : AddAbortTest(GetDoneSearching() || (m_stopTester && m_stopTester->_CheckStopLocate())));
+    return WasAborted() ? true : (AddAbortTest(GetDoneSearching() || (m_stopTester && m_stopTester->_CheckStopLocate())));
     }
 
 /*---------------------------------------------------------------------------------**//**
