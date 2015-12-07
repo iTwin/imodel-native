@@ -2002,7 +2002,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
         for (ElementGeometryPtr const& geom : gcollection)
             {
             //  Look up the subcategory ... IN THE CLIENT DB
-            GeometryParamsCR dparams = gcollection.GetElemDisplayParams();
+            GeometryParamsCR dparams = gcollection.GetGeometryParams();
             DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
             ElementGeometryBuilderPtr& builder = builders [clientsubcatid];

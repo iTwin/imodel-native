@@ -1010,7 +1010,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
                 FB::DPoint2d       uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to GeometryParams/GraphicParams...
                 GeometryParams  faceParams;
 
-                attachment.ToElemDisplayParams(faceParams);
+                attachment.ToGeometryParams(faceParams);
 
                 FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
                                           faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
@@ -2056,10 +2056,10 @@ void InitDisplayParams(DgnCategoryId category)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SetElemDisplayParams(DgnSubCategoryId subCategory)
+void SetGeometryParams(DgnSubCategoryId subCategory)
     {
-    GeometryParamsR  dispParams = m_context.GetCurrentGeometryParams();
-    DgnCategoryId       category = dispParams.GetCategoryId(); // Preserve current category...
+    GeometryParamsR dispParams = m_context.GetCurrentGeometryParams();
+    DgnCategoryId   category = dispParams.GetCategoryId(); // Preserve current category...
 
     dispParams = GeometryParams();
     dispParams.SetCategoryId(category);
@@ -2071,7 +2071,7 @@ void SetElemDisplayParams(DgnSubCategoryId subCategory)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangedElemDisplayParams()
+void ChangedGeometryParams()
     {
     m_symbologyChanged = true;
     }
@@ -2079,7 +2079,7 @@ void ChangedElemDisplayParams()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CookElemDisplayParams(Render::GraphicR graphic)
+void CookGeometryParams(Render::GraphicR graphic)
     {
     if (!m_symbologyChanged)
         return;
@@ -2873,7 +2873,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, context.GetCurrentGeometryParams()))
                     break;
 
-                state.ChangedElemDisplayParams();
+                state.ChangedGeometryParams();
                 break;
                 }
 
@@ -2895,7 +2895,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 ElementGeomIO::Collection collection(partGeometry->GetGeomStream().GetData(), partGeometry->GetGeomStream().GetSize());
 
                 GeomStreamEntryIdHelper::SetActiveGeomPart(context, geomPartId);
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER) // NEEDSWORK: AddSubGraphic...
                 context.PushTransform(geomToElem);
@@ -2926,7 +2926,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
 
                 switch (boundary)
                     {
@@ -2959,7 +2959,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
 
                 switch (boundary)
                     {
@@ -2991,7 +2991,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, arc, boundary))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
 
                 if (!context.Is3dView())
                     {
@@ -3021,7 +3021,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, curvePrimitivePtr))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
 
                 // A single curve primitive is always open (or none for a point string)...
                 CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
@@ -3048,7 +3048,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
 
                 if (!context.Is3dView())
                     {
@@ -3072,7 +3072,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, meshData))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
                 graphic.AddPolyface(meshData, FillDisplay::Never != context.GetCurrentGeometryParams().GetFillDisplay());
                 break;
                 };
@@ -3089,7 +3089,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
                 graphic.AddSolidPrimitive(*solidPtr);
                 break;
                 }
@@ -3106,7 +3106,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, surfacePtr))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
                 graphic.AddBSplineSurface(*surfacePtr);
                 break;
                 }
@@ -3129,7 +3129,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                     break;
                     }
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
                 graphic.AddBody(*entityPtr);
                 break;
                 }
@@ -3149,7 +3149,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
 
                 // NOTE: For this case the exact edge geometry will be supplied by BRepEdges/BRepFaceIso, inhibit facetted edge draw...
                 if ((isPick || isQVWireframe) && ElementGeomIO::OpCode::BRepPolyface == egOp.m_opCode)
@@ -3199,7 +3199,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!curvePtr.IsValid())
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
                 graphic.AddCurveVector(*curvePtr, false);
                 break;
                 }
@@ -3218,7 +3218,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!curvePtr.IsValid())
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
                 graphic.AddCurveVector(*curvePtr, false);
                 break;
                 }
@@ -3235,7 +3235,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
 
-                state.CookElemDisplayParams(graphic);
+                state.CookGeometryParams(graphic);
                 context.AddTextString(text);
                 break;
                 }
@@ -3345,7 +3345,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
                 }
             }
 
-        context.GetCurrentGeometryParams() = collection.GetElemDisplayParams();
+        context.GetCurrentGeometryParams() = collection.GetGeometryParams();
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         if (SubSelectionMode::Segment != hit.GetSubSelectionMode())
@@ -3565,7 +3565,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryParamsCR ElementGeometryCollection::GetElemDisplayParams()
+GeometryParamsCR ElementGeometryCollection::GetGeometryParams()
     {
     return m_context->GetCurrentGeometryParams();
     }
@@ -4249,7 +4249,7 @@ public:
         m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_transform(Transform::FromIdentity()) {}
 
     virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
-    virtual void _AnnounceElemDisplayParams(GeometryParamsCR params) override { m_builder.Append(params); }
+    virtual void _AnnounceGeometryParams(GeometryParamsCR params) override { m_builder.Append(params); }
     virtual BentleyStatus _ProcessTextString(TextStringCR) override;
     virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool isFilled) override;
     virtual void _OutputGraphics(ViewContextR) override;

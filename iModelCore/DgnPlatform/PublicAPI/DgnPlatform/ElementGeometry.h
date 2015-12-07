@@ -352,7 +352,7 @@ const_iterator end   () const {return const_iterator ();}
 
 void SetBRepOutput(BRepOutput bRep) {m_bRepOutput = bRep;}
 
-DGNPLATFORM_EXPORT Render::GeometryParamsCR GetElemDisplayParams();
+DGNPLATFORM_EXPORT Render::GeometryParamsCR GetGeometryParams();
 DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId(); //!< Returns primitive id for current geometry
 DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();

@@ -513,7 +513,7 @@ bool Is3dCellSymbol()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ApplyElemDisplayParams(GeometryParamsCR elParams)
+void ApplyGeometryParams(GeometryParamsCR elParams)
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     ElementPropertiesSetter remapper;
@@ -737,7 +737,7 @@ static MaterialPtr CreateGeometryMapMaterial(ViewContextR context, PatternSymbol
 
     // NOTE: Need to setup pattern symbology on cell element and hide 0 length lines used as pattern cell extent markers, etc.
     PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyElemDisplayParams(*context.GetCurrentGeometryParams());
+    symbCell.ApplyGeometryParams(*context.GetCurrentGeometryParams());
 
     DRange2d range;
     DisplayHandler::GetDPRange(&range.low, &eh.GetElementCP ()->hdr.dhdr.range);
@@ -1038,7 +1038,7 @@ DPoint3dR       origin
 
     // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
     PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyElemDisplayParams(*context.GetCurrentGeometryParams());
+    symbCell.ApplyGeometryParams(*context.GetCurrentGeometryParams());
 
     bool        drawFiltered = false;
     Transform   orgTrans;

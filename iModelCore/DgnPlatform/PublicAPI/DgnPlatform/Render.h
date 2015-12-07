@@ -414,7 +414,7 @@ public:
     bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
     //! @endcond
 
-    //! Compare two ElemDisplayParam.
+    //! Compare two GeometryParams.
     DGNPLATFORM_EXPORT bool operator==(GeometryParamsCR rhs) const;
 
     //! copy operator
@@ -517,8 +517,8 @@ private:
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT int FromResolvedElemDisplayParams(GeometryParamsCR, ViewContextR context, DPoint3dCP, DPoint3dCP);
-    DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams(GeometryParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
+    DGNPLATFORM_EXPORT int FromResolvedGeometryParams(GeometryParamsCR, ViewContextR context, DPoint3dCP, DPoint3dCP);
+    DGNPLATFORM_EXPORT int FromNaturalGeometryParams(GeometryParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
     void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_texture = nullptr;}

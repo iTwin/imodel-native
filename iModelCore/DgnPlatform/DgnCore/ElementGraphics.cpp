@@ -55,7 +55,7 @@ void AnnounceCurrentState()
     m_dropObj->_AnnounceTransform(&m_localToWorldTransform);
 #endif
     m_dropObj->_AnnounceGraphicParams(currentMatSymb);
-    m_dropObj->_AnnounceElemDisplayParams(m_context->GetCurrentGeometryParams());
+    m_dropObj->_AnnounceGeometryParams(m_context->GetCurrentGeometryParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -285,7 +285,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
                 {
                 context.SetGeomStreamEntryId(collection.GetGeomStreamEntryId());
 
-                context.GetCurrentGeometryParams() = collection.GetElemDisplayParams();
+                context.GetCurrentGeometryParams() = collection.GetGeometryParams();
                 context.CookGeometryParams();
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -1364,7 +1364,7 @@ virtual bool _WantClipping() const override {return false;}
 virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
 virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
 virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
-virtual void _AnnounceElemDisplayParams(GeometryParams const& params) override {m_currentDisplayParams = params;}
+virtual void _AnnounceGeometryParams(GeometryParams const& params) override {m_currentDisplayParams = params;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
@@ -1398,7 +1398,7 @@ virtual void _OutputGraphics(ViewContextR context) override
         CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
         GeometryParams  faceParams;
 
-        attachment.ToElemDisplayParams(faceParams);
+        attachment.ToGeometryParams(faceParams);
         m_params.push_back(faceParams);
         m_curves.push_back(curve);
         m_uniqueAttachments[attachment] = curve.get();
@@ -1473,7 +1473,7 @@ void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgn
             PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
             GeometryParams faceParams;
 
-            faceAttachment.ToElemDisplayParams(faceParams);
+            faceAttachment.ToGeometryParams(faceParams);
             params.push_back(faceParams);
             polyfaces.push_back(polyface);
             faceToPolyfaces[curr->first] = uniqueFaceAttachments[faceAttachment] = polyface.get();
@@ -1762,7 +1762,7 @@ static void DrawStyled(ViewContextR context, CurveVectorCR curves, bool is3d, do
                 }
             }
 
-        context.SetLinestyleTangents(pStartTangent, pEndTangent); // NOTE: This needs to happen before CookElemDisplayParams to setup modifiers!
+        context.SetLinestyleTangents(pStartTangent, pEndTangent); // NOTE: This needs to happen before CookGeometryParams to setup modifiers!
 
         if (isComplex)
             context.CookGeometryParams(); // Set/Clear linestyle start/end tangent modifiers. (needed for constant width change...)

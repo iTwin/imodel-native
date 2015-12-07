@@ -205,7 +205,7 @@ public:
     DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range);
     DGNPLATFORM_EXPORT bool IsRangeTotallyInsideClip(DRange3dCR range);
     DGNPLATFORM_EXPORT bool ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints);
-    DGNPLATFORM_EXPORT bool         ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints);
+    DGNPLATFORM_EXPORT bool ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints);
 
     void SetInPatternDraw(bool isPattern) {m_inPatternDraw = isPattern;}
     bool GetInPatternDraw() {return m_inPatternDraw;}

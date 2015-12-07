@@ -66,7 +66,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetGeometryParams();
         Render::GradientSymbCP gradient = params.GetGradient();
         EXPECT_NE (nullptr, params.GetGradient());
         EXPECT_EQ (GradientMode::Spherical, gradient->GetMode());
@@ -113,7 +113,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::GeometryParamsCR params = collection.GetElemDisplayParams ();
+        Render::GeometryParamsCR params = collection.GetGeometryParams ();
         PatternParamsCP pattern = params.GetPatternParams ();
         ASSERT_NE(nullptr, pattern );
         EXPECT_EQ(ColorDef::Cyan(), pattern->GetColor());
@@ -149,7 +149,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetGeometryParams();
         EXPECT_EQ (0.5, params.GetTransparency());
         EXPECT_EQ (0.5, params.GetNetTransparency());
         }
@@ -181,7 +181,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetGeometryParams();
         DgnCategoryId CId = params.GetCategoryId();
         ASSERT_TRUE (CId.IsValid());
         //Setting the Category Id also sets the SubCategory to the default.
@@ -218,7 +218,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetGeometryParams();
         EXPECT_EQ (21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
         EXPECT_FALSE (weight);
@@ -255,7 +255,7 @@ TEST_F (ElementDisplayProperties, FillProperties)
 
     for (ElementGeometryPtr geom : collection)
         {
-        Render::GeometryParamsCR params = collection.GetElemDisplayParams();
+        Render::GeometryParamsCR params = collection.GetGeometryParams();
         EXPECT_EQ (Render::FillDisplay::Always, params.GetFillDisplay());
         EXPECT_EQ (ColorDef::Red(), params.GetFillColor());
         bool FillColor = params.IsFillColorFromSubCategoryAppearance();

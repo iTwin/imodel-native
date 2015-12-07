@@ -302,7 +302,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
     else
         {
 #if defined (NEEDS_WORK_DGNITEM)
-        ElemDisplayParamsP elParams = context->GetCurrentGeometryParams();
+        GeometryParamsP elParams = context->GetCurrentGeometryParams();
         if (0 == elParams->GetWeight())
             {
             context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
@@ -313,7 +313,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             // may arise due to level of detail differences between view display and printing. [TFS 8535]
             GraphicParams saveMatSymb;
             saveMatSymb = *context->GetGraphicParams();
-            ElemDisplayParamsStateSaver saveState (*context->GetCurrentGeometryParams(), false, false, false, true, false);
+            GeometryParamsStateSaver saveState (*context->GetCurrentGeometryParams(), false, false, false, true, false);
             elParams->SetWeight (0);
             context->CookGeometryParams();
             context->GetCurrentGraphic().ActivateMatSymb (context->GetGraphicParams());
