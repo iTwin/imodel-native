@@ -32,6 +32,13 @@ Utf8String base64_scramble(Utf8String value, int multiplier);
 
 void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
     {
+    if (Connect::IsTokenBasedAuthorization())
+        {
+        ConnectImsSetup(messageDataObj);
+        return;
+        }
+
+    // The following code will be no longer used, when apps switch to WebView authentication
     Credentials cred;
     bool validCredentials = GetCredentials(messageDataObj, cred);
 
@@ -93,15 +100,14 @@ void WebServices::ConnectImsSetup(JsonValueCR messageDataObj)
     Credentials cred;
     Utf8String token;
 
-    if (!GetToken(messageDataObj, token))
+    bool getTokenResult = GetToken(messageDataObj, token);
+    if (!getTokenResult)
         {
-        MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
-        ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
+        ConnectSignOut(messageDataObj);
         return;
         }
 
     MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, true);
-
     SamlToken sToken(token);
     Utf8String displayUserName;
     bmap<Utf8String, Utf8String> attributes;
@@ -110,7 +116,6 @@ void WebServices::ConnectImsSetup(JsonValueCR messageDataObj)
         Utf8String givenName = attributes["givenname"];
         Utf8String surName = attributes["surname"];
         displayUserName = givenName + " " + surName;
-
         MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, attributes["name"]);
         cred = Credentials(attributes["name"], "password");
         ConnectAuthenticationPersistence::GetShared()->SetCredentials(cred);
@@ -120,14 +125,13 @@ void WebServices::ConnectImsSetup(JsonValueCR messageDataObj)
     MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERID, attributes["userid"].c_str());
 
     MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.Setup_Succeeded"));
+    }
 
-    // TODO: review if safe to remove
-    Json::Value csSetup;
-    csSetup[CS_MESSAGE_FIELD_username] = cred.GetUsername();
-    csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword();
-    csSetup[CS_MESSAGE_FIELD_token] = token;
-
-    MobileDgnUi::SendMessageToWorkThread(CS_MESSAGE_SetCredentials, std::move(csSetup));
+void WebServices::ConnectSignOut(JsonValueCR messageDataObj)
+    {
+    MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
+    ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
+    MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.SignOut_Succeeded"));
     }
 
 bool GetCredentials(JsonValueCR messageDataObj, CredentialsR cred)
