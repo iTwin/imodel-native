@@ -1,6 +1,10 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
+ECSchemaUnitsManagerTests.*                         # need to update kindofquantity schema in ecstandards. its on lockdown
+UnitsTest.TestUnitSpecifications                    # ^
+SchemaLocateTest.ExpectSuccessWhenLocatingStandardSchema # ^^
+
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
