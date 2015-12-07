@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bvector_cc.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -257,6 +257,8 @@ _C_insert_n (const iterator &__it, size_type __n, const_reference __x)
         // construct `n' copies of `x' just past the initial range,
         // as if by a call to
         // uninitialized_fill_n (__tmp._C_aloc._C_begin + __size1, __n, __x);
+        
+#if 0   // *** BENTLEY_CHANGE
         for ( ; __n; --__n) {
 
             _RWSTD_ASSERT (!(   __tmp._C_alloc._C_end
@@ -264,6 +266,10 @@ _C_insert_n (const iterator &__it, size_type __n, const_reference __x)
 
             __tmp._C_push_back (__x);
         }
+#else
+        __tmp._uninitialized_fill_back(__n, __x, typename _TypeTagger<value_type>::Type());
+        //__n = 0;   not needed, we return before we use this variable again.
+#endif
 
         // copy the final range of elements starting with `it'
         // as if by a call to
