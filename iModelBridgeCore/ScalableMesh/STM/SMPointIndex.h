@@ -25,6 +25,33 @@
 #include <ImagePP/all/h/HVEShape.h>
 
 
+//NEEDS_WORK_SM Currently redefining this due to removing all the IDTMFile dependencies
+namespace IDTMFile{
+struct NeighborNodesTable
+{
+static const size_t MAX_QTY = 26;
+};
+
+struct VariableSubNodesTable
+{
+static IDTMFile::NodeID GetNoSubNodeID () {return 0;}
+};
+};
+
+template <class SPATIAL, class POINT, class EXTENT> class SpatialOp_
+    {
+public:
+
+    static bool IsSpatialInExtent3D (const SPATIAL& spatial, const EXTENT& extent)
+        {
+        EXTENT spatialExtent = SpatialOp<SPATIAL, POINT, EXTENT>::GetExtent(spatial);
+        POINT Origin = PointOp<POINT>::Create (ExtentOp<EXTENT>::GetXMin(spatialExtent), ExtentOp<EXTENT>::GetYMin(spatialExtent), ExtentOp<EXTENT>::GetZMin(spatialExtent));
+        POINT Corner = PointOp<POINT>::Create (ExtentOp<EXTENT>::GetXMax(spatialExtent), ExtentOp<EXTENT>::GetYMax(spatialExtent), ExtentOp<EXTENT>::GetZMax(spatialExtent));
+        return (ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(spatialExtent, Origin) && ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(spatialExtent, Corner));
+        }
+
+    };
+
 
 #define MAX_NUM_SUBNODES 8
 #define MAX_NUM_NEIGHBORNODE_POSITIONS 26
@@ -256,7 +283,7 @@ template<class T> class OverrideSizeTypeTrait<true, T> : public T
     mutable size_t m_nbPointsUsedForMeshIndex =0;
     public:
     //NEEDS_WORK_SM placed those here instead of StoredPooledVector, but probably should use different storage for indexes than coordinates
-        virtual size_t size() const override
+        virtual size_t size() const //override
             {
             return m_count - m_nbPointsUsedForMeshIndex;
             }
@@ -1386,7 +1413,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
             return GetParentNodePtr()->size();
             };
 
-        virtual const POINT& operator[](size_t index) const override
+        virtual const POINT& operator[](size_t index) const //override
             {
             return GetParentNodePtr()->operator[](index);
             };

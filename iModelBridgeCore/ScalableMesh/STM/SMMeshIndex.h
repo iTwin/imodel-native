@@ -2,8 +2,8 @@
 #pragma once
 #include <Mtg/MtgStructs.h>
 #include "SMPointIndex.h"
-#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
-
+//#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+template <typename DataType> using HPMIndirectCountLimitedPool = HPMCountLimitedPool<DataType>;
 
 template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;
@@ -136,7 +136,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void SetGraphDirty()
         {
-        m_graphVec.SetDiscarded(false);
+     //   m_graphVec.SetDiscarded(false);
         m_graphVec.SetDirty(true);
         }
 
@@ -331,7 +331,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             return GetParentNodePtr()->size();
             };
 
-        virtual const POINT& operator[](size_t index) const override
+        virtual const POINT& operator[](size_t index) const //override
             {
             return GetParentNodePtr()->operator[](index);
             };

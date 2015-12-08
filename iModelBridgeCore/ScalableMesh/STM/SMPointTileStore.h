@@ -341,8 +341,8 @@ public:
     int*        m_meshComponents;
 
 
-    vector<HPMBlockID> m_apNeighborNodeID[IDTMFile::NeighborNodesTable::MAX_QTY];    
-    bool               m_apAreNeighborNodesStitched[IDTMFile::NeighborNodesTable::MAX_QTY];    
+    vector<HPMBlockID> m_apNeighborNodeID[26];    
+    bool               m_apAreNeighborNodesStitched[26];    
 
     ~SMPointNodeHeader()
          {
@@ -381,7 +381,7 @@ private:
         return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
         }
 
-    static IDTMFile::VariableSubNodesTable::value_type ConvertChildID(const HPMBlockID& childID)
+    /*static IDTMFile::VariableSubNodesTable::value_type ConvertChildID(const HPMBlockID& childID)
         {
         return static_cast<IDTMFile::VariableSubNodesTable::value_type>(childID.m_integerID);
         }
@@ -389,7 +389,7 @@ private:
     static IDTMFile::NeighborNodesTable::value_type ConvertNeighborID (const HPMBlockID& neighborID)
         {
         return static_cast<IDTMFile::NeighborNodesTable::value_type>(neighborID.m_integerID);
-        }
+        }*/
 
 public:
     // Constructor / Destroyer
@@ -534,7 +534,7 @@ public:
             {
             // For this particular implementation the header size is unused ... The indexHeader is unique and of known size
             m_indexHandler->SetBalanced(indexHeader->m_balanced);
-            m_indexHandler->SetDepth((uint32_t)indexHeader->m_depth);
+ //           m_indexHandler->SetDepth((uint32_t)indexHeader->m_depth);
 
             if (indexHeader->m_rootNodeBlockID.m_integerInitialized)
                 m_indexHandler->SetTopNode(ConvertBlockID(indexHeader->m_rootNodeBlockID));
@@ -549,7 +549,7 @@ public:
         {
         if (m_DTMFile == NULL)
             return 0;
-        IDTMFile::BTreeIndexHandler::s_FixedSizeSubNodes = false;
+       // IDTMFile::BTreeIndexHandler::s_FixedSizeSubNodes = false;
         if (NULL == m_tileHandler)
             {
                 IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
@@ -580,7 +580,7 @@ public:
             indexHeader->m_SplitTreshold = m_indexHandler->GetSplitTreshold();
             indexHeader->m_balanced = m_indexHandler->IsBalanced();
 
-            indexHeader->m_depth = m_indexHandler->GetDepth();
+ //           indexHeader->m_depth = m_indexHandler->GetDepth();
 
 
             if (m_indexHandler->GetTopNode() != IDTMFile::GetNullNodeID())
@@ -640,6 +640,8 @@ public:
 
     virtual size_t StoreHeader (SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
         {
+        return 1;
+        #if 0
         HPRECONDITION(m_tileHandler != NULL);
         HPRECONDITION(m_indexHandler != NULL);
         HPRECONDITION(m_filteringDir != NULL);
@@ -767,14 +769,14 @@ public:
         */
         
         
-        m_indexHandler->SetMeshIndexesCount(ConvertBlockID(blockID), header->m_nbFaceIndexes);
+       m_indexHandler->SetMeshIndexesCount(ConvertBlockID(blockID), header->m_nbFaceIndexes);
         if (header->m_graphID.IsValid())
             {
-            m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = ConvertBlockID(header->m_graphID);
+           m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = ConvertBlockID(header->m_graphID);
             }
         else
             {
-            m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
+           m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
             }
         m_indexHandler->SetMeshComponentsCount(ConvertBlockID(blockID), header->m_numberOfMeshComponents);
         if (header->m_numberOfMeshComponents > 0)
@@ -785,10 +787,13 @@ public:
             }
 
         return 1;
+        #endif
         }
 
     virtual size_t LoadHeader (SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
         {
+        return 1;
+        #if 0
         HPRECONDITION(m_tileHandler != NULL);
         HPRECONDITION(m_indexHandler != NULL);
         HPRECONDITION(m_filteringDir != NULL);
@@ -900,6 +905,7 @@ public:
             }
               
         return 1;
+        #endif
         }
 
 

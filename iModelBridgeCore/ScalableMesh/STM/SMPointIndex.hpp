@@ -3765,7 +3765,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
                     {
                     for (size_t indexNodes = 0; !addedToNode && indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
                         {
-                        if (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(INSpatialArray[indexSpatial], m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent))
+                        if (SpatialOp_<POINT, POINT, EXTENT>::IsSpatialInExtent3D(INSpatialArray[indexSpatial], m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent))
                             {
                             spatialArray[indexNodes][spatialArrayNumber[indexNodes]] = INSpatialArray[indexSpatial];
                             spatialArrayNumber[indexNodes]++;
@@ -4986,7 +4986,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
 
         if (m_nodeHeader.m_arePoints3d)
             {        
-            while ((lastPointsIndexInExtent < countPoints) && (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(pointsArray[lastPointsIndexInExtent], m_nodeHeader.m_nodeExtent)))
+            while ((lastPointsIndexInExtent < countPoints) && (SpatialOp_<POINT, POINT, EXTENT>::IsSpatialInExtent3D(pointsArray[lastPointsIndexInExtent], m_nodeHeader.m_nodeExtent)))
                 {
                 lastPointsIndexInExtent++;
                 }
@@ -5351,7 +5351,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Add(co
             for (size_t i = 0 ; i < GetNumberOfSubNodesOnSplit() && !Added ; ++ i)
                 {
                 // Check if object is contained in this sub-node
-                if (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(pi_rpSpatialObject, m_apSubNodes[i]->GetNodeExtent()))
+                if (SpatialOp_<POINT, POINT, EXTENT>::IsSpatialInExtent3D(pi_rpSpatialObject, m_apSubNodes[i]->GetNodeExtent()))
                     {
                     // The object is contained ... we add to subnode
                     m_apSubNodes[i]->Add(pi_rpSpatialObject, isPoint3d);
@@ -6782,7 +6782,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::AddNum
 
     for (uint32_t PtInd = 0; PtInd < size(); PtInd++)
         {
-        if (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(this->operator[](PtInd), pi_rChildNodeExtent))
+        if (SpatialOp_<POINT, POINT, EXTENT>::IsSpatialInExtent3D(this->operator[](PtInd), pi_rChildNodeExtent))
             //{
 
             // Check if point lies inside (Borders are inclusive here)
@@ -6816,7 +6816,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::AddNod
 
     for (uint32_t PtInd = 0; PtInd < size(); PtInd++)
         {
-        if (SpatialOp<POINT, POINT, EXTENT>::IsSpatialInExtent3D(this->operator[](PtInd), pi_rChildNodeExtent))
+        if (SpatialOp_<POINT, POINT, EXTENT>::IsSpatialInExtent3D(this->operator[](PtInd), pi_rChildNodeExtent))
             {
             pio_rListOfObjects.push_back(this->operator[](PtInd));
             }

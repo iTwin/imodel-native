@@ -10,7 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+//template <typename DataType> using HPMIndirectCountLimitedPool = HPMCountLimitedPool<DataType>;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 template <typename POINT> class ScalableMeshMemoryPools

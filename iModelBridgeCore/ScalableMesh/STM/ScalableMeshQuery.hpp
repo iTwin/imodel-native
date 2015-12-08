@@ -1123,7 +1123,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(bool loadGraph) const
     {
-    m_node->Pin();
+//    m_node->Pin();
 
     IScalableMeshMeshPtr meshP;
     if (loadGraph)
@@ -1180,7 +1180,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(bo
         meshP = meshPtr.get();
         }
 
-    m_node->UnPin();
+ //   m_node->UnPin();
 
     return meshP;    
     }

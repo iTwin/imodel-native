@@ -212,6 +212,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Initialize.cpp" />
+    <ClCompile Include="..\ScalableMeshSDKexe.cpp" />
     <ClCompile Include="..\SDKSample.cpp" />
     <ClCompile Include="..\SDKSampleImporter.cpp" />
   </ItemGroup>

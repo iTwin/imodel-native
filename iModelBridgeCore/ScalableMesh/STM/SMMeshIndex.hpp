@@ -17,7 +17,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_mesher3d = mesher3d;
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_featureStore = nullptr;
     m_featurePool = nullptr;
@@ -34,7 +34,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = pi_rpParentNode->GetMesher3d();
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -50,7 +50,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = pi_rpParentNode->GetMesher3d();
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -63,7 +63,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = pi_rNode.GetMesher3d();
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -74,7 +74,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = pi_rNode.GetMesher3d();
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -88,7 +88,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = pi_rpParentNode->GetMesher3d();
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -112,7 +112,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = mesher3d;
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -135,7 +135,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = mesher3d;
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -155,7 +155,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = mesher3d;
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_featureStore = nullptr;
     m_featurePool = nullptr;
@@ -176,7 +176,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = mesher3d;
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_featureStore = nullptr;
     m_featurePool = nullptr;
@@ -199,7 +199,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = mesher3d;
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_graphVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     }
 
@@ -234,7 +234,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
     SMPointIndexNode::Destroy();
     //m_graphVec.clear();
     m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_graphVec.SetDiscarded(true);
     m_isGraphLoaded = false;
     if (m_graphVec.GetBlockID().IsValid())
         m_graphStore->DestroyBlock(m_graphVec.GetBlockID());
@@ -305,7 +305,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     {
     if (IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
-    m_graphVec.SetBlockID(m_nodeHeader.m_graphID);
+ //   m_graphVec.SetBlockID(m_nodeHeader.m_graphID);
     }
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload() const
@@ -319,7 +319,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload(
 
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::CreateGraph() const
     {
-    m_graphVec.SetDiscarded(false);
+ //   m_graphVec.SetDiscarded(false);
     if (m_graphVec.size() == 0) m_graphVec.push_back(MTGGraph());
     }
 

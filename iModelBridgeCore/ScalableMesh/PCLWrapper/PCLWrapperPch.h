@@ -53,6 +53,7 @@ using namespace std;
 #include <Bentley\Bentley.r.h>
 #include <Bentley\bvector.h>
 
+#include <Geom\GeomApi.h>
 #include <Geom\msgeomstructs_typedefs.h>
 #include <Geom\dpoint3d.h>
 #include <Geom\dvec3d.h>

@@ -24,6 +24,9 @@
     <ClCompile Include="..\SDKSampleImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\ScalableMeshSDKexe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Initialize.h">
