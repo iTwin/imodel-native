@@ -37,6 +37,7 @@ namespace ServerSchema
         static Utf8CP Revision = "Revision";
         static Utf8CP File = "DgnDbFile";
         static Utf8CP Repository = "DgnDbRepository";
+        static Utf8CP Lock = "Lock";
         }
     namespace Property
         {
@@ -54,7 +55,25 @@ namespace ServerSchema
         static Utf8CP UserCreated = "UserCreated";
         static Utf8CP PushDate = "PushDate";
         static Utf8CP Published = "Published";
+        static Utf8CP ObjectId = "ObjectId";
+        static Utf8CP LockType = "LockType";
+        static Utf8CP LockLevel = "LockLevel";
         }
+    static Utf8CP DeleteAllLocks = "DeleteAll";
+    }
+
+namespace Locks
+    {
+    static Utf8CP Description = "Description";
+    static Utf8CP Locks = "Locks";
+    static Utf8CP ObjectId = "LockableId";
+    namespace Object
+        {
+        static Utf8CP Id = "Id";
+        static Utf8CP Type = "Type";
+        }
+    static Utf8CP Level = "Level";
+    static Utf8CP Status = "Status";
     }
 
 namespace Db

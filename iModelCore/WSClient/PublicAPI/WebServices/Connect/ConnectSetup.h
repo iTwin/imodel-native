@@ -19,5 +19,6 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 WSCLIENT_EXPORT extern void ConnectSetup(JsonValueCR messageDataObj, bool requireToken);
 WSCLIENT_EXPORT extern void ConnectImsSetup(JsonValueCR messageDataObj);
+WSCLIENT_EXPORT extern void ConnectSignOut(JsonValueCR messageDataObj);
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

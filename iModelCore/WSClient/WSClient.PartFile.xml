@@ -117,7 +117,7 @@
 
     <Part Name="DgnDbServerClient-PublicAPI" BentleyBuildMakeFile="DgnDbServerClientPrewire.mke">
         <Bindings>
-            <PublicAPI Domain="WebServices" />
+            <PublicAPI Domain="DgnDbServer" />
         </Bindings>
     </Part>
 
