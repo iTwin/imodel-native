@@ -62,7 +62,7 @@ protected:
     virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR, bool filled) {return ERROR;}
     virtual StatusInt _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled) {return ERROR;}
 
-    virtual void _ActivateMatSymb(Render::GraphicParamsCP matSymb) override {}
+    virtual void _ActivateGraphicParams(Render::GraphicParamsCP matSymb) override {}
     DGNPLATFORM_EXPORT virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) override;

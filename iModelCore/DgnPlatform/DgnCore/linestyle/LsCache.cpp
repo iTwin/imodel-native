@@ -524,7 +524,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
     // It's important to set the style via GeometryParams, not GraphicParams, for printing to work correctly.
     context->GetCurrentGeometryParams ()->SetLineStyle (style);
     context->CookGeometryParams ();
-    context->GetIDrawGeom ().ActivateMatSymb (context->GetGraphicParams ()); // Activate the new matsymb
+    context->GetIDrawGeom ().ActivateGraphicParams (context->GetGraphicParams ()); // Activate the new matsymb
 
     // Style override that caused this linestyle to be used needs to be cleared in order to use the correct raster pattern for the strokes. 
     OvrGraphicParamsP ovrMatSymb = context->GetOverrideGraphicParams ();
@@ -539,7 +539,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
     context->GetIDrawGeom ().AddLineString (nPoints, inPoints, NULL); // Draw the linestring
 
     // Restore GraphicParams to previous state, GeometryParams will be restored in GeometryParamsStateSaver destructor...
-    context->GetIDrawGeom ().ActivateMatSymb (&saveMatSymb);
+    context->GetIDrawGeom ().ActivateGraphicParams (&saveMatSymb);
 
     if (0 != (saveFlags & MATSYMB_OVERRIDE_Style))
         {

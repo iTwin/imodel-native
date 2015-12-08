@@ -547,7 +547,7 @@ void LineStyleSymb::ClearContinuationData ()
 
 //---------------------------------------------------------------------------------------
 // When this is called both GeometryParams and GraphicParams are fully determined.
-// It is called before the call to ActivateMatSymb.
+// It is called before the call to ActivateGraphicParams.
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
 void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)

@@ -527,9 +527,12 @@ public:
     bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
 
     //! Change the supplied "natural" GeometryParams. Resolves effective symbology as required by the context and initializes the supplied GraphicParams.
-    //! @note Does NOT call ActivateMatSymb on the output or change the current GeometryParams/GraphicParams of the context.
-    void CookGeometryParams(Render::GeometryParamsR elParams, Render::GraphicParamsR elMatSymb) {_CookGeometryParams(elParams, elMatSymb);}
-    DGNPLATFORM_EXPORT void CookGeometryParams();
+    //! @note Does NOT call ActivateGraphicParams on the output or change the current GeometryParams/GraphicParams of the context.
+    void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams) {_CookGeometryParams(geomParams, graphicParams);}
+
+    //! Change the current "natural" GeometryParams. Resolves effective symbology as required by the context and initializes the current GraphicParams.
+    //! @note Calls ActivateGraphicParams on the supplied Render::GraphicR.
+    DGNPLATFORM_EXPORT void CookGeometryParams(Render::GraphicR);
 
     //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
     //! @return the net display priority. For 3D views, display priority is always 0.

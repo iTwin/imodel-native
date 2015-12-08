@@ -286,15 +286,16 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
                 context.SetGeometryStreamEntryId(collection.GetGeometryStreamEntryId());
 
                 context.GetCurrentGeometryParams() = collection.GetGeometryParams();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 context.CookGeometryParams();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 context.PushTransform(collection.GetGeometryToWorld());
                 elemGeom->Draw(context);
                 context.PopTransformClip();
 #else
                 Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), collection.GetGeometryToWorld()));
 
+                context.CookGeometryParams(*graphic);
                 elemGeom->Draw(*graphic, context);
 #endif
                 }
