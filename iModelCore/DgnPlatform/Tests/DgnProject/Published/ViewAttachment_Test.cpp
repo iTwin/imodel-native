@@ -76,6 +76,7 @@ public:
         }
 
     void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
+    void AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot=0.0);
     template<typename VC, typename EL> void SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId, double rot=0.0);
 };
 
@@ -135,6 +136,38 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
 
     DrawingViewController viewController(db, m_viewId);
     SetupAndSaveViewController(viewController, *annoElem, drawingId, viewRot);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot)
+    {
+    bvector<DPoint3d> pts
+        {
+        DPoint3d::FromXYZ(0,0,0),
+        DPoint3d::FromXYZ(0,height,0),
+        DPoint3d::FromXYZ(width,height,0),
+        DPoint3d::FromXYZ(width,0,0),
+        };
+
+    ICurvePrimitivePtr curve = ICurvePrimitive::CreateLineString(pts);
+
+    auto& db = *GetDgnDb();
+    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
+    DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, drawingId, classId, DgnElement::Code()));
+    ASSERT_TRUE(el.IsValid());
+
+    auto geomEl = el->ToGeometrySourceP()->ToGeometrySource2dP();
+    geomEl->SetCategoryId(m_attachmentCatId);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geomEl, DPoint2d::From(3,2));
+
+    builder->Append(*curve);
+    EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomEl));
+    EXPECT_TRUE(el->Insert().IsValid());
+
+    DrawingViewController viewController(db, m_viewId);
+    SetupAndSaveViewController(viewController, *geomEl, drawingId, viewRot);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -211,7 +244,9 @@ TEST_F(ViewAttachmentTest, Geom)
 
     // Add some geometry to the drawing and regenerate attachment geometry
     static const double drawingViewRot = 45.0*msGeomConst_piOver2;
-    AddTextToDrawing(m_drawingId, "Text", drawingViewRot);
+
+    //AddTextToDrawing(m_drawingId, "Text", drawingViewRot);
+    AddBoxToDrawing(m_drawingId, 5, 10, drawingViewRot);
 
     // Create an attachment using the bounds of the drawing view
     ViewControllerPtr drawingController = ViewDefinition::LoadViewController(m_viewId, db);

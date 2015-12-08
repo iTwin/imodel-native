@@ -170,15 +170,39 @@ public:
         m_builder = ElementGeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
         BeAssert(IsValid());
 
+#ifdef APPLY_ROTATION
         m_initialTransform = Transform::FromMatrixAndFixedPoint(controller.GetRotation(), controller.GetCenter());
+#else
+        m_initialTransform = Transform::FromIdentity();
+#endif
+
+#define APPLY_TRANSLATION
+#ifdef APPLY_TRANSLATION
+        auto viewOrigin = controller.GetOrigin();
+        DPoint3d translation = DPoint3d::FromXYZ(0,0,0);
+        translation.Subtract(viewOrigin);
+        m_initialTransform.InitFrom(translation);
+#endif
+
+#ifdef APPLY_SCALE
         auto scale = m_attachment.GetViewScale();
         m_initialTransform.ScaleMatrixColumns(scale, scale, scale);
+#endif
         }
 
     bool IsValid() const { return m_builder.IsValid() && m_subCategory.IsValid(); }
 
     DgnDbStatus SaveGeom()
         {
+#define DEBUG_ORIGIN
+#ifdef DEBUG_ORIGIN
+        Placement2dCR placement = m_builder->GetPlacement2d();
+        DPoint3d center = DPoint3d::FromXYZ(0,0,0);
+        static const double s_radiusFactor = 0.01;
+        double radius = placement.GetElementBox().GetRight() - placement.GetElementBox().GetLeft();
+        radius *= s_radiusFactor;
+        m_builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::FromCenterRadiusXY(center, radius)));
+#endif
         return IsValid() && SUCCESS == m_builder->SetGeomStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
         }
 };
