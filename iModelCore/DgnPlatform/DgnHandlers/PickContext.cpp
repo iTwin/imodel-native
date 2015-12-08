@@ -1175,8 +1175,10 @@ void PickContext::_OnPreDrawTransient()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr PickContext::_OutputElement(GeometrySourceCR element)
+void PickContext::_OutputGeometry(GeometrySourceCR element)
     {
+    m_currentGeomSource = &element;
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
     if (!m_output.GetInSymbolDraw())
@@ -1184,35 +1186,15 @@ Render::GraphicPtr PickContext::_OutputElement(GeometrySourceCR element)
 #endif
 
     // do per-element test
-    return T_Super::_OutputElement(element);
+    T_Super::_OutputGeometry(element);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Reset hit priority override in case it's been set...
     if (!m_output.GetInSymbolDraw())
         m_output._SetHitPriorityOverride(HitPriority::Highest);
 #endif
+    m_currentGeomSource = nullptr;
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    03/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_DrawCached(aphicStroker& stroker)
-    {
-    bool    testStroke = stroker._WantLocateByStroker();
-
-    m_output.InitStrokeForCache();
-
-    if (testStroke)
-        stroker._Stroke(*this);
-
-    if (CheckStop())
-        return ;
-
-    if (testCached || m_output.GetLocateSilhouettes())
-        T_Super::_DrawCached(stroker);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013

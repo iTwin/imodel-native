@@ -759,9 +759,9 @@ public:
 /** @name DgnViewport Parameters */
 /** @{ */
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
-    //! been initialized and connected to an output device.
+    //! been initialized and connected to an Render::Target.
     //! @return true if the DgnViewport is active.
-    bool IsActive() const {return m_viewController.IsValid();}
+    bool IsActive() const {return m_viewController.IsValid() && m_renderTarget.IsValid();}
 
     //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
     //! if the WorldToView transform contains a perspective transformation.

@@ -12,8 +12,8 @@
 #   define RENDER_LOGGING 1
 #endif
 
-#if defined (RENDER_LOGGING)
 #undef LOG
+#if defined (RENDER_LOGGING)
 #   define LOG (*NativeLogging::LoggingManager::GetLogger(L"Render"))
 //#   define LOG_STRING(msg) LOG.debug(msg.c_str())
 #   define LOG_STRING(msg) printf(msg.c_str())
@@ -169,7 +169,8 @@ void Render::Queue::Process()
     {
     StopWatch timer(false);
 
-    while (true)
+    static bool s_go = true;
+    while (s_go) // this is to quiet the compiler complaining that the main never returns
         {
         WaitForWork();
         m_currTask->Perform(timer);

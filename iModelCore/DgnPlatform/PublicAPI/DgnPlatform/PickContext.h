@@ -79,10 +79,11 @@ private:
     double            m_pickApertureSquared;
     LocateOptions     m_options;
     StopLocateTest*   m_stopTester;
+    GeometrySourceCP  m_currentGeomSource;
 
+    virtual void _OutputGeometry(GeometrySourceCR) override;
     virtual bool _CheckStop() override;
     virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override;
-    virtual Render::GraphicPtr _OutputElement(GeometrySourceCR) override;
     virtual void _DrawAreaPattern(ViewContext::ClipStencil& boundary) override;
     virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*) override;
     virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;

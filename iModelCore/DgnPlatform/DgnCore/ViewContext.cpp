@@ -268,7 +268,6 @@ void ViewContext::_Detach()
     m_isAttached = false;
 
     m_transformClipStack.PopAll(*this);
-    m_currentGeomSource = nullptr;
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -430,21 +429,19 @@ bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    03/02
+* @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr ViewContext::_OutputElement(GeometrySourceCR source)
+void ViewContext::_OutputGeometry(GeometrySourceCR source)
     {
     if (!source.HasGeometry())
-        return nullptr;
-
-    m_currentGeomSource = &source;
+        return;
 
     DPoint3d origin;
     source.GetPlacementTransform().GetTranslation(origin);
     DgnViewportCP vp = GetViewport();
     double pixelSize = (nullptr != vp ? vp->GetPixelSizeAtPoint(&origin) : 0.0);
 
-    Render::GraphicPtr graphic = _GetCachedGraphic(pixelSize);
+    Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
 
     if (!graphic.IsValid())
         {
@@ -453,11 +450,11 @@ Render::GraphicPtr ViewContext::_OutputElement(GeometrySourceCR source)
         else
             graphic = source.Stroke(*this, pixelSize);
 
-        _SaveGraphic(*graphic);
+        _SaveGraphic(source, *graphic);
         }
 
-    m_currentGeomSource = nullptr;
-    return graphic;
+    if (graphic.IsValid())
+        _OutputGraphic(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -606,7 +603,7 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
     if (IsUndisplayed(source))
         return SUCCESS;
 
-    _OutputElement(source);
+    _OutputGeometry(source);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Output element or local range for debugging if requested...

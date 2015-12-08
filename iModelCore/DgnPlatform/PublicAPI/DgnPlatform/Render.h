@@ -1092,13 +1092,6 @@ public:
     void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
     void DropGraphic(Graphic& graphic) {_DropGraphic(graphic);}
     void Clear() {_Clear();}
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void Create() {return _Create();}
-    void Paint(Render::Plan const& plan) {return _Paint(plan);}
-
-    bool ApplyMonochromeOverrides(ViewFlagsCR) const;
-#endif
-
 };
 
 //=======================================================================================

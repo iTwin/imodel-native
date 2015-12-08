@@ -221,7 +221,6 @@ protected:
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
-    GeometrySourceCP        m_currentGeomSource;
     Render::GeometryParams  m_currGeometryParams;
     Render::GraphicParams   m_graphicParams;
     Render::OvrGraphicParams      m_ovrGraphicParams;
@@ -238,9 +237,10 @@ protected:
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _OutputElement(GeometrySourceCR);
-    virtual Render::GraphicP _GetCachedGraphic(double pixelSize) {return nullptr;}
-    virtual void _SaveGraphic(Render::GraphicR graphic) {}
+    DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
+    virtual void _OutputGraphic(Render::GraphicR) {}
+    virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
+    virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*);
@@ -287,11 +287,9 @@ public:
     bool IsAttached() {return m_isAttached;}
     DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
-    void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputElement may not be called...
+    void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputGeometry may not be called...
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
-//    DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
-//    DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
     StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
@@ -424,7 +422,9 @@ public:
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void SetCurrentGeomSource(GeometrySourceCP source) {m_currentGeomSource = source;}
+#endif
     
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
     DrawPurpose GetDrawPurpose() const {return m_purpose;}

@@ -644,6 +644,7 @@ void QueryViewController::_VisitElements(ViewContextR context)
     project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
     BindModelAndCategory(*rangeStmt);
     ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+
     while (pvFilter._Process(context) != IProgressiveDisplay::Completion::Finished)
         ;
     }
