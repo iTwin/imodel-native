@@ -150,11 +150,11 @@ public:
     //! Make sure that a Texture has been imported
     DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
     //! Look up a copy of a LineStyle
-    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {BeAssert(false); return DgnStyleId();}
+    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return DgnStyleId();}
     //! Register a copy of a LineStyle
-    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {BeAssert(false); return DgnStyleId();;}
+    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId();;}
     //! Make sure that a LineStyle has been imported
-    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {BeAssert(false); return DgnStyleId();}
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return DgnStyleId();}
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeomStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
