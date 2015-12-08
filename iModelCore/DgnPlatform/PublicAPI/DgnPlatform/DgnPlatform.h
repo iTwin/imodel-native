@@ -704,6 +704,46 @@ enum class ClipMask
 
 ENUM_IS_FLAGS(ClipMask)
 
+//! Values held in line style definition elements; normally not used by clients of this API
+//! @ingroup LineStyleManagerModule
+enum class LsComponentType
+{
+    Unknown         = 0,             //!<   Unknown, should never occur
+    PointSymbol     = 1,
+    Compound        = 2,
+    LineCode        = 3,
+    LinePoint       = 4,
+    Internal        = 6,
+    RasterImage     = 7,
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LsComponentId
+{
+private:
+    uint32_t            m_number;              // Component property ID
+    LsComponentType     m_type;
+public:
+    uint32_t GetValue() const { return m_number; }
+    LsComponentType GetType() const { return m_type; }
+    LsComponentId() { m_type = LsComponentType::Unknown; m_number = 0xFFFFFFFF; }
+    bool IsValid() const { return m_number != 0xFFFFFFFF; }
+    explicit LsComponentId(LsComponentType type, uint32_t value) : m_type(type), m_number(value) {}
+
+    bool operator<(LsComponentId const&r) const
+        {
+        if (this->m_type < r.m_type)
+            return true;
+
+        if (this->m_type > r.m_type)
+            return false;
+
+        return this->m_number < r.m_number;
+        }
+};
+
 enum
 {
     MAX_GRADIENT_KEYS =  8,
