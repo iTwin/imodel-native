@@ -280,8 +280,6 @@
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c JoinedTablePerDirectSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
             to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
-            - @c SingleJoinedTableForSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
-            to the table of the root class. All subclasses of this class are mapped to the same joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
             - @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
         If false (default), the MapStrategy only applies to this class.
     - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):

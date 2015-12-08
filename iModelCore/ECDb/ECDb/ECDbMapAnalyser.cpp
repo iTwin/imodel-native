@@ -1550,7 +1550,7 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
     for (auto& i : m_storage)
         {
         auto& storage = *i.second;
-        if (storage.GetTable ().GetOwnerType () == OwnerType::ExistingTable)
+        if (storage.GetTable ().GetTableType () == TableType::Existing)
             {
             continue;
             }

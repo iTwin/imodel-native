@@ -86,8 +86,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
                                  "    </ECClass>"
                                  "</ECSchema>"));
     testItem.AddTableLayout("ts_C0", "a b");
-    testItem.AddTableLayout("ts_C0_C1_joined", "c d g h");
-    testItem.AddTableLayout("ts_C0_C2_joined", "e f i j");
+    testItem.AddTableLayout("ts_C1", "c d g h");
+    testItem.AddTableLayout("ts_C2", "e f i j");
     testItems.push_back(testItem);
 
     testItem = TestItem(SchemaItem("JoinedTablePerDirectSubclass_on_c1",
@@ -150,8 +150,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
                                    "</ECSchema>"));
 
     testItem.AddTableLayout("ts_C0", "c0_a c0_b c1_a c1_b c21_a c21_b c2_a c2_b");
-    testItem.AddTableLayout("ts_C0_C11_joined", "c111_a c111_b c11_a c11_b");
-    testItem.AddTableLayout("ts_C0_C12_joined", "c12_a c12_b");
+    testItem.AddTableLayout("ts_C11", "c111_a c111_b c11_a c11_b");
+    testItem.AddTableLayout("ts_C12", "c12_a c12_b");
     testItems.push_back(testItem);
 
     testItem = TestItem(SchemaItem("JoinedTablePerDirectSubclass_on_c1_and_c2",
@@ -211,170 +211,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
                                    "</ECSchema>"));
 
     testItem.AddTableLayout("ts_C0", "a b c d e f");
-    testItem.AddTableLayout("ts_C0_C11_joined", "g h");
-    testItem.AddTableLayout("ts_C0_C21_joined", "i j");
-    testItems.push_back(testItem);
-
-    //SingleJoinedTableForSubclasses tests
-
-    testItem = TestItem(SchemaItem("SingleJoinedTableForSubclasses_on_c0",
-                                 "<?xml version='1.0' encoding='utf-8'?>"
-                                 "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
-                                 "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-                                 "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-                                 "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
-                                 "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
-                                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                                 "    <ECClass typeName='C0' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                 "        <ECCustomAttributes>"
-                                 "            <ClassMap xmlns='ECDbMap.01.00'>"
-                                 "                <MapStrategy>"
-                                 "                    <Strategy>SharedTable</Strategy>"
-                                 "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
-                                 "                    <Options>SingleJoinedTableForSubclasses</Options>"
-                                 "                </MapStrategy>"
-                                 "            </ClassMap>"
-                                 "        </ECCustomAttributes>"
-                                 "        <ECProperty propertyName='A' typeName='long'/>"
-                                 "        <ECProperty propertyName='B' typeName='string'/>"
-                                 "    </ECClass>"
-                                 "   <ECClass typeName='C1' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                 "        <BaseClass>C0</BaseClass>"
-                                 "        <ECProperty propertyName='C' typeName='long'/>"
-                                 "        <ECProperty propertyName='D' typeName='string'/>"
-                                 "    </ECClass>"
-                                 "   <ECClass typeName='C2' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                 "        <BaseClass>C0</BaseClass>"
-                                 "        <ECProperty propertyName='E' typeName='long'/>"
-                                 "        <ECProperty propertyName='F' typeName='string'/>"
-                                 "    </ECClass>"
-                                 "   <ECClass typeName='C11' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                 "        <BaseClass>C1</BaseClass>"
-                                 "        <ECProperty propertyName='G' typeName='long'/>"
-                                 "        <ECProperty propertyName='H' typeName='string'/>"
-                                 "    </ECClass>"
-                                 "   <ECClass typeName='C21' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                 "        <BaseClass>C2</BaseClass>"
-                                 "        <ECProperty propertyName='I' typeName='long'/>"
-                                 "        <ECProperty propertyName='J' typeName='string'/>"
-                                 "    </ECClass>"
-                                 "</ECSchema>"));
-    testItem.AddTableLayout("ts_C0", "a b");
-    testItem.AddTableLayout("ts_C0_joined", "c d e f g h i j");
-    testItems.push_back(testItem);
-
-    testItem = TestItem(SchemaItem("SingleJoinedTableForSubclasses_on_c1",
-                                       "<?xml version='1.0' encoding='utf-8'?>"
-                                       "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
-                                       "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-                                       "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-                                       "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
-                                       "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
-                                       "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                                       "    <ECClass typeName='C0' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                       "        <ECCustomAttributes>"
-                                       "            <ClassMap xmlns='ECDbMap.01.00'>"
-                                       "                <MapStrategy>"
-                                       "                    <Strategy>SharedTable</Strategy>"
-                                       "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
-                                       "                </MapStrategy>"
-                                       "            </ClassMap>"
-                                       "        </ECCustomAttributes>"
-                                       "        <ECProperty propertyName='A' typeName='long'/>"
-                                       "        <ECProperty propertyName='B' typeName='string'/>"
-                                       "    </ECClass>"
-                                       "   <ECClass typeName='C1' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                       "        <ECCustomAttributes>"
-                                       "            <ClassMap xmlns='ECDbMap.01.00'>"
-                                       "                <MapStrategy>"
-                                       "                    <Options>SingleJoinedTableForSubclasses</Options>"
-                                       "                </MapStrategy>"
-                                       "            </ClassMap>"
-                                       "        </ECCustomAttributes>"
-                                       "        <BaseClass>C0</BaseClass>"
-                                       "        <ECProperty propertyName='C' typeName='long'/>"
-                                       "        <ECProperty propertyName='D' typeName='string'/>"
-                                       "    </ECClass>"
-                                       "   <ECClass typeName='C2' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                       "        <BaseClass>C0</BaseClass>"
-                                       "        <ECProperty propertyName='E' typeName='long'/>"
-                                       "        <ECProperty propertyName='F' typeName='string'/>"
-                                       "    </ECClass>"
-                                       "   <ECClass typeName='C11' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                       "        <BaseClass>C1</BaseClass>"
-                                       "        <ECProperty propertyName='G' typeName='long'/>"
-                                       "        <ECProperty propertyName='H' typeName='string'/>"
-                                       "    </ECClass>"
-                                        "   <ECClass typeName='C21' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                                        "        <BaseClass>C2</BaseClass>"
-                                        "        <ECProperty propertyName='I' typeName='long'/>"
-                                        "        <ECProperty propertyName='J' typeName='string'/>"
-                                        "    </ECClass>"
-                                       "</ECSchema>"));
-
-    testItem.AddTableLayout("ts_C0", "a b c d e f i j");
-    testItem.AddTableLayout("ts_C0_C1_joined", "g h");
-    testItems.push_back(testItem);
-
-    testItem = TestItem( SchemaItem("SingleJoinedTableForSubclasses_on_c1_and_c2",
-                            "<?xml version='1.0' encoding='utf-8'?>"
-                            "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='ts' version='1.0'"
-                            "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-                            "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-                            "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
-                            "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
-                            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                            "    <ECClass typeName='C0' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                            "        <ECCustomAttributes>"
-                            "            <ClassMap xmlns='ECDbMap.01.00'>"
-                            "                <MapStrategy>"
-                            "                    <Strategy>SharedTable</Strategy>"
-                            "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
-                            "                </MapStrategy>"
-                            "            </ClassMap>"
-                            "        </ECCustomAttributes>"
-                            "        <ECProperty propertyName='A' typeName='long'/>"
-                            "        <ECProperty propertyName='B' typeName='string'/>"
-                            "    </ECClass>"
-                            "   <ECClass typeName='C1' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                            "        <ECCustomAttributes>"
-                            "            <ClassMap xmlns='ECDbMap.01.00'>"
-                            "                <MapStrategy>"
-                            "                    <Options>SingleJoinedTableForSubclasses</Options>"
-                            "                </MapStrategy>"
-                            "            </ClassMap>"
-                            "        </ECCustomAttributes>"
-                            "        <BaseClass>C0</BaseClass>"
-                            "        <ECProperty propertyName='C' typeName='long'/>"
-                            "        <ECProperty propertyName='D' typeName='string'/>"
-                            "    </ECClass>"
-                            "   <ECClass typeName='C2' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                           "        <ECCustomAttributes>"
-                           "            <ClassMap xmlns='ECDbMap.01.00'>"
-                           "                <MapStrategy>"
-                           "                    <Options>SingleJoinedTableForSubclasses</Options>"
-                           "                </MapStrategy>"
-                           "            </ClassMap>"
-                           "        </ECCustomAttributes>"
-                           "        <BaseClass>C0</BaseClass>"
-                            "        <ECProperty propertyName='E' typeName='long'/>"
-                            "        <ECProperty propertyName='F' typeName='string'/>"
-                            "    </ECClass>"
-                            "   <ECClass typeName='C11' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                            "        <BaseClass>C1</BaseClass>"
-                            "        <ECProperty propertyName='G' typeName='long'/>"
-                            "        <ECProperty propertyName='H' typeName='string'/>"
-                            "    </ECClass>"
-                            "   <ECClass typeName='C21' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-                            "        <BaseClass>C2</BaseClass>"
-                            "        <ECProperty propertyName='I' typeName='long'/>"
-                            "        <ECProperty propertyName='J' typeName='string'/>"
-                            "    </ECClass>"
-                            "</ECSchema>"));
-
-    testItem.AddTableLayout("ts_C0", "a b c d e f");
-    testItem.AddTableLayout("ts_C0_C1_joined", "g h");
-    testItem.AddTableLayout("ts_C0_C2_joined", "i j");
+    testItem.AddTableLayout("ts_C11", "g h");
+    testItem.AddTableLayout("ts_C21", "i j");
     testItems.push_back(testItem);
 
     for (TestItem const& testItem : testItems)
@@ -817,8 +655,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
 
     bmap<Utf8String, Utf8String> expectedTableLayouts;
     expectedTableLayouts["rs_Base"] = "p0";
-    expectedTableLayouts["rs_Base_Sub1_joined"] = "p1 p11";
-    expectedTableLayouts["rs_Base_ts_Sub2_joined"] = "p2";
+    expectedTableLayouts["rs_Sub1"] = "p1 p11";
+    expectedTableLayouts["ts_Sub2"] = "p2";
     AssertTableLayouts(ecdb, expectedTableLayouts, "JoinedTablePerDirectSubclass in base schema imported in separate session");
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.

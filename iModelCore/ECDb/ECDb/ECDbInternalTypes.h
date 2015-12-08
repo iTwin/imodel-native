@@ -166,6 +166,8 @@ enum class ECContainerType
 #define COLUMNKIND_ECINSTANCEID_SQLVAL "1"
 #define COLUMNKIND_ECCLASSID_SQLVAL "2"
 
+#define TABLETYPE_JOINED_SQLVAL "1"
+
 
 //=======================================================================================
 // @bsiclass                                 Affan.Khan                10/2015

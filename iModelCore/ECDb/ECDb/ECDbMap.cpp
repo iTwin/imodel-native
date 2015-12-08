@@ -431,36 +431,31 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportContext, Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable)
+ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportContext, Utf8CP tableName, TableType tableType, bool isVirtual, Utf8CP primaryKeyColumnName)
     {
     if (AssertIfIsNotImportingSchema ())
         return nullptr;
 
     BeMutexHolder lock (m_criticalSection);
     ECDbSqlTable* table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
-    OwnerType ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
     if (table != nullptr)
         {
-
-        //if virtuality and empty table handling mismatches, change the table to the stronger
-        //option so that both needs are met. (does some logging)
-        //existingTable->TryAssign (isVirtual, allowReplacingEmptyTableWithView);        
-        if (table->GetOwnerType () != ownerType)
+        if (table->GetTableType() != tableType)
             {
             std::function<Utf8CP (bool)> toStr = [] (bool val) {return val ? "true" : "false"; };
             LOG.warningv ("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
                 "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
                 tableName,
-                toStr (mapToExistingTable), toStr (table->GetOwnerType () != OwnerType::ECDb));
+                toStr (tableType == TableType::Existing), toStr (!table->IsOwnedByECDb()));
             BeAssert (false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
             }
 
         return table;
         }
 
-    if (ownerType == OwnerType::ECDb)
+    if (tableType != TableType::Existing)
         {
-        table = GetSQLManagerR ().GetDbSchemaR ().CreateTable (tableName, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted);
+        table = GetSQLManagerR ().GetDbSchemaR ().CreateTable (tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted);
         if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
@@ -471,8 +466,8 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
             table->GetPrimaryKeyConstraint ()->Add (primaryKeyColumnName);
             }
 
-        if (mapToSecondaryTable)
-            {            
+        if (tableType == TableType::StructArray)
+            {
             table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
             table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
             table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
@@ -502,10 +497,6 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
         }
     else
         {
-        BeAssert (mapToSecondaryTable == false);
-        if (mapToSecondaryTable)
-            return nullptr;
-
         table = GetSQLManagerR ().GetDbSchemaR ().CreateTableForExistingTableMapStrategy (GetECDbR (), tableName);
         if (table == nullptr)
             return nullptr;
@@ -594,7 +585,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
                 return ERROR;
             }
 
-        if (table->GetPersistenceType () == PersistenceType::Virtual || table->GetOwnerType () == OwnerType::ExistingTable)           
+        if (table->GetPersistenceType () == PersistenceType::Virtual || table->GetTableType() == TableType::Existing)           
             continue; 
         
         if (GetECDbR().TableExists(table->GetName().c_str()))
@@ -983,9 +974,9 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
+        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) AND ec_Table.Type<>" TABLETYPE_JOINED_SQLVAL " "
         "GROUP BY ec_Class.Id, ec_Table.Name) "
         "SELECT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
         "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";

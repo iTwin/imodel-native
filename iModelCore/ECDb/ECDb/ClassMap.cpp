@@ -347,10 +347,6 @@ BentleyStatus IClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassC
         }
 
     tableName.append("_").append(ecclass.GetName());
-
-    if (IsMapToSecondaryTableStrategy(ecclass))
-        tableName.append(TABLESUFFIX_STRUCTARRAY);
-    
     return SUCCESS;
     }
 
@@ -360,6 +356,8 @@ BentleyStatus IClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassC
 //static
 BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
     {
+    tablePrefix.clear();
+
     ECSchemaCR schema = ecclass.GetSchema();
     ECDbSchemaMap customSchemaMap;
 
@@ -418,8 +416,15 @@ MapStatus ClassMap::Initialize(SchemaImportContext* schemaImportContext, ClassMa
 MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
-    bool isJoinedTable = Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
-    if (isJoinedTable)
+    TableType tableType = TableType::Primary;
+    if (Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable))
+        tableType = TableType::Joined;
+    else if (IClassMap::IsMapToSecondaryTableStrategy(m_ecClass))
+        tableType = TableType::StructArray;
+    else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+        tableType = TableType::Existing;
+
+    if (tableType == TableType::Joined)
         {
         PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
         m_parentMapClassId = parentClassMap->GetClass().GetId();
@@ -427,10 +432,9 @@ MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, C
         auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
             schemaImportContext,
             mapInfo.GetTableName(),
+            tableType,
             mapInfo.IsMapToVirtualTable(),
-            mapInfo.GetECInstanceIdColumnName(),
-            IClassMap::IsMapToSecondaryTableStrategy(m_ecClass),
-            mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable);
+            mapInfo.GetECInstanceIdColumnName());
 
         if (!EXPECTED_CONDITION(table != nullptr))
             return MapStatus::Error;
@@ -451,10 +455,9 @@ MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, C
             auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
                 schemaImportContext,
                 mapInfo.GetTableName(),
+                tableType,
                 mapInfo.IsMapToVirtualTable(),
-                mapInfo.GetECInstanceIdColumnName(),
-                IClassMap::IsMapToSecondaryTableStrategy(m_ecClass),
-                mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable);
+                mapInfo.GetECInstanceIdColumnName());
 
             if (!EXPECTED_CONDITION(table != nullptr))
                 return MapStatus::Error;
@@ -742,7 +745,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                         issues.Report(ECDbIssueSeverity::Error,
                                       "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
                                       "The properties that make up the index are mapped to different tables because the MapStrategy option '" USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS 
-                                      "' or '" USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES "'  is applied to this class hierarchy.",
+                                      "' is applied to this class hierarchy.",
                                       i, GetClass().GetFullName());
                         }
                     else
@@ -1034,7 +1037,7 @@ MappedTablePtr MappedTable::Create(ECDbMapR ecDbMap, ClassMapCR classMap)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus MappedTable::FinishTableDefinition(ECDbCR ecdb, SchemaImportContext& schemaImportContext)
     {
-    if (m_table.GetOwnerType() == OwnerType::ECDb)
+    if (m_table.IsOwnedByECDb())
         {
         int nOwners = 0;
         bool sharedTableWithAppliesToSubclasses = false;
@@ -1359,7 +1362,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& sp
         {
         if (ECDbSqlHelper::IsCompatible(existingColumn->GetType(), specifications.GetColumnType()))
             {
-            if (GetTable().GetOwnerType() == OwnerType::ECDb)
+            if (GetTable().IsOwnedByECDb())
                 {
                 if (existingColumn->GetConstraint().IsNotNull() != specifications.IsNotNull() || existingColumn->GetConstraint().IsUnique() != specifications.IsUnique() || existingColumn->GetConstraint().GetCollation() != specifications.GetCollation())
                     {

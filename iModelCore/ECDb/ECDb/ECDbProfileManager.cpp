@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 5, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 6, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -719,7 +719,7 @@ Db& db
         "("
         "Id INTEGER PRIMARY KEY,"
         "Name TEXT NOT NULL COLLATE NOCASE,"
-        "IsOwnedByECDb BOOL NOT NULL CHECK (IsOwnedByECDb IN (0, 1)),"
+        "Type INTEGER NOT NULL,"
         "IsVirtual BOOL NOT NULL CHECK (IsVirtual IN (0, 1))"
         ");");
     }

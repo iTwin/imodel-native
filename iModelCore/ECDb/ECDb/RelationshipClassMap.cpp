@@ -48,7 +48,7 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext*
         return column;
         }
 
-    if (GetTable().GetOwnerType() == OwnerType::ECDb)
+    if (GetTable().IsOwnedByECDb())
         {
         column = GetTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId,
                                          addToTable ? PersistenceType::Persisted : PersistenceType::Virtual);
@@ -725,7 +725,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMapInfo::Cardinality::OneToOne;
     ECDbSqlTable& persistenceEndTable = GetTable();
 
-    if (!relMapInfo.CreateIndexOnForeignKey() || persistenceEndTable.GetOwnerType() == OwnerType::ExistingTable || 
+    if (!relMapInfo.CreateIndexOnForeignKey() || persistenceEndTable.GetTableType() == TableType::Existing || 
         (!isUniqueIndex && !m_autogenerateForeignKeyColumns))
         return;
 
@@ -1123,7 +1123,7 @@ ECClassId defaultTargetECClassId
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelationshipClassLinkTableMap::AddIndices (SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
     {
-    if (GetRootTable ().GetOwnerType () == OwnerType::ExistingTable)
+    if (GetRootTable ().GetTableType () == TableType::Existing)
         return;
 
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
