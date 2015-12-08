@@ -76,7 +76,6 @@
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
-#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>

@@ -365,6 +365,28 @@ DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
     return DgnStyleId(); // DgnLineStyles::ImportLineStyle(source, *this);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentId DgnImportContext::FindLineStyleComponentId(LsComponentId sourceId) const
+    {
+    auto const& iter = m_importedComponents.find(sourceId);
+    if (iter == m_importedComponents.end())
+        return LsComponentId();
+
+    return LsComponentId(sourceId.GetType(), iter->second);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void DgnImportContext::AddLineStyleComponentId(LsComponentId sourceId, LsComponentId targetId)
+    {
+    BeAssert(sourceId.GetType() == targetId.GetType());
+    BeAssert(m_importedComponents.find(sourceId) == m_importedComponents.end());
+    m_importedComponents[sourceId] = targetId.GetValue();
+    }
+
 #if defined(NOTNOW)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015

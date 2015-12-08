@@ -97,6 +97,7 @@ private:
     AngleInDegrees  m_yawAdj;
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
+    bmap<LsComponentId, uint32_t> m_importedComponents;
 
     void ComputeGcsAdjustment();
 
@@ -155,6 +156,10 @@ public:
     DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return m_remap.Add(sourceId, targetId); }
     //! Make sure that a LineStyle has been imported
     DgnStyleId RemapLineStyleId(DgnStyleId sourceId);
+    //! Look up a copy of a LineStyle component
+    LsComponentId FindLineStyleComponentId(LsComponentId sourceId) const;
+    //! Register a copy of a LineStyle component
+    void AddLineStyleComponentId(LsComponentId sourceId, LsComponentId targetId);
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeomStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
