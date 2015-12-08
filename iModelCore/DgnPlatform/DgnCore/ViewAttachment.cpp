@@ -134,40 +134,24 @@ void ViewAttachment::_RemapIds(DgnImportContext& importer)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void fixScanCriteriaHACKHACKHACK(ViewContextR context)
-    {
-    struct FixMePlease : NullContext
-    {
-        void FixMe() { m_setupScan = true; }
-    };
-
-    auto fixMe = reinterpret_cast<FixMePlease*>(&context);
-    fixMe->FixMe();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ViewAttachmentGeomCollector : IElementGraphicsProcessor
 {
 private:
     ViewAttachmentR             m_attachment;
-    ViewControllerR             m_controller;
     DgnSubCategoryId            m_subCategory;
     ElementGeometryBuilderPtr   m_builder;
-    Transform                   m_transform;
+    Transform                   m_curTransform;
     ViewContextP                m_viewContext;
     NonVisibleViewport          m_viewport;
+    Transform                   m_initialTransform;
 
     virtual void _AnnounceContext(ViewContextR context) override { m_viewContext = &context; }
     virtual void _OutputGraphics(ViewContextR context) override
         {
-        fixScanCriteriaHACKHACKHACK(context);
         context.Attach(&m_viewport, DrawPurpose::CaptureGeometry);
-        context.SetScanReturn(); // ###TODO wtf there is no documentation regarding attaching a viewport, everything breaks, why.
-        m_controller.DrawView(context);
+        context.VisitAllViewElements(false, nullptr);
         context.Detach();
         }
 
@@ -177,18 +161,18 @@ private:
     virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool) override;
 public:
     ViewAttachmentGeomCollector(ViewControllerR controller, ViewAttachmentR attach, DgnSubCategoryId subcat=DgnSubCategoryId())
-        : m_attachment(attach), m_controller(controller), m_subCategory(subcat), m_transform(Transform::FromIdentity()), m_viewContext(nullptr), m_viewport(controller)
+        : m_attachment(attach), m_subCategory(subcat), m_curTransform(Transform::FromIdentity()), m_viewContext(nullptr), m_viewport(controller)
         {
         if (!m_subCategory.IsValid())
             m_subCategory = DgnCategory::GetDefaultSubCategoryId(m_attachment.GetCategoryId());
 
-        m_builder = ElementGeometryBuilder::Create(m_attachment);
+        Placement2dCR placement = m_attachment.GetPlacement();
+        m_builder = ElementGeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
         BeAssert(IsValid());
 
-        controller.SetOrigin(m_attachment.GetViewOrigin());
-        controller.SetDelta(m_attachment.GetViewDelta());
-
-        // ###TODO: Scaling transform...
+        m_initialTransform = Transform::FromMatrixAndFixedPoint(controller.GetRotation(), controller.GetCenter());
+        auto scale = m_attachment.GetViewScale();
+        m_initialTransform.ScaleMatrixColumns(scale, scale, scale);
         }
 
     bool IsValid() const { return m_builder.IsValid() && m_subCategory.IsValid(); }
@@ -205,9 +189,9 @@ public:
 void ViewAttachmentGeomCollector::_AnnounceTransform(TransformCP tf)
     {
     if (nullptr != tf)
-        m_transform = *tf;
+        m_curTransform = Transform::FromProduct(m_initialTransform, *tf);
     else
-        m_transform.InitIdentity();
+        m_curTransform = m_initialTransform;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -217,11 +201,44 @@ void ViewAttachmentGeomCollector::_AnnounceElemDisplayParams(ElemDisplayParamsCR
     {
     if (nullptr != m_viewContext)
         {
+        // Resolve symbology according to the view
         ElemDisplayParams resolved(params);
         resolved.Resolve(*m_viewContext);
-        resolved.SetCategoryId(m_attachment.GetCategoryId());
-        resolved.SetSubCategoryId(m_subCategory);
-        m_builder->Append(resolved);
+
+        // Remap to the attachment's subcategory, retaining resolved values
+        ElemDisplayParams remapped;
+        remapped.SetCategoryId(m_attachment.GetCategoryId());
+        remapped.SetSubCategoryId(m_subCategory);
+
+        remapped.SetLineColor(resolved.GetLineColor());
+        remapped.SetFillColor(resolved.GetFillColor());
+        remapped.SetFillDisplay(resolved.GetFillDisplay());
+        remapped.SetGeometryClass(resolved.GetGeometryClass());
+        remapped.SetTransparency(resolved.GetTransparency());
+        remapped.SetFillTransparency(resolved.GetFillTransparency());
+        remapped.SetDisplayPriority(resolved.GetDisplayPriority());
+        remapped.SetWeight(resolved.GetWeight());
+
+        auto cpGradient = resolved.GetGradient();
+        if (nullptr != cpGradient)
+            {
+            auto gradient = GradientSymb::Create();
+            gradient->CopyFrom(*cpGradient);
+            remapped.SetGradient(gradient.get());
+            }
+
+        auto cpPattern = resolved.GetPatternParams();
+        if (nullptr != cpPattern)
+            remapped.SetPatternParams(PatternParams::CreateFromExisting(*cpPattern).get());
+
+        auto cpStyle = resolved.GetLineStyle();
+        if (nullptr != cpStyle)
+            remapped.SetLineStyle(LineStyleInfo::Create(cpStyle->GetStyleId(), cpStyle->GetStyleParams()).get());
+
+        // Ignore: Material
+
+        // push the effective symbology
+        m_builder->Append(remapped);
         }
     }
 
@@ -231,7 +248,7 @@ void ViewAttachmentGeomCollector::_AnnounceElemDisplayParams(ElemDisplayParamsCR
 BentleyStatus ViewAttachmentGeomCollector::_ProcessTextString(TextStringCR text)
     {
     TextString tfText(text);
-    tfText.ApplyTransform(m_transform);
+    tfText.ApplyTransform(m_curTransform);
     m_builder->Append(tfText);
     return SUCCESS;
     }
@@ -242,7 +259,7 @@ BentleyStatus ViewAttachmentGeomCollector::_ProcessTextString(TextStringCR text)
 BentleyStatus ViewAttachmentGeomCollector::_ProcessCurveVector(CurveVectorCR cv, bool isFilled)
     {
     CurveVector tfCv(cv);
-    tfCv.TransformInPlace(m_transform);
+    tfCv.TransformInPlace(m_curTransform);
     m_builder->Append(tfCv);
     return SUCCESS;
     }
@@ -257,6 +274,11 @@ DgnDbStatus ViewAttachment::GenerateGeomStream()
         return DgnDbStatus::ViewNotFound;
 
     controller->Load();
+#ifdef USE_STORED_REGION
+    controller->SetOrigin(GetViewOrigin());
+    controller->SetDelta(GetViewDelta());
+#endif
+
     ViewAttachmentGeomCollector proc(*controller, *this);
     if (!proc.IsValid())
         return DgnDbStatus::BadElement;

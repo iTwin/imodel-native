@@ -75,8 +75,8 @@ public:
         EXPECT_EQ(attach.GetViewScale(), data.m_scale);
         }
 
-    void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text");
-    template<typename VC, typename EL> void SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId);
+    void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
+    template<typename VC, typename EL> void SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId, double rot=0.0);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,7 +115,7 @@ void ViewAttachmentTest::SetUp()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text)
+void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, double viewRot)
     {
     auto& db = *GetDgnDb();
     if (!m_textStyleId.IsValid())
@@ -134,17 +134,18 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text)
     EXPECT_TRUE(annoElem->Insert().IsValid());
 
     DrawingViewController viewController(db, m_viewId);
-    SetupAndSaveViewController(viewController, *annoElem, drawingId);
+    SetupAndSaveViewController(viewController, *annoElem, drawingId, viewRot);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId)
+template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId, double rot)
     {
     // Set up the view to display the new element...
     ViewController::MarginPercent viewMargin(.1,.1,.1,.1);
     viewController.SetStandardViewRotation(StandardView::Top);
+    viewController.SetRotation(RotMatrix::FromAxisAndRotationAngle(2, rot));
     viewController.LookAtVolume(el.CalculateRange3d(), nullptr, &viewMargin);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(m_attachmentCatId, true);
@@ -209,11 +210,12 @@ TEST_F(ViewAttachmentTest, Geom)
     auto& db = *GetDgnDb();
 
     // Add some geometry to the drawing and regenerate attachment geometry
-    AddTextToDrawing(m_drawingId);
+    static const double drawingViewRot = 45.0*msGeomConst_piOver2;
+    AddTextToDrawing(m_drawingId, "Text", drawingViewRot);
 
     // Create an attachment using the bounds of the drawing view
     ViewControllerPtr drawingController = ViewDefinition::LoadViewController(m_viewId, db);
-    static const double scale = 1.0;
+    static const double scale = 2.0;
     ViewAttachment::Data data(*drawingController, scale);
     auto cpAttach = InsertAttachment(MakeParams(data, m_sheetId, m_attachmentCatId, MakePlacement()));
 

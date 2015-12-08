@@ -195,7 +195,8 @@ virtual void _SetupOutputs() override {SetIViewDraw(m_output);}
 
 public:
 
-ElementGraphicsContext(IElementGraphicsProcessor* dropObj, ElementGraphicsDrawGeom& output) : m_output(output)
+ElementGraphicsContext(IElementGraphicsProcessor* dropObj, ElementGraphicsDrawGeom& output, bool setupScan=false)
+    : NullContext(nullptr, setupScan), m_output(output)
     {
     m_purpose = dropObj->_GetDrawPurpose();
     m_wantMaterials = true; // Setup material in ElemDisplayParams in case IElementGraphicsProcessor needs it...
@@ -317,7 +318,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
 void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, DgnDbR dgnDb)
     {
     ElementGraphicsDrawGeom output;
-    ElementGraphicsContext  context(&dropObj, output);
+    ElementGraphicsContext  context(&dropObj, output, true); // setup scan criteria...
 
     context.GetCurrentDisplayParams() = ElemDisplayParams();
     context.SetDgnDb(dgnDb);
