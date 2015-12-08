@@ -11,11 +11,10 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! ClassMap for ECClasses which can be used as domain class or embedded types. They are
-//! mapped to a secondary table
+//! ClassMap for structs. They are mapped to a struct array table
 // @bsiclass                                                    Krischan.Eberle   02/2014
 //+===============+===============+===============+===============+===============+======
-struct SecondaryTableClassMap : ClassMap
+struct StructClassMap : ClassMap
     {
 private:
     //=======================================================================================
@@ -46,7 +45,7 @@ private:
 
     std::unique_ptr<EmbeddedTypeClassMap> m_embeddedTypeClassView;
 
-    SecondaryTableClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
+    StructClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
     virtual MapStatus _OnInitialized () override;
     virtual Type _GetClassMapType () const override;
@@ -59,9 +58,9 @@ private:
         return a;
         }
 public:
-    ~SecondaryTableClassMap () {}
+    ~StructClassMap () {}
 
-    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new SecondaryTableClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new StructClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
     };
 
 //=======================================================================================

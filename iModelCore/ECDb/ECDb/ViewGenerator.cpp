@@ -93,7 +93,7 @@ BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ECDbMapCR map
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, IClassMap const& classMap)
     {
-    if (classMap.IsMappedToSecondaryTable ())
+    if (classMap.MapsToStructArrayTable ())
         viewSql.Append ("SELECT NULL ECClassId, NULL " ECDB_COL_ECInstanceId ", NULL ParentECInstanceId, NULL ECPropertyPathId, NULL ECArrayIndex");
     else
         viewSql.Append ("SELECT NULL ECClassId, NULL " ECDB_COL_ECInstanceId);
@@ -210,7 +210,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
     for (PropertyMap const* baseClassPropertyMap : parentMap.GetPropertyMaps())
         {
         if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()) ||
-            baseClassPropertyMap->GetAsPropertyMapToTable())
+            baseClassPropertyMap->GetAsPropertyMapStructArray())
             continue;
 
         PropertyMap const* childClassCounterpartPropMap = childMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
@@ -350,7 +350,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
         }
 
     //We allow query of struct classes.
-    if (firstChildClassMap->IsMappedToSecondaryTable())
+    if (firstChildClassMap->MapsToStructArrayTable())
         {
         if (!where.IsEmpty())
         where.Append(" AND ");
@@ -896,7 +896,7 @@ void ViewGenerator::CreateSystemClassView(NativeSqlBuilder &viewSql, std::map<EC
             wherePreset = true;
             }
 
-        if (classMap->IsMappedToSecondaryTable())
+        if (classMap->MapsToStructArrayTable())
             {
             viewSql.AppendSpace();
             if (!wherePreset)

@@ -313,7 +313,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assi
                 }
             }
 
-        else if (childPropertyMap->GetAsPropertyMapToTable() != nullptr)
+        else if (childPropertyMap->GetAsPropertyMapStructArray() != nullptr)
             {
             if (StructArrayPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
                 {

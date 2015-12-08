@@ -13,7 +13,6 @@
 #define USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES "SharedColumnsForSubclasses"
 #define USERMAPSTRATEGY_OPTIONS_DISABLESHAREDCOLUMNS "DisableSharedColumns"
 #define USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS "JoinedTablePerDirectSubclass"
-#define USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES "SingleJoinedTableForSubclasses"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -44,8 +43,7 @@ public:
         SharedColumns = 1,
         SharedColumnsForSubclasses = 2,
         DisableSharedColumns = 4,
-        JoinedTablePerDirectSubclass = 8,
-        SingleJoinedTableForSubclasses = 16
+        JoinedTablePerDirectSubclass = 8
         };
 
 private:

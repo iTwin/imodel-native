@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 void RenderPropertyMap (NativeSqlBuilder::List& snippets, PropertyMapCR propertyMap)
     {
-    BeAssert (propertyMap.GetAsPropertyMapToTable () == nullptr);
+    BeAssert (propertyMap.GetAsPropertyMapStructArray () == nullptr);
     auto& children = propertyMap.GetChildren ();
     if (children.Size() == 0)
         {

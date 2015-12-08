@@ -945,7 +945,7 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         }
 
     storage.GetClassesR ().insert (ptr);
-    if (classMap.IsJoinedTable())
+    if (classMap.MapsToJoinedTable())
         {
         auto& storage = GetStorage(classMap.GetTable().GetName().c_str());
         for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetTable())->GetClassIds())
@@ -1028,7 +1028,7 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
         auto& constraitClass = GetClass (*constraintMap);
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
             {
-            if (!(constraintMap->IsJoinedTable() && hasRootOfJoinedTableSource))
+            if (!(constraintMap->MapsToJoinedTable() && hasRootOfJoinedTableSource))
                 {
                 if (isForward)
                     ptr->From().GetClassesR().insert(&constraitClass);
@@ -1038,7 +1038,7 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
             }
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Target))
             {
-            if (!(constraintMap->IsJoinedTable() && hasRootOfJoinedTableTarget))
+            if (!(constraintMap->MapsToJoinedTable() && hasRootOfJoinedTableTarget))
                 {
                 if (!isForward)
                     ptr->From().GetClassesR().insert(&constraitClass);
@@ -1092,10 +1092,10 @@ BentleyStatus ECDbMapAnalyser::AnalyseClass (ClassMapCR ecClassMap)
 //---------------------------------------------------------------------------------------
 void ECDbMapAnalyser::AnalyseStruct (Class& classInfo)
     {
-    std::map<IClassMap const*, std::vector<PropertyMapToTableCP>> structPropertyMaps;
+    std::map<IClassMap const*, std::vector<PropertyMapStructArrayCP>> structPropertyMaps;
     classInfo.GetClassMap ().GetPropertyMaps ().Traverse ([&] (TraversalFeedback& feedback, PropertyMapCP propertyMap)
         {
-        if (auto mapToTable = dynamic_cast<PropertyMapToTableCP>(propertyMap))
+        if (auto mapToTable = propertyMap->GetAsPropertyMapStructArray())
             {
             if (auto associatedClasMap = m_map.GetClassMap (mapToTable->GetElementType ()))
                 {
@@ -1134,12 +1134,10 @@ BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass (RelationshipClassMapCR 
 //---------------------------------------------------------------------------------------
 const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
     {
-    Utf8CP sql0 =
-        "SELECT C.Id"
-        "	FROM ec_Class C "
-        "   	INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
-        "       LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
-        "	WHERE B.BaseClassId IS NULL And C.IsRelationship = 0";
+    Utf8CP sql0 = "SELECT C.Id FROM ec_Class C "
+        "INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
+        "LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
+        "WHERE B.BaseClassId IS NULL And C.IsRelationship = 0";
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
@@ -1550,7 +1548,7 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
     for (auto& i : m_storage)
         {
         auto& storage = *i.second;
-        if (storage.GetTable ().GetOwnerType () == OwnerType::ExistingTable)
+        if (storage.GetTable ().GetTableType () == TableType::Existing)
             {
             continue;
             }

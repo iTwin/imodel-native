@@ -568,7 +568,7 @@ BentleyStatus ECDbMapDb::DropTable (Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, PersistenceType type)
+ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType tableType, PersistenceType persType)
     {
     ECDbSqlTable* newTableDef;
     if (!Utf8String::IsNullOrEmpty (name))
@@ -579,7 +579,7 @@ ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, PersistenceType type)
             return nullptr;
             }
 
-        newTableDef = new ECDbSqlTable (name, *this, GetManagerR ().GetIdGenerator ().NextTableId (), type, OwnerType::ECDb);
+        newTableDef = new ECDbSqlTable (name, *this, GetManagerR ().GetIdGenerator ().NextTableId (), persType, tableType);
         }
     else
         {
@@ -589,7 +589,7 @@ ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, PersistenceType type)
             m_nameGenerator.Generate (generatedName);
             } while (FindTable (generatedName.c_str ()));
 
-            newTableDef = new ECDbSqlTable (generatedName.c_str (), *this, GetManagerR ().GetIdGenerator ().NextTableId (), type, OwnerType::ECDb);
+            newTableDef = new ECDbSqlTable (generatedName.c_str (), *this, GetManagerR ().GetIdGenerator ().NextTableId (), persType, tableType);
         }
 
     m_tables[newTableDef->GetName ().c_str ()] = std::unique_ptr<ECDbSqlTable> (newTableDef);
@@ -613,7 +613,7 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existing
         return nullptr;
         }
 
-    auto newTableDef = new ECDbSqlTable (existingTableName, *this, GetManagerR ().GetIdGenerator ().NextTableId (), PersistenceType::Persisted, OwnerType::ExistingTable);
+    auto newTableDef = new ECDbSqlTable (existingTableName, *this, GetManagerR ().GetIdGenerator ().NextTableId (), PersistenceType::Persisted, TableType::Existing);
     newTableDef->GetEditHandleR ().EndEdit (); //we do not want this table to be editable;
     m_tables[newTableDef->GetName ().c_str ()] = std::unique_ptr<ECDbSqlTable> (newTableDef);
     return newTableDef;
@@ -643,7 +643,7 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Ut
         }
 
 
-    ECDbSqlTable* newTableDef = new ECDbSqlTable(existingTableName, *this, GetManagerR().GetIdGenerator().NextTableId(), PersistenceType::Persisted, OwnerType::ExistingTable);
+    ECDbSqlTable* newTableDef = new ECDbSqlTable(existingTableName, *this, GetManagerR().GetIdGenerator().NextTableId(), PersistenceType::Persisted, TableType::Existing);
     
     Statement stmt;
     if (stmt.Prepare (ecdb, SqlPrintfString ("PRAGMA table_info('%s')", existingTableName)) != BE_SQLITE_OK)
@@ -1137,7 +1137,7 @@ Utf8String DDLGenerator::GetCreateTriggerDDL(ECDbSqlTrigger const& trigger)
 //static 
 Utf8String DDLGenerator::GetCreateTableDDL (ECDbSqlTable const& o, DDLGenerator::CreateOption option)
     {
-    if (o.GetOwnerType () == OwnerType::ExistingTable)
+    if (o.GetTableType () == TableType::Existing)
         {
         BeAssert (false && "Existing Table cannot be created");
         return "";
@@ -1574,7 +1574,7 @@ void ECDbSQLManager::SetupNullTable ()
     m_nullTable = m_defaultDb.FindTableP (ECDBSQL_NULLTABLENAME);
     if (!m_nullTable)
         {
-        m_nullTable = m_defaultDb.CreateTable (ECDBSQL_NULLTABLENAME, PersistenceType::Virtual);
+        m_nullTable = m_defaultDb.CreateTable (ECDBSQL_NULLTABLENAME, TableType::Primary, PersistenceType::Virtual);
         }
 
     if (m_nullTable->GetEditHandleR ().CanEdit ())
@@ -1910,14 +1910,14 @@ DbResult ECDbSqlPersistence::ReadTable(Statement& stmt, ECDbMapDb& o)
     {
     auto id = stmt.GetValueInt64(0);
     auto name = stmt.GetValueText(1);
-    auto ownerType = stmt.GetValueInt(2) == 1 ? OwnerType::ECDb : OwnerType::ExistingTable;
+    TableType tableType = Enum::FromInt<TableType>(stmt.GetValueInt(2));
     auto persistenceType = stmt.GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
 
     ECDbSqlTable* table = nullptr;
-    if (ownerType == OwnerType::ECDb)
-        table = o.CreateTable(name, persistenceType);
-    else
+    if (tableType == TableType::Existing)
         table = o.CreateTableForExistingTableMapStrategy(name);
+    else
+        table = o.CreateTable(name, tableType, persistenceType);
 
     if (table == nullptr)
         {
@@ -2134,7 +2134,7 @@ DbResult ECDbSqlPersistence::InsertTable (ECDbSqlTable const& o)
 
     stmt->BindInt64 (1, o.GetId ());
     stmt->BindText (2, o.GetName ().c_str (), Statement::MakeCopy::No);
-    stmt->BindInt (3, o.GetOwnerType () == OwnerType::ECDb ? 1 : 0);
+    stmt->BindInt (3, Enum::ToInt(o.GetTableType ()));
     stmt->BindInt (4, o.GetPersistenceType () == PersistenceType::Virtual ? 1 : 0);
 
     auto stat = stmt->Step ();

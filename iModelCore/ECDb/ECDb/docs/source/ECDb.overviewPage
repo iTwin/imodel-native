@@ -280,8 +280,6 @@
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c JoinedTablePerDirectSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
             to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
-            - @c SingleJoinedTableForSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
-            to the table of the root class. All subclasses of this class are mapped to the same joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
             - @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
         If false (default), the MapStrategy only applies to this class.
     - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
@@ -292,8 +290,8 @@
         - @b IsUnique (optional): If true, the index will be a unique index. Default value is @em false.
         - @b Properties: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
         in the ECClass or in the base classes.
-        - @b Where (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
-        creates a partial index ignoring any NULL values.
+        - @b Where (optional): Creates a partial index. Right now only the special value <b>IndexedColumnsAreNotNull</b> is supported which
+        creates a partial index ignoring any NULL values in the indexed columns.
 
     ####Examples
 
@@ -344,7 +342,7 @@
                             <Properties>
                                 <string>Birthday</string>
                             </Properties>
-                            <Where>ECDB_NOTNULL</Where>
+                            <Where>IndexedColumnsAreNotNull</Where>
                         </DbIndex>
                     </Indexes>
                 </ClassMap>

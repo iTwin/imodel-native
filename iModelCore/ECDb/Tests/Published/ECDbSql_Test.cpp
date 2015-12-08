@@ -46,7 +46,7 @@ TEST(ECDbSql, PartialIndex)
         "                   <Properties>"
         "                       <string>PropertyPartialIndex</string>"
         "                   </Properties>"
-        "                   <Where>ECDB_NOTNULL</Where>"
+        "                   <Where>IndexedColumnsAreNotNull</Where>"
         "               </DbIndex>"
         "               <DbIndex>"
         "                   <Name>IDX_Full</Name>"
