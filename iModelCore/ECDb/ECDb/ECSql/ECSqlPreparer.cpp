@@ -464,9 +464,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
                 //we need a view for it.
                 NativeSqlBuilder nativeSqlSnippet;
-                Utf8String viewName = "_" + classMap.GetClass().GetSchema().GetNamespacePrefix() + "_" + classMap.GetClass().GetName();
-                nativeSqlSnippet.AppendEscaped(viewName.c_str());
-                BeAssert(ctx.GetECDb().TableExists(viewName.c_str()) && "View must exist");
+                if (!classMap.HasPersistedView())
+                    {
+                    BeAssert (false && "[Programmer Error] Database view must exist for this class as it derive classes is map into its on table");
+                    return ECSqlStatus::Error;
+                    }
+
+                BeAssert(classMap.HasPersistedView() && "View must exist");
+                nativeSqlSnippet.AppendEscaped(classMap.GetPersistedViewName().c_str());            
                 nativeSqlSnippets.push_back(move(nativeSqlSnippet));
                 return ECSqlStatus::Success;
                 }
@@ -475,7 +480,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             Partition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
             table = &partition->GetTable();
             }
-        //BeAssert(desc.HasNonVirtualPartitions() || table->GetPersistenceType() == PersistenceType::Virtual);
         }
 
     BeAssert(table != nullptr);

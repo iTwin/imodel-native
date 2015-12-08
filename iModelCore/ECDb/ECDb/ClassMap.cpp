@@ -37,6 +37,22 @@ BentleyStatus ClassDbView::Generate(NativeSqlBuilder& viewSql, bool isPolymorphi
 
 //********************* IClassMap ******************************************
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    12/2015
+//---------------------------------------------------------------------------------------
+const Utf8String IClassMap::GetPersistedViewName() const
+    {
+    return Utf8String("_" + GetClass().GetSchema().GetNamespacePrefix() + "_" + GetClass().GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    12/2015
+//---------------------------------------------------------------------------------------
+bool IClassMap::HasPersistedView() const
+    {
+    return GetECDbMap().GetECDb().TableExists(GetPersistedViewName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2014
 //---------------------------------------------------------------------------------------
 IClassMap const& IClassMap::GetView(View classView) const
