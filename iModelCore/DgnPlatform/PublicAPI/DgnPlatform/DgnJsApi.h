@@ -304,6 +304,8 @@ struct JsDgnCategory : RefCountedBaseWithCreate
 {
     DgnCategoryCPtr m_category;
 
+    JsDgnCategory(DgnCategoryCR cat) : m_category(&cat) {;}
+
     JsDgnDbP GetDgnDb() {return m_category.IsValid()? new JsDgnDb(m_category->GetDgnDb()): nullptr;}
     void SetDgnDb(JsDgnDbP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnObjectIdP GetCategoryId() {return m_category.IsValid()? new JsDgnObjectId(m_category->GetCategoryId().GetValueUnchecked()): nullptr;}
@@ -318,7 +320,7 @@ struct JsDgnCategory : RefCountedBaseWithCreate
         if (!db || !db->m_db.IsValid())
             return nullptr;
         auto cat = DgnCategory::QueryCategory(DgnCategoryId(id->m_id), *db->m_db);
-        return cat.IsValid()? new JsDgnCategory(): nullptr;
+        return cat.IsValid()? new JsDgnCategory(*cat): nullptr;
         }
     static JsDgnObjectIdSetP QueryCategories(JsDgnDbP db)
         {
