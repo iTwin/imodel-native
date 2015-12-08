@@ -252,7 +252,7 @@ BentleyStatus ViewAttachmentGeomCollector::_ProcessCurveVector(CurveVectorCR cv,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::GenerateGeomStream()
     {
-    auto controller = ViewDefinition::LoadViewController(GetViewId(), GetDgnDb(), ViewDefinition::FillModels::No);
+    auto controller = ViewDefinition::LoadViewController(GetViewId(), GetDgnDb(), ViewDefinition::FillModels::Yes);
     if (controller.IsNull())
         return DgnDbStatus::ViewNotFound;
 
