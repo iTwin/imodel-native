@@ -742,7 +742,7 @@ PropertyMapStructArrayPtr PropertyMapStructArray::Create (ECPropertyCR ecPropert
         }
 
     ECClassCP structType = structArrayProperty->GetStructElementType();
-    return new PropertyMapStructArray (ecProperty, *tableECType, propertyAccessString, primaryTable, parentPropertyMap);
+    return new PropertyMapStructArray (ecProperty, *structType, propertyAccessString, primaryTable, parentPropertyMap);
     }
        
 //---------------------------------------------------------------------------------------
