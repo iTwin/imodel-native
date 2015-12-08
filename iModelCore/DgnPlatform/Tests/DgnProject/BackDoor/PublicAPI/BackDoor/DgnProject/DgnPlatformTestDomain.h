@@ -208,7 +208,7 @@ struct TestDefinition2d : Dgn::GeometricElement2d<Dgn::DefinitionElement>
     DEFINE_T_SUPER(Dgn::GeometricElement2d<Dgn::DefinitionElement>)
   
 protected:
-    explicit TestDefinition3d(CreateParams const& params) : T_Super(params) {}
+    explicit TestDefinition2d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
