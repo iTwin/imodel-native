@@ -12,7 +12,11 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnHost.h>
 
-typedef struct mdlDesc* MdlDescP;
+BEGIN_BENTLEY_NAMESPACE
+struct MdlDesc;
+typedef MdlDesc* MdlDescP;
+END_BENTLEY_NAMESPACE
+
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

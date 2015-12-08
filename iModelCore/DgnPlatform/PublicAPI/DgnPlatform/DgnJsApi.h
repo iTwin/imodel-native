@@ -220,7 +220,7 @@ struct JsComponentModel : JsDgnModel
 
     Utf8String GetName() {return m_model.IsValid()? m_model->GetCode().GetValue(): "";}
     void SetName(Utf8StringCR) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
-    JsDgnElement* MakeInstanceOfSolution(JsDgnModelP targetModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP code);
+    JsDgnElement* MakeInstance(JsDgnModelP targetModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP code);
     void DeleteAllElements();
     static JsComponentModelP FindModelByName(JsDgnDbP db, Utf8StringCR name) {auto cm = ComponentModel::FindModelByName(*db->m_db, name); return cm.IsValid()? new JsComponentModel(*cm): nullptr; }
 };

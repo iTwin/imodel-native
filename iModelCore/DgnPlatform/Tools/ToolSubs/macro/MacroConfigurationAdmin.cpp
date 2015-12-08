@@ -11,11 +11,6 @@
 #include <DgnPlatform/DesktopTools/fileutil.h>
 #include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
 
-#if defined (NEEDSWORK_DESKTOP_PLATFORM_READV8ICONFIG)
-// the Cryptographer stuff is in the Resource Manager, but so far DgnPlatform does not depend on that.
-#include <RmgrTools/Tools/CryptUtils.h>
-#endif
-
 #include "macro.h"
 #if defined (BENTLEY_WIN32)
 #include <shlwapi.h>

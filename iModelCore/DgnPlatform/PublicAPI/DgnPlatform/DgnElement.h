@@ -150,11 +150,11 @@ public:
     //! Make sure that a Texture has been imported
     DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
     //! Look up a copy of a LineStyle
-    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {BeAssert(false); return DgnStyleId();}
+    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return DgnStyleId();}
     //! Register a copy of a LineStyle
-    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {BeAssert(false); return DgnStyleId();;}
+    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId();;}
     //! Make sure that a LineStyle has been imported
-    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {BeAssert(false); return DgnStyleId();}
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return DgnStyleId();}
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeomStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
@@ -2153,6 +2153,103 @@ public:
     //!                             will either be the parent of the source element or the element to which the source parent has been remapped. See DgnCloneContext.
     //! @return a new element if successful
     DGNPLATFORM_EXPORT DgnElementCPtr MakeCopy(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR sourceElement, DgnElement::Code const& code, DgnElementId newParentId = DgnElementId());
+};
+
+//=======================================================================================
+//! Utility to collect editable elements.
+//! Order is \em not preserved.
+//! The collection holds only one copy of an element with a given ElementId.
+// @bsiclass                                                BentleySystems
+//=======================================================================================
+struct DgnEditElementCollector
+{
+protected:
+     bset<DgnElementP> m_elements; // The editable elements in the set. We manage their refcounts as we add and remove them 
+     bmap<DgnElementId,DgnElementP> m_ids; // The Elements in the set that have IDs. Child elements will always have IDs. Some top-level elements may not have an ID.
+
+public:
+    DGNPLATFORM_EXPORT DgnEditElementCollector();
+    DGNPLATFORM_EXPORT ~DgnEditElementCollector();
+
+    //! Add the specified editable copy of an element to the collection. 
+    //! @param el  The editable copy to be added
+    //! @return The element that is in the collection. 
+    DGNPLATFORM_EXPORT DgnElementPtr AddElement(DgnElementR el);
+
+    //! Add editable copies of the children of an element to the collection. 
+    //! @param el  The parent element to be queried
+    //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
+    DGNPLATFORM_EXPORT void AddChildren(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max());
+    
+    //! Add an element and editable copies of its children to the collection
+    //! @param el       The parent element to be added and queried
+    //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
+    DGNPLATFORM_EXPORT void AddAssembly(DgnElement& el, size_t maxDepth = std::numeric_limits<size_t>::max()) {AddElement(el); AddChildren(el, maxDepth);}
+
+    //! Add an editable copy of the specified element to the collection.
+    //! If the collection already contains an element with the same ElementId, then \a el is not added and the existing element is returned.
+    //! @param el  The element to be edited
+    //! @return The element that is in the collection or nullptr if the element could not be copied for edit.
+    DGNPLATFORM_EXPORT DgnElementPtr EditElement(DgnElementCR el) {auto ee = el.CopyForEdit(); if (ee.IsValid()) return AddElement(*ee); else return nullptr;}
+    
+    //! Add an editable copy of the specified element and its children to the collection.
+    //! @param el       The element to be added
+    //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
+    DGNPLATFORM_EXPORT void EditAssembly(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {auto ee = el.CopyForEdit(); if (ee.IsValid()) AddAssembly(*ee, maxDepth);}
+
+    //! Look up the editable copy of an element in the collection by its ElementId.
+    //! @return The element that is in the collection or nullptr if not found.
+    DGNPLATFORM_EXPORT DgnElementPtr FindElementById(DgnElementId);
+
+    //! Remove the specified editable copy of an element from the collection.
+    //! @param el  The editable copy of an element in the collection
+    //! @note \a el must be the editable copy of the element that is in this collection.
+    //! @see FindElementById 
+    DGNPLATFORM_EXPORT void RemoveElement(DgnElementR el);
+
+    //! Remove an element's children (by ID) from the collection.
+    //! @param el  The parent element to query.
+    //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
+    DGNPLATFORM_EXPORT void RemoveChildren(DgnElementCR el, size_t maxDepth = std::numeric_limits<size_t>::max());
+    
+    //! Remove the specified editable copy of an element and its children (by ID) from the collection.
+    //! @param el  The editable copy of the parent element to remove and to query.
+    //! @param maxDepth The levels of child elements to add. Pass 1 to add only the immediate children.
+    DGNPLATFORM_EXPORT void RemoveAssembly(DgnElementR el, size_t maxDepth = std::numeric_limits<size_t>::max()) {RemoveElement(el); RemoveChildren(el, maxDepth);}
+
+    //! Get the number of elements currently in the collection
+    size_t size() {return m_elements.size();}
+
+    //! Get an iterator pointing to the beginning of the collection
+    bset<DgnElementP>::const_iterator begin() const {return m_elements.begin();}
+
+    //! Get an iterator pointing to the end of the collection
+    bset<DgnElementP>::const_iterator end() const {return m_elements.end();}
+
+    //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Elements with no ElementIds are inserted. 
+    //! @return non-zero error status if any insert or update fails. In that case some elements in the collection may not be written.
+    DGNPLATFORM_EXPORT DgnDbStatus Write();
+};
+
+//=======================================================================================
+//! Applies a transform one or more  elements
+// @bsiclass                                                BentleySystems
+//=======================================================================================
+struct DgnElementTransformer
+{
+    DGNPLATFORM_EXPORT static DgnDbStatus ApplyTransformTo(DgnElementR el, Transform const& t); 
+
+    template<typename COLL>
+    static DgnDbStatus ApplyTransformToAll(COLL& collection, Transform const& t) 
+        {
+        for (auto& item : collection)
+            {
+            DgnDbStatus status = ApplyTransformTo(*item, t);
+            if (DgnDbStatus::Success != status)
+                return status;
+            }
+        return DgnDbStatus::Success;
+        }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

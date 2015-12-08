@@ -664,11 +664,17 @@ DgnElementPtr ComponentModel::CreateCapturedSolutionElement(DgnDbStatus& status,
     GeometrySource* geom = capturedSolutionElement->ToGeometrySourceP();
     if (nullptr == geom)
         {
-        BeAssert(false && "*** TBD: support for non-geometric components");
-        return nullptr;
+        BeAssert(false && "*** TBD: support for non-geometric components. Harvest aspects?");
+        return capturedSolutionElement;
         }
 
     geom->SetCategoryId(m_compProps.QueryItemCategoryId(db));
+
+    //GeometrySource3d* geom3d = capturedSolutionElement->ToGeometrySource3dP();
+    //if (nullptr != geom3d)
+    //    geom3d->SetPlacement(Placement3d(DPoint3d::FromZero(), YawPitchRollAngles(), ElementAlignedBox3d())); // element must have a placement
+    //else
+    //    capturedSolutionElement->ToGeometrySource2dP()->SetPlacement(Placement2d(DPoint2d::FromZero(), AngleInDegrees::FromDegrees(0.0), ElementAlignedBox2d()));
 
     //  The element's geometry is just a list of references to the GeomParts
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geom);
@@ -680,6 +686,8 @@ DgnElementPtr ComponentModel::CreateCapturedSolutionElement(DgnDbStatus& status,
         }
 
     builder->SetGeomStreamAndPlacement(*geom);
+
+    // *** TBD: Other Aspects??
 
     return capturedSolutionElement;
     }
@@ -864,7 +872,7 @@ DgnElementCPtr ComponentModel::HarvestedSingletonInserter::_WriteSolution(DgnDbS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR catalogItem, DgnElement::Code const& code)
+DgnElementCPtr ComponentModel::MakeInstance(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR catalogItem, DgnElement::Code const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     
@@ -921,13 +929,13 @@ DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, DgnModelR targetModel, Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, DgnElement::Code const& code)
+DgnElementCPtr ComponentModel::MakeInstance(DgnDbStatus* statusOut, DgnModelR targetModel, Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, DgnElement::Code const& code)
     {
     //  If this is an instance of an existing type, just make a copy of the type
     DgnElementCPtr typeElem;
     ModelSolverDef::ParameterSet typeParams;
     if ((DgnDbStatus::Success == QuerySolutionByName(typeElem, typeParams, capturedSolutionName)) && (params == typeParams))
-        return MakeInstanceOfSolution(statusOut, targetModel, *typeElem, code);
+        return MakeInstance(statusOut, targetModel, *typeElem, code);
     
     // Otherwise, capture a unique/singleton solution
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
