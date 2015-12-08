@@ -819,6 +819,7 @@ enum class DrawPurpose
     ModelFacet,
     Measure,
     VisibilityCalculation,
+    UpdateDynamic,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

@@ -2901,8 +2901,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
 
                 collection.Draw(*partGraphic, context, category, Transform::FromIdentity());
 
-                if (SUCCESS == partGraphic->Close())
-                    graphic.AddSubGraphic(*partGraphic, Transform::FromProduct(elemToWorld, geomToElem), *context.GetGraphicParams());
+                graphic.AddSubGraphic(*partGraphic, Transform::FromProduct(elemToWorld, geomToElem), *context.GetGraphicParams());
 #endif
                 break;
                 }
@@ -3244,6 +3243,8 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
         }
 
     GeometryStreamEntryIdHelper::SetActive(context, false);
+
+    graphic.Close();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3311,7 +3312,6 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
             return false;
         }
 
-    context.SetCurrentGeomSource(this);
 
     // Get the GeometryParams for this hit from the GeometryStream...
     ElementGeometryCollection collection(*this);
@@ -3360,7 +3360,6 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
         break;
         }
 
-    context.SetCurrentGeomSource(nullptr);
     return true;
     }
 

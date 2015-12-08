@@ -275,8 +275,6 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
             if (context.IsUndisplayed(source))
                 return;
 
-            context.SetCurrentGeomSource(&source);
-
             ElementGeometryCollection collection(source);
 
             collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Edges | ElementGeometryCollection::BRepOutput::FaceIso);
@@ -300,7 +298,6 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
 #endif
                 }
 
-            context.SetCurrentGeomSource(nullptr);
             return;
             }
         }

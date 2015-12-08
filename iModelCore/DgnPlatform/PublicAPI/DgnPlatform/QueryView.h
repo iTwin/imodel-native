@@ -88,7 +88,7 @@ protected:
     //! @param[in]  info        Options
     //! @remarks  Although an application can override this method, the decision on whether or not to repopulate the QueryModel in a dynamic update is typically left to
     //! QueryViewController::_OnDynamicUpdate. It in turn defers the decision to _WantElementLoadStart.
-    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
+    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo& info) override;
 
     //! QueryViewController uses this to determine if it should start another background query to repopulate the query model.
     //! QueryViewController calls this from _OnDynamicUpdate and when it detects that the background element query processing is idle during a dynamic update.

@@ -12,6 +12,7 @@
 #include "DgnCategory.h"
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
+#include <Bentley/BeTimeUtilities.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
     struct ViewManager;
@@ -34,6 +35,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(LineTexture)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
@@ -55,11 +57,14 @@ DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Window)
 
 //=======================================================================================
+//! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
+//! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
+//! on the main (work) thread, and may only be processed on the Render thread.
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct Queue
 {
-    friend struct ViewManager;
+    friend struct DgnViewport;
 
 private:
     BeConditionVariable m_cv;
@@ -71,32 +76,84 @@ private:
     THREAD_MAIN_DECL Main(void*);
 
 public:
-    DGNVIEW_EXPORT static void VerifyRenderThread(bool yesNo);
-    DGNVIEW_EXPORT void AddTask(Render::Task&);
-    DGNVIEW_EXPORT void WaitForIdle();
-    void AddAndWait(Render::Task& task) {AddTask(task); WaitForIdle();}
+    DGNPLATFORM_EXPORT static void VerifyRenderThread(bool yesNo);
+
+    //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
+    //! for the same Render::Target for which task._CanReplace(existing) returns true.
+    //! @param[in] task The Render::Task to add to the queue.
+    //! @note This method may only be called from the main thread.
+    DGNPLATFORM_EXPORT void AddTask(Task& task);
+
+    //! Wait for all Tasks in the Queue to be processed.
+    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
+    //! to complete.
+    DGNPLATFORM_EXPORT void WaitForIdle();
+
+    //! Add a task to the Queue and wait for it (and all previously queued Tasks) to complete.
+    //! @param[in] task The Render::Task to add to the queue.
+    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
+    //! to complete.
+    void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
 };
 
 //=======================================================================================
+//! A rendering task to be performed on the render thread.
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
 struct Task : RefCounted<NonCopyableClass>
 {
-    enum class Type {Initialize, CreateList, Paint,};
-    enum class Outcome {Waiting, Finished, Aborted, Abandoned,};
-    Type        m_type;
+    //! The rendering operation a task performs.
+    enum class Operation 
+    {
+        Initialize, 
+        ChangeScene, 
+        Paint,
+    };
+
+    //! The outcome of the processing of a Task.
+    enum class Outcome
+    {
+        Waiting,   //!< in queue, pending
+        Abandoned, //!< replaced while pending
+        Started,   //!< currently processing
+        Aborted,   //!< aborted during processing
+        Finished,  //!< successfully finished processing
+    };
+
+    friend struct Queue;
+
+protected:
+    Operation   m_operation;
     TargetPtr   m_target;
     Outcome     m_outcome = Outcome::Waiting;
-    double      m_elapsedTime = 0.0; // in seconds. Only valid if m_outcome is Finished or Aborted
-                                                                                                 
+    double      m_elapsedTime = 0.0;
+    void Perform(StopWatch&);
+
+public:
+    //! Get the name of this task. For debugging only
     virtual Utf8CP _GetName() const = 0;
+
+    //! Perform the rendering task.
+    //! @return the Outcome of the processing of the Task.
     virtual Outcome _Process() = 0;
-    virtual bool _CanReplace(Task& other) const {return m_type == other.m_type;}
-    Target* GetTarget() const {return m_target.get();}
-    Task(Target* target, Type type) : m_target(target), m_type(type) {}
+
+    //! Determine whether this Task can replace a pending entry in the Queue.
+    //! @param[in] other a pending task for the same Render::Target
+    //! @return true if this Task should replace the other pending task.
+    //! @note this method will only be called for Tasks for the same Render::Target.
+    virtual bool _CanReplace(Task& other) const {return m_operation == other.m_operation;}
+
+    Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
+    Operation GetOperation() const {return m_operation;} //!< Get the Type of this Task.
+    Outcome GetOutcome() const {return m_outcome;}   //!< The Outcome of the processing of this Task (or Waiting, if it has not been processed yet.)
+    double GetElapsedTime() const {return m_elapsedTime;} //!< Elapsed time in seconds. Only valid if m_outcome is Finished or Aborted
+
+    Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
 };
 
 //=======================================================================================
+//! A Render::Plan holds a Frustum and all of the render settings for displaying the current Render::Scene
+//! into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Plan
@@ -104,14 +161,13 @@ struct Plan
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
 
     ViewFlags     m_viewFlags;
-    bool          m_is2d;
+    bool          m_is3d;
     Frustum       m_frustum;
     double        m_fraction;
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-
-    DGNVIEW_EXPORT Plan(DgnViewportCR);
+    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
 //=======================================================================================
@@ -157,6 +213,7 @@ public:
 };
 
 //=======================================================================================
+//! A Texture for rendering
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
@@ -769,6 +826,7 @@ struct PointCloudDraw
 };
 
 //=======================================================================================
+//! An object that supplies the renderer-specific implementation of the Graphic primitives.
 // @bsiclass
 //=======================================================================================
 struct Graphic : RefCounted<NonCopyableClass>
@@ -966,34 +1024,26 @@ public:
     bool IsQuickVision() const {return _IsQuickVision();}
 };
 
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct Scene : NonCopyableClass
+struct Scene : RefCounted<NonCopyableClass>
 {
-protected:
-    Target& m_target;
-    bvector<GraphicPtr> m_graphics;
+    typedef std::deque<GraphicPtr> Graphics;
 
-    virtual void _SetToViewCoords(bool yesNo) = 0;
-    virtual void _ActivateOverrideGraphicParams(OvrGraphicParamsCP ovrMatSymb) = 0;
-    virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
-    virtual bool _DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) = 0;
-    virtual void _DrawTiledRaster(ITiledRaster* tiledRaster) = 0;
-    virtual void _PushClipStencil(Graphic* graphic) = 0;
-    virtual void _PopClipStencil() = 0;
-    virtual void _Create() = 0;
-    virtual void _Paint(Render::Plan const&) = 0;
-    DGNVIEW_EXPORT virtual void _AddGraphic(Graphic& graphic);
-    DGNVIEW_EXPORT virtual void _DropGraphic(Graphic& graphic);
-    DGNVIEW_EXPORT virtual void _Clear();
+protected:
+    Graphics m_graphics;
+
+    DGNPLATFORM_EXPORT virtual void _AddGraphic(Graphic& graphic);
+    DGNPLATFORM_EXPORT virtual void _DropGraphic(Graphic& graphic);
+    DGNPLATFORM_EXPORT virtual void _Clear();
     virtual ~Scene() {_Clear();}
 
 public:
-    Scene(Target& target) : m_target(target) {}
+    Scene() {}
+    Graphics& GetGraphics() {return m_graphics;}
 
-    Target& GetTarget() {return m_target;}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 
     //! Set an GraphicParams to be the "active override" GraphicParams for this IDrawGeom.
     //! @param[in]          ovrMatSymb  The new active override GraphicParams.
@@ -1037,15 +1087,11 @@ public:
 
     //! Pop the most recently pushed clip stencil boundary.
     void PopClipStencil() {_PopClipStencil();}
+#endif
 
     void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
     void DropGraphic(Graphic& graphic) {_DropGraphic(graphic);}
     void Clear() {_Clear();}
-    void Create() {return _Create();}
-    void Paint(Render::Plan const& plan) {return _Paint(plan);}
-
-    bool ApplyMonochromeOverrides(ViewFlagsCR) const;
-
 };
 
 //=======================================================================================
@@ -1075,60 +1121,6 @@ enum class DgnDrawMode
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/14
-//=======================================================================================
-struct PaintOptions
-{
-private:
-    DgnDrawBuffer m_buffer;
-    DgnDrawMode   m_drawMode;
-    BSIRectCP     m_subRect;
-    bool          m_eraseBefore;
-    bool          m_synchDrawingFromBs;
-    bool          m_synchToScreen;
-    bool          m_drawDecorations;
-    bool          m_accumulateDirty;
-    bool          m_showTransparent;
-    bool          m_progressiveDisplay;
-
-public:
-    PaintOptions(DgnDrawBuffer buffer=DgnDrawBuffer::None, BSIRectCP subRect=nullptr) : m_buffer(buffer), m_subRect(subRect)
-        {
-        m_drawMode = DgnDrawMode::Normal;
-        m_eraseBefore = true;
-        m_synchDrawingFromBs = true;
-        m_accumulateDirty = true;
-        m_drawDecorations = false;
-        m_synchToScreen = false;
-        m_showTransparent = true;
-        m_progressiveDisplay = false;
-        }
-    DgnDrawBuffer GetDrawBuffer() const{return m_buffer;}
-    DgnDrawMode GetDrawMode() const {return m_drawMode;}
-    BSIRectCP GetSubRect() const {return m_subRect;}
-    bool WantEraseBefore() const {return m_eraseBefore;}
-    bool WantSynchFromBackingStore() const {return m_synchDrawingFromBs;}
-    bool WantAccumulateDirty() const {return m_accumulateDirty;}
-    bool WantSynchToScreen() const {return m_synchToScreen;}
-    bool WantDrawDecorations() const {return m_drawDecorations;}
-    bool WantShowTransparent() const {return m_showTransparent;}
-    bool IsProgressiveDisplay() const {return m_progressiveDisplay;}
-    void SetDrawBuffer(DgnDrawBuffer buffer) {m_buffer = buffer;}
-    void SetDrawMode(DgnDrawMode mode) {m_drawMode = mode;}
-    void SetSubRect(BSIRectCP rect) {m_subRect = rect;}
-    void SetEraseBefore(bool val) {m_eraseBefore = val;}
-    void SetSynchFromBackingStore(bool val) {m_synchDrawingFromBs = val;}
-    void SetAccumulateDirty(bool val) {m_accumulateDirty = val;}
-    void SetSynchToScreen(bool val) {m_synchToScreen = val;}
-    void SetDrawDecorations(bool val) {m_drawDecorations = val;}
-    void SetShowTransparent(bool val) {m_showTransparent = val;}
-    void SetProgressiveDisplay(bool val) {m_progressiveDisplay = val;}
-    bool IsHiliteMode() const {return (m_drawMode == DgnDrawMode::Hilite);}
-    bool IsEraseMode() const {return (m_drawMode == DgnDrawMode::Erase);}
-};
-
-
-//=======================================================================================
 //! The "system context" is the main window for the rendering system.
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
@@ -1137,7 +1129,7 @@ struct SystemContext
 };
 
 //=======================================================================================
-//! A Render::Window is a platform specific object that identifies a rectangular "window" on a screen.
+//! A Render::Window is a platform specific object that identifies a rectangular window on a screen.
 //! On Windows, for example, the Render::Window holds an "HWND"
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
@@ -1184,7 +1176,8 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr     m_device;
+    DevicePtr  m_device;
+    ScenePtr   m_currentScene;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
@@ -1193,13 +1186,17 @@ protected:
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
+    virtual void _SetCurrentScene(Scene&) = 0;
+    virtual void _Paint(PlanCR) = 0;
 
 public:
     virtual double _GetCameraFrustumNearScaleLimit() = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
-    virtual Scene* _GetMainScene() {return nullptr;} // TEMPORARY!
 
     Target(Device* device) : m_device(device) {}
+
+    void SetCurrentScene(SceneR scene) {_SetCurrentScene(scene);}
+    void Paint(PlanCR plan) {_Paint(plan);}
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}

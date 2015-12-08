@@ -17,7 +17,6 @@
 
 #define FOCAL_LENGTH_RATIO 0.023584905
 
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
@@ -100,7 +99,6 @@ struct  ILineStyle
     virtual ILineStyleComponent const* _GetComponent() const = 0;
     virtual bool _IsSnappable() const = 0;
 };
-
 
 //=======================================================================================
 // @bsiclass
@@ -223,7 +221,6 @@ protected:
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
-    GeometrySourceCP        m_currentGeomSource;
     Render::GeometryParams  m_currGeometryParams;
     Render::GraphicParams   m_graphicParams;
     Render::OvrGraphicParams      m_ovrGraphicParams;
@@ -240,9 +237,10 @@ protected:
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _OutputElement(GeometrySourceCR);
-    virtual Render::GraphicP _GetCachedGraphic(double pixelSize) {return nullptr;}
-    virtual void _SaveGraphic(Render::GraphicR graphic) {}
+    DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
+    virtual void _OutputGraphic(Render::GraphicR) {}
+    virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
+    virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*);
@@ -258,10 +256,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements(bool includeTransients);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
-//    DGNPLATFORM_EXPORT virtual void _PushTransform(TransformCR trans);
     DGNPLATFORM_EXPORT virtual void _PushClip(ClipVectorCR clip);
-//    DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin(DPoint3dCP origin);
-//    DGNPLATFORM_EXPORT virtual void _PopTransformClip();
     DGNPLATFORM_EXPORT virtual void _PopClip();    
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
@@ -292,11 +287,9 @@ public:
     bool IsAttached() {return m_isAttached;}
     DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
-    void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputElement may not be called...
+    void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputGeometry may not be called...
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
-//    DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
-//    DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
     StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
@@ -308,7 +301,6 @@ public:
     DGNPLATFORM_EXPORT void DrawBox(DPoint3dP box, bool is3d);
     StatusInt InitContextForView() {return _InitContextForView();}
     DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
-//    DGNPLATFORM_EXPORT bool IsLocalPointVisible(DPoint3dCR localPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
     DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
@@ -332,44 +324,6 @@ public:
 
     /// @name Coordinate Query and Conversion
     //@{
-
-#if defined (NOT_NOW)
-    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::World coordinates.
-    //! @param[out]     worldPts    An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      localPts    Input array in current local coordinates,
-    //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void LocalToWorld(DPoint3dP worldPts, DPoint3dCP localPts, int nPts) const;
-
-    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
-    //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      localPts    Input array in current local coordinates,
-    //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const;
-
-    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
-    //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      localPts    Input array in current local coordinates,
-    //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const;
-
-    //! Transform an array of points in DgnCoordSystem::World into the current local coordinate system.
-    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-    //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void WorldToLocal(DPoint3dP localPts, DPoint3dCP worldPts, int nPts) const;
-
-    //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
-    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const;
-
-    //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
-    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-    //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const;
-#endif
 
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
     //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
@@ -419,28 +373,6 @@ public:
     //! @param[in]      nPts        Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
-#if defined (NOT_NOW)
-    //! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
-    //! @return   nullptr if no transform present.
-    TransformCP GetCurrLocalToWorldTransformCP() const {return m_transformClipStack.GetTransformCP();}
-
-    //! Retrieve a copy of the transform from the current local coordinate system into DgnCoordSystem::World.
-    //! @param[out]     trans       Transform from current local coordinate system to DgnCoordSystem::World
-    //! @return   SUCCESS if there is a current local coordinate system.
-    BentleyStatus GetCurrLocalToWorldTrans(TransformR trans) const {return m_transformClipStack.GetTransform(trans);}
-
-    //! Retrieve a copy of the transform from the DgnCoordSystem::World to current local coordinate system.
-    //! @param[out]     trans       Transform from DgnCoordSystem::World to current local coordinate system
-    //! @return   SUCCESS if there is a current local coordinate system.
-    BentleyStatus GetCurrWorldToLocalTrans(TransformR trans) const {return m_transformClipStack.GetInverseTransform(trans);}
-
-    //! Retrieve a copy of the transform from the local coordinate system at the specified index into DgnCoordSystem::World.
-    //! @param[out]     trans  Transform from local coordinate system at the specified index to DgnCoordSystem::World
-    //! @param[in]      index  Index into transform stack to return transform for.
-    //! @return   SUCCESS if there is a local coordinate system.
-    BentleyStatus GetLocalToWorldTrans(TransformR trans, size_t index) const {return m_transformClipStack.GetTransformFromIndex(trans, index);}
-#endif
-
     //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
     //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
     //! @param[in]      origin      The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
@@ -448,14 +380,6 @@ public:
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
 
-    //! Get transform aligned with current view rotation.
-//    DGNPLATFORM_EXPORT void GetViewIndependentTransform(TransformP trans, DPoint3dCP originLocal);
-
-    //! Check whether the current transform is view independent. Several MicroStation element types can display
-    //! as "View independent" (e.g. text, text nodes, point cells). They do this by pushing the inverse of the current
-    //! view-to-local transformation via #PushViewIndependentOrigin.
-    //! @return   true if the current local coordinate system is a view independent transform.
-//    bool IsViewIndependent() {return m_transformClipStack.IsViewIndependent();}
     //@}
 
     /// @name Pushing and Popping Transforms and Clips
@@ -477,17 +401,7 @@ public:
     //! @see   PopTransformClip
     DGNPLATFORM_EXPORT void PushClipPlanes(ClipPlaneSetCR clipPlanes);
 
-#if defined (NOT_NOW)
-    //! Push a transform such that the X,Y plane of the new local coordinate system will be aligned with the X,Y plane of the
-    //! view coordinate system, oriented about the given origin.
-    //! @param[in]      origin      Origin for rotation, in the \e current local coordinate system.
-    void PushViewIndependentOrigin(DPoint3dCP origin) {_PushViewIndependentOrigin(origin);}
-
-    //! Remove the most recently pushed coordinate system and clip, restoring the local coordinate system to its previous state.
-    void PopTransformClip() {_PopTransformClip();}
-#else
     void PopClip() {_PopClip();}
-#endif
     //@}
 
     /// @name Query Methods
@@ -508,7 +422,9 @@ public:
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void SetCurrentGeomSource(GeometrySourceCP source) {m_currentGeomSource = source;}
+#endif
     
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
     DrawPurpose GetDrawPurpose() const {return m_purpose;}

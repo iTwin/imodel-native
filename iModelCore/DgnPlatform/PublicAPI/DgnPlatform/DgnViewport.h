@@ -348,9 +348,6 @@ private:
     friend struct ViewManager;
     StopEvents          m_stopEvents;
     bool                m_doBackingStore;
-    bool                m_deferShadows;
-    int                 m_dynamicsStopInterval;
-    int                 m_dynamicsMotionTolerance;
     int                 m_minLodDelta;
     bool                m_haveLastMotion;
     int                 m_lastTotalMotion;
@@ -359,17 +356,13 @@ private:
 public:
     DGNVIEW_EXPORT DynamicUpdateInfo();
     Point2d& GetLastCursorPos() {return m_lastCursorPos;}
-    int GetStopInterval() {return m_dynamicsStopInterval;}
     int GetMinLodDelta() {return m_minLodDelta;}
     bool GetDoBackingStore() {return m_doBackingStore;}
     StopEvents GetStopEvents() {return m_stopEvents;}
     void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
     void SetDoBackingStore(bool doBackingStore) {m_doBackingStore = doBackingStore;}
-    void SetDeferShadows(bool deferShadows) {m_deferShadows = deferShadows;}
     void SetMinLODDelta(int minLodDelta) {m_minLodDelta = minLodDelta;}
-    void SetDynamicsStopInterval(int dynamicsStopInterval) {m_dynamicsStopInterval = dynamicsStopInterval;}
-    void SetDynamicsMotionTolerance(int dynamicsMotionTolerance) {m_dynamicsMotionTolerance = dynamicsMotionTolerance;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
@@ -422,7 +415,6 @@ public:
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
 
-    bool            m_needsRefresh;           // screen needs to be redrawn from backing store at next opportunity
     bool            m_zClipAdjusted;          // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView;               // view is of a 3d model
     bool            m_isCameraOn;             // view is 3d and the camera is turned on.
@@ -462,8 +454,7 @@ protected:
     virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(bool& stopFlag);
-    virtual void _SetNeedsHeal() {m_needsRefresh = true;}
-    virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
+    virtual void _SetNeedsHeal() {}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
@@ -478,13 +469,13 @@ protected:
     DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
+    DGNPLATFORM_EXPORT static void StartRenderThread();
 
 public:
     DGNPLATFORM_EXPORT DgnViewport(Render::Target*);
     virtual ~DgnViewport() {DestroyViewport();}
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     double GetFrustumFraction() const {return m_frustFraction;}
-    bool CheckNeedsRefresh() const {return m_needsRefresh;}
     bool IsVisible() {return _IsVisible();}
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
@@ -496,7 +487,6 @@ public:
     DGNPLATFORM_EXPORT void GridFix(DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions = nullptr);
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
-    void ClearNeedsRefresh() {m_needsRefresh = false;}
     void AlignWithRootZ();
     DGNPLATFORM_EXPORT double GetMinimumLOD() const;
     IProgressiveDisplay::Completion DoProgressiveDisplay();
@@ -518,7 +508,6 @@ public:
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
     void SetNeedsHeal() {_SetNeedsHeal();}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
-    StatusInt RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return SUCCESS;}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
     DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);
@@ -531,7 +520,6 @@ public:
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
-    DGNVIEW_EXPORT bool HandlePaintMsg(BSIRect const& dirtyRect);
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(uint32_t const* endTime);
     void ForceHealUntil(uint32_t endTime);
@@ -556,6 +544,7 @@ public:
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT void CheckForChanges();
     DGNPLATFORM_EXPORT void Initialize(ViewControllerR);
+    DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
@@ -770,9 +759,9 @@ public:
 /** @name DgnViewport Parameters */
 /** @{ */
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
-    //! been initialized and connected to an output device.
+    //! been initialized and connected to an Render::Target.
     //! @return true if the DgnViewport is active.
-    bool IsActive() const {return m_viewController.IsValid();}
+    bool IsActive() const {return m_viewController.IsValid() && m_renderTarget.IsValid();}
 
     //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
     //! if the WorldToView transform contains a perspective transformation.
@@ -837,7 +826,7 @@ public:
     //! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
     void SynchWithViewController(bool saveInUndo) {_SynchWithViewController(saveInUndo);}
 
-    void SetNeedsRefresh() {_SetNeedsRefresh();}
+    DGNPLATFORM_EXPORT bool QueuePaint();
 /** @} */
 
 /** @name Changing DgnViewport Frustum */

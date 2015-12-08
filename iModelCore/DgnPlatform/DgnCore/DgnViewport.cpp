@@ -38,7 +38,6 @@ DgnViewport::DgnViewport(Render::Target* target) : m_renderTarget(target)
     {
     m_minLOD            = DEFAULT_MINUMUM_LOD;
     m_isCameraOn        = false;
-    m_needsRefresh      = false;
     m_zClipAdjusted     = false;
     m_is3dView          = false;
     m_invertY           = true;
@@ -647,10 +646,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     if (nullptr == viewController)
         return  ViewportStatus::InvalidViewport;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (!m_deviceAssigned)
-        _SetupFromViewController();
-#endif
+    _SetupFromViewController();
 
     DPoint3d worldPts[3] = {pts[0], pts[1], viewController->GetOrigin()};
     DPoint3d viewPts[3];
@@ -946,16 +942,6 @@ int DgnViewport::_GetIndexedLineWidth(int index) const
     {
     return DgnViewport::GetDefaultIndexedLineWidth(index);
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex)
-    {
-    m_renderTarget->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
@@ -1385,7 +1371,6 @@ void DgnViewport::CheckForChanges()
     m_currentBaseline = curr;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/02
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1444,4 +1429,3 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     SetupFromViewController();
     }
-
