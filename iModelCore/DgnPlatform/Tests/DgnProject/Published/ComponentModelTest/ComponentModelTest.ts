@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/ComponentModelTest.ts $
+|  $Source: Tests/DgnProject/Published/ComponentModelTest/ComponentModelTest.ts $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -35,9 +35,10 @@ module ComponentModelTest
         /** The Gadget component's logic */
         export function GenerateElements(model: be.DgnModel, params: Parameters, options: be.ModelSolverOptions)
         {
+            var db = model.DgnDb;
             model.DeleteAllElements();
 
-            var element = be.PhysicalElement.Create(model, options.Category, '');
+            var element = be.PhysicalElement.Create(model, be.DgnCategory.QueryCategoryId(options.Category, db), '');
 
             var origin = new be.DPoint3d(0, 0, 0);
             var angles = new be.YawPitchRollAngles(0, 0, 45);
@@ -68,9 +69,12 @@ module ComponentModelTest
         /** The Widget component's logic */
         export function GenerateElements(model: be.DgnModel, params: Parameters, options: be.ModelSolverOptions): number
         {
+            var db = model.DgnDb;
             model.DeleteAllElements();
 
-            var element = be.PhysicalElement.Create(model, options.Category, '');
+            var catid = be.DgnCategory.QueryCategoryId(options.Category, db);
+
+            var element = be.PhysicalElement.Create(model, catid, '');
 
             var origin = new be.DPoint3d(1, 2, 3);
             var angles = new be.YawPitchRollAngles(0, 0, 0);
@@ -80,7 +84,7 @@ module ComponentModelTest
 
             element.Insert();
 
-            var element2 = be.PhysicalElement.Create(model, options.Category, '');
+            var element2 = be.PhysicalElement.Create(model, catid, '');
 
             var origin2 = new be.DPoint3d(10, 12, 13);
             var angles2 = new be.YawPitchRollAngles(0, 0, 0);
@@ -118,7 +122,9 @@ module ComponentModelTest
 
             model.DeleteAllElements();
 
-            var element = be.PhysicalElement.Create(model, options.Category, '');
+            var catid= be.DgnCategory.QueryCategoryId(options.Category, db);
+
+            var element = be.PhysicalElement.Create(model, catid, '');
 
             var origin = new be.DPoint3d(2, 0, 0);
             var angles = new be.YawPitchRollAngles(45, 0, 0);

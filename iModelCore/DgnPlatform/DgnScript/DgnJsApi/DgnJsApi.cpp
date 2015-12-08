@@ -103,9 +103,11 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, Utf8StringCR categoryName, Utf8StringCR ecSqlClassName)
+JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR ecSqlClassName)
     {
-    DgnCategoryId catid = DgnCategory::QueryCategoryId(categoryName.c_str(), model->m_model->GetDgnDb());
+    if (!categoryId || !categoryId->IsValid() || !model || !model->m_model.IsValid())
+        return nullptr;
+    DgnCategoryId catid(categoryId->m_id);
     return new JsPhysicalElement(*createPhysicalElement(*model->m_model, ecSqlClassName.c_str(), catid));
     }
 
