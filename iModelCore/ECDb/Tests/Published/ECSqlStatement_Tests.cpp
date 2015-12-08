@@ -3346,7 +3346,7 @@ TEST_F(ECSqlStatementTestFixture, GetGeometryWithInvalidBlobFormat)
 
     // insert invalid geom blob
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_PASpatial_Array (ECInstanceId, Geometry) VALUES (1,?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_PASpatial (ECInstanceId, Geometry) VALUES (1,?)"));
     double dummyValue = 3.141516;
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindBlob(1, &dummyValue, (int) sizeof(dummyValue), Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
