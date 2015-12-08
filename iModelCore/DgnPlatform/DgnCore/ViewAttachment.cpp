@@ -170,15 +170,11 @@ public:
         m_builder = ElementGeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
         BeAssert(IsValid());
 
-#define APPLY_ROTATION
-#ifdef APPLY_ROTATION
         m_initialTransform = Transform::From(controller.GetRotation());
-#else
-        m_initialTransform = Transform::FromIdentity();
-#endif
 
-#define APPLY_TRANSLATION
-#ifdef APPLY_TRANSLATION
+        auto scale = m_attachment.GetViewScale();
+        m_initialTransform.ScaleMatrixColumns(scale, scale, scale);
+
         // The view origin corresponds to the local origin of the attachment's geometry.
         auto viewOrigin = controller.GetOrigin();
         DPoint3d translation = DPoint3d::FromXYZ(0,0,0);
@@ -187,12 +183,6 @@ public:
         Transform translate;
         translate.InitFrom(translation);
         m_initialTransform = Transform::FromProduct(m_initialTransform, translate);
-#endif
-
-#ifdef APPLY_SCALE
-        auto scale = m_attachment.GetViewScale();
-        m_initialTransform.ScaleMatrixColumns(scale, scale, scale);
-#endif
         }
 
     bool IsValid() const { return m_builder.IsValid() && m_subCategory.IsValid(); }
