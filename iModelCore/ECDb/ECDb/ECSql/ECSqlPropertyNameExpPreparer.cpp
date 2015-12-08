@@ -54,16 +54,45 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //in SQLite table aliases are only allowed for SELECT statements
-    Utf8CP classIdentifier = nullptr;
+    Utf8String classIdentifier = nullptr;
+    auto resolveClassIdentifier = [&] () 
+        {
+        if (exp->GetClassRefExp()->GetType() == Exp::Type::ClassName)
+            {
+            IClassMap const& classMap = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap();
+            StorageDescription const& desc = classMap.GetStorageDescription();
+            bool isPolymorphic = exp->GetClassRefExp()->IsPolymorphic();
+            if (isPolymorphic && desc.HierarchyMapsToMultipleTables())
+                {
+                BeAssert(desc.HierarchyMapsToMultipleTables() && isPolymorphic && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
+                if (!classMap.HasPersistedView())
+                    {
+                    BeAssert(false && "[Programmer Error] Database view must exist for this class as it derive classes is map into its on table");
+                    return ECSqlStatus::Error;
+                    }
+
+                classIdentifier = classMap.GetPersistedViewName().c_str();
+                }
+            }
+
+        return ECSqlStatus::Success;
+        };
+
     if (currentScopeECSqlType == ECSqlType::Select)
+        {
         classIdentifier = exp->GetClassRefExp()->GetId().c_str();
+        }
     else if (currentScopeECSqlType == ECSqlType::Delete)
         {
         if (!ctx.GetCurrentScope().GetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
             classIdentifier = exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName().c_str();
+
+        if (resolveClassIdentifier() != ECSqlStatus::Success)
+            return ECSqlStatus::Error;
         }
 
-    NativeSqlBuilder::List propNameNativeSqlSnippets = exp->GetPropertyMap().ToNativeSql(classIdentifier, currentScopeECSqlType, exp->HasParentheses());
+
+    NativeSqlBuilder::List propNameNativeSqlSnippets = exp->GetPropertyMap().ToNativeSql((classIdentifier.empty()? nullptr : classIdentifier.c_str()), currentScopeECSqlType, exp->HasParentheses());
     nativeSqlSnippets.insert(nativeSqlSnippets.end(), propNameNativeSqlSnippets.begin(), propNameNativeSqlSnippets.end());
 
     return ECSqlStatus::Success;

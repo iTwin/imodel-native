@@ -470,7 +470,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                     return ECSqlStatus::Error;
                     }
 
-                BeAssert(classMap.HasPersistedView() && "View must exist");
                 nativeSqlSnippet.AppendEscaped(classMap.GetPersistedViewName().c_str());            
                 nativeSqlSnippets.push_back(move(nativeSqlSnippet));
                 return ECSqlStatus::Success;
