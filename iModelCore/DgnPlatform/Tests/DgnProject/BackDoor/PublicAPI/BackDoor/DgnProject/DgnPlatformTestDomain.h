@@ -200,6 +200,30 @@ struct TestRequirementHandler : Dgn::dgn_ElementHandler::Element
 };
 
 //=======================================================================================
+//! Make sure GeometricElement2d can be introduced at an arbitrary point in the class hierarchy
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestDefinition2d : Dgn::GeometricElement2d<Dgn::DefinitionElement>
+{
+    DEFINE_T_SUPER(Dgn::GeometricElement2d<Dgn::DefinitionElement>)
+  
+protected:
+    explicit TestDefinition2d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Make sure GeometricElement3d can be introduced at an arbitrary point in the class hierarchy
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestDefinition3d : Dgn::GeometricElement3d<Dgn::DefinitionElement>
+{
+    DEFINE_T_SUPER(Dgn::GeometricElement3d<Dgn::DefinitionElement>)
+  
+protected:
+    explicit TestDefinition3d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
