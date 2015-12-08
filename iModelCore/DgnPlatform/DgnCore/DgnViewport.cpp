@@ -38,7 +38,6 @@ DgnViewport::DgnViewport(Render::Target* target) : m_renderTarget(target)
     {
     m_minLOD            = DEFAULT_MINUMUM_LOD;
     m_isCameraOn        = false;
-    m_needsRefresh      = false;
     m_zClipAdjusted     = false;
     m_is3dView          = false;
     m_invertY           = true;
@@ -1444,4 +1443,5 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     SetupFromViewController();
     }
+
 

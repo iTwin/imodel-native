@@ -1,0 +1,239 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/Render.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "DgnPlatformInternal.h"
+
+#if !defined (NDEBUG)
+#   define DEBUG_THREADS 1
+#   define RENDER_LOGGING 1
+#endif
+
+#if defined (RENDER_LOGGING)
+#undef LOG
+#   define LOG (*NativeLogging::LoggingManager::GetLogger(L"Render"))
+//#   define LOG_STRING(msg) LOG.debug(msg.c_str())
+#   define LOG_STRING(msg) printf(msg.c_str())
+#   define LOG_PRINTF(fmt, ...) LOG_STRING(Utf8PrintfString(fmt,__VA_ARGS__))
+#else
+#   define LOG
+#   define LOG_STRING(msg)
+#   define LOG_PRINTF(fmt, ...)
+#endif
+
+#if defined (DEBUG_THREADS)
+    #include <Bentley/BeThreadLocalStorage.h>
+    BeThreadLocalStorage g_threadChecker;
+#endif
+
+
+BEGIN_UNNAMED_NAMESPACE
+static Render::Queue* s_renderQueue = nullptr;
+
+
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Queue::VerifyRenderThread(bool yesNo)
+    {
+#if defined (DEBUG_THREADS)
+    BeAssert (yesNo == TO_BOOL((g_threadChecker.GetValueAsInteger())));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Scene::_AddGraphic(GraphicR graphic)
+    {
+    m_graphics.push_back(&graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Scene::_DropGraphic(GraphicR graphic)
+    {
+    for (auto it=m_graphics.begin(); it != m_graphics.end(); ++it)
+        {
+        if (it->get() == &graphic)
+            {
+            m_graphics.erase(it);
+            return;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Scene::_Clear()
+    {
+    m_graphics.clear();
+    }
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
+struct PaintTask : Task
+{
+    Plan m_plan;
+    virtual Utf8CP _GetName() const override {return "Paint";}
+    virtual Outcome _Process() override {m_target->Paint(m_plan); return Outcome::Finished;}
+    PaintTask(DgnViewportR vp) : Task(vp.GetRenderTarget(), Operation::Paint), m_plan(vp) {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnViewport::QueuePaint()
+    {
+    if (s_renderQueue == nullptr || !m_renderTarget.IsValid())
+        return false;
+
+    RenderQueue().AddTask(*new PaintTask(*this));
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Queue::AddTask(Task& task)
+    {
+    VerifyRenderThread(false);
+
+    BeMutexHolder lock(m_cv.GetMutex());
+
+    // see whether the new task should replace any existing tasks
+    for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
+        {
+        if (task.GetTarget() == (*entry)->GetTarget() && task._CanReplace(**entry))
+            {
+            (*entry)->m_outcome = Render::Task::Outcome::Abandoned;
+            entry = m_tasks.erase(entry);
+            }
+        else
+            ++entry;
+        }
+
+    m_tasks.push_back(&task);
+    m_cv.notify_all();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Queue::WaitForIdle()
+    {
+    VerifyRenderThread(false);
+
+    BeMutexHolder holder(m_cv.GetMutex());
+    while (m_currTask.IsValid() || !m_tasks.empty())
+        m_cv.InfiniteWait(holder);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Queue::WaitForWork()
+    {
+    BeMutexHolder holder(m_cv.GetMutex());
+    while (m_tasks.empty())
+        m_cv.InfiniteWait(holder);
+
+    m_currTask = m_tasks.front();
+    m_tasks.pop_front();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Task::Perform(StopWatch& timer)
+    {
+    m_outcome = Task::Outcome::Started;
+    timer.Start();
+    m_outcome = _Process();
+    m_elapsedTime = timer.GetCurrentSeconds();
+    LOG_PRINTF ("task=%s, elapsed=%lf\n", _GetName(), m_elapsedTime);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Queue::Process()
+    {
+    StopWatch timer(false);
+
+    while (true)
+        {
+        WaitForWork();
+        m_currTask->Perform(timer);
+        m_currTask = nullptr;
+        m_cv.notify_all();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+THREAD_MAIN_IMPL Render::Queue::Main(void* arg)
+    {
+    BeThreadUtilities::SetCurrentThreadName("Render"); // for debugging only
+
+#if defined (DEBUG_THREADS)
+    g_threadChecker.SetValueAsInteger(true);
+#endif
+
+    ((Render::Queue*)arg)->Process(); // this never returns
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::StartRenderThread()
+    {
+    if (nullptr != s_renderQueue)
+        {
+        BeAssert(false);
+        return;
+        }
+
+#if defined (DEBUG_THREADS)
+    g_threadChecker.SetValueAsInteger(false);
+#endif
+    
+    s_renderQueue = new Render::Queue();
+
+    // create the rendering thread
+    BeThreadUtilities::StartNewThread(300*1024, Render::Queue::Main, s_renderQueue); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::Plan::Plan(DgnViewportCR vp)
+    {
+    m_is2d     = !vp.Is3dView();
+    m_viewFlags = vp.GetViewFlags();
+    m_frustum  = vp.GetFrustum(DgnCoordSystem::World, true);
+    m_bgColor  = vp.GetBackgroundColor();
+    m_fraction = vp.GetFrustumFraction();
+    m_aaLines  = vp.WantAntiAliasLines();
+    m_aaText   = vp.WantAntiAliasText();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::Queue& DgnViewport::RenderQueue() 
+    {
+    BeAssert(nullptr != s_renderQueue);
+    return *s_renderQueue;
+    }
+
