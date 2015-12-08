@@ -111,6 +111,21 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
+    class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
+
+        /**
+         * Create a new PhysicalElement
+         * @param model The model that is to contain the new element
+         * @param categoryName The name of the category to assign to the new element
+         * @paeram elementClassname Optional. The name of the element's ECClass. If not specified, then dgn.PhysicalElement is used
+         * @return a new, non-persistent PhysicalElement or null if one of the parameters is invalid
+         * @see Insert
+        */
+        static Create(model: DgnModelP, categoryName: Bentley_Utf8String, elementClassName: Bentley_Utf8String): DgnElementP;
+    }
+
     type DgnElementP = cxx_pointer<DgnElement>;
 
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
@@ -118,7 +133,6 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         ModelId: DgnObjectId;
         Code: AuthorityIssuedCode;
         DgnDb: DgnDbP;
-        CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): DgnElementP;
         static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
         DeleteAllElements(): void;
         OnDispose(): void;

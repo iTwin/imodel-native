@@ -172,6 +172,16 @@ typedef JsDgnElement* JsDgnElementP;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
+struct JsPhysicalElement : JsDgnElement
+{
+    JsPhysicalElement(PhysicalElementR el) : JsDgnElement(el) {;}
+
+    static JsPhysicalElement* Create(JsDgnModelP model, Utf8StringCR categoryName, Utf8StringCR elementClassName);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
 struct JsDgnModel : RefCountedBaseWithCreate
 {
     DgnModelPtr m_model;

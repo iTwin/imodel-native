@@ -22,6 +22,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 +---------------+---------------+---------------+---------------+---------------+------*/
 static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
+    if (!ecSqlClassName || !*ecSqlClassName)
+        ecSqlClassName = DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         return nullptr;
@@ -101,10 +103,10 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringCR categoryName)
+JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, Utf8StringCR categoryName, Utf8StringCR ecSqlClassName)
     {
-    DgnCategoryId catid = DgnCategory::QueryCategoryId(categoryName.c_str(), m_model->GetDgnDb());
-    return new JsDgnElement(*createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid));
+    DgnCategoryId catid = DgnCategory::QueryCategoryId(categoryName.c_str(), model->m_model->GetDgnDb());
+    return new JsPhysicalElement(*createPhysicalElement(*model->m_model, ecSqlClassName.c_str(), catid));
     }
 
 //---------------------------------------------------------------------------------------

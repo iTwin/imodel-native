@@ -17,12 +17,20 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
+static DgnCategoryId getFirstCategory(DgnDbR db)
+    {
+    return *DgnCategory::QueryCategories(db).begin();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
 static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     {
     DgnDbR db = model.GetDgnDb();
     DgnModelId mid = model.GetModelId();
 
-    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
+    DgnCategoryId cat = getFirstCategory(db);
 
     DgnElementPtr gelem;
     if (model.Is3d())
@@ -216,8 +224,13 @@ TEST_F(DgnScriptTest, RunScripts)
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
+    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    model->FillModel();
+    Json::Value parms = Json::objectValue;
+    parms["modelName"] = model->GetCode().GetValueCP();
+    parms["categoryName"] = DgnCategory::QueryCategory(getFirstCategory(*project), *project)->GetCategoryName();
     int retstatus = 0;
-    DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", Json::objectValue);
+    DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", parms);
     ASSERT_EQ(0, retstatus);
     }
 

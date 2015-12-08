@@ -37,7 +37,7 @@ module ComponentModelTest
         {
             model.DeleteAllElements();
 
-            var element = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
+            var element = be.PhysicalElement.Create(model, options.Category, '');
 
             var origin = new be.DPoint3d(0, 0, 0);
             var angles = new be.YawPitchRollAngles(0, 0, 45);
@@ -70,7 +70,7 @@ module ComponentModelTest
         {
             model.DeleteAllElements();
 
-            var element = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
+            var element = be.PhysicalElement.Create(model, options.Category, '');
 
             var origin = new be.DPoint3d(1, 2, 3);
             var angles = new be.YawPitchRollAngles(0, 0, 0);
@@ -80,7 +80,7 @@ module ComponentModelTest
 
             element.Insert();
 
-            var element2 = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
+            var element2 = be.PhysicalElement.Create(model, options.Category, '');
 
             var origin2 = new be.DPoint3d(10, 12, 13);
             var angles2 = new be.YawPitchRollAngles(0, 0, 0);
@@ -118,7 +118,7 @@ module ComponentModelTest
 
             model.DeleteAllElements();
 
-            var element = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
+            var element = be.PhysicalElement.Create(model, options.Category, '');
 
             var origin = new be.DPoint3d(2, 0, 0);
             var angles = new be.YawPitchRollAngles(45, 0, 0);
