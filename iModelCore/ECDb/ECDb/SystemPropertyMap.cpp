@@ -133,18 +133,18 @@ Utf8String PropertyMapECInstanceId::_ToString () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapSecondaryTableKey::PropertyMapSecondaryTableKey (ECPropertyCR ecProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind)
+PropertyMapStructArrayTableKey::PropertyMapStructArrayTableKey (ECPropertyCR ecProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind)
 : PropertyMapSystem (ecProperty, column->GetWeakPtr (), kind, &(column->GetTable ()))
  {}
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind, IClassMap const& classMap)
+PropertyMapPtr PropertyMapStructArrayTableKey::Create (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind, IClassMap const& classMap)
     {
-    if (!classMap.IsMappedToSecondaryTable ())
+    if (!classMap.MapsToStructArrayTable ())
         {
-        BeAssert (false && "PropertyMapSecondaryTableKey must only be used with class maps using ArrayStorage.");
+        BeAssert (false);
         return nullptr;
         }
 
@@ -217,13 +217,13 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
         }
 
-    return new PropertyMapSecondaryTableKey (*property, systemColumn, kind);
+    return new PropertyMapStructArrayTableKey (*property, systemColumn, kind);
     }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-Utf8String PropertyMapSecondaryTableKey::_ToString () const
+Utf8String PropertyMapStructArrayTableKey::_ToString () const
  {
  return Utf8PrintfString ("PropertyMapSecondaryTableKey: Column name=%s", GetColumn ().GetName ().c_str());
  }

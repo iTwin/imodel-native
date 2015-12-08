@@ -193,7 +193,7 @@ ECSqlStatus ECSqlInsertPreparer::SetupBindStructParameter(ECSqlBinder* binder, P
                 }
             }
 
-        else if (childPropertyMap->GetAsPropertyMapToTable() != nullptr)
+        else if (childPropertyMap->GetAsPropertyMapStructArray() != nullptr)
             {
             auto structArrayBinder = dynamic_cast<StructArrayToSecondaryTableECSqlBinder*> (&propertyBinder);
             if (structArrayBinder == nullptr)

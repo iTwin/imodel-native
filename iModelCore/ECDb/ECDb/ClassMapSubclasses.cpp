@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-SecondaryTableClassMap::SecondaryTableClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+StructClassMap::StructClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : ClassMap (ecClass, ecDbMap, mapStrategy, setIsDirty), m_embeddedTypeClassView (nullptr)
     {
     m_embeddedTypeClassView = std::unique_ptr<EmbeddedTypeClassMap> (new EmbeddedTypeClassMap (*this));
@@ -23,7 +23,7 @@ SecondaryTableClassMap::SecondaryTableClassMap (ECN::ECClassCR ecClass, ECDbMapC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-ClassMap::Type SecondaryTableClassMap::_GetClassMapType () const
+ClassMap::Type StructClassMap::_GetClassMapType () const
     {
     return Type::SecondaryTable;
     }
@@ -31,7 +31,7 @@ ClassMap::Type SecondaryTableClassMap::_GetClassMapType () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus SecondaryTableClassMap::_OnInitialized ()
+MapStatus StructClassMap::_OnInitialized ()
     {
     return m_embeddedTypeClassView->Initialize ();
     }
@@ -39,7 +39,7 @@ MapStatus SecondaryTableClassMap::_OnInitialized ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-IClassMap const& SecondaryTableClassMap::_GetView (View classView) const
+IClassMap const& StructClassMap::_GetView (View classView) const
     {
     if (classView == IClassMap::View::EmbeddedType)
         return *m_embeddedTypeClassView;
@@ -52,19 +52,19 @@ IClassMap const& SecondaryTableClassMap::_GetView (View classView) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus SecondaryTableClassMap::EmbeddedTypeClassMap::Initialize ()
+MapStatus StructClassMap::EmbeddedTypeClassMap::Initialize ()
     {
     auto const& schemaManager = GetECDbMap ().GetECDbR ().Schemas ();
-    auto systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECInstanceId, *this);
+    auto systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ParentECInstanceId, *this);
+    systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ParentECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECPropertyPathId, *this);
+    systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ECPropertyPathId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECArrayIndex, *this);
+    systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ECArrayIndex, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
     for (auto propMap : m_secondaryTableClassMap.GetPropertyMaps ())

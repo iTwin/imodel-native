@@ -17,10 +17,10 @@ ECDB_TYPEDEFS(ECDbMap);
 
 ECDB_TYPEDEFS_PTR(ECDbSchemaWriter);
 ECDB_TYPEDEFS_PTR(ECDbSchemaReader);
-ECDB_TYPEDEFS_PTR (ClassMap);
-ECDB_TYPEDEFS_PTR (PropertyMap);
-ECDB_TYPEDEFS_PTR(PropertyMapToInLineStruct);
-ECDB_TYPEDEFS_PTR(PropertyMapToTable);
+ECDB_TYPEDEFS_PTR(ClassMap);
+ECDB_TYPEDEFS_PTR(PropertyMap);
+ECDB_TYPEDEFS_PTR(PropertyMapStruct);
+ECDB_TYPEDEFS_PTR(PropertyMapStructArray);
 ECDB_TYPEDEFS_PTR(MappedTable);
 ECDB_TYPEDEFS_PTR(RelationshipClassMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);

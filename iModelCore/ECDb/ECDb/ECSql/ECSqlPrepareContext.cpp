@@ -244,7 +244,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     {
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.IsJoinedTable())
+    if (!classMap.MapsToJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
@@ -358,7 +358,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     {
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.IsJoinedTable())
+    if (!classMap.MapsToJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;

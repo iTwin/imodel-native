@@ -290,8 +290,8 @@
         - @b IsUnique (optional): If true, the index will be a unique index. Default value is @em false.
         - @b Properties: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
         in the ECClass or in the base classes.
-        - @b Where (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
-        creates a partial index ignoring any NULL values.
+        - @b Where (optional): Creates a partial index. Right now only the special value <b>IndexedColumnsAreNotNull</b> is supported which
+        creates a partial index ignoring any NULL values in the indexed columns.
 
     ####Examples
 
@@ -342,7 +342,7 @@
                             <Properties>
                                 <string>Birthday</string>
                             </Properties>
-                            <Where>ECDB_NOTNULL</Where>
+                            <Where>IndexedColumnsAreNotNull</Where>
                         </DbIndex>
                     </Indexes>
                 </ClassMap>

@@ -156,7 +156,7 @@ PropertyNameExp const* propertyName
         auto classNameExp = static_cast<ClassNameExp const*>(propertyName->GetClassRefExp());
         PRECONDITION(classNameExp != nullptr, ECSqlStatus::Error);
         auto& propertyMap = propertyName->GetPropertyMap();
-        if(auto structPropertyMap = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
+        if(auto structPropertyMap = dynamic_cast<PropertyMapStructCP>(&propertyMap))
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
 
         BeAssert (false && "For struct properties we only support inline mapping %s");
@@ -165,7 +165,7 @@ PropertyNameExp const* propertyName
     if (propertyName->GetClassRefExp ()->GetType () == Exp::Type::SubqueryRef)
         {        
         auto& propertyMap = propertyName->GetPropertyMap ();
-        if (auto structPropertyMap = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
+        if (auto structPropertyMap = dynamic_cast<PropertyMapStructCP>(&propertyMap))
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
         
         BeAssert(false && "For struct properties we only support inline mapping %s");
@@ -245,7 +245,7 @@ PropertyMapCR propertyMap
             innerECSqlSelectClause.append(", ");
 
         innerECSqlSelectClause.append("[");
-        innerECSqlSelectClause.append(Utf8String(propertyMap->GetProperty().GetName().c_str()));
+        innerECSqlSelectClause.append(propertyMap->GetProperty().GetName());
         innerECSqlSelectClause.append("]");
         selectColumnCount++;
         isFirstProp = false;
@@ -297,7 +297,7 @@ ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields
 std::unique_ptr<ECSqlField>& structField, 
 int& sqlColumnIndex, 
 ECSqlPrepareContext& ctx, 
-PropertyMapToInLineStructCR structPropertyMap,
+PropertyMapStructCR structPropertyMap,
 ECSqlColumnInfo&& structFieldColumnInfo
 )
     {
@@ -316,7 +316,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild (newStructField->GetColumnInfo (), childPropertyMap->GetProperty ());
 
         std::unique_ptr<ECSqlField> childField = nullptr;
-        if (auto childStructPropMap = dynamic_cast<PropertyMapToInLineStructCP>(childPropertyMap))
+        if (auto childStructPropMap = dynamic_cast<PropertyMapStructCP>(childPropertyMap))
             {
             status = CreateStructMemberFields (childField, sqlColumnIndex, ctx, *childStructPropMap, move (childColumnInfo));
             if ( !status.IsSuccess())
