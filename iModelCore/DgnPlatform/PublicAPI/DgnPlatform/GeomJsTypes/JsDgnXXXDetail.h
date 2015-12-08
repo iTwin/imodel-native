@@ -143,6 +143,7 @@ public:
         }
 
     double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
+    ISolidPrimitivePtr GetISolidPrimitivePtr() {return m_solidPrimitive;}
 };
 
 

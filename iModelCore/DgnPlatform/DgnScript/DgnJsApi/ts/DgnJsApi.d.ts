@@ -3,10 +3,12 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     /*** BEGIN_FORWARD_DECLARATIONS ***/
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
     class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
+    class SolidPrimitive { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
     type DPoint3dP = cxx_pointer<DPoint3d>;
     type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
+    type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
 
     //! Logging serverity level.
     enum LoggingSeverity { }
@@ -157,6 +159,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
         AppendSphere(radius: cxx_double): void;
+        Append(solid: SolidPrimitiveP): void;
         SetGeomStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;

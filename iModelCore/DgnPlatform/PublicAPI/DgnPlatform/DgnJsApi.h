@@ -252,6 +252,7 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
 
     void AppendBox(double x, double y, double z);
     void AppendSphere(double radius);
+    void Append(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
     BentleyStatus SetGeomStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeomStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
 };
 typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;

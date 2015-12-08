@@ -208,11 +208,17 @@ TEST_F(DgnScriptTest, RunScripts)
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
     jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
-    printf (":Hello world\n");
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
-    //printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
+
+
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
+    DgnDbP project = tdm.GetDgnProjectP();
+    ASSERT_TRUE(project != NULL);
+    int retstatus = 0;
+    DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", Json::objectValue);
+    ASSERT_EQ(0, retstatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
