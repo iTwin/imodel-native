@@ -130,6 +130,7 @@ enum class ECObjectsStatus
     SchemaNotFound,
     ClassNotFound,
     EnumerationNotFound,
+    EnumeratorNotFound,
     BaseClassUnacceptable,
     SchemaInUse,
     InvalidName,

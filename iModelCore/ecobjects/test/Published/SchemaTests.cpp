@@ -342,6 +342,7 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_String);
     ASSERT_TRUE(enumeration->SetType(PrimitiveType::PRIMITIVETYPE_IGeometry) == ECObjectsStatus::DataTypeNotSupported);
     ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_String);
+    ASSERT_TRUE(enumeration->SetType(PrimitiveType::PRIMITIVETYPE_Integer) == ECObjectsStatus::Success);
 
     //Description
     enumeration->SetDescription("MyDescription");
@@ -352,6 +353,58 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     ASSERT_TRUE(enumeration->SetDisplayLabel("Display Label") == ECObjectsStatus::Success);
     EXPECT_STREQ(enumeration->GetDisplayLabel().c_str(), "Display Label");
     EXPECT_STREQ(enumeration->GetInvariantDisplayLabel().c_str(), "Display Label");
+
+    ECEnumeratorP enumerator;
+    status = enumeration->CreateEnumerator(enumerator, 5);
+    EXPECT_TRUE(status == ECObjectsStatus::Success);
+    EXPECT_TRUE(enumerator != nullptr);
+    EXPECT_TRUE(enumerator->GetDisplayLabel() == nullptr);
+    EXPECT_TRUE(ECObjectsStatus::Success == enumerator->SetDisplayLabel("DLBL"));
+
+    Utf8StringCP displayLabel = nullptr;
+    displayLabel = enumerator->GetDisplayLabel();
+    EXPECT_TRUE(displayLabel != nullptr);
+    EXPECT_STREQ(displayLabel->c_str(), "DLBL");
+    
+    EXPECT_TRUE(enumerator->GetInteger() == 5);
+    EXPECT_TRUE(enumerator->GetString() == nullptr);
+    EXPECT_FALSE(enumerator->IsString());
+    EXPECT_TRUE(enumerator->IsInteger());
+
+    ECEnumeratorP enumerator2;
+    status = enumeration->CreateEnumerator(enumerator2, 5);
+    EXPECT_TRUE(status == ECObjectsStatus::NamedItemAlreadyExists);
+    EXPECT_TRUE(enumerator2 == nullptr);
+
+    status = enumeration->CreateEnumerator(enumerator2, 1);
+    EXPECT_TRUE(status == ECObjectsStatus::Success);
+    EXPECT_TRUE(enumerator2 != nullptr);
+    EXPECT_TRUE(ECObjectsStatus::Success == enumerator2->SetDisplayLabel("DLBL2"));
+    
+    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 2);
+
+    int i = 0;
+    for (auto p : enumeration->GetEnumerators())
+        {
+        EXPECT_TRUE(p != nullptr);
+        if (i == 0)
+            {
+            EXPECT_TRUE(p == enumerator);
+            }
+        else if(i == 1)
+            {
+            EXPECT_TRUE(p == enumerator2);
+            }
+
+        i++;
+        }
+
+    ASSERT_TRUE(i == 2);
+
+    EXPECT_TRUE(enumeration->DeleteEnumerator(*enumerator2) == ECObjectsStatus::Success);
+    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 1);
+    enumeration->Clear();
+    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 0);
     }
 
 //---------------------------------------------------------------------------------------
