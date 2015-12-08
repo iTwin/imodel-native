@@ -139,7 +139,7 @@ public:
 
     //! Determine whether this Task can replace a pending entry in the Queue.
     //! @param[in] other a pending task for the same Render::Target
-    //! @return true if this Task can replace the other pending task.
+    //! @return true if this Task should replace the other pending task.
     //! @note this method will only be called for Tasks for the same Render::Target.
     virtual bool _CanReplace(Task& other) const {return m_operation == other.m_operation;}
 
@@ -148,7 +148,7 @@ public:
     Outcome GetOutcome() const {return m_outcome;}   //!< The Outcome of the processing of this Task (or Waiting, if it has not been processed yet.)
     double GetElapsedTime() const {return m_elapsedTime;} //!< Elapsed time in seconds. Only valid if m_outcome is Finished or Aborted
 
-    Task(Target* target, Type type) : m_target(target), m_type(type) {}
+    Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
 };
 
 //=======================================================================================
