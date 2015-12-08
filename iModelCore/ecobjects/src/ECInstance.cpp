@@ -2425,15 +2425,19 @@ bool   convertStringToByteArray (T_ByteArray& byteData, Utf8CP stringData)
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void                 AppendAccessString (Utf8String& compoundAccessString, Utf8String& baseAccessString, const Utf8String& propertyName)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                     12/15
+//---------------+---------------+---------------+---------------+---------------+------
+static void CreateAccessString(Utf8StringR accessString, Utf8StringP baseAccessString, Utf8StringCR propertyName)
     {
-    compoundAccessString = baseAccessString;
-    compoundAccessString.append (propertyName);
+    if (nullptr == baseAccessString)
+        accessString = propertyName;
+    else
+        {
+        accessString = *baseAccessString;
+        accessString.append(propertyName);
+        }
     }
-
 
 #define INSTANCEID_ATTRIBUTE         "instanceID"
 #define SOURCECLASS_ATTRIBUTE        "sourceClass"
@@ -2746,17 +2750,58 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
     PrimitiveECPropertyP    primitiveProperty;
     ArrayECPropertyP        arrayProperty;
     StructECPropertyP       structProperty;
+    NavigationECPropertyP   navigationProperty;
     if (NULL != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
         return ReadPrimitivePropertyValue (primitiveProperty, ecInstance, baseAccessString, propertyValueNode);
                 //Above is good, if SkipToElementEnd() is returned from ReadPrimitiveValue.
     else if (NULL != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
         return ReadArrayPropertyValue (arrayProperty, ecInstance, baseAccessString, propertyValueNode);
     else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
-        return ReadEmbeddedStructPropertyValue (structProperty, ecInstance, baseAccessString, propertyValueNode);
+        return ReadEmbeddedStructPropertyValue(structProperty, ecInstance, baseAccessString, propertyValueNode);
+    else if (nullptr != (navigationProperty = ecProperty->GetAsNavigationPropertyP()))
+        return ReadNavigationPropertyValue(navigationProperty, ecInstance, baseAccessString, propertyValueNode);
 
     // should be one of those!
     BeAssert (false);
     return InstanceReadStatus::BadECProperty;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                     12/15
+//---------------+---------------+---------------+---------------+---------------+------
+InstanceReadStatus  ReadSimplePropertyValue(Utf8StringCR propertyName, PrimitiveType propertyType, Utf8StringP baseAccessString, IECInstanceP ecInstance, BeXmlNodeR propertyValueNode, PrimitiveType serializedType)
+    {
+    // on entry, propertyValueNode is the xml node for the primitive property value.
+    InstanceReadStatus   ixrStatus;
+    ECValue              ecValue;
+    if (InstanceReadStatus::Success != (ixrStatus = ReadPrimitiveValue(ecValue, propertyType, propertyValueNode, serializedType)))
+        return ixrStatus;
+
+    if (ecValue.IsUninitialized())
+        {
+        //A malformed value was found.  A warning was shown; just move on.
+        return InstanceReadStatus::Success;
+        }
+
+    ECObjectsStatus setStatus;
+    Utf8String accessString;
+    CreateAccessString(accessString, baseAccessString, propertyName);
+    setStatus = ecInstance->SetInternalValue(accessString.c_str(), ecValue);
+
+    if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
+        LOG.warningv("Unable to set value for property %s", propertyName.c_str());
+
+    BeAssert(ECObjectsStatus::Success == setStatus || ECObjectsStatus::PropertyValueMatchesNoChange == setStatus);
+
+    return InstanceReadStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                     12/15
+//---------------+---------------+---------------+---------------+---------------+------
+InstanceReadStatus  ReadNavigationPropertyValue(NavigationECPropertyP navigationProperty, IECInstanceP ecInstance, Utf8StringP baseAccessString, BeXmlNodeR propertyValueNode)
+    {
+    return ReadSimplePropertyValue(navigationProperty->GetName(), PrimitiveType::PRIMITIVETYPE_String, baseAccessString, ecInstance, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2764,41 +2809,9 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, Utf8String* baseAccessString, BeXmlNodeR propertyValueNode)
     {
-    // on entry, propertyValueNode is the xml node for the primitive property value.
-    PrimitiveType        propertyType = primitiveProperty->GetType();
-    InstanceReadStatus   ixrStatus;
-    ECValue              ecValue;
-    if (InstanceReadStatus::Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType, propertyValueNode, m_context.GetSerializedPrimitiveType (*primitiveProperty))))
-        return ixrStatus;
-
-    if(ecValue.IsUninitialized())
-        {
-        //A malformed value was found.  A warning was shown; just move on.
-        return InstanceReadStatus::Success;
-        }
-
-    ECObjectsStatus setStatus;
-    if (NULL == baseAccessString)
-        {
-        setStatus = ecInstance->SetInternalValue (primitiveProperty->GetName().c_str(), ecValue);
-
-        if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
-            LOG.warningv(L"Unable to set value for property %ls", primitiveProperty->GetName().c_str());
-        }
-    else
-        {
-        Utf8String compoundAccessString;
-        AppendAccessString (compoundAccessString, *baseAccessString, primitiveProperty->GetName());
-        setStatus = ecInstance->SetInternalValue (compoundAccessString.c_str(), ecValue);
-
-        if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
-            LOG.warningv("Unable to set value for property %s", compoundAccessString.c_str());
-        }
-
-    BeAssert (ECObjectsStatus::Success == setStatus || ECObjectsStatus::PropertyValueMatchesNoChange == setStatus);
-
-    return InstanceReadStatus::Success;
+    return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty));
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
@@ -2807,10 +2820,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
     {
     // on entry, propertyValueNode is the xml node for the primitive property value.
     Utf8String    accessString;
-    if (NULL == baseAccessString)
-        accessString = arrayProperty->GetName();    
-    else
-        AppendAccessString (accessString, *baseAccessString, arrayProperty->GetName());
+    CreateAccessString(accessString, baseAccessString, arrayProperty->GetName());
 
     // start the address out as zero.
     uint32_t    index = 0;
@@ -2899,10 +2909,7 @@ InstanceReadStatus   ReadEmbeddedStructPropertyValue (StructECPropertyP structPr
     {
     // empty element OK for struct - all members are null.
     Utf8String    thisAccessString;
-    if (NULL != baseAccessString)
-        AppendAccessString (thisAccessString, *baseAccessString, structProperty->GetName());
-    else
-        thisAccessString = structProperty->GetName().c_str();
+    CreateAccessString(thisAccessString, baseAccessString, structProperty->GetName());
     thisAccessString.append (".");
 
     ICustomECStructSerializerP customECStructSerializerP = CustomStructSerializerManager::GetManager().GetCustomSerializer (structProperty, *ecInstance);
@@ -2924,10 +2931,7 @@ InstanceReadStatus   ReadCustomSerializedStruct (StructECPropertyP structPropert
         return InstanceReadStatus::Success;
 
     Utf8String    thisAccessString;
-    if (NULL != baseAccessString)
-        AppendAccessString (thisAccessString, *baseAccessString, structProperty->GetName());
-    else
-        thisAccessString = structProperty->GetName().c_str();
+    CreateAccessString(thisAccessString, baseAccessString, structProperty->GetName());
     thisAccessString.append (".");
 
     customECStructSerializerP->LoadStructureFromString (structProperty, *ecInstance, thisAccessString.c_str(), propertyValueString.c_str());
@@ -3480,6 +3484,7 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
         PrimitiveECPropertyP    primitiveProperty;
         ArrayECPropertyP        arrayProperty;
         StructECPropertyP       structProperty;
+        NavigationECPropertyP   navProperty;
         InstanceWriteStatus     ixwStatus = InstanceWriteStatus::BadPrimitivePropertyType;
             
         if (NULL != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
@@ -3492,10 +3497,7 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
                 {
                 // if the above flag is set then the instance sets "IsLoaded" flags for loaded properties and that "IsLoaded" flag is set in the ECValue for the property
                 Utf8String    accessString;
-                if (NULL == baseAccessString)
-                    accessString = structProperty->GetName();    
-                else
-                    AppendAccessString (accessString, *baseAccessString, structProperty->GetName());
+                CreateAccessString(accessString, baseAccessString, structProperty->GetName());
 
                 // no members, don't write anything.
                 ECValue         ecValue;
@@ -3523,6 +3525,10 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
                 ixwStatus = WriteEmbeddedStructPropertyValue (*structProperty, ecInstance, baseAccessString);
                 }
             }
+        else if (nullptr != (navProperty = ecProperty->GetAsNavigationPropertyP()))
+            {
+            ixwStatus = WriteNavigationPropertyValue(*navProperty, ecInstance, baseAccessString);
+            }
 
         if (InstanceWriteStatus::Success != ixwStatus)
             {
@@ -3534,6 +3540,28 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
      return InstanceWriteStatus::Success;
      }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                     12/15
+//---------------+---------------+---------------+---------------+---------------+------
+InstanceWriteStatus     WriteNavigationPropertyValue(NavigationECPropertyR navigationProperty, IECInstanceCR ecInstance, Utf8StringP baseAccessString)
+    {
+    ECObjectsStatus getStatus;
+    ECValue         ecValue;
+    Utf8StringCR    propertyName = navigationProperty.GetName();
+    Utf8String      accessString;
+    CreateAccessString(accessString, baseAccessString, propertyName);
+    getStatus = ecInstance.GetValue(ecValue, accessString.c_str());
+
+    // couldn't get, or NULL value, write nothing.
+    if ((ECObjectsStatus::Success != getStatus) || ecValue.IsNull())
+        return InstanceWriteStatus::Success;
+
+    m_xmlWriter->WriteElementStart(propertyName.c_str());
+    m_xmlWriter->WriteText(ecValue.GetUtf8CP());
+    m_xmlWriter->WriteElementEnd();
+    return InstanceWriteStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3541,18 +3569,11 @@ InstanceWriteStatus     WritePrimitivePropertyValue (PrimitiveECPropertyR primit
     {
     ECObjectsStatus     getStatus;
     ECValue             ecValue;
-    Utf8StringCR propertyName = primitiveProperty.GetName();
 
-    if (NULL == baseAccessString)
-        {
-        getStatus = ecInstance.GetValue (ecValue, propertyName.c_str());
-        }
-    else
-        {
-        Utf8String compoundAccessString;
-        AppendAccessString (compoundAccessString, *baseAccessString, propertyName);
-        getStatus = ecInstance.GetValue (ecValue, compoundAccessString.c_str());
-        }
+    Utf8StringCR    propertyName = primitiveProperty.GetName();
+    Utf8String      accessString;
+    CreateAccessString(accessString, baseAccessString, propertyName);
+    getStatus = ecInstance.GetValue(ecValue, accessString.c_str());
 
     // couldn't get, or NULL value, write nothing.
     if ( (ECObjectsStatus::Success != getStatus) || ecValue.IsNull() )
@@ -3676,10 +3697,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
     ArrayKind       arrayKind = arrayProperty.GetKind();
 
     Utf8String    accessString;
-    if (NULL == baseAccessString)
-        accessString = arrayProperty.GetName();    
-    else
-        AppendAccessString (accessString, *baseAccessString, arrayProperty.GetName());
+    CreateAccessString(accessString, baseAccessString, arrayProperty.GetName());
 
     // no members, don't write anything.
     ECValue         ecValue;
@@ -3764,13 +3782,10 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 InstanceWriteStatus     WriteEmbeddedStructPropertyValue (StructECPropertyR structProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
     {
     // the tag of the element for an embedded struct is the property name.
-    m_xmlWriter->WriteElementStart(Utf8String(structProperty.GetName().c_str()).c_str());
+    m_xmlWriter->WriteElementStart(structProperty.GetName().c_str());
 
     Utf8String    thisAccessString;
-    if (NULL != baseAccessString)
-        AppendAccessString (thisAccessString, *baseAccessString, structProperty.GetName());
-    else
-        thisAccessString = structProperty.GetName().c_str();
+    CreateAccessString(thisAccessString, baseAccessString, structProperty.GetName());
     thisAccessString.append (".");
 
     ECClassCR   structClass = structProperty.GetType();

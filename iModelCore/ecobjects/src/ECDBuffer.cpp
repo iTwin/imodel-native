@@ -870,6 +870,11 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
                     AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), property->GetIsReadOnly(), arrayProp->IsCalculated()); 
                 }
             }
+        else if (property->GetIsNavigation())
+            {
+            if (!addingFixedSizeProps)
+                AddVariableSizeProperty(propName.c_str(), PrimitiveType::PRIMITIVETYPE_String, false, false);
+            }
         }
     }
 

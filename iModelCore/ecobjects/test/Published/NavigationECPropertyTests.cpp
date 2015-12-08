@@ -63,51 +63,6 @@ void VerifyFailedToDeserialize(Utf8StringCR invalidSchemaString, Utf8StringCR fa
     ASSERT_NE(SchemaReadStatus::Success, readStatus) << "Successfully deserialized schema with error: " << failureMessage;
     }
 
-TEST_F(NavigationECPropertyTests, CreateSomeEC3Xml)
-    {
-    ECSchemaPtr schema;
-    ECEntityClassP abstractEntityClass;
-    ECEntityClassP entityClass;
-    ECEntityClassP entity2Class;
-    ECStructClassP structClass;
-    ECCustomAttributeClassP caClass;
-    ECRelationshipClassP relClass;
-
-    ECSchema::CreateSchema(schema, "EC3Example", 4, 2);
-    schema->CreateEntityClass(abstractEntityClass, "AbstractEntity");
-    schema->CreateEntityClass(entityClass, "Entity1");
-    schema->CreateEntityClass(entity2Class, "Entity2");
-    schema->CreateStructClass(structClass, "Struct");
-    schema->CreateCustomAttributeClass(caClass, "CustomAttribute");
-    schema->CreateRelationshipClass(relClass, "Relationship");
-
-    relClass->GetSource().AddClass(*entityClass);
-    relClass->GetTarget().AddClass(*entity2Class);
-
-    abstractEntityClass->SetClassModifier(ECClassModifier::Abstract);
-    entityClass->AddBaseClass(*abstractEntityClass);
-
-    PrimitiveECPropertyP structsProp;
-    structClass->CreatePrimitiveProperty(structsProp, "sProp");
-    structClass->SetClassModifier(ECClassModifier::Sealed);
-
-    StructECPropertyP structProp;
-    entityClass->CreateStructProperty(structProp, "Struct", *structClass);
-    StructArrayECPropertyP structArrayProp;
-    entityClass->CreateStructArrayProperty(structArrayProp, "StructArray", structClass);
-
-    NavigationECPropertyP navProp;
-    entity2Class->CreateNavigationProperty(navProp, "NavProp", *relClass, ECRelatedInstanceDirection::Backward);
-
-    Utf8String schemaString;
-    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, 3, 0);
-    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema with navigation property";
-
-    Utf8String schema2String;
-    SchemaWriteStatus write2Status = schema->WriteToXmlString(schema2String, 2, 0);
-    ASSERT_EQ(SchemaWriteStatus::Success, write2Status) << "Failed to serialize schema with navigation property";
-    }
-
 TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     {
     ECSchemaPtr schema;
@@ -284,6 +239,76 @@ TEST_F(NavigationECPropertyTests, RoundtripToEC2Xml)
     ASSERT_NE(nullptr, navPropSourceDeserialized) << "Source.MyTarget property does not exist after deserialization from ECXml 2.0";
     ASSERT_FALSE(navPropSourceDeserialized->GetIsNavigation()) << "Source.MyTarget property is still navigation property after deserializing from ECXml 2.0"; // Not that it couldn't be just that we don't need it to
     ASSERT_EQ("string", navPropSourceDeserialized->GetTypeName()) << "Expected navigation property to be of type string after roundtripped to ECXml 2.0";
+    }
+
+TEST_F(NavigationECPropertyTests, InstanceWithNavProp)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP sourceClass;
+    ECEntityClassP targetClass;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", 4, 2);
+    schema->CreateRelationshipClass(relClass, "RelClass");
+    schema->CreateEntityClass(sourceClass, "Source");
+    schema->CreateEntityClass(targetClass, "Target");
+
+    relClass->GetSource().AddClass(*sourceClass);
+    relClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    relClass->GetTarget().AddClass(*targetClass);
+    relClass->GetTarget().SetCardinality(RelationshipCardinality::OneOne());
+
+    NavigationECPropertyP navPropSource;
+    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
+    PrimitiveECPropertyP stringProp;
+    sourceClass->CreatePrimitiveProperty(stringProp, "sProp", PrimitiveType::PRIMITIVETYPE_String);
+    PrimitiveECPropertyP intProp;
+    sourceClass->CreatePrimitiveProperty(intProp, "iProp", PrimitiveType::PRIMITIVETYPE_Integer);
+
+    StandaloneECEnablerPtr enabler = sourceClass->GetDefaultStandaloneEnabler();
+    StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
+    
+    ECValue stringValue ("SomeValue");
+    sourceInstance->SetValue("sProp", stringValue);
+    ECValue intValue(42);
+    sourceInstance->SetValue("iProp", intValue);
+
+    ECValue myTargetValueFromInst;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetValueFromInst, "MyTarget")) << "Failed to get ECValue for MyTarget Navigation Property";
+    ASSERT_TRUE(myTargetValueFromInst.IsNull()) << "Expected Navigation Property MyTarget to be null but it was not";
+    ASSERT_TRUE(myTargetValueFromInst.IsString()) << "Expected Navigation Property to have an ECValue of type string because this is a standalone instance";
+
+    ECValue myTargetValue("IdOfTarget");
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->SetValue("MyTarget", myTargetValue)) << "Failed to set the value of MyTarget nav prop to a string";
+    EXPECT_STREQ("IdOfTarget", myTargetValue.GetUtf8CP()) << "Value of MyTarget nav property not as expected";
+
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetValueFromInst, "MyTarget")) << "Failed to get ECValue for MyTarget Navigation Property after set";
+    ASSERT_FALSE(myTargetValueFromInst.IsNull()) << "Expected Navigation Property MyTarget to be not null after set but it was";
+    EXPECT_STREQ("IdOfTarget", myTargetValueFromInst.GetUtf8CP()) << "Value of MyTarget nav property gotten from instance not as expected";
+
+    Utf8String xmlString;
+    InstanceWriteStatus writeStatus = sourceInstance->WriteToXmlString(xmlString, true, false);
+    ASSERT_EQ(InstanceWriteStatus::Success, writeStatus) << "Failed to serilaize an instance with a nav property";
+    
+    ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(*schema);
+    IECInstancePtr sourceDeserialized;
+    InstanceReadStatus readStatus = StandaloneECInstance::ReadFromXmlString(sourceDeserialized, xmlString.c_str(), *readContext);
+    ASSERT_EQ(InstanceReadStatus::Success, readStatus) << "Failed to deserialize an instance with a nav property";
+
+    ECValue stringValueDes;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(stringValueDes, "sProp")) << "Failed to get standard string property value after deserialization";
+    ASSERT_STREQ(stringValue.GetUtf8CP(), stringValueDes.GetUtf8CP()) << "Standard String property value failed to deserialize correctly";
+
+    ECValue intValueDes;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(intValueDes, "iProp")) << "Failed to get standard int property value after deserialization";
+    ASSERT_EQ(intValue.GetInteger(), intValueDes.GetInteger()) << "Standard Int property value failed to deserialize correctly";
+
+    ECValue myTargetValueDes;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetValueDes, "MyTarget")) << "Failed to get ECValue for MyTarget Navigation Property after deserialization";
+    ASSERT_FALSE(myTargetValueDes.IsNull()) << "Expected Navigation Property MyTarget to be not null after deserialization but it was";
+    ASSERT_TRUE(myTargetValueDes.IsString()) << "Expected Navigation Property to have an ECValue of type string because this is a standalone instance";
+
+    EXPECT_STREQ("IdOfTarget", myTargetValueDes.GetUtf8CP()) << "Value of MyTarget nav property not as expected after deserialization";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
