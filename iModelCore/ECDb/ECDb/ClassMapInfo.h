@@ -64,8 +64,6 @@ private:
 
     BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, Utf8CP customAttributeName);
 
-    BentleyStatus DetermineJoinedTableName(ECN::ECClassCR rootClassOfJoinedTable);
-
 protected:
     virtual BentleyStatus _InitializeFromSchema();
     virtual MapStatus _EvaluateMapStrategy();
@@ -209,11 +207,12 @@ public:
         Utf8CP whereClause = dbIndex.GetWhereClause();
         if (!Utf8String::IsNullOrEmpty(whereClause))
             {
-            if (BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0)
+            if (BeStringUtilities::Stricmp(whereClause, "IndexedColumnsAreNotNull") == 0 ||
+                BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0) //legacy support
                 whereConstraint = WhereConstraint::NotNull;
             else
                 {
-                LOG.errorv("Invalid where clause in ClassMap::DbIndex: %s. Only ECDB_NOTNULL supported by ECDb.", dbIndex.GetWhereClause());
+                LOG.errorv("Invalid where clause in ClassMap::DbIndex: %s. Only 'IndexedColumnsAreNotNull' supported by ECDb.", dbIndex.GetWhereClause());
                 return nullptr;
                 }
             }

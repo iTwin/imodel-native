@@ -995,10 +995,10 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
 
     bvector<Utf8String> tableNames;
     tableNames.push_back ("nsat_ClassA");
-    tableNames.push_back ("nsat_S1_Array");
-    tableNames.push_back ("nsat_S2_Array");
-    tableNames.push_back ("nsat_S3_Array");
-    tableNames.push_back ("nsat_S4_Array");
+    tableNames.push_back ("nsat_S1");
+    tableNames.push_back ("nsat_S2");
+    tableNames.push_back ("nsat_S3");
+    tableNames.push_back ("nsat_S4");
     tableNames.push_back ("nsat_BaseHasDerivedA");
     tableNames.push_back ("nsat_DerivedBOwnsChilds");
 
@@ -1034,10 +1034,10 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDeleteTestWithStructArrays)
     tableNames.push_back ("nsat_DoubleDerivedA");
     tableNames.push_back ("nsat_DoubleDerivedB");
     tableNames.push_back ("nsat_DoubleDerivedC");
-    tableNames.push_back ("nsat_S1_Array");
-    tableNames.push_back ("nsat_S2_Array");
-    tableNames.push_back ("nsat_S3_Array");
-    tableNames.push_back ("nsat_S4_Array");
+    tableNames.push_back ("nsat_S1");
+    tableNames.push_back ("nsat_S2");
+    tableNames.push_back ("nsat_S3");
+    tableNames.push_back ("nsat_S4");
     tableNames.push_back ("nsat_BaseHasDerivedA");
     tableNames.push_back ("nsat_DerivedBOwnsChilds");
     
@@ -1288,7 +1288,7 @@ TEST_F (ECSqlStatementTestFixture, InsertStructArray)
         if (testClass->IsStructClass())
             {
             Utf8String selectSql = "SELECT COUNT(*) FROM nsat_";
-            selectSql.append (testClass->GetName ()).append("_Array");
+            selectSql.append (testClass->GetName ());
             selectStatements[selectSql] = i*j;
             j = i*j;
             i++;
@@ -1353,7 +1353,7 @@ TEST_F (ECSqlStatementTestFixture, DeleteStructArray)
         if (testClass->IsStructClass())
             {
             Utf8String selectSql = "SELECT * FROM nsat_";
-            selectSql.append (testClass->GetName ()).append("_Array");
+            selectSql.append (testClass->GetName ());
             selectStatements.push_back (selectSql);
             }
         }

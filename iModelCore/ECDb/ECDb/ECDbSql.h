@@ -62,10 +62,12 @@ enum class PersistenceType
     Virtual //! Not persisted in db rather used as a view specification
     };
 
-enum class OwnerType
+enum class TableType
     {
-    ECDb, //! owned by ECDb.
-    ExistingTable //! existing table
+    Primary = 0,
+    Joined = 1,
+    StructArray = 2,
+    Existing = 3
     };
 
 //======================================================================================
@@ -216,7 +218,7 @@ public:
     virtual ~ECDbMapDb() {}
 
     //! Create a table with a given name or if name is null a name will be generated
-    ECDbSqlTable* CreateTable (Utf8CP name, PersistenceType type = PersistenceType::Persisted);
+    ECDbSqlTable* CreateTable (Utf8CP name, TableType, PersistenceType type = PersistenceType::Persisted);
     ECDbSqlTable* CreateTableForExistingTableMapStrategy (ECDbCR, Utf8CP existingTableName);
     ECDbSqlTable* CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
     BeVersion const& GetVersion () const { return m_version; }
@@ -427,8 +429,8 @@ struct ECDbSqlTable : NonCopyableClass
         Created,
         Deleted
         };
-    friend ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, PersistenceType type);
-    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName);
+    friend ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType, PersistenceType);
+    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR, Utf8CP existingTableName);
     friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
     friend std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const;
     struct PersistenceManager : NonCopyableClass
@@ -452,8 +454,8 @@ struct ECDbSqlTable : NonCopyableClass
         ECDbTableId m_id;
         Utf8String m_name;
         NameGenerator m_nameGeneratorForColumn;
-        PersistenceType m_type;
-        OwnerType m_ownerType;
+        TableType m_tableType;
+        PersistenceType m_persistenceType;
         std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8> m_columns;
         std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_triggers;
         std::vector<ECDbSqlColumn const*> m_orderedColumns;
@@ -464,8 +466,8 @@ struct ECDbSqlTable : NonCopyableClass
         EditHandle m_editInfo;
         std::vector<std::function<void (ColumnEvent, ECDbSqlColumn&)>> m_columnEvents;
     private:
-        ECDbSqlTable (Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, OwnerType ownerType)
-            : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("sc%02x"), m_type(type), m_ownerType(ownerType), 
+        ECDbSqlTable (Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, TableType tableType)
+            : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("sc%02x"), m_persistenceType(type), m_tableType(tableType),
             m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this)
             {}
 
@@ -476,8 +478,9 @@ struct ECDbSqlTable : NonCopyableClass
         ECDbTableId GetId () const { return m_id; }
         void SetId (ECDbTableId id) { m_id = id; }
         Utf8StringCR GetName () const { return m_name; }
-        PersistenceType GetPersistenceType () const { return m_type; }
-        OwnerType GetOwnerType () const { return m_ownerType; }
+        PersistenceType GetPersistenceType () const { return m_persistenceType; }
+        TableType GetTableType () const { return m_tableType; }
+        bool IsOwnedByECDb() const { return m_tableType != TableType::Existing; }
         ECDbMapDb const& GetDbDef () const{ return m_dbDef; }
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
         //! Any type will be mark as reusable column
@@ -790,11 +793,11 @@ public:
 struct ECDbSqlPersistence : NonCopyableClass
     {
     private:
-        const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, IsOwnedByECDb, IsVirtual) VALUES (?, ?, ?, ?)";
+        const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, Type, IsVirtual) VALUES (?, ?, ?, ?)";
         const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferencedTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)";
-        const Utf8CP Sql_SelectTable = "SELECT Id, Name, IsOwnedByECDb, IsVirtual FROM ec_Table";
+        const Utf8CP Sql_SelectTable = "SELECT Id, Name, Type, IsVirtual FROM ec_Table";
         const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
         const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferencedTableId WHERE F.TableId = ?";
         const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferencedColumnId = B.Id  WHERE F.ForeignKeyId = ? ORDER BY F.Ordinal";

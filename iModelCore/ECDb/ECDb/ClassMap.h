@@ -41,7 +41,6 @@ public:
 //! A helper class to help generate view/trigger in standard way
 // @bsiclass                                               Affan.Khan          08/2015
 //+===============+===============+===============+===============+===============+======
-
 struct PropertyMapSet : NonCopyableClass
     {
     typedef std::unique_ptr<PropertyMapSet> Ptr;
@@ -147,13 +146,11 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
-    bool IsJoinedTable() const;
-    bool IsParentOfJoinedTable() const;
     IClassMap const* FindParentOfJoinedTable() const;
     const std::set<ECDbSqlTable const*> GetJoinedTables() const;
-    ECDbSqlTable& GetRootTable() const
+    ECDbSqlTable& GetPrimaryTable() const
         {
-        if (IsJoinedTable())
+        if (MapsToJoinedTable())
             {
             auto root = FindParentOfJoinedTable();
             BeAssert(root != nullptr && "This should never be null");
@@ -186,13 +183,15 @@ public:
     bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
     StorageDescription const& GetStorageDescription() const;
-    bool IsMappedToSecondaryTable () const;
+    bool MapsToJoinedTable() const;
+    bool IsParentOfJoinedTable() const;
+    bool MapsToStructArrayTable () const;
     bool IsRelationshipClassMap () const;
     Utf8String ToString () const;
 
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
-    static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR);
+    static bool MapsToStructArrayTable (ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
     };
 

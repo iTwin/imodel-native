@@ -446,13 +446,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
     else
         {
-        if (classMap.IsJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
+        if (classMap.MapsToJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
             {
             auto rootMap = classMap.FindParentOfJoinedTable();
             BeAssert(rootMap != nullptr);
             table = &rootMap->GetTable();
             }
-        else if (classMap.IsJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
+        else if (classMap.MapsToJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
             {
             table = &classMap.GetTable();
             }

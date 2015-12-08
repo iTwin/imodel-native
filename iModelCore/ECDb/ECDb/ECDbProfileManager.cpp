@@ -717,7 +717,7 @@ Db& db
         "("
         "Id INTEGER PRIMARY KEY,"
         "Name TEXT NOT NULL COLLATE NOCASE,"
-        "IsOwnedByECDb BOOL NOT NULL CHECK (IsOwnedByECDb IN (0, 1)),"
+        "Type INTEGER NOT NULL,"
         "IsVirtual BOOL NOT NULL CHECK (IsVirtual IN (0, 1))"
         ");");
     }

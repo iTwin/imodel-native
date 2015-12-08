@@ -73,7 +73,7 @@ bool IClassMap::ContainsPropertyMapToTable() const
     GetPropertyMaps().Traverse([&found] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
         BeAssert(propMap != nullptr);
-        if (propMap->GetAsPropertyMapToTable() != nullptr)
+        if (propMap->GetAsPropertyMapStructArray() != nullptr)
             {
             found = true;
             feedback = TraversalFeedback::Cancel;
@@ -189,16 +189,16 @@ bool IClassMap::IsAnyClass(ECClassCR ecclass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2014
 //---------------------------------------------------------------------------------------
-bool IClassMap::IsMappedToSecondaryTable() const
+bool IClassMap::MapsToStructArrayTable() const
     {
-    return IsMapToSecondaryTableStrategy(GetClass());
+    return MapsToStructArrayTable(GetClass());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2014
 //---------------------------------------------------------------------------------------
 //static
-bool IClassMap::IsMapToSecondaryTableStrategy(ECN::ECClassCR ecClass)
+bool IClassMap::MapsToStructArrayTable(ECN::ECClassCR ecClass)
     {
     return ecClass.IsStructClass();
     }
@@ -206,7 +206,7 @@ bool IClassMap::IsMapToSecondaryTableStrategy(ECN::ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-bool IClassMap::IsJoinedTable() const
+bool IClassMap::MapsToJoinedTable() const
     {
     return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     }
@@ -225,7 +225,7 @@ bool IClassMap::IsParentOfJoinedTable() const
 IClassMap const* IClassMap::FindParentOfJoinedTable() const
     {
     auto current = this;
-    if (!current->IsJoinedTable())
+    if (!current->MapsToJoinedTable())
         return nullptr;
 
     do
@@ -321,10 +321,6 @@ BentleyStatus IClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassC
         }
 
     tableName.append("_").append(ecclass.GetName());
-
-    if (IsMapToSecondaryTableStrategy(ecclass))
-        tableName.append(TABLESUFFIX_STRUCTARRAY);
-    
     return SUCCESS;
     }
 
@@ -334,6 +330,8 @@ BentleyStatus IClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassC
 //static
 BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
     {
+    tablePrefix.clear();
+
     ECSchemaCR schema = ecclass.GetSchema();
     ECDbSchemaMap customSchemaMap;
 
@@ -392,50 +390,35 @@ MapStatus ClassMap::Initialize(SchemaImportContext* schemaImportContext, ClassMa
 MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
-    bool isJoinedTable = Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
-    if (isJoinedTable)
+    TableType tableType = TableType::Primary;
+    if (Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable))
+        tableType = TableType::Joined;
+    else if (IClassMap::MapsToStructArrayTable(m_ecClass))
+        tableType = TableType::StructArray;
+    else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+        tableType = TableType::Existing;
+
+    BeAssert(tableType != TableType::Joined || parentClassMap != nullptr);
+    if (parentClassMap != nullptr)
         {
-        PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
+        PRECONDITION(!parentClassMap->GetMapStrategy().IsNotMapped(), MapStatus::Error);
         m_parentMapClassId = parentClassMap->GetClass().GetId();
 
-        auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
-            schemaImportContext,
-            mapInfo.GetTableName(),
-            mapInfo.IsMapToVirtualTable(),
-            mapInfo.GetECInstanceIdColumnName(),
-            IClassMap::IsMapToSecondaryTableStrategy(m_ecClass),
-            mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable);
+        if (tableType != TableType::Joined)
+            m_table = &parentClassMap->GetTable();
+        }
+    
+    if (m_table == nullptr)
+        {
+        ECDbSqlTable* table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(schemaImportContext, mapInfo.GetTableName(), tableType,
+                                                                                mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName());
 
         if (!EXPECTED_CONDITION(table != nullptr))
             return MapStatus::Error;
 
         m_table = table;
         }
-    else
-        {
-        //if parent class map exists, its dbtable is reused.
-        if (parentClassMap != nullptr)
-            {
-            PRECONDITION(!parentClassMap->GetMapStrategy().IsNotMapped(), MapStatus::Error);
-            m_parentMapClassId = parentClassMap->GetClass().GetId();
-            m_table = &parentClassMap->GetTable();
-            }
-        else
-            {
-            auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
-                schemaImportContext,
-                mapInfo.GetTableName(),
-                mapInfo.IsMapToVirtualTable(),
-                mapInfo.GetECInstanceIdColumnName(),
-                IClassMap::IsMapToSecondaryTableStrategy(m_ecClass),
-                mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable);
 
-            if (!EXPECTED_CONDITION(table != nullptr))
-                return MapStatus::Error;
-
-            m_table = table;
-            }
-        }
     //Add ECInstanceId property map
     //check if it already exists
     if (GetECInstanceIdPropertyMap() != nullptr)
@@ -716,7 +699,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                         issues.Report(ECDbIssueSeverity::Error,
                                       "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
                                       "The properties that make up the index are mapped to different tables because the MapStrategy option '" USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS 
-                                      "' or '" USERMAPSTRATEGY_OPTIONS_SINGLEJOINEDTABLEFORSUBCLASSES "'  is applied to this class hierarchy.",
+                                      "' is applied to this class hierarchy.",
                                       i, GetClass().GetFullName());
                         }
                     else
@@ -1008,7 +991,7 @@ MappedTablePtr MappedTable::Create(ECDbMapR ecDbMap, ClassMapCR classMap)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus MappedTable::FinishTableDefinition(ECDbCR ecdb, SchemaImportContext& schemaImportContext)
     {
-    if (m_table.GetOwnerType() == OwnerType::ECDb)
+    if (m_table.IsOwnedByECDb())
         {
         int nOwners = 0;
         bool sharedTableWithAppliesToSubclasses = false;
@@ -1333,7 +1316,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& sp
         {
         if (ECDbSqlHelper::IsCompatible(existingColumn->GetType(), specifications.GetColumnType()))
             {
-            if (GetTable().GetOwnerType() == OwnerType::ECDb)
+            if (GetTable().IsOwnedByECDb())
                 {
                 if (existingColumn->GetConstraint().IsNotNull() != specifications.IsNotNull() || existingColumn->GetConstraint().IsUnique() != specifications.IsUnique() || existingColumn->GetConstraint().GetCollation() != specifications.GetCollation())
                     {
@@ -1571,7 +1554,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             if (pm->Is3d ())
                 propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".Z").c_str (), *columns[2], ECValue ())));
             }
-        else if (nullptr != dynamic_cast<PropertyMapToTable const*> (propMap))
+        else if (nullptr != dynamic_cast<PropertyMapStructArray const*> (propMap))
             {
             feedback = TraversalFeedback::NextSibling;
             }

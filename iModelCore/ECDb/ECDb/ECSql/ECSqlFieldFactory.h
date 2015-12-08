@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,49 +27,49 @@ private:
 
     static ECSqlStatus CreatePrimitiveField
     (
-    std::unique_ptr<ECSqlField>& field,
+    std::unique_ptr<ECSqlField>&,
     int& sqlColumnIndex,
-    ECSqlPrepareContext& ctx, 
-    ECSqlColumnInfo&& columnInfo,
-    PropertyNameExp const* propertyName,
-    PrimitiveType primitiveType
+    ECSqlPrepareContext&, 
+    ECSqlColumnInfo&&,
+    PropertyNameExp const*,
+    PrimitiveType
     );
 
     static ECSqlStatus CreateStructField
     (
-    std::unique_ptr<ECSqlField>& field,
+    std::unique_ptr<ECSqlField>&,
     int& sqlColumnIndex,
-    ECSqlPrepareContext& ctx, 
-    ECSqlColumnInfo&& columnInfo,
-    PropertyNameExp const* propertyName
+    ECSqlPrepareContext&, 
+    ECSqlColumnInfo&&,
+    PropertyNameExp const*
     );
 
     static ECSqlStatus CreatePrimitiveArrayField
     (
-    std::unique_ptr<ECSqlField>& field,
+    std::unique_ptr<ECSqlField>&,
     int& sqlColumnIndex,
-    ECSqlPrepareContext& ctx, 
-    ECSqlColumnInfo&& columnInfo,
-    PropertyNameExp const* propertyName,
-    PrimitiveType primitiveType
+    ECSqlPrepareContext&, 
+    ECSqlColumnInfo&&,
+    PropertyNameExp const*,
+    PrimitiveType
     );
 
     static ECSqlStatus CreateStructArrayField
     (
-    std::unique_ptr<ECSqlField>& field,
+    std::unique_ptr<ECSqlField>&,
     int& sqlColumnIndex,
-    ECSqlPrepareContext& ctx, 
-    ECSqlColumnInfo&& ecsqlColumnInfo, 
-    PropertyMapCR propertyMap
+    ECSqlPrepareContext&, 
+    ECSqlColumnInfo&&, 
+    PropertyMapCR
     );
 
     static ECSqlStatus CreateStructMemberFields
     (
-    std::unique_ptr<ECSqlField>& structField, 
+    std::unique_ptr<ECSqlField>&, 
     int& sqlColumnIndex, 
-    ECSqlPrepareContext& ctx, 
-    PropertyMapToInLineStructCR structPropertyMap,
-    ECSqlColumnInfo&& structFieldColumnInfo
+    ECSqlPrepareContext&, 
+    PropertyMapStructCR,
+    ECSqlColumnInfo&&
     );
 
     static ECSqlColumnInfo CreateECSqlColumnInfoFromPropertyNameExp (ECSqlPrepareContext const& ctx, PropertyNameExp const& propertyNameExp);

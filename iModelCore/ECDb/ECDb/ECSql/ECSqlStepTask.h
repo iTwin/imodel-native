@@ -75,7 +75,6 @@ public:
         bool HasSelector () const { return m_selector != nullptr;  }
         EmbeddedECSqlStatement* GetSelector (bool create = false);
         bool Add (std::unique_ptr<ECSqlStepTask> stepTask);
-        bool Delete (Utf8CP name);
         size_t Size () const { return m_stepTasks.size(); }
         bool IsEmpty () const { return m_stepTasks.empty (); }
         void Clear() { m_stepTasks.clear(); }
@@ -130,20 +129,18 @@ public:
 struct ECSqlPropertyStepTask : public ECSqlStepTask
     {
 private:
-    PropertyMapToTableCR m_property;
+    PropertyMapStructArrayCR m_propertyMap;
     IClassMap const& m_classMap;
 
 protected:
-    ECSqlPropertyStepTask (ExecutionCategory category, PropertyMapToTableCR property, IClassMap const& classMap)
-        :ECSqlStepTask (category, property.GetPropertyAccessString ()), m_property (property), m_classMap (classMap) {}
+    ECSqlPropertyStepTask (ExecutionCategory category, PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
+        :ECSqlStepTask (category, propertyMap.GetPropertyAccessString ()), m_propertyMap (propertyMap), m_classMap (classMap) {}
 
 public:
     virtual ~ECSqlPropertyStepTask (){}
 
-    PropertyMapToTableCR aInsertStepTaskGetPropertyMap () const { return m_property; }
     IClassMap const& GetClassMap () const { return m_classMap; }
-    PropertyMapToTableCR GetPropertyMap () const { return m_property; }
-    PropertyMapToTableCR GetPropertyMapR () const { return const_cast<PropertyMapToTableR>(m_property); }
+    PropertyMapStructArrayCR GetPropertyMap () const { return m_propertyMap; }
     };
 
 //=======================================================================================
@@ -157,8 +154,8 @@ private:
     virtual ECSqlParameterValue* _GetParameter () = 0;
 
 protected:
-    ParametericStepTask (ExecutionCategory category, PropertyMapToTableCR property, IClassMap const& classMap)
-        :ECSqlPropertyStepTask (category, property, classMap) {}
+    ParametericStepTask (ExecutionCategory category, PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
+        :ECSqlPropertyStepTask (category, propertyMap, classMap) {}
 
 public:
     virtual ~ParametericStepTask (){}
@@ -184,7 +181,7 @@ private:
     ECSqlParameterValue* m_parameterValue;
     ECPropertyId m_propertyPathId;
 private:
-    InsertStructArrayStepTask (PropertyMapToTableCR property, IClassMap const& classMap);
+    InsertStructArrayStepTask (PropertyMapStructArrayCR, IClassMap const&);
     virtual DbResult _Execute (ECInstanceId const& instanceId) override;
 
     virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override { m_parameterValue = &parameterSource; }
@@ -208,7 +205,7 @@ private:
     std::unique_ptr<EmbeddedECSqlStatement> m_deleteStmt;
 
 private:
-    DeleteStructArrayStepTask (PropertyMapToTableCR property, IClassMap const& classMap);
+    DeleteStructArrayStepTask (PropertyMapStructArrayCR, IClassMap const&);
     virtual DbResult _Execute (ECInstanceId const& instanceId) override;
 
     public:

@@ -1010,7 +1010,7 @@ bool ChangeExtractor::ChangeAffectsClass(IClassMapCR classMap) const
 //---------------------------------------------------------------------------------------
 bool ChangeExtractor::ChangeAffectsProperty(PropertyMapCR propertyMap) const
     {
-    PropertyMapToInLineStructCP inlineStructMap = dynamic_cast<PropertyMapToInLineStructCP> (&propertyMap);
+    PropertyMapStructCP inlineStructMap = dynamic_cast<PropertyMapStructCP> (&propertyMap);
     if (inlineStructMap != nullptr)
         {
         for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
@@ -1500,7 +1500,7 @@ void ChangeExtractor::RecordStructArrayParentInstance(IClassMapCR classMap, ECIn
 //---------------------------------------------------------------------------------------
 void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMapCR propertyMap)
     {
-    PropertyMapToInLineStructCP inlineStructMap = dynamic_cast<PropertyMapToInLineStructCP> (&propertyMap);
+    PropertyMapStructCP inlineStructMap = dynamic_cast<PropertyMapStructCP> (&propertyMap);
     if (inlineStructMap != nullptr)
         {
         for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
@@ -1536,7 +1536,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    BeAssert(nullptr != dynamic_cast<PropertyMapToTable const*> (&propertyMap));
+    BeAssert(nullptr != dynamic_cast<PropertyMapStructArray const*> (&propertyMap));
     BeAssert(columns.size() == 0);
     }
 

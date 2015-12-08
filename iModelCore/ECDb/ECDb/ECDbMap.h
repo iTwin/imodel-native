@@ -12,9 +12,6 @@
 #include "ECDbSql.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define TABLESUFFIX_STRUCTARRAY "_Array"
-#define TABLESUFFIX_JOINEDTABLE "_Joined"
-
 struct StorageDescription;
 
 /*=================================================================================**//**
@@ -163,7 +160,7 @@ public:
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
 
-    ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable);
+    ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
     MappedTableP                GetMappedTable(ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
 
     //!Loads the class maps if they were not loaded yet

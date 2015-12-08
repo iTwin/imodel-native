@@ -172,8 +172,8 @@ ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create(unique_ptr<UpdateStr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-InsertStructArrayStepTask::InsertStructArrayStepTask(PropertyMapToTableCR property, IClassMap const& classMap)
-: ParametericStepTask(ExecutionCategory::ExecuteAfterParentStep, property, classMap), m_insertStmt(new EmbeddedECSqlStatement()), m_parameterValue(nullptr), m_propertyPathId(0)
+InsertStructArrayStepTask::InsertStructArrayStepTask(PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
+: ParametericStepTask(ExecutionCategory::ExecuteAfterParentStep, propertyMap, classMap), m_insertStmt(new EmbeddedECSqlStatement()), m_parameterValue(nullptr), m_propertyPathId(0)
     {}
 
 
@@ -193,7 +193,7 @@ DbResult InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
     if (structArrayParameterValue->IsNull())
         return BE_SQLITE_OK;
     
-    ECClassCP structType = GetPropertyMapR ().GetProperty().GetAsStructArrayProperty()->GetStructElementType();
+    ECClassCP structType = GetPropertyMap().GetProperty().GetAsStructArrayProperty()->GetStructElementType();
     ECDb const& ecdb = preparedStmt->GetECDb();
     IClassMap const* structClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*structType);
     PropertyMapCollection const& structMemberPropMaps = structClassMap->GetPropertyMaps();
@@ -254,17 +254,13 @@ DbResult InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
 //---------------------------------------------------------------------------------------
 ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
-    auto propertyMap = classMap.GetPropertyMap(property);
+    PropertyMapCP propertyMap = classMap.GetPropertyMap(property);
     if (propertyMap == nullptr)
-        {
         return ECSqlStepTaskCreateStatus::PropertyNotFound;
-        }
 
-    auto structArrayPropertyMap = dynamic_cast<PropertyMapToTableCP>(propertyMap);
+    PropertyMapStructArrayCP structArrayPropertyMap = propertyMap->GetAsPropertyMapStructArray();
     if (structArrayPropertyMap == nullptr)
-        {
         return ECSqlStepTaskCreateStatus::PropertyNotStructArrayType;
-        }
 
     auto& arrayElementType = structArrayPropertyMap->GetElementType();
     auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(arrayElementType);
@@ -293,7 +289,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
             continue;
 
         Utf8String propName("[");
-        propName.append(Utf8String(propertyMap->GetProperty().GetName())).append("]");
+        propName.append(propertyMap->GetProperty().GetName()).append("]");
 
         builder.AddValue(propName.c_str(), "?");
         }
@@ -318,8 +314,8 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-DeleteStructArrayStepTask::DeleteStructArrayStepTask(PropertyMapToTableCR property, IClassMap const& classMap)
-: ECSqlPropertyStepTask(ExecutionCategory::ExecuteBeforeParentStep, property, classMap), m_deleteStmt(new EmbeddedECSqlStatement())
+DeleteStructArrayStepTask::DeleteStructArrayStepTask(PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
+: ECSqlPropertyStepTask(ExecutionCategory::ExecuteBeforeParentStep, propertyMap, classMap), m_deleteStmt(new EmbeddedECSqlStatement())
     {}
 
 
@@ -342,36 +338,26 @@ DbResult DeleteStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
 //---------------------------------------------------------------------------------------
 ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
-    auto propertyMap = classMap.GetPropertyMap(property);
+    PropertyMapCP propertyMap = classMap.GetPropertyMap(property);
     if (propertyMap == nullptr)
-        {
         return ECSqlStepTaskCreateStatus::PropertyNotFound;
-        }
 
-    auto structArrayPropertyMap = dynamic_cast<PropertyMapToTableCP>(propertyMap);
+    PropertyMapStructArrayCP structArrayPropertyMap = propertyMap->GetAsPropertyMapStructArray();
     if (structArrayPropertyMap == nullptr)
-        {
         return ECSqlStepTaskCreateStatus::PropertyNotStructArrayType;
-        }
 
     auto& arrayElementType = structArrayPropertyMap->GetElementType();
     auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(arrayElementType);
     if (arrayElementTypeMap == nullptr)
-        {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
-        }
 
     if (arrayElementTypeMap->GetMapStrategy().IsNotMapped())
-        {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeIsUnmapped;
-        }
 
-    Utf8String schemaName = Utf8String(arrayElementType.GetSchema().GetName().c_str());
-    Utf8String structName = Utf8String(arrayElementType.GetName().c_str());
-    auto persistenceECPropertyId = propertyMap->GetPropertyPathId();
- 
     Utf8String ecsql; 
-    ecsql.Sprintf("DELETE FROM ONLY [%s].[%s] WHERE " ECDB_COL_ParentECInstanceId " = ? AND " ECDB_COL_ECPropertyPathId " = %llu AND " ECDB_COL_ECArrayIndex " IS NOT NULL", schemaName.c_str(), structName.c_str(), persistenceECPropertyId);
+    ecsql.Sprintf("DELETE FROM ONLY [%s].[%s] WHERE " ECDB_COL_ParentECInstanceId " = ? AND " 
+                  ECDB_COL_ECPropertyPathId " = %llu AND " ECDB_COL_ECArrayIndex " IS NOT NULL", 
+                  arrayElementType.GetSchema().GetName().c_str(), arrayElementType.GetName().c_str(), propertyMap->GetPropertyPathId());
 
     unique_ptr<DeleteStructArrayStepTask>  aDeleteStepTask = unique_ptr<DeleteStructArrayStepTask> (new DeleteStructArrayStepTask(*structArrayPropertyMap, classMap));
     aDeleteStepTask->GetStatement().Initialize(preparedContext, propertyMap->GetProperty().GetAsArrayProperty(), nullptr);
@@ -534,7 +520,7 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateStepTaskList(ECSqlStepTask
     ECSqlStepTaskCreateStatus status = ECSqlStepTaskCreateStatus::Success;
     auto processStructArrayProperties = [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
-        if (propMap->GetAsPropertyMapToTable())
+        if (propMap->GetAsPropertyMapStructArray())
             {
             unique_ptr<ECSqlStepTask> task;
             status = ECSqlStepTaskFactory::CreatePropertyStepTask(task, taskType, preparedContext, ecdb, classMap, propMap->GetPropertyAccessString());

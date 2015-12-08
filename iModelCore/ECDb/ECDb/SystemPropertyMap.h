@@ -62,19 +62,19 @@ public:
 
 
 //=======================================================================================
-//! PropertyMapSecondaryTableKey is a property map for the system properties used to
+//! PropertyMapStructArrayTableKey is a property map for the system properties used to
 //! identify a row in a secondary table.
 /// @bsiclass                                                 Krischan.Eberle    06/2013
 //+===============+===============+===============+===============+===============+======
-struct PropertyMapSecondaryTableKey : PropertyMapSystem
+struct PropertyMapStructArrayTableKey : PropertyMapSystem
     {
 private:
-    explicit PropertyMapSecondaryTableKey (ECN::ECPropertyCR systemProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind);
+    explicit PropertyMapStructArrayTableKey (ECN::ECPropertyCR systemProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind);
 
     virtual Utf8String _ToString () const override;
 
 public:
-    ~PropertyMapSecondaryTableKey () {}
+    ~PropertyMapStructArrayTableKey () {}
     static PropertyMapPtr Create (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind, IClassMap const& classMap);
     };
 

@@ -58,8 +58,8 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
             else
                 classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             }
-        else if (IClassMap::IsMapToSecondaryTableStrategy (ecClass))
-            classMap = SecondaryTableClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+        else if (IClassMap::MapsToStructArrayTable (ecClass))
+            classMap = StructClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
         else
             classMap = ClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
         }
@@ -139,8 +139,8 @@ ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, SchemaImportC
             else
                 classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             }
-        else if (IClassMap::IsMapToSecondaryTableStrategy (ecClass))
-            classMap = SecondaryTableClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+        else if (IClassMap::MapsToStructArrayTable (ecClass))
+            classMap = StructClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
         else
             classMap = ClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
         }
