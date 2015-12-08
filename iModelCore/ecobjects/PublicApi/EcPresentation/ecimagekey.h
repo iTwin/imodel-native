@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/ecimagekey.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -11,7 +11,9 @@
 #include <Bentley/WString.h>
 #include <ECObjects/ECObjects.h>
 
-typedef struct mdlDesc  MdlDesc;
+BEGIN_BENTLEY_NAMESPACE
+struct MdlDesc;
+END_BENTLEY_NAMESPACE
 typedef uint32_t        RscType;            /* Resource Type */
 typedef int32_t         RscId;              /* Resource Id */
 

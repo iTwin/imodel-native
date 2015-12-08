@@ -1475,12 +1475,21 @@ friend struct SchemaXmlReaderImpl;
         //! Gets the invariant description for this ECEnumeration.
         ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
 
+        //!Creates a new enumerator at the end of this enumeration.
         ECOBJECTS_EXPORT ECObjectsStatus        CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR value);
+        //!Creates a new enumerator at the end of this enumeration.
         ECOBJECTS_EXPORT ECObjectsStatus        CreateEnumerator(ECEnumeratorP& enumerator, int32_t value);
+        //! Finds the enumerator with the provided integer value, returns nullptr if none found.
         ECOBJECTS_EXPORT ECEnumeratorP          FindEnumerator(int32_t value) const;
+        //! Finds the enumerator with the provided string value, returns nullptr if none found.
         ECOBJECTS_EXPORT ECEnumeratorP          FindEnumerator(Utf8StringCR value) const;
-        ECOBJECTS_EXPORT ECObjectsStatus        DeleteEnumerator(ECEnumeratorR enumerator);
+        //! Removes the provided enumerator from this enumeration
+        ECOBJECTS_EXPORT ECObjectsStatus        DeleteEnumerator(ECEnumeratorCR enumerator);
+        //! Removes all enumerators in this enumeration
+        ECOBJECTS_EXPORT void                   Clear();
+        //! Get the enumerator list held by this object
         ECOBJECTS_EXPORT EnumeratorIterable     GetEnumerators() const;
+        //! Get the amount of enumerators in this enumeration
         ECOBJECTS_EXPORT size_t                 GetEnumeratorCount() const;
     };
 

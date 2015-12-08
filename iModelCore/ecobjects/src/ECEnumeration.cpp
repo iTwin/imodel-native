@@ -379,28 +379,31 @@ ECEnumeratorP ECEnumeration::FindEnumerator(Utf8StringCR value) const
 /*--------------------------------------------------------------------------------------/
 * @bsimethod                                    Robert.Schili                  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECEnumeration::DeleteEnumerator(ECEnumeratorR enumerator)
+ECObjectsStatus ECEnumeration::DeleteEnumerator(ECEnumeratorCR enumerator)
     {
-    ECEnumeratorP pEnumerator = nullptr;
-    if (GetType() == PrimitiveType::PRIMITIVETYPE_Integer)
-        {
-        pEnumerator = FindEnumerator(enumerator.GetInteger());
-        }
-    else //assume it's a string
-        {
-        Utf8StringCP stringValue = enumerator.GetString();
-        if (stringValue != nullptr)
-            {
-            pEnumerator = FindEnumerator(*stringValue);
-            }
-        }
+    auto existing = std::find(m_enumeratorList.begin(), m_enumeratorList.end(), &enumerator);
+    if (existing == nullptr)
+        return ECObjectsStatus::EnumeratorNotFound;
 
-    if (pEnumerator == nullptr)
-        return ECObjectsStatus::EnumerationNotFound;
+    m_enumeratorList.erase(existing);
+    delete(&enumerator);
 
-    m_enumeratorList.erase(&pEnumerator);
     return ECObjectsStatus::Success;
     }
+
+/*--------------------------------------------------------------------------------------/
+* @bsimethod                                    Robert.Schili                  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECEnumeration::Clear()
+    {
+    for (auto pEnumerator : m_enumeratorList)
+        {
+        delete(pEnumerator);
+        }
+
+    m_enumeratorList.clear();
+    }
+
 
 /*--------------------------------------------------------------------------------------/
 * @bsimethod                                    Robert.Schili                  12/2015
