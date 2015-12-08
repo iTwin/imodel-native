@@ -39,8 +39,6 @@ protected:
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
-    bmap<DgnMaterialId, DgnMaterialId> m_materialId;
-    bmap<DgnTextureId, DgnTextureId> m_textureId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
@@ -60,6 +58,8 @@ public:
     DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
     DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
+    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
@@ -150,11 +150,11 @@ public:
     //! Make sure that a Texture has been imported
     DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
     //! Look up a copy of a LineStyle
-    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return DgnStyleId();}
+    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a LineStyle
-    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId();;}
+    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return m_remap.Add(sourceId, targetId); }
     //! Make sure that a LineStyle has been imported
-    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {return DgnStyleId();}
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId);
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeomStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);

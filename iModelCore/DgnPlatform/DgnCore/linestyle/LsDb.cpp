@@ -147,19 +147,18 @@ BentleyStatus LsRasterImageComponent::CreateRscFromDgnDb(V10RasterImage** rscOut
 //--------------+------------------------------------------------------------------------
 void LsDefinition::InitializeJsonObject (Json::Value& jsonObj)
     {
-    InitializeJsonObject (jsonObj, m_location.GetComponentId(), m_location.GetComponentType(),
-                          m_attributes, (uint32_t) m_unitDef); // WIP: m_unitDef double --> UInt32 conversion
+    InitializeJsonObject (jsonObj, m_location.GetComponentId(), m_attributes, (uint32_t) m_unitDef); // WIP: m_unitDef double --> UInt32 conversion
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
+void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, uint32_t flags, double unitDefinition)
     {
     jsonObj.clear();
 
     jsonObj[DGNPROPERTYBLOB_CompId] = componentId.GetValue();
-    jsonObj[DGNPROPERTYBLOB_CompType] = static_cast <uint16_t> (componentType);  //  defined(NOTNOW) (uint32_t)remapRscTypeToElmType(componentType);
+    jsonObj[DGNPROPERTYBLOB_CompType] = static_cast <uint16_t> (componentId.GetType());
     jsonObj[DGNPROPERTYBLOB_Flags] = flags;
     jsonObj[DGNPROPERTYBLOB_UnitDef] = unitDefinition;
     }
@@ -183,30 +182,23 @@ uint32_t LsDefinition::GetAttributes (Json::Value& lsDefinition)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LsComponentType LsDefinition::GetComponentType (Json::Value& lsDefinition)
-    {
-    LsComponentType retval = (LsComponentType)lsDefinition[DGNPROPERTYBLOB_CompType].asUInt();
-    if (!LsComponent::IsValidComponentType(retval))
-        {
-        BeAssert(LsComponent::IsValidComponentType(retval));
-        retval = LsComponentType::Unknown;
-        }
-
-    return retval;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
 LsComponentId LsDefinition::GetComponentId (Json::Value& lsDefinition)
     {
-    return LsComponentId(lsDefinition[DGNPROPERTYBLOB_CompId].asUInt());
+    LsComponentType typeValue = (LsComponentType)lsDefinition[DGNPROPERTYBLOB_CompType].asUInt();
+    if (!LsComponent::IsValidComponentType(typeValue))
+        {
+        BeAssert(LsComponent::IsValidComponentType(typeValue));
+        typeValue = LsComponentType::Unknown;
+        }
+
+    uint32_t idValue = lsDefinition[DGNPROPERTYBLOB_CompId].asUInt();
+    return LsComponentId(typeValue, idValue);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-void LsComponent::QueryComponentIds(bset<LsComponentTypeAndId>& ids, DgnDbCR project, LsComponentType lsType)
+void LsComponent::QueryComponentIds(bset<LsComponentId>& ids, DgnDbCR project, LsComponentType lsType)
     {
     //  No default constructor so we have to initialize it.
     LineStyleProperty::ComponentProperty spec = LineStyleProperty::Compound();
@@ -237,9 +229,7 @@ void LsComponent::QueryComponentIds(bset<LsComponentTypeAndId>& ids, DgnDbCR pro
     stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        LsComponentTypeAndId     componentId;
-        componentId.m_id = stmt.GetValueInt(0);
-        componentId.m_type = (uint32_t)lsType;
+        LsComponentId  componentId(lsType, stmt.GetValueInt(0));
         ids.insert(componentId);
         };
     }
@@ -360,5 +350,50 @@ void LineStyleHandler::_GetClassParams(ECSqlClassParams& params)
     params.Add(PROPNAME_Descr);
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
+    {
+    if (!IsBetweenDbs())
+        return sourceId;
+    DgnStyleId dest = FindLineStyleId(sourceId);
+    if (dest.IsValid())
+        return dest;
+
+    return DgnStyleId(); // DgnLineStyles::ImportLineStyle(source, *this);
+    }
+
+#if defined(NOTNOW)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportContext& importer)
+    {
+    //  See if we already have a line style with the same code in the destination Db.
+    //  If so, we'll map the source line style to it.  
+    LineStyleElementCPtr srcStyle = LineStyleElement::Get(importer.GetSourceDb(), srcStyleId);
+    BeAssert(srcStyle.IsValid());
+    if (!srcStyle.IsValid())
+        {
+        BeAssert(false && "invalid source line style ID");
+        return DgnStyleId();
+        }
+
+    DgnStyleId dstStyleId = QueryId(importer.GetDestinationDb(), srcStyle->GetName());
+    if (dstStyleId.IsValid())
+        {
+        //  *** TBD: Check if the line style definitions match. If not, rename and remap
+        importer.AddLineStyleId(srcStyleId, dstStyleId);
+        return dstStyleId;
+        }
+
+    //  No such line style in the destination Db. Ask the source LineStyleElement to import itself.
+    auto importedElem = srcStyle->Import(importer.GetDestinationDb(), importer);
+    return importedElem.IsValid()? importedElem->GetElementId() : DgnStyleId();
+    }
+#endif
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -19,10 +19,10 @@ using namespace std;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
+BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, uint32_t flags, double unitDefinition)
     {
     Json::Value jsonObj(Json::objectValue);
-    LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, flags, unitDefinition);
+    LsDefinition::InitializeJsonObject(jsonObj, componentId, flags, unitDefinition);
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
     LineStyleElementPtr lsElement = LineStyleElement::Create(m_dgndb);
@@ -44,7 +44,7 @@ BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
+BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponentId componentId, uint32_t flags, double unitDefinition)
     {
 #if defined(NEEDSWORK_LINESTYLES)
     PRECONDITION(styleId.IsValid(), ERROR);

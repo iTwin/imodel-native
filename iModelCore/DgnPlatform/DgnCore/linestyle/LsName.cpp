@@ -106,11 +106,11 @@ Utf8CP          name
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsDefinition::SetHWStyle (LsComponentType componentType, LsComponentId componentIDIn)
+void LsDefinition::SetHWStyle (LsComponentId componentIDIn)
     {
     uint32_t componentID = componentIDIn.GetValue();
     m_hardwareLineCode = -1;
-    if (LsComponentType::Internal == componentType)
+    if (LsComponentType::Internal == componentIDIn.GetType())
         {
         // Linecode only if hardware bit is set and masked value is within range.
         if ( (0 != (componentID & LSID_HARDWARE)) && ((componentID & LSID_HWMASK) <= MAX_LINECODE))
@@ -155,11 +155,10 @@ void LsDefinition::Destroy(LsDefinitionP def) { delete def; }
 LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId)
     {
     Init (name, lsDefinition, styleId);
-    LsComponentType compType = GetComponentType(lsDefinition);
     LsComponentId compId = GetComponentId(lsDefinition);
 
-    m_location.SetLocation (project, compType, compId);
-    SetHWStyle (compType, compId);
+    m_location.SetLocation (project, compId);
+    SetHWStyle(compId);
     m_componentLookupFailed = false;
     }
 
