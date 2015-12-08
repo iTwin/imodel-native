@@ -136,9 +136,133 @@ void ViewAttachment::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void fixScanCriteriaHACKHACKHACK(ViewContextR context)
+    {
+    struct FixMePlease : NullContext
+    {
+        void FixMe() { m_setupScan = true; }
+    };
+
+    auto fixMe = reinterpret_cast<FixMePlease*>(&context);
+    fixMe->FixMe();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ViewAttachmentGeomCollector : IElementGraphicsProcessor
+{
+private:
+    ViewAttachmentR             m_attachment;
+    ViewControllerR             m_controller;
+    DgnSubCategoryId            m_subCategory;
+    ElementGeometryBuilderPtr   m_builder;
+    Transform                   m_transform;
+    ViewContextP                m_viewContext;
+    NonVisibleViewport          m_viewport;
+
+    virtual void _AnnounceContext(ViewContextR context) override { m_viewContext = &context; }
+    virtual void _OutputGraphics(ViewContextR context) override
+        {
+        fixScanCriteriaHACKHACKHACK(context);
+        context.Attach(&m_viewport, DrawPurpose::CaptureGeometry);
+        context.SetScanReturn(); // ###TODO wtf there is no documentation regarding attaching a viewport, everything breaks, why.
+        m_controller.DrawView(context);
+        context.Detach();
+        }
+
+    virtual void _AnnounceTransform(TransformCP tf) override;
+    virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override;
+    virtual BentleyStatus _ProcessTextString(TextStringCR) override;
+    virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool) override;
+public:
+    ViewAttachmentGeomCollector(ViewControllerR controller, ViewAttachmentR attach, DgnSubCategoryId subcat=DgnSubCategoryId())
+        : m_attachment(attach), m_controller(controller), m_subCategory(subcat), m_transform(Transform::FromIdentity()), m_viewContext(nullptr), m_viewport(controller)
+        {
+        if (!m_subCategory.IsValid())
+            m_subCategory = DgnCategory::GetDefaultSubCategoryId(m_attachment.GetCategoryId());
+
+        m_builder = ElementGeometryBuilder::Create(m_attachment);
+        BeAssert(IsValid());
+
+        controller.SetOrigin(m_attachment.GetViewOrigin());
+        controller.SetDelta(m_attachment.GetViewDelta());
+
+        // ###TODO: Scaling transform...
+        }
+
+    bool IsValid() const { return m_builder.IsValid() && m_subCategory.IsValid(); }
+
+    DgnDbStatus SaveGeom()
+        {
+        return IsValid() && SUCCESS == m_builder->SetGeomStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachmentGeomCollector::_AnnounceTransform(TransformCP tf)
+    {
+    if (nullptr != tf)
+        m_transform = *tf;
+    else
+        m_transform.InitIdentity();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachmentGeomCollector::_AnnounceElemDisplayParams(ElemDisplayParamsCR params)
+    {
+    if (nullptr != m_viewContext)
+        {
+        ElemDisplayParams resolved(params);
+        resolved.Resolve(*m_viewContext);
+        resolved.SetCategoryId(m_attachment.GetCategoryId());
+        resolved.SetSubCategoryId(m_subCategory);
+        m_builder->Append(resolved);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ViewAttachmentGeomCollector::_ProcessTextString(TextStringCR text)
+    {
+    TextString tfText(text);
+    tfText.ApplyTransform(m_transform);
+    m_builder->Append(tfText);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ViewAttachmentGeomCollector::_ProcessCurveVector(CurveVectorCR cv, bool isFilled)
+    {
+    CurveVector tfCv(cv);
+    tfCv.TransformInPlace(m_transform);
+    m_builder->Append(tfCv);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::GenerateGeomStream()
     {
-    // ###TODO: This is kinda the important part...
-    return DgnDbStatus::BadElement;
+    auto controller = ViewDefinition::LoadViewController(GetViewId(), GetDgnDb(), ViewDefinition::FillModels::No);
+    if (controller.IsNull())
+        return DgnDbStatus::ViewNotFound;
+
+    controller->Load();
+    ViewAttachmentGeomCollector proc(*controller, *this);
+    if (!proc.IsValid())
+        return DgnDbStatus::BadElement;
+
+    ElementGraphicsOutput::Process(proc, GetDgnDb());
+
+    return proc.SaveGeom();
     }
 
