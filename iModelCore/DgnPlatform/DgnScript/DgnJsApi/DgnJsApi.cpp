@@ -129,26 +129,32 @@ JsComponentModelP JsDgnModel::ToComponentModel()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-static void loadParams(ModelSolverDef::ParameterSet& params, ComponentModel& cm, Utf8StringCR paramsJSON)
+static BentleyStatus loadParams(ModelSolverDef::ParameterSet& params, ComponentModel& cm, Utf8StringCR paramsJSON)
     {
     Json::Value paramsJsonValue(Json::objectValue);
-    Json::Reader::Parse(paramsJSON.c_str(), paramsJsonValue);
+    if (!Json::Reader::Parse(paramsJSON.c_str(), paramsJsonValue))
+        return BSIERROR;
 
     ModelSolverDef::ParameterSet newParameterValues = cm.GetSolver().GetParameters();
     for (auto pname : paramsJsonValue.getMemberNames())
         {
         ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
-        BeAssert( nullptr != sparam );
+        if (nullptr == sparam)
+            {
+            // *** TBD: print warning
+            continue;
+            }
         ECN::ECValue ecv;
         ECUtils::ConvertJsonToECValue(ecv, paramsJsonValue[pname], sparam->GetValue().GetPrimitiveType());
         sparam->SetValue(ecv);
         }
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsDgnElement* JsComponentModel::MakeInstanceOfSolution(JsDgnModelP targetJsModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP jscode)
+JsDgnElement* JsComponentModel::MakeInstance(JsDgnModelP targetJsModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP jscode)
     {
     ComponentModel* cm = ToDgnComponentModel();
     if (nullptr == cm || nullptr == targetJsModel || !targetJsModel->m_model.IsValid())
@@ -156,13 +162,14 @@ JsDgnElement* JsComponentModel::MakeInstanceOfSolution(JsDgnModelP targetJsModel
     DgnModelR targetModel = *targetJsModel->m_model;
 
     ModelSolverDef::ParameterSet params;
-    loadParams(params, *cm, paramsJSON);
+    if (BSISUCCESS != loadParams(params, *cm, paramsJSON))
+        return nullptr;
 
     DgnElement::Code ecode;
     if (nullptr != jscode)
         ecode = jscode->m_code;
 
-    DgnElementCPtr instance = cm->MakeInstanceOfSolution(nullptr, targetModel, capturedSolutionName, params, ecode);
+    DgnElementCPtr instance = cm->MakeInstance(nullptr, targetModel, capturedSolutionName, params, ecode);
     if (!instance.IsValid())
         return nullptr;
 

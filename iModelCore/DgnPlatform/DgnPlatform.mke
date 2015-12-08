@@ -362,6 +362,7 @@ $(CoreObjs)DgnECSymbolProvider$(oext) :             $(DgnHandlersDir)DgnECSymbol
 
 $(coreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
+$(coreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
