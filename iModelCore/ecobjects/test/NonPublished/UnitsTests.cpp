@@ -145,8 +145,8 @@ struct UnitsTest : ECTestFixture
 
     void            SetUnits (Utf8CP fromUnitName, Utf8CP toUnitName)
         {
-        m_fromProperty->GetCustomAttribute ("UnitSpecification")->SetValue ("UnitName", ECValue (fromUnitName));
-        m_toProperty->GetCustomAttribute ("UnitSpecification")->SetValue ("UnitName", ECValue (toUnitName));
+        m_fromProperty->GetCustomAttribute ("UnitSpecificationAttr")->SetValue ("UnitName", ECValue (fromUnitName));
+        m_toProperty->GetCustomAttribute ("UnitSpecificationAttr")->SetValue ("UnitName", ECValue (toUnitName));
         }
 
     void            GetUnits (UnitR from, UnitR to)
