@@ -1650,6 +1650,8 @@ public:
     DGNPLATFORM_EXPORT LsCacheR ReloadMap();
 };
 
+//__PUBLISH_SECTION_END__
+
 //=======================================================================================
 //! Provides access to the line style data in the element table.
 //!  @ingroup LineStyleManagerModule
@@ -1742,6 +1744,7 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
     };
 }
+//__PUBLISH_SECTION_START__
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
