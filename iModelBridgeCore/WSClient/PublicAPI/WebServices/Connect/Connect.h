@@ -36,7 +36,7 @@ struct Connect
 
     public:
         //! Initialize once in app lifetime
-        WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler = nullptr);
+        WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler = nullptr, bool tokenBasedAuthentication = false);
         WSCLIENT_EXPORT static void Uninintialize();
 
         WSCLIENT_EXPORT static StatusInt Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
@@ -46,6 +46,7 @@ struct Connect
         // Checks if given response is IMS Login redirect that should be treated as invalid credentials.
         // This is workaround because IMS does not give any other indication.
         WSCLIENT_EXPORT static bool IsImsLoginRedirect(HttpResponseCR response);
+        WSCLIENT_EXPORT static bool IsTokenBasedAuthorization();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

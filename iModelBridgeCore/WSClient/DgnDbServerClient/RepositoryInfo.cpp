@@ -34,7 +34,8 @@ RepositoryInfoPtr RepositoryInfo::Create(Utf8StringCR serverUrl, Utf8StringCR id
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfo::Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
+RepositoryInfoPtr RepositoryInfo::Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description, Utf8StringCR user,
+    DateTimeCR date)
     {
     return std::make_shared<RepositoryInfo>(RepositoryInfo(serverUrl, id, fileId, description, user, date));
     }
@@ -122,4 +123,14 @@ BeSQLite::DbResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, const Rep
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
         status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryId, repositoryInfo.GetId());
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+bool RepositoryInfo::operator==(RepositoryInfoCR rhs) const
+    {
+    if (rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL())
+        return true;
+    return false;
     }

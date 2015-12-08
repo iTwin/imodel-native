@@ -12,18 +12,21 @@
 #include <DgnDbServer/Client/RepositoryInfo.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 typedef std::shared_ptr<struct DgnDbRepositoryConnection> DgnDbRepositoryConnectionPtr;
 
-typedef DgnClientFx::Utils::AsyncResult<void, DgnDbServerError> DgnDbResult;
-typedef DgnClientFx::Utils::AsyncResult<DgnDbRepositoryConnectionPtr, DgnDbServerError> DgnDbRepositoryConnectionResult;
-typedef DgnClientFx::Utils::AsyncResult<RepositoryInfoPtr, DgnDbServerError> DgnDbRepositoryResult;
-typedef DgnClientFx::Utils::AsyncResult<Dgn::DgnRevisionPtr, DgnDbServerError> DgnDbRevisionResult;
-typedef DgnClientFx::Utils::AsyncResult<bvector<Dgn::DgnRevisionPtr>, DgnDbServerError> DgnDbRevisionsResult;
-typedef DgnClientFx::Utils::AsyncResult<uint64_t, DgnDbServerError> DgnDbUInt64Result;
-typedef DgnClientFx::Utils::AsyncResult<uint32_t, DgnDbServerError> DgnDbUInt32Result;
-typedef DgnClientFx::Utils::AsyncResult<Dgn::LockLevel, DgnDbServerError> DgnDbLockLevelResult;
-typedef DgnClientFx::Utils::AsyncResult<Dgn::DgnLockSet, DgnDbServerError> DgnDbLockSetResult;
-
+typedef AsyncResult<void, DgnDbServerError> DgnDbResult;
+typedef AsyncResult<DgnDbRepositoryConnectionPtr, DgnDbServerError> DgnDbRepositoryConnectionResult;
+typedef AsyncResult<RepositoryInfoPtr, DgnDbServerError> DgnDbRepositoryResult;
+typedef AsyncResult<DgnRevisionPtr, DgnDbServerError> DgnDbRevisionResult;
+typedef AsyncResult<bvector<DgnRevisionPtr>, DgnDbServerError> DgnDbRevisionsResult;
+typedef AsyncResult<uint64_t, DgnDbServerError> DgnDbUInt64Result;
+typedef AsyncResult<uint32_t, DgnDbServerError> DgnDbUInt32Result;
+typedef AsyncResult<LockLevel, DgnDbServerError> DgnDbLockLevelResult;
+typedef AsyncResult<DgnLockSet, DgnDbServerError> DgnDbLockSetResult;
+typedef AsyncResult<LockRequest::Response, DgnDbServerError> DgnLockResponseResult;
+typedef AsyncResult<DgnLockOwnership, DgnDbServerError> DgnDbOwnershipResult;
 
 //=======================================================================================
 //! Connection to a repository on server.
@@ -42,28 +45,53 @@ private:
     friend struct DgnDbLocks;
 
     //! Update repository info from the server.
-    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> UpdateRepositoryInfo(DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbResult> UpdateRepositoryInfo(ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Aquire a new briefcase id for this repository.
-    DgnClientFx::Utils::AsyncTaskPtr<WebServices::WSCreateObjectResult> AcquireBriefcaseId(DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<WebServices::WSCreateObjectResult> AcquireBriefcaseId(ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download a copy of the master file from the repository and write the briefcaseId into it.
-    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> DownloadBriefcaseFile(BeFileName localFile, const BeSQLite::BeBriefcaseId& briefcaseId, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbResult> DownloadBriefcaseFile(BeFileName localFile, const BeSQLite::BeBriefcaseId& briefcaseId,
+    HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download the file for this revision from server.
-    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> DownloadRevisionFile(Dgn::DgnRevisionPtr revision, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbResult> DownloadRevisionFile(DgnRevisionPtr revision, HttpRequest::ProgressCallbackCR callback = nullptr,
+    ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Push this revision file to server.
-    DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> Push(Dgn::DgnRevisionPtr revision, uint32_t repositoryId, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbResult> Push(DgnRevisionPtr revision, uint32_t repositoryId, HttpRequest::ProgressCallbackCR callback = nullptr,
+    ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download all revision files after revisionId
-    DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionsResult> Pull(Utf8StringCR revisionId, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbRevisionsResult> Pull(Utf8StringCR revisionId, HttpRequest::ProgressCallbackCR callback = nullptr,
+    ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Get all revision information based on a query.
-    DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionsResult> RevisionsFromQuery(const WebServices::WSQuery& query, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbRevisionsResult> RevisionsFromQuery(const WebServices::WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Get the index from a revisionId.
-    DgnClientFx::Utils::AsyncTaskPtr<DgnDbUInt64Result> GetRevisionIndex(Utf8StringCR revisionId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbUInt64Result> GetRevisionIndex(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Check if the requested set of locks is already held.
+    AsyncTaskPtr<DgnDbResult> QueryLocksHeld(bool& held, LockRequestCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId,
+    ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Aquire the requested set of locks.
+    AsyncTaskPtr<DgnLockResponseResult> AcquireLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId,
+    ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Delete all currently held locks by specific briefcase.
+    AsyncTaskPtr<DgnDbResult> RelinquishLocks(const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Query ownership information of a specific lock.
+    AsyncTaskPtr<DgnDbOwnershipResult> QueryOwnership(LockableId lockId, ICancellationTokenPtr cancellationToken = nullptr);
+
+    AsyncTaskPtr<DgnDbLockLevelResult> QueryLockLevel(LockableId lockId, const BeSQLite::BeBriefcaseId& briefcaseId,
+    ICancellationTokenPtr cancellationToken = nullptr);
+
+    AsyncTaskPtr<DgnDbLockSetResult> QueryLocks(const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
+
+    AsyncTaskPtr<DgnDbResult> ReleaseLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
 
     DgnDbRepositoryConnection(RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
 public:
@@ -74,20 +102,21 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note OpenBriefcase in DgnDbClient is used to create an instance of a DgnDbRepositoryConnection.
-    static DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoryConnectionResult> Create(RepositoryInfoPtr repository, DgnClientFx::Utils::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    static AsyncTaskPtr<DgnDbRepositoryConnectionResult> Create(RepositoryInfoPtr repository, CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo,
+    ICancellationTokenPtr cancellationToken = nullptr);
 
     //__PUBLISH_SECTION_START__
     //! Get a revision for the specific revision id.
     //! @param[in] revisionId Id of the revision to retrieve.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the revision information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionResult> GetRevisionById(Utf8StringCR revisionId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbRevisionResult> GetRevisionById(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Get all of the revisions after the specific revision id.
     //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbRevisionsResult> GetRevisionsFromId(Utf8StringCR revisionId, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbRevisionsResult> GetRevisionsFromId(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download the revision files.
     //! @param[in] revisions Set of revisions to download.
@@ -95,12 +124,13 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
-    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> DownloadRevisions(const bvector<Dgn::DgnRevisionPtr>& revisions, DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> DownloadRevisions(const bvector<DgnRevisionPtr>& revisions,
+    HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Verify the access to the revision on the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that results in error if connection or authentication fails and success otherwise.
-    DGNDBSERVERCLIENT_EXPORT DgnClientFx::Utils::AsyncTaskPtr<DgnDbResult> VerifyConnection(DgnClientFx::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> VerifyConnection(ICancellationTokenPtr cancellationToken = nullptr);
 
     DGNDBSERVERCLIENT_EXPORT RepositoryInfoCR GetRepositoryInfo(); //!< Returns repository information for this connection.
 };
