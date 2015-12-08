@@ -161,7 +161,7 @@ struct Plan
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
 
     ViewFlags     m_viewFlags;
-    bool          m_is2d;
+    bool          m_is3d;
     Frustum       m_frustum;
     double        m_fraction;
     ColorDef      m_bgColor;

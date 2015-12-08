@@ -220,13 +220,13 @@ void DgnViewport::StartRenderThread()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Plan::Plan(DgnViewportCR vp)
     {
-    m_is2d     = !vp.Is3dView();
     m_viewFlags = vp.GetViewFlags();
-    m_frustum  = vp.GetFrustum(DgnCoordSystem::World, true);
-    m_bgColor  = vp.GetBackgroundColor();
-    m_fraction = vp.GetFrustumFraction();
-    m_aaLines  = vp.WantAntiAliasLines();
-    m_aaText   = vp.WantAntiAliasText();
+    m_is3d      = vp.Is3dView();
+    m_frustum   = vp.GetFrustum(DgnCoordSystem::World, true);
+    m_bgColor   = vp.GetBackgroundColor();
+    m_fraction  = vp.GetFrustumFraction();
+    m_aaLines   = vp.WantAntiAliasLines();
+    m_aaText    = vp.WantAntiAliasText();
     }
 
 /*---------------------------------------------------------------------------------**//**
