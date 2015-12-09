@@ -274,6 +274,8 @@ public:
     PhysicalViewDefinitionP ToPhysicalViewP() { return const_cast<PhysicalViewDefinitionP>(ToPhysicalView()); }
     DrawingViewDefinitionP ToDrawingViewP() { return const_cast<DrawingViewDefinitionP>(ToDrawingView()); }
     SheetViewDefinitionP ToSheetViewP() { return const_cast<SheetViewDefinitionP>(ToSheetView()); }
+
+    ViewControllerPtr LoadViewController(bool allowOverrides, FillModels fillModels) const; //!< @private
 };
 
 //=======================================================================================

@@ -42,7 +42,7 @@ public:
         }
     static ViewAttachment::Data MakeData(DgnViewId viewId, double ox, double oy, double dx, double dy, double s)
         {
-        return ViewAttachment::Data(viewId, DPoint3d::FromXYZ(ox,oy,0), DVec3d::From(dx,dy,0), s);
+        return ViewAttachment::Data(viewId, s);
         }
     ViewAttachment::CreateParams MakeParams(ViewAttachment::Data const& data, DgnModelId mid, DgnCategoryId cat, Placement2dCR placement=Placement2d())
         {
@@ -56,7 +56,7 @@ public:
     ViewAttachmentCPtr UpdateAttachment(ViewAttachmentCR in, ViewAttachment::Data const& data)
         {
         auto pAttach = in.MakeCopy<ViewAttachment>();
-        pAttach->SetViewParams(data.m_origin, data.m_delta, data.m_scale);
+        pAttach->SetViewScale(data.m_scale);
         return pAttach->Update();
         }
 
@@ -69,8 +69,6 @@ public:
 
     void ExpectData(ViewAttachmentCR attach, ViewAttachment::Data const& data)
         {
-        ExpectEqualPoints(attach.GetViewOrigin(), data.m_origin);
-        ExpectEqualPoints(attach.GetViewDelta(), data.m_delta);
         EXPECT_EQ(attach.GetViewId(), data.m_viewId);
         EXPECT_EQ(attach.GetViewScale(), data.m_scale);
         }
@@ -205,8 +203,6 @@ TEST_F(ViewAttachmentTest, CRUD)
     EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,1), m_drawingId, m_attachmentCatId, MakePlacement())));
     // Negative scale
     EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,1,1,-1), m_sheetId, m_attachmentCatId, MakePlacement())));
-    // Zero delta
-    EXPECT_INVALID(InsertAttachment(MakeParams(MakeData(m_viewId,0,0,0,0,1), m_sheetId, m_attachmentCatId, MakePlacement())));
 
     // Create a valid view attachment
     auto data = MakeData(m_viewId, -5.0, 2.5, 1.0, 0.5, 3.0);
@@ -217,8 +213,6 @@ TEST_F(ViewAttachmentTest, CRUD)
     ExpectData(*cpAttach, data);
 
     // Modify
-    data.m_origin.x += 0.25;
-    data.m_delta.y -= 0.25;
     data.m_scale *= 2;
     cpAttach = UpdateAttachment(*cpAttach, data);
     ExpectData(*cpAttach, data);
@@ -243,15 +237,14 @@ TEST_F(ViewAttachmentTest, Geom)
     auto& db = *GetDgnDb();
 
     // Add some geometry to the drawing and regenerate attachment geometry
-    static const double drawingViewRot = 45.0*msGeomConst_piOver2;
+    static const double drawingViewRot = /*45.0*msGeomConst_piOver2*/ 0.0;
 
-    //AddTextToDrawing(m_drawingId, "Text", drawingViewRot);
+    AddTextToDrawing(m_drawingId, "Text", drawingViewRot);
     AddBoxToDrawing(m_drawingId, 5, 10, drawingViewRot);
 
-    // Create an attachment using the bounds of the drawing view
-    ViewControllerPtr drawingController = ViewDefinition::LoadViewController(m_viewId, db);
+    // Create an attachment
     static const double scale = 2.0;
-    ViewAttachment::Data data(*drawingController, scale);
+    ViewAttachment::Data data(m_viewId, scale);
     auto cpAttach = InsertAttachment(MakeParams(data, m_sheetId, m_attachmentCatId, MakePlacement()));
 
     ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();

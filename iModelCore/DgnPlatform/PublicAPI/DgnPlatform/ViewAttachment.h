@@ -41,32 +41,21 @@ public:
     struct Data
     {
         DgnViewId   m_viewId;
-        DPoint3d    m_origin;
-        DVec3d      m_delta;
         double      m_scale;
 
         //! Constructor
         //! @param[in]      viewId The ID of the view to be attached
-        //! @param[in]      origin The lower-left corner of the viewing area, in coordinates of the viewed model
-        //! @param[in]      delta  The extents of the viewing area
         //! @param[in]      scale  Scale factor from viewed model to sheet
-        Data(DgnViewId viewId, DPoint3dCR origin, DVec3d delta, double scale=1.0) { Init(viewId, origin, delta, scale); }
-
-        //! Construct from a ViewController.
-        //! @param[in]      controller The ViewController from which the view ID and viewing area will be obtained
-        //! @param[in]      scale      Scale from viewed model to sheet
-        explicit Data(ViewControllerCR controller, double scale=1.0) { Init(controller.GetViewId(), controller.GetOrigin(), controller.GetDelta(), scale); }
+        explicit Data(DgnViewId viewId, double scale=1.0) { Init(viewId, scale); }
 
         //! Default constructor
-        Data() : Data(DgnViewId(), DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0,1.0,0.0)) { }
+        Data() : Data(DgnViewId()) { }
 
         //! Initialize from the specified values
         //! @param[in]      viewId The ID of the view to be attached
-        //! @param[in]      origin The lower-left corner of the viewing area, in coordinates of the viewed model
-        //! @param[in]      delta  The extents of the viewing area
         //! @param[in]      scale  Scale factor from viewed model to sheet
-        void Init(DgnViewId viewId, DPoint3dCR origin, DVec3d delta, double scale=1.0)
-            { m_viewId=viewId; m_origin=origin; m_delta=delta; m_scale=scale; }
+        void Init(DgnViewId viewId, double scale=1.0)
+            { m_viewId=viewId; m_scale=scale; }
 
         DGNPLATFORM_EXPORT bool IsValid() const; //!< Queries whether the data is valid (e.g., refers to a valid ViewDefinition; has meaningful scale and extents; etc)
     };
@@ -123,20 +112,13 @@ public:
     explicit ViewAttachment(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
     DgnViewId GetViewId() const { return m_data.m_viewId; } //!< The ID of the view definition to be drawn by this attachment
-    DPoint3dCR GetViewOrigin() const { return m_data.m_origin; } //!< The lower-left corner of the viewing area, in coordinates of the viewed model
-    DVec3dCR GetViewDelta() const { return m_data.m_delta; } //!< The extents of the viewing area
     double GetViewScale() const { return m_data.m_scale; } //!< Scale factor from model to sheet
 
     //! Look up the ViewDefinition to be drawn by this attachment
     ViewDefinitionCPtr GetViewDefinition() const { return ViewDefinition::QueryView(GetViewId(), GetDgnDb()); }
 
     void SetViewId(DgnViewId viewId) { m_data.m_viewId = viewId; } //!< Set the view definition to be drawn
-    void SetViewOrigin(DPoint3dCR origin) { m_data.m_origin = origin; } //!< Set the lower-left corner of the viewing area, in coordinates of the viewed model
-    void SetViewDelta(DVec3dCR delta) { m_data.m_delta = delta; } //!< Set the extents of the viewing area
     void SetViewScale(double scale) { m_data.m_scale = scale; } //!< Set the scale factor from model to sheet
-
-    //! Change the properties of this attachment
-    void SetViewParams(DPoint3dCR origin, DVec3dCR delta, double scale=1.0) { m_data.Init(GetViewId(), origin, delta, scale); }
 
     //! Inserts this attachment into the DgnDb and returns the new persistent copy.
     ViewAttachmentCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<ViewAttachment>(*this, status); }
@@ -145,7 +127,7 @@ public:
     ViewAttachmentCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<ViewAttachment>(*this, status); }
 
     //! Generates (or regenerates) this attachment's geometry to reflect the view of the viewed model.
-    DGNPLATFORM_EXPORT DgnDbStatus GenerateGeomStream();
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateGeomStream(DgnSubCategoryId subCategory=DgnSubCategoryId());
 
     //! Look up the ID of the base ViewAttachmentElement ECClass within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ViewAttachment)); }

@@ -9,8 +9,6 @@
 #include <DgnPlatform/ViewAttachment.h>
 
 #define PROP_ViewId         "ViewId"
-#define PROP_Origin         "Origin"
-#define PROP_Delta          "Delta"
 #define PROP_Scale          "Scale"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -26,8 +24,6 @@ void ViewAttachmentHandler::_GetClassParams(ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     params.Add(PROP_ViewId);
-    params.Add(PROP_Origin);
-    params.Add(PROP_Delta);
     params.Add(PROP_Scale);
     }
 }
@@ -40,9 +36,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 DgnDbStatus ViewAttachment::BindParams(ECSqlStatement& stmt)
     {
     if (ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(PROP_ViewId), GetViewId())
-        || ECSqlStatus::Success != stmt.BindDouble(stmt.GetParameterIndex(PROP_Scale), GetViewScale())
-        || ECSqlStatus::Success != stmt.BindPoint3D(stmt.GetParameterIndex(PROP_Origin), GetViewOrigin())
-        || ECSqlStatus::Success != stmt.BindPoint3D(stmt.GetParameterIndex(PROP_Delta), GetViewDelta()))
+        || ECSqlStatus::Success != stmt.BindDouble(stmt.GetParameterIndex(PROP_Scale), GetViewScale()))
         return DgnDbStatus::BadArg;
     else
         return DgnDbStatus::Success;
@@ -76,8 +70,6 @@ DgnDbStatus ViewAttachment::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClas
         {
         m_data.m_viewId = stmt.GetValueId<DgnViewId>(params.GetSelectIndex(PROP_ViewId));
         m_data.m_scale = stmt.GetValueDouble(params.GetSelectIndex(PROP_Scale));
-        m_data.m_origin = stmt.GetValuePoint3D(params.GetSelectIndex(PROP_Origin));
-        m_data.m_delta = DVec3d::From(stmt.GetValuePoint3D(params.GetSelectIndex(PROP_Delta)));
 
         BeAssert(m_data.IsValid());
         }
@@ -117,7 +109,7 @@ DgnDbStatus ViewAttachment::_OnUpdate(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewAttachment::Data::IsValid() const
     {
-    return m_viewId.IsValid() && m_delta.MagnitudeSquared() > 0.0 && m_scale > 0.0;
+    return m_viewId.IsValid() && m_scale > 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -159,48 +151,75 @@ private:
     virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override;
     virtual BentleyStatus _ProcessTextString(TextStringCR) override;
     virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool) override;
+
+    void FitView();
 public:
-    ViewAttachmentGeomCollector(ViewControllerR controller, ViewAttachmentR attach, DgnSubCategoryId subcat=DgnSubCategoryId())
-        : m_attachment(attach), m_subCategory(subcat), m_curTransform(Transform::FromIdentity()), m_viewContext(nullptr), m_viewport(controller)
+    ViewAttachmentGeomCollector(ViewControllerR controller, ViewAttachmentR attach, DgnSubCategoryId subcat=DgnSubCategoryId());
+
+    bool IsValid() const
         {
-        if (!m_subCategory.IsValid())
-            m_subCategory = DgnCategory::GetDefaultSubCategoryId(m_attachment.GetCategoryId());
-
-        Placement2dCR placement = m_attachment.GetPlacement();
-        m_builder = ElementGeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
-        BeAssert(IsValid());
-
-        m_initialTransform = Transform::From(controller.GetRotation());
-
-        auto scale = m_attachment.GetViewScale();
-        m_initialTransform.ScaleMatrixColumns(scale, scale, scale);
-
-        // The view origin corresponds to the local origin of the attachment's geometry.
-        auto viewOrigin = controller.GetOrigin();
-        DPoint3d translation = DPoint3d::FromXYZ(0,0,0);
-        translation.Subtract(viewOrigin);
-
-        Transform translate;
-        translate.InitFrom(translation);
-        m_initialTransform = Transform::FromProduct(m_initialTransform, translate);
+        return m_builder.IsValid() && m_subCategory.IsValid() && m_attachment.GetCategoryId() == DgnSubCategory::QueryCategoryId(m_subCategory, m_attachment.GetDgnDb());
         }
-
-    bool IsValid() const { return m_builder.IsValid() && m_subCategory.IsValid(); }
 
     DgnDbStatus SaveGeom()
         {
 #define DEBUG_ORIGIN
 #ifdef DEBUG_ORIGIN
         Placement2dCR placement = m_builder->GetPlacement2d();
-        DPoint3d center = DPoint3d::FromXYZ(0,0,0);
-        static const double s_radiusFactor = 0.01;
-        double radius = placement.GetElementBox().GetRight() - placement.GetElementBox().GetLeft();
-        radius *= s_radiusFactor;
-        m_builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::FromCenterRadiusXY(center, radius)));
+        static const double s_lenFactor = 0.01;
+        double len = placement.GetElementBox().GetRight() - placement.GetElementBox().GetLeft();
+        len *= s_lenFactor;
+        m_builder->Append(*ICurvePrimitive::CreateRectangle(0, 0, len, len, 0));
 #endif
         return IsValid() && SUCCESS == m_builder->SetGeomStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewAttachmentGeomCollector::ViewAttachmentGeomCollector(ViewControllerR controller, ViewAttachmentR attach, DgnSubCategoryId subcat)
+    : m_attachment(attach), m_subCategory(subcat), m_curTransform(Transform::FromIdentity()), m_viewContext(nullptr), m_viewport(controller)
+    {
+    if (!m_subCategory.IsValid())
+        m_subCategory = DgnCategory::GetDefaultSubCategoryId(m_attachment.GetCategoryId());
+
+    Placement2dCR placement = m_attachment.GetPlacement();
+    m_builder = ElementGeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
+    BeAssert(IsValid());
+
+    // Fit the view to define the range of our geometry
+    FitView();
+
+    // Set up transform relative to element origin
+    m_initialTransform = Transform::From(controller.GetRotation());
+
+    auto scale = m_attachment.GetViewScale();
+    m_initialTransform.ScaleMatrixColumns(scale, scale, scale);
+
+    auto viewOrigin = controller.GetOrigin();
+    DPoint3d translation = DPoint3d::FromXYZ(0,0,0);
+    translation.Subtract(viewOrigin);
+
+    Transform translate;
+    translate.InitFrom(translation);
+    m_initialTransform = Transform::FromProduct(m_initialTransform, translate);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewAttachmentGeomCollector::FitView()
+    {
+    DRange3d range;
+    FitViewParams params;
+    if (!IsValid() || SUCCESS != m_viewport.ComputeViewRange(range, params))
+        return;
+
+    ViewController::MarginPercent margin(0,0,0,0);
+    m_viewport.GetViewControllerR().LookAtViewAlignedVolume(range, nullptr, &margin, true);
+    m_viewport.SynchWithViewController(false);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -286,19 +305,19 @@ BentleyStatus ViewAttachmentGeomCollector::_ProcessCurveVector(CurveVectorCR cv,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::GenerateGeomStream()
+DgnDbStatus ViewAttachment::GenerateGeomStream(DgnSubCategoryId subcat)
     {
+#ifdef ALLOW_CONTROLLER_OVERRIDES
     auto controller = ViewDefinition::LoadViewController(GetViewId(), GetDgnDb(), ViewDefinition::FillModels::Yes);
+#else
+    auto view = ViewDefinition::QueryView(GetViewId(), GetDgnDb());
+    auto controller = view.IsValid() ? view->LoadViewController(false, ViewDefinition::FillModels::Yes) : nullptr;
+#endif
+
     if (controller.IsNull())
         return DgnDbStatus::ViewNotFound;
 
-    controller->Load();
-#ifdef USE_STORED_REGION
-    controller->SetOrigin(GetViewOrigin());
-    controller->SetDelta(GetViewDelta());
-#endif
-
-    ViewAttachmentGeomCollector proc(*controller, *this);
+    ViewAttachmentGeomCollector proc(*controller, *this, subcat);
     if (!proc.IsValid())
         return DgnDbStatus::BadElement;
 
