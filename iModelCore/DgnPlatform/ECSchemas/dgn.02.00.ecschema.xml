@@ -606,12 +606,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <!-- Foreign key relationship: ViewIsAttached.ViewId -->
             <!-- Should have IsNullable=False but shared table... -->
         </ECProperty>
-        <ECProperty propertyName="Origin" typeName="point3d">
-            <!-- Should have IsNullable=False but shared table... -->
-        </ECProperty>
-        <ECProperty propertyName="Delta" typeName="point3d">
-            <!-- Should have IsNullable=False but shared table... -->
-        </ECProperty>
         <ECProperty propertyName="Scale" typeName="double">
             <!-- Should have IsNullable=False but shared table... -->
         </ECProperty>
