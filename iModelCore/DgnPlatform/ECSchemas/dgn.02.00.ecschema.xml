@@ -250,18 +250,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
-    <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
-    <ECClass typeName="RasterBaseModel" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
     <ECClass typeName="SystemModel" isDomainClass="True" >
         <!-- A SystemModel contains SystemElements which are used to model functional systems -->
         <ECCustomAttributes>
