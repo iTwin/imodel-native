@@ -21,12 +21,6 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # WIP_ELEMENT
 
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
 
-DgnChangeSummaryTestFixture.CreateSampleDataSet # crashing on optimized 06; notified Raman
-DgnChangeSummaryTestFixture.ValidateChangeSummaries # crashing on optimized 06; notified Raman
-RevisionTestFixture.Workflow # crashing on optimized 06; notified Raman
-RevisionTestFixture.ConflictError # crashing on optimized 06; notified Raman
-ChangeSummaryTestFixture.* # crashing on optimized 06; notified Raman
-
 UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardLabel                        # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
@@ -34,4 +28,9 @@ UnitIterator.GetName                                    # fails randomonly on 06
 
 ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementation merge and test clean up
 ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
+
+ChangeSummaryTestFixture.StructArrayChangesFromCurrentTransaction # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
+ChangeSummaryTestFixture.StructArrayChangesFromSavedTransactions # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
+ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
+ChangeSummaryTestFixture.RelationshipChangesFromSavedTransaction # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
 
