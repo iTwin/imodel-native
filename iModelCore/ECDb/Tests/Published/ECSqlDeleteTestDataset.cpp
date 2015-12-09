@@ -178,7 +178,7 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
     ecsql = "DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Is a bug in ECSQL");
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
     return dataset;
     }
