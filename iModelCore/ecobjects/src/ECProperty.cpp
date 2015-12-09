@@ -710,7 +710,7 @@ Utf8String StructECProperty::_GetTypeName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR containingClass)
+ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR containingClass, bool doLogging = true)
     {
     // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
     Utf8String namespacePrefix;
@@ -718,31 +718,35 @@ ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR ty
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECObjectsStatus::Success != status)
         {
-        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
+        if (doLogging)
+            LOG.warningv ("Cannot resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
     
     ECSchemaCP resolvedSchema = containingClass.GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
-            typeName.c_str(), namespacePrefix.c_str());
+        if (doLogging)
+            LOG.warningv ("Cannot resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
+                typeName.c_str(), namespacePrefix.c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 
     ECClassCP ecClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == ecClass)
         {
-        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
-            typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+        if (doLogging)
+            LOG.warningv ("Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%s'.", 
+                typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
 
     structClass = ecClass->GetStructClassCP();
     if (NULL == ecClass)
         {
-        LOG.warningv ("ECClass '%s' does exists in the schema '%s' but is not of type ECStructClass.", 
-            className.c_str(), resolvedSchema->GetName().c_str());
+        if (doLogging)
+            LOG.warningv ("ECClass '%s' does exists in the schema '%s' but is not of type ECStructClass.", 
+                className.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
 
