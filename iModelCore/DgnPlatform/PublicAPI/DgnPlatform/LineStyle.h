@@ -51,7 +51,6 @@ LINESTYLE_TYPEDEFS (LsLocation)
 LINESTYLE_TYPEDEFS (LsLineCodeComponent)
 LINESTYLE_TYPEDEFS (LsOffsetComponent)
 LINESTYLE_TYPEDEFS (LsPointComponent)
-LINESTYLE_TYPEDEFS (LsPointSymbolComponent)
 LINESTYLE_TYPEDEFS (LsRasterImageComponent)
 LINESTYLE_TYPEDEFS (LsStroke)
 LINESTYLE_TYPEDEFS (LsStrokePatternComponent)
@@ -428,6 +427,7 @@ protected:
     // Should only be used for setting descr in resource definition
     void      CopyDescription (Utf8CP buffer);
     static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const = 0;
 
 public:
     LsComponent (DgnDbR, LsComponentId componentId);
@@ -435,6 +435,7 @@ public:
     LsComponent (LsComponent const* base) : m_isDirty (false)
         {
         m_location.SetFrom (&base->m_location);
+        m_descr = base->m_descr;
         }
 
     DGNPLATFORM_EXPORT static void GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec);
@@ -477,8 +478,10 @@ public:
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
     DGNPLATFORM_EXPORT void SetDescription (Utf8CP descr) { m_descr = Utf8String (descr); }
 
-    DGNPLATFORM_EXPORT static void QueryComponentIds(bset<LsComponentId>& ids, DgnDbCR project, LsComponentType lsType);
     DGNPLATFORM_EXPORT static bool IsValidComponentType(LsComponentType value);
+
+    static LsComponentId Import(LsComponentId sourceId, DgnImportContext& importer);
+    static LsComponentPtr GetImportedComponent(LsComponentId sourceId, DgnImportContext& importer);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -518,8 +521,9 @@ private:
     double              m_trueWidth;
     bvector<uint8_t>    m_image;
 
-    LsRasterImageComponent   (LsLocationCP pLocation);
-    LsRasterImageComponent (V10RasterImage* rasterImageResource, LsLocationCP location);
+    LsRasterImageComponent(LsRasterImageComponentCR);
+    LsRasterImageComponent(LsLocationCP pLocation);
+    LsRasterImageComponent(V10RasterImage* rasterImageResource, LsLocationCP location);
 
     DGNPLATFORM_EXPORT static LsRasterImageComponentPtr Create (BeFileNameCR fileName);
                        static LsRasterImageComponentPtr Create (LsLocation const& location) { LsRasterImageComponentP retVal = new LsRasterImageComponent (&location); retVal->m_isDirty = true; return retVal; }
@@ -532,6 +536,7 @@ protected:
     virtual void _StartTextureGeneration() const override {}
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
@@ -561,7 +566,6 @@ struct          LsSymbolComponent : public LsComponent
 //__PUBLISH_SECTION_END__
 private:
     bool                m_isModified;
-    WChar               m_descr[LS_MAX_DESCR];
 
     DgnGeomPartId       m_geomPartId;
     mutable DgnGeomPartPtr m_geomPart;
@@ -578,7 +582,11 @@ private:
 
     explicit LsSymbolComponent (LsLocationCP pLocation);
     virtual ~LsSymbolComponent ();
+    LsSymbolComponent(LsSymbolComponentCR src);
 
+protected:
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
@@ -610,7 +618,6 @@ public:
     //  Should never be called; symbol components should never be drawn this way.  Therefore, a line style
     //  resource must not directly refer to a symbol component.
     StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
-    BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
     static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
@@ -792,6 +799,7 @@ private:
                     LsCompoundComponent         (LsCompoundComponentCR source);
 protected:
     virtual         ~LsCompoundComponent        ();
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
@@ -1013,6 +1021,7 @@ protected:
     explicit LsStrokePatternComponent       (LsLocationCP pLocation);
     void            FixDashWidths           (double& orgWidth, double& endWidth, bool taper, ViewContextCP context, DPoint3dCP pt);
     void            Init                    (V10LineCode const* lcRsc);
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
 
@@ -1209,6 +1218,7 @@ private:
 
 protected:
     ~LsPointComponent   ();
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
     virtual void                    _PostProcessLoad        (DgnModelP modelRef) override;
@@ -1287,6 +1297,7 @@ public:
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsInternalComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const { return const_cast<LsInternalComponent*>(this); }
 
 //__PUBLISH_SECTION_START__
 public:

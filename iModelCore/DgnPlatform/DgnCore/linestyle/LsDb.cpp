@@ -42,6 +42,18 @@ void V10ComponentBase::SetDescription (Utf8CP source)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsStrokePatternComponent::_Import(DgnImportContext& importer) const
+    {
+    LsStrokePatternComponentP result = new LsStrokePatternComponent(this);
+
+    //  Save to destination and record ComponentId in clone
+
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(V10LineCode** rscOut, DgnDbR project, LsComponentId componentId)
@@ -59,6 +71,32 @@ BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(V10LineCode** rscOut,
 
     *rscOut = lineCodeData;
     return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
+    {
+    LsPointComponentP cloned = new LsPointComponent(*this, false);
+    if (cloned->m_strokeComponent.IsValid())
+        {
+        LsComponentPtr ptr = LsComponent::GetImportedComponent(cloned->m_strokeComponent->GetId(), importer);
+        cloned->m_strokeComponent = dynamic_cast<LsStrokePatternComponent*>(ptr.get());
+        }
+
+    for (LsSymbolReference& symbref : cloned->m_symbols)
+        {
+        if (symbref.m_symbol.IsValid())
+            {
+            LsComponentPtr ptr = LsComponent::GetImportedComponent(symbref.m_symbol->GetId(), importer);
+            symbref.m_symbol  = dynamic_cast<LsSymbolComponentP>(ptr.get());
+            }
+        }
+
+    //  Add to destination file.
+
+    return cloned;
     }
 
 //---------------------------------------------------------------------------------------
@@ -83,6 +121,22 @@ BentleyStatus LsPointComponent::CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsCompoundComponent::_Import(DgnImportContext& importer) const
+    {
+    LsCompoundComponentP    result = new LsCompoundComponent(*this);
+
+    for (auto& compOffset: result->m_components)
+        compOffset.m_subComponent = LsComponent::GetImportedComponent(compOffset.m_subComponent->GetId(), importer);
+
+
+    //  Save to destination and record ComponentId in clone
+
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId componentId)
@@ -100,6 +154,20 @@ BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(V10Compound** rscOut, DgnD
 
     *rscOut = compoundData;
     return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
+    {
+    LsSymbolComponentP result = new LsSymbolComponent(*this);
+
+    importer.RemapGeomPartId(result->m_geomPartId);
+
+    //  Save to destination and record ComponentId in clone
+
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -196,44 +264,38 @@ LsComponentId LsDefinition::GetComponentId (Json::Value& lsDefinition)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
+// @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsComponent::QueryComponentIds(bset<LsComponentId>& ids, DgnDbCR project, LsComponentType lsType)
+LsComponentId LsComponent::Import(LsComponentId sourceId, DgnImportContext& importer)
     {
-    //  No default constructor so we have to initialize it.
-    LineStyleProperty::ComponentProperty spec = LineStyleProperty::Compound();
+    if (!importer.IsBetweenDbs())
+        return sourceId;
 
-    switch(lsType)
-        {
-        case LsComponentType::Compound:
-            break;
-        case LsComponentType::LineCode:
-            spec = LineStyleProperty::LineCode();
-            break;
-        case LsComponentType::LinePoint:
-            spec = LineStyleProperty::LinePoint();
-            break;
-        case LsComponentType::PointSymbol:
-            spec = LineStyleProperty::PointSym();
-            break;
+    LsComponentId result = importer.FindLineStyleComponentId(sourceId);
+    if (result.IsValid())
+        return result;
 
-        default:
-            BeAssert(false && "bad lsType argument to QueryComponentIds");
-            return;
-        }
+    LsComponentPtr srcComponent = importer.GetSourceDb().Styles().LineStyles().GetLsComponent(sourceId);
+    if (!srcComponent.IsValid())
+        return LsComponentId();
 
-    Statement stmt;
-    stmt.Prepare (project, SqlPrintfString("SELECT Id FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=?"));
-
-    stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
-    stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        LsComponentId  componentId(lsType, stmt.GetValueInt(0));
-        ids.insert(componentId);
-        };
+    LsComponentPtr clonedComponent = srcComponent->_Import(importer);
+    LsComponentId  clonedId = clonedComponent->GetId();
+    importer.AddLineStyleComponentId(sourceId, clonedId);
+    return clonedId;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsComponent::GetImportedComponent(LsComponentId sourceId, DgnImportContext& importer)
+    {
+    LsComponentId   resultId = Import(sourceId, importer);
+    if (!resultId.IsValid())
+        return nullptr;
+
+    return importer.GetDestinationDb().Styles().LineStyles().GetLsComponent(resultId);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
@@ -358,10 +420,12 @@ DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
     {
     if (!IsBetweenDbs())
         return sourceId;
+
     DgnStyleId dest = FindLineStyleId(sourceId);
     if (dest.IsValid())
         return dest;
 
+    //  NEEDSWORK_LINESTYLES importers are not finished so don't pass along bad data.
     return DgnStyleId(); // DgnLineStyles::ImportLineStyle(source, *this);
     }
 
