@@ -13,11 +13,12 @@ DgnDbServerClientMkiSourceDir = $(DgnDbServerClientSourceDirectory)DgnDbServerCl
 #   Set up build dependencies for precompiled header and Client.mki
 #----------------------------------------------------------------------------------------
 
-DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h						\
+DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h                      \
 		                        $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                  \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                     \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbLocks.h                      \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevision.h             \
 		                        $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h							\
 		                        $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h
 
@@ -26,6 +27,8 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
 #----------------------------------------------------------------------------------------
 
 $(o)DgnDbServerUtils$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbServerRevision$(oext)             : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevision.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 

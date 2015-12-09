@@ -15,13 +15,18 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id)
-    : m_serverUrl(serverUrl), m_id(id) {}
+    : m_serverUrl(serverUrl), m_id(id)
+    {
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
-    : m_serverUrl(serverUrl), m_id(id), m_fileId(fileId), m_description(description), m_userUploaded(user), m_uploadedDate(date) {}
+RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR fileUrl, Utf8StringCR description,
+    Utf8StringCR user, DateTimeCR date)
+    : m_serverUrl(serverUrl), m_id(id), m_fileId(fileId), m_fileUrl(fileUrl), m_description(description), m_userUploaded(user), m_uploadedDate(date)
+    {
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
@@ -34,10 +39,10 @@ RepositoryInfoPtr RepositoryInfo::Create(Utf8StringCR serverUrl, Utf8StringCR id
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfo::Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description, Utf8StringCR user,
-    DateTimeCR date)
+RepositoryInfoPtr RepositoryInfo::Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR fileUrl, Utf8StringCR description,
+    Utf8StringCR user,DateTimeCR date)
     {
-    return std::make_shared<RepositoryInfo>(RepositoryInfo(serverUrl, id, fileId, description, user, date));
+    return std::make_shared<RepositoryInfo>(RepositoryInfo(serverUrl, id, fileId, fileUrl, description, user, date));
     }
 
 //---------------------------------------------------------------------------------------

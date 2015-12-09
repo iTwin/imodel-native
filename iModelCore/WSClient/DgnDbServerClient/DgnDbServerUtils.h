@@ -58,6 +58,7 @@ namespace ServerSchema
         static Utf8CP ObjectId = "ObjectId";
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
+        static Utf8CP URL = "URL";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }

@@ -24,6 +24,7 @@ struct RepositoryInfo
 //__PUBLISH_SECTION_END__
 private:
     Utf8String m_serverUrl;
+    Utf8String m_fileUrl;
     Utf8String m_description;
     Utf8String m_id;
     Utf8String m_fileId;
@@ -31,12 +32,13 @@ private:
     DateTime   m_uploadedDate;
 protected:
     RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
-    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
+    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR fileUrl, Utf8StringCR description, Utf8StringCR user,
+    DateTimeCR date);
  //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id);
-    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR description,
-    Utf8StringCR user, DateTimeCR date);
+    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR fileUrl,
+    Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
 
     //__PUBLISH_SECTION_END__
     static RepositoryInfoPtr ReadRepositoryInfo(Dgn::DgnDbCR db);
@@ -46,6 +48,7 @@ public:
 
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const; //!< Description taken from dgn_Proj Description property of the master file.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetServerURL() const; //!< URL of the server where the master file is stored.
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileURL() const; //!< URL of the master file.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetId() const; //!< Repository Id taken from dgn_Proj Name property of the master file.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileId() const; //!< Guid of the repository master file.
     DGNDBSERVERCLIENT_EXPORT Utf8String   GetWSRepositoryName() const; //!< Formatted WebServices repository id that is used in the address.
