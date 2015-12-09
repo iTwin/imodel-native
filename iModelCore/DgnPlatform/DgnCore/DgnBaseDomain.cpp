@@ -121,6 +121,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
 
+    RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
+
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
