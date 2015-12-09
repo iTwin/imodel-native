@@ -1054,6 +1054,9 @@ public:
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsSystemElement() const {return nullptr != ToSystemElement();}             //!< Determine whether this element is a SystemElement or not
+    bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
+    bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
+    bool IsSheetElement() const {return nullptr != ToSheetElement();}               //!< Determine whether this element is an SheetElement
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
@@ -1553,9 +1556,6 @@ protected:
     virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource3d()); }
 };
 
-//! Specialization of GeometricElement3d deriving directly from the dgn:Element ECClass.
-typedef GeometricElement3d<DgnElement> DgnElement3d;
-
 //=======================================================================================
 //! CreateParams used for constructing geometric elements
 //! @ingroup DgnElementGroup
@@ -1586,9 +1586,9 @@ typedef GeometricElementCreateParams<Placement3d> ElementCreateParams3d;
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : GeometricElement3d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, DgnElement3d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, GeometricElement3d<DgnElement>)
 
 protected:
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
@@ -1651,17 +1651,14 @@ protected:
     virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource2d()); }
 };
 
-//! Specialization of GeometricElement2d deriving directly from the dgn:Element ECClass.
-typedef GeometricElement2d<DgnElement> DgnElement2d;
-
 //=======================================================================================
 //! A 2-dimensional geometric element used to annotate drawings and sheets.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : DgnElement2d
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : GeometricElement2d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, DgnElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, GeometricElement2d<DgnElement>)
     friend struct dgn_ElementHandler::Annotation;
 public:
     typedef ElementCreateParams2d CreateParams;
@@ -1679,9 +1676,9 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
+struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : GeometricElement2d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, GeometricElement2d<DgnElement>)
     friend struct dgn_ElementHandler::Drawing;
 public:
     typedef ElementCreateParams2d CreateParams;
@@ -1699,9 +1696,9 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetElement : DgnElement2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GeometricElement2d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, DgnElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GeometricElement2d<DgnElement>)
     friend struct dgn_ElementHandler::Sheet;
 public:
     typedef ElementCreateParams2d CreateParams;

@@ -88,6 +88,7 @@ private:
     Data m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus DeleteReferences() const;
     static bool IsValidCode(Code const& code);
 protected:
     explicit ViewDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
