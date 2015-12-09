@@ -255,6 +255,28 @@ SchemaWriteStatus ECEnumeration::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVer
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+
+    bool isIntType = GetType() == PrimitiveType::PRIMITIVETYPE_Integer;
+    for (auto enumerator : m_enumeratorList)
+        {
+        xmlWriter.WriteElementStart(EC_ENUMERATOR_ELEMENT);
+        Utf8StringCP displayLabel = enumerator->GetInvariantDisplayLabel();
+        if(isIntType)
+            xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetInteger());
+        else
+            {
+            Utf8StringCP stringValue = enumerator->GetString();
+            if (stringValue != nullptr)
+                {
+                xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetString()->c_str());
+                }
+            }
+
+        if (displayLabel != nullptr)
+            xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel->c_str());
+
+        xmlWriter.WriteElementEnd();
+        }
     
     //WriteCustomAttributes (xmlWriter);
     xmlWriter.WriteElementEnd();
@@ -288,6 +310,55 @@ SchemaReadStatus ECEnumeration::_ReadXml(BeXmlNodeR enumerationNode, ECSchemaRea
         {
         LOG.errorv("Invalid type name on enumeration '%s': '%s'.", this->GetName().c_str(), value.c_str());
         return SchemaReadStatus::InvalidPrimitiveType;
+        }
+
+    PrimitiveType primitiveType = GetType();
+
+    for (BeXmlNodeP childNode = enumerationNode.GetFirstChild(); childNode != nullptr; childNode = childNode->GetNextSibling())
+        {
+        Utf8CP childNodeName = childNode->GetName();
+        if (0 != strcmp(childNodeName, EC_ENUMERATOR_ELEMENT))
+            continue;
+
+        ECEnumeratorP enumerator;
+        if (primitiveType == PrimitiveType::PRIMITIVETYPE_Integer)
+            {
+            int32_t intValue;
+            BeXmlStatus status = childNode->GetAttributeInt32Value(intValue, ENUMERATOR_VALUE_ATTRIBUTE);
+            if (status != BeXmlStatus::BEXML_Success)
+                {
+                LOG.warningv("Failed to read int attribute '%s' on ECEnumerator for Enumeration '%s'.", ENUMERATOR_VALUE_ATTRIBUTE, this->GetName().c_str());
+                continue;
+                }
+            
+            if (this->CreateEnumerator(enumerator, intValue) != ECObjectsStatus::Success)
+                {
+                LOG.warningv("Failed to add value '%d' to ECEnumeration '%s'. Duplicate or invalid entry?", intValue, this->GetName().c_str());
+                continue;
+                }
+            }
+        else
+            {
+            Utf8String stringValue;
+            BeXmlStatus status = childNode->GetAttributeStringValue(stringValue, ENUMERATOR_VALUE_ATTRIBUTE);
+            if (status != BeXmlStatus::BEXML_Success)
+                {
+                LOG.warningv("Missing xml element '%s' on ECEnumerator for Enumeration '%s'.", ENUMERATOR_VALUE_ATTRIBUTE, this->GetName().c_str());
+                continue;
+                }
+
+            if (this->CreateEnumerator(enumerator, stringValue) != ECObjectsStatus::Success)
+                {
+                LOG.warningv("Failed to add value '%s' to ECEnumeration '%s'. Duplicate or invalid entry?", stringValue.c_str(), this->GetName().c_str());
+                continue;
+                }
+            }
+
+        Utf8String displayLabel;
+        if (childNode->GetAttributeStringValue(displayLabel, DISPLAY_LABEL_ATTRIBUTE) == BeXmlStatus::BEXML_Success)
+            {
+            enumerator->SetDisplayLabel(displayLabel);
+            }
         }
 
     return SchemaReadStatus::Success;

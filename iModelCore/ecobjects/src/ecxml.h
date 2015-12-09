@@ -34,6 +34,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     EC_KEYPROPERTY_ELEMENT              "Property"
 #define     EC_SCHEMAREFERENCE_ELEMENT          "ECSchemaReference"
 #define     EC_ENUMERATION_ELEMENT              "ECEnumeration"
+#define     EC_ENUMERATOR_ELEMENT               "ECEnumerator"
 
 #define     BASECLASS_ATTRIBUTE                 "baseClass"
 #define     TYPE_NAME_ATTRIBUTE                 "typeName"
@@ -60,6 +61,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     MAXIMUM_VALUE_ATTRIBUTE             "MaximumValue"
 #define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
 
+
 #define     STRENGTH_ATTRIBUTE                  "strength"
 #define     STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"
 #define     CARDINALITY_ATTRIBUTE               "cardinality"
@@ -67,6 +69,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     POLYMORPHIC_ATTRIBUTE               "polymorphic"
 #define     CONSTRAINTCLASSNAME_ATTRIBUTE       "class"
 #define     KEYPROPERTYNAME_ATTRIBUTE           "name"
+#define     ENUMERATOR_VALUE_ATTRIBUTE          "value"
 
 #define     ECXML_TRUE                          "True"
 #define     ECXML_FALSE                         "False"
