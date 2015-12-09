@@ -163,7 +163,7 @@ public:
 
     DgnDbStatus SaveGeom()
         {
-//#define DEBUG_ORIGIN
+#define DEBUG_ORIGIN
 #ifdef DEBUG_ORIGIN
         Placement2dCR placement = m_builder->GetPlacement2d();
         static const double s_lenFactor = 0.01;
@@ -216,8 +216,8 @@ void ViewAttachmentGeomCollector::FitView()
     if (!IsValid() || SUCCESS != m_viewport.ComputeViewRange(range, params))
         return;
 
-    double aspect = m_viewport.GetViewRect().Aspect();
-    m_viewport.GetViewControllerR().LookAtViewAlignedVolume(range, &aspect, nullptr, true);
+    ViewController::MarginPercent margin(0,0,0,0);
+    m_viewport.GetViewControllerR().LookAtViewAlignedVolume(range, nullptr, &margin, true);
     m_viewport.SynchWithViewController(false);
     }
 
@@ -307,7 +307,13 @@ BentleyStatus ViewAttachmentGeomCollector::_ProcessCurveVector(CurveVectorCR cv,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewAttachment::GenerateGeomStream(DgnSubCategoryId subcat)
     {
+#ifdef ALLOW_CONTROLLER_OVERRIDES
     auto controller = ViewDefinition::LoadViewController(GetViewId(), GetDgnDb(), ViewDefinition::FillModels::Yes);
+#else
+    auto view = ViewDefinition::QueryView(GetViewId(), GetDgnDb());
+    auto controller = view.IsValid() ? view->LoadViewController(false, ViewDefinition::FillModels::Yes) : nullptr;
+#endif
+
     if (controller.IsNull())
         return DgnDbStatus::ViewNotFound;
 

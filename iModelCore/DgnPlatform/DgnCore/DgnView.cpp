@@ -144,7 +144,15 @@ ViewControllerPtr ViewDefinition::LoadViewController(DgnViewId viewId, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr ViewDefinition::LoadViewController(FillModels fillModels) const
     {
-    ViewControllerOverride* ovr = ViewControllerOverride::Cast(GetElementHandler());
+    return LoadViewController(true, fillModels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillModels fillModels) const
+    {
+    ViewControllerOverride* ovr = allowOverrides ? ViewControllerOverride::Cast(GetElementHandler()) : nullptr;
     ViewControllerPtr controller = ovr ? ovr->_SupplyController(*this) : nullptr;
     if (controller.IsNull())
         controller = _SupplyController();
