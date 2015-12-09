@@ -62,7 +62,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
         AsyncTaskPtr<void> SyncFileModification(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncObjectDeletion(ChangeGroupPtr changeGroup);
 
-        void HandleCreationError(WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
+        void HandleSyncError(WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
 
         void ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const;
         void ReportFinalProgress() const;
