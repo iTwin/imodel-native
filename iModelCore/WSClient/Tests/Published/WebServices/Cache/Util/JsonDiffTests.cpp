@@ -32,6 +32,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString) \
     TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, JsonDiff::Flags::FindDeletions, R"({})")
 
+#define TEST_GET_CHANGES_DO_NOT_IGNORE_DEL2(oldJsonString, newJsonString, outJsonString, expectedDiffString) \
+    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, JsonDiff::Flags::FindDeletions, outJsonString)
+
 using namespace ::testing;
 
 TEST_F(JsonDiffTests, GetChanges_OldAndNewAreNull_ReturnsEmptyJson)
@@ -260,6 +263,20 @@ TEST_F(JsonDiffTests, GetChanges_MemberDeletedDoNotIgnoreDeleted_ReturnsNullMemb
                      R"({ "A" : [1,2,3] })",
                      R"({ })",
                      R"({ "A" : null })");
+
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                    R"({ "A" : "foo" })",
+                    R"({ "B" : "boo" })",
+                    R"({ "A" : null, "B" : "boo" })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_MemberDeletedExistsInOutputDoNotIgnoreDeleted_ReturnsNullMember)
+    {
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL2(
+                    R"({ "A" : "foo" })",
+                    R"({ })",
+                    R"({ "A" : "otherValue" })",
+                    R"({ "A" : null })");
     }
 
 TEST_F(JsonDiffTests, GetChanges_MemberTypeChanged_ReturnsNewMember)

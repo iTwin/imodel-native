@@ -94,16 +94,14 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
         }
 
     // Find deletions
-    if (m_findDeletions &&
-        std::distance(oldJson.MemberBegin(), oldJson.MemberEnd()) != std::distance(newJson.MemberBegin(), newJson.MemberEnd()))
+    if (m_findDeletions)
         {
         for (auto oldMemberItr = oldJson.MemberBegin(); oldMemberItr != oldJson.MemberEnd(); ++oldMemberItr)
             {
-            auto& newValue = newJson[oldMemberItr->name.GetString()];
-            if (newValue.IsNull())
+            if (!newJson.HasMember(oldMemberItr->name.GetString()))
                 {
                 changesFound = true;
-                AddMember(jsonOut, oldMemberItr->name, newValue, allocator);
+                AddMember(jsonOut, oldMemberItr->name, Value(kNullType), allocator);
                 }
             }
         }
