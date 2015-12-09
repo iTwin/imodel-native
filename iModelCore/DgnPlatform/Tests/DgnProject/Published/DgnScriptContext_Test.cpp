@@ -17,12 +17,20 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
+static DgnCategoryId getFirstCategory(DgnDbR db)
+    {
+    return *DgnCategory::QueryCategories(db).begin();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
 static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     {
     DgnDbR db = model.GetDgnDb();
     DgnModelId mid = model.GetModelId();
 
-    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
+    DgnCategoryId cat = getFirstCategory(db);
 
     DgnElementPtr gelem;
     if (model.Is3d())
@@ -82,7 +90,7 @@ struct DgnScriptTest : public ::testing::Test
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnScriptTest, Test1)
+TEST_F(DgnScriptTest, TestEga)
     {
     DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
@@ -119,8 +127,11 @@ TEST_F(DgnScriptTest, Test1)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
+        var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
+        var box = Bentley.Dgn.DgnBoxDetail.InitFromCenterAndSize(new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
+        var solid = Bentley.Dgn.SolidPrimitive.CreateDgnBox(box); \
         var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-        builder.AppendBox(params[\"X\"], params[\"Y\"], params[\"Z\"]); \
+        builder.Append(solid); \
         builder.SetGeomStreamAndPlacement(element); \
         return 0;\
     } \
@@ -208,11 +219,22 @@ TEST_F(DgnScriptTest, RunScripts)
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
     jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
-    printf (":Hello world\n");
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
-    //printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
+
+
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
+    DgnDbP project = tdm.GetDgnProjectP();
+    ASSERT_TRUE(project != NULL);
+    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    model->FillModel();
+    Json::Value parms = Json::objectValue;
+    parms["modelName"] = model->GetCode().GetValueCP();
+    parms["categoryName"] = DgnCategory::QueryCategory(getFirstCategory(*project), *project)->GetCategoryName();
+    int retstatus = 0;
+    DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", parms);
+    ASSERT_EQ(0, retstatus);
     }
 
 /*---------------------------------------------------------------------------------**//**

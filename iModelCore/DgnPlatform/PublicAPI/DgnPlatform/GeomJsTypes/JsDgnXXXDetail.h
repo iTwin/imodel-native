@@ -129,6 +129,13 @@ public:
                 );
         return new JsDgnBoxDetail (data);
         }
+
+    static JsDgnBoxDetailP InitFromCenterAndSize(JsDPoint3dP center, JsDPoint3dP size, bool capped)
+        {
+        DgnBoxDetail data =  DgnBoxDetail::InitFromCenterAndSize(center->Get(), size->Get(), capped);
+        return new JsDgnBoxDetail (data);
+        }
+
 };
 
 struct JsSolidPrimitive : RefCountedBase
@@ -160,6 +167,7 @@ public:
         }
 
     double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
+    ISolidPrimitivePtr GetISolidPrimitivePtr() {return m_solidPrimitive;}
 };
 
 
