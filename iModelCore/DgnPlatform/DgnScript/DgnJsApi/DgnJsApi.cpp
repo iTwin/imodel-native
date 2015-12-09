@@ -50,41 +50,6 @@ void JsDgnModel::DeleteAllElements()
     }
 
 //---------------------------------------------------------------------------------------
-// *** TEMPORARY METHOD *** 
-// @bsimethod                                   Sam.Wilson                      06/15
-//---------------------------------------------------------------------------------------
-void JsElementGeometryBuilder::AppendBox(double x, double y, double z)
-    {
-    // *** TEMPORARY METHOD *** 
-    DPoint3d localOrigin;
-    localOrigin.x = 0.0;
-    localOrigin.y = 0.0;
-    localOrigin.z = 0.0;
-
-    DPoint3d localTop (localOrigin);
-    localTop.z = z;
-
-    DVec3d localX = DVec3d::From(1,0,0);
-    DVec3d localY = DVec3d::From(0,1,0);
-
-    DgnBoxDetail boxd(localOrigin, localTop, localX, localY, x, y, x, y, true);
-    ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnBox(boxd);
-
-    m_builder->Append(*solid);
-    }
-
-//---------------------------------------------------------------------------------------
-// *** TEMPORARY METHOD *** 
-// @bsimethod                                   Sam.Wilson                      06/15
-//---------------------------------------------------------------------------------------
-void JsElementGeometryBuilder::AppendSphere(double radius)
-    {
-    DgnSphereDetail sphere(DPoint3d::FromZero(), radius);
-    ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnSphere(sphere);
-    m_builder->Append(*solid);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)

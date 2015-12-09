@@ -157,6 +157,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
+    type DgnElementP = cxx_pointer<DgnElement>;
+
     class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
@@ -169,10 +171,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @return a new, non-persistent PhysicalElement or null if one of the parameters is invalid
          * @see Insert
         */
-        static Create(model: DgnModelP, categoryId: DgnObjectIdP, elementClassName: Bentley_Utf8String): DgnElementP;
+        static Create(model: DgnModelP, categoryId: DgnObjectIdP, elementClassName: Bentley_Utf8String): PhysicalElementP;
     }
 
-    type DgnElementP = cxx_pointer<DgnElement>;
+    type PhysicalElementP = cxx_pointer<PhysicalElement>;
 
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
@@ -217,8 +219,6 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
-        AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
-        AppendSphere(radius: cxx_double): void;
         Append(solid: SolidPrimitiveP): void;
         SetGeomStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
