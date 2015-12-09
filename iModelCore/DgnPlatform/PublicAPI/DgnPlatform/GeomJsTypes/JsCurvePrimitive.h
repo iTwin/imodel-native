@@ -19,24 +19,17 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct JsCurvePrimitive: RefCountedBase
 {
-private:
+protected :
     ICurvePrimitivePtr m_curvePrimitive;
+
+    void Set (ICurvePrimitivePtr const &curvePrimitive)
+        {
+        m_curvePrimitive = curvePrimitive;
+        }
 public:
     JsCurvePrimitive () {}
 
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
-
-    static JsCurvePrimitiveP CreateLineSegment (JsDSegment3dP data)
-        {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (data->Get ());
-        return new JsCurvePrimitive (cp);
-        }
-    
-    static JsCurvePrimitiveP CreateEllipticArc (JsDEllipse3dP data)
-        {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (data->Get ());
-        return new JsCurvePrimitive (cp);
-        }
 
     static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
         {
@@ -75,6 +68,69 @@ public:
             }
         return nullptr;
         }
+
+    JsDRange3dP Range ()
+        {
+        DRange3d range;
+        m_curvePrimitive->GetRange (range);
+        return new JsDRange3d (range);
+        }
+};
+
+struct JsLineSegment : JsCurvePrimitive
+{
+public:
+    JsLineSegment () {}
+    JsLineSegment (ICurvePrimitivePtr const &data) {Set (data);}
+    JsLineSegment (JsDPoint3dP pointA, JsDPoint3dP pointB)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (DSegment3d::From (pointA->Get (), pointB->Get ()));
+        Set (cp);
+        }
+    JsLineSegment * Clone (){return new JsLineSegment (m_curvePrimitive->Clone ());}
+
+};
+
+struct JsEllipticArc: JsCurvePrimitive
+{
+public:
+    JsEllipticArc () {}
+    JsEllipticArc (ICurvePrimitivePtr const &data) {Set (data);}
+    JsEllipticArc (JsDPoint3dP center, JsDVector3dP vector0, JsDVector3dP vector90, JsAngleP startAngle, JsAngleP sweepAngle)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc 
+            (DEllipse3d::FromVectors (center->Get (), vector0->Get (), vector90->Get (), startAngle->GetRadians (), sweepAngle->GetRadians ()));
+        Set(cp);
+        }
+
+    JsEllipticArc * Clone (){return new JsEllipticArc (m_curvePrimitive->Clone ());}
+
+JsDPoint3d * GetCenter()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsDPoint3d (data.center) : nullptr;
+    }
+
+JsDVector3d * GetVector0()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsDVector3d (data.vector0) : nullptr;
+    }
+JsDVector3d * GetVector90()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsDVector3d (data.vector90) : nullptr;
+    }
+JsAngle * GetStartAngle ()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.start)) : nullptr;
+    }
+JsAngle * GetSweepAngle ()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.sweep)) : nullptr;
+    }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

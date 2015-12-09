@@ -540,8 +540,6 @@ class CurvePrimitive implements IDisposable
     /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
     Clone(): CurvePrimitiveP;
     constructor ();
-    static CreateLineSegment(segment: DSegment3dP): CurvePrimitiveP;
-    static CreateEllipticArc(arc: DEllipse3dP): CurvePrimitiveP;
     static CreateLineString(points: DPoint3dArrayP): CurvePrimitiveP;
     static CreateBsplineCurve (curve: BsplineCurveP) : CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
@@ -553,6 +551,19 @@ class CurvePrimitive implements IDisposable
 
     type CurvePrimitiveP = cxx_pointer<CurvePrimitive>;
 
+
+
+    //! A wrapper for BentleyApi::JsLineSegment
+    class LineSegment extends CurvePrimitive implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsLineSegment ***/
+        Clone(): LineSegmentP;
+        constructor();
+        constructor (pointA : DPoint3dP, pointB : DPoint3dP);
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type LineSegmentP = cxx_pointer<LineSegment>;
 
 
 

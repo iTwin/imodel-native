@@ -56,6 +56,8 @@ JSSTRUCT(JsDRay3d);
 JSSTRUCT(JsDRange3d);
 JSSTRUCT(JsDPoint3dDVector3dDVector3d);
 JSSTRUCT(JsCurvePrimitive);
+JSSTRUCT(JsLineSegment);
+JSSTRUCT(JsEllipticArc);
 JSSTRUCT(JsCurveVector);
 JSSTRUCT(JsSolidPrimitive);
 JSSTRUCT(JsBsplineCurve);

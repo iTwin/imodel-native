@@ -31,8 +31,25 @@ public:
         }
 
 };
+#ifdef abc
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     11/15
+//=======================================================================================
+struct JsDgnExtrusionDetail: JsGeomWrapperBase <DgnExtrusionDetail>
+{
+public:
+    JsDgnExtrusionDetail () {}
 
+    JsDgnExtrusionDetail (DgnExtrusionDetailCR data)   { m_data = data;}
 
+    static JsDgnExtrusionDetailP Create (JsCurveVectorP contour, JsDVector3dP vector, bool capped)
+        {
+        DgnExtrusionDetail data (contour->Get (), vector->Get (), capped);
+        return new JsDgnExtrusionDetail (data);
+        }
+
+};
+#endif
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     11/15
 //=======================================================================================
