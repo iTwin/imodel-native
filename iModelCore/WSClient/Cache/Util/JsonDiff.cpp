@@ -61,26 +61,28 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
             continue;
             }
 
-        auto& oldValue = oldJson[newMemberItr->name.GetString()];
+        RapidJsonValueCR oldValue = oldJson[newMemberItr->name.GetString()];
 
         if (newMemberItr->value.GetType() == kObjectType)
             {
-            bool needsAdding = false;
-            auto& newParent = jsonOut[newMemberItr->name.GetString()];
-            if (newParent.IsNull())
+            bool needsAdding = true;
+
+            Value temp(kObjectType);
+            Value* outMember = &temp;
+
+            if (jsonOut.HasMember(newMemberItr->name.GetString()))
                 {
-                needsAdding = true;
-                Value newPar(kObjectType);
-                newParent = newPar;
+                needsAdding = false;
+                outMember = &jsonOut[newMemberItr->name.GetString()];
                 }
 
-            if (GetChanges(oldValue, newMemberItr->value, newParent, allocator))
+            if (GetChanges(oldValue, newMemberItr->value, *outMember, allocator))
                 {
                 changesFound = true;
 
                 if (needsAdding)
                     {
-                    AddMember(jsonOut, newMemberItr->name, newParent, allocator);
+                    AddMember(jsonOut, newMemberItr->name, temp, allocator);
                     }
                 }
             }
@@ -149,7 +151,6 @@ RapidJsonValueCR JsonDiff::ValidateObject(RapidJsonValueCR value)
 
     if (!value.IsObject())
         {
-        BeAssert(false && "Expecting object value");
         static const Value empty(kObjectType);
         return empty;
         }

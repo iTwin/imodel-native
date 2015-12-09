@@ -36,39 +36,31 @@ using namespace ::testing;
 
 TEST_F(JsonDiffTests, GetChanges_OldAndNewAreNull_ReturnsEmptyJson)
     {
-    BeTest::SetFailOnAssert(false);
     TEST_GET_CHANGES(R"(null)",
                      R"(null)",
                      R"({ })");
-    BeTest::SetFailOnAssert(true);
     }
 
 TEST_F(JsonDiffTests, GetChanges_OldIsNull_ReturnsAllNew)
     {
-    BeTest::SetFailOnAssert(false);
     TEST_GET_CHANGES(R"(null)",
                      R"({"A" : "foo"})",
                      R"({"A" : "foo"})");
-    BeTest::SetFailOnAssert(true);
     }
 
 TEST_F(JsonDiffTests, GetChanges_NewIsNullAndIgnoreDeletions_ReturnsEmpty)
     {
-    BeTest::SetFailOnAssert(false);
     TEST_GET_CHANGES(R"({"A" : "foo"})",
                      R"(null)",
                      R"({ })");
-    BeTest::SetFailOnAssert(true);
     }
 
 TEST_F(JsonDiffTests, GetChanges_NewIsNullAndNotIgnoreDeletions_ReturnsAllOldAsDeleted)
     {
-    BeTest::SetFailOnAssert(false);
     TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
                      R"({"A" : "foo"})",
                      R"(null)",
                      R"({"A" : null})");
-    BeTest::SetFailOnAssert(true);
     }
 
 TEST_F(JsonDiffTests, GetChanges_EmptyJsons_ReturnsEmptyJson)
@@ -408,6 +400,22 @@ TEST_F(JsonDiffTests, GetChanges_PropertyDifferentExistsInDeepOutput_ReturnsDiff
 
 TEST_F(JsonDiffTests, GetChanges_PropertyDifferentDeeply_ReturnsDiff)
     {
+    TEST_GET_CHANGES(R"({})",
+                     R"({ "A": { "B" : "Val1", "C" : "Val2" } })",
+                     R"({ "A": { "B" : "Val1", "C" : "Val2" } })");
+
+    TEST_GET_CHANGES(R"({ "A": { "B" : "Val1" } })",
+                     R"({ "A": { "B" : "Val1" } })",
+                     R"({ })");
+
+    TEST_GET_CHANGES(R"({ "A": { "B" : "Val1" } })",
+                     R"({ "A": { "B" : "Val2" } })",
+                     R"({ "A": { "B" : "Val2" } })");
+
+    TEST_GET_CHANGES(R"({})",
+                     R"({ "A": { "B" : "Val1" } })",
+                     R"({ "A": { "B" : "Val1" } })");
+
     TEST_GET_CHANGES(R"({ "A" : { "B" : [1,2], "C" : "bar" } })",
                      R"({ "A" : { "B" : [1,3], "C" : "bar" } })",
                      R"({ "A" : { "B" : [1,3] } })");
@@ -420,7 +428,6 @@ TEST_F(JsonDiffTests, GetChanges_PropertyDifferentDeeply_ReturnsDiff)
                      R"({ "A" : 3, "B": { "C" : false, "D" : 4 } })",
                      R"({ "B": { "C" : false } })");
     }
-
 
 TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsElementRemoved_ReturnsEmptyJson)
     {
