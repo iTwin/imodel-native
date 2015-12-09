@@ -10,7 +10,7 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-extern ECObjectsStatus ResolveStructType(ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR ecClass);
+extern ECObjectsStatus ResolveStructType(ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR ecClass, bool doLogging);
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
@@ -1255,14 +1255,20 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     READ_OPTIONAL_XML_ATTRIBUTE (classNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)
 
     Utf8String     modifierString;
-    if (BEXML_Success == classNode.GetAttributeStringValue (modifierString, MODIFIER_ATTRIBUTE))
+    Utf8String boolStr;
+
+    BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
+    BeXmlStatus domainStatus = classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE);
+    if (BEXML_Success == modifierStatus && BEXML_Success == domainStatus)
         {
-        ECXml::ParseModifierString(m_modifier, modifierString);
+        LOG.warningv("Both '%s' and '%s' are set on ECClass '%s'.  This is not allowed.", MODIFIER_ATTRIBUTE, IS_DOMAINCLASS_ATTRIBUTE, GetName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    Utf8String boolStr;
     bool boolVal;
-    if (BEXML_Success == classNode.GetAttributeStringValue (boolStr, IS_DOMAINCLASS_ATTRIBUTE))
+    if (BEXML_Success == modifierStatus)
+        ECXml::ParseModifierString(m_modifier, modifierString);
+    else if (BEXML_Success == domainStatus)
         {
         if (ECObjectsStatus::Success == ECXml::ParseBooleanString(boolVal, boolStr.c_str()))
             {
@@ -1312,7 +1318,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                     if (BEXML_Success == childNode->GetAttributeStringValue(typeName, TYPE_NAME_ATTRIBUTE))
                         {
                         ECStructClassCP structClass;
-                        ECObjectsStatus status = ResolveStructType(structClass, typeName, *this);
+                        ECObjectsStatus status = ResolveStructType(structClass, typeName, *this, false);
                         if (ECObjectsStatus::Success == status && NULL != structClass)
                             isStruct = true;
                         }
