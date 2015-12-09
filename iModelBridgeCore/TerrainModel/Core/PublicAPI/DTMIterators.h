@@ -235,7 +235,7 @@ struct DTMMeshEnumerator : RefCountedBase
     private: long vectorOption;        /* ==> Vector Option <1=Surface Derivatives,2=Averaged Triangle Surface Normals> */
     private: double zAxisFactor;       /* ==> Factor To Exaggerate The z Axis default value 1.0  */
     private: DTMFenceParams m_fence;
-
+    private: mutable bool m_useFence;
     private: mutable long m_pointMark;
     private: mutable bool voidsInDtm;
     private: mutable long startPnt, lastPnt, leftMostPnt;

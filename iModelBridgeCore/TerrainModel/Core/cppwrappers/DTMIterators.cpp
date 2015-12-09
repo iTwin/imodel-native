@@ -441,6 +441,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize() const
         if (fenceType != DTMFenceType::Block && fenceType != DTMFenceType::Shape) fenceType = DTMFenceType::Block;
         if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Overlap;
         }
+
     /*
     ** Test For Valid Dtm Object
     */
@@ -588,6 +589,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize() const
     ** Allocate Memory For Mesh Faces
     */
     meshFaces.resize (maxTriangles * 3);
+    m_useFence = useFence;
     return DTM_SUCCESS;
 errexit:
     if (m_dtmP->dtmState == DTMState::Tin)
@@ -809,7 +811,7 @@ void DTMMeshEnumerator::Reset ()
             {
             long dbg = DTM_TRACE_VALUE (0);
             DTMFenceType fenceType = m_fence.fenceType;
-            bool useFence = fenceType != DTMFenceType::None;
+            bool useFence = m_useFence;
 
             m_initialized = false;
             if (m_dtmP->dtmState == DTMState::Tin) bcdtmList_nullTptrValuesDtmObject (m_dtmP);
@@ -885,6 +887,8 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
 //---------------------------------------------------------------------------------------
 bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         {
+        if (!m_initialized) Initialize ();
+
         long dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
         long  pnt3, clPtr, numTriangles = 0;
         bool voidTriangle;
@@ -892,9 +896,8 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         DTM_CIR_LIST  *clistP;
         DTM_TIN_NODE  *node1P, *node2P, *node3P;
         DTMFenceType fenceType = m_fence.fenceType;
-        bool useFence = fenceType != DTMFenceType::None;
         bool usePnt2 = pnt1 != -1;
-        if (!m_initialized) Initialize ();
+        bool useFence = m_useFence;
 
         if (m_dtmP->dtmState != DTMState::Tin)
             return false;
