@@ -203,7 +203,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
     type AngleP = cxx_pointer<Angle>;
 
-    //! A wrapper for BentleyApi::DEllipse3d
+    //! A wrapper for BentleyApi::DRange3d
     class DRange3d implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDRange3d ***/ 
         //! constructor for empty range.
@@ -253,42 +253,6 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
 
     type DRange3dP = cxx_pointer<DRange3d>;
-
-
-    //! A wrapper for BentleyApi::DEllipse3d
-    class DEllipse3d implements IDisposable {
-        /*** NATIVE_TYPE_NAME = JsDEllipse3d ***/ 
-        constructor(
-                center      : DPoint3dP,
-                vector0     : DVector3dP,
-                vector90    : DVector3dP,
-                startAngle  : AngleP,
-                sweepAngle  : AngleP
-                );
-        Clone () : DEllipse3dP;
-
-        PointAtFraction (f : cxx_double) : DPoint3dP;                
-        OnDispose(): void;
-        Dispose(): void;
-    }
-
-    type DEllipse3dP = cxx_pointer<DEllipse3d>;
-
-    //! A wrapper for BentleyApi::DSegment3d
-    class DSegment3d implements IDisposable {
-        /*** NATIVE_TYPE_NAME = JsDSegment3d ***/ 
-        Clone(): DSegment3dP;
-    
-        constructor (
-                startPoint : DPoint3dP,
-                endPoint   : DPoint3dP
-                );
-        PointAtFraction (f : cxx_double) : DPoint3dP;                
-        OnDispose(): void;
-        Dispose(): void;
-    }
-
-    type DSegment3dP = cxx_pointer<DSegment3d>;
 
 
     //! A wrapper for BentleyApi::DRay3d
@@ -515,25 +479,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
 
 
-    //! A wrapper for a bspline curve
-    class BsplineCurve implements IDisposable, BeJsProjection_SuppressConstructor
-    {
-        /*** NATIVE_TYPE_NAME = JsBsplineCurve ***/ 
-
-        OnDispose(): void;
-        Dispose(): void;
-        IsPeriodic () : cxx_bool;
-        static CreateFromPoles(xyz: DPoint3dArrayP,
-            weights: DoubleArrayP,
-            knots : DoubleArrayP,
-            order: cxx_double, closed: cxx_bool, preWeighted: cxx_bool): BsplineCurveP;
-    }
-
-    type BsplineCurveP = cxx_pointer<BsplineCurve>;
-
-
-
-    
+   
 //! A wrapper for BentleyApi::JsCurvePrimitive
 class CurvePrimitive implements IDisposable
     {
@@ -541,7 +487,6 @@ class CurvePrimitive implements IDisposable
     Clone(): CurvePrimitiveP;
     constructor ();
     static CreateLineString(points: DPoint3dArrayP): CurvePrimitiveP;
-    static CreateBsplineCurve (curve: BsplineCurveP) : CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
     PointAtFraction(f: cxx_double): DPoint3dP; 
 
@@ -567,7 +512,38 @@ class CurvePrimitive implements IDisposable
 
 
 
+    //! A wrapper for BentleyApi::JsEllipticArc
+    class EllipticArc extends CurvePrimitive implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsEllipticArc ***/
+        Clone(): EllipticArcP;
+        constructor();
+        constructor(pointA: DPoint3dP, pointB: DPoint3dP);
+        OnDispose(): void;
+        Dispose(): void;
+    }
 
+    type EllipticArcP = cxx_pointer<EllipticArc>;
+
+
+    //! A wrapper for a bspline curve
+    //! Because curve contruction is error-prone and proper constructors cannot indicate errors, 
+    //!   curve creation is through the static methods.
+    //!  , BeJsProjection_SuppressConstructor
+    class BsplineCurve extends CurvePrimitive implements IDisposable
+    {
+        /*** NATIVE_TYPE_NAME = JsBsplineCurve ***/
+        constructor ();
+        Clone(): BsplineCurveP;
+        OnDispose(): void;
+        Dispose(): void;
+        IsPeriodic(): cxx_bool;
+        static CreateFromPoles(xyz: DPoint3dArrayP,
+            weights: DoubleArrayP,
+            knots: DoubleArrayP,
+            order: cxx_double, closed: cxx_bool, preWeighted: cxx_bool): BsplineCurveP;
+    }
+
+    type BsplineCurveP = cxx_pointer<BsplineCurve>;
 
 //! A wrapper for a polyface mesh !!!
 class PolyfaceMesh implements IDisposable

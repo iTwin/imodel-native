@@ -50,8 +50,6 @@ JSSTRUCT(JsDPoint3d);
 JSSTRUCT(JsDPoint2d);
 JSSTRUCT(JsDVector3d);
 JSSTRUCT(JsDVector2d);
-JSSTRUCT(JsDEllipse3d);
-JSSTRUCT(JsDSegment3d);
 JSSTRUCT(JsDRay3d);
 JSSTRUCT(JsDRange3d);
 JSSTRUCT(JsDPoint3dDVector3dDVector3d);
@@ -144,17 +142,15 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JSYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JSDRay3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3dDVector3dDVector3d.h>
-#include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
-#include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
 #include <DgnPlatform/GeomJsTypes/JSRotMatrix.h>
 #include <DgnPlatform/GeomJsTypes/JSTransform.h>
 
 
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
 
-#include <DgnPlatform/GeomJsTypes/JSBsplineCurve.h>
-
+// This has CurvePrimitive, LineSegment, EllipticArc, BsplineCurve ...
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
+
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceVisitor.h>
 #include <DgnPlatform/GeomJsTypes/JsDgnXXXDetail.h>

@@ -30,22 +30,13 @@ public:
     JsCurvePrimitive () {}
 
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
+    JsCurvePrimitiveP Clone () {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
 
     static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
         {
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->GetRef ());
         return new JsCurvePrimitive (cp);
         }
-
-    static JsCurvePrimitiveP CreateBsplineCurve (JsBsplineCurveP data)
-        {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateBsplineCurve (*data->Get ());
-        if (cp.IsValid ())
-            return new JsCurvePrimitive (cp);
-        return nullptr;
-        }
-
-    JsCurvePrimitiveP Clone () {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
 
     double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
     JsDPoint3dP PointAtFraction (double f)
@@ -131,6 +122,45 @@ JsAngle * GetSweepAngle ()
     DEllipse3d data;
     return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.sweep)) : nullptr;
     }
+};
+
+
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     08/15
+//=======================================================================================
+struct JsBsplineCurve: JsCurvePrimitive
+{
+private:
+public:
+    JsBsplineCurve () {}
+    JsBsplineCurve (ICurvePrimitivePtr const &data) {Set (data);}
+    JsBsplineCurve * Clone (){return new JsBsplineCurve (m_curvePrimitive->Clone ());}
+
+    static JsBsplineCurve * CreateFromPoles (JsDPoint3dArrayP xyz, 
+        JsDoubleArrayP weights, JsDoubleArrayP knots,
+        double order, bool closed, bool preWeighted)
+        {
+        MSBsplineCurvePtr bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
+                            xyz->GetRef (),
+                            weights == nullptr ? nullptr : &weights->GetRef (),
+                            knots   == nullptr ? nullptr : &knots->GetRef (),
+                            (int)order,
+                            closed,
+                            preWeighted
+                            );
+        if (bcurve.IsValid ())
+            {
+            auto bcurvePrimitive = ICurvePrimitive::CreateBsplineCurve (bcurve);
+            return new JsBsplineCurve (bcurvePrimitive);
+            }
+        return nullptr;
+        }
+    bool IsPeriodic ()
+        {
+        auto data = m_curvePrimitive->GetBsplineCurvePtr ();
+        return data.IsValid () ? data->IsClosed () : false;
+        }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
