@@ -212,10 +212,13 @@ void ComponentModelPerfTest::Developer_CreateCMs()
         var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
         for (var i = 0; i < params.box_count; i++)\
             {\
+            var boxSize = new be.DPoint3d(params.H, params.W, params.D); \
+            var box = be.DgnBoxDetail.InitFromCenterAndSize(new be.DPoint3d(0,0,0), boxSize, true); \
+            var solid = be.SolidPrimitive.CreateDgnBox(box); \
             var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
             var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
             var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-            builder.AppendBox(params.H, params.W, params.D); \
+            builder.Append(solid); \
             builder.SetGeomStreamAndPlacement(element); \
             element.Insert(); \
             }\

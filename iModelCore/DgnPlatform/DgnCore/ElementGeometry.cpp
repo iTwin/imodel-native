@@ -4263,10 +4263,11 @@ private:
     ElementGeometryBuilderR m_builder;
     DgnCategoryId m_categoryId;
     Transform m_transform;
+    Transform m_geomToElem;
 
 public:
-    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
-        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_transform(Transform::FromIdentity()) {}
+    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, TransformCR geomToElem, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
+        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_geomToElem (geomToElem), m_transform(Transform::FromIdentity()) {}
 
     virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
     virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override { m_builder.Append(params); }
@@ -4318,8 +4319,10 @@ BentleyStatus TextAnnotationDrawToElementGeometry::_ProcessCurveVector(CurveVect
 //---------------------------------------------------------------------------------------
 void TextAnnotationDrawToElementGeometry::_OutputGraphics(ViewContextR context)
     {
+    context.PushTransform(m_geomToElem);
     context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
     m_annotationDraw.Draw(context);
+    context.PopTransformClip();
     }
 
 END_UNNAMED_NAMESPACE
@@ -4327,10 +4330,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append(TextAnnotationCR text)
+bool ElementGeometryBuilder::Append(TextAnnotationCR text, TransformCR transform)
     {
     TextAnnotationDraw annotationDraw(text);
-    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, *this, m_elParams.GetCategoryId());
+    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, transform, *this, m_elParams.GetCategoryId());
     ElementGraphicsOutput::Process(annotationDrawToGeom, m_dgnDb);
 
     return true;
