@@ -545,6 +545,73 @@ class CurvePrimitive implements IDisposable
 
     type BsplineCurveP = cxx_pointer<BsplineCurve>;
 
+
+
+
+    //! A wrapper for BentleyApi::JsCurveVector
+    class CurveVector implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsCurveVector ***/
+        Clone(): CurveVectorP;
+        constructor();
+        BoundaryType(): cxx_double;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type CurveVectorP = cxx_pointer<CurveVector>;
+
+    //! A wrapper for BentleyApi::JsPath
+    class Path extends CurveVector implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsPath ***/
+        Clone(): PathP;
+        constructor();
+        Add(primitive: CurvePrimitiveP): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type PathP = cxx_pointer<Path>;
+
+    //! A wrapper for BentleyApi::JsLoop
+    class Loop extends CurveVector implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsLoop ***/
+        Clone(): LoopP;
+        constructor();
+        Add(primitive: CurvePrimitiveP): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type LoopP = cxx_pointer<Loop>;
+
+    //! A wrapper for BentleyApi::JsParityRegion
+    class ParityRegion extends CurveVector implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsParityRegion ***/
+        Clone(): ParityRegionP;
+        constructor();
+        Add(loop: LoopP): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ParityRegionP = cxx_pointer<ParityRegion>;
+
+    //! A wrapper for BentleyApi::JsUnionRegion
+    class UnionRegion extends CurveVector implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsUnionRegion ***/
+        Clone(): UnionRegionP;
+        constructor();
+        Add(child: CurveVectorP): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type UnionRegionP = cxx_pointer<UnionRegion>;
+
+
+
+
 //! A wrapper for a polyface mesh !!!
 class PolyfaceMesh implements IDisposable
     {

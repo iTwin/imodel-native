@@ -19,6 +19,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct JsCurvePrimitive: RefCountedBase
 {
+
 protected :
     ICurvePrimitivePtr m_curvePrimitive;
 
@@ -31,7 +32,7 @@ public:
 
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
     JsCurvePrimitiveP Clone () {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
-
+    ICurvePrimitivePtr Get () {return m_curvePrimitive;}
     static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
         {
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->GetRef ());
