@@ -110,10 +110,41 @@ struct JsDgnObjectId : RefCountedBaseWithCreate
     uint64_t m_id;
     JsDgnObjectId() : m_id(0) {;}
     explicit JsDgnObjectId(uint64_t v) : m_id(v) {;}
+    bool IsValid() {return 0 != m_id;}
+    bool Equals(JsDgnObjectId* rhs) {return rhs && rhs->m_id == m_id;}
 };
 
 typedef JsDgnObjectId* JsDgnObjectIdP;
 
+struct JsDgnObjectIdSet;
+
+struct JsDgnObjectIdSetIterator : RefCountedBaseWithCreate
+{
+    bset<uint64_t>::iterator m_iter;
+
+    JsDgnObjectIdSetIterator(bset<uint64_t>::iterator const& it) : m_iter(it) {;}
+};
+
+typedef JsDgnObjectIdSetIterator* JsDgnObjectIdSetIteratorP;
+
+struct JsDgnObjectIdSet : RefCountedBaseWithCreate
+{
+    bset<uint64_t> m_ids;
+
+    JsDgnObjectIdSet() {;}
+    JsDgnObjectIdSet(DgnCategoryIdSet const& ids) {for (auto id: ids) m_ids.insert(id.GetValueUnchecked());}
+    JsDgnObjectIdSet(DgnElementIdSet const& ids) {for (auto id: ids) m_ids.insert(id.GetValueUnchecked());}
+
+    int Size() {return (int)m_ids.size();}
+    void Clear() {m_ids.clear();}
+    void Insert(JsDgnObjectIdP id) {if (id && id->m_id) m_ids.insert(id->m_id);}
+    JsDgnObjectIdSetIteratorP Begin() {return new JsDgnObjectIdSetIterator(m_ids.begin());}
+    bool IsValid(JsDgnObjectIdSetIteratorP iter) {return iter && iter->m_iter != m_ids.end();}
+    bool ToNext(JsDgnObjectIdSetIteratorP iter) {if (!iter) return false; ++(iter->m_iter); return IsValid(iter);}
+    JsDgnObjectIdP GetId(JsDgnObjectIdSetIteratorP iter) {return IsValid(iter)? new JsDgnObjectId(*iter->m_iter): nullptr;}
+};
+
+typedef JsDgnObjectIdSet* JsDgnObjectIdSetP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -172,6 +203,16 @@ typedef JsDgnElement* JsDgnElementP;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
+struct JsPhysicalElement : JsDgnElement
+{
+    JsPhysicalElement(PhysicalElementR el) : JsDgnElement(el) {;}
+
+    static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
 struct JsDgnModel : RefCountedBaseWithCreate
 {
     DgnModelPtr m_model;
@@ -186,7 +227,6 @@ struct JsDgnModel : RefCountedBaseWithCreate
     void SetCode(JsAuthorityIssuedCodeP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnDbP GetDgnDb() {return new JsDgnDb(m_model->GetDgnDb());}
     void SetDgnDb(JsDgnDbP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
-    JsDgnElement* CreateElement(Utf8StringCR elType, Utf8StringCR categoryName);
     void DeleteAllElements();
     static JsAuthorityIssuedCodeP CreateModelCode(Utf8StringCR name) {return new JsAuthorityIssuedCode(DgnModel::CreateModelCode(name));}
 
@@ -252,9 +292,44 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
 
     void AppendBox(double x, double y, double z);
     void AppendSphere(double radius);
+    void Append(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
     BentleyStatus SetGeomStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeomStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
 };
 typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsDgnCategory : RefCountedBaseWithCreate
+{
+    DgnCategoryCPtr m_category;
+
+    JsDgnCategory(DgnCategoryCR cat) : m_category(&cat) {;}
+
+    JsDgnDbP GetDgnDb() {return m_category.IsValid()? new JsDgnDb(m_category->GetDgnDb()): nullptr;}
+    void SetDgnDb(JsDgnDbP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
+    JsDgnObjectIdP GetCategoryId() {return m_category.IsValid()? new JsDgnObjectId(m_category->GetCategoryId().GetValueUnchecked()): nullptr;}
+    void SetCategoryId(JsDgnObjectIdP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
+    JsDgnObjectIdP GetDefaultSubCategoryId() {return m_category.IsValid()? new JsDgnObjectId(m_category->GetDefaultSubCategoryId().GetValueUnchecked()): nullptr;}
+    void SetDefaultSubCategoryId(JsDgnObjectIdP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
+    Utf8String GetCategoryName() {return m_category.IsValid()? m_category->GetCategoryName(): "";}
+    void SetCategoryName(Utf8StringCR) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
+    static JsDgnObjectIdP QueryCategoryId(Utf8StringCR name, JsDgnDbP db) {return (db && db->m_db.IsValid())? new JsDgnObjectId(DgnCategory::QueryCategoryId(name, *db->m_db).GetValueUnchecked()): nullptr;}
+    static JsDgnCategory* QueryCategory(JsDgnObjectIdP id, JsDgnDbP db) 
+        {
+        if (!db || !db->m_db.IsValid())
+            return nullptr;
+        auto cat = DgnCategory::QueryCategory(DgnCategoryId(id->m_id), *db->m_db);
+        return cat.IsValid()? new JsDgnCategory(*cat): nullptr;
+        }
+    static JsDgnObjectIdSetP QueryCategories(JsDgnDbP db)
+        {
+        if (!db || !db->m_db.IsValid())
+            return nullptr;
+        return new JsDgnObjectIdSet(DgnCategory::QueryCategories(*db->m_db));
+        }
+};
+typedef JsDgnCategory* JsDgnCategoryP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

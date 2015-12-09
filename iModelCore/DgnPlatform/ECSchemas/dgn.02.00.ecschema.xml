@@ -250,18 +250,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
-    <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
-    <ECClass typeName="RasterBaseModel" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
     <ECClass typeName="SystemModel" isDomainClass="True" >
         <!-- A SystemModel contains SystemElements which are used to model functional systems -->
         <ECCustomAttributes>
@@ -604,12 +592,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>GeometrySource</BaseClass>
         <ECProperty propertyName="ViewId" typeName="long">
             <!-- Foreign key relationship: ViewIsAttached.ViewId -->
-            <!-- Should have IsNullable=False but shared table... -->
-        </ECProperty>
-        <ECProperty propertyName="Origin" typeName="point3d">
-            <!-- Should have IsNullable=False but shared table... -->
-        </ECProperty>
-        <ECProperty propertyName="Delta" typeName="point3d">
             <!-- Should have IsNullable=False but shared table... -->
         </ECProperty>
         <ECProperty propertyName="Scale" typeName="double">
