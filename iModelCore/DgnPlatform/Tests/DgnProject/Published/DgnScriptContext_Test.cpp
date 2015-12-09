@@ -90,7 +90,7 @@ struct DgnScriptTest : public ::testing::Test
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnScriptTest, Test1)
+TEST_F(DgnScriptTest, TestEga)
     {
     DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
@@ -127,8 +127,11 @@ TEST_F(DgnScriptTest, Test1)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
+        var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
+        var box = Bentley.Dgn.DgnBoxDetail.InitFromCenterAndSize(new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
+        var solid = Bentley.Dgn.SolidPrimitive.CreateDgnBox(box); \
         var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-        builder.AppendBox(params[\"X\"], params[\"Y\"], params[\"Z\"]); \
+        builder.Append(solid); \
         builder.SetGeomStreamAndPlacement(element); \
         return 0;\
     } \
