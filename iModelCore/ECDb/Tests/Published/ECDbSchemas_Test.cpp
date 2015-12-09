@@ -30,7 +30,7 @@ static int GetColumnCount(DbR db, Utf8CP table)
 void WriteECSchemaDiffToLog (ECDiffR diff, NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO)
     {
     Utf8String diffString;
-    ASSERT_EQ (diff.WriteToString(diffString, 2), DIFFSTATUS_Success);
+    ASSERT_EQ (diff.WriteToString(diffString, 2), DiffStatus::Success);
     LOG.message (severity,  "ECDiff: Legend [L] Added from left schema, [R] Added from right schema, [!] conflicting value");
     LOG.message (severity, "=====================================[ECDiff Start]=====================================");
     //LOG doesnt allow single large string
@@ -281,7 +281,7 @@ TEST(ECDbSchemas, UpdatingExistingECSchema)
     ECSchemaCP  updatedECSchema = db.Schemas().GetECSchema("RSComponents");
 
     ECDiffPtr diff = ECDiff::Diff(*updatedECSchema, *modifiedECSchema);
-    ASSERT_EQ (diff->GetStatus() , DIFFSTATUS_Success);
+    ASSERT_EQ (diff->GetStatus() , DiffStatus::Success);
     if (!diff->IsEmpty())
         {
         bmap<Utf8String, DiffNodeState> searchResults;
@@ -1809,7 +1809,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     
     //Diff two schema too see if they are different in any way diff.Merge();
     ECDiffPtr diff = ECDiff::Diff(*diskSchema, *openPlant3D);
-    ASSERT_EQ (diff->GetStatus() , DIFFSTATUS_Success);
+    ASSERT_EQ (diff->GetStatus() , DiffStatus::Success);
     if (!diff->IsEmpty())
         {
         bmap<Utf8String, DiffNodeState> searchResults;
@@ -1900,7 +1900,7 @@ TEST(ECDbSchemas, SchemaDiff)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MERGESTATUS_Success);   
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     }
 
@@ -1945,7 +1945,7 @@ TEST(ECDbSchemas, PFLModulePPCS_ECDiffTest)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MERGESTATUS_Success);   
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     
     VerifyRelationshipConstraint(*mergedSchema, "STRUFRMW",   "STRU", "FRMW");
@@ -1983,7 +1983,7 @@ TEST(ECDbSchemas, ClassDiff)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MERGESTATUS_Success);   
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     ECClassP classPtr=mergedSchema->GetClassP("Employee");
     uint32_t classCount=mergedSchema->GetClassCount();
@@ -2049,7 +2049,7 @@ TEST(ECDbSchemas, RelationshiClassDiff)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MERGESTATUS_Success);   
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     ECRelationshipClassCP relationshipClassPtr = mergedSchema->GetClassP("RightRelationshipClass")->GetRelationshipClassP();
     Utf8String relationshipClassName=relationshipClassPtr->GetName();
@@ -2088,7 +2088,7 @@ TEST(ECDbSchemas, PropertiesDiff)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MERGESTATUS_Success);   
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     ECClassP ecClassPtr = mergedSchema->GetClassP("Employee");
     ECPropertyP  ecPropertyPtr=  ecClassPtr->GetPropertyP("Address");

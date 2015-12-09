@@ -1313,14 +1313,14 @@ void ECSchemaDiffCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> 
         }
 
     auto diff = ECDiff::Diff(*left, *right);
-    if (diff->GetStatus() != DiffStatus::DIFFSTATUS_Success)
+    if (diff->GetStatus() != DiffStatus::Success)
         {
         Console::WriteErrorLine("Failed to diff schemas");
         return;
         }
 
     Utf8String diffText;
-    if (diff->WriteToString(diffText,2) != DiffStatus::DIFFSTATUS_Success)
+    if (diff->WriteToString(diffText,2) != DiffStatus::Success)
         {
         Console::WriteErrorLine("Failed to convert diff into textual representation");
         return;
