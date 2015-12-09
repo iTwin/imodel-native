@@ -112,7 +112,7 @@ Utf8String ReadHttpBody(HttpBodyPtr body);
 WSInfo StubWSInfo(BeVersion version = BeVersion(1, 2), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 WSQuery StubWSQuery();
 
-HttpResponse StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, Utf8StringCR message = "", Utf8StringCR description = "");
+HttpResponse StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId = "", Utf8StringCR message = "", Utf8StringCR description = "");
 HttpResponse StubWSInfoHttpResponseV1();
 HttpResponse StubWSInfoHttpResponseV1BentleyConnect();
 HttpResponse StubWSInfoHttpResponseV2();
