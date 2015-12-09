@@ -22,6 +22,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 +---------------+---------------+---------------+---------------+---------------+------*/
 static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
+    if (!ecSqlClassName || !*ecSqlClassName)
+        ecSqlClassName = DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         return nullptr;
@@ -48,41 +50,6 @@ void JsDgnModel::DeleteAllElements()
     }
 
 //---------------------------------------------------------------------------------------
-// *** TEMPORARY METHOD *** 
-// @bsimethod                                   Sam.Wilson                      06/15
-//---------------------------------------------------------------------------------------
-void JsElementGeometryBuilder::AppendBox(double x, double y, double z)
-    {
-    // *** TEMPORARY METHOD *** 
-    DPoint3d localOrigin;
-    localOrigin.x = 0.0;
-    localOrigin.y = 0.0;
-    localOrigin.z = 0.0;
-
-    DPoint3d localTop (localOrigin);
-    localTop.z = z;
-
-    DVec3d localX = DVec3d::From(1,0,0);
-    DVec3d localY = DVec3d::From(0,1,0);
-
-    DgnBoxDetail boxd(localOrigin, localTop, localX, localY, x, y, x, y, true);
-    ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnBox(boxd);
-
-    m_builder->Append(*solid);
-    }
-
-//---------------------------------------------------------------------------------------
-// *** TEMPORARY METHOD *** 
-// @bsimethod                                   Sam.Wilson                      06/15
-//---------------------------------------------------------------------------------------
-void JsElementGeometryBuilder::AppendSphere(double radius)
-    {
-    DgnSphereDetail sphere(DPoint3d::FromZero(), radius);
-    ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnSphere(sphere);
-    m_builder->Append(*solid);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
@@ -101,10 +68,12 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringCR categoryName)
+JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR ecSqlClassName)
     {
-    DgnCategoryId catid = DgnCategory::QueryCategoryId(categoryName.c_str(), m_model->GetDgnDb());
-    return new JsDgnElement(*createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid));
+    if (!categoryId || !categoryId->IsValid() || !model || !model->m_model.IsValid())
+        return nullptr;
+    DgnCategoryId catid(categoryId->m_id);
+    return new JsPhysicalElement(*createPhysicalElement(*model->m_model, ecSqlClassName.c_str(), catid));
     }
 
 //---------------------------------------------------------------------------------------
