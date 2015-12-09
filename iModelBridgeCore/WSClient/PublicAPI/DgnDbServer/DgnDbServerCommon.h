@@ -36,13 +36,8 @@ public:
 
     DgnDbServerError(Dgn::RevisionStatus const& status)
         {
-
         }
     };
-template<typename AnyValue> using DgnDbServerResult = AsyncResult<AnyValue, DgnDbServerError>;
-template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<AsyncResult<AnyValue, DgnDbServerError>>;
-template<typename AnyValue> using DgnDbServerTask = PackagedAsyncTask<AsyncResult<AnyValue, DgnDbServerError>>;
-template<typename AnyValue> using DgnDbServerTaskPtr = std::shared_ptr<PackagedAsyncTask<AsyncResult<AnyValue, DgnDbServerError>>>;
 END_BENTLEY_DGNDBSERVER_NAMESPACE
 
 

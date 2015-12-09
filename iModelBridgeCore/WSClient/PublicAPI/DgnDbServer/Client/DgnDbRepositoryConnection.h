@@ -10,6 +10,7 @@
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
+#include <DgnDbServer/Client/DgnDbServerRevision.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -27,6 +28,8 @@ typedef AsyncResult<LockLevel, DgnDbServerError> DgnDbLockLevelResult;
 typedef AsyncResult<DgnLockSet, DgnDbServerError> DgnDbLockSetResult;
 typedef AsyncResult<LockRequest::Response, DgnDbServerError> DgnLockResponseResult;
 typedef AsyncResult<DgnLockOwnership, DgnDbServerError> DgnDbOwnershipResult;
+typedef AsyncResult<DgnDbServerRevisionPtr, DgnDbServerError> DgnDbServerRevisionResult;
+typedef AsyncResult<bvector<DgnDbServerRevisionPtr>, DgnDbServerError> DgnDbServerRevisionsResult;
 
 //=======================================================================================
 //! Connection to a repository on server.
@@ -63,11 +66,11 @@ private:
     ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download all revision files after revisionId
-    AsyncTaskPtr<DgnDbRevisionsResult> Pull(Utf8StringCR revisionId, HttpRequest::ProgressCallbackCR callback = nullptr,
+    AsyncTaskPtr<DgnDbServerRevisionsResult> Pull(Utf8StringCR revisionId, HttpRequest::ProgressCallbackCR callback = nullptr,
     ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Get all revision information based on a query.
-    AsyncTaskPtr<DgnDbRevisionsResult> RevisionsFromQuery(const WebServices::WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbServerRevisionsResult> RevisionsFromQuery(const WebServices::WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Get the index from a revisionId.
     AsyncTaskPtr<DgnDbUInt64Result> GetRevisionIndex(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
@@ -94,6 +97,7 @@ private:
     AsyncTaskPtr<DgnDbResult> ReleaseLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
 
     DgnDbRepositoryConnection(RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
+
 public:
     //! Create an instance of the connection to a repository on the server.
     //! @param[in] repository Repository information used to connect to a specific repository on the server.
@@ -110,13 +114,13 @@ public:
     //! @param[in] revisionId Id of the revision to retrieve.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the revision information as the result.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbRevisionResult> GetRevisionById(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbServerRevisionResult> GetRevisionById(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Get all of the revisions after the specific revision id.
     //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbRevisionsResult> GetRevisionsFromId(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbServerRevisionsResult> GetRevisionsAfterId(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download the revision files.
     //! @param[in] revisions Set of revisions to download.
@@ -124,7 +128,7 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> DownloadRevisions(const bvector<DgnRevisionPtr>& revisions,
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> DownloadRevisions(const bvector<DgnDbServerRevisionPtr>& revisions,
     HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Verify the access to the revision on the server.

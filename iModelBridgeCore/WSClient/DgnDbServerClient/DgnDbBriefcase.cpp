@@ -52,11 +52,14 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCall
         }
     Utf8String lastRevisionId;
     m_db->QueryBriefcaseLocalValue(Db::Local::LastRevision, lastRevisionId);
-    return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbRevisionsResult& result)
+    return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbServerRevisionsResult& result)
         {
         if (result.IsSuccess())
             {
-            bvector<DgnRevisionPtr> revisions = result.GetValue();
+            auto serverRevisions = result.GetValue();
+            bvector<DgnRevisionPtr> revisions;
+            for (auto revision : serverRevisions)
+                revisions.push_back(revision->GetRevision());
             RevisionStatus mergeStatus = RevisionStatus::Success;
             if (!revisions.empty())
                 {
@@ -111,8 +114,8 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::Progress
                 Dgn::DgnPlatformLib::ForgetHost();
                 Utf8String revisionId = revision->GetId();
                 BeFileName revisionFile(m_db->GetDbFileName());
-                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then([=]
-                    (const DgnDbResult& pushResult)
+                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then
+                    ([=] (const DgnDbResult& pushResult)
                     {
                     if (pushResult.IsSuccess())
                         {

@@ -331,7 +331,8 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                 {
                 if (briefcaseResult.IsSuccess())
                     {
-                    JsonValueCR properties = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties];
+                    JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+                    JsonValueCR properties = instance[ServerSchema::Properties];
                     uint32_t briefcaseId = properties[ServerSchema::Property::BriefcaseId].asUInt();
 
                     BeFileName filePath(localPath);
@@ -366,11 +367,14 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                             Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
                             if (BeSQLite::DbResult::BE_SQLITE_OK == status)
                                 {
-                                bvector<Dgn::DgnRevisionPtr> revisions = pullTask->GetResult().GetValue();
+                                bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult().GetValue();
                                 RevisionStatus mergeStatus = RevisionStatus::Success;
                                 if (!revisions.empty())
                                     {
-                                    mergeStatus = db->Revisions().MergeRevisions(revisions);
+                                    bvector<DgnRevisionPtr> mergeRevisions;
+                                    for (auto revision : revisions)
+                                        mergeRevisions.push_back(revision->GetRevision());
+                                    mergeStatus = db->Revisions().MergeRevisions(mergeRevisions);
                                     db->CloseDb();
                                     }
                                 Dgn::DgnPlatformLib::ForgetHost();
