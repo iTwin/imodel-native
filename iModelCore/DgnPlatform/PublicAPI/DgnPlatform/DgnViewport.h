@@ -330,7 +330,7 @@ private:
 
 public:
     DGNVIEW_EXPORT DynamicUpdateInfo();
-    Point2d& GetLastCursorPos() {return m_lastCursorPos;}
+    Point2d GetLastCursorPos() {return m_lastCursorPos;}
     StopEvents GetStopEvents() {return m_stopEvents;}
     void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
