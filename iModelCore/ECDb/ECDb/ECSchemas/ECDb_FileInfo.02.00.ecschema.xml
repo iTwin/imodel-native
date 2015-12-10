@@ -2,11 +2,7 @@
 <ECSchema schemaName="ECDb_FileInfo" nameSpacePrefix="ecdbf" version="02.00" description="ECDb FileInfo" displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
-    <ECSchemaReference name="Bentley_Standard_Classes" version="01.01" prefix="bsc"/>
-    <ECCustomAttributes>
-        <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
-    </ECCustomAttributes>
+
     <ECEntityClass typeName="FileInfo" description="Abstract base class for holding attributes of a file" modifier="Abstract">
         <ECProperty propertyName="Name" typeName="string" description="File name"/>
         <ECProperty propertyName="Size" typeName="long" description="File size"/>
@@ -48,35 +44,20 @@
         </ECProperty>
         <ECProperty propertyName="Type" typeName="string" description="File type"/>
     </ECEntityClass>
+    
+    <ECEnumeration typeName="StandardRootFolderType" backingTypeName="int" isStrict="False" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." displayLabel="Root Folder Type">
+        <ECEnumerator value="0" displayLabel="DocumentsFolder" />
+        <ECEnumerator value="1" displayLabel="TemporaryFolder" />
+        <ECEnumerator value="2" displayLabel="CachesFolder" />
+        <ECEnumerator value="3" displayLabel="LocalStateFolder" />
+    </ECEnumeration>
+    
     <ECEntityClass typeName="ExternalFileInfo" description="Attributes of a file stored external to the repository." displayLabel="External File Info" modifier="Sealed">
         <BaseClass>FileInfo</BaseClass>
-        <ECProperty propertyName="RootFolder" typeName="int" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." >
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.02">
-                    <MustBeFromList>False</MustBeFromList>
-                    <ValueMap>
-                        <ValueMap>
-                            <DisplayString>DocumentsFolder</DisplayString>
-                            <Value>0</Value>
-                        </ValueMap>
-                        <ValueMap>
-                            <DisplayString>TemporaryFolder</DisplayString>
-                            <Value>1</Value>
-                        </ValueMap>
-                        <ValueMap>
-                            <DisplayString>CachesFolder</DisplayString>
-                            <Value>2</Value>
-                        </ValueMap>
-                        <ValueMap>
-                            <DisplayString>LocalStateFolder</DisplayString>
-                            <Value>3</Value>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="RootFolder" typeName="StandardRootFolderType" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." />
         <ECProperty propertyName="RelativePath" typeName="string" description="File path relative to root folder"/>
     </ECEntityClass>
+    
     <ECEntityClass typeName="FileInfoOwnership" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
