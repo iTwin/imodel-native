@@ -18,16 +18,5 @@
                 </ApplicationSetting>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="PackagesLocation" typeName="string">
-            <ECCustomAttributes>
-                <DeploymentSettingAttributes xmlns="DeploymentCustomAttributes.01.03">
-                    <IsRequired>True</IsRequired>
-                    <IsUserConfigurable>True</IsUserConfigurable>
-                </DeploymentSettingAttributes>
-                <ApplicationSetting xmlns="DeploymentCustomAttributes.01.03">
-                    <SettingKey>RECPPackagesLocation</SettingKey>
-                </ApplicationSetting>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECClass>
 </ECSchema>

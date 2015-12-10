@@ -3,7 +3,6 @@ using Bentley.EC.Persistence.FileSystemResource;
 using Bentley.EC.Persistence.Operations;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
-using Bentley.ECPluginExamples;
 using Bentley.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

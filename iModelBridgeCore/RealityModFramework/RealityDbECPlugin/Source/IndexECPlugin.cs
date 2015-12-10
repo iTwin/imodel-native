@@ -22,7 +22,6 @@ using Bentley.ECSystem.Repository;
 using Bentley.ECSystem.Session;
 using Bentley.Exceptions;
 using RealityDataPackageWrapper;
-using IndexECPlugin.Source;
 using IndexECPlugin.Source.FileRetrievalControllers;
 using IndexECPlugin.Source.Helpers;
 using IndexECPlugin.Source.QueryProviders;
@@ -44,7 +43,7 @@ using Bentley.ECSystem.Configuration;
 using System.Data.Common;
 using System.Data;
 
-namespace Bentley.ECPluginExamples
+namespace IndexECPlugin.Source
 {
     /*====================================================================================**/
     /// <summary>

@@ -72,21 +72,22 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
             }
 
-            if (m_query.ResultRangeOffset >= 0 && m_query.MaxResults > 0)
-            {
-                int lowerBound = m_query.ResultRangeOffset + 1;
-                int upperBound = m_query.MaxResults + lowerBound - 1;
+            //WE DEACTIVATE PAGING FOR NOW
+            //if (m_query.ResultRangeOffset >= 0 && m_query.MaxResults > 0)
+            //{
+            //    int lowerBound = m_query.ResultRangeOffset + 1;
+            //    int upperBound = m_query.MaxResults + lowerBound - 1;
 
-                m_sqlQueryBuilder = new PagedSQLQueryBuilder(lowerBound, upperBound);
+            //    m_sqlQueryBuilder = new PagedSQLQueryBuilder(lowerBound, upperBound);
 
-                //This instruction is to prevent WSG from reusing the ResultRangeOffset (skip) a second time,
-                //since we take care of the paging ourselves...
-                m_query.ResultRangeOffset = 0;
-            }
-            else
-            {
+            //    //This instruction is to prevent WSG from reusing the ResultRangeOffset (skip) a second time,
+            //    //since we take care of the paging ourselves...
+            //    m_query.ResultRangeOffset = 0;
+            //}
+            //else
+            //{
                 m_sqlQueryBuilder = new StandardSQLQueryBuilder();
-            }
+            //}
 
             if (m_query.ExtendedData.ContainsKey("polygon"))
             {

@@ -13,9 +13,9 @@ namespace IndexECPlugin.Source
         internal static void InitializeHandlers (ECPluginBuilder builder)
         {
 
-            builder.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsMaxResults)
-                   .SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsResultRangeOffset)
-                   .SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SortableQueries)
+            builder//.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsMaxResults)
+                   //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsResultRangeOffset)
+                   //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SortableQueries)
                    .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.StreamBackable, ApplyStreambackableAssertion);
 
         }
