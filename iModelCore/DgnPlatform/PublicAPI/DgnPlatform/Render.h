@@ -438,7 +438,8 @@ public:
     DGNPLATFORM_EXPORT GeometryParams();
     DGNPLATFORM_EXPORT explicit GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
-    DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values
+    DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
+    DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values using the supplied ViewContext.
 
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
     void SetSubCategoryId(DgnSubCategoryId subCategoryId) {m_subCategoryId = subCategoryId; memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
@@ -662,7 +663,7 @@ private:
     PatternParamsPtr    m_patternParams;
 
 public:
-    void Cook(GeometryParamsCR, ViewContextR, DPoint3dCP startTan, DPoint3dCP endTan);
+    void Cook(GeometryParamsCR, ViewContextR);
 
     DGNPLATFORM_EXPORT GraphicParams();
     DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
@@ -845,7 +846,7 @@ protected:
     double        m_pixelSize;
 
     virtual StatusInt _Close() {return SUCCESS;}
-    virtual void _ActivateGraphicParams(GraphicParamsCP matSymb) = 0;
+    virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
     virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
@@ -880,11 +881,12 @@ public:
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize) {}
 
     bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
+    double GetPixelSize() {return m_pixelSize;}
 
-    //! Set an GraphicParams to be the "active" GraphicParams for this IDrawGeom.
-    //! @param[in]          matSymb     The new active GraphicParams. All geometry drawn via calls to this IDrawGeom will
-    //!                                     be displayed using the values in this GraphicParams.
-    void ActivateGraphicParams(GraphicParamsCP matSymb) {_ActivateGraphicParams(matSymb);}
+    //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
+    //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
+    //! @param[in]          geomParams      The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
+    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) {_ActivateGraphicParams(graphicParams, geomParams);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.

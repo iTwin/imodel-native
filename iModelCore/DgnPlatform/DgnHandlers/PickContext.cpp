@@ -172,7 +172,7 @@ void PickContext::_AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriori
     m_currGeomDetail.SetClosestPoint(hitPtWorld);
     m_currGeomDetail.SetLocatePriority(priority);
     m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtView, m_pickPointView)));
-    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtView) + GetCurrentGeometryParams().GetNetDisplayPriority());
+    m_currGeomDetail.SetZValue(getAdjustedViewZ(*this, hitPtView) + m_graphic->GetCurrentGeometryParams().GetNetDisplayPriority());
     m_currGeomDetail.SetGeometryStreamEntryId(GetGeometryStreamEntryId());
 
     RefCountedPtr<HitDetail> thisHit = new HitDetail(*GetViewport(), m_currentGeomSource, m_pickPointWorld, m_options.GetHitSource(), m_currGeomDetail);
@@ -961,15 +961,14 @@ void PickContext::_DrawAreaPattern(ClipStencil& boundary)
 #endif
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILineStyleCP PickContext::_GetCurrLineStyle(LineStyleSymbP* symb)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_output.GetInSymbolDraw())
         return NULL;
-#endif
 
     LineStyleSymbP  tSymb;
     ILineStyleCP    style = T_Super::_GetCurrLineStyle(&tSymb);
@@ -982,16 +981,15 @@ ILineStyleCP PickContext::_GetCurrLineStyle(LineStyleSymbP* symb)
 
     if (style->_GetComponent()->_HasWidth() || tSymb->HasOrgWidth() || tSymb->HasEndWidth())
         {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         m_output._GetGeomDetail().SetDetailSource(HitDetailSource::LineStyle | m_output._GetGeomDetail().GetDetailSource());
         m_output._GetGeomDetail().SetNonSnappable(!style->_IsSnappable());
-#endif
 
         return style;
         }
 
     return nullptr;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01

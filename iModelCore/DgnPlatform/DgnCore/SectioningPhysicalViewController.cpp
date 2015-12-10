@@ -242,13 +242,13 @@ void SectioningViewController::SetOverrideGraphicParams(ViewContextR context) co
 
     ColorDef color = (m_pass == ClipVolumePass::InsideBackward)? ColorDef(0xcf00ffff) : ColorDef(0xcfffff00);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
     overrideMatSymb->Clear();
     overrideMatSymb->SetLineColor(color);
     overrideMatSymb->SetFillColor(color);
     overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | OvrGraphicParams::FLAGS_FillColorTransparency);
     overrideMatSymb->SetWidth(0);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetCurrentGraphicR().ActivateOverrideGraphicParams(overrideMatSymb);
 #endif
     }

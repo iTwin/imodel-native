@@ -29,7 +29,6 @@ ViewContext::ViewContext()
     m_useNpcSubRange = false;
     m_filterLOD = FILTER_LOD_ShowRange;
     m_wantMaterials = false;
-    m_startTangent = m_endTangent = nullptr;
     m_ignoreViewRange = false;
     m_hiliteState = DgnElement::Hilited::None;
     m_scanRangeValid = false;
@@ -88,9 +87,6 @@ void ViewContext::InitDisplayPriorityRange()
 StatusInt ViewContext::_InitContextForView()
     {
     BeAssert(0 == GetTransClipDepth());
-
-    m_graphicParams.Init();
-    m_ovrGraphicParams.Clear();
 
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
@@ -270,44 +266,13 @@ void ViewContext::_Detach()
     m_transformClipStack.PopAll(*this);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
+* @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
+bool ViewContext::IsCameraOn() const
     {
-    GetLocalToView().Multiply(viewPts, localPts, nullptr, nPts);
+    return m_viewport->IsCameraOn();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
-    {
-    DMatrix4dCR  localToView = GetLocalToView();
-
-    if (m_viewport->IsCameraOn())
-        localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
-    else
-        localToView.MultiplyAffine(viewPts, localPts, nPts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const
-    {
-    GetViewToLocal().MultiplyAndNormalize(localPts, viewPts, nPts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
-    {
-    GetViewToLocal().MultiplyAndRenormalize(localPts, viewPts, nPts);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
@@ -360,6 +325,7 @@ void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) 
     m_worldToView.M1.MultiplyAndRenormalize(worldPts, viewPts, nPts);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -372,6 +338,7 @@ ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
 
     return nullptr == tSymb.GetTexture() ? tSymb.GetILineStyle() : nullptr;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * convert the view context polyhedron to scan parameters in the scanCriteria.
@@ -462,7 +429,6 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    // NOTE: GeometryParams/GraphicParams ARE NOT setup at this point!
     if (!m_viewflags.weights)
         ovrMatSymb.SetWidth(1);
 
@@ -478,49 +444,27 @@ void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    // Modify m_ovrGraphicParams for view flags...
-    _AddViewOverrides(ovrMatSymb); 
+    _AddViewOverrides(ovrMatSymb); // Modify m_ovrGraphicParams for view flags...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_ModifyPreCook(GeometryParamsR elParams)
+void ViewContext::_CookGeometryParams(GeometryParamsR geomParams, GraphicParamsR graphicParams)
     {
-    elParams.Resolve(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_CookGeometryParams(GeometryParamsR elParams, GraphicParamsR elMatSymb)
-    {
-    _ModifyPreCook(elParams); // Allow context to modify elParams before cooking...
-
-    // "cook" the display params into a MatSymb
-    elMatSymb.Cook(elParams, *this, m_startTangent, m_endTangent);
+    geomParams.Resolve(*this);
+    graphicParams.Cook(geomParams, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::CookGeometryParams(Render::GraphicR graphic)
+void ViewContext::CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicR graphic)
     {
-    _CookGeometryParams(m_currGeometryParams, m_graphicParams);
+    GraphicParams graphicParams;
 
-    //  NEEDSWORK_LINESTYLES
-    //  If this is a 3d view and we have a line style then we want to convert the line style
-    //  to a texture line style.  We don't do it prior to this because generating the geometry map
-    //  may use the current symbology.  This seems like a horrible place to do this,
-    //  so we need to come up with something better.
-    LineStyleSymb & lsSym = m_graphicParams.GetLineStyleSymbR();
-    if (nullptr==lsSym.GetTexture() && lsSym.GetILineStyle() != nullptr && Is3dView())
-        {
-        lsSym.ConvertLineStyleToTexture(*this, true);
-        }
-
-    // Activate m_graphicParams on graphic.
-    graphic.ActivateGraphicParams(&m_graphicParams);
+    _CookGeometryParams(geomParams, graphicParams);
+    graphic.ActivateGraphicParams(graphicParams, &geomParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -546,12 +490,12 @@ bool ViewContext::IsUndisplayed(GeometrySourceCR source)
     return (!_WantUndisplayed() && source.IsUndisplayed());
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::DrawBox(DPoint3dP box, bool is3d)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     GraphicR drawGeom = GetCurrentGraphicR();
     DPoint3d    tmpPts[9];
 
@@ -587,8 +531,8 @@ void ViewContext::DrawBox(DPoint3dP box, bool is3d)
     tmpPts[4] = box[0];
 
     drawGeom.AddLineString(5, tmpPts, nullptr);
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
@@ -690,7 +634,7 @@ void ViewContext::_SetScanReturn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Result  ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
+ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, DRange3dCR testRange, bool is3d)
     {
     return ClipPlaneContainment_StronglyOutside != m_transformClipStack.ClassifyElementRange(testRange, is3d, true) ? ScanCriteria::Result::Pass : ScanCriteria::Result::Fail;
     }
@@ -1064,41 +1008,20 @@ void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDep
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::_AddTextString(TextStringCR text)
+    {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   10/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-DMatrix4d ViewContext::GetViewToLocal() const
-    {
-    DMatrix4d  viewToLocal = GetWorldToView().M1;
-    Transform  worldToLocalTransform;
+    text.GetGlyphSymbology(GetCurrentGeometryParams());
+    CookGeometryParams();
 
-    if (SUCCESS == GetCurrWorldToLocalTrans(worldToLocalTransform) && !worldToLocalTransform.IsIdentity())
-        {
-        DMatrix4d worldToLocal = DMatrix4d::From(worldToLocalTransform);
-        viewToLocal.InitProduct(worldToLocal, viewToLocal);
-        }
-
-    return viewToLocal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   10/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-DMatrix4d ViewContext::GetLocalToView() const
-    {
-    DMatrix4d localToView = GetWorldToView().M0;
-    Transform localToWorldTransform;
-
-    if (SUCCESS == GetCurrLocalToWorldTrans(localToWorldTransform) && !localToWorldTransform.IsIdentity())
-        {
-        DMatrix4d   localToWorld = DMatrix4d::From(localToWorldTransform);
-        localToView.InitProduct(localToView, localToWorld);
-        }
-
-    return localToView;
-    }
+    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
+    GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
+    text.DrawTextAdornments(*this);
 #endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/03
@@ -1269,53 +1192,6 @@ ViewContext::ContextMark::ContextMark(ViewContextP context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearanceIn) const
-    {
-    if (m_is3dView)
-        return 0;
-
-    // SubCategory display priority is combined with element priority to compute net display priority. 
-    int32_t netPriority = geomPriority;
-
-    if (nullptr == appearanceIn)
-        {
-        if (!subCategoryId.IsValid())
-            return netPriority;
-
-        DgnSubCategory::Appearance appearance;
-
-        if (nullptr != GetViewport())
-            {
-            appearance = GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
-            }
-        else
-            {
-            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, GetDgnDb());
-            BeAssert(subCat.IsValid());
-            if (!subCat.IsValid())
-                return netPriority;
-            else
-                appearance = subCat->GetAppearance();
-            }
-
-        netPriority += appearance.GetDisplayPriority();
-        }
-    else
-        {
-        netPriority += appearanceIn->GetDisplayPriority();
-        }
-
-    int32_t displayRange[2];
-
-    if (GetDisplayPriorityRange(displayRange[0], displayRange[1]))
-        LIMIT_RANGE (displayRange[0], displayRange[1], netPriority);
-
-    return netPriority;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicParams::GraphicParams()
@@ -1339,33 +1215,10 @@ void GraphicParams::Init()
     m_lStyleSymb.Clear();
     }
 
-#if defined (WIP_PLOTTING)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   08/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Byte screenColor(Byte color, double factor)
-    {
-    uint32_t tmp = color + (uint32_t) (factor * (255 - color));
-    LIMIT_RANGE (0, 255, tmp);
-    return  (Byte) tmp;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AndrewEdge      08/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void     applyScreeningFactor(ColorDef* rgb, double screeningFactor)
-    {
-    rgb->SetRed(screenColor(rgb->GetRed(),   screeningFactor));
-    rgb->SetGreen(screenColor(rgb->GetGreen(), screeningFactor));
-    rgb->SetBlue(screenColor(rgb->GetBlue(),  screeningFactor));
-    }
-#endif
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
     {
     Init();
 
@@ -1424,15 +1277,14 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context, DPoint
         m_fillColor.SetAlpha(netTransparency);
         }
 
-#if defined (WIP_PLOTTING)    
-    if (elParams.IsScreeningSet() && (elParams.GetScreening() >= SCREENING_Full) && (elParams.GetScreening() < SCREENING_None))
-        {
-        double  screeningFactor = (SCREENING_None - elParams.GetScreening()) / SCREENING_None;
-
-        applyScreeningFactor(&m_lineColor, screeningFactor);
-        applyScreeningFactor(&m_fillColor, screeningFactor);
-        }
-#endif
+    // NEEDSWORK_LINESTYLES
+    // If this is a 3d view and we have a line style then we want to convert the line style
+    // to a texture line style.  We don't do it prior to this because generating the geometry map
+    // may use the current symbology.  This seems like a horrible place to do this,
+    // so we need to come up with something better.
+    LineStyleSymb& lsSym = GetLineStyleSymbR();
+    if (nullptr == lsSym.GetTexture() && nullptr != lsSym.GetILineStyle() && context.Is3dView())
+        lsSym.ConvertLineStyleToTexture(context, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1486,6 +1338,7 @@ GraphicParamsR GraphicParams::operator=(GraphicParamsCR rhs)
     m_rasterWidth       = rhs.m_rasterWidth;
     m_lStyleSymb        = rhs.m_lStyleSymb;
     m_gradient          = rhs.m_gradient;
+
     return *this;
     }
 
@@ -1532,6 +1385,7 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
+    m_resolved              = rhs.m_resolved;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1557,6 +1411,7 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
+    m_resolved              = rhs.m_resolved;
 
     return *this;
     }
@@ -1597,6 +1452,9 @@ bool GeometryParams::operator==(GeometryParamsCR rhs) const
     if (this == &rhs)
         return true;
 
+    if (rhs.m_resolved != m_resolved)
+        return false;
+
     if (rhs.m_categoryId    != m_categoryId ||
         rhs.m_subCategoryId != m_subCategoryId ||
         rhs.m_elmPriority   != m_elmPriority ||
@@ -1635,26 +1493,24 @@ bool GeometryParams::operator==(GeometryParamsCR rhs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/13
+* @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryParams::Resolve(ViewContextR context)
+void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
     {
-    DgnSubCategoryId subCategoryId = GetSubCategoryId();
-
-    BeAssert(subCategoryId.IsValid());
-    if (!subCategoryId.IsValid())
+    BeAssert(m_subCategoryId.IsValid());
+    if (!m_subCategoryId.IsValid())
         return;
 
     // Setup from SubCategory appearance...
     DgnSubCategory::Appearance appearance;
 
-    if (nullptr != context.GetViewport())
+    if (nullptr != vp)
         {
-        appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
+        appearance = vp->GetViewController().GetSubCategoryAppearance(m_subCategoryId);
         }
     else
         {
-        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, context.GetDgnDb());
+        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(m_subCategoryId, dgnDb);
         BeAssert(subCat.IsValid());
         if (!subCat.IsValid())
             return;
@@ -1667,9 +1523,9 @@ void GeometryParams::Resolve(ViewContextR context)
 
     if (m_appearanceOverrides.m_bgFill)
         {
-        m_fillColor = (nullptr != context.GetViewport() ? context.GetViewport()->GetBackgroundColor() : ColorDef::Black());
+        m_fillColor = (nullptr != vp ? vp->GetBackgroundColor() : ColorDef::Black());
 
-        // NEEDSWORK_ASK_QVIS_FOLKS: Problem with white-on-white reversal...don't want this to apply to the background fill... :(
+        // NOTE: Problem with white-on-white reversal...don't want this to apply to the background fill... :(
         if (ColorDef::White() == m_fillColor)
             m_fillColor.SetRed(254);
         }
@@ -1702,41 +1558,30 @@ void GeometryParams::Resolve(ViewContextR context)
         }
 
     // SubCategory display priority is combined with element priority to compute net display priority. 
-    m_netPriority = context.ResolveNetDisplayPriority(m_elmPriority, subCategoryId, &appearance);
+    if (nullptr != vp && vp->Is3dView())
+        m_netPriority = 0;
+    else
+        m_netPriority = m_elmPriority + appearance.GetDisplayPriority();
+
     m_resolved = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/2013
+* @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddTextString(TextStringCR text)
+void GeometryParams::Resolve(ViewContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    text.GetGlyphSymbology(GetCurrentGeometryParams());
-    CookGeometryParams();
+    Resolve(context.GetDgnDb(), context.GetViewport());
 
-    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
-    GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
-    text.DrawTextAdornments(*this);
-#endif
+    if (context.Is3dView())
+        {
+        m_netPriority = 0;
+        }
+    else
+        {
+        int32_t displayRange[2];
+
+        if (context.GetDisplayPriorityRange(displayRange[0], displayRange[1]))
+            LIMIT_RANGE (displayRange[0], displayRange[1], m_netPriority);
+        }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end)
-    {
-    m_startTangent = start;
-    m_endTangent = end;
-    m_graphicParams.GetLineStyleSymbR().ClearContinuationData();
-    m_ovrGraphicParams.GetMatSymbR().GetLineStyleSymbR().ClearContinuationData();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsCameraOn() const
-    {
-    return m_viewport->IsCameraOn();
-    }
-
