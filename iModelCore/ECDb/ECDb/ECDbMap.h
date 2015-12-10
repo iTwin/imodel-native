@@ -138,6 +138,7 @@ public:
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
     bool                        ContainsMappingsForSchema(ECN::ECSchemaCR ecSchema);
     ECDbR                       GetECDbR() const { return m_ecdb; }
+    ECDbCR                      GetECDb()  const { return m_ecdb; }
     MapStatus                   MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&, bool forceMapStrategyReevaluation);
 
     ClassMapPtr                 LoadClassMap(bmap<ECN::ECClassId, ECN::ECClassCP>& currentlyLoadingClasses, ECN::ECClassCR);
@@ -159,7 +160,7 @@ public:
 
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
-
+    BentleyStatus               CreateOrUpdateECDatabaseViews();
     ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
     MappedTableP                GetMappedTable(ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
 

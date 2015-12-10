@@ -188,6 +188,8 @@ public:
     bool MapsToStructArrayTable () const;
     bool IsRelationshipClassMap () const;
     Utf8String ToString () const;
+    const Utf8String GetPersistedViewName() const;
+    bool HasPersistedView() const;
 
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);

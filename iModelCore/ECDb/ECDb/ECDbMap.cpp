@@ -104,6 +104,40 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
     return MapStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         12/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbMap::CreateOrUpdateECDatabaseViews()
+    {
+    BeAssert(GetECDb().IsReadonly() == false && "Need a writeable db for this operation");
+    if (GetECDb().IsReadonly())
+        {       
+        LOG.errorv("CreateOrUpdateECView(): This operation require a read/write access to db");
+        return ERROR;
+        }
+
+    Statement stmt;
+    stmt.Prepare(
+        GetECDb(), 
+        SqlPrintfString("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy NOT IN (%lld, %lld)",
+            Enum::ToInt(ECDbMapStrategy::Strategy::ExistingTable), 
+            Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped)).GetUtf8CP());
+
+    std::vector<ClassMapCP> classMaps;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        auto classId = (ECClassId)stmt.GetValueInt64(0);
+        auto classMap = GetClassMapCP(classId);
+        BeAssert(classMap != nullptr);
+        if (classMap)
+            classMaps.push_back(classMap);
+        }
+
+    SqlGenerator sqlG(*this);
+    sqlG.DropExistingViews(); 
+    sqlG.BuildViews(classMaps);
+    return BentleyStatus::SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
@@ -976,7 +1010,7 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) AND ec_Table.Type<>" TABLETYPE_JOINED_SQLVAL " "
+        "WHERE ec_ClassMap.MapStrategy<>100 AND ec_ClassMap.MapStrategy<>101 AND ec_Table.Type<>" TABLETYPE_JOINED_SQLVAL " "
         "GROUP BY ec_Class.Id, ec_Table.Name) "
         "SELECT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
         "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";

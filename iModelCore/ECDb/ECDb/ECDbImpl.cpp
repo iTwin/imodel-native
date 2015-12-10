@@ -338,25 +338,8 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
 
     //Step 3: Purge file info class from records for which no ownership exists anymore
     {
-    //TODO: Once polymorphic DELETE works again, we only need a single DELETE. Uncomment the below, and remove
-    //the two statements below
-/*    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFO_FULLCLASSNAME " WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_CLASSNAME ")"))
-        return ERROR;
-
-    if (BE_SQLITE_DONE != stmt.Step())
-        return ERROR;
-        */
-
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM ONLY ecdbf.EmbeddedFileInfo WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME ")"))
-        return ERROR;
-
-    if (BE_SQLITE_DONE != stmt.Step())
-        return ERROR;
-
-    stmt.Finalize();
-
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM ecdbf.ExternalFileInfo WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME ")"))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFO_FULLCLASSNAME " WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME ")"))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt.Step())

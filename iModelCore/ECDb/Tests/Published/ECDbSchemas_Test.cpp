@@ -1945,7 +1945,7 @@ TEST(ECDbSchemas, PFLModulePPCS_ECDiffTest)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MergeStatus::Success);
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     
     VerifyRelationshipConstraint(*mergedSchema, "STRUFRMW",   "STRU", "FRMW");
@@ -1983,7 +1983,7 @@ TEST(ECDbSchemas, ClassDiff)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MergeStatus::Success);
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     ECClassP classPtr=mergedSchema->GetClassP("Employee");
     uint32_t classCount=mergedSchema->GetClassCount();
@@ -2049,7 +2049,7 @@ TEST(ECDbSchemas, RelationshiClassDiff)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MergeStatus::Success);
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     ECRelationshipClassCP relationshipClassPtr = mergedSchema->GetClassP("RightRelationshipClass")->GetRelationshipClassP();
     Utf8String relationshipClassName=relationshipClassPtr->GetName();
@@ -2088,7 +2088,7 @@ TEST(ECDbSchemas, PropertiesDiff)
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MergeStatus::Success);
+    ASSERT_EQ(status , MergeStatus::Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     ECClassP ecClassPtr = mergedSchema->GetClassP("Employee");
     ECPropertyP  ecPropertyPtr=  ecClassPtr->GetPropertyP("Address");
