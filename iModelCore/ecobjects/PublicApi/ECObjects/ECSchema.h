@@ -1543,7 +1543,7 @@ struct ECEnumerator : NonCopyableClass
         Utf8StringCR GetString() const { return m_stringValue; }
         //! Sets the value of this ECEnumerator to the given string
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
-        //! @param[in] string           The value to set
+        //! @param[in] value           The value to set
         ECOBJECTS_EXPORT ECObjectsStatus    SetString(Utf8CP value);
     };
 
