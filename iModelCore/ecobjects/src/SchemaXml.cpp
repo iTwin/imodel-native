@@ -469,7 +469,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadEnumerationsFromXml(ECSchemaPtr& schem
             }
 
         ECEnumerationP ecEnumeration = new ECEnumeration(*schemaOut);
-        status = ecEnumeration->_ReadXml(*candidateNode, m_schemaContext);
+        status = ecEnumeration->ReadXml(*candidateNode, m_schemaContext);
         if (SchemaReadStatus::Success != status)
             {
             delete ecEnumeration;
@@ -757,7 +757,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteEnumeration(ECEnumerationCR ecEnumeratio
         return status;
 
     //WriteCustomAttributeDependencies(ecEnumeration);
-    return ecEnumeration._WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    return ecEnumeration.WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     }
 
 

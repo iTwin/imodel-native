@@ -503,7 +503,7 @@ bool copyCustomAttributes
         ECEnumerationCP enumeration = sourcePrimitive->GetEnumeration();
         if (enumeration != nullptr)
             {
-            destPrimitive->SetType(enumeration);
+            destPrimitive->SetType(*enumeration);
             }
         else
             {
@@ -774,7 +774,7 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                   11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCP enumerationType)
+ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
     {
     ecProperty = new PrimitiveECProperty(*this);
     ecProperty->SetType(enumerationType);
