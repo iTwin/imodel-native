@@ -9,18 +9,43 @@ using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source.Helpers
 {
-    internal interface IUSGSDataExtractor
+    /// <summary>
+    /// Interface for USGSDataExtractors, used to extract data from the USGS API datasets
+    /// </summary>
+    public interface IUSGSDataExtractor
     {
+        /// <summary>
+        /// Extract data from the USGS API Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from the USGS API</param>
+        /// <param name="title">The title extracted from the token</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters);
     }
 
-    internal class HRODataExtractor : IUSGSDataExtractor
+    /// <summary>
+    /// This class is used to extract data from the USGS API High Resolution Orthoimagery results
+    /// </summary>
+    public class HRODataExtractor : IUSGSDataExtractor
     {
+        /// <summary>
+        /// HRODataExtractor constructor
+        /// </summary>
         public HRODataExtractor()
         {
             //Does nothing
         }
 
+        /// <summary>
+        /// Extract data from the USGS API Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from the USGS API</param>
+        /// <param name="title">The title extracted from the token</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
             title = token.TryToGetString("title");
@@ -59,13 +84,27 @@ namespace IndexECPlugin.Source.Helpers
         }
     }
 
-    internal class NAIPDataExtractor : IUSGSDataExtractor
+    /// <summary>
+    /// This class is used to extract data from the USGS API National Agriculture Imagery Program
+    /// </summary>
+    public class NAIPDataExtractor : IUSGSDataExtractor
     {
+        /// <summary>
+        /// NAIPDataExtractor constructor
+        /// </summary>
         public NAIPDataExtractor()
         {
             //Does nothing
         }
 
+        /// <summary>
+        /// Extract data from the USGS API Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from the USGS API</param>
+        /// <param name="title">The title extracted from the token</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
             title = token.TryToGetString("title");
@@ -121,12 +160,15 @@ namespace IndexECPlugin.Source.Helpers
         }
     }
 
-    internal class NEDDataExtractor : IUSGSDataExtractor
+    /// <summary>
+    /// This class is used to extract data from the different USGS API National Elevation Datasets
+    /// </summary>
+    public class NEDDataExtractor : IUSGSDataExtractor
     {
         string m_dataset;
 
         /// <summary>
-        /// 
+        /// NEDDataExtractor constructor
         /// </summary>
         /// <param name="Dataset">Name of the dataset (sbDatasetTag)</param>
         public NEDDataExtractor(string Dataset)
@@ -134,6 +176,14 @@ namespace IndexECPlugin.Source.Helpers
             m_dataset = Dataset;
         }
 
+        /// <summary>
+        /// Extract data from the USGS API Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from the USGS API</param>
+        /// <param name="title">The title extracted from the token</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
             title = token.TryToGetString("title");
@@ -185,13 +235,27 @@ namespace IndexECPlugin.Source.Helpers
         }
     }
 
-    internal class DefaultDataExtractor : IUSGSDataExtractor
+    /// <summary>
+    /// This class is used to extract data from the USGS API Datasets that do not have any resolution and follow standard date specification.
+    /// </summary>
+    public class DefaultDataExtractor : IUSGSDataExtractor
     {
+        /// <summary>
+        /// DefaultDataExtractor constructor
+        /// </summary>
         public DefaultDataExtractor()
         {
 
         }
 
+        /// <summary>
+        /// Extract data from the USGS API Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from the USGS API</param>
+        /// <param name="title">The title extracted from the token</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
             string dateString = token.TryToGetString("publicationDate");
@@ -217,14 +281,29 @@ namespace IndexECPlugin.Source.Helpers
         }
     }
 
-    internal class NLCDDataExtractor : IUSGSDataExtractor
+    /// <summary>
+    /// This class is used to extract data from the different USGS API National Land Cover Database Datasets
+    /// </summary>
+    public class NLCDDataExtractor : IUSGSDataExtractor
     {
         string m_dataset;
+        /// <summary>
+        /// NLCDDataExtractor constructor
+        /// </summary>
+        /// <param name="Dataset">Name of the dataset (sbDatasetTag)</param>
         public NLCDDataExtractor(string Dataset)
         {
             m_dataset = Dataset;
         }
 
+        /// <summary>
+        /// Extract data from the USGS API Json token
+        /// </summary>
+        /// <param name="token">The json token obtained from the USGS API</param>
+        /// <param name="title">The title extracted from the token</param>
+        /// <param name="date">The date of publication of the data</param>
+        /// <param name="resolution">The resolution of the data, if applicable</param>
+        /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
         {
             title = token.TryToGetString("title");
@@ -251,39 +330,53 @@ namespace IndexECPlugin.Source.Helpers
         }
     }
 
-    internal class LidarDataExtractor : IUSGSDataExtractor
-    {
-        public LidarDataExtractor()
-        {
+    ///// <summary>
+    ///// This class is used to extract data from the USGS API Lidar Point Cloud Dataset
+    ///// </summary>
+    //public class LidarDataExtractor : IUSGSDataExtractor
+    //{
+    //    /// <summary>
+    //    /// LidarDataExtractor constructor
+    //    /// </summary>
+    //    public LidarDataExtractor()
+    //    {
 
-        }
+    //    }
 
-        public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
-        {
-            string dateString = token.TryToGetString("publicationDate");
-            title = token.TryToGetString("title");
+    //    /// <summary>
+    //    /// Extract data from the USGS API Json token
+    //    /// </summary>
+    //    /// <param name="token">The json token obtained from the USGS API</param>
+    //    /// <param name="title">The title extracted from the token</param>
+    //    /// <param name="date">The date of publication of the data</param>
+    //    /// <param name="resolution">The resolution of the data, if applicable</param>
+    //    /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
+    //    public void ExtractTitleDateAndResolution(JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
+    //    {
+    //        string dateString = token.TryToGetString("publicationDate");
+    //        title = token.TryToGetString("title");
 
 
-            if (dateString != null)
-            {
-                try
-                {
-                    date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-                }
-                catch(FormatException)
-                {
-                    Log.Logger.error(String.Format("Error while filtering USGS Lidar entry {0}.", title));
-                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering USGS Lidar results.");
-                }
-            }
-            else
-            {
-                date = null;
-            }
-            resolution = "Unknown";
-            resolutionInMeters = "Unknown";
-        }
-    }
+    //        if (dateString != null)
+    //        {
+    //            try
+    //            {
+    //                date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    //            }
+    //            catch(FormatException)
+    //            {
+    //                Log.Logger.error(String.Format("Error while filtering USGS Lidar entry {0}.", title));
+    //                throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering USGS Lidar results.");
+    //            }
+    //        }
+    //        else
+    //        {
+    //            date = null;
+    //        }
+    //        resolution = "Unknown";
+    //        resolutionInMeters = "Unknown";
+    //    }
+    //}
 
 
 }

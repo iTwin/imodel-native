@@ -20,48 +20,30 @@ using System.Xml;
 
 namespace IndexECPlugin.Source.QueryProviders
 {
-
-    internal class UsgsAPIQueryProvider : IECQueryProvider
+    /// <summary>
+    /// UsgsAPIQueryProvider's purpose is to transform USGS data into ECInstances for our plugin.
+    /// </summary>
+    public class UsgsAPIQueryProvider : IECQueryProvider
     {
 
-        //TODO : Add outputFormat=JSON in WebReq???
-        const string WebReqCategories = "http://viewer.nationalmap.gov/tnmaccess/api/searchCategories?";
-        const string WebReq = "http://viewer.nationalmap.gov/tnmaccess/api/searchProducts?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=200&offset=0";
-        //const int USGSIdLenght = 24;
-        private readonly List<UsgsAPICategory> CategoryTable = new List<UsgsAPICategory> 
-        { //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "2 arc-second DEM - Alaska", Format = "none", Priority = 0, Type = "", SbDatasetTag = "National Elevation Dataset (NED) Alaska 2 arc-second"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 meter DEM", Format = "IMG", Priority = 1, Classification = "Terrain", SbDatasetTag = "Digital Elevation Model (DEM) 1 meter"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/9 arc-second DEM", Format = "IMG", Priority = 2, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1/9 arc-second"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second DEM", Format = "IMG", Priority = 3, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1/3 arc-second"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 arc-second DEM", Format = "IMG", Priority = 4, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1 arc-second"},
-          //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second Contours", Format = "Shapefile", Priority = 6, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1/3 arc-second - Contours"},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "DEM Source (OPR)", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Digital Surface Model (DSM)", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Orthorectified Radar Image (ORI)", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Lidar Point Cloud (LPC)", Format = "LAS", Priority = 1, Classification = "PointCloud", SbDatasetTag = "Lidar Point Cloud (LPC)"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Best Resolution", Format = "Shapefile", Priority = 1, Classification = "WaterBody", SbDatasetTag = "National Hydrography Dataset (NHD) Best Resolution"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Medium Resolution", Format = "Shapefile", Priority = 2, Classification = "WaterBody" SbDatasetTag = "National Hydrography Dataset (NHD) Medium Resolution"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2011", Format = "GeoTIFF", Priority = 1, Classification = "Imagery", SbDatasetTag = "National Land Cover Database (NLCD) - 2011"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2006", Format = "GeoTIFF", Priority = 2, Classification = "Imagery", SbDatasetTag = "National Land Cover Database (NLCD) - 2006"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2001", Format = "GeoTIFF", Priority = 3, Classification = "Imagery", SbDatasetTag = "National Land Cover Database (NLCD) - 2001"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Watershed Boundary Dataset (WBD)", Format = "Shapefile", Priority = 1, Classification = "WaterBody", SbDatasetTag = "National Watershed Boundary Dataset (WBD)"},
-          //new UsgsAPICategory(){Title = "Boundaries - National Boundary Dataset", SubTitle = "Boundaries - National Boundary Dataset", Format = "none", Priority = 0, Classification = ""},
-          new UsgsAPICategory(){Title = "Imagery - 1 foot (HRO)", SubTitle = "Imagery - 1 foot (HRO)", Format = "JPEG2000", Priority = 1, Classification = "Imagery", SbDatasetTag = "High Resolution Orthoimagery"},
-          new UsgsAPICategory(){Title = "Imagery - 1 meter (NAIP)", SubTitle = "Imagery - 1 meter (NAIP)", Format = "JPEG2000", Priority = 1, Classification = "Imagery", SbDatasetTag = "USDA National Agriculture Imagery Program (NAIP)"},
-          //new UsgsAPICategory(){Title = "Historical Topographic Maps", SubTitle = "Historical Topographic Maps", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Map Indices", SubTitle = "Map Indices", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Names - Geographic Names Information System (GNIS)", SubTitle = "Names - Geographic Names Information System (GNIS)", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Small-scale Datasets", SubTitle = "Small-scale Datasets", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Structures - National Structures Dataset", SubTitle = "Structures - National Structures Dataset", Format = "Shapefile", Priority = 2, Classification = "Bridge,Building", SbDatasetTag = "National Structures Dataset (NSD)"},
-          //new UsgsAPICategory(){Title = "Transportation - National Transportation Dataset", SubTitle = "Transportation - National Transportation Dataset", Format = "Shapefile", Priority = 1, Classification = "Roadway", SbDatasetTag = "National Transportation Dataset (NTD)"},
-          //new UsgsAPICategory(){Title = "US Topo", SubTitle = "US Topo", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Woodland Tint", SubTitle = "Woodland Tint", Format = "none", Priority = 0, Classification = ""}
-        };
-        
         ECQuery m_query;
         ECQuerySettings m_querySettings;
+        IUSGSDataFetcher m_usgsDataFetcher;
 
         Dictionary<string, IECInstance> m_storedParents;
+
+        /// <summary>
+        /// UsgsAPIQueryProvider constructor
+        /// </summary>
+        /// <param name="query">The ECQuery received by the plugin</param>
+        /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
+        /// <param name="usgsDataFetcher">The usgsDataFetcher that will be used to query USGS</param>
+        public UsgsAPIQueryProvider(ECQuery query, ECQuerySettings querySettings, IUSGSDataFetcher usgsDataFetcher)
+        {
+            m_query = query;
+            m_querySettings = querySettings;
+            m_usgsDataFetcher = usgsDataFetcher;
+        }
 
         /// <summary>
         /// UsgsAPIQueryProvider constructor
@@ -72,6 +54,7 @@ namespace IndexECPlugin.Source.QueryProviders
         {
             m_query = query;
             m_querySettings = querySettings;
+            m_usgsDataFetcher = new USGSDataFetcher(query);
         }
 
         /// <summary>
@@ -235,7 +218,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = getSciencebaseJson(sourceID);
+            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
             if (json == null)
             {
@@ -259,7 +242,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 if (bbox != null)
                 {
-                    instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{2},{3}],[{2},{1}],[{0},{1}],[{0},{3}],[{2},{3}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
+                    instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
                 }
             }
 
@@ -320,7 +303,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = getSciencebaseJson(sourceID);
+            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
             if (json == null)
             {
@@ -344,9 +327,10 @@ namespace IndexECPlugin.Source.QueryProviders
                         string[] splitURL = weblink["uri"].Value<string>().Split(new char[] {'/'}, StringSplitOptions.RemoveEmptyEntries);
 
                         //The communication protocol is the first part of the uri (http or ftp, usually).
-                        instance["CommunicationProtocol"].StringValue = splitURL[0];
+                        string communicationProtocol = splitURL[0].TrimEnd(':');
+                        instance["CommunicationProtocol"].StringValue = communicationProtocol;
 
-                        instance["URL"].StringValue = splitURL[0] + "://" + splitURL[1];
+                        instance["URL"].StringValue = communicationProtocol + "://" + splitURL[1];
                         break;
                     }
                 }
@@ -369,13 +353,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                     if ((file["contentType"].Value<string>() == "application/fgdc+xml") && file["originalMetadata"].Value<bool>() == true)
                     {
-                        string xmlString = GetHttpResponse(file["url"].Value<string>());
-                        //using (XmlReader xmlReader = XmlReader.Create(xmlString))
-                        //{
-
-                        //}
-                        XmlDocument xmlDoc = new XmlDocument();
-                        xmlDoc.LoadXml(xmlString);
+                        XmlDocument xmlDoc = m_usgsDataFetcher.GetXmlDocFromURL(file["url"].Value<string>());
 
                         var feesNode = xmlDoc.SelectSingleNode("metadata/distinfo/stdorder/fees");
                         if (feesNode != null)
@@ -445,7 +423,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = getSciencebaseJson(sourceID);
+            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
             if (json == null)
             {
@@ -529,7 +507,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = getSciencebaseJson(sourceID);
+            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
             if (json == null)
             {
@@ -602,7 +580,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = getSciencebaseJson(sourceID);
+            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
             if (json == null)
             {
@@ -717,7 +695,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance.InstanceId = sourceID;
 
-            JObject json = getSciencebaseJson(sourceID);
+            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
             if (json == null)
             {
@@ -732,7 +710,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if (bbox != null)
             {
-                instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{2},{3}],[{2},{1}],[{0},{1}],[{0},{3}],[{2},{3}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
+                instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
             }
 
             //Name
@@ -752,7 +730,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     string scheme = tag.TryToGetString("scheme");
                     if ((scheme != null) && (scheme == "The National Map Collection Thesaurus"))
                     {
-                        var cat = CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
+                        var cat = m_usgsDataFetcher.CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
                         if (cat != null)
                         {
                             instance["Classification"].StringValue = cat.Classification;
@@ -883,42 +861,6 @@ namespace IndexECPlugin.Source.QueryProviders
             return null;
         }
 
-        private string GetHttpResponse(string url)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                using (HttpResponseMessage response = client.GetAsync(url).Result)
-                {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        using (HttpContent content = response.Content)
-                        {
-                            return content.ReadAsStringAsync().Result;
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Returns the json of the item of specified source ID in the sciencebase catalog
-        /// </summary>
-        /// <param name="sourceID">The source ID of the item</param>
-        /// <returns>The JObject read if the request was successful, null otherwise</returns>
-        private JObject getSciencebaseJson(string sourceID)
-        {
-            string url = "https://www.sciencebase.gov/catalog/item/" + sourceID + "?format=json";
-
-            string jsonString = GetHttpResponse(url);
-            if (jsonString != null)
-            {
-                return JObject.Parse(jsonString) as JObject;
-            }
-
-            return null;
-        }
-
         private List<IECInstance> QuerySpatialEntitiesWithDetailsViewByPolygon()
         {
             List<IECInstance> instanceList = new List<IECInstance>();
@@ -933,7 +875,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             var criteriaList = ExtractPropertyWhereClauses();
 
-            foreach (var bundle in GetNonFormattedUSGSResults(criteriaList))
+            foreach (var bundle in m_usgsDataFetcher.GetNonFormattedUSGSResults(criteriaList))
             {
 
                 
@@ -961,7 +903,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     if (bbox != null)
                     {
-                        instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{0},{3}],[{2},{3}],[{2},{1}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
+                        instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                     }
                     instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
                     instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
@@ -1005,209 +947,6 @@ namespace IndexECPlugin.Source.QueryProviders
                     instanceList.Add(instance);
                 }
             }
-
-            return instanceList;
-        }
-
-        /// <summary>
-        /// Queries USGS for data located in the selected bbox and in the predetermined datasets (see CategoryTable)
-        /// </summary>
-        /// <returns>Non formatted data (still in JSON form), along with the ID of the parent dataset. This ID was added there to prevent
-        /// having to query USGS for every single data</returns>
-        private IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults(List<SingleWhereCriteriaHolder> whereCriteriaList)
-        {
-
-            List<USGSRequestBundle> instanceList = new List<USGSRequestBundle>();
-
-            string bbox = ExtractBboxFromQuery();
-
-            List<string> formatList = ExtractFormatList();
-            bool selectAllFormats = (formatList == null || formatList.Count == 0);
-
-            List<UsgsRequest> reqList = new List<UsgsRequest>();
-
-            List<String> requestedClassificationList = new List<String>();
-            bool selectAllClasses = true;
-
-            foreach (var criteriaHolder in whereCriteriaList)
-            {
-                if ((criteriaHolder.Operator == RelationalOperator.IN) && criteriaHolder.Property.Name == "Classification")
-                {
-                    foreach(var classification in criteriaHolder.Value.Split(','))
-                    {
-                        requestedClassificationList.Add(classification);
-                        selectAllClasses = false;
-                    }
-                }
-            }
-
-
-            try
-            {
-                using (HttpClient client = new HttpClient())
-                {
-
-                    client.Timeout = new TimeSpan(0, 0, 15);
-                    //client.Timeout = new TimeSpan(15000);
-                    using (HttpResponseMessage response = client.GetAsync(WebReqCategories).Result)
-                    {
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            throw new Exception("USGS did not send a successful response.");
-                        }
-                        using (HttpContent content = response.Content)
-                        {
-                            string responseString = content.ReadAsStringAsync().Result;
-
-                            JArray json = JArray.Parse(responseString);
-
-                            foreach (var entry in json)
-                            {
-                                if (entry["tags"].HasValues)
-                                {
-
-                                    foreach (JProperty subEntry in entry["tags"])
-                                    {
-                                        System.Console.Out.Write(subEntry.Value["title"]);
-                                        foreach (var category in CategoryTable)
-                                        {
-                                            if (entry["title"].Value<string>() == category.Title &&
-                                               subEntry.Value["title"].Value<string>() == category.SubTitle &&
-                                               category.Priority != 0 &&
-                                               (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
-                                               (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)))
-                                            {
-                                                UsgsRequest req = new UsgsRequest()
-                                                {
-                                                    //Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
-                                                    Dataset = category.SbDatasetTag,
-                                                    DatasetID = subEntry.Value["id"].Value<string>(),
-                                                    Format = category.Format,
-                                                    Category = category.Title,
-                                                    Priority = category.Priority,
-                                                    Classification = category.Classification
-                                                };
-
-                                                reqList.Add(req);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    foreach (var category in CategoryTable)
-                                    {
-                                        if (entry["title"].Value<string>() == category.Title &&
-                                           entry["title"].Value<string>() == category.SubTitle &&
-                                           category.Priority != 0 &&
-                                           (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
-                                           (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)))
-                                        {
-                                            UsgsRequest req = new UsgsRequest()
-                                            {
-                                                //Dataset = entry["sbDatasetTag"].Value<string>(),
-                                                Dataset = category.SbDatasetTag,
-                                                DatasetID = entry["id"].Value<string>(),
-                                                Format = category.Format,
-                                                Category = category.Title,
-                                                Priority = category.Priority,
-                                                Classification = category.Classification
-                                            };
-                                            reqList.Add(req);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch(TaskCanceledException)
-            {
-                //Request timed out. We return our empty list
-                //return instanceList;
-                throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-            }
-            catch (System.AggregateException ex)
-            {
-                if((ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)))
-                {
-                    throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-                }
-                else
-                {
-                    throw ex;
-                }
-            }
-            reqList.Sort();
-
-            //string curCat = "";
-
-            object locker = new object();
-
-
-
-            //TODO : We have deactivated the category feature for the parallel foreach we could reimplement it by storing all results in a temporary list of list, 
-            //       then process it to have the same list we would have had before
-            Parallel.ForEach (reqList, req =>
-            {
-                //if (curCat == req.Category)
-                //{
-                //    continue;
-                //}
-
-                string readyToSend = WebReq.Replace("_bbox", bbox).Replace("_datasets", req.Dataset).Replace("_prodFormats", req.Format).Replace(' ', '+');
-
-                try
-                {
-                    using (HttpClient client = new HttpClient())
-                    {
-                        client.Timeout = new TimeSpan(0, 0, 15);
-                        using (HttpResponseMessage response = client.GetAsync(readyToSend).Result)
-                        {
-                            if (response.IsSuccessStatusCode)
-                            {
-                                using (HttpContent content = response.Content)
-                                {
-                                    string responseString = content.ReadAsStringAsync().Result;
-
-                                    JObject jsonResp = JObject.Parse(responseString);
-
-                                    lock (locker)
-                                    {
-                                        instanceList.Add(new USGSRequestBundle { jtokenList = jsonResp["items"], DatasetId = req.DatasetID, Dataset = req.Dataset, Classification = req.Classification });
-                                        //foreach (var item in jsonResp["items"] as JArray)
-                                        //{
-                                        //    instanceList.Add(item);
-
-                                        //}
-                                    }
-
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (TaskCanceledException)
-                {
-                    //Request timed out. We return our empty list
-                    //return instanceList;
-                    throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-                }
-                catch (System.AggregateException ex)
-                {
-                    if ((ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)))
-                    {
-                        throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-                    }
-                    else
-                    {
-                        throw ex;
-                    }
-                }
-            });
 
             return instanceList;
         }
@@ -1413,29 +1152,6 @@ namespace IndexECPlugin.Source.QueryProviders
             }
         }
 
-        /// <summary>
-        /// Extracts all formats from the extended data key "format". 
-        /// </summary>
-        /// <returns>Null if there is no format key, otherwise list of all formats requested</returns>
-        private List<string> ExtractFormatList()
-        {
-            if(!m_query.ExtendedData.ContainsKey("format"))
-            {
-                return null;
-            }
-            string formatString = m_query.ExtendedData["format"].ToString();
-
-            string[] formatArray = formatString.Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries);
-            List<string> formatList = new List<string>();
-            
-            foreach(var format in formatArray)
-            {
-                formatList.Add(format.Trim());
-            }
-
-            return formatList;
-        }
-
         //private IEnumerable<IECInstance> QueryUSGSThumbnail()
         //{
         //    List<IECInstance> instanceList = new List<IECInstance>();
@@ -1489,44 +1205,6 @@ namespace IndexECPlugin.Source.QueryProviders
         //    return bytes;
 
         //}
-
-        private string ExtractBboxFromQuery()
-        {
-            if (!m_query.ExtendedData.ContainsKey("polygon"))
-            {
-                throw new UserFriendlyException("This request must contain a \"polygon\" parameter in the form of a WKT polygon string.");
-            }
-
-            string polygonString = m_query.ExtendedData["polygon"].ToString();
-            PolygonModel model;
-            try
-            {
-                model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-            }
-            catch (JsonSerializationException)
-            {
-                throw new UserFriendlyException("The polygon format is not valid.");
-            }
-
-            int polygonSRID;
-            if (!int.TryParse(model.coordinate_system, out polygonSRID))
-            {
-                throw new UserFriendlyException("The polygon format is not valid.");
-            }
-
-            string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
-
-            PolygonDescriptor polyDesc = new PolygonDescriptor
-            {
-                WKT = polygonWKT,
-                SRID = polygonSRID
-            };
-
-            //We should now extract a bbox from this wkt
-
-            return DbGeometryHelpers.ExtractBboxFromWKTPolygon(polyDesc.WKT);
-
-        }
 
         //This is an helper method we could put in another file. It belonged in the now unused USGSThumbnailRetrievalController
         private MemoryStream DownloadThumbnail(string thumbnailUri)

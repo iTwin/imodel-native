@@ -102,10 +102,11 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/ECToSQLMap.cs \
+            $(baseDir)Source/Helpers/ECQueryConverter.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
             $(baseDir)Source/Helpers/TableDescriptor.cs \
-            $(baseDir)Source/Helpers/SchemaHelper.cs \
             $(baseDir)Source/Helpers/IUSGSDataExtractor.cs \
+            $(baseDir)Source/Helpers/IUSGSDataFetcher.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageStreamRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/SQLThumbnailRetrievalController.cs \

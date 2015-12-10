@@ -199,33 +199,35 @@ namespace IndexECPlugin.Source
         {
             //For now, we'll only manage the case where we receive one search class.
             //foreach (SearchClass searchClass in query.SearchClasses)
-            SearchClass searchClass = query.SearchClasses.First();
+            try
             {
-                Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
-                
-                //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
-                if ((querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage"))
+                SearchClass searchClass = query.SearchClasses.First();
                 {
-                    IECInstance packageInstance = searchClass.Class.CreateInstance();
-                    ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
-                    packageInstance.InstanceId = exp.RightSideString;
-                    PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, m_connectionString);
-                    return new List<IECInstance>{packageInstance};
-                }
+                    Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
+
+                    //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
+                    if ((querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage"))
+                    {
+                        IECInstance packageInstance = searchClass.Class.CreateInstance();
+                        ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
+                        packageInstance.InstanceId = exp.RightSideString;
+                        PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, m_connectionString);
+                        return new List<IECInstance> { packageInstance };
+                    }
 
                     IECQueryProvider helper/* = new SqlQueryProvider(query)*/;
-                    
+
                     if (searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull)
                     {
                         //Log.Logger.error(String.Format("Query {1} aborted. The class {0} cannot be queried.", searchClass.Class.Name, query.ID));
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                     }
-                    
+
                     //string queryType = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
 
                     string source;
 
-                    if(query.ExtendedData.ContainsKey("source"))
+                    if (query.ExtendedData.ContainsKey("source"))
                     {
                         source = query.ExtendedData["source"].ToString();
                     }
@@ -235,93 +237,95 @@ namespace IndexECPlugin.Source
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
                     }
                     //IEnumerable<IECInstance> instanceList;
-                    try
-                    {
-                        switch (source.ToLower())
-                        {
-                            case "index":
-                                using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
-                                {
-                                    SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME);
-                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
-                                    return helper.CreateInstanceList();
-                                }
 
-                            case "usgsapi":
-                                helper = new UsgsAPIQueryProvider(query, querySettings);
+                    switch (source.ToLower())
+                    {
+                        case "index":
+                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
+                            {
+                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
+                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
                                 return helper.CreateInstanceList();
+                            }
 
-                            case "all":
-                                List<IECInstance> instanceList = new List<IECInstance>();
-                                using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
-                                {
-                                    SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME);
-                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
-                                    instanceList = helper.CreateInstanceList().ToList();
-                                }
+                        case "usgsapi":
+                            helper = new UsgsAPIQueryProvider(query, querySettings);
+                            return helper.CreateInstanceList();
 
-                                helper = new UsgsAPIQueryProvider(query, querySettings);
-                                instanceList.AddRange(helper.CreateInstanceList());
-                                return instanceList;
-                            default:
-                                //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                                //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
-                                throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
-                        }
-                    }
-                    catch(System.Data.Common.DbException)
-                    {
-                        //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
-                        //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
-                        //Log.Logger.error(String.Format("Query {0} aborted. The database server has encountered a problem.", query.ID));
-                        throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}", query.ID, e.Message));
-                        throw;
+                        case "all":
+                            List<IECInstance> instanceList = new List<IECInstance>();
+                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
+                            {
+                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
+                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                instanceList = helper.CreateInstanceList().ToList();
+                            }
+
+                            helper = new UsgsAPIQueryProvider(query, querySettings);
+                            instanceList.AddRange(helper.CreateInstanceList());
+                            return instanceList;
+                        default:
+                            //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                            //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
+                            throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
                     }
 
 
-                ////SqlCommand cmd = helper.;
+
+                    ////SqlCommand cmd = helper.;
 
 
-                ////***************************FOR NOW, WE ONLY TAKE THE ADDRESS OF THE API**************************
-                ////We suppose that the location will be of the form : "Adress_Of_The_API,Location_Of_The_Repository"
-                ////string baseURL = connection.RepositoryIdentifier.Location.Split(',')[0];
-                //////string baseURL = "https://localhost/upload/Api/BentleyFiles/";
-                ////*************************************************************************************************
-                //string baseURL = connection.RepositoryIdentifier.Location;
-                //string apiMethodURL = "GetJSonOfAllFilesInQuery";
-                //int pageSize = -1;
-                //if (query.ExtendedData.ContainsKey("pagesize"))
-                //{
-                //    if (int.TryParse(query.ExtendedData["pagesize"].ToString(), out pageSize))
-                //    {
-                //        throw new UserFriendlyException("Please enter a valid number for the pagesize parameter");
-                //    }
-                //}
+                    ////***************************FOR NOW, WE ONLY TAKE THE ADDRESS OF THE API**************************
+                    ////We suppose that the location will be of the form : "Adress_Of_The_API,Location_Of_The_Repository"
+                    ////string baseURL = connection.RepositoryIdentifier.Location.Split(',')[0];
+                    //////string baseURL = "https://localhost/upload/Api/BentleyFiles/";
+                    ////*************************************************************************************************
+                    //string baseURL = connection.RepositoryIdentifier.Location;
+                    //string apiMethodURL = "GetJSonOfAllFilesInQuery";
+                    //int pageSize = -1;
+                    //if (query.ExtendedData.ContainsKey("pagesize"))
+                    //{
+                    //    if (int.TryParse(query.ExtendedData["pagesize"].ToString(), out pageSize))
+                    //    {
+                    //        throw new UserFriendlyException("Please enter a valid number for the pagesize parameter");
+                    //    }
+                    //}
 
-                //int page = 1;
-                //if (query.ExtendedData.ContainsKey("page"))
-                //{
-                //    if (int.TryParse(query.ExtendedData["page"].ToString(), out page))
-                //    {
-                //        throw new UserFriendlyException("Please enter a valid number for the page parameter");
-                //    }
-                //}
+                    //int page = 1;
+                    //if (query.ExtendedData.ContainsKey("page"))
+                    //{
+                    //    if (int.TryParse(query.ExtendedData["page"].ToString(), out page))
+                    //    {
+                    //        throw new UserFriendlyException("Please enter a valid number for the page parameter");
+                    //    }
+                    //}
 
-                //if (!query.ExtendedData.ContainsKey("polygon"))
-                //{
-                //    throw new UserFriendlyException("Please specify a polygon parameter for this query");
-                //}
-                //string polygonPointsVar = query.ExtendedData["polygon"].ToString();
+                    //if (!query.ExtendedData.ContainsKey("polygon"))
+                    //{
+                    //    throw new UserFriendlyException("Please specify a polygon parameter for this query");
+                    //}
+                    //string polygonPointsVar = query.ExtendedData["polygon"].ToString();
 
-                //string whereClauseString = query.WhereClause.ToString();
-                //whereClauseString = whereClauseString.Replace("(", "").Replace(")", "");
+                    //string whereClauseString = query.WhereClause.ToString();
+                    //whereClauseString = whereClauseString.Replace("(", "").Replace(")", "");
 
-                //return ReadInstancesFromAPI(bentleyFileClass, baseURL + apiMethodURL, polygonPointsVar, whereClauseString, pageSize, page, testToErase, testToErase2);
+                    //return ReadInstancesFromAPI(bentleyFileClass, baseURL + apiMethodURL, polygonPointsVar, whereClauseString, pageSize, page, testToErase, testToErase2);
 
+                }
+            }
+            catch (System.Data.Common.DbException)
+            {
+                //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
+                //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
+                //Log.Logger.error(String.Format("Query {0} aborted. The database server has encountered a problem.", query.ID));
+                throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
+            }
+            catch (Exception e)
+            {
+                Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}", query.ID, e.Message));
+                throw;
             }
         }
 

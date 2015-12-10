@@ -7,7 +7,10 @@ using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source
 {
-    internal class PagedSQLQueryBuilder : SQLQueryBuilder
+    /// <summary>
+    /// SQLQueryBuilder class used to create paged queries.
+    /// </summary>
+    public class PagedSQLQueryBuilder : SQLQueryBuilder
     {
         private int m_colNumber;
         private int m_lowerBound;
@@ -16,7 +19,7 @@ namespace IndexECPlugin.Source
         private List<string> m_aliasList;
 
         /// <summary>
-        /// 
+        /// PagedSQLQueryBuilder constructor
         /// </summary>
         /// <param name="lowerBound">Lower bound (included) of the instance rows returned</param>
         /// <param name="upperBound">Upper bound (included) of the instance rows returned</param>
@@ -34,6 +37,10 @@ namespace IndexECPlugin.Source
             m_aliasList = new List<string>();
         }
 
+        /// <summary>
+        /// Builds the query according to the clauses added
+        /// </summary>
+        /// <returns>The SQL query string</returns>
         override public string BuildQuery()
         {
             string innerRequestAlias = "Results";

@@ -220,6 +220,14 @@
         </Bindings>
     </Part>
 
+    <Part Name="RealityDbECPluginUnitTests" BMakeFile="Tests/RealityDbECPlugin/RealityDbECPluginTests.mke">
+        <SubPart PartName="RealityDbECPlugin" />
+        <SubPart PartName="nunit_2.6.4" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Nunit_2.6.4" />
+        <SubPart PartName="rhinomocks_3.5" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Rhinomocks_3.5" />
+        
+        
+    </Part>
+    
     <!-- Define a test collection product -->
     <Part Name="Tests">
         <SubPart PartName="RealityPackageUnitTests"/>
@@ -280,6 +288,7 @@
     <!-- This part runs RealityModFrameworkTests on platforms that support it. -->
     <Part Name="RealityModFrameworkTested">
         <SubPart PartName="RunGtest" />
+        <SubPart PartName="RealityDbECPluginUnitTests" />
     </Part>
 
 </BuildContext>

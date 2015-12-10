@@ -130,7 +130,10 @@ namespace IndexECPlugin.Source
         public IEnumerable<double[]> Footprint { get; set; }
     }
 
-    internal class UsgsAPICategory
+    /// <summary>
+    /// 
+    /// </summary>
+    public class UsgsAPICategory
     {
         /// <summary>
         ///   

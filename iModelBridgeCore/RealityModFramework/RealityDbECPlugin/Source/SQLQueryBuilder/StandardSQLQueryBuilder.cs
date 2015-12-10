@@ -6,13 +6,23 @@ using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source
 {
-    internal class StandardSQLQueryBuilder : SQLQueryBuilder
+    /// <summary>
+    /// SQLQueryBuilder class used to create non paged queries.
+    /// </summary>
+    public class StandardSQLQueryBuilder : SQLQueryBuilder
     {
+        /// <summary>
+        /// StandardSQLQueryBuilder constructor
+        /// </summary>
         public StandardSQLQueryBuilder() : base()
         {
 
         }
 
+        /// <summary>
+        /// Builds the query according to the clauses added
+        /// </summary>
+        /// <returns>The SQL query string</returns>
         override public string BuildQuery()
         {
             string completeSelectStr = "SELECT ";

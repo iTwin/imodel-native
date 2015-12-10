@@ -12,23 +12,46 @@ using System.Threading.Tasks;
 namespace IndexECPlugin.Source
 {
     /// <summary>
-    /// b
+    /// This class is used to build SQL queries by specifying each part of the query.
     /// </summary>
-    internal abstract class SQLQueryBuilder
+    public abstract class SQLQueryBuilder
     {
+        /// <summary>
+        /// The SELECT clause of the SQL query
+        /// </summary>
         protected List<string> m_sqlSelectClause;
+        
+        /// <summary>
+        /// The FROM clause of the SQLQuery
+        /// </summary>
         protected TableDescriptor m_sqlFromClause;
+
+        /// <summary>
+        /// The LeftJoin clause of the SQLQuery
+        /// </summary>
         protected List<TableDescriptor> m_sqlLeftJoinClause;
+        
         //TODO : Simplify the use of the whereClause Part of the builder. 
         //       It is the most complex and low level part. It would be nice
         //       to have a way to manage automatically the inner clauses
+
+        /// <summary>
+        /// The Where clause of the SQLQuery
+        /// </summary>
         protected string m_sqlWhereClause;
+
+        /// <summary>
+        /// The OrderBy clause of the SQLQuery
+        /// </summary>
         protected List<string> m_sqlOrderByClause;
 
         private Dictionary<string, Tuple<string, DbType>> m_paramNameValueMap;
 
         private int m_paramNumber;
 
+        /// <summary>
+        /// SQLQueryBuilder constructor
+        /// </summary>
         protected SQLQueryBuilder()
         {
             m_paramNameValueMap = new Dictionary<string, Tuple<string, DbType>>();
@@ -211,6 +234,11 @@ namespace IndexECPlugin.Source
             return m_sqlOrderByClause.Count == 0;
         }
 
+        /// <summary>
+        /// Does not do anything for now. Should be removed
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         protected string AddBrackets(string str)
         {
             string tempString = str;
@@ -228,7 +256,10 @@ namespace IndexECPlugin.Source
         }
 
 
-
+        /// <summary>
+        /// Builds the query according to the clauses added
+        /// </summary>
+        /// <returns>The SQL query string</returns>
         abstract public string BuildQuery();
 
         /// <summary>
@@ -253,6 +284,9 @@ namespace IndexECPlugin.Source
             return String.Format("@param{0}", m_paramNumber++);
         }
 
+        /// <summary>
+        /// The mapping of the parameter names and their values and type.
+        /// </summary>
         public Dictionary<string, Tuple<string, DbType>> paramNameValueMap
         {
             get
@@ -261,7 +295,10 @@ namespace IndexECPlugin.Source
             }
         }
 
-
+        /// <summary>
+        /// Builds a query returning the number of rows following the given criteria.
+        /// </summary>
+        /// <returns>The query string</returns>
         public string BuildCountQuery()
         {
             string completeFromStr = "FROM " + m_sqlFromClause.Name + " " + m_sqlFromClause.Alias + " ";
