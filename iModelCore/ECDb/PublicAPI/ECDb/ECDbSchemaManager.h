@@ -285,14 +285,12 @@ public:
     //! @see ECN::ECClass::GetDerivedECClasses
     ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedECClasses (ECN::ECClassCR baseECClass) const;
 
-    //! Create database views for EC Classes excluding those which are not mapped or are mapped to existing tables.
-    //! The view name is formated as namespaceprefix.className while it contain property with full property path as column names.
-    //! This method must be called on a read / write db after schema(if any) imported.Calling it again will drop last created views and
-    //! create new one according to currently present mapped classes.
-    //! @note The database views are strickly intended for DEVELOPERS for DEBUGGING purpose only. Should not use in anyway as part of production 
-    //! application. No code should depend on these views they may or may not be present in DgnDb generated. Use ECSQL in all cases in you applications.
-    //! @return Return ERROR if db is readonly.
-    ECDB_EXPORT BentleyStatus CreateOrUpdateECDatabaseViews() const;
+    //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
+    //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
+    //! @note The views are strickly intended for developers for debugging purpose only. They should not be used in application code. 
+    //! No code should depend on these views.
+    //! @return SUCCESS OR ERROR
+    ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)    
     //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
