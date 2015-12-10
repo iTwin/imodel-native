@@ -250,18 +250,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
-    <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
-    <ECClass typeName="RasterBaseModel" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
     <ECClass typeName="SystemModel" isDomainClass="True" >
         <!-- A SystemModel contains SystemElements which are used to model functional systems -->
         <ECCustomAttributes>
@@ -1010,9 +998,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="LineStyle" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style" />
-        <ECProperty propertyName="Data" displayLabel="Data" typeName="binary" description="Encoded style properties" />
+        <ECProperty propertyName="Data" displayLabel="Data" typeName="string" description="Encoded style properties" />
     </ECClass>
 
     <ECClass typeName="Texture" isDomainClass="True">
@@ -1133,55 +1124,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
     </ECClass>
-
-    <ECClass typeName="Style" description="Styles help define properties and standards shared among many elements, such as formatting peroperties for text.">
-        <!-- WIP convert all to elements. -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Type</string>
-                            <string>Name</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Type" typeName="int" description="Type of style; see DGN_STYLE_TYPE_*">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Name" typeName="string" description="Name of the style; all styles must be unique by type and name (NoCase)">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Descr" typeName="string" description="Description of the style"/>
-        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
-    </ECClass>
-    <ECRelationshipClass typeName="ElementUsesStyles">
-        <ECCustomAttributes>
-           <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>StyleId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="uses 0 to N styles" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="is used by 0 to N elements">
-            <Class class="Style" />
-        </Target>
-    </ECRelationshipClass>
 
     <ECClass typeName="Link" description="Base class for links from elements to other objects (e.g. URLs and embedded files).">
         <ECCustomAttributes>

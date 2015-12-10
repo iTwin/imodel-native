@@ -665,7 +665,37 @@ type DgnConeDetailP = cxx_pointer<DgnConeDetail>;
 
 type DgnSphereDetailP = cxx_pointer<DgnSphereDetail>;
 
+//! A wrapper for BentleyApi::JsDgnBoxDetail
+class DgnBoxDetail implements IDisposable
+{
+    /*** NATIVE_TYPE_NAME = JsDgnBoxDetail ***/
+    constructor();
 
+    /**
+     * Initialize box detail fields from center and size.
+     * @param [in] center center of box in XYZ
+     * @param [in] size total range in XYZ
+     * @param [in] capped true if closed top and bottom.
+     */
+    static InitFromCenterAndSize(center: DPoint3dP, size: DPoint3dP, capped: cxx_bool): DgnBoxDetailP;
+
+    static CreateBox(
+        baseOrigin: DPoint3dP,
+        topOrigin: DPoint3dP,
+        unitX: DVector3dP,
+        unitY: DVector3dP,
+        baseX: cxx_double,
+        baseY: cxx_double,
+        topX: cxx_double,
+        topY: cxx_double,
+        capped: cxx_bool
+    ): DgnBoxDetailP;
+
+    OnDispose(): void;
+    Dispose(): void;
+}
+
+type DgnBoxDetailP = cxx_pointer<DgnBoxDetail>;
 
 
     //! A wrapper for BentleyApi::JsCurvePrimitive
@@ -675,7 +705,7 @@ type DgnSphereDetailP = cxx_pointer<DgnSphereDetail>;
         constructor();
         static CreateDgnCone(detail: DgnConeDetailP): SolidPrimitiveP;
         static CreateDgnSphere      (detail: DgnSphereDetailP): SolidPrimitiveP;
-        //!static CreateDgnBox         (detail: DgnBoxDetailP): SolidPrimitiveP;
+        static CreateDgnBox         (detail: DgnBoxDetailP): SolidPrimitiveP;
         //!static CreateDgnTorusPipe   (detail: DgnTorusPipeDetailP): SolidPrimitiveP;
         SolidPrimitiveType(): cxx_double;
 
