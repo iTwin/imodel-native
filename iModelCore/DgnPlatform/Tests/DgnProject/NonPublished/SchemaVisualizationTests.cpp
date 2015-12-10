@@ -1798,15 +1798,17 @@ struct BentleyGraphvizContext
 private:
     GVC_t* m_gvc;
 
-    lt_symlist_t lt_preloaded_symbols[4] =
+    lt_symlist_t lt_preloaded_symbols[4];
+
+public:
+    BentleyGraphvizContext()
+        : lt_preloaded_symbols
         {
             { "gvplugin_dot_layout_LTX_library", (void*)(&gvplugin_dot_layout_LTX_library) },
             { "gvplugin_core_LTX_library", (void*)(&gvplugin_core_LTX_library) },
             { "gvplugin_mylib_LTX_library", (void*)(&gvplugin_mylib_LTX_library) },
             { 0, 0 },
-        };
-public:
-    BentleyGraphvizContext()
+        }
         {
         m_gvc = gvContextPlugins(lt_preloaded_symbols, 0);
         }
