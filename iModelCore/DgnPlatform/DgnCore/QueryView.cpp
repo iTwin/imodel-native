@@ -107,7 +107,7 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo& info)
+void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo const& info)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
@@ -162,7 +162,6 @@ void QueryViewController::_OnHealUpdate(DgnViewportR vp, ViewContextR context, b
         return;
 
     Frustum newFrustumPoints = vp.GetFrustum(DgnCoordSystem::World, true);
-
     if (!m_forceNewQuery)
         {
         if (newFrustumPoints == m_saveQueryFrustum)
@@ -184,6 +183,14 @@ void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context)
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_lastUpdateType = DrawPurpose::Update;
 #endif
+
+    if (!m_forceNewQuery)
+        {
+        Frustum newFrustumPoints = vp.GetFrustum(DgnCoordSystem::World, true);
+        if (newFrustumPoints == m_saveQueryFrustum)
+            return;
+        }
+
     LoadElementsForUpdate(vp, DrawPurpose::CreateScene, &context, true, true, false);
     ComputeFps();
     }
@@ -502,6 +509,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             {
             DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
             auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+
             if (nullptr != geomModel)
                 geomModel->AddGraphicsToScene(context);
 

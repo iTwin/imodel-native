@@ -35,8 +35,6 @@ enum FilterLODFlags
 
 enum
 {
-    DEFAULT_MINUMUM_LOD     = 50,       // extent squared
-    DEFAULT_MINUMUM_CUT_LOD = 20,       // extent squared
     LOD_DISPLAY_AS_POINT    = 6,        // extent squared
     LOD_DELTA_INCREASE      = 9,        // extent squared
     LOD_DELTA_DECREASE      = 100,      // extent squared
@@ -217,20 +215,19 @@ protected:
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
-    ScanCriteriaP           m_scanCriteria;
+    ScanCriteria            m_scanCriteria;
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     Render::GeometryParams  m_currGeometryParams;
     Render::GraphicParams   m_graphicParams;
-    Render::OvrGraphicParams      m_ovrGraphicParams;
+    Render::OvrGraphicParams m_ovrGraphicParams;
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     DgnElement::Hilited     m_hiliteState;
     IElemTopologyCPtr       m_currElemTopo;
-    GeometryStreamEntryId       m_currGeometryStreamEntryId;
+    GeometryStreamEntryId   m_currGeometryStreamEntryId;
     double                  m_levelOfDetail;
-    double                  m_minLOD;             // minimum size of default level-of-detail test.
     double                  m_arcTolerance;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
@@ -263,7 +260,6 @@ protected:
     virtual void _OnPreDrawTransient() {}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) = 0;
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
-    DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
@@ -277,7 +273,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT ViewContext();
-    DGNPLATFORM_EXPORT virtual ~ViewContext();
 
 public:
     int ViewContext::GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
@@ -308,13 +303,10 @@ public:
     double GetArcTolerance() const {return m_arcTolerance;}
     void SetArcTolerance(double tol) {m_arcTolerance = tol;}
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
-    double GetMinLOD() const {return m_minLOD;}
-    void SetMinLOD(double lod) {m_minLOD = lod;}
     Byte& GetFilterLODFlag() {return m_filterLOD;}
     void SetFilterLODFlag(FilterLODFlags flags) {m_filterLOD =(Byte) flags;}
-    ScanCriteriaCP GetScanCriteria() const {return m_scanCriteria;}
+    ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
-    void AllocateScanCriteria(){_AllocateScanCriteria();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
 

@@ -49,7 +49,7 @@ void    SpriteLocation::Activate (ISpriteP sprite, DgnViewportP viewport, DPoint
     if (NULL == sprite || NULL == viewport)
         return;
 
-    viewport->QueuePaint();
+    viewport->QueueRefresh();
     m_viewport = viewport;
     sprite->AddRef();
     m_sprite   = sprite;
@@ -69,7 +69,7 @@ void SpriteLocation::Deactivate ()
     if (!IsActive())
         return;
 
-    m_viewport->QueuePaint();
+    m_viewport->QueueRefresh();
     m_viewport = NULL;
     m_sprite->Release();
     m_sprite   = NULL;

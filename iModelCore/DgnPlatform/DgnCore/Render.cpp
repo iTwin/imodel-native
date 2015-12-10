@@ -80,23 +80,23 @@ void Render::Scene::_Clear()
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
-struct PaintTask : Task
+struct RefreshTask : Task
 {
     Plan m_plan;
-    virtual Utf8CP _GetName() const override {return "Paint";}
-    virtual Outcome _Process() override {m_target->Paint(m_plan); return Outcome::Finished;}
-    PaintTask(DgnViewportR vp) : Task(vp.GetRenderTarget(), Operation::Paint), m_plan(vp) {}
+    virtual Utf8CP _GetName() const override {return "Refresh";}
+    virtual Outcome _Process() override {m_target->Refresh(m_plan); return Outcome::Finished;}
+    RefreshTask(DgnViewportR vp) : Task(vp.GetRenderTarget(), Operation::Refresh), m_plan(vp) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::QueuePaint()
+bool DgnViewport::QueueRefresh()
     {
     if (s_renderQueue == nullptr || !m_renderTarget.IsValid())
         return false;
 
-    RenderQueue().AddTask(*new PaintTask(*this));
+    RenderQueue().AddTask(*new RefreshTask(*this));
     return true;
     }
 

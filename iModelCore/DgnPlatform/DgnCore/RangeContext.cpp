@@ -905,7 +905,7 @@ bool _ScanRangeFromPolyhedron()
         bigRange.low.x = bigRange.low.y = bigRange.low.z = -1.0e20;
         bigRange.high.x = bigRange.high.y = bigRange.high.z = 1.0e20;
 
-        m_scanCriteria->SetRangeTest(&bigRange);
+        m_scanCriteria.SetRangeTest(&bigRange);
         return  true;
         }
     return  T_Super::_ScanRangeFromPolyhedron();

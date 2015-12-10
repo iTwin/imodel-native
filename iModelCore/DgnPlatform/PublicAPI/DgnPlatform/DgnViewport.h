@@ -305,38 +305,15 @@ struct FullUpdateInfo
 private:
     friend struct ViewSet;
 
-    StopEvents          m_stopEvents;
-    bool                m_incremental;
-    bool                m_deferShadows;
-    bool                m_startEndMsg;
-    bool                m_startAbortState;
-    bool                m_useCachedElems;
-    BSIRect const*      m_subRect;
-    FenceParamsP        m_fenceParams;
+    StopEvents m_stopEvents;
+    uint32_t   m_timeout;                 // in milliseconds
 
 public:
-    FullUpdateInfo() : m_stopEvents(StopEvents::ForFullUpdate)
-        {
-        m_incremental       = false;
-        m_deferShadows      = true;
-        m_startEndMsg       = false;
-        m_startAbortState   = false;
-        m_useCachedElems    = true;
-        m_subRect           = NULL;
-        m_fenceParams       = NULL;
-        }
-
+    FullUpdateInfo(uint32_t timeout=400) : m_stopEvents(StopEvents::ForFullUpdate), m_timeout(timeout) {}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    void SetIncremental(bool incremental) {m_incremental = incremental;}
-    void SetDeferShadows(bool deferShadows) {m_deferShadows = deferShadows;}
-    void SetStartEndMsg(bool startEndMsg) {m_startEndMsg = startEndMsg;}
-    void SetStartAbortState(bool startAbortState) {m_startAbortState = startAbortState;}
-    void SetUseCachedElems(bool useCachedElems) {m_useCachedElems = useCachedElems;}
-    void SetSubRect(BSIRect const* subRect) {m_subRect = subRect;}
-    void SetFenceParams(FenceParamsP fp) {m_fenceParams = fp;}
-    bool GetIncremental() const {return m_incremental;}
-    bool GetStartEndMsg() const {return m_startEndMsg;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
+    void SetTimeout(uint32_t timeout) {m_timeout=timeout;}
+    uint32_t GetTimeout() const {return m_timeout;}
     };
 
 //=======================================================================================
@@ -346,23 +323,17 @@ struct DynamicUpdateInfo
     {
 private:
     friend struct ViewManager;
-    StopEvents          m_stopEvents;
-    bool                m_doBackingStore;
-    int                 m_minLodDelta;
-    bool                m_haveLastMotion;
-    int                 m_lastTotalMotion;
-    Point2d             m_lastCursorPos;
+    StopEvents   m_stopEvents;
+    bool         m_haveLastMotion;
+    int          m_lastTotalMotion;
+    Point2d      m_lastCursorPos;
 
 public:
     DGNVIEW_EXPORT DynamicUpdateInfo();
     Point2d& GetLastCursorPos() {return m_lastCursorPos;}
-    int GetMinLodDelta() {return m_minLodDelta;}
-    bool GetDoBackingStore() {return m_doBackingStore;}
     StopEvents GetStopEvents() {return m_stopEvents;}
     void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    void SetDoBackingStore(bool doBackingStore) {m_doBackingStore = doBackingStore;}
-    void SetMinLODDelta(int minLodDelta) {m_minLodDelta = minLodDelta;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
@@ -415,17 +386,17 @@ public:
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
 
-    bool            m_zClipAdjusted;          // were the view z clip planes adjusted due to front/back clipping off?
-    bool            m_is3dView;               // view is of a 3d model
-    bool            m_isCameraOn;             // view is 3d and the camera is turned on.
-    bool            m_invertY;
-    bool            m_frustumValid;
-    bool            m_needSynchWithViewController;
-    bool            m_targetCenterValid;
-    bool            m_viewingToolActive;    // don't heal while this is true.
-    bool            m_undoActive;
-    bool            m_initializedBackingStore;
+    bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
+    bool            m_is3dView = false;                 // view is of a 3d model
+    bool            m_isCameraOn = false;             // view is 3d and the camera is turned on.
+    bool            m_invertY = true;
+    bool            m_frustumValid = false;
+    bool            m_needSynchWithViewController = true;
+    bool            m_needsHeal = true;
+    bool            m_targetCenterValid = false;
+    bool            m_undoActive = false;
     int             m_maxUndoSteps = 20;
+    uint32_t        m_sceneEntries = 0;
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
     DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
@@ -439,7 +410,7 @@ protected:
     double          m_frustFraction;
     double          m_minLOD;                   // default level of detail filter size
     Utf8String      m_viewTitle;
-    ToolGraphicsHandler* m_toolGraphicsHandler;
+    ToolGraphicsHandler* m_toolGraphicsHandler = nullptr;
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
     DPoint3d        m_viewCmdTargetCenter;
@@ -454,7 +425,6 @@ protected:
     virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(bool& stopFlag);
-    virtual void _SetNeedsHeal() {}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
@@ -464,16 +434,16 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
-    DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
     DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
-    virtual double _GetMinimumLOD() const {return m_minLOD;}
+    virtual uint64_t _GetMaxHealTime() const {return 1000;}
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
     DGNPLATFORM_EXPORT static void StartRenderThread();
 
 public:
-    DGNPLATFORM_EXPORT DgnViewport(Render::Target*);
+    DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
     virtual ~DgnViewport() {DestroyViewport();}
+
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
@@ -488,7 +458,6 @@ public:
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions = nullptr);
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
     void AlignWithRootZ();
-    DGNPLATFORM_EXPORT double GetMinimumLOD() const;
     IProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
     DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
@@ -501,12 +470,12 @@ public:
     DGNPLATFORM_EXPORT void SetDisplayFlagFill(bool fill);
     DGNPLATFORM_EXPORT void SetDisplayFlagPatterns(bool patternsOn);
     DGNPLATFORM_EXPORT void SetDisplayFlagLevelSymb(bool levelSymbOn);
-    ViewportStatus SetupFromViewController() {return _SetupFromViewController();}
+    DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
-    void SetNeedsHeal() {_SetNeedsHeal();}
+    void SetNeedsHeal() {m_needsHeal = true;}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
@@ -521,21 +490,13 @@ public:
     DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
-    StatusInt HealViewport(uint32_t const* endTime);
-    void ForceHealUntil(uint32_t endTime);
-    void ForceHealRange(DRange3dCR range);
-    bool GetNeedsHeal() {return true;}
-    DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
+    StatusInt HealViewport(uint64_t const* endTime);
+    void ForceHealUntil(uint64_t endTime);
+    bool GetNeedsHeal() {return m_needsHeal;}
+    DGNVIEW_EXPORT void ForceHealImmediate(uint64_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground();
 
-    //  SetViewingToolActive to true if the tool uses viewing dynamics.  Set
-    //  it false if the tool draws decorations.  Setting it true blocks healing. If a tool
-    //  needs to draw decorations then it relies on the backing store being valid since
-    //  DgnView can't draw decorations without a valid backing store. THe easiest way to
-    //  accomplish that is to allow healing.
-    void SetViewingToolActive(bool val) {m_viewingToolActive = val;}
-    bool GetViewingToolActive() const {return m_viewingToolActive;}
     void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; CheckForChanges();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
@@ -826,7 +787,7 @@ public:
     //! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
     void SynchWithViewController(bool saveInUndo) {_SynchWithViewController(saveInUndo);}
 
-    DGNPLATFORM_EXPORT bool QueuePaint();
+    DGNPLATFORM_EXPORT bool QueueRefresh();
 /** @} */
 
 /** @name Changing DgnViewport Frustum */
@@ -864,8 +825,8 @@ public:
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
-    DGNVIEW_EXPORT UpdateAbort UpdateViewDynamic(DynamicUpdateInfo& info);
-    DGNVIEW_EXPORT bool UpdateView(FullUpdateInfo& info);
+    DGNVIEW_EXPORT void UpdateViewDynamic(DynamicUpdateInfo const& info = DynamicUpdateInfo());
+    DGNVIEW_EXPORT void UpdateView(FullUpdateInfo const& info = FullUpdateInfo());
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter();}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth

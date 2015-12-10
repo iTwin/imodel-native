@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
 DGNPLATFORM_TYPEDEFS (RedrawElems)
 DGNPLATFORM_TYPEDEFS (ViewTransientCaller)
 
@@ -32,8 +33,7 @@ protected:
 //! @note You must set the current symbology before drawing any geometry.
 //! @see ViewContext::GetIDrawGeom
 virtual void _DrawTransients (ViewContextR context, bool isPreUpdate) = 0;
-
-}; // IViewTransients
+};
 
 END_BENTLEY_DGN_NAMESPACE
 

@@ -7,18 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-static  uint32_t s_rasterLinePatterns[8] =
-    {
-    0xffffffff,     // 0
-    0x80808080,     // 1
-    0xf8f8f8f8,     // 2
-    0xffe0ffe0,     // 3
-    0xfe10fe10,     // 4
-    0xe0e0e0e0,     // 5
-    0xf888f888,     // 6
-    0xff18ff18      // 7
-    };
-
 static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
     {
     { 0.0, 0.0, 0.0 },  // NPC_000
@@ -32,31 +20,13 @@ static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewport::DgnViewport(Render::Target* target) : m_renderTarget(target)
-    {
-    m_minLOD            = DEFAULT_MINUMUM_LOD;
-    m_isCameraOn        = false;
-    m_zClipAdjusted     = false;
-    m_is3dView          = false;
-    m_invertY           = true;
-    m_frustumValid      = false;
-    m_toolGraphicsHandler = nullptr;
-    m_maxUndoSteps      = 0;
-    m_undoActive        = false;
-    m_needSynchWithViewController = true;
-    m_targetCenterValid = false;
-    m_viewingToolActive = false;
-    m_initializedBackingStore = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::Initialize(ViewControllerR viewController)
     {
     m_viewController = &viewController;
+    m_sceneEntries = 0;
+    m_needsHeal = true;
     viewController._OnAttachedToViewport(*this);
     }
 
@@ -486,12 +456,12 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     }
 
 /*---------------------------------------------------------------------------------**//**
-* set up this viewport from the given viewController
+* set up this viewport from its viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus DgnViewport::_SetupFromViewController()
+ViewportStatus DgnViewport::SetupFromViewController()
     {                                               
-    ViewControllerP   viewController = m_viewController.get();
+    ViewControllerP viewController = m_viewController.get();
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
@@ -628,7 +598,7 @@ ViewportStatus DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
 
     ViewportStatus validSize = viewController->SetupFromFrustum(inFrustum);
 
-    ViewportStatus status = _SetupFromViewController();
+    ViewportStatus status = SetupFromViewController();
     if (ViewportStatus::Success != status)
         return  status;
 
@@ -646,7 +616,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     if (nullptr == viewController)
         return  ViewportStatus::InvalidViewport;
 
-    _SetupFromViewController();
+    SetupFromViewController();
 
     DPoint3d worldPts[3] = {pts[0], pts[1], viewController->GetOrigin()};
     DPoint3d viewPts[3];
@@ -818,7 +788,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     viewController->SetOrigin(newOrg);
 
     _AdjustFencePts(viewController->GetRotation(), oldOrg, newOrg);
-    return _SetupFromViewController();
+    return SetupFromViewController();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -923,7 +893,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     viewController->SetOrigin(newOrg);
 
     _AdjustFencePts(rotation, oldOrg, newOrg);
-    return  _SetupFromViewController();
+    return SetupFromViewController();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1156,7 +1126,7 @@ ColorDef DgnViewport::GetContrastToBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::_SynchWithViewController(bool saveInUndo)
     {
-    _SetupFromViewController();
+    SetupFromViewController();
 
     if (saveInUndo)
         {
