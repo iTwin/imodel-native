@@ -242,6 +242,92 @@ V10LineCode const* lcRsc
     CreateFromRsrc (lcRsc);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsStrokePatternComponent::CreateJsonValue(Json::Value& result)
+    {
+    result.clear();
+    Utf8String descr = GetDescription();
+    if (descr.SizeInBytes() > 0)
+        result["descr"] = descr.c_str();
+
+    double phase = 0.0;
+    uint32_t options = 0;
+    uint32_t  maxIterate = 0;
+
+    // Set phase, maxIterate, and options
+    if (HasIterationLimit ())
+        {
+        maxIterate = GetIterationLimit ();
+        options |= LCOPT_ITERATION;
+        }
+
+    if (IsSingleSegment())
+        options |= LCOPT_SEGMENT;
+
+    switch (GetPhaseMode ())
+        {
+        case PHASEMODE_Fixed:
+            phase = GetDistancePhase ();
+            break;
+        case PHASEMODE_Fraction:
+            phase = GetFractionalPhase ();
+            options |= LCOPT_AUTOPHASE;
+            break;
+        case PHASEMODE_Center:
+            phase = 0;
+            options |= LCOPT_CENTERSTRETCH;
+            break;
+        }
+
+    if (phase != 0)
+        result["phase"] = phase;
+
+    if (options != 0)
+        result["options"] = options;
+
+    if (maxIterate != 0)
+        result["maxIter"] = maxIterate;
+
+    Json::Value strokes(Json::arrayValue);
+    for (uint32_t index = 0; index<m_nStrokes; ++index)
+        {
+        LsStroke& stroke = m_strokes[index];
+        Json::Value  entry(Json::objectValue);
+        entry["length"] = stroke.m_length;
+        if (stroke.m_orgWidth != 0)
+            entry["orgWidth"] = stroke.m_orgWidth;
+        if (stroke.m_endWidth != stroke.m_orgWidth)
+            entry["endWidth"] = stroke.m_endWidth;
+        if (stroke.m_strokeMode != 0)
+            entry["strokeMode"] = stroke.m_strokeMode;
+        if (stroke.m_widthMode != 0)
+            entry["widthMode"] = stroke.m_widthMode;
+        if (stroke.m_capMode != 0)
+            entry["capMode"] = stroke.m_capMode;
+
+        uint8_t strokeMode = 0;
+        if (stroke.IsDash ())
+            strokeMode  |= LCSTROKE_DASH;
+        if (stroke.IsDashFirst () != stroke.IsDash())
+            strokeMode  |= LCSTROKE_SINVERT;
+        if (stroke.IsDashLast () != stroke.IsDash())
+            strokeMode  |= LCSTROKE_EINVERT;
+        if (stroke.IsRigid ())
+            strokeMode  |= LCSTROKE_RAY;
+        if (stroke.IsStretchable ())
+            strokeMode  |= LCSTROKE_SCALE;
+
+        if (strokeMode != 0)
+            entry["strokeMode"] = strokeMode;
+
+        strokes[index] = entry;
+        }
+
+    result["strokes"] = strokes;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
