@@ -55,7 +55,7 @@ const bvector<Utf8String> SpatioTemporalSelector::GetIDsFromJson(const bvector<G
 
         // Select terrain data.
         // For terrain, up-to-date high-res data is a priority.
-        bvector<Utf8String> terrainIDs = GetIDsByCriteria(regionOfInterest, pDataset->GetTerrainGroup(), SelectionCriteria::Resolution_Best, SelectionCriteria::Date_Most);
+        bvector<Utf8String> terrainIDs = GetIDsByCriteria(regionOfInterest, pDataset->GetTerrainGroup(), SelectionCriteria::Resolution_Better, SelectionCriteria::Date_Most);
         if (!terrainIDs.empty())
             selectedIDs.insert(selectedIDs.end(), terrainIDs.begin(), terrainIDs.end());
         }
