@@ -39,6 +39,7 @@
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
@@ -52,7 +53,6 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
-#define DGN_CLASSNAME_Style                 "Style"
 #define DGN_CLASSNAME_SystemElement         "SystemElement"
 #define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
@@ -76,7 +76,6 @@
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
-#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>

@@ -1834,6 +1834,8 @@ AnnotationTableCellP    m_cell;
 DPoint2d                m_origin;
 };
 
+struct   TablePositionedCells;
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1901,6 +1903,8 @@ double          m_width;
 double          m_height;
 };
 
+struct   TableFillBoxes;
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1935,6 +1939,8 @@ public:
     void                    MoveToNext  ();
     TableFillBox const&     GetCurrent  () const;
 };
+
+struct   AnnotationTableStroker;
 
 /*=================================================================================**//**
 * @bsiclass
@@ -1971,6 +1977,8 @@ uint32_t        m_symbologyKey;
 DPoint2d        m_origin;
 DPoint2d        m_end;
 };
+
+struct   TableEdgeStrokes;
 
 /*=================================================================================**//**
 * @bsiclass

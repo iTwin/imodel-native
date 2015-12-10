@@ -72,7 +72,7 @@ void LsComponent::UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&cu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec)
+void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec)
     {
     SqlPrintfString sql("SELECT  max(Id) from " BEDB_TABLE_Property " where Namespace='%s' and Name='%s'", spec.GetNamespace(), spec.GetName());
     Statement stmt;
@@ -80,34 +80,59 @@ void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLit
     DbResult result = stmt.Step();
     if (BE_SQLITE_DONE != result && BE_SQLITE_ROW != result)
         {
-        id = LsComponentId(1);
+        id = 1;
         return;
         }
 
     //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
-    id = LsComponentId(std::max(stmt.GetValueInt(0) + 1, MAX_LINECODE+1));
+    id = std::max(stmt.GetValueInt(0) + 1, MAX_LINECODE+1);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2012
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, PropertySpec spec, V10ComponentBase const*data, uint32_t dataSize)
+LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, V10ComponentBase const*data, uint32_t dataSize)
     {
-    BeAssert(V10ComponentBase::InitialDgnDb == data->m_version);
-    GetNextComponentId (componentId, project, spec);
+    BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
 
-    if (project.SaveProperty (spec, data, dataSize, componentId.GetValue(), 0) != BE_SQLITE_OK)
+    BeAssert(V10ComponentBase::InitialDgnDb == data->m_version);
+    switch (componentType)
+        {
+        case LsComponentType::Compound:
+            break;
+        case LsComponentType::LineCode:
+            spec = LineStyleProperty::LineCode();
+            break;
+        case LsComponentType::LinePoint:
+            spec = LineStyleProperty::LinePoint();
+            break;
+        case LsComponentType::PointSymbol:
+            spec = LineStyleProperty::PointSym();
+            break;
+        case LsComponentType::RasterImage:
+            spec = LineStyleProperty::RasterImage();
+            break;
+        default:
+            BeAssert(false && "invalid component type");
+            componentId = LsComponentId();
+            return LINESTYLE_STATUS_ConvertingComponent;
+        }
+    uint32_t componentNumber;
+    GetNextComponentNumber (componentNumber, project, spec);
+
+    if (project.SaveProperty (spec, data, dataSize, componentNumber, 0) != BE_SQLITE_OK)
         return LINESTYLE_STATUS_SQLITE_Error;
 
+    componentId = LsComponentId(componentType, componentNumber);
     return LINESTYLE_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LsComponent::LsComponent (DgnDbR project, LsComponentType componentType, LsComponentId componentId) : m_isDirty (false)
+LsComponent::LsComponent (DgnDbR project, LsComponentId componentId) : m_isDirty (false)
     {
-    m_location.SetLocation (project, componentType, componentId);
+    m_location.SetLocation (project, componentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -562,7 +587,7 @@ LsLocation&     location
 )
     {
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (&location, LsComponentType::Internal);
+    tmpLocation.SetFrom (&location, LsComponentId(LsComponentType::Internal, 0));
 
     LsInternalComponent*  comp = new LsInternalComponent (&location);
     comp->m_isDirty = true;
@@ -577,8 +602,7 @@ LsLocation&     location
 StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
-    project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(),
-                                            GetLocation()->GetComponentType(), GetAttributes(), m_unitDef);
+    project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -594,7 +618,7 @@ LsComponentReader*    reader
     const LsLocation* location = reader->GetSource();
 
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (location, LsComponentType::Internal);
+    tmpLocation.SetFrom (location, LsComponentId(LsComponentType::Internal, 0));
     LsInternalComponent*  comp = new LsInternalComponent (location);
     
     comp->Init (NULL);
@@ -857,9 +881,8 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
         return SUCCESS;
 
     wt_OperationForGraphics highPriority; // see comments in BeSQLite.h
-    m_componentType = m_source->GetComponentType();
 
-    switch ((LsComponentType)m_componentType)
+    switch (m_source->GetComponentType())
         {
         case LsComponentType::LineCode:
             LsStrokePatternComponent::CreateRscFromDgnDb ((V10LineCode**)&m_rsc, m_dgndb, m_source->GetComponentId());
@@ -958,12 +981,12 @@ LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2015
 //---------------------------------------------------------------------------------------
-LsComponentPtr DgnLineStyles::GetLsComponent(LsComponentType componentType, LsComponentId componentId)
+LsComponentPtr DgnLineStyles::GetLsComponent(LsComponentId componentId)
     {
     if (!componentId.IsValid())
         return nullptr;
 
     LsLocation   location;
-    location.SetLocation(m_dgndb, componentType, componentId);
+    location.SetLocation(m_dgndb, componentId);
     return GetLsComponent(location);
     }
