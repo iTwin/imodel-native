@@ -790,7 +790,7 @@ std::map<Utf8String, std::set<Utf8String>> GetECViewNamesByPrefix(ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan Khan                        12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECDatabaseViews)
+TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECViewsInDb)
     {
     //PREFIX        NoOfClasses
     //-------------------------
@@ -802,14 +802,12 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECDatabaseViews)
     //stco	        51
     //units_attribs	2
 
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"CreateOrUpdateECDatabaseViews.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbR ecdb = SetupECDb("CreateOrUpdateECViews.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     //Test================================================================
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().CreateOrUpdateECDatabaseViews());
-    auto x = GetECViewNamesByPrefix(testecdb);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECViewsInDb());
+    auto x = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(5, x.size()) << "Unexpected number of ";
     ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
     ASSERT_EQ(10, x["bsca"].size()) << "Unexpected number of views";
@@ -824,10 +822,10 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECDatabaseViews)
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
     //Test================================================================
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().CreateOrUpdateECDatabaseViews());
-    x = GetECViewNamesByPrefix(testecdb);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECViewsInDb());
+    x = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(7, x.size()) << "Unexpected number of ";
     ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
     ASSERT_EQ(10, x["bsca"].size()) << "Unexpected number of views";
@@ -838,8 +836,8 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECDatabaseViews)
     ASSERT_EQ(2, x["units_attribs"].size()) << "Unexpected number of views";
     ASSERT_EQ(51, x["stco"].size()) << "Unexpected number of views";
     //====================================================================
-
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------

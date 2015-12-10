@@ -198,6 +198,20 @@ public:
     };
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    12/2015
+//---------------------------------------------------------------------------------------
+struct CreateECViewsCommand : public ConsoleCommand, NonCopyableClass
+    {
+private:
+    virtual Utf8String _GetName() const override;
+    virtual Utf8String _GetUsage() const override;
+    virtual void _Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
+public:
+    CreateECViewsCommand() : ConsoleCommand() {}
+    ~CreateECViewsCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
 struct ECSqlCommand : public ConsoleCommand, NonCopyableClass

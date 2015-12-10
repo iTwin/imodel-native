@@ -14,11 +14,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //******************************** ECDbSchemaManager ****************************************
-BentleyStatus ECDbSchemaManager::CreateOrUpdateECDatabaseViews() const
-    {    
-    return m_map.CreateOrUpdateECDatabaseViews();
-    }
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -590,6 +585,14 @@ void ECDbSchemaManager::ReportUpdateError(ECN::ECSchemaCR newSchema, ECN::ECSche
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, str.c_str());
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan   12/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaManager::CreateECViewsInDb() const
+    {
+    return m_map.CreateECViewsInDb();
+    }
 
 //*********************************************************************************
 // ECDbSchemaManager::ImportOptions
