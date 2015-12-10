@@ -45,7 +45,21 @@ JsDVector2dP CreateJsVector (DVec2dCR data, double length)
         return new JsDVector2d (DVec2d::FromScale (data, length / d));
         }
 
-
+JsSolidPrimitiveP JsSolidPrimitive::Clone ()
+    {
+    switch (m_solidPrimitive->GetSolidPrimitiveType ())
+        {
+        case SolidPrimitiveType_DgnBox:
+            return new JsDgnBox (m_solidPrimitive->Clone ());
+        case SolidPrimitiveType_DgnSphere:
+            return new JsDgnSphere (m_solidPrimitive->Clone ());
+        case SolidPrimitiveType_DgnTorusPipe:
+            return new JsDgnTorusPipe (m_solidPrimitive->Clone ());
+        case SolidPrimitiveType_DgnCone:
+            return new JsDgnCone (m_solidPrimitive->Clone ());
+        }
+    return nullptr;
+    }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15

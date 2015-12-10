@@ -39,16 +39,13 @@ struct JsSolidPrimitive : JsGeometry
 private:
 ISolidPrimitivePtr m_solidPrimitive;
 // initialize with nullptr.   This should never be called -- maybe needed for compile/link?
-
 public:
+// hmm ...this class is not instantiable but typescript wrapperw want it to be so ...
+virtual JsSolidPrimitiveP Clone ();
+
+
     JsSolidPrimitive (){}
     JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
-
-    JsSolidPrimitiveP Clone ()
-        {
-        auto clone = m_solidPrimitive->Clone ();
-        return new JsSolidPrimitive (clone);
-        }
 
     double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
     ISolidPrimitivePtr GetISolidPrimitivePtr() {return m_solidPrimitive;}
@@ -58,7 +55,7 @@ struct JsDgnCone : JsSolidPrimitive
 {
 public:
 JsDgnCone (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
-
+virtual JsSolidPrimitiveP Clone () override {return new JsDgnCone (GetISolidPrimitivePtr ()->Clone ());}
 static JsDgnConeP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, double radiusA, double radiusB, bool capped)
     {
     DgnConeDetail coneData (pointA->Get (), pointB->Get (), radiusA, radiusB, capped);
@@ -73,8 +70,10 @@ static JsDgnConeP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, do
 //=======================================================================================
 struct JsDgnSphere: JsSolidPrimitive
 {
+
 public:
 JsDgnSphere (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+virtual JsSolidPrimitiveP Clone () override {return new JsDgnSphere (GetISolidPrimitivePtr ()->Clone ());}
 
 static JsDgnSphereP CreateSphere (JsDPoint3dP center, double radius)
     {
@@ -91,6 +90,7 @@ struct JsDgnTorusPipe: JsSolidPrimitive
 {
 public:
 JsDgnTorusPipe (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+virtual JsSolidPrimitiveP Clone () override {return new JsDgnTorusPipe (GetISolidPrimitivePtr ()->Clone ());}
 
 static JsDgnTorusPipeP CreateTorusPipe (
         JsDPoint3dP center,
@@ -123,7 +123,7 @@ public:
     JsDgnBox () {}
 
     JsDgnBox (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
-
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnBox (GetISolidPrimitivePtr ()->Clone ());}
     static JsDgnBoxP CreateBox (
             JsDPoint3dP baseOrigin,
             JsDPoint3dP topOrigin,
@@ -152,6 +152,64 @@ public:
         }
 
 };
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     11/15
+//=======================================================================================
+struct JsDgnExtrusion: JsSolidPrimitive
+{
+public:
+    JsDgnExtrusion () {}
+
+    JsDgnExtrusion (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnExtrusion (GetISolidPrimitivePtr ()->Clone ());}
+    static JsDgnExtrusionP Create (
+            JsCurveVectorP profile,
+            JsDVector3dP   vector,
+            bool capped
+            )
+        {
+        auto cv = profile->GetCurveVectorPtr ();
+        DgnExtrusionDetail data (
+                profile->GetCurveVectorPtr (),
+                vector->Get (),
+                capped
+                );
+        return new JsDgnExtrusion (ISolidPrimitive::CreateDgnExtrusion (data));
+        }
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     11/15
+//=======================================================================================
+struct JsDgnRotationalSweep: JsSolidPrimitive
+{
+public:
+    JsDgnRotationalSweep () {}
+
+    JsDgnRotationalSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnRotationalSweep (GetISolidPrimitivePtr ()->Clone ());}
+    static JsDgnRotationalSweepP Create (
+            JsCurveVectorP profile,
+            JsDPoint3dP    center,
+            JsDVector3dP   axis,
+            JsAngleP       sweep,
+            bool capped
+            )
+        {
+        auto cv = profile->GetCurveVectorPtr ();
+        DgnRotationalSweepDetail data (
+                profile->GetCurveVectorPtr (),
+                center->Get (), axis->Get (), sweep->GetRadians (),
+                capped
+                );
+        return new JsDgnRotationalSweep (ISolidPrimitive::CreateDgnRotationalSweep (data));
+        }
+
+};
+
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #endif//ndef _JsDgnXXXDetail_H_

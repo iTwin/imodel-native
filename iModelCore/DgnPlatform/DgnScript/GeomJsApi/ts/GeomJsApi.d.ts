@@ -687,8 +687,8 @@ type PolyfaceVisitorP = cxx_pointer<PolyfaceVisitor>;
     //! A wrapper for BentleyApi::JsCurvePrimitive
     class SolidPrimitive implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
-
-
+        /** base class clone method -- actually returns clone of the concrete class */
+        Clone(): SolidPrimitiveP;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -697,7 +697,7 @@ type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
     //! A wrapper for BentleyApi::JsDgnCone
     class DgnCone extends SolidPrimitive implements BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsDgnCone ***/
-
+    
         static CreateCircularCone(
             centerA: DPoint3dP,
             centerB: DPoint3dP,
@@ -777,7 +777,42 @@ type DgnBoxP = cxx_pointer<DgnBox>;
 
 type DgnTorusPipeP=cxx_pointer<DgnTorusPipe>;
 
+    //! A wrapper for BentleyApi::JsDgnExtrusion
+    class DgnExtrusion extends SolidPrimitive implements BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnExtrusion ***/
 
+        static Create (
+            profile: CurveVectorP,
+            vector: DVector3dP,
+            capped: cxx_bool
+            ): DgnExtrusionP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type DgnExtrusionP=cxx_pointer<DgnExtrusion>;
+
+
+    //! A wrapper for BentleyApi::JsDgnRotationalSweep
+    class DgnRotationalSweep extends SolidPrimitive implements BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnRotationalSweep ***/
+
+        static Create(
+            profile: CurveVectorP,
+            center: DPoint3dP,
+            axis: DVector3dP,
+            sweep: AngleP,
+            capped: cxx_bool
+            ): DgnRotationalSweepP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type DgnRotationalSweepP=cxx_pointer<DgnRotationalSweep>;
 
 
 }

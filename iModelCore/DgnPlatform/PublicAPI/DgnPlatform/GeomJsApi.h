@@ -79,11 +79,8 @@ JsSTRUCT(JsGeometry);
         JsSTRUCT(JsDgnSphere)
         JsSTRUCT(JsDgnTorusPipe)
         JsSTRUCT(JsDgnBox)
-                // deprecated ...
-
-
-
-
+        JsSTRUCT(JsDgnExtrusion)
+        JsSTRUCT(JsDgnRotationalSweep)
 
     JsSTRUCT(JsPolyfaceMesh)
 
