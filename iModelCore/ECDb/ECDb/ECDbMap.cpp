@@ -104,6 +104,40 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
     return MapStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         12/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbMap::CreateOrUpdateECDatabaseViews()
+    {
+    BeAssert(GetECDb().IsReadonly() == false && "Need a writeable db for this operation");
+    if (GetECDb().IsReadonly())
+        {       
+        LOG.errorv("CreateOrUpdateECView(): This operation require a read/write access to db");
+        return ERROR;
+        }
+
+    Statement stmt;
+    stmt.Prepare(
+        GetECDb(), 
+        SqlPrintfString("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy NOT IN (%lld, %lld)",
+            Enum::ToInt(ECDbMapStrategy::Strategy::ExistingTable), 
+            Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped)).GetUtf8CP());
+
+    std::vector<ClassMapCP> classMaps;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        auto classId = (ECClassId)stmt.GetValueInt64(0);
+        auto classMap = GetClassMapCP(classId);
+        BeAssert(classMap != nullptr);
+        if (classMap)
+            classMaps.push_back(classMap);
+        }
+
+    SqlGenerator sqlG(*this);
+    sqlG.DropExistingViews(); 
+    sqlG.BuildViews(classMaps);
+    return BentleyStatus::SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
