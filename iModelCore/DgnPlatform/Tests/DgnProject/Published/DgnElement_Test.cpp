@@ -430,8 +430,12 @@ TEST_F(DgnElementTests, ElementCopierTests)
         ASSERT_TRUE(parent_cc.IsValid());
         auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
         ASSERT_TRUE(c1ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c1ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c1ccId)->GetModel() == destModel);
         auto c2ccId = copier.GetCloneContext().FindElementId(c2->GetElementId());
         ASSERT_TRUE(c2ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c2ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c2ccId)->GetModel() == destModel);
         size_t cccount = 0;
         for (auto childid : parent_cc->QueryChildren())
             {
@@ -445,6 +449,77 @@ TEST_F(DgnElementTests, ElementCopierTests)
         ASSERT_TRUE(c1ccId == copier.MakeCopy(nullptr, *destModel, *c1, DgnElement::Code())->GetElementId());
         ASSERT_TRUE(c2ccId == copier.MakeCopy(nullptr, *destModel, *c2, DgnElement::Code())->GetElementId());
         }
+
+    // Verify that children are NOT copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyChildren(false);
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        ASSERT_TRUE(parent_cc.IsValid());
+        auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
+        ASSERT_FALSE(c1ccId.IsValid());
+        auto c2ccId = copier.GetCloneContext().FindElementId(c2->GetElementId());
+        ASSERT_FALSE(c2ccId.IsValid());
+        ASSERT_EQ(0, parent_cc->QueryChildren().size());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, ElementCopierTests_Group)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementCopierTests_Group.dgndb", Db::OpenMode::ReadWrite);
+
+    DgnElementCPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
+    DgnElementCPtr m1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    DgnElementCPtr m2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    ElementGroupsMembers::Insert(*group, *m1);
+    ElementGroupsMembers::Insert(*group, *m2);
+    ASSERT_TRUE(group->ToIElementGroup()->QueryMembers().size() == 2);
+
+    DgnModelPtr destModel = group->GetModel();
+
+    // Verify that members are copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyGroups(true);
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        ASSERT_TRUE(group_cc.IsValid());
+        auto m1ccId = copier.GetCloneContext().FindElementId(m1->GetElementId());
+        ASSERT_TRUE(m1ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m1ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m1ccId)->GetModel() == destModel);
+        auto m2ccId = copier.GetCloneContext().FindElementId(m2->GetElementId());
+        ASSERT_TRUE(m2ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m2ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m2ccId)->GetModel() == destModel);
+        size_t cccount = 0;
+        for (auto memberid : group_cc->ToIElementGroup()->QueryMembers())
+            {
+            ASSERT_TRUE(memberid == m1ccId || memberid == m2ccId);
+            ++cccount;
+            }
+        ASSERT_EQ(2, cccount);
+
+        // Verify that a second attempt to copy an already copied element does nothing
+        ASSERT_TRUE(group_cc.get() == copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code()).get());
+        ASSERT_TRUE(m1ccId == copier.MakeCopy(nullptr, *destModel, *m1, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(m2ccId == copier.MakeCopy(nullptr, *destModel, *m2, DgnElement::Code())->GetElementId());
+        }
+
+    // Verify that members are NOT copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyGroups(false);
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        ASSERT_TRUE(group_cc.IsValid());
+        ASSERT_EQ(0, group_cc->ToIElementGroup()->QueryMembers().size());
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
