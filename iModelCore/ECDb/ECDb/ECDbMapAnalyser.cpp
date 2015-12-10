@@ -2230,9 +2230,9 @@ BentleyStatus SqlGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& f
             return BentleyStatus::ERROR;
         }
 
-    if (baseClassMap.GetClass().GetIsStruct())
+    if (baseClassMap.GetClass().IsStructClass())
         {
-        if (!classMap.GetClass().GetIsStruct())
+        if (!classMap.GetClass().IsStructClass())
             {
             BeAssert(false && "BaseClass is of type struct but not the child class which must also be struct type");
             return BentleyStatus::ERROR;
