@@ -21,12 +21,11 @@ module ComponentModelTest
     //  Utility function that sets up the geometry of the specified element as a slab
     function makeBox(element: be.PhysicalElement, origin: be.DPoint3d, angles: be.YawPitchRollAngles, xsize: number, ysize: number, zsize: number): void
     {
-        var boxSize = new be.DPoint3d(xsize, ysize, zsize);
-        var box = be.DgnBoxDetail.InitFromCenterAndSize(new be.DPoint3d(0,0,0), boxSize, true); // NB: the *geometry* is always defined in an LCS w/ origin 0,0,0. The placement below puts where we want it.
-        var solid = be.SolidPrimitive.CreateDgnBox(box);
+        var boxSize = new be.DVector3d (xsize, ysize, zsize);
+        var box = be.DgnBox.CreateBoxCentered (new be.DPoint3d(0,0,0), boxSize, true); // NB: the *geometry* is always defined in an LCS w/ origin 0,0,0. The placement below puts where we want it.
 
         var builder = new be.ElementGeometryBuilder(element, origin, angles);
-        builder.Append(solid);
+        builder.Append(box);
         builder.SetGeomStreamAndPlacement(element);
     }
 

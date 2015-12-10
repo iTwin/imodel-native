@@ -502,8 +502,8 @@ class CurvePrimitive implements IDisposable
     class LineSegment extends CurvePrimitive implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsLineSegment ***/
         Clone(): LineSegmentP;
-        constructor();
         constructor (pointA : DPoint3dP, pointB : DPoint3dP);
+        constructor();
         OnDispose(): void;
         Dispose(): void;
     }
