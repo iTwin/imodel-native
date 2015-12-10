@@ -684,92 +684,98 @@ class PolyfaceVisitor implements IDisposable
 type PolyfaceVisitorP = cxx_pointer<PolyfaceVisitor>;
 
 
-    //! A wrapper for BentleyApi::JsDgnConeDetail
-    class DgnConeDetail implements IDisposable {
-    /*** NATIVE_TYPE_NAME = JsDgnConeDetail ***/ 
-        constructor();
+    //! A wrapper for BentleyApi::JsCurvePrimitive
+    class SolidPrimitive implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
 
-    static CreateCircularCone(
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
+
+    //! A wrapper for BentleyApi::JsDgnCone
+    class DgnCone extends SolidPrimitive implements BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnCone ***/
+
+        static CreateCircularCone(
             centerA: DPoint3dP,
             centerB: DPoint3dP,
             radiusA: cxx_double,
             radiusB: cxx_double,
             capped: cxx_bool
-        ): DgnConeDetailP;
+            ): DgnConeP;
 
         OnDispose(): void;
         Dispose(): void;
     }
 
-type DgnConeDetailP = cxx_pointer<DgnConeDetail>;
+type DgnConeP = cxx_pointer<DgnCone>;
 
-    //! A wrapper for BentleyApi::JsDgnSphereDetail
-    class DgnSphereDetail implements IDisposable {
-        /*** NATIVE_TYPE_NAME = JsDgnSphereDetail ***/
-        constructor();
+    //! A wrapper for BentleyApi::JsDgnSphere
+    class DgnSphere extends SolidPrimitive implements BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnSphere ***/
 
         static CreateSphere(
             center: DPoint3dP,
             radius: cxx_double
-            ): DgnSphereDetailP;
+            ): DgnSphereP;
 
         OnDispose(): void;
         Dispose(): void;
     }
 
-type DgnSphereDetailP = cxx_pointer<DgnSphereDetail>;
+type DgnSphereP = cxx_pointer<DgnSphere>;
 
-//! A wrapper for BentleyApi::JsDgnBoxDetail
-class DgnBoxDetail implements IDisposable
-{
-    /*** NATIVE_TYPE_NAME = JsDgnBoxDetail ***/
-    constructor();
+    //! A wrapper for BentleyApi::JsDgnBox
+    class DgnBox extends SolidPrimitive implements BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnBox ***/
 
-    /**
-     * Initialize box detail fields from center and size.
-     * @param [in] center center of box in XYZ
-     * @param [in] size total range in XYZ
-     * @param [in] capped true if closed top and bottom.
-     */
-    static InitFromCenterAndSize(center: DPoint3dP, size: DPoint3dP, capped: cxx_bool): DgnBoxDetailP;
+        /**
+         * Initialize box detail fields from center and size.
+         * @param [in] center center of box in XYZ
+         * @param [in] diagonalSize total diagonal lengths (i.e. x,y,z side lengths)
+         * @param [in] capped true if closed top and bottom.
+         */
+        static CreateBoxCentered(center: DPoint3dP, diagonalSize: DVector3dP, capped: cxx_bool): DgnBoxP;
 
-    static CreateBox(
-        baseOrigin: DPoint3dP,
-        topOrigin: DPoint3dP,
-        unitX: DVector3dP,
-        unitY: DVector3dP,
-        baseX: cxx_double,
-        baseY: cxx_double,
-        topX: cxx_double,
-        topY: cxx_double,
-        capped: cxx_bool
-    ): DgnBoxDetailP;
-
-    OnDispose(): void;
-    Dispose(): void;
-}
-
-type DgnBoxDetailP = cxx_pointer<DgnBoxDetail>;
-
-
-    //! A wrapper for BentleyApi::JsCurvePrimitive
-    class SolidPrimitive implements IDisposable {
-        /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
-        Clone(): SolidPrimitiveP;
-        constructor();
-        static CreateDgnCone(detail: DgnConeDetailP): SolidPrimitiveP;
-        static CreateDgnSphere      (detail: DgnSphereDetailP): SolidPrimitiveP;
-        static CreateDgnBox         (detail: DgnBoxDetailP): SolidPrimitiveP;
-        //!static CreateDgnTorusPipe   (detail: DgnTorusPipeDetailP): SolidPrimitiveP;
-        SolidPrimitiveType(): cxx_double;
+        static CreateBox(
+            baseOrigin: DPoint3dP,
+            topOrigin: DPoint3dP,
+            unitX: DVector3dP,
+            unitY: DVector3dP,
+            baseX: cxx_double,
+            baseY: cxx_double,
+            topX: cxx_double,
+            topY: cxx_double,
+            capped: cxx_bool
+            ): DgnBoxP;
 
         OnDispose(): void;
         Dispose(): void;
     }
 
-type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
+type DgnBoxP = cxx_pointer<DgnBox>;
 
+    //! A wrapper for BentleyApi::JsDgnTorusPipe
+    class DgnTorusPipe extends SolidPrimitive implements BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnTorusPipe ***/
 
+        static CreateTorusPipe(
+            baseOrigin: DPoint3dP,
+            unitX: DVector3dP,
+            unitY: DVector3dP,
+            majorRadius: cxx_double,
+            minorRadius: cxx_double,
+            sweep: AngleP,
+            capped: cxx_bool
+            ): DgnTorusPipeP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type DgnTorusPipeP=cxx_pointer<DgnTorusPipe>;
 
 
 

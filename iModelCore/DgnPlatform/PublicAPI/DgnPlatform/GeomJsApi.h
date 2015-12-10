@@ -45,7 +45,6 @@ NativeType &GetR () {return m_data;}
 NativeType const &GetCR () const {return m_data;}
 };
 
-
 JsSTRUCT(JsDPoint3d);
 JsSTRUCT(JsDPoint2d);
 JsSTRUCT(JsDVector3d);
@@ -53,17 +52,6 @@ JsSTRUCT(JsDVector2d);
 JsSTRUCT(JsDRay3d);
 JsSTRUCT(JsDRange3d);
 JsSTRUCT(JsDPoint3dDVector3dDVector3d);
-JsSTRUCT(JsCurvePrimitive);
-JsSTRUCT(JsLineSegment);
-JsSTRUCT(JsEllipticArc);
-JsSTRUCT(JsCurveVector);
-JsSTRUCT(JsPath);
-JsSTRUCT(JsLoop);
-JsSTRUCT(JsParityRegion);
-JsSTRUCT(JsUnionRegion);
-JsSTRUCT(JsSolidPrimitive);
-JsSTRUCT(JsBsplineCurve);
-JsSTRUCT(JsBsplineSurface);
 JsSTRUCT(JsAngle);
 JsSTRUCT(JsYawPitchRollAngles);
 JsSTRUCT(JsRotMatrix);
@@ -71,16 +59,37 @@ JsSTRUCT(JsTransform);
 JsSTRUCT(JsDPoint3dArray)
 JsSTRUCT(JsDoubleArray)
 
-JsSTRUCT(JsPolyfaceMesh)
+JsSTRUCT(JsGeometry);
+
+    JsSTRUCT(JsCurvePrimitive);
+        JsSTRUCT(JsLineSegment);
+        JsSTRUCT(JsEllipticArc);
+        JsSTRUCT(JsBsplineCurve);
+
+    JsSTRUCT(JsCurveVector);
+        JsSTRUCT(JsPath);
+        JsSTRUCT(JsLoop);
+        JsSTRUCT(JsParityRegion);
+        JsSTRUCT(JsUnionRegion);
+
+    JsSTRUCT(JsBsplineSurface);
+
+    JsSTRUCT(JsSolidPrimitive);
+        JsSTRUCT(JsDgnCone)
+        JsSTRUCT(JsDgnSphere)
+        JsSTRUCT(JsDgnTorusPipe)
+        JsSTRUCT(JsDgnBox)
+                // deprecated ...
+
+
+
+
+
+    JsSTRUCT(JsPolyfaceMesh)
+
+
+
 JsSTRUCT(JsPolyfaceVisitor)
-
-
-JsSTRUCT(JsDgnConeDetail)
-JsSTRUCT(JsDgnSphereDetail)
-JsSTRUCT(JsDgnTorusPipeDetail)
-JsSTRUCT(JsDgnBoxDetail)
-JsSTRUCT(JsSolidPrimitive)
-
 
 // Forward declare access methods so JsDPoint2d and JsDPoint3d can query their vector peers.
 DVec3d GetData (JsDVector3dP);
@@ -91,6 +100,14 @@ JsDVector2dP CreateJsVector (DVec2dCR data);
 JsDVector3dP CreateJsVector (DVec3dCR data, double length);
 // Create vector with specfied length -- return nullptr if input vector is zero length
 JsDVector2dP CreateJsVector (DVec2dCR data, double length);
+
+
+// Base class for the CurvePrimitive+Surface+Mesh+SolidPrimitive tree
+struct JsGeometry : RefCountedBase
+{
+};
+
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -133,6 +150,8 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
  // Methods that have point inputs and vector outputs
  #define DeclareAndImplementMethods_VectorTo(NativeVectorType,PointTypeP,VectorTypeP) \
     VectorTypeP VectorTo(PointTypeP other){return NativeVectorType::FromStartEnd (m_data, other->m_data);}
+
+
 
 #include <DgnPlatform/GeomJsTypes/JsAngle.h>
 #include <DgnPlatform/GeomJsTypes/JsDPoint3d.h>

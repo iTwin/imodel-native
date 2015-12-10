@@ -14,10 +14,11 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     08/15
 //=======================================================================================
-struct JsCurvePrimitive: RefCountedBase
+struct JsCurvePrimitive: JsGeometry
 {
 
 protected :
