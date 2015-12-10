@@ -100,6 +100,94 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsCompoundComponent::CreateJsonValue(Json::Value& result)
+    {
+    result.clear();
+    Utf8String descr = GetDescription();
+    if (descr.SizeInBytes() > 0)
+        result["descr"] = descr.c_str();
+
+    Json::Value components(Json::arrayValue);
+    uint32_t index = 0;
+    for (LsOffsetComponent& offset: m_components)
+        {
+        if (!offset.m_subComponent.IsValid())
+            continue;
+        Json::Value  entry(Json::objectValue);
+        if (offset.m_offset != 0)
+            entry["offset"] = offset.m_offset;
+        LsComponentId id = offset.m_subComponent->GetId();
+        entry["id"] = id.GetValue();
+        components[index++] = entry;
+        }
+
+    result["comps"]=components;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsCompoundComponentPtr LsCompoundComponent::CreateFromJson(Json::Value& result, DgnDbR project, LsComponentId id)
+    {
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsPointComponent::CreateJsonValue(Json::Value& result)
+    {
+    result.clear();
+    Utf8String descr = GetDescription();
+    if (descr.SizeInBytes() > 0)
+        result["descr"] = descr.c_str();
+
+    LsStrokePatternComponent const* strokePattern = GetStrokeComponentCP();
+    BeAssert(nullptr != strokePattern);
+    if (nullptr == strokePattern)
+        return;
+
+    LsComponentId  pattern = strokePattern->GetId();
+    if (pattern.GetType() != LsComponentType::LineCode)
+        result["lcType"] = (int)pattern.GetType();
+    result["lcId"] = pattern.GetValue();
+
+    Json::Value symbols(Json::arrayValue);
+    uint32_t index = 0;
+    for (LsSymbolReference& symRef: m_symbols)
+        {
+        Json::Value  entry(Json::objectValue);
+
+        LsSymbolComponentCP symbolComponent = symRef.GetSymbolComponentCP();
+        BeAssert(symbolComponent != nullptr);
+        if (nullptr == symbolComponent)
+            continue;       //  NEEDSWORK_LINESTYLE report error
+
+        LsComponentId symbolId = symbolComponent->GetId();
+        if (symbolId.GetType() != LsComponentType::PointSymbol)
+            entry["symType"] = (int)symbolId.GetType();
+
+        entry["symValue"] = symbolId.GetValue();
+        entry["strokeNnum"] = symRef.GetStrokeNumber();
+        if (symRef.GetXOffset() != 0.0)
+            entry["xOffset"] = symRef.GetXOffset();
+        if (symRef.GetYOffset() != 0.0)
+            entry["yOffset"] = symRef.GetYOffset();
+        if (symRef.GetAngle() != 0.0)
+            entry["angle"] = symRef.GetAngle();
+
+        if (symRef.GetMod1() != 0)
+            entry["mod1"] = symRef.GetMod1();
+
+        symbols[index++] = entry;
+        }
+
+    result["symbols"]=symbols;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 BentleyStatus LsPointComponent::CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId componentId)
