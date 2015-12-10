@@ -1807,7 +1807,7 @@ public:
             { "gvplugin_dot_layout_LTX_library", (void*)(&gvplugin_dot_layout_LTX_library) },
             { "gvplugin_core_LTX_library", (void*)(&gvplugin_core_LTX_library) },
             { "gvplugin_mylib_LTX_library", (void*)(&gvplugin_mylib_LTX_library) },
-            { 0, 0 },
+            { 0, 0 }
         }
         {
         m_gvc = gvContextPlugins(lt_preloaded_symbols, 0);
