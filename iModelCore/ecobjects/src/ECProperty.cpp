@@ -489,9 +489,9 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
     
     ECEnumerationCP enumeration;
     ECObjectsStatus status2 = ResolveEnumerationType(enumeration, typeName, this->GetClass().GetSchema());
-    if (ECObjectsStatus::Success == status2)
+    if (ECObjectsStatus::Success == status2 && enumeration != nullptr)
         {
-        return SetType(enumeration);
+        return SetType(*enumeration);
         }
         
     m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
@@ -539,12 +539,9 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCP enumerationType)
+ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     {        
-    if (enumerationType == nullptr)
-        return ECObjectsStatus::NullPointerValue;
-    
-    auto primitiveType = enumerationType->GetType();
+    auto primitiveType = enumerationType.GetType();
     if (m_primitiveType != primitiveType)
         {
         m_primitiveType = primitiveType;        
@@ -552,7 +549,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCP enumerationType)
         InvalidateClassLayout();
         }
 
-    m_enumeration = enumerationType;
+    m_enumeration = &enumerationType;
 
     return ECObjectsStatus::Success;
     }

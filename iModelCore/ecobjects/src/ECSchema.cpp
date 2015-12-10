@@ -886,14 +886,14 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP & targetEnumeration, EC
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status;
-    status = CreateEnumeration(targetEnumeration, sourceEnumeration.GetName(), sourceEnumeration.GetType());
+    status = CreateEnumeration(targetEnumeration, sourceEnumeration.GetName().c_str(), sourceEnumeration.GetType());
     if (ECObjectsStatus::Success != status)
         return status;
 
     if (sourceEnumeration.GetIsDisplayLabelDefined())
-        targetEnumeration->SetDisplayLabel(sourceEnumeration.GetInvariantDisplayLabel());
+        targetEnumeration->SetDisplayLabel(sourceEnumeration.GetInvariantDisplayLabel().c_str());
 
-    targetEnumeration->SetDescription(sourceEnumeration.GetInvariantDescription());
+    targetEnumeration->SetDescription(sourceEnumeration.GetInvariantDescription().c_str());
     return ECObjectsStatus::Success;
     }
 
@@ -937,27 +937,21 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                   11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8StringCR name, PrimitiveType type)
+ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8CP name, PrimitiveType type)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ClassMap::const_iterator  classIterator;
-    classIterator = m_classMap.find(name.c_str());
+    classIterator = m_classMap.find(name);
     if (classIterator != m_classMap.end())
         {
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
     ecEnumeration = new ECEnumeration(*this);
-    ECObjectsStatus status = ecEnumeration->SetName(name);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete ecEnumeration;
-        ecEnumeration = nullptr;
-        return status;
-        }
+    ecEnumeration->SetName(name);
 
-    status = ecEnumeration->SetType(type);
+    auto status = ecEnumeration->SetType(type);
     if (ECObjectsStatus::Success != status)
         {
         delete ecEnumeration;

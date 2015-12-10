@@ -301,21 +301,19 @@ TEST_F (SchemaTest, TestPrimitiveEnumerationProperty)
     ASSERT_TRUE(status == ECObjectsStatus::Success);
 
     PrimitiveECPropertyP prop;
-    status = domainClass->CreateEnumerationProperty(prop, "MyProperty", enumeration);
+    status = domainClass->CreateEnumerationProperty(prop, "MyProperty", *enumeration);
     ASSERT_TRUE(prop != nullptr);
     ASSERT_TRUE(status == ECObjectsStatus::Success);
 
     ASSERT_TRUE(prop->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
-    status = enumeration->SetType(PrimitiveType::PRIMITIVETYPE_String);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-
-    prop->SetType(enumeration);
-    ASSERT_TRUE(prop->GetType() == PrimitiveType::PRIMITIVETYPE_String);
-
     ASSERT_TRUE(prop->GetEnumeration() == enumeration);
 
     prop->SetType(PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_TRUE(prop->GetEnumeration() == nullptr);
+
+    prop->SetType(*enumeration);
+    ASSERT_TRUE(prop->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_TRUE(prop->GetEnumeration() == enumeration);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,19 +336,20 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
 
     //Type
     ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(enumeration->SetType(PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
-    ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_String);
-    ASSERT_TRUE(enumeration->SetType(PrimitiveType::PRIMITIVETYPE_IGeometry) == ECObjectsStatus::DataTypeNotSupported);
-    ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_String);
-    ASSERT_TRUE(enumeration->SetType(PrimitiveType::PRIMITIVETYPE_Integer) == ECObjectsStatus::Success);
 
     //Description
     enumeration->SetDescription("MyDescription");
     EXPECT_STREQ(enumeration->GetDescription().c_str(), "MyDescription");
 
+    //IsStrict
+    EXPECT_TRUE(enumeration->GetIsStrict());
+    enumeration->SetIsStrict(false);
+    EXPECT_FALSE(enumeration->GetIsStrict());
+
     //DisplayLabel
     ASSERT_TRUE(enumeration->GetIsDisplayLabelDefined() == false);
-    ASSERT_TRUE(enumeration->SetDisplayLabel("Display Label") == ECObjectsStatus::Success);
+    EXPECT_STREQ(enumeration->GetDisplayLabel().c_str(), "Enumeration");
+    enumeration->SetDisplayLabel("Display Label");
     EXPECT_STREQ(enumeration->GetDisplayLabel().c_str(), "Display Label");
     EXPECT_STREQ(enumeration->GetInvariantDisplayLabel().c_str(), "Display Label");
 
@@ -358,16 +357,13 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     status = enumeration->CreateEnumerator(enumerator, 5);
     EXPECT_TRUE(status == ECObjectsStatus::Success);
     EXPECT_TRUE(enumerator != nullptr);
-    EXPECT_TRUE(enumerator->GetDisplayLabel() == nullptr);
-    EXPECT_TRUE(ECObjectsStatus::Success == enumerator->SetDisplayLabel("DLBL"));
+    enumerator->SetDisplayLabel("DLBL");
 
-    Utf8StringCP displayLabel = nullptr;
-    displayLabel = enumerator->GetDisplayLabel();
-    EXPECT_TRUE(displayLabel != nullptr);
-    EXPECT_STREQ(displayLabel->c_str(), "DLBL");
+    Utf8StringCR displayLabel = enumerator->GetDisplayLabel();
+    EXPECT_STREQ(displayLabel.c_str(), "DLBL");
     
     EXPECT_TRUE(enumerator->GetInteger() == 5);
-    EXPECT_TRUE(enumerator->GetString() == nullptr);
+    EXPECT_STREQ(enumerator->GetString().c_str(), "");
     EXPECT_FALSE(enumerator->IsString());
     EXPECT_TRUE(enumerator->IsInteger());
 
@@ -379,7 +375,7 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     status = enumeration->CreateEnumerator(enumerator2, 1);
     EXPECT_TRUE(status == ECObjectsStatus::Success);
     EXPECT_TRUE(enumerator2 != nullptr);
-    EXPECT_TRUE(ECObjectsStatus::Success == enumerator2->SetDisplayLabel("DLBL2"));
+    enumerator2->SetDisplayLabel("DLBL2");
     
     EXPECT_TRUE(enumeration->GetEnumeratorCount() == 2);
 
@@ -1033,6 +1029,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
     auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_String);
     enumeration->SetDescription("de");
     enumeration->SetDisplayLabel("dl");
+    enumeration->SetIsStrict(false);
     ASSERT_TRUE(enumeration != nullptr);
     ASSERT_TRUE(status == ECObjectsStatus::Success);
     EXPECT_STREQ("dl", enumeration->GetDisplayLabel().c_str());
@@ -1041,16 +1038,16 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
 
     ECEnumeratorP enumerator;
     EXPECT_TRUE(enumeration->CreateEnumerator(enumerator, "First") == ECObjectsStatus::Success);
-    EXPECT_TRUE(enumerator->SetDisplayLabel("First Value") == ECObjectsStatus::Success);
+    enumerator->SetDisplayLabel("First Value");
     EXPECT_TRUE(enumeration->CreateEnumerator(enumerator, "Second") == ECObjectsStatus::Success);
-    EXPECT_TRUE(enumerator->SetDisplayLabel("Second Value") == ECObjectsStatus::Success);
+    enumerator->SetDisplayLabel("Second Value");
     EXPECT_TRUE(enumeration->GetEnumeratorCount() == 2);
 
     ECEntityClassP entityClass;
     status = schema->CreateEntityClass(entityClass, "EntityClass");
     ASSERT_TRUE(status == ECObjectsStatus::Success);
     PrimitiveECPropertyP property;
-    status = entityClass->CreateEnumerationProperty(property, "EnumProperty", enumeration);
+    status = entityClass->CreateEnumerationProperty(property, "EnumProperty", *enumeration);
     ASSERT_TRUE(status == ECObjectsStatus::Success);
     ASSERT_TRUE(property != nullptr);
     EXPECT_STREQ("Enumeration", property->GetTypeName().c_str());
@@ -1074,7 +1071,8 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
     EXPECT_TRUE(deserializedEnumeration->GetEnumeratorCount() == 2);
     enumerator = deserializedEnumeration->FindEnumerator("First");
     EXPECT_TRUE(enumerator != nullptr);
-    EXPECT_STREQ("First Value", enumerator->GetInvariantDisplayLabel()->c_str());
+    EXPECT_STREQ("First Value", enumerator->GetInvariantDisplayLabel().c_str());
+    EXPECT_FALSE(deserializedEnumeration->GetIsStrict());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
     ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("EnumProperty");
@@ -1277,7 +1275,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWithEnumerationInReferencedSchem
     {
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='ReferencedSchema' version='01.00' displayLabel='Display Label' description='Description' nameSpacePrefix='ref' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECEnumeration typeName='RevisionStatus' backingTypeName='int' description='...' displayLabel='Revision Status'>"
+        "   <ECEnumeration typeName='RevisionStatus' backingTypeName='int' description='...' displayLabel='Revision Status' isStrict='False'>"
         "       <ECEnumerator value='0' displayLabel='Undefined' />"
         "       <ECEnumerator value='1' displayLabel='Planned' />"
         "       <ECEnumerator value='2' displayLabel='Not Approved' />"
@@ -1311,6 +1309,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWithEnumerationInReferencedSchem
     enumeration = refSchema->GetEnumerationP("RevisionStatus");
     ASSERT_TRUE(enumeration != nullptr);
     EXPECT_STREQ("int", enumeration->GetTypeName().c_str());
+    EXPECT_FALSE(enumeration->GetIsStrict());
 
     ECClassCP documentClass = schema->GetClassCP("Document");
     ECPropertyP deserializedProperty = documentClass->GetPropertyP("RevisionStatus");
@@ -1327,9 +1326,8 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWithEnumerationInReferencedSchem
     ECEnumeratorP ecEnumerator = enumeration->FindEnumerator(3);
     EXPECT_TRUE(ecEnumerator != nullptr);
     EXPECT_TRUE(ecEnumerator->GetInteger() == 3);
-    Utf8StringCP displayLabel = ecEnumerator->GetDisplayLabel();
-    EXPECT_TRUE(displayLabel != nullptr);
-    EXPECT_STREQ(displayLabel->c_str(), "Approved");
+    Utf8StringCR displayLabel = ecEnumerator->GetDisplayLabel();
+    EXPECT_STREQ(displayLabel.c_str(), "Approved");
     }
 
 //--------------------------------------------------------------------------------------
@@ -1513,11 +1511,11 @@ TEST_F (SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     enumeration->SetDescription("This is a description.");
     ECEnumeratorP enumerator;
     EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 1));
-    EXPECT_EQ(ECObjectsStatus::Success, enumerator->SetDisplayLabel("First"));
+    enumerator->SetDisplayLabel("First");
     EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 2));
-    EXPECT_EQ(ECObjectsStatus::Success, enumerator->SetDisplayLabel("Second"));
+    enumerator->SetDisplayLabel("Second");
     EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
-    EXPECT_EQ(ECObjectsStatus::Success, enumerator->SetDisplayLabel("Third"));
+    enumerator->SetDisplayLabel("Third");
 
     schema2->CreateEntityClass(baseClass, "BaseClass");
     schema3->CreateEntityClass(anotherBase, "AnotherBase");

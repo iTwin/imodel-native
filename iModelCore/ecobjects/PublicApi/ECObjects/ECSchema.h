@@ -784,7 +784,7 @@ public:
     //! Gets the PrimitiveType of this ECProperty
     ECOBJECTS_EXPORT PrimitiveType GetType() const;
     //! Sets an ECEnumeration as type of this ECProperty.
-    ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCP value);
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
     ECOBJECTS_EXPORT ECEnumerationCP GetEnumeration() const;
 };
@@ -1314,7 +1314,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCP structType);
 
     //! If the given name is valid, creates a primitive property object with the given enumeration type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCP enumerationType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
 
     //! Remove the named property
     //! @param[in] name The name of the property to be removed
@@ -1381,64 +1381,63 @@ public:
 //! The in-memory representation of an ECEnumeration as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct EnumeratorIterable : public std::iterator<std::forward_iterator_tag, ECEnumeratorP>
+struct EnumeratorIterable : NonCopyableClass
     {
-
     friend struct ECEnumeration;
     
     private:
-        EnumeratorIterable(EnumeratorList& list) : m_list(list) {}
-        EnumeratorList&     m_list;
+        EnumeratorList const& m_list;
+        explicit EnumeratorIterable(EnumeratorList const& list) : m_list(list) {}
 
     public:
         typedef EnumeratorList::const_iterator const_iterator;
-        typedef EnumeratorList::iterator iterator;
-
-        const_iterator       begin() const { return m_list.begin(); }
-        const_iterator       end() const { return m_list.end(); }
-        iterator             begin() { return m_list.begin(); }
-        iterator             end() { return m_list.end(); }
+        const_iterator begin() const { return m_list.begin(); }
+        const_iterator end() const { return m_list.end(); }
     };
 
 //=======================================================================================
 //! The in-memory representation of an ECEnumeration as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECEnumeration
+struct ECEnumeration : NonCopyableClass
     {
-    //__PUBLISH_SECTION_END__
 friend struct ECSchema;
 friend struct SchemaXmlWriter;
 friend struct SchemaXmlReaderImpl;
 
     private:
-        ECSchemaCR                      m_schema;
-        mutable Utf8String              m_fullName;
-        ECValidatedName                 m_validatedName;
-        PrimitiveType                   m_primitiveType;
-        Utf8String                      m_description;
-        EnumeratorList                  m_enumeratorList;
-        EnumeratorIterable            m_enumeratorIterable;
+        ECSchemaCR m_schema;
+        mutable Utf8String m_fullName;
+        ECValidatedName m_validatedName;
+        PrimitiveType m_primitiveType;
+        Utf8String m_description;
+        EnumeratorList m_enumeratorList;
+        EnumeratorIterable m_enumeratorIterable;
+        bool m_isStrict;
 
-    protected:
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for enumerations and will manage their lifecycle.
-        ECEnumeration(ECSchemaCR schema);
-        virtual ~ECEnumeration();
+        explicit ECEnumeration(ECSchemaCR schema);
+        ~ECEnumeration();
 
         // schemas index enumeration by name so publicly name can not be reset
-        ECObjectsStatus                     SetName(Utf8StringCR name);
+        void SetName(Utf8CP name);
 
-        SchemaReadStatus                    _ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context);
-        SchemaWriteStatus                   _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
-    //__PUBLISH_SECTION_START__
+        //! Sets the PrimitiveType of this Enumeration.  The default type is ::PRIMITIVETYPE_Integer
+        ECObjectsStatus SetType(PrimitiveType value);
+        //! Sets the backing primitive type by its name.
+        ECObjectsStatus SetTypeName(Utf8CP typeName);
+
+        SchemaReadStatus ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context);
+        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
+
     public:
         //! The ECSchema that this enumeration is defined in
-        ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
+        ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
         //! The name of this ECClass
-        ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetName() const;
         //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
-        ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
         //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
         //! is no namespace prefix.  Otherwise, the enumeration's schema must be a referenced schema in the passed in schema
         //! @param[in]  primarySchema   The schema used to lookup the namespace prefix of the class's schema
@@ -1451,99 +1450,101 @@ friend struct SchemaXmlReaderImpl;
         //! @param[in]  qualifiedEnumName  The qualified name of the enum, in the format of ns:enumName
         //! @return A status code indicating whether the qualified name was successfully parsed or not
         ECOBJECTS_EXPORT static ECObjectsStatus ParseEnumerationName(Utf8StringR prefix, Utf8StringR enumName, Utf8StringCR qualifiedEnumName);
-        //! Sets the PrimitiveType of this Enumeration.  The default type is ::PRIMITIVETYPE_Integer
-        ECOBJECTS_EXPORT ECObjectsStatus    SetType(PrimitiveType value);
+
         //! Gets the PrimitiveType of this ECEnumeration
-        ECOBJECTS_EXPORT PrimitiveType      GetType() const;
+        PrimitiveType GetType() const { return m_primitiveType; }
         //! Gets the name of the backing primitive type.
-        ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
-        //! Sets the backing primitive type by its name.
-        ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8StringCR typeName);
+        ECOBJECTS_EXPORT Utf8String GetTypeName() const;
+
         //! Whether the display label is explicitly defined or not
-        ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+        ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
         //! Sets the display label of this ECEnumeration
-        ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
+        ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
         //! Gets the display label of this ECEnumeration.  If no display label has been set explicitly, it will return the name of the ECEnumeration
-        ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
         //! Gets the invariant display label for this ECEnumeration.
-        ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
 
         //! Sets the description of this ECEnumeration
-        ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
+        ECOBJECTS_EXPORT void SetDescription(Utf8CP value) { m_description = value; }
         //! Gets the description of this ECEnumeration.  Returns the localized description if one exists.
-        ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
         //! Gets the invariant description for this ECEnumeration.
-        ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetInvariantDescription() const;
+
+        //! Gets the IsStrict flag of this enum. True means that values on properties will be enforced.
+        bool GetIsStrict() const { return m_isStrict; }
+        //! Sets the IsStrict flag to a given value. NonStrict enums will be treated as suggestions and not enforce values.
+        void SetIsStrict(bool value) { m_isStrict = value; }
 
         //!Creates a new enumerator at the end of this enumeration.
-        ECOBJECTS_EXPORT ECObjectsStatus        CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR value);
+        ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8CP value);
         //!Creates a new enumerator at the end of this enumeration.
-        ECOBJECTS_EXPORT ECObjectsStatus        CreateEnumerator(ECEnumeratorP& enumerator, int32_t value);
+        ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, int32_t value);
         //! Finds the enumerator with the provided integer value, returns nullptr if none found.
-        ECOBJECTS_EXPORT ECEnumeratorP          FindEnumerator(int32_t value) const;
+        ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(int32_t value) const;
         //! Finds the enumerator with the provided string value, returns nullptr if none found.
-        ECOBJECTS_EXPORT ECEnumeratorP          FindEnumerator(Utf8StringCR value) const;
+        ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(Utf8CP value) const;
         //! Removes the provided enumerator from this enumeration
-        ECOBJECTS_EXPORT ECObjectsStatus        DeleteEnumerator(ECEnumeratorCR enumerator);
+        ECOBJECTS_EXPORT ECObjectsStatus DeleteEnumerator(ECEnumeratorCR enumerator);
         //! Removes all enumerators in this enumeration
-        ECOBJECTS_EXPORT void                   Clear();
+        ECOBJECTS_EXPORT void Clear();
         //! Get the enumerator list held by this object
-        ECOBJECTS_EXPORT EnumeratorIterable     GetEnumerators() const;
+        EnumeratorIterable const& GetEnumerators() const { return m_enumeratorIterable; }
         //! Get the amount of enumerators in this enumeration
-        ECOBJECTS_EXPORT size_t                 GetEnumeratorCount() const;
+        size_t GetEnumeratorCount() const { return m_enumeratorList.size(); }
     };
 
 //=======================================================================================
 //! The in-memory representation of an ECEnumerator which is a single element in an ECEnumeration
 //! @bsiclass
 //=======================================================================================
-struct ECEnumerator
+struct ECEnumerator : NonCopyableClass
     {
     friend struct ECEnumeration;
 
     private:
-        ECEnumerationCR                 m_enum;
-        int32_t                         m_intValue;
-        Utf8String                      m_stringValue;
+        ECEnumerationCR m_enum;
+        int32_t m_intValue;
+        Utf8String m_stringValue;
 
-        Utf8String                      m_displayLabel;
-        bool                            m_hasExplicitDisplayLabel;
+        Utf8String m_displayLabel;
+        bool m_hasExplicitDisplayLabel;
 
-    protected:
         //  Lifecycle management:  The enumeration implementation will
         //  serve as a factory for enumerators and will manage their lifecycle.
-        ECEnumerator(ECEnumerationCR parent, int32_t value) : m_enum(parent), m_intValue(value), m_hasExplicitDisplayLabel(false) {}
-        ECEnumerator(ECEnumerationCR parent, Utf8StringCR value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
-        virtual ~ECEnumerator() {}
+        explicit ECEnumerator(ECEnumerationCR parent, int32_t value) : m_enum(parent), m_intValue(value), m_hasExplicitDisplayLabel(false) {}
+        explicit ECEnumerator(ECEnumerationCR parent, Utf8StringCR value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
+        ~ECEnumerator() {}
 
     public:
         //! The ECEnumeration that this enumerator is defined in
-        ECOBJECTS_EXPORT ECEnumerationCR    GetEnumeration() const { return m_enum; }
+        ECEnumerationCR    GetEnumeration() const { return m_enum; }
         //! Whether the display label is explicitly defined or not
-        ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
+        bool GetIsDisplayLabelDefined() const { return m_hasExplicitDisplayLabel; }
         //! Sets the display label of this enumerator
-        ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
+        ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
         //! Gets the display label of this enumerator.  If no display label has been set explicitly, it will return the name of the enumerator
-        ECOBJECTS_EXPORT Utf8StringCP       GetDisplayLabel() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
         //! Gets the invariant display label for this enumerator. This will return nullptr if no label is available, and the value is not a string.
-        ECOBJECTS_EXPORT Utf8StringCP       GetInvariantDisplayLabel() const;
+        ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
 
         //!Returns true if this enumerator holds an integer value
-        ECOBJECTS_EXPORT bool               IsInteger() const;
+        ECOBJECTS_EXPORT bool IsInteger() const;
         //! Returns the integer value, if this ECEnumerator holds an Integer 
-        ECOBJECTS_EXPORT int32_t            GetInteger() const;
+        int32_t GetInteger() const { return m_intValue; }
         //! Sets the value of this ECEnumerator to the given integer
         //! @param[in] integer  The value to set
-        ECOBJECTS_EXPORT ECObjectsStatus    SetInteger(int32_t integer);
+        ECOBJECTS_EXPORT ECObjectsStatus SetInteger(int32_t integer);
         //!Returns true if this enumerator holds an integer value
-        ECOBJECTS_EXPORT bool               IsString() const;
+        ECOBJECTS_EXPORT bool IsString() const;
         //! Gets the string content of this ECEnumerator in UTF-8 encoding.
         //! @return string content in UTF-8 encoding
-        ECOBJECTS_EXPORT Utf8StringCP       GetString() const;
+        Utf8StringCR GetString() const { return m_stringValue; }
         //! Sets the value of this ECEnumerator to the given string
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
         //! @param[in] string           The value to set
-        ECOBJECTS_EXPORT ECObjectsStatus    SetString(Utf8StringCR string);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetString(Utf8CP value);
     };
 
 //---------------------------------------------------------------------------------------
@@ -2332,17 +2333,13 @@ public:
 //=======================================================================================
 struct ECEnumerationContainer
     {
-/*__PUBLISH_SECTION_END__*/
     private:
         friend struct ECSchema;
         friend struct ECEnumeration;
 
         EnumerationMap const&     m_enumerationMap;
+        ECEnumerationContainer(EnumerationMap const& enumerationMap) : m_enumerationMap(enumerationMap) {}; //public for test purposes only
 
-    public:
-        ECOBJECTS_EXPORT ECEnumerationContainer(EnumerationMap const& enumerationMap) : m_enumerationMap(enumerationMap) {}; //public for test purposes only
-
-//__PUBLISH_SECTION_START__
     public:
         //=======================================================================================
         // @bsistruct
@@ -2350,13 +2347,11 @@ struct ECEnumerationContainer
         struct IteratorState : RefCountedBase
             {
             friend struct const_iterator;
-            /*__PUBLISH_SECTION_END__*/
             public:
                 EnumerationMap::const_iterator     m_mapIterator;
 
                 IteratorState(EnumerationMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
                 static RefCountedPtr<IteratorState> Create(EnumerationMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
-                //__PUBLISH_SECTION_START__
             };
 
         //=======================================================================================
@@ -2368,9 +2363,7 @@ struct ECEnumerationContainer
                 friend struct ECEnumerationContainer;
                 RefCountedPtr<IteratorState>   m_state;
 
-                /*__PUBLISH_SECTION_END__*/
                 const_iterator(EnumerationMap::const_iterator mapIterator) { m_state = IteratorState::Create(mapIterator); };
-                /*__PUBLISH_SECTION_START__*/
                 const_iterator(char*) { ; } // must publish at least one private constructor to prevent instantiation
 
             public:
@@ -2383,7 +2376,6 @@ struct ECEnumerationContainer
     public:
         ECOBJECTS_EXPORT const_iterator begin() const; //!< Returns the beginning of the iterator
         ECOBJECTS_EXPORT const_iterator end()   const; //!< Returns the end of the iterator
-
     };
 
 //=======================================================================================
@@ -2730,7 +2722,7 @@ public:
     //! @param[in] name    Name of the enumeration to create
     //! @param[in] type    Type for the enumeration to create. Must be integer or string.
     //! @return A status code indicating whether or not the enumeration was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus    CreateEnumeration(ECEnumerationP& ecEnumeration, Utf8StringCR name, PrimitiveType type);
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateEnumeration(ECEnumerationP& ecEnumeration, Utf8CP name, PrimitiveType type);
 
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
