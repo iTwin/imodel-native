@@ -207,8 +207,18 @@
     <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
       <SubPart PartName="ECObjectsNative"  LibType="Static"/>
       <Directories DirectoryListName="ECObjects" />
-  </Product>
+    </Product>
 
+    <Part Name="SchemaConverter" BentleyBuildMakeFile="tools/SchemaConverter/SchemaConverter.mke" >
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaConverterExe">
+                Delivery/SchemaConverter.exe
+                Delivery/SchemaConverter.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
@@ -250,6 +260,16 @@
         <Directories DirectoryListName="ECObjects"/>
     </Product>
 
+    <ProductDirectoryList ListName="SchemaConverter">
+        <ProductDirectory Name="SchemaConverterExe"     Path="Runtime"/>
+    </ProductDirectoryList>
+    <Product Name="ECObjectsTools">
+        <SubPart    PartName="SchemaConverter" />
+        <SubProduct ProductName="ECObjects"/>
+        <Directories DirectoryListName="SchemaConverter" />
+        <Directories DirectoryListName="ECObjects" />
+    </Product>
+    
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
     <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true" AddIn="true">
