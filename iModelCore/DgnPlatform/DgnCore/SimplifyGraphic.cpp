@@ -635,7 +635,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
                 {
                 polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
                 faceAttachmentsVec->at(i).ToGeometryParams(m_context->GetCurrentGeometryParams());
-                m_context->CookGeometryParams();
+                m_context->CookGeometryParams(*this);
 
                 FacetClipper(*this, false).ProcessDisposablePolyface(*polyfaces[i]);
                 }

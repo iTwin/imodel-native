@@ -444,7 +444,7 @@ void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, 
     elemMatSymb.SetWidth(vp->GetIndexedLineWidth(weight));
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetCurrentGraphicR().ActivateMatSymb(&elemMatSymb);
+    context.GetCurrentGraphicR().ActivateGraphicParams(&elemMatSymb);
 #endif
     }
 

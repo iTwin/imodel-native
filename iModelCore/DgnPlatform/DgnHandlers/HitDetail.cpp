@@ -429,7 +429,7 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
     // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
     elMatSymb.SetWidth(elMatSymb.GetWidth()+2);
 
-    context.GetCurrentGraphicR().ActivateMatSymb(&elMatSymb);
+    context.GetCurrentGraphicR().ActivateGraphicParams(&elMatSymb);
     context.ResetContextOverrides();
 
     bool doSegmentFlash = (GetHitType() < HitDetailType::Snap);

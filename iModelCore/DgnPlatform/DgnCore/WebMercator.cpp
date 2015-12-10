@@ -143,7 +143,7 @@ static void setSymbology (ViewContextR context, RgbColorDefCR color, uint32_t tr
     elemMatSymb.SetLineColor (colorIdx);
     elemMatSymb.SetWidth (width);
 
-    context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
+    context.GetIDrawGeom().ActivateGraphicParams (&elemMatSymb);
     }
 #endif
 

@@ -319,7 +319,7 @@ void _Stroke(ViewContextR context) const override
     lineStyleSymb.Init(nullptr);
     lineStyleSymb.SetScale(m_scaleFactor);
 
-    context.GetCurrentGraphicR().ActivateMatSymb(&elemMatSymb);
+    context.GetCurrentGraphicR().ActivateGraphicParams(&elemMatSymb);
 
     context.PushTransform(m_transformForTexture);
     m_component->_StrokeLineString(&context, &lineStyleSymb, m_points, 2, false);

@@ -845,7 +845,7 @@ protected:
     double        m_pixelSize;
 
     virtual StatusInt _Close() {return SUCCESS;}
-    virtual void _ActivateMatSymb(GraphicParamsCP matSymb) = 0;
+    virtual void _ActivateGraphicParams(GraphicParamsCP matSymb) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
     virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
@@ -884,7 +884,7 @@ public:
     //! Set an GraphicParams to be the "active" GraphicParams for this IDrawGeom.
     //! @param[in]          matSymb     The new active GraphicParams. All geometry drawn via calls to this IDrawGeom will
     //!                                     be displayed using the values in this GraphicParams.
-    void ActivateMatSymb(GraphicParamsCP matSymb) {_ActivateMatSymb(matSymb);}
+    void ActivateGraphicParams(GraphicParamsCP matSymb) {_ActivateGraphicParams(matSymb);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -1047,7 +1047,7 @@ public:
 
     //! Set an GraphicParams to be the "active override" GraphicParams for this IDrawGeom.
     //! @param[in]          ovrMatSymb  The new active override GraphicParams.
-    //!                                     value in ovrMatSymb will be used instead of the value set by ActivateMatSymb.
+    //!                                     value in ovrMatSymb will be used instead of the value set by ActivateGraphicParams.
     void ActivateOverrideGraphicParams(OvrGraphicParamsCP ovrMatSymb) {_ActivateOverrideGraphicParams(ovrMatSymb);}
 
     //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,

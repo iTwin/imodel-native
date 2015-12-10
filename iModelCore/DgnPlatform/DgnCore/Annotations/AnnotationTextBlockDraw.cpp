@@ -82,7 +82,9 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
         default: BeAssert(false) /* unknown */; break;
         }
     
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.CookGeometryParams();
+#endif
     context.AddTextString(ts);
     
     return SUCCESS;

@@ -2090,12 +2090,7 @@ void CookGeometryParams(Render::GraphicR graphic)
     if (FillDisplay::ByView == m_context.GetCurrentGeometryParams().GetFillDisplay() && RenderMode::Wireframe == viewFlags.GetRenderMode() && !viewFlags.fill)
         m_context.GetCurrentGeometryParams().SetFillDisplay(FillDisplay::Never);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Fix CookGeometryParams...
-#endif
-    m_context.CookGeometryParams();
-    graphic.ActivateMatSymb(m_context.GetGraphicParams());
-
+    m_context.CookGeometryParams(graphic);
     m_symbologyChanged = false;
     }
 

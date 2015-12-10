@@ -475,7 +475,7 @@ void ViewContext::_CookGeometryParams(GeometryParamsR elParams, GraphicParamsR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::CookGeometryParams()
+void ViewContext::CookGeometryParams(Render::GraphicR graphic)
     {
     _CookGeometryParams(m_currGeometryParams, m_graphicParams);
 
@@ -490,10 +490,8 @@ void ViewContext::CookGeometryParams()
         lsSym.ConvertLineStyleToTexture(*this, true);
         }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Activate the matsymb in the IDrawGeom
-    GetCurrentGraphicR().ActivateMatSymb(&m_graphicParams);
-#endif
+    // Activate m_graphicParams on graphic.
+    graphic.ActivateGraphicParams(&m_graphicParams);
     }
 
 /*---------------------------------------------------------------------------------**//**

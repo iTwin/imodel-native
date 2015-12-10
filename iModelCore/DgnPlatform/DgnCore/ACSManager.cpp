@@ -938,7 +938,7 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP l
         elemMatSymb.SetIsBlankingRegion(true);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        cached->ActivateMatSymb(&elemMatSymb);
+        cached->ActivateGraphicParams(&elemMatSymb);
         cached->AddShape(5, pts, true, NULL);
 #endif
         }
@@ -949,7 +949,7 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP l
     elemMatSymb.SetIsBlankingRegion(false);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    cached->ActivateMatSymb(&elemMatSymb);
+    cached->ActivateGraphicParams(&elemMatSymb);
     cached->AddTextString(textStr);
 #endif
     }
@@ -971,11 +971,11 @@ void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* 
     elemMatSymb.SetFillColor(_GetColor(viewport, ColorDef::Blue(), _GetTransparency(true, options), options));
     elemMatSymb.SetWidth(2);
 
-    cached->ActivateMatSymb(&elemMatSymb);
+    cached->ActivateGraphicParams(&elemMatSymb);
     cached->AddLineString(2, linePts, NULL);
 
     elemMatSymb.SetWidth(6);
-    cached->ActivateMatSymb(&elemMatSymb);
+    cached->ActivateGraphicParams(&elemMatSymb);
     cached->AddPointString(2, linePts, NULL);
 
     double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
@@ -995,7 +995,7 @@ void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* 
     yVec.Normalize();
 
     elemMatSymb.SetWidth(1);
-    cached->ActivateMatSymb(&elemMatSymb);
+    cached->ActivateGraphicParams(&elemMatSymb);
 
     DEllipse3d  ellipse;
 
@@ -1049,7 +1049,7 @@ void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, SceneP cached, Transfo
     if (NULL != labelStrP)
         {
         // Add text and arrow outline...
-        cached->ActivateMatSymb(&elemMatSymb);
+        cached->ActivateGraphicParams(&elemMatSymb);
         cached->AddLineString(8, shapePts, NULL);
 
         _DrawAxisText(viewport, cached, labelStrP, true, userOrg.x, userOrg.y, scale, angle, options);
@@ -1059,7 +1059,7 @@ void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, SceneP cached, Transfo
 
     // Draw arrow fill as blanking region...
     elemMatSymb.SetIsBlankingRegion(true);
-    cached->ActivateMatSymb(&elemMatSymb);
+    cached->ActivateGraphicParams(&elemMatSymb);
     cached->AddShape(8, shapePts, true, NULL);
 #endif
     }

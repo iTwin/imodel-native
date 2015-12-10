@@ -561,7 +561,9 @@ static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
         }
 
     // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing it doesn't affect them...
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.CookGeometryParams();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

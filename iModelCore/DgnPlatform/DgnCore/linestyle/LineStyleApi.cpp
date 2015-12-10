@@ -318,9 +318,9 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             GeometryParamsStateSaver saveState (*context->GetCurrentGeometryParams(), false, false, false, true, false);
             elParams->SetWeight (0);
             context->CookGeometryParams();
-            context->GetCurrentGraphic().ActivateMatSymb (context->GetGraphicParams());
+            context->GetCurrentGraphic().ActivateGraphicParams (context->GetGraphicParams());
             context->GetCurrentGraphic().AddArc (ellipse, NULL == inSweep, filled, range);
-            context->GetCurrentGraphic().ActivateMatSymb (&saveMatSymb);
+            context->GetCurrentGraphic().ActivateGraphicParams (&saveMatSymb);
             }
 #else
         context->GetCurrentGraphicR().AddArc (ellipse, NULL == inSweep, filled, range);
