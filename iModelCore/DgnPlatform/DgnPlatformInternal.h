@@ -68,7 +68,6 @@
 #include <Regions/rimsbsAPI.h>
 #include <DgnPlatform/IEditActionSource.h>
 #include <Logging/bentleylogging.h>
-#include <DgnPlatform/Tools/ostime.fdf>
 #include <DgnPlatform/Tools/stringop.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/IGeoCoordServices.h>

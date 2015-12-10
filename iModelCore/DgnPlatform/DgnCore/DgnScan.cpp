@@ -14,12 +14,6 @@ ScanCriteria::ScanCriteria()
     {
     // do this so we don't lose our vtable
     memset (&m_firstMember, 0, offsetof (ScanCriteria, m_lastMember) - offsetof (ScanCriteria, m_firstMember));
-
-    for (int iRange = 0; iRange < MAX_SC_RANGE; iRange++)
-        {
-        m_range[iRange].low.x = 1000.; // set low.x > high.x (invalid range) so we can skip if never set up
-        m_range[iRange].high.x = 0.0;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,17 +167,17 @@ ScanCriteria::Result  ScanCriteria::CheckRange(DRange3dCR elemRange, bool is3d) 
     {
     if (m_type.testSkewScan)
         {
-        if (checkSubRange(m_range[0], elemRange, is3d) == ScanCriteria::Result::Fail)
+        if (checkSubRange(m_range, elemRange, is3d) == ScanCriteria::Result::Fail)
             return ScanCriteria::Result::Fail;
 
-        if (checkSubRange(m_range[1], elemRange, is3d) == ScanCriteria::Result::Pass)
+        if (checkSubRange(m_skewRange, elemRange, is3d) == ScanCriteria::Result::Pass)
             return ScanCriteria::Result::Pass;
 
         return checkSkewRange(&m_skewRange, &m_skewVector, elemRange, is3d);
         }
 
     if (m_type.testRange)
-        return checkSubRange (m_range[0], elemRange, is3d);
+        return checkSubRange(m_range, elemRange, is3d);
 
     return ScanCriteria::Result::Pass;
     }
@@ -252,12 +246,11 @@ DgnRangeTree::Match ScanCriteria::_VisitRangeTreeElem(GeometrySourceCP source, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    KeithBentley                    2/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ScanCriteria::Scan(ViewContextP context)
+StatusInt ScanCriteria::Scan()
     {
     if (nullptr == m_model)
         return ERROR;
 
-    m_viewContext = context;
     DgnRangeTreeP rangeIndex;
     if (m_type.testRange && (nullptr != (rangeIndex = m_model->GetRangeIndexP(true))) && UseRangeTree(*rangeIndex))
         {
@@ -306,7 +299,7 @@ void ScanCriteria::SetRangeTest (DRange3dP srP)
     m_type.testSkewScan = false;
     if (NULL != srP)
         {
-        m_range[0] = *srP;
+        m_range = *srP;
         m_type.testRange = 1;
         }
     else
@@ -326,7 +319,6 @@ void ScanCriteria::SetSkewRangeTest (DRange3dP mainRange, DRange3dP skewRange, D
     if ( (NULL != skewRange) && (NULL != skewVector) )
         {
         m_skewRange = *skewRange;
-        m_range[1] = *skewRange;
         m_skewVector = *skewVector;
         m_type.testSkewScan = 1;
         m_numRanges = 1;

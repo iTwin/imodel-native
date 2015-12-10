@@ -27,7 +27,6 @@ public:
     typedef int (*PFScanElementCallback)(DgnElementCR, void *callbackArg, ScanCriteriaR sc);
 
 private:
-    enum {MAX_SC_RANGE = 8,};
     struct ScanType
     {
         unsigned int testRange:1;
@@ -41,12 +40,11 @@ private:
     int                     m_numRanges;
     DPoint3d                m_skewVector;
     DRange3d                m_skewRange;
-    DRange3d                m_range[MAX_SC_RANGE];
+    DRange3d                m_range;
     PFScanElementCallback   m_callbackFunc;
     void*                   m_callbackArg;
     DgnCategoryIdSet const* m_categories;
     IRangeNodeCheckP        m_appRangeNodeCheck;
-    ViewContextP            m_viewContext;
     int                     m_lastMember;
 
     bool UseRangeTree(DgnRangeTree&);
@@ -58,7 +56,7 @@ public:
     DGNPLATFORM_EXPORT ScanCriteria();
 
     ScanType GetScanType() const {return m_type;}
-    DRange3dCR GetScanRange() const {return m_range[0];}
+    DRange3dCR GetScanRange() const {return m_range;}
     DPoint3dCR GetSkewVector() const {return m_skewVector;}
     DgnModelP GetDgnModelP() {return m_model;}
     PFScanElementCallback GetCallbackFunc() {return m_callbackFunc;}
@@ -86,7 +84,7 @@ public:
     DGNPLATFORM_EXPORT void SetRangeTest(DRange3dP scanRange);
 
     //! Perform the scan, filtering elements as dictated by this ScanCriteria, calling the callbackFunc specified in #SetElementCallback.
-    DGNPLATFORM_EXPORT StatusInt Scan(ViewContextP=nullptr);
+    DGNPLATFORM_EXPORT StatusInt Scan();
 
     //! Get the DgnModel set by #SetDgnModel.
     DGNPLATFORM_EXPORT DgnModelP GetDgnModel();

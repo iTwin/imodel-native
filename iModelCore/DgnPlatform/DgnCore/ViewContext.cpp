@@ -20,10 +20,7 @@ ViewContext::ViewContext()
     {
     m_dgnDb = nullptr;
     m_viewport = nullptr;
-    m_scanCriteria = nullptr;
     m_purpose = DrawPurpose::NotSpecified;
-    m_arcTolerance = .01;
-    m_minLOD = DEFAULT_MINUMUM_LOD;
     m_isAttached = false;
     m_is3dView = true;
     m_useNpcSubRange = false;
@@ -35,15 +32,6 @@ ViewContext::ViewContext()
     m_levelOfDetail = 1.0;
     m_worldToNpc.InitIdentity();
     m_worldToView.InitIdentity();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::~ViewContext()
-    {
-    BeAssert(!m_isAttached);
-    DELETE_AND_CLEAR(m_scanCriteria);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,21 +193,9 @@ void ViewContext::_SetDgnDb(DgnDbR dgnDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetupScanCriteria()
     {
-    if (nullptr == m_scanCriteria)
-        return;
-
     DgnViewportP vp = GetViewport();
     if (nullptr != vp)
-        m_scanCriteria->SetCategoryTest(vp->GetViewController().GetViewedCategories());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AllocateScanCriteria()
-    {
-    if (nullptr == m_scanCriteria)
-        m_scanCriteria = new ScanCriteria;
+        m_scanCriteria.SetCategoryTest(vp->GetViewController().GetViewedCategories());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -237,19 +213,15 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
         }
 
     m_isAttached = true;
-    _AllocateScanCriteria();
 
     m_viewport = viewport;
     m_purpose = purpose;
     ClearAborted();
 
-    m_minLOD = viewport->GetMinimumLOD();
     m_filterLOD = FILTER_LOD_ShowRange;
 
     m_is3dView = viewport->Is3dView();
     SetViewFlags(viewport->GetViewFlags());
-
-    m_arcTolerance = 0.1;
 
     return _InitContextForView();
     }
@@ -262,7 +234,6 @@ void ViewContext::_Detach()
     BeAssert(IsAttached());
 
     m_isAttached = false;
-
     m_transformClipStack.PopAll(*this);
     }
 
@@ -357,30 +328,28 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         scanRange.high.z = 1;
         }
 
-    if (m_scanCriteria)
+    m_scanCriteria.SetRangeTest(&scanRange);
+
+    // if we're doing a skew scan, get the skew parameters
+    if (Is3dView())
         {
-        m_scanCriteria->SetRangeTest(&scanRange);
+        DRange3d skewRange;
 
-        // if we're doing a skew scan, get the skew parameters
-        if (Is3dView())
-            {
-            DRange3d skewRange;
+        // get bounding range of front plane of polyhedron
+        skewRange.InitFrom(polyhedron.GetPts(), 4);
 
-            // get bounding range of front plane of polyhedron
-            skewRange.InitFrom(polyhedron.GetPts(), 4);
+        // get unit bvector from front plane to back plane
+        DVec3d      skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
 
-            // get unit bvector from front plane to back plane
-            DVec3d      skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
+        // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
+        int alongAxes = (fabs(skewVec.x) < 1e-8);
+        alongAxes += (fabs(skewVec.y) < 1e-8);
+        alongAxes += (fabs(skewVec.z) < 1e-8);
 
-            // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
-            int alongAxes = (fabs(skewVec.x) < 1e-8);
-            alongAxes += (fabs(skewVec.y) < 1e-8);
-            alongAxes += (fabs(skewVec.z) < 1e-8);
-
-            if (alongAxes < 2)
-                m_scanCriteria->SetSkewRangeTest(&scanRange, &skewRange, &skewVec);
-            }
+        if (alongAxes < 2)
+            m_scanCriteria.SetSkewRangeTest(&scanRange, &skewRange, &skewVec);
         }
+
     m_scanRangeValid = true;
     return true;
     }
@@ -627,8 +596,8 @@ static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetScanReturn()
     {
-    m_scanCriteria->SetRangeNodeCheck(this);
-    m_scanCriteria->SetElementCallback(visitElementFunc, this);
+    m_scanCriteria.SetRangeNodeCheck(this);
+    m_scanCriteria.SetElementCallback(visitElementFunc, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -746,8 +715,8 @@ StatusInt ViewContext::_ScanDgnModel(DgnModelP model)
     if (!ValidateScanRange())
         return ERROR;
 
-    m_scanCriteria->SetDgnModel(model);
-    return m_scanCriteria->Scan(this);
+    m_scanCriteria.SetDgnModel(model);
+    return m_scanCriteria.Scan();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -355,7 +355,7 @@ protected:
     //  Override and forward the methods that trigger a query.
     virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
     virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context) override;
-    virtual void _OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo& info) override;
+    virtual void _OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo const& info) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 

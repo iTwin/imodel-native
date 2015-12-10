@@ -107,7 +107,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         Initialize, 
         ChangeScene, 
-        Paint,
+        Refresh,
     };
 
     //! The outcome of the processing of a Task.
@@ -1188,8 +1188,8 @@ protected:
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
-    virtual void _SetCurrentScene(Scene&) = 0;
-    virtual void _Paint(PlanCR) = 0;
+    virtual void _ChangeScene(Scene&) = 0;
+    virtual void _Refresh(PlanCR) = 0;
 
 public:
     virtual double _GetCameraFrustumNearScaleLimit() = 0;
@@ -1197,8 +1197,8 @@ public:
 
     Target(Device* device) : m_device(device) {}
 
-    void SetCurrentScene(SceneR scene) {_SetCurrentScene(scene);}
-    void Paint(PlanCR plan) {_Paint(plan);}
+    void ChangeScene(SceneR scene) {_ChangeScene(scene);}
+    void Refresh(PlanCR plan) {_Refresh(plan);}
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}

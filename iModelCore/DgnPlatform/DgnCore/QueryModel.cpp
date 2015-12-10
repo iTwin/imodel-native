@@ -144,9 +144,11 @@ QueryModel::Selector::State QueryModel::Selector::WaitUntilFinished(ICheckStop* 
         if (nullptr != checkStop && checkStop->_CheckStop())
             {
             if (stopQueryOnAbort)
+                {
                 //  RequestAbort does not return until the abort has finished,
                 //  so it is okay to exit from the loop after RequestAbort returns.
                 RequestAbort(true);
+                }
 
             break;
             }

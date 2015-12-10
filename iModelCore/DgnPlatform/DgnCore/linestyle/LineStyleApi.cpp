@@ -34,6 +34,7 @@ static double  getLinearLength (DPoint3dCP pts, int nPts, int& disconnectPt)
 
     return  length;
     }
+    enum {DEFAULT_MINUMUM_LOD   = 50,};       // extent squared
 
 /*---------------------------------------------------------------------------------**//**
 * Check to see whether a single repeitition of this linestyle for this element is discernible in
@@ -78,7 +79,8 @@ bool LsComponent::IsWidthDiscernible (ViewContextP context, Render::LineStyleSym
     context->WorldToView (vec, vec, 2);
 #endif
 
-    double      minLODSize = context->GetMinLOD()*0.25;
+
+    double minLODSize = DEFAULT_MINUMUM_LOD * 0.25;
 
     return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
     }
@@ -117,7 +119,7 @@ DPoint3dCR      pt
     context->WorldToView (vec, vec, 2);
 #endif
 
-    double      minLODSize = context->GetMinLOD()*0.25;
+    double      minLODSize = DEFAULT_MINUMUM_LOD * 0.25;
 
     return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
     }
