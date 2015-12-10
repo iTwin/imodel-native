@@ -114,9 +114,9 @@ const Utf8String SqlViewBuilder::ToString (SqlOption option, bool escape , bool 
         }
     else
         {
-        sql.AppendLine ("--### WARNING: SYSTEM GENERATED VIEW. DO NOT CHANGE THIS VIEW IN ANYWAY. ####");
         sql.Append ("CREATE ").AppendIf (IsTemprory (), "TEMP ").Append ("VIEW ").AppendIf (option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").AppendEscapedIf (escape, GetName ()).AppendEOL ();
         sql.Append ("AS").AppendEOL ();
+        sql.AppendLine("--### WARNING!!! - SYSTEM GENERATED VIEW. DO NOT CHANGE THIS VIEW IN ANYWAY. ####");
         for (auto& select : m_selectList)
             {
             if (&select != &m_selectList.front ())
@@ -1965,4 +1965,770 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
         }
     }
 
+//==============================================SqlGenerator==============================================
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    if (auto o = dynamic_cast<PropertyMapSingleColumn const*>(&propertyMap))
+        {
+        return BuildPrimitivePropertyExpression(viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
+        }
+    if (auto o = dynamic_cast<PropertyMapPoint const*>(&propertyMap))
+        {
+        return BuildPointPropertyExpression(viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
+        }
+    else if (auto o = dynamic_cast<PropertyMapStruct const*>(&propertyMap))
+        {
+        return BuildStructPropertyExpression(viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
+        }
+    else if (/*auto o = */dynamic_cast<PropertyMapStructArray const*>(&propertyMap))
+        {
+        return BentleyStatus::SUCCESS;
+        }
+    else if (/*auto o = */dynamic_cast<PropertyMapSystem const*>(&propertyMap))
+        {
+        return BentleyStatus::SUCCESS;
+        }
+
+    BeAssert(false && "Case not handled");
+    return BentleyStatus::ERROR;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildColumnExpression(NativeSqlBuilder::List& viewSql, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP accessString, bool addECPropertyPathAlias, bool nullValue, bool escapeColumName)
+    {
+    NativeSqlBuilder sqlBuilder;
+
+    if (nullValue)
+        {
+        columnName = "NULL";
+        sqlBuilder.Append(columnName);
+        }
+    else
+        {
+        if (columnName == nullptr)
+            {
+            BeAssert(columnName != nullptr);
+            return BentleyStatus::ERROR;
+            }
+
+        if (escapeColumName)
+            {
+            if (tablePrefix)
+                {
+                sqlBuilder.AppendEscaped(tablePrefix).AppendDot();
+                }
+
+            sqlBuilder.AppendEscaped(columnName);
+            }
+        else
+            sqlBuilder.Append(columnName);
+        }
+
+    if (addECPropertyPathAlias)
+        {
+        if (accessString == nullptr)
+            {
+            BeAssert(accessString != nullptr);
+            return BentleyStatus::ERROR;
+            }
+
+        else if (strcmp(accessString, columnName) != 0)
+            sqlBuilder.AppendSpace().AppendEscaped(accessString);
+        }
+
+    viewSql.push_back(std::move(sqlBuilder));
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    auto accessString = Utf8String(propertyMap.GetPropertyAccessString());
+    auto primitiveProperty = propertyMap.GetProperty().GetAsPrimitiveProperty();
+    // accessString.ReplaceAll (".", "_");
+
+    NativeSqlBuilder::List fragments;
+    std::vector<ECDbSqlColumn const*> columns;
+    propertyMap.GetColumns(columns);
+
+
+    if (!primitiveProperty->GetIsArray() && primitiveProperty->GetType() == PrimitiveType::PRIMITIVETYPE_Point2D)
+        {
+        if (columns.size() != 2LL)
+            {
+            BeAssert(columns.size() == 2LL);
+            return BentleyStatus::ERROR;
+            }
+
+        BuildColumnExpression(fragments, columns[0]->GetTable().GetName().c_str(), columns[0]->GetName().c_str(), (accessString + ".X").c_str(), addECPropertyPathAlias, nullValue);
+        BuildColumnExpression(fragments, columns[1]->GetTable().GetName().c_str(), columns[1]->GetName().c_str(), (accessString + ".Y").c_str(), addECPropertyPathAlias, nullValue);
+        }
+    else if (!primitiveProperty->GetIsArray() && primitiveProperty->GetType() == PrimitiveType::PRIMITIVETYPE_Point3D)
+        {
+        if (columns.size() != 3LL)
+            {
+            BeAssert(columns.size() == 3LL);
+            return BentleyStatus::ERROR;
+            }
+
+        BuildColumnExpression(fragments, columns[0]->GetTable().GetName().c_str(), columns[0]->GetName().c_str(), (accessString + ".X").c_str(), addECPropertyPathAlias, nullValue);
+        BuildColumnExpression(fragments, columns[1]->GetTable().GetName().c_str(), columns[1]->GetName().c_str(), (accessString + ".Y").c_str(), addECPropertyPathAlias, nullValue);
+        BuildColumnExpression(fragments, columns[2]->GetTable().GetName().c_str(), columns[2]->GetName().c_str(), (accessString + ".Z").c_str(), addECPropertyPathAlias, nullValue);
+        }
+
+    for (auto const& fragment : fragments)
+        {
+        if (&(fragments.front()) != &(fragment))
+            viewSql.Append(", ");
+
+        viewSql.Append(fragment);
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMapSingleColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    auto accessString = Utf8String(propertyMap.GetPropertyAccessString());
+    NativeSqlBuilder::List fragments;
+    std::vector<ECDbSqlColumn const*> columns;
+    propertyMap.GetColumns(columns);
+
+    if (columns.size() != 1LL)
+        {
+        BeAssert(columns.size() == 1LL);
+        return BentleyStatus::ERROR;
+        }
+
+    if (BuildColumnExpression(fragments, columns[0]->GetTable().GetName().c_str(), columns[0]->GetName().c_str(), accessString.c_str(), addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
+    viewSql.Append(fragments.front());
+    return BentleyStatus::SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildECInstanceIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    auto propertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+    auto column = propertyMap->GetFirstColumn();
+    auto accessString = Utf8String(propertyMap->GetPropertyAccessString());
+    if (column->GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Source/Target ECInstanceId cannot be mapped to virtual column");
+        return BentleyStatus::ERROR;
+        }
+
+    if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), accessString.c_str(), addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildECClassIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    auto propertyMap = static_cast<PropertyMapRelationshipConstraintClassId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap());
+    auto& constraint = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetClass().GetRelationshipClassCP()->GetSource() : classMap.GetClass().GetRelationshipClassCP()->GetTarget();
+    auto column = propertyMap->GetFirstColumn();
+    auto accessString = Utf8String(propertyMap->GetPropertyAccessString());
+    auto tableAlias = GetECClassIdPrimaryTableAlias(endPoint);
+
+    if (column->GetPersistenceType() == PersistenceType::Persisted)
+        {
+        if (propertyMap->IsMappedToPrimaryTable())
+            {
+            if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), accessString.c_str(), addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
+        else
+            {
+            Utf8String columnQualifiedName;
+            columnQualifiedName.append(tableAlias);
+            columnQualifiedName.append(".");
+            columnQualifiedName.append(column->GetName());
+            if (BuildColumnExpression(fragments, nullptr, columnQualifiedName.c_str(), accessString.c_str(), addECPropertyPathAlias, nullValue, false) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
+        }
+    else
+        {
+        auto eclassId = constraint.GetClasses().front()->GetId();
+        Utf8String columnValueExpr;
+        columnValueExpr.Sprintf("%lld", eclassId);
+
+        if (BuildColumnExpression(fragments, nullptr, columnValueExpr.c_str(), accessString.c_str(), addECPropertyPathAlias, nullValue, false) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildStructPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapStructCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    NativeSqlBuilder::List fragments;
+    for (auto const childMap : propertyMap.GetChildren())
+        {
+        NativeSqlBuilder fragment;
+        if (BuildPropertyExpression(fragment, *childMap, tablePrefix, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+
+        if (!fragment.IsEmpty())
+            fragments.push_back(std::move(fragment));
+        }
+
+    for (auto const& fragment : fragments)
+        {
+        if (&(fragments.front()) != &(fragment))
+            viewSql.Append(", ");
+
+        viewSql.Append(fragment);
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId))
+        {
+        if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+        }
+    else
+        {
+        BeAssert(false && "Failed to find ECInstanceId column");
+        return BentleyStatus::ERROR;
+        }
+
+    if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECClassId))
+        {
+        if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), "ECClassId", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+        }
+    else
+        {
+        Utf8String classIdStr;
+        classIdStr.Sprintf("%lld", classMap.GetClass().GetId());
+        if (BuildColumnExpression(fragments, tablePrefix, classIdStr.c_str(), "ECClassId", addECPropertyPathAlias, nullValue, false) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+        }
+
+    if (baseClassMap.GetClass().GetIsStruct())
+        {
+        if (!classMap.GetClass().GetIsStruct())
+            {
+            BeAssert(false && "BaseClass is of type struct but not the child class which must also be struct type");
+            return BentleyStatus::ERROR;
+            }
+
+        if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ParentECInstanceId))
+            {
+            if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
+
+        if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECPropertyPathId))
+            {
+            if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
+
+        if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECArrayIndex))
+            {
+
+            if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
+        }
+
+    if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable || classMap.GetClassMapType() == IClassMap::Type::RelationshipLinkTable)
+        {
+        auto const& rel = static_cast<RelationshipClassMapCR>(classMap);
+        if (BuildECInstanceIdConstraintExpression(fragments, rel, ECRelationshipEnd::ECRelationshipEnd_Source, tablePrefix, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+
+        if (BuildECClassIdConstraintExpression(fragments, rel, ECRelationshipEnd::ECRelationshipEnd_Source, tablePrefix, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+
+        if (BuildECInstanceIdConstraintExpression(fragments, rel, ECRelationshipEnd::ECRelationshipEnd_Target, tablePrefix, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+
+        if (BuildECClassIdConstraintExpression(fragments, rel, ECRelationshipEnd::ECRelationshipEnd_Target, tablePrefix, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildSelectionClause(NativeSqlBuilder& viewSql, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    {
+    NativeSqlBuilder::List fragments;
+
+    if (BuildSystemSelectionClause(fragments, baseClassMap, classMap, nullptr, true, nullValue) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
+    for (auto basePropertyMap : baseClassMap.GetPropertyMaps())
+        {
+        auto propertyMap = classMap.GetPropertyMap(basePropertyMap->GetPropertyAccessString());
+        if (propertyMap == nullptr)
+            {
+            BeAssert(propertyMap != nullptr);
+            return BentleyStatus::ERROR;
+            }
+
+        NativeSqlBuilder fragment;
+        if (BuildPropertyExpression(fragment, *propertyMap, tablePrefix, addECPropertyPathAlias, nullValue)
+            != BentleyStatus::SUCCESS)
+            {
+            return BentleyStatus::ERROR;
+            }
+
+        if (!fragment.IsEmpty())
+            fragments.push_back(std::move(fragment));
+        }
+
+    if (fragments.empty())
+        {
+        BeAssert(false && "There is no property to create selection");
+        return BentleyStatus::ERROR;
+        }
+
+    for (auto const& fragment : fragments)
+        {
+        if (&(fragments.front()) != &(fragment))
+            viewSql.Append(",").AppendEOL();
+
+        viewSql.Append("\t\t");
+        viewSql.Append(fragment);
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+Utf8String SqlGenerator::BuildSchemaQualifiedClassName(ECClassCR ecClass)
+    {
+    Utf8String name;
+    name.append(ecClass.GetSchema().GetNamespacePrefix());
+    name.append("_");
+    name.append(ecClass.GetName());
+    return name;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+Utf8String SqlGenerator::BuildViewClassName(ECClassCR ecClass)
+    {
+    return  ecClass.GetSchema().GetNamespacePrefix() + "." + ecClass.GetName();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, bool topLevel)
+    {
+    auto ecclassIdPropertyMap = static_cast<PropertyMapRelationshipConstraintClassId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap());
+    if (!ecclassIdPropertyMap->IsMappedToPrimaryTable())
+        {
+        auto ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+
+        auto const& targetTable = ecclassIdPropertyMap->GetFirstColumn()->GetTable();
+        sqlBuilder.Append(" INNER JOIN ");
+        sqlBuilder.AppendEscaped(targetTable.GetName().c_str());
+        sqlBuilder.AppendSpace();
+        sqlBuilder.Append(GetECClassIdPrimaryTableAlias(endPoint));
+        sqlBuilder.Append(" ON ");
+        sqlBuilder.Append(GetECClassIdPrimaryTableAlias(endPoint));
+        sqlBuilder.AppendDot();
+        auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        if (targetECInstanceIdColumn == nullptr)
+            {
+            BeAssert(false && "Failed to find ECInstanceId column in target table");
+            return BentleyStatus::ERROR;
+            }
+        sqlBuilder.AppendEscaped(targetECInstanceIdColumn->GetName().c_str());
+        sqlBuilder.Append(" = ");
+        sqlBuilder.AppendEscaped(ecInstanceIdPropertyMap->GetFirstColumn()->GetTable().GetName().c_str());
+
+        sqlBuilder.AppendDot();
+        sqlBuilder.Append(ecInstanceIdPropertyMap->GetFirstColumn()->GetName().c_str());
+        sqlBuilder.AppendSpace();
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+void SqlGenerator::CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap)
+    {
+    if (classMap.GetMapStrategy().IsForeignKeyMapping())
+        childMaps.insert(static_cast<RelationshipClassEndTableMapCP>(&classMap));
+
+    for (auto derviedMap : classMap.GetDerivedClassMaps())
+        {
+        if (derviedMap->IsRelationshipClassMap())
+            CollectDerivedEndTableRelationships(childMaps, static_cast<RelationshipClassMapCR>(*derviedMap));
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildEndTableRelationshipView(NativeSqlBuilder::List& unionList, RelationshipClassMapCR classMap)
+    {
+    std::set<RelationshipClassEndTableMapCP> childMaps;
+    CollectDerivedEndTableRelationships(childMaps, classMap);
+    for (auto endClassMap : childMaps)
+        {
+        NativeSqlBuilder sqlBuilder;
+        bool topLevel = &classMap == endClassMap;
+
+        sqlBuilder.Append("SELECT ");
+
+        if (BuildSelectionClause(sqlBuilder, classMap, *endClassMap, nullptr, /*addECPropertyPathAlias = */ topLevel, false)
+            != BentleyStatus::SUCCESS)
+            {
+            return BentleyStatus::ERROR;
+            }
+        sqlBuilder.AppendEOL();
+        sqlBuilder.Append(" FROM ")
+            .AppendEscaped(endClassMap->GetTable().GetName().c_str());
+
+        Utf8String tableAlias = endClassMap->GetTable().GetName();
+
+        if (BuildRelationshipJoinIfAny(sqlBuilder, *endClassMap, ECRelationshipEnd::ECRelationshipEnd_Source, topLevel) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+
+        if (BuildRelationshipJoinIfAny(sqlBuilder, *endClassMap, ECRelationshipEnd::ECRelationshipEnd_Target, topLevel) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+
+        sqlBuilder.Append(" WHERE (");
+        sqlBuilder.AppendEscaped(tableAlias.c_str());
+        sqlBuilder.AppendDot();
+        sqlBuilder.Append(endClassMap->GetOtherEndECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str());
+        sqlBuilder.Append(" IS NOT NULL)");
+
+        if (topLevel)
+            {
+            unionList.insert(unionList.begin(), std::move(sqlBuilder));
+            }
+        else
+            {
+            unionList.push_back(std::move(sqlBuilder));
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildViews(std::vector<ClassMap const*> const& classMaps)
+    {
+    BeAssert(!m_map.GetECDb().IsReadonly() && "Db is readonly the opertion will fail");
+
+    auto r = BentleyStatus::SUCCESS;
+    for (auto classMap : classMaps)
+        {
+        SqlViewBuilder builder;
+        r = BuildClassView(builder, *classMap);
+        if (r != SUCCESS)
+            return r;
+
+        if (builder.IsNullView())
+            continue;
+
+        if (m_map.GetECDbR().ExecuteSql(builder.ToString(SqlOption::Create).c_str()) != BE_SQLITE_OK)
+            {
+            return ERROR;
+            }
+        }
+
+    return r;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap const& classMap)
+    {
+    viewBuilder.GetNameBuilder().AppendEscaped(SqlGenerator::BuildViewClassName(classMap.GetClass()).c_str());
+    NativeSqlBuilder::List unionList;
+
+    if (classMap.IsRelationshipClassMap() && classMap.GetMapStrategy().IsForeignKeyMapping())
+        {
+        if (BuildEndTableRelationshipView(unionList, static_cast<RelationshipClassMapCR> (classMap)) != BentleyStatus::SUCCESS)
+            return BentleyStatus::ERROR;
+        }
+    else
+        {
+        auto& disp = classMap.GetStorageDescription();
+        bool nextClassMapIsTopLevel = false;
+        for (auto& part : disp.GetHorizontalPartitions())
+            {
+            bool topLevel = (&disp.GetRootHorizontalPartition() == &part);
+            if (part.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+                {
+                if (topLevel)
+                    nextClassMapIsTopLevel = true;
+
+                continue;
+                }
+
+            if (nextClassMapIsTopLevel)
+                {
+                topLevel = true;
+                nextClassMapIsTopLevel = false;
+                }
+            NativeSqlBuilder sqlBuilder;
+            sqlBuilder.Append("SELECT ").AppendEOL();
+            auto derivedClassId = part.GetClassIds().front();
+            auto derivedClass = m_map.GetECDbR().Schemas().GetECClass(derivedClassId);
+
+            if (derivedClass == nullptr)
+                {
+                BeAssert(derivedClass != nullptr);
+                return BentleyStatus::ERROR;
+                }
+
+            auto derivedClassMap = m_map.GetClassMap(*derivedClass);
+            if (derivedClassMap == nullptr)
+                {
+                BeAssert(derivedClassMap != nullptr);
+                return BentleyStatus::ERROR;
+                }
+
+            if (derivedClassMap->GetMapStrategy().IsForeignKeyMapping())
+                continue;
+
+            auto classSqlName = BuildSchemaQualifiedClassName(*derivedClass);
+            Utf8String tabelPrefix;
+            if (topLevel)
+                {
+                tabelPrefix = classSqlName;
+                }
+            else
+                {
+                tabelPrefix = part.GetTable().GetName();
+                }
+
+            if (BuildSelectionClause(sqlBuilder, classMap, static_cast<ClassMapCR>(*derivedClassMap), tabelPrefix.c_str(), /*addECPropertyPathAlias = */ topLevel, false)
+                != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+
+            sqlBuilder.Append(" FROM ")
+                .AppendEscaped(part.GetTable().GetName().c_str());
+
+            if (classMap.MapsToJoinedTable())
+                {
+                auto primaryKey = part.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                for (auto const& vpart : classMap.GetStorageDescription().GetVerticalPartitions())
+                    {
+                    if (&vpart.GetTable() == &part.GetTable())
+                        continue;
+
+                    auto fkKey = vpart.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                    sqlBuilder.Append(" INNER JOIN ").AppendEscaped(vpart.GetTable().GetName().c_str());
+                    sqlBuilder.Append(" ON ").AppendEscaped(part.GetTable().GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
+                    sqlBuilder.Append(" = ").AppendEscaped(vpart.GetTable().GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
+                    }
+                }
+
+
+            if (derivedClassMap->IsRelationshipClassMap())
+                {
+                auto const relationshipMap = static_cast<RelationshipClassMapCP>(derivedClassMap);
+                if (BuildRelationshipJoinIfAny(sqlBuilder, *relationshipMap, ECRelationshipEnd::ECRelationshipEnd_Source, topLevel) != BentleyStatus::SUCCESS)
+                    return BentleyStatus::ERROR;
+
+                if (BuildRelationshipJoinIfAny(sqlBuilder, *relationshipMap, ECRelationshipEnd::ECRelationshipEnd_Target, topLevel) != BentleyStatus::SUCCESS)
+                    return BentleyStatus::ERROR;
+                }
+
+            if (auto classIdcolumn = part.GetTable().GetFilteredColumnFirst(ColumnKind ::ECClassId))
+                {
+                if (part.NeedsECClassIdFilter())
+                    {
+                    sqlBuilder.Append(" WHERE ");
+                    sqlBuilder.AppendParenLeft();
+
+                    //sqlBuilder.AppendEscaped(part.GetTable().GetName().c_str()).AppendDot();
+                    Utf8String columnQualifiedName = part.GetTable().GetName() + "." + classIdcolumn->GetName();
+                    part.AppendECClassIdFilterSql(columnQualifiedName.c_str(), sqlBuilder);
+                    sqlBuilder.AppendParenRight();
+                    }
+                }
+
+            if (topLevel)
+                {
+                unionList.insert(unionList.begin(), std::move(sqlBuilder));
+                }
+            else
+                {
+                unionList.push_back(std::move(sqlBuilder));
+                }
+            }
+        }
+
+    if (!unionList.empty())
+        {
+        for (auto const& unionEntry : unionList)
+            {
+            viewBuilder.AddSelect().Append(unionEntry);
+            }
+
+        return BentleyStatus::SUCCESS;
+        }
+
+    NativeSqlBuilder nullView;
+    nullView.Append("SELECT ");
+    if (BuildSelectionClause(nullView, classMap, classMap, nullptr, true, true) != BentleyStatus::SUCCESS)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    nullView.Append(" LIMIT 0;").AppendEOL();
+    viewBuilder.AddSelect().Append(nullView);
+    viewBuilder.MarkAsNullView();
+    return BentleyStatus::SUCCESS;
+    }
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::BuildDerivedFilterClause(Utf8StringR filter, ECDb& db, ECClassId baseClassId)
+    {
+    Utf8CP sql =
+        "WITH RECURSIVE "
+        "    DerivedClassList (CurrentClassId, DerivedClassId) "
+        "    AS ( "
+        "       SELECT ?1, ?1 FROM ec_Class "
+        "    UNION "
+        "       SELECT BC.BaseClassId, BC.ClassId "
+        "           FROM DerivedClassList DCL "
+        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
+        "    ) "
+        "SELECT 'IN (' || group_concat(DISTINCT DerivedClassId) || ')' FROM DerivedClassList ORDER BY DerivedClassId";
+
+    auto stmt = db.GetCachedStatement(sql);
+    if (stmt.IsValid())
+        {
+        stmt->BindInt64(1, baseClassId);
+        if (stmt->Step() == BE_SQLITE_ROW)
+            {
+            if (!stmt->IsColumnNull(0))
+                filter = stmt->GetValueText(0);
+
+            return BentleyStatus::SUCCESS;
+            }
+        }
+    return BentleyStatus::ERROR;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::FindRelationshipReferences(bmap<RelationshipClassMapCP, ECDbMap::LightweightCache::RelationshipEnd>& relationships, ClassMapCR classMap)
+    {
+    for (auto& pair : m_map.GetLightweightCache().GetRelationshipsForConstraintClass(classMap.GetClass().GetId()))
+        {
+        auto classMap = m_map.GetRelationshipClassMap(pair.first);
+        if (classMap == nullptr)
+            continue;
+
+        if (classMap->GetMapStrategy().IsNotMapped())
+            continue;
+
+        relationships[classMap] = pair.second;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      06/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+const std::vector<ClassMapCP> SqlGenerator::GetEndClassMaps(ECRelationshipClassCR relationship, ECRelationshipEnd end)
+    {
+    std::vector<ClassMapCP> classes;
+    auto& constraints = end == ECRelationshipEnd::ECRelationshipEnd_Source ? relationship.GetSource() : relationship.GetTarget();
+    auto anyClassId = m_map.GetLightweightCache().GetAnyClassId();
+    ClassMapCP classMap = nullptr;
+    for (auto constraint : constraints.GetConstraintClasses())
+        {
+        if (constraint->GetClass().GetId() == anyClassId)
+            {
+            classes.clear();
+            for (auto classId : m_map.GetLightweightCache().GetAnyClassReplacements())
+                {
+                classMap = m_map.GetClassMapCP(classId);
+                if (classMap != nullptr)
+                    classes.push_back(classMap);
+                }
+
+            return classes;
+            }
+
+        classMap = m_map.GetClassMapCP(constraint->GetClass());
+        if (classMap != nullptr)
+            classes.push_back(classMap);
+        }
+
+    return classes;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus SqlGenerator::DropViewIfExists(ECDbR db, Utf8CP viewName)
+    {
+    return db.ExecuteSql(SqlPrintfString("DROP VIEW IF EXISTS %s;", viewName).GetUtf8CP()) != BE_SQLITE_OK ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         06/2015
+//---------------------------------------------------------------------------------------
+void SqlGenerator::DropExistingViews()
+    {
+    BeAssert(!m_map.GetECDb().IsReadonly() && "Db is readonly the opertion will fail");
+   
+    Statement stmt;
+    stmt.Prepare(m_map.GetECDb(), "select 'DROP VIEW [' || name || '];'  from sqlite_master where type = 'view' and instr(name, '.') and instr(sql, '--### WARNING!!!')");
+    std::vector<Utf8String> dropViewCommands;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        dropViewCommands.push_back(stmt.GetValueText(0));
+        }
+    stmt.Finalize();
+
+    LOG.info("*** Deleting ECViews ***");
+    for (auto const& command : dropViewCommands)
+        {
+        LOG.info(command.c_str());
+        m_map.GetECDbR().ExecuteSql(command.c_str());
+        }
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

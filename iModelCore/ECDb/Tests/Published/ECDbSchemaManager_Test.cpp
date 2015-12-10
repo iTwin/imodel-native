@@ -772,6 +772,75 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMaj
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan Khan                        12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+std::map<Utf8String, std::set<Utf8String>> GetECViewNamesByPrefix(ECDbR ecdb)
+    {
+    Statement stmt;
+    stmt.Prepare(ecdb, "select  substr (name, 1,  instr (name,'.') - 1), '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### WARNING!!!')");
+    std::map<Utf8String, std::set<Utf8String>> dropViewCommands;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        dropViewCommands[stmt.GetValueText(0)].insert(stmt.GetValueText(1));
+        }
+
+    return dropViewCommands;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan Khan                        12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECDatabaseViews)
+    {
+    //PREFIX        NoOfClasses
+    //-------------------------
+    //beca	        3
+    //bsca	        10
+    //bsm	        2
+    //ecdbf	        3
+    //ecdbmap	    2
+    //stco	        51
+    //units_attribs	2
+
+    ECDbTestFixture::Initialize();
+    ECDb testecdb;
+    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"CreateOrUpdateECDatabaseViews.ecdb");
+    ASSERT_TRUE(stat == BE_SQLITE_OK);
+
+    //Test================================================================
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().CreateOrUpdateECDatabaseViews());
+    auto x = GetECViewNamesByPrefix(testecdb);
+    ASSERT_EQ(5, x.size()) << "Unexpected number of ";
+    ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
+    ASSERT_EQ(10, x["bsca"].size()) << "Unexpected number of views";
+    ASSERT_EQ(2, x["bsm"].size()) << "Unexpected number of views";
+    ASSERT_EQ(3, x["ecdbf"].size()) << "Unexpected number of views";
+    ASSERT_EQ(2, x["ecdbmap"].size()) << "Unexpected number of views";
+    //====================================================================
+    ECSchemaReadContextPtr  context = nullptr;
+    ECSchemaPtr schemaptr;
+    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"StartupCompany.02.00.ecschema.xml", nullptr);
+
+    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
+    schemacache->AddSchema(*schemaptr);
+
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
+    //Test================================================================
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().CreateOrUpdateECDatabaseViews());
+    x = GetECViewNamesByPrefix(testecdb);
+    ASSERT_EQ(7, x.size()) << "Unexpected number of ";
+    ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
+    ASSERT_EQ(10, x["bsca"].size()) << "Unexpected number of views";
+    ASSERT_EQ(2, x["bsm"].size()) << "Unexpected number of views";
+    ASSERT_EQ(3, x["ecdbf"].size()) << "Unexpected number of views";
+    ASSERT_EQ(2, x["ecdbmap"].size()) << "Unexpected number of views";
+    //Following should exist in addition to above
+    ASSERT_EQ(2, x["units_attribs"].size()) << "Unexpected number of views";
+    ASSERT_EQ(51, x["stco"].size()) << "Unexpected number of views";
+    //====================================================================
+
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //supplemental schema whose Targeted primary schema's minor version is less then minor Version of schema to supplement.

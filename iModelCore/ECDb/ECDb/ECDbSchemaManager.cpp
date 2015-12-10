@@ -14,6 +14,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //******************************** ECDbSchemaManager ****************************************
+BentleyStatus ECDbSchemaManager::CreateOrUpdateECDatabaseViews() const
+    {    
+    return m_map.CreateOrUpdateECDatabaseViews();
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
