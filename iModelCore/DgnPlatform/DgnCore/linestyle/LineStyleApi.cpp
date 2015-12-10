@@ -381,11 +381,9 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 #endif
 
         double  dist = vec[0].Distance (vec[1]);
+        double  arcTolerance = .01;
 
-        if (0.0 == context->GetArcTolerance())
-            numVerts = 200;
-        else
-            numVerts = fabs (dist * sweep * (.02 / context->GetArcTolerance()));
+        numVerts = fabs (dist * sweep * (.02 / arcTolerance));
         }
 
     int   nPts = (numVerts > 200) ? 200 : (int) numVerts;
