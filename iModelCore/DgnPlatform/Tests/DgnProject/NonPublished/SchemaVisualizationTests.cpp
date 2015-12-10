@@ -1790,11 +1790,6 @@ gvplugin_api_t mylib_apis[4] =
 
 gvplugin_library_t gvplugin_mylib_LTX_library = { "mylib", mylib_apis };
 
-//lt_symlist_t gvplugin_dot = { "gvplugin_dot_layout_LTX_library", (void*)(&gvplugin_dot_layout_LTX_library) };
-//lt_symlist_t gvplugin_core = { "gvplugin_core_LTX_library", (void*)(&gvplugin_core_LTX_library) };
-//lt_symlist_t gvplugin_mylib = { "gvplugin_mylib_LTX_library", (void*)(&gvplugin_mylib_LTX_library) };
-//lt_symlist_t gvplugin_zero = { 0, 0 };
-
 //=======================================================================================
 // @bsistruct                                                   Mike.Embick     10/15
 //=======================================================================================
