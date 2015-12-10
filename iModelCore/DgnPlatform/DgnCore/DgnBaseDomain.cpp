@@ -105,6 +105,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::LineStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
