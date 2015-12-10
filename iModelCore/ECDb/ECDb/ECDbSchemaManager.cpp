@@ -287,7 +287,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
             if (SUCCESS != UpdateECSchema(diff, *schema))
                 return ERROR;
 
-            if (diff != nullptr && diff->GetStatus() == DIFFSTATUS_Success && !diff->IsEmpty())
+            if (diff != nullptr && diff->GetStatus() == DiffStatus::Success && !diff->IsEmpty())
                 diffs.push_back(diff);
             }
         else
@@ -350,7 +350,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecS
         }
 
     diff = ECDiff::Diff (*existingSchema, ecSchema);
-    if (diff->GetStatus () != DIFFSTATUS_Success)
+    if (diff->GetStatus () != DiffStatus::Success)
         {
         ReportUpdateError (ecSchema, *existingSchema, "Could not compute the difference between the new and the existing version.");
         return ERROR;
