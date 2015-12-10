@@ -842,8 +842,10 @@ struct Graphic : RefCounted<NonCopyableClass>
     };
 
 protected:
-    DgnViewportCP m_vp;
-    double        m_pixelSize;
+    DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
+    double        m_pixelSize; //! Pixel size to use for stroke
+    double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
+    double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
 
     virtual StatusInt _Close() {return SUCCESS;}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
@@ -868,7 +870,6 @@ protected:
     virtual void _AddTextString(TextStringCR text, double* zDepth = nullptr) = 0;
     virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
     virtual bool _IsQuickVision() const {return false;}
-    virtual bool _IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return true;}
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
     virtual void _AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
@@ -878,10 +879,21 @@ protected:
 
 public:
     StatusInt Close() {return _Close();}
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize) {}
+    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {}
 
-    bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
+    bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
+        {
+        if (nullptr != m_vp && m_vp != &vp)
+            return false;
+
+        if (0.0 == m_minSize && 0.0 == m_maxSize)
+            return true;
+
+        return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
+        }
+
     double GetPixelSize() {return m_pixelSize;}
+    void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will

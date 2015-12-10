@@ -65,14 +65,12 @@ struct NullContext : ViewContext
     };
 
 protected:
-    bool  m_setupScan;
     RefCountedPtr<NullGraphic> m_nullGraphic;
 
-    virtual bool _FilterRangeIntersection(GeometrySourceCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(element); return false;}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_nullGraphic;}
 
 public:
-    NullContext(bool setupScan = false) {m_setupScan = setupScan; m_ignoreViewRange = true; m_nullGraphic=new NullGraphic();}
+    NullContext() {m_ignoreViewRange = true; m_nullGraphic=new NullGraphic();}
 };
 
 END_BENTLEY_DGN_NAMESPACE
