@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/ComponentModelTest.ts $
+|  $Source: Tests/DgnProject/Published/ComponentModelTest/ComponentModelTest.ts $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,6 +17,24 @@ module ComponentModelTest
     var TEST_WIDGET_COMPONENT_NAME = "Widget";
     var TEST_GADGET_COMPONENT_NAME = "Gadget";
     var TEST_THING_COMPONENT_NAME = "Thing";
+
+    //  Utility function that sets up the geometry of the specified element as a slab
+    function makeBox(element: be.PhysicalElement, origin: be.DPoint3d, angles: be.YawPitchRollAngles, xsize: number, ysize: number, zsize: number): void
+    {
+        var boxSize = new be.DPoint3d(xsize, ysize, zsize);
+        var box = be.DgnBoxDetail.InitFromCenterAndSize(new be.DPoint3d(0,0,0), boxSize, true); // NB: the *geometry* is always defined in an LCS w/ origin 0,0,0. The placement below puts where we want it.
+        var solid = be.SolidPrimitive.CreateDgnBox(box);
+
+        var builder = new be.ElementGeometryBuilder(element, origin, angles);
+        builder.Append(solid);
+        builder.SetGeomStreamAndPlacement(element);
+    }
+
+    //  Utility function that creates a new (non-persistent) PhysicalElement object in memory and assigns it to the correct category 
+    function makeElement(model: be.DgnModel, options: be.ModelSolverOptions): be.PhysicalElement
+    {
+        return be.PhysicalElement.Create(model, be.DgnCategory.QueryCategoryId(options.Category, model.DgnDb), '');
+    }
 
     /**
      * The 'Gadget' component. This is a simple case of just one element.
@@ -37,13 +55,12 @@ module ComponentModelTest
         {
             model.DeleteAllElements();
 
-            var element = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
+            var element = makeElement(model, options);
 
             var origin = new be.DPoint3d(0, 0, 0);
             var angles = new be.YawPitchRollAngles(0, 0, 45);
-            var builder = new be.ElementGeometryBuilder(element, origin, angles);
-            builder.AppendBox(params.Q, params.W, params.R);
-            builder.SetGeomStreamAndPlacement(element);
+
+            makeBox(element, origin, angles, params.Q, params.W, params.R);
 
             element.Insert();
 
@@ -70,24 +87,16 @@ module ComponentModelTest
         {
             model.DeleteAllElements();
 
-            var element = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
-
+            var element = makeElement(model, options);
             var origin = new be.DPoint3d(1, 2, 3);
             var angles = new be.YawPitchRollAngles(0, 0, 0);
-            var builder = new be.ElementGeometryBuilder(element, origin, angles);
-            builder.AppendBox(params.X, params.Y, params.Z);
-            builder.SetGeomStreamAndPlacement(element);
-
+            makeBox(element, origin, angles, params.X, params.Y, params.Z);
             element.Insert();
 
-            var element2 = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
-
+            var element2 = makeElement(model, options);
             var origin2 = new be.DPoint3d(10, 12, 13);
             var angles2 = new be.YawPitchRollAngles(0, 0, 0);
-            var builder2 = new be.ElementGeometryBuilder(element2, origin2, angles2);
-            builder2.AppendBox(params.X, params.Y, params.Z);
-            builder2.SetGeomStreamAndPlacement(element2);
-
+            makeBox(element2, origin2, angles2, params.X, params.Y, params.Z);
             element2.Insert();
 
             element.SetParent(element2);
@@ -98,7 +107,7 @@ module ComponentModelTest
     }
 
     /**
-     * The 'Thing' component. This component contains both raw elements and an instance of Gadget.
+     * The 'Thing' component. This component contains both a plain physical element and an instance of Gadget.
      */
     module Thing
     {
@@ -118,14 +127,10 @@ module ComponentModelTest
 
             model.DeleteAllElements();
 
-            var element = model.CreateElement(be.DGN_SCHEMA(be.DGN_CLASSNAME_PhysicalElement), options.Category);
-
+            var element = makeElement(model, options);
             var origin = new be.DPoint3d(2, 0, 0);
             var angles = new be.YawPitchRollAngles(45, 0, 0);
-            var builder = new be.ElementGeometryBuilder(element, origin, angles);
-            builder.AppendBox(params.A, params.B, params.C);
-            builder.SetGeomStreamAndPlacement(element);
-
+            makeBox(element, origin, angles, params.A, params.B, params.C);
             element.Insert();
 
             var gadgetComponentModel = be.ComponentModel.FindModelByName(db, TEST_GADGET_COMPONENT_NAME);

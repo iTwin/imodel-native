@@ -325,6 +325,30 @@ DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SheetModel::_OnInsertElement(DgnElementR el)
+    {
+    auto stat = T_Super::_OnInsertElement(el);
+    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement() && !el.IsSheetElement())
+        stat = DgnDbStatus::WrongModel;
+
+    return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
+    {
+    auto stat = T_Super::_OnInsertElement(el);
+    if (DgnDbStatus::Success == stat && el.IsGeometricElement() && !el.IsAnnotationElement() && !el.IsDrawingElement())
+        stat = DgnDbStatus::WrongModel;
+
+    return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
@@ -1452,7 +1476,6 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
 
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupsMembers), "GroupId", "MemberId");
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "RootElementId", "DependentElementId", "ECClassId", {"Status", "Priority"});
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementUsesStyles), "ElementId", "StyleId");
 
     // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
 

@@ -23,6 +23,7 @@ struct DgnScriptContext : BeJsContext
 {
     BeJsObject m_egaRegistry;
     BeJsObject m_modelSolverRegistry;
+    BeJsObject m_dgndbScriptRegistry;
     bset<Utf8String> m_jsScriptsExecuted;
 
     DgnScriptContext(BeJsEnvironmentR jsenv) : BeJsContext(jsenv, "DgnScript")
@@ -35,14 +36,17 @@ struct DgnScriptContext : BeJsContext
         
         m_egaRegistry = EvaluateScript("Bentley.Dgn.GetEgaRegistry()");
         m_modelSolverRegistry = EvaluateScript("Bentley.Dgn.GetModelSolverRegistry()");
+        m_dgndbScriptRegistry = EvaluateScript("Bentley.Dgn.GetDgnDbScriptRegistry()");
 
         BeAssert(!m_egaRegistry.IsUndefined() && m_egaRegistry.IsObject());
         BeAssert(!m_modelSolverRegistry.IsUndefined() && m_modelSolverRegistry.IsObject());
+        BeAssert(!m_dgndbScriptRegistry.IsUndefined() && m_dgndbScriptRegistry.IsObject());
         }
 
     DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
     DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options);
+    DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR jsFunctionName, Json::Value const& parms);
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -102,7 +106,7 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
 
     NativeLogging::LoggingManager::GetLogger("DgnScript")->tracev ("Evaluating %s", jsProgramName.c_str());
 
-    EvaluateScript(jsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objecjs and their properties. 
+    EvaluateScript(jsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objects and their properties. 
     return DgnDbStatus::Success;
     }
 
@@ -146,6 +150,48 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
         {
         NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for an EGA - must return an int", jsEgaFunctionName);
         BeAssert(false && "EGA has incorrect return type");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    BeJsNumber num(retval);
+    functionReturnStatus = num.GetIntegerValue();
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScript::ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms)
+    {
+    DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
+    return ctx.ExecuteDgnDbScript(functionReturnStatus, db, functionName, parms);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms)
+    {
+    functionReturnStatus = -1;
+
+    BeJsFunction jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
+    if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
+        {
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a DgnDbScript", functionName.c_str());
+        BeAssert(false && "DgnDbScript not found");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    BeginCallContext();
+    BeJsObject parmsObj = EvaluateJson(parms);
+    BeJsNativePointer jsdb = ObtainProjectedClassInstancePointer(new JsDgnDb(db), true);
+    BeJsValue retval = jsfunc(jsdb, parmsObj);
+    EndCallContext();
+
+    if (!retval.IsNumber())
+        {
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for an DgnDbScript - must return an int", functionName.c_str());
+        BeAssert(false && "DgnDbScript has incorrect return type");
         return DgnDbStatus::NotEnabled;
         }
 

@@ -144,7 +144,15 @@ ViewControllerPtr ViewDefinition::LoadViewController(DgnViewId viewId, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr ViewDefinition::LoadViewController(FillModels fillModels) const
     {
-    ViewControllerOverride* ovr = ViewControllerOverride::Cast(GetElementHandler());
+    return LoadViewController(true, fillModels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillModels fillModels) const
+    {
+    ViewControllerOverride* ovr = allowOverrides ? ViewControllerOverride::Cast(GetElementHandler()) : nullptr;
     ViewControllerPtr controller = ovr ? ovr->_SupplyController(*this) : nullptr;
     if (controller.IsNull())
         controller = _SupplyController();
@@ -223,10 +231,38 @@ DgnDbStatus ViewDefinition::_OnUpdate(DgnElementCR orig)
 DgnDbStatus ViewDefinition::_OnDelete() const
     {
     auto status = T_Super::_OnDelete();
-    if (DgnDbStatus::Success == status)
-        DeleteSettings();
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    return status;
+    // Foreign key constraint will be enforced for ViewAttachments which reference this view.
+    // But we should delete them through element API.
+    status = DeleteReferences();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    DeleteSettings();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::DeleteReferences() const
+    {
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewAttachment) " WHERE ViewId=?");
+    stmt->BindId(1, GetViewId());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto el = GetDgnDb().Elements().GetElement(stmt->GetValueId<DgnElementId>(0));
+        if (el.IsValid())
+            {
+            DgnDbStatus stat = el->Delete();
+            if (DgnDbStatus::Success != stat)
+                return stat;
+            }
+        }
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

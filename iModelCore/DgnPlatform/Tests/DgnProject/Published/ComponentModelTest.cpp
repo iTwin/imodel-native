@@ -121,9 +121,9 @@ static void checkSlabDimensions(GeometrySourceCR el, double expectedX, double ex
     {
     DgnBoxDetail box;
     ASSERT_TRUE( (*(ElementGeometryCollection(el).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
-    ASSERT_EQ( expectedX, box.m_baseX );
-    ASSERT_EQ( expectedY, box.m_baseY );
-    ASSERT_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );
+    EXPECT_EQ( expectedX, box.m_baseX );
+    EXPECT_EQ( expectedY, box.m_baseY );
+    EXPECT_DOUBLE_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );
     }
 
 /*---------------------------------------------------------------------------------**//**

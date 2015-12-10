@@ -22,6 +22,18 @@ LsRasterImageComponent::LsRasterImageComponent (V10RasterImage* rasterImageResou
     memcpy (&m_image.front(), rasterImageResource->m_imageData, rasterImageResource->m_nImageBytes);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsRasterImageComponent::LsRasterImageComponent(LsRasterImageComponentCR source) : LsComponent(&source)
+    {
+    m_flags     = source.m_flags;
+    m_size      = source.m_size;
+    m_trueWidth = source.m_trueWidth;
+    m_image.resize(source.m_image.size());
+    memcpy (&m_image.front(), &source.m_image.front(), m_image.size());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -44,5 +56,17 @@ BentleyStatus   LsRasterImageComponent::_GetTextureWidth (double& width) const
 
     width = m_trueWidth;
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsRasterImageComponent::_Import(DgnImportContext& importer) const
+    {
+    LsRasterImageComponentP result = new LsRasterImageComponent(*this);
+
+    //  Save to destination and record ComponentId in clone
+
+    return result;
     }
 
