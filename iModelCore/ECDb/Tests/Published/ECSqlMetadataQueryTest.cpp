@@ -212,7 +212,7 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
             }
         else if (ARRAYKIND_Struct == expectedProperty.GetAsArrayProperty()->GetKind())
             {
-            u.SetLong(expectedProperty.GetAsArrayProperty()->GetStructElementType()->GetId());
+            u.SetLong(expectedProperty.GetAsStructArrayProperty()->GetStructElementType()->GetId());
             actualProperty.GetValue(v, "StructType");
             EXPECT_TRUE(u.Equals(v));
             }
@@ -315,15 +315,15 @@ void ECSqlMetadataQueryTest::CompareClassDefProperties(ECClassCR expectedClass, 
     actualClass.GetValue(v, "Description");
     EXPECT_TRUE(u.Equals(v));
 
-    u.SetBoolean(expectedClass.GetIsDomainClass());
+    u.SetBoolean(expectedClass.IsEntityClass());
     actualClass.GetValue(v, "IsDomainClass");
     EXPECT_TRUE(u.Equals(v));
 
-    u.SetBoolean(expectedClass.GetIsStruct());
+    u.SetBoolean(expectedClass.IsStructClass());
     actualClass.GetValue(v, "IsStruct");
     EXPECT_TRUE(u.Equals(v));
 
-    u.SetBoolean(expectedClass.GetIsCustomAttributeClass());
+    u.SetBoolean(expectedClass.IsCustomAttributeClass());
     actualClass.GetValue(v, "IsCustomAttribute");
     EXPECT_TRUE(u.Equals(v));
 
