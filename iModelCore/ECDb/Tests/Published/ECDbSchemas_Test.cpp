@@ -1894,7 +1894,7 @@ TEST(ECDbSchemas, SchemaDiff)
     ASSERT_TRUE ( diff.IsValid());
 
     bmap<Utf8String,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecificationAttr");
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);
@@ -1977,7 +1977,7 @@ TEST(ECDbSchemas, ClassDiff)
     ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
     ASSERT_TRUE ( diff.IsValid());
     bmap<Utf8String,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecificationAttr");
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);
@@ -2043,7 +2043,7 @@ TEST(ECDbSchemas, RelationshiClassDiff)
     ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
     ASSERT_TRUE ( diff.IsValid());
     bmap<Utf8String,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecificationAttr");
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);
@@ -2082,7 +2082,7 @@ TEST(ECDbSchemas, PropertiesDiff)
     ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
     ASSERT_TRUE ( diff.IsValid());
     bmap<Utf8String,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecificationAttr");
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);

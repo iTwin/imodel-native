@@ -13,6 +13,11 @@
         <ECProperty propertyName="Line2" typeName="string" />
         <ECArrayProperty propertyName="StringArray" typeName="string" minOccurs="0" maxOccurs="10" />
     </ECClass>
+	<ECClass typeName="AddressDomain" isDomainClass="True">
+        <ECProperty propertyName="Line1" typeName="string" />
+        <ECProperty propertyName="Line2" typeName="string" />
+        <ECArrayProperty propertyName="StringArray" typeName="string" minOccurs="0" maxOccurs="10" />
+    </ECClass>
     <ECClass typeName="BaseAClass1" isDomainClass="True" />
     <ECClass typeName="BaseAClass2" isDomainClass="True" />
     <ECClass typeName="BaseSchemaACustomAttribute" isCustomAttributeClass="True">

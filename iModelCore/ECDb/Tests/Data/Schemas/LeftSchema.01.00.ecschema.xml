@@ -23,7 +23,7 @@
             </UnitSpecificationList>
         </UnitSpecifications>
     </ECCustomAttributes>
-    <ECClass typeName="Employee" description="Employee that exist in a company (left modifed this)" displayLabel="Employee Left" isStruct="True" isDomainClass="False">
+    <ECClass typeName="Employee" description="Employee that exist in a company (left modifed this)" displayLabel="Employee Left" isDomainClass="True">
         <BaseClass>bsb:DataObject</BaseClass>
         <BaseClass>bs:BaseAClass1</BaseClass>
         <BaseClass>bs:BaseAClass2</BaseClass>
