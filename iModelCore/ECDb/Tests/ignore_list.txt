@@ -25,11 +25,6 @@ ECDbInstances.UpdateRelationshipProperty
 #TFS341360 to address this (Affan)
 ECSqlStatementTestFixture.PolymorphicDeleteWithSubclassesInMultipleTables
 
-# WIP_EC3 - test schema uses UnitSpecification as a CA
-ECDbSchemas.SchemaDiff
-ECDbSchemas.ClassDiff
-ECDbSchemas.RelationshiClassDiff
-ECDbSchemas.PropertiesDiff
 
 #WIP_EC3 - Uses Rule schema which has classes that are both structs and CAs
 ECInstanceInserterTests.InsertSingleRuleInstance

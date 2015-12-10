@@ -96,7 +96,7 @@
     <ECRelationshipClass typeName="RightRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="Property" typeName="string" />
         <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="bs:Address" />
+            <Class class="bs:AddressDomain" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="True">
             <Class class="bsb:DataObject" />

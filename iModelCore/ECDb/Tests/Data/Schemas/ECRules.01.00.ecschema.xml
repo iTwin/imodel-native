@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="ECRules" nameSpacePrefix="ecr" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECClass typeName="RuleSet" isDomainClass="True" isCustomAttributeClass="True" isStruct="True">
+    <ECClass typeName="RuleSet" isDomainClass="True" >
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Description" typeName="string" />
         <ECProperty propertyName="BaseQuery" typeName="string" description="The starting point for building a query during the execution of a rule set." />
@@ -9,7 +9,7 @@
         <ECProperty propertyName="Chaining" typeName="int" description="0 for No Chaining (Sequential), 1 for Explicit Chaining (Explicit Update Only), 2 for Full Chaining" />
         <ECArrayProperty propertyName="Context" typeName="string" minOccurs="0" maxOccurs="unbounded" description="An array containing relevant context for the rule set." />
     </ECClass>
-    <ECClass typeName="Rule" isDomainClass="True" isCustomAttributeClass="True" isStruct="True">
+    <ECClass typeName="Rule" isStruct="True">
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Description" typeName="string" description="A string containing a plain text description of the rule including the find and replace points." />
         <ECProperty propertyName="ReadOnly" typeName="boolean" description="If true the rule cannot be edited"/>
