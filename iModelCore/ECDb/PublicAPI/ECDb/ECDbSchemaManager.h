@@ -290,7 +290,7 @@ public:
     //! @note The views are strickly intended for developers for debugging purpose only. They should not be used in application code. 
     //! No code should depend on these views.
     //! @return SUCCESS OR ERROR
-    ECDB_EXPORT BentleyStatus CreateECViewsInDb() const;
+    ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)    
     //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted

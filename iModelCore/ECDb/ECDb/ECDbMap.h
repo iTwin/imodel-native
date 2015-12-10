@@ -160,7 +160,7 @@ public:
 
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
-    BentleyStatus               CreateECViewsInDb();
+    BentleyStatus               CreateECClassViewsInDb() const;
     ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
     MappedTableP                GetMappedTable(ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
 

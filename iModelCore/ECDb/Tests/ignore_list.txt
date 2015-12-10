@@ -27,3 +27,6 @@ ECSqlStatementTestFixture.PolymorphicDeleteWithSubclassesInMultipleTables
 
 #TFS344205 (Affan)
 JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
+
+#Raman will take a look
+ECDbInstances.CommonGeometryJsonSerialization

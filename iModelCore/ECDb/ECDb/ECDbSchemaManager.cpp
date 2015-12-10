@@ -589,9 +589,9 @@ void ECDbSchemaManager::ReportUpdateError(ECN::ECSchemaCR newSchema, ECN::ECSche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan   12/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaManager::CreateECViewsInDb() const
+BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
     {
-    return m_map.CreateECViewsInDb();
+    return m_map.CreateECClassViewsInDb();
     }
 
 //*********************************************************************************

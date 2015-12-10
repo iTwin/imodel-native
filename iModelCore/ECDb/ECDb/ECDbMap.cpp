@@ -107,17 +107,16 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         12/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbMap::CreateECViewsInDb()
+BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     {
     if (GetECDb().IsReadonly())
-        {       
-        LOG.errorv("ECDb::CreateECViewsInDb: This operation require a read/write access to db");
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
     Utf8String sql;
-    sql.Sprintf("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy<>%lld AND MapStrategy<>%lld",
-                Enum::ToInt(ECDbMapStrategy::Strategy::ExistingTable), Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+    sql.Sprintf("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy<>%lld", Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
     
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))

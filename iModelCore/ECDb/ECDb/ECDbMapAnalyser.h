@@ -397,7 +397,7 @@ struct ECDbMapAnalyser
     struct SqlGenerator
         {
         private:
-            ECDbMapR m_map;
+            ECDbMapCR m_map;
 
         private:
             const std::vector<ClassMapCP> GetEndClassMaps(ECN::ECRelationshipClassCR relationship, ECN::ECRelationshipEnd end);
@@ -426,11 +426,8 @@ struct ECDbMapAnalyser
             static Utf8String BuildSchemaQualifiedClassName(ECN::ECClassCR ecClass);
 
         public:
-            SqlGenerator(ECDbMapR map):m_map(map)
-                {}
+            explicit SqlGenerator(ECDbMapCR map):m_map(map) {}
             void DropExistingViews();
             BentleyStatus BuildViews(std::vector<ClassMap const*> const& classMaps);
-
-
         };
 END_BENTLEY_SQLITE_EC_NAMESPACE

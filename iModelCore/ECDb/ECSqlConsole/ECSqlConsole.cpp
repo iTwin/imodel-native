@@ -104,7 +104,7 @@ void ECSqlConsole::Setup()
     AddCommand(make_shared<ParseCommand>());
     AddCommand(make_shared<SetCommand>());
     AddCommand(make_shared<PopulateCommand>());
-    AddCommand(make_shared<CreateECViewsCommand>());
+    AddCommand(make_shared<CreateECClassViewsCommand>());
 
     AddCommand(make_shared<SqliteCommand>());
 

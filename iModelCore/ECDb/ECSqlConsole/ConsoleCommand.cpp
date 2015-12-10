@@ -172,7 +172,7 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".populate")->GetUsage().c_str());
     Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".createecviews")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
     Console::WriteLine();
@@ -895,25 +895,25 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
     }
 
 
-//******************************* CreateECViewsCommand ******************
+//******************************* CreateECClassViewsCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-Utf8String CreateECViewsCommand::_GetName() const { return ".createecviews"; }
+Utf8String CreateECClassViewsCommand::_GetName() const { return ".createecclassviews"; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-Utf8String CreateECViewsCommand::_GetUsage() const
+Utf8String CreateECClassViewsCommand::_GetUsage() const
     {
-    return " .createecviews              Creates or updates views in the ECDb file to visualize the EC content\r\n"
-           "                             as ECClasses and ECProperties rather than tables and columns.";
+    return " .createecclassviews            Creates or updates views in the ECDb file to visualize the EC content\r\n"
+           "                                as ECClasses and ECProperties rather than tables and columns.";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-void CreateECViewsCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
+void CreateECClassViewsCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
     {
     if (!session.HasECDb(true))
         return;
@@ -924,7 +924,7 @@ void CreateECViewsCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8St
         return;
         }
 
-    if (SUCCESS != session.GetECDb().Schemas().CreateECViewsInDb())
+    if (SUCCESS != session.GetECDb().Schemas().CreateECClassViewsInDb())
         Console::WriteErrorLine("Failed to create EC database views in the ECDb file.");
     else
         Console::WriteLine("Created or updated EC database views in the ECDb file.");
@@ -1381,7 +1381,7 @@ Utf8String SqliteCommand::_GetName() const
 //---------------------------------------------------------------------------------------
 Utf8String SqliteCommand::_GetUsage() const
     {
-    return " .sqlite <SQLite SQL>        Executes a SQLite SQL statement";
+    return " .sqlite <SQLite SQL>           Executes a SQLite SQL statement";
     }
 
 //---------------------------------------------------------------------------------------

@@ -790,7 +790,7 @@ std::map<Utf8String, std::set<Utf8String>> GetECViewNamesByPrefix(ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan Khan                        12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECViewsInDb)
+TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECClassViewsInDb)
     {
     //PREFIX        NoOfClasses
     //-------------------------
@@ -802,11 +802,11 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECViewsInDb)
     //stco	        51
     //units_attribs	2
 
-    ECDbR ecdb = SetupECDb("CreateOrUpdateECViews.ecdb");
+    ECDbR ecdb = SetupECDb("CreateOrUpdateECClassViews.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     //Test================================================================
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECViewsInDb());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     auto x = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(5, x.size()) << "Unexpected number of ";
     ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
@@ -824,7 +824,7 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECViewsInDb)
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
     //Test================================================================
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECViewsInDb());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     x = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(7, x.size()) << "Unexpected number of ";
     ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
