@@ -176,7 +176,7 @@ $(CoreObjs)MemoryManager$(oext) :                   $(DgnCoreDir)MemoryManager.c
 
 $(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
-$(coreObjs)LocksManager$(oext): $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
+$(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
 
 $(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
@@ -429,6 +429,12 @@ $(o)GeomJsApiCallbacks$(oext) :                     $(dgnScriptGen)GeomJsApiCall
 %else
 
 $(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStubbedOut.cpp $(DgnPlatformAPISrc)DgnScript.h ${MultiCompileDepends}
+
+%endif
+
+%if defined (winNT)
+
+$(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
 
 %endif
 
