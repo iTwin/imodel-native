@@ -4353,6 +4353,7 @@ void ElementGeometryBuilder::SetUseCurrentDisplayParams(bool newValue)
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement) : m_dgnDb(dgnDb), m_is3d(true), m_writer(dgnDb)
     {
     m_placement3d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 
@@ -4366,6 +4367,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement) : m_dgnDb(dgnDb), m_is3d(false), m_writer(dgnDb)
     {
     m_placement2d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 
