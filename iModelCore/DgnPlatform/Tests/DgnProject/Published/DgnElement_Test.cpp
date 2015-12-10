@@ -409,6 +409,45 @@ TEST_F(DgnElementTests, DgnEditElementCollector)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, ElementCopierTests)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementCopierTests.dgndb", Db::OpenMode::ReadWrite);
+
+    DgnElementCPtr parent = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    TestElementCPtr c1 = AddChild(*parent);
+    TestElementCPtr c2 = AddChild(*parent);
+
+    DgnModelPtr destModel = parent->GetModel();
+
+    // Verify that children are copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyChildren(true);
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        ASSERT_TRUE(parent_cc.IsValid());
+        auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
+        ASSERT_TRUE(c1ccId.IsValid());
+        auto c2ccId = copier.GetCloneContext().FindElementId(c2->GetElementId());
+        ASSERT_TRUE(c2ccId.IsValid());
+        size_t cccount = 0;
+        for (auto childid : parent_cc->QueryChildren())
+            {
+            ASSERT_TRUE(childid == c1ccId || childid == c2ccId);
+            ++cccount;
+            }
+        ASSERT_EQ(2, cccount);
+
+        // Verify that a second attempt to copy an already copied element does nothing
+        ASSERT_TRUE(parent_cc.get() == copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code()).get());
+        ASSERT_TRUE(c1ccId == copier.MakeCopy(nullptr, *destModel, *c1, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(c2ccId == copier.MakeCopy(nullptr, *destModel, *c2, DgnElement::Code())->GetElementId());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ElementGeomAndPlacementTests : DgnElementTests
