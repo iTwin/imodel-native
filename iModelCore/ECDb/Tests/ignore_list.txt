@@ -27,3 +27,9 @@ ECSqlStatementTestFixture.PolymorphicDeleteWithSubclassesInMultipleTables
 
 #TFS344205 (Affan)
 JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
+
+#Affan
+#Crash importing DgnPlatformTestDomain after adding
+#JoinedTablePerDirectSubclass to dgn.Element class
+ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant
+
