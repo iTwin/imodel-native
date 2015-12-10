@@ -286,7 +286,7 @@ public:
     ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedECClasses (ECN::ECClassCR baseECClass) const;
 
     //! Create database views for EC Classes excluding those which are not mapped or are mapped to existing tables.
-    //! The view name is formated as <namespaceprefix>.<className> while it contain property with full property path as column names.
+    //! The view name is formated as namespaceprefix.className while it contain property with full property path as column names.
     //! This method must be called on a read / write db after schema(if any) imported.Calling it again will drop last created views and
     //! create new one according to currently present mapped classes.
     //! @note The database views are strickly intended for DEVELOPERS for DEBUGGING purpose only. Should not use in anyway as part of production 
