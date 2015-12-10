@@ -283,6 +283,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Options>JoinedTablePerDirectSubclass</Options>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
