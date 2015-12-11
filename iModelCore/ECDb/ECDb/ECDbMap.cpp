@@ -107,36 +107,35 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         12/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbMap::CreateOrUpdateECDatabaseViews()
+BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     {
-    BeAssert(GetECDb().IsReadonly() == false && "Need a writeable db for this operation");
     if (GetECDb().IsReadonly())
-        {       
-        LOG.errorv("CreateOrUpdateECView(): This operation require a read/write access to db");
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
+    Utf8String sql;
+    sql.Sprintf("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy<>%lld", Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+    
     Statement stmt;
-    stmt.Prepare(
-        GetECDb(), 
-        SqlPrintfString("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy NOT IN (%lld, %lld)",
-            Enum::ToInt(ECDbMapStrategy::Strategy::ExistingTable), 
-            Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped)).GetUtf8CP());
+    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
+        return ERROR;
 
     std::vector<ClassMapCP> classMaps;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        auto classId = (ECClassId)stmt.GetValueInt64(0);
-        auto classMap = GetClassMapCP(classId);
+        ECClassId classId = (ECClassId)stmt.GetValueInt64(0);
+        ClassMapCP classMap = GetClassMapCP(classId);
         BeAssert(classMap != nullptr);
-        if (classMap)
+        if (classMap != nullptr)
             classMaps.push_back(classMap);
         }
 
-    SqlGenerator sqlG(*this);
-    sqlG.DropExistingViews(); 
-    sqlG.BuildViews(classMaps);
-    return BentleyStatus::SUCCESS;
+    SqlGenerator sqlGenerator(*this);
+    sqlGenerator.DropExistingViews();
+    sqlGenerator.BuildViews(classMaps);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

@@ -1363,9 +1363,9 @@ void ValidateSpatialInstance(ECDbR db, ECInstanceKey spatialInstanceKey, JsonVal
     BentleyStatus status = reader.ReadInstance(actualJsonValue, spatialInstanceKey.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     ASSERT_EQ(SUCCESS, status);
 
-    //Utf8String expectedStrValue = Json::StyledWriter().write(expectedJsonValue);
-    //Utf8String actualStrValue = Json::StyledWriter().write(actualJsonValue);
-    //ASSERT_STREQ(expectedStrValue.c_str(), actualStrValue.c_str());
+    /*Utf8String expectedStrValue = Json::StyledWriter().write(expectedJsonValue);
+    Utf8String actualStrValue = Json::StyledWriter().write(actualJsonValue);
+    ASSERT_STREQ(expectedStrValue.c_str(), actualStrValue.c_str());*/
 
     ValidateCGPoint(expectedJsonValue["Center"]["Coordinate"]["xyz"], actualJsonValue["Center"]["Coordinate"]["xyz"]);
     ValidateCGPoint(expectedJsonValue["LLP"]["Coordinate"]["xyz"], actualJsonValue["LLP"]["Coordinate"]["xyz"]);
@@ -1377,32 +1377,36 @@ void ValidateSpatialInstance(ECDbR db, ECInstanceKey spatialInstanceKey, JsonVal
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Ramanujam.Raman                   10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-#ifdef WIP_MERGE
-TEST(ECDbInstances, CommonGeometryJsonSerialization)
+TEST_F(ECDbInstances, CommonGeometryJsonSerialization)
     {
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDbR ecdb = SetupECDb("cgjsonserialization.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                                             "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                                                             "<ECClass typeName='SpatialLocation' isDomainClass='True'>"
+                                                             "  <ECProperty propertyName='Center' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                             "  <ECProperty propertyName='URP' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                             "  <ECProperty propertyName='LLP' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                             "  <ECProperty propertyName='Location' typeName='Bentley.Geometry.Common.IGeometry'/>"
+                                                             "</ECClass>"
+                                                             "</ECSchema>"), 3);
 
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn_Yes));
-    ASSERT_EQ(BE_SQLITE_OK, stat);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ECClassCP spatialClass = ecdb.Schemas().GetECClass("Test", "SpatialLocation");
+    ASSERT_TRUE(nullptr != spatialClass);
 
     BeFileName pathname;
     BeTest::GetHost().GetDocumentsRoot(pathname);
-    pathname.AppendToPath(L"DgnDb");
+    pathname.AppendToPath(L"ECDb");
     pathname.AppendToPath(L"CommonGeometry.json");
 
-    rapidjson::Document expectedRapidJsonValue;
-    ReadJsonInputFromFile(expectedRapidJsonValue, pathname);
-
     Json::Value expectedJsonCppValue;
-    ReadJsonInputFromFile(expectedJsonCppValue, pathname);
+    ECDbTestUtility::ReadJsonInputFromFile(expectedJsonCppValue, pathname);
 
-    ECClassCP spatialClass = db.GetEC().GetClassLocater().LocateClass(L"StartupCompany", L"SpatialLocation");
-    ASSERT_NE(nullptr, spatialClass);
+    rapidjson::Document expectedRapidJsonValue;
+    bool parseSuccessful = !expectedRapidJsonValue.Parse<0>(Json::FastWriter().write(expectedJsonCppValue).c_str()).HasParseError();
+    ASSERT_TRUE(parseSuccessful);
 
     // Insert using RapidJson API
-    JsonInserter inserter(db, *spatialClass);
+    JsonInserter inserter(ecdb, *spatialClass);
     ECInstanceKey rapidJsonInstanceKey;
     ASSERT_EQ(SUCCESS, inserter.Insert(rapidJsonInstanceKey, expectedRapidJsonValue));
 
@@ -1411,9 +1415,8 @@ TEST(ECDbInstances, CommonGeometryJsonSerialization)
     ASSERT_EQ(SUCCESS, inserter.Insert(jsonCppInstanceKey, expectedJsonCppValue));
 
     // Validate
-    ValidateSpatialInstance(db, rapidJsonInstanceKey, expectedJsonCppValue);
-    ValidateSpatialInstance(db, jsonCppInstanceKey, expectedJsonCppValue);
+    ValidateSpatialInstance(ecdb, rapidJsonInstanceKey, expectedJsonCppValue);
+    ValidateSpatialInstance(ecdb, jsonCppInstanceKey, expectedJsonCppValue);
     }
-#endif
 
 END_ECDBUNITTESTS_NAMESPACE

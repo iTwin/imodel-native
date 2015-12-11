@@ -68,51 +68,52 @@ char ECSqlConsole::s_readBuffer [ECSqlConsole::MaxReadBufferLineSize];
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
-void ECSqlConsole::Setup ()
+void ECSqlConsole::Setup()
     {
-    Console::WriteLine (" --------------------------------------------------------------------------- ");
-    Console::WriteLine (" ECSqlConsole.exe v%d.%d", ECSQLCONSOLE_MAJ_VER, ECSQLCONSOLE_MIN_VER); 
-    Console::WriteLine (" Copyright (c) Bentley Systems 2013. All rights reserved. www.Bentley.com.");
-    Console::WriteLine (" ----------------------------------------------------------------------------");
-    Console::WriteLine ();
-    Console::WriteLine ("    .help for help, .exit to quit program");
-    Console::WriteLine ();
+    Console::WriteLine(" --------------------------------------------------------------------------- ");
+    Console::WriteLine(" ECSqlConsole.exe v%d.%d", ECSQLCONSOLE_MAJ_VER, ECSQLCONSOLE_MIN_VER);
+    Console::WriteLine(" Copyright (c) Bentley Systems 2013. All rights reserved. www.Bentley.com.");
+    Console::WriteLine(" ----------------------------------------------------------------------------");
+    Console::WriteLine();
+    Console::WriteLine("    .help for help, .exit to quit program");
+    Console::WriteLine();
 
-    auto helpCommand = make_shared<HelpCommand> (s_commands);
-    AddCommand (helpCommand);
-    AddCommand (".h", helpCommand); //add same command with alternative command name
-    
-    AddCommand (make_shared<OpenCommand> ());
-    AddCommand (make_shared<CloseCommand> ());
-    AddCommand (make_shared<CreateCommand> ());
-    AddCommand (make_shared<PathCommand> ());
+    auto helpCommand = make_shared<HelpCommand>(s_commands);
+    AddCommand(helpCommand);
+    AddCommand(".h", helpCommand); //add same command with alternative command name
 
-    AddCommand (make_shared<ECSqlCommand> ());
+    AddCommand(make_shared<OpenCommand>());
+    AddCommand(make_shared<CloseCommand>());
+    AddCommand(make_shared<CreateCommand>());
+    AddCommand(make_shared<PathCommand>());
 
-    auto metadataCommand = make_shared<MetadataCommand> ();
-    AddCommand (metadataCommand);
-    AddCommand (".meta", metadataCommand); //add same command with alternative command name
+    AddCommand(make_shared<ECSqlCommand>());
 
-    AddCommand (make_shared<CommitCommand> ());
-    AddCommand (make_shared<RollbackCommand> ());
+    auto metadataCommand = make_shared<MetadataCommand>();
+    AddCommand(metadataCommand);
+    AddCommand(".meta", metadataCommand); //add same command with alternative command name
 
-    AddCommand (make_shared<ImportCommand> ());
-    AddCommand (make_shared<ExportCommand> ());
-    AddCommand (make_shared<ECSchemaDiffCommand> ());
+    AddCommand(make_shared<CommitCommand>());
+    AddCommand(make_shared<RollbackCommand>());
 
-    AddCommand (make_shared<SqlCommand> ());
-    AddCommand (make_shared<ParseCommand> ());
-    AddCommand (make_shared<SetCommand> ());
-    AddCommand (make_shared<PopulateCommand> ());
+    AddCommand(make_shared<ImportCommand>());
+    AddCommand(make_shared<ExportCommand>());
+    AddCommand(make_shared<ECSchemaDiffCommand>());
+
+    AddCommand(make_shared<SqlCommand>());
+    AddCommand(make_shared<ParseCommand>());
+    AddCommand(make_shared<SetCommand>());
+    AddCommand(make_shared<PopulateCommand>());
+    AddCommand(make_shared<CreateECClassViewsCommand>());
 
     AddCommand(make_shared<SqliteCommand>());
 
-    AddCommand (make_shared<HistoryCommand> ());
-    auto exitCommand = make_shared<ExitCommand> ();
-    AddCommand (exitCommand);
-    AddCommand (".quit", exitCommand); //add same command with alternative command name
-    AddCommand (".q", exitCommand); //add same command with alternative command name
-    AddCommand (".bye", exitCommand); //add same command with alternative command name
+    AddCommand(make_shared<HistoryCommand>());
+    auto exitCommand = make_shared<ExitCommand>();
+    AddCommand(exitCommand);
+    AddCommand(".quit", exitCommand); //add same command with alternative command name
+    AddCommand(".q", exitCommand); //add same command with alternative command name
+    AddCommand(".bye", exitCommand); //add same command with alternative command name
     }
 
 

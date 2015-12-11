@@ -146,7 +146,7 @@ Utf8String HelpCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 25 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -171,6 +171,8 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".populate")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
     Console::WriteLine();
@@ -816,7 +818,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
     if (argCount == 2)
         {
         auto schemaName = args[1].c_str();
-        ECSchemaCP schema = session.GetECDbR ().Schemas().GetECSchema(schemaName, true);
+        ECSchemaCP schema = session.GetECDbR().Schemas().GetECSchema(schemaName, true);
         if (schema == nullptr)
             {
             Console::WriteErrorLine("Could not find ECSchema '%s' in ECDb file.", schemaName);
@@ -827,7 +829,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         }
     else
         {
-        auto stat = session.GetECDbR ().Schemas().GetECSchemas(schemaList,true);
+        auto stat = session.GetECDbR().Schemas().GetECSchemas(schemaList, true);
         if (stat != SUCCESS)
             {
             Console::WriteErrorLine("Could not retrieve the ECSchemas from the ECDb file.");
@@ -851,7 +853,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         };
 
     RandomECInstanceGenerator rig(classList);
-    auto status = rig.Generate (true);
+    auto status = rig.Generate(true);
 
     if (status != BentleyStatus::SUCCESS)
         {
@@ -859,7 +861,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         return;
         }
 
-    auto& ecdb = session.GetECDbR ();
+    auto& ecdb = session.GetECDbR();
     auto insertECInstanceDelegate = [&ecdb] (bpair<ECClassCP, vector<IECInstancePtr>> entry)
         {
         auto ecClass = entry.first;
@@ -871,8 +873,8 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
             ECInstanceKey instanceKey;
             auto insertStatus = inserter.Insert(instanceKey, *instance);
             Utf8Char id[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH] = "";
-            ECInstanceIdHelper::ToString (id, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceKey.GetECInstanceId ());
-            instance->SetInstanceId (id);
+            ECInstanceIdHelper::ToString(id, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceKey.GetECInstanceId());
+            instance->SetInstanceId(id);
 
             if (insertStatus != SUCCESS)
                 {
@@ -890,6 +892,42 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
     //relationship instances can only be inserted after the regular instances
     auto const& generatedRelationshipInstances = rig.GetGeneratedRelationshipInstances();
     for_each(generatedRelationshipInstances.begin(), generatedRelationshipInstances.end(), insertECInstanceDelegate);
+    }
+
+
+//******************************* CreateECClassViewsCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2015
+//---------------------------------------------------------------------------------------
+Utf8String CreateECClassViewsCommand::_GetName() const { return ".createecclassviews"; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2015
+//---------------------------------------------------------------------------------------
+Utf8String CreateECClassViewsCommand::_GetUsage() const
+    {
+    return " .createecclassviews            Creates or updates views in the ECDb file to visualize the EC content\r\n"
+           "                                as ECClasses and ECProperties rather than tables and columns.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2015
+//---------------------------------------------------------------------------------------
+void CreateECClassViewsCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
+    {
+    if (!session.HasECDb(true))
+        return;
+
+    if (session.GetECDb().IsReadonly())
+        {
+        Console::WriteErrorLine("ECDb file must be editable. Please close the file and re-open it in read-write mode.");
+        return;
+        }
+
+    if (SUCCESS != session.GetECDb().Schemas().CreateECClassViewsInDb())
+        Console::WriteErrorLine("Failed to create EC database views in the ECDb file.");
+    else
+        Console::WriteLine("Created or updated EC database views in the ECDb file.");
     }
 
 
@@ -1343,7 +1381,7 @@ Utf8String SqliteCommand::_GetName() const
 //---------------------------------------------------------------------------------------
 Utf8String SqliteCommand::_GetUsage() const
     {
-    return " .sqlite <SQLite SQL>        Executes a SQLite SQL statement";
+    return " .sqlite <SQLite SQL>           Executes a SQLite SQL statement";
     }
 
 //---------------------------------------------------------------------------------------
