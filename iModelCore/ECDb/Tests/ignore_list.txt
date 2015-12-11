@@ -33,8 +33,11 @@ ECInstanceInserterTests.InsertSingleRuleInstance
 JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
 
 #WIP_EC3
-ECDbSchemaManagerTests.CreateOrUpdateECDatabaseViews #Numbers aren't what are expected with the EC3 conversion.  Notified Affan
+ECDbSchemaManagerTests.CreateOrUpdateECClassViewsInDb #Numbers aren't what are expected with the EC3 conversion.  Notified Affan
 ECSqlMetadataQueryTest.VerifyQueries # ECClassDef needs to be updated - Notified Mike Embick
+ECDbMappingTestFixture.PropertyWithSameNameAsStructMemberColumn # Notified Krischan
+ECDbSchemas.LoadECSchemas # Uses Unit_Attributes schema with invalid classes - Notified Basanta
+
 #Raman will take a look
 ECDbInstances.CommonGeometryJsonSerialization
 #Affan
