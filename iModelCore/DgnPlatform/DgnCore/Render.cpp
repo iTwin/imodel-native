@@ -49,30 +49,14 @@ void Render::Queue::VerifyRenderThread(bool yesNo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Scene::_AddGraphic(GraphicR graphic)
+void Render::GraphicList::Add(GraphicR graphic)
     {
     m_graphics.push_back(&graphic);
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Scene::_DropGraphic(GraphicR graphic)
-    {
-    for (auto it=m_graphics.begin(); it != m_graphics.end(); ++it)
-        {
-        if (it->get() == &graphic)
-            {
-            m_graphics.erase(it);
-            return;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Scene::_Clear()
+void Render::GraphicList::Clear()
     {
     m_graphics.clear();
     }

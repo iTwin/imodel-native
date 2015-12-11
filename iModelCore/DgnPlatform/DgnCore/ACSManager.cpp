@@ -910,7 +910,7 @@ ColorDef IAuxCoordSys::_GetColor(DgnViewportP viewport, ColorDef menuColor, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
+void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, GraphicR cached, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
     {
     DPoint3d textPt;
     textPt.x = userOrgX; textPt.y = userOrgY; textPt.z = 0.0;
@@ -957,7 +957,7 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP l
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* transformP, ACSDisplayOptions options) const
+void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, GraphicR cached, Transform* transformP, ACSDisplayOptions options) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    linePts[2];
@@ -1009,7 +1009,7 @@ void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, SceneP cached, Transform* transformP, ColorDef menuColor, WCharCP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
+void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, GraphicR cached, Transform* transformP, ColorDef menuColor, WCharCP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double      scale = 0.35, angle = swapAxis ? 0.0 : -msGeomConst_pi/2.0;

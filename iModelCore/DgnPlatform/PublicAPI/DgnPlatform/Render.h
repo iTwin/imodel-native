@@ -25,6 +25,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
@@ -36,7 +37,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
@@ -45,12 +45,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 DEFINE_REF_COUNTED_PTR(Device)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
+DEFINE_REF_COUNTED_PTR(GraphicList)
 DEFINE_REF_COUNTED_PTR(Image)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 DEFINE_REF_COUNTED_PTR(LineTexture)
 DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
-DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Texture)
 DEFINE_REF_COUNTED_PTR(Task)
@@ -1027,85 +1027,21 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct Scene : RefCounted<NonCopyableClass>
+struct GraphicList : RefCounted<NonCopyableClass>
 {
     typedef std::deque<GraphicPtr> Graphics;
 
 protected:
     Graphics m_graphics;
 
-    DGNPLATFORM_EXPORT virtual void _AddGraphic(Graphic& graphic);
-    DGNPLATFORM_EXPORT virtual void _DropGraphic(Graphic& graphic);
-    DGNPLATFORM_EXPORT virtual void _Clear();
-    virtual ~Scene() {_Clear();}
-
 public:
-    Scene() {}
+    GraphicList() {}
     Graphics& GetGraphics() {return m_graphics;}
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-
-    //! Set an GraphicParams to be the "active override" GraphicParams for this IDrawGeom.
-    //! @param[in]          ovrMatSymb  The new active override GraphicParams.
-    //!                                     value in ovrMatSymb will be used instead of the value set by ActivateGraphicParams.
-    void ActivateOverrideGraphicParams(OvrGraphicParamsCP ovrMatSymb) {_ActivateOverrideGraphicParams(ovrMatSymb);}
-
-    //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,
-    //! including all camera definitions. It is ONLY valid or useful for drawing "overlay" graphics while drawing View Decorations.
-    //! @param[in]      yesNo       If true, set to DgnCoordSystem::View. If false, restore to COORDSYS_Root.
-    //! @note           calls to this method should be paired with true then false values for \c yesNo.
-    void SetToViewCoords(bool yesNo) {_SetToViewCoords(yesNo);}
-
-    //! Draw the grid matrix.
-    //! @param[in]      doIsoGrid       Draw the isometric grid points (if applicable).
-    //! @param[in]      drawDots        Draw grid dots.
-    //! @param[in]      gridOrigin      Point for the origin of the grid matrix.
-    //! @param[in]      xVector         Direction of grid X.
-    //! @param[in]      yVector         Direction of grid y.
-    //! @param[in]      gridsPerRef     Draw reference lines.
-    //! @param[in]      repetitions     X,y values for number or repetitions.
-    void DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) {_DrawGrid(doIsoGrid, drawDots, gridOrigin, xVector, yVector, gridsPerRef, repetitions);}
-
-    //! Draw a sprite at a specific location.
-    //! @param[in]      sprite          The sprite definition.
-    //! @param[in]      location        The location where the origin of the sprite should be drawn (in DgnCoordSystem::View coordinates.)
-    //! @param[in]      xVec            A vector that points in the direction (in DgnCoordSystem::View coordinates) that the x vector
-    //!                                     of the sprite definition should be oriented. This allows for rotating sprites. If nullptr, sprite is draw
-    //!                                     unrotated.
-    //! @param[in]      transparency    Sprite is drawn with this transparency  (0=opaque, 255=invisible).
-    //! @note this method is only valid from View Decorators.
-    bool DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) {return _DrawSprite(sprite, location, xVec, transparency);}
-
-    //! Draw a Tiled Raster.
-    //! @param[in]      tiledRaster     The Tiled Raster to draw.
-    void DrawTiledRaster(ITiledRaster* tiledRaster) {_DrawTiledRaster(tiledRaster);}
-
-    DGNPLATFORM_EXPORT void DrawTile(uintptr_t tileId, DPoint3d const* verts);
-
-    //! Push the supplied Graphic as a clip stencil boundary.
-    void PushClipStencil(Graphic* graphic) {_PushClipStencil(graphic);}
-
-    //! Pop the most recently pushed clip stencil boundary.
-    void PopClipStencil() {_PopClipStencil();}
-#endif
-
-    void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
-    void DropGraphic(Graphic& graphic) {_DropGraphic(graphic);}
-    void Clear() {_Clear();}
+    DGNPLATFORM_EXPORT void Add(Graphic& graphic);
+    DGNPLATFORM_EXPORT void Clear();
 };
 
-//=======================================================================================
-//! Selects the output buffer for IViewDraw methods.
-// @bsiclass
-//=======================================================================================
-enum class DgnDrawBuffer
-{
-    None         = 0,                    //!< Do not draw to any buffer.
-    Screen       = 1,                    //!< The visible buffer.
-    Dynamic      = 2,                    //!< Offscreen, usually implemented in hardware as the "back buffer" of a double-buffered context
-    BackingStore = 4,                    //!< Non-drawable offscreen buffer. Holds a copy of the most recent scene.
-    Drawing      = 8,                    //!< The offscreen drawable buffer.
-};
 
 /*=================================================================================**//**
 * Draw modes for displaying information in viewports.
@@ -1177,7 +1113,7 @@ struct Target : RefCounted<NonCopyableClass>
 
 protected:
     DevicePtr  m_device;
-    ScenePtr   m_currentScene;
+    GraphicListPtr m_currentScene;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
@@ -1186,7 +1122,7 @@ protected:
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
-    virtual void _ChangeScene(Scene&) = 0;
+    virtual void _ChangeScene(GraphicList&) = 0;
     virtual void _Refresh(PlanCR) = 0;
 
 public:
@@ -1195,7 +1131,7 @@ public:
 
     Target(Device* device) : m_device(device) {}
 
-    void ChangeScene(SceneR scene) {_ChangeScene(scene);}
+    void ChangeScene(GraphicListR scene) {_ChangeScene(scene);}
     void Refresh(PlanCR plan) {_Refresh(plan);}
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
