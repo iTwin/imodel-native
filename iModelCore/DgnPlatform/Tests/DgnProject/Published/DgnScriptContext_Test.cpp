@@ -64,8 +64,13 @@ static void checkGeometryStream(GeometrySourceCR gel, ElementGeometry::GeometryT
     {
     //  Verify that item generated a line
     size_t count=0;
-    for (ElementGeometryPtr geom : ElementGeometryCollection (gel))
+    for (auto iter : ElementGeometryCollection (gel))
         {
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
         ASSERT_EQ( exptectedType , geom->GetGeometryType() );
         ++count;
         }
@@ -96,7 +101,7 @@ TEST_F(DgnScriptTest, Test1)
         ASSERT_TRUE( newel.IsValid() );
 
         checkGeometryStream(*newel->ToGeometrySource(), ElementGeometry::GeometryType::CurvePrimitive, 1);
-        ASSERT_TRUE( (*(ElementGeometryCollection (*newel->ToGeometrySource()).begin()))->GetAsICurvePrimitive()->GetLineStringCP() != nullptr ) << "Initial geometry should be a line";
+        ASSERT_TRUE( (*(ElementGeometryCollection (*newel->ToGeometrySource()).begin())).GetGeometryPtr()->GetAsICurvePrimitive()->GetLineStringCP() != nullptr ) << "Initial geometry should be a line";
 
         el = newel->CopyForEdit();
         }
@@ -146,7 +151,7 @@ TEST_F(DgnScriptTest, Test1)
 
         checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         DgnBoxDetail box;
-        ASSERT_TRUE( (*(ElementGeometryCollection (*el->ToGeometrySource()).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
+        ASSERT_TRUE( (*(ElementGeometryCollection (*el->ToGeometrySource()).begin())).GetGeometryPtr()->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
         ASSERT_EQ( box.m_baseX , parms["X"].asDouble() );
         ASSERT_EQ( box.m_baseY , parms["Y"].asDouble() );
         ASSERT_EQ( box.m_topOrigin.Distance(box.m_baseOrigin) , parms["Z"].asDouble() );
