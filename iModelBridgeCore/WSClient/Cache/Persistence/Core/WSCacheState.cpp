@@ -21,29 +21,40 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 WSCacheState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment) :
-m_dbAdapter(db),
-m_statementCache(db),
+dbAdapter(db),
+statementCache(db),
+environment(environment),
+extendedDataAdapter(db),
 
-m_objectInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager),
-m_relationshipInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager),
-m_fileInfoManager(m_dbAdapter, m_statementCache, m_fileStorage, m_objectInfoManager, m_hierarchyManager),
+objectInfoManager(dbAdapter, statementCache, hierarchyManager),
+relationshipInfoManager(dbAdapter, statementCache, hierarchyManager),
+fileInfoManager(dbAdapter, statementCache, fileStorage, objectInfoManager, hierarchyManager),
 #if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06,
-m_hierarchyManager(m_dbAdapter, m_statementCache, m_changeInfoManager),
+hierarchyManager(dbAdapter, statementCache, changeInfoManager),
 #else
-m_hierarchyManager(m_dbAdapter, m_statementCache, m_objectInfoManager, m_changeInfoManager),
+hierarchyManager(dbAdapter, statementCache, objectInfoManager, changeInfoManager),
 #endif
-m_instanceHelper(m_dbAdapter, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_changeInfoManager),
-m_rootManager(m_dbAdapter, m_statementCache, m_instanceHelper, m_hierarchyManager, m_objectInfoManager),
-m_cachedQueryManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_relationshipInfoManager, m_objectInfoManager),
-m_navigationBaseManager(m_dbAdapter, m_statementCache),
-m_changeInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_fileInfoManager),
-m_changeManager(m_dbAdapter, m_instanceHelper, m_hierarchyManager, m_cachedQueryManager, m_objectInfoManager, m_relationshipInfoManager,
-m_fileInfoManager, m_changeInfoManager, m_fileStorage, m_rootManager),
-m_fileStorage(m_dbAdapter, m_statementCache, environment),
-
-m_cacheSchema(nullptr),
-m_extendedDataAdapter(db)
+instanceCacheHelper(dbAdapter, hierarchyManager, objectInfoManager, relationshipInfoManager, changeInfoManager),
+rootManager(dbAdapter, statementCache, instanceCacheHelper, hierarchyManager, objectInfoManager),
+responseManager(dbAdapter, statementCache, hierarchyManager, relationshipInfoManager, objectInfoManager),
+navigationBaseManager(dbAdapter, statementCache),
+changeInfoManager(dbAdapter, statementCache, hierarchyManager, objectInfoManager, relationshipInfoManager, fileInfoManager),
+fileStorage(dbAdapter, statementCache, environment),
+changeManager(dbAdapter, instanceCacheHelper, hierarchyManager, responseManager, objectInfoManager, relationshipInfoManager,
+fileInfoManager, changeInfoManager, fileStorage, rootManager)
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ECSchemaCP WSCacheState::Core::GetCacheSchema()
+    {
+    if (nullptr == cacheSchema)
+        {
+        cacheSchema = dbAdapter.GetECSchema(SCHEMA_CacheSchema);
+        }
+    return cacheSchema;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -77,7 +88,7 @@ void WSCacheState::OnSchemaChanged()
 +--------------------------------------------------------------------------------------*/
 void WSCacheState::ClearRuntimeCaches()
     {
-    m_isSyncActive = m_core ? m_core->m_changeManager.IsSyncActive() : m_isSyncActive;
+    m_isSyncActive = m_core ? m_core->changeManager.IsSyncActive() : m_isSyncActive;
     m_core = nullptr;
     }
 
@@ -100,23 +111,10 @@ void WSCacheState::ResetCore()
     {
     if (m_core)
         {
-        m_isSyncActive = m_core->m_changeManager.IsSyncActive();
+        m_isSyncActive = m_core->changeManager.IsSyncActive();
         }
 
     m_core = std::make_shared<Core>(m_db, m_environment);
 
-    m_core->m_changeManager.SetSyncActive(m_isSyncActive);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2015
-+--------------------------------------------------------------------------------------*/
-ECSchemaCP WSCacheState::GetCacheSchema()
-    {
-    Core& core = GetCore();
-    if (nullptr == core.m_cacheSchema)
-        {
-        core.m_cacheSchema = core.m_dbAdapter.GetECSchema(SCHEMA_CacheSchema);
-        }
-    return core.m_cacheSchema;
+    m_core->changeManager.SetSyncActive(m_isSyncActive);
     }
