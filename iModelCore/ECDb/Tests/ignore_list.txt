@@ -30,8 +30,4 @@ JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
 
 #Raman will take a look
 ECDbInstances.CommonGeometryJsonSerialization
-#Affan
-#Crash importing DgnPlatformTestDomain after adding
-#JoinedTablePerDirectSubclass to dgn.Element class
-ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant
 
