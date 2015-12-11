@@ -29,9 +29,3 @@ UnitIterator.GetName                                    # fails randomonly on 06
 ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementation merge and test clean up
 ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
 
-# WIP_EC3 - these use the StartupCompany schema which uses Unit_Attributes with the invalid struct/custom attributes
-ChangeSummaryTestFixture.StructArrayChangesFromCurrentTransaction # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
-ChangeSummaryTestFixture.StructArrayChangesFromSavedTransactions # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
-ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
-ChangeSummaryTestFixture.RelationshipChangesFromSavedTransaction # crashing on optimized 06, with PageHeap ON. Related to importing of StartupCompany.02.00.ecschema.xml. Notified Affan. 
-
