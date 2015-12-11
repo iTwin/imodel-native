@@ -252,7 +252,7 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
 #endif
 
     QueryModel::Selector& selector = m_queryModel.GetSelector();
-    selector.StartProcessing(viewport, *this, _GetRTreeMatchSql(viewport).c_str(), hitLimit, GetMaxElementMemory(), minimumPixels, 
+    selector.StartProcessing(viewport, _GetRTreeMatchSql(viewport).c_str(), hitLimit, GetMaxElementMemory(), minimumPixels, 
                                 m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, 
                                 m_neverDrawn.empty() ?  nullptr : &m_neverDrawn, 
                                 m_noQuery, GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume);

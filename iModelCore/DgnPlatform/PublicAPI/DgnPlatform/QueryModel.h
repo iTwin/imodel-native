@@ -73,7 +73,6 @@ struct QueryModel : PhysicalModel
         DgnDbR              m_dgndb;
         State               m_state;
         BeConditionVariable m_conditionVariable;
-        Utf8String          m_elementLoadSql;
         Utf8String          m_searchSql;
         DgnViewportCP       m_viewport;
         uint32_t            m_maxElements;
@@ -85,7 +84,6 @@ struct QueryModel : PhysicalModel
         bool                m_inRangeSelectionStep;
         bool                m_noQuery;
         Frustum             m_frustum;
-        QueryViewControllerCP m_controller;
         DgnElementIdSet*    m_alwaysDraw;
         DgnElementIdSet*    m_neverDraw;
         ClipVectorPtr       m_clipVector;
@@ -108,7 +106,7 @@ struct QueryModel : PhysicalModel
         Frustum const& GetFrustum() {return m_frustum;}
         //  The QueryViewController passed in via qvc is not the same as viewport->GetViewControllerCP when the viewport is associated with a 
         //  PhysicalRedlineViewController.
-        void StartProcessing(DgnViewportCR viewport, QueryViewControllerCR qvc, Utf8CP sql, uint32_t hitLimit, uint64_t maxMemory, double minimumScreenPixels, 
+        void StartProcessing(DgnViewportCR viewport, Utf8CP sql, uint32_t hitLimit, uint64_t maxMemory, double minimumScreenPixels, 
                                 DgnElementIdSet* highPriority, DgnElementIdSet* neverDraw, bool onlyHighPriority, ClipVectorP clipVector,
                              uint32_t secondaryHitLimit, DRange3dCR secondaryRange);
         void RequestAbort(bool waitUntilFinished);

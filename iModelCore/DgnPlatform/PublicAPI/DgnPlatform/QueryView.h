@@ -25,7 +25,7 @@ struct EXPORT_VTABLE_ATTRIBUTE QueryViewController : CameraViewController, BeSQL
 
 #if !defined (DOCUMENTATION_GENERATOR)
 //__PUBLISH_SECTION_END__
-    friend struct QueryModel::Selector;
+    friend struct QueryModel::Selector; // For BindModelAndCategory()...
 //__PUBLISH_SECTION_START__
 protected:
 

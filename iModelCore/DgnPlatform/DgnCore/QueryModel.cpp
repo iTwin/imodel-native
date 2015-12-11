@@ -173,7 +173,7 @@ void QueryModel::Selector::Reset()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding    05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::Selector::StartProcessing(DgnViewportCR viewport, QueryViewControllerCR qvc, Utf8CP sql, uint32_t maxElements, uint64_t maxMemory, double minimumSizePixels, 
+void QueryModel::Selector::StartProcessing(DgnViewportCR viewport, Utf8CP sql, uint32_t maxElements, uint64_t maxMemory, double minimumSizePixels, 
                    DgnElementIdSet* alwaysDraw, DgnElementIdSet* neverDraw, bool noQuery, ClipVectorP cpsIn,
                    uint32_t secondaryHitLimit, DRange3dCR secondaryRange)
     {
@@ -186,7 +186,6 @@ void QueryModel::Selector::StartProcessing(DgnViewportCR viewport, QueryViewCont
     m_maxElements = maxElements;
     m_searchSql = sql;
     m_frustum = viewport.GetFrustum(DgnCoordSystem::World, true);
-    m_controller = &qvc;
 
     m_minimumPixels = minimumSizePixels;
     m_restartRangeQuery = false;
@@ -515,7 +514,6 @@ QueryModel::Selector::Selector(QueryModel& model) : m_dgndb(model.GetDgnDb()), m
     m_dbStatus = BE_SQLITE_ERROR;
     m_results = 0;
     m_maxElements = 0;
-    m_controller = nullptr;
     m_secondaryVolume.Init();
     m_secondaryHitLimit = 0;
     m_inRangeSelectionStep = false;
