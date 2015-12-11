@@ -1089,7 +1089,7 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementImporter::ElementImporter(DgnImportContext& c) : m_context(c), m_copyChildren(true)
+ElementImporter::ElementImporter(DgnImportContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false)
     {
     }
 
@@ -1113,6 +1113,24 @@ DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR 
             Placement3d childPlacement; // *** WIP COPY - compute offset and rotation of source child relative to source parent 
 
             ImportElement(statusOut, destModel, *sourceChildElement);
+            }
+        }
+
+    IElementGroupCP sourceGroup;
+    if (m_copyGroups && nullptr != (sourceGroup = sourceElement.ToIElementGroup()))
+        {
+        for (auto sourceMemberId : sourceGroup->QueryMembers())
+            {
+            DgnElementCPtr sourceMemberElement = sourceElement.GetDgnDb().Elements().GetElement(sourceMemberId);
+            if (!sourceMemberElement.IsValid())
+                continue;
+            auto destMemberModelId = m_context.FindModelId(sourceMemberElement->GetModel()->GetModelId());
+            DgnModelPtr destMemberModel = m_context.GetDestinationDb().Models().GetModel(destMemberModelId);
+            if (!destMemberModel.IsValid())
+                destMemberModel = &destModel; 
+            DgnElementCPtr destMemberElement = ImportElement(nullptr, *destMemberModel, *sourceMemberElement);
+            if (destMemberElement.IsValid())
+                ElementGroupsMembers::Insert(*destElement, *destMemberElement); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks?
             }
         }
 
@@ -2598,7 +2616,7 @@ DgnDbStatus ElementGeom3d::SetPlacement(Placement3dCR placement, DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true)
+ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false), m_preserveOriginalModels(true)
     {
     }
 
@@ -2615,38 +2633,54 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
 
     DgnElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), sourceElement.GetElementClassId(), icode);
 
-    DgnElementPtr outputDgnElement0 = sourceElement.Clone(&status, &iparams);
-    if (!outputDgnElement0.IsValid())
+    DgnElementPtr outputEditElement = sourceElement.Clone(&status, &iparams);
+    if (!outputEditElement.IsValid())
         return nullptr;
 
     if (!newParentId.IsValid())
         {
-        DgnElementId remappedParentId = m_context.FindElementId(outputDgnElement0->GetParentId());
+        DgnElementId remappedParentId = m_context.FindElementId(outputEditElement->GetParentId());
         if (remappedParentId.IsValid())
             newParentId = remappedParentId;
         }
-    outputDgnElement0->SetParentId(newParentId);
+    outputEditElement->SetParentId(newParentId);
 
-    DgnElementCPtr outputDgnElement = outputDgnElement0->Insert(&status);
-    if (!outputDgnElement.IsValid())
+    DgnElementCPtr outputElement = outputEditElement->Insert(&status);
+    if (!outputElement.IsValid())
         return nullptr;
 
+    m_context.AddElementId(sourceElement.GetElementId(), outputElement->GetElementId());
+
     // *** WIP_COMPONENT_MODEL - we must generalize this support for deep-copying other kinds of relationships
-    ComponentModel::OnElementCopied(*outputDgnElement->ToPhysicalElement(), sourceElement, m_context);
+    ComponentModel::OnElementCopied(*outputElement, sourceElement, m_context);
 
     if (m_copyChildren)
         {
         for (auto sourceChildid : sourceElement.QueryChildren())
             {
-            PhysicalElementCPtr sourceChildElement = sourceElement.GetDgnDb().Elements().Get<PhysicalElement>(sourceChildid);
+            DgnElementCPtr sourceChildElement = sourceElement.GetDgnDb().Elements().GetElement(sourceChildid);
             if (!sourceChildElement.IsValid())
                 continue;
 
-            MakeCopy(&status, targetModel, *sourceChildElement, DgnElement::Code(), outputDgnElement->GetElementId());
+            MakeCopy(nullptr, m_preserveOriginalModels? *sourceChildElement->GetModel(): targetModel, *sourceChildElement, DgnElement::Code(), outputElement->GetElementId());
             }
         }
 
-    return outputDgnElement0->ToPhysicalElementP();
+    IElementGroupCP sourceGroup;
+    if (m_copyGroups && nullptr != (sourceGroup = sourceElement.ToIElementGroup()))
+        {
+        for (auto sourceMemberId : sourceGroup->QueryMembers())
+            {
+            DgnElementCPtr sourceMemberElement = sourceElement.GetDgnDb().Elements().GetElement(sourceMemberId);
+            if (!sourceMemberElement.IsValid())
+                continue;
+            DgnElementCPtr destMemberElement = MakeCopy(nullptr, *sourceMemberElement->GetModel(), *sourceMemberElement, DgnElement::Code());
+            if (destMemberElement.IsValid())
+                ElementGroupsMembers::Insert(*outputElement, *destMemberElement); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks?
+            }
+        }
+
+    return outputElement;
     }
 
 /*---------------------------------------------------------------------------------**//**
