@@ -400,7 +400,7 @@ public:
         //! @param[in] modified the modified DgnElement (before undo)
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::No;}
+        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
