@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Cache/Persistence/Core/DataSourceCacheOpenState.cpp $
+|     $Source: Cache/Persistence/Core/WSCacheState.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "DataSourceCacheOpenState.h"
+#include "WSCacheState.h"
 
 #include <WebServices/Cache/Util/ECDbHelper.h>
 
@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DataSourceCacheOpenState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment) :
+WSCacheState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment) :
 m_dbAdapter(db),
 m_statementCache(db),
 
@@ -48,7 +48,7 @@ m_extendedDataAdapter(db)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DataSourceCacheOpenState::DataSourceCacheOpenState(ObservableECDb& db, CacheEnvironmentCR environment) :
+WSCacheState::WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment) :
 m_db(db),
 m_environment(environment),
 m_isSyncActive(false)
@@ -59,7 +59,7 @@ m_isSyncActive(false)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +--------------------------------------------------------------------------------------*/
-DataSourceCacheOpenState::~DataSourceCacheOpenState()
+WSCacheState::~WSCacheState()
     {
     m_db.UnRegisterSchemaChangeListener(this);
     }
@@ -67,7 +67,7 @@ DataSourceCacheOpenState::~DataSourceCacheOpenState()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +--------------------------------------------------------------------------------------*/
-void DataSourceCacheOpenState::OnSchemaChanged()
+void WSCacheState::OnSchemaChanged()
     {
     ClearRuntimeCaches();
     }
@@ -75,7 +75,7 @@ void DataSourceCacheOpenState::OnSchemaChanged()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +--------------------------------------------------------------------------------------*/
-void DataSourceCacheOpenState::ClearRuntimeCaches()
+void WSCacheState::ClearRuntimeCaches()
     {
     m_isSyncActive = m_core ? m_core->m_changeManager.IsSyncActive() : m_isSyncActive;
     m_core = nullptr;
@@ -84,7 +84,7 @@ void DataSourceCacheOpenState::ClearRuntimeCaches()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +--------------------------------------------------------------------------------------*/
-DataSourceCacheOpenState::Core& DataSourceCacheOpenState::GetCore()
+WSCacheState::Core& WSCacheState::GetCore()
     {
     if (nullptr == m_core)
         {
@@ -96,7 +96,7 @@ DataSourceCacheOpenState::Core& DataSourceCacheOpenState::GetCore()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void DataSourceCacheOpenState::ResetCore()
+void WSCacheState::ResetCore()
     {
     if (m_core)
         {
@@ -111,7 +111,7 @@ void DataSourceCacheOpenState::ResetCore()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +--------------------------------------------------------------------------------------*/
-ECSchemaCP DataSourceCacheOpenState::GetCacheSchema()
+ECSchemaCP WSCacheState::GetCacheSchema()
     {
     Core& core = GetCore();
     if (nullptr == core.m_cacheSchema)

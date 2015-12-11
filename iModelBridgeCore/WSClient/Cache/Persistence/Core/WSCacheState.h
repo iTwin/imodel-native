@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Cache/Persistence/Core/DataSourceCacheOpenState.h $
+|     $Source: Cache/Persistence/Core/WSCacheState.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -32,7 +32,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
+struct WSCacheState : public IECDbSchemaChangeListener
     {
     private:
         struct Core
@@ -71,8 +71,8 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
         void ResetCore();
 
     public:
-        DataSourceCacheOpenState(ObservableECDb& db, CacheEnvironmentCR environment);
-        ~DataSourceCacheOpenState();
+        WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment);
+        ~WSCacheState();
 
         virtual void OnSchemaChanged() override; // IECDbSchemaChangeListener
         void ClearRuntimeCaches();
