@@ -2650,7 +2650,6 @@ public:
     //! @note If this Db already has a ChangeTracker active, the new one replaces it.
     BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker* tracker);
 
-    //__PUBLISH_SECTION_END__
     BE_SQLITE_EXPORT bool IsSettingProperty(Utf8CP space, Utf8CP name, uint64_t id, uint64_t subId) const;
     Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
     //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
@@ -2680,7 +2679,6 @@ public:
     //! to make sure the profile is up-to-date.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     BE_SQLITE_EXPORT DbResult UpgradeBeSQLiteProfile();
-    //__PUBLISH_SECTION_START__
 
     //! Check if the Db is at or beyond its expiration date.
     //! @see QueryExpirationDate, CreateParams::SetExpirationDate
