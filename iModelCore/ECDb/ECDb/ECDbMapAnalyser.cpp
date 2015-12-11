@@ -1587,16 +1587,23 @@ BentleyStatus ECDbMapAnalyser::Analyse (bool applyChanges)
     m_viewInfos.clear ();
 
     SetupDerivedClassLookup ();
-    for (auto rootClassId : GetRootClassIds ())
+    for (auto rootClassId : GetRootClassIds())
         {
-        if (AnalyseClass (*GetClassMap (rootClassId)) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+        auto classMap = GetClassMap(rootClassId);
+        BeAssert(classMap != nullptr);
+        if (classMap != nullptr && !classMap->GetMapStrategy().IsNotMapped())
+            if (AnalyseClass(*classMap) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
         }
+
 
     for (auto rootClassId : GetRelationshipClassIds ())
         {
-        if (AnalyseRelationshipClass (static_cast<RelationshipClassMapCR> (*GetClassMap (rootClassId))) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+        auto classMap = GetClassMap(rootClassId);
+        BeAssert(classMap != nullptr);
+        if (classMap != nullptr && !classMap->GetMapStrategy().IsNotMapped())
+            if (AnalyseRelationshipClass (static_cast<RelationshipClassMapCR> (*classMap)) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
         }
 
 
