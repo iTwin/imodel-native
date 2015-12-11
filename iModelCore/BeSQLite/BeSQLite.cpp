@@ -2103,7 +2103,7 @@ DbResult Db::QueryExpirationDate (DateTime& xdate) const
 
     if (DateTime::FromString (xdate, xdateStr.c_str()) != BSISUCCESS)
         {
-        BeDataAssert (false && "invalid value stored for expiration date property");
+        BeDataAssert (xdateStr.length() == 0 && "invalid value stored for expiration date property");
         return BE_SQLITE_ERROR;
         }
 
