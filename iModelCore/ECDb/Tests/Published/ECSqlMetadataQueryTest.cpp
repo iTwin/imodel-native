@@ -368,7 +368,7 @@ void ECSqlMetadataQueryTest::CompareClassDefLists(bvector<ECClassCP> & expectedC
             propQuery += expectedClass->GetName().c_str();
             propQuery += "'";
             ECSqlStatement propStatement;
-            propStatement.Prepare(db, propQuery.c_str());
+            ASSERT_TRUE (ECSqlStatus::Success == propStatement.Prepare(db, propQuery.c_str()));
             while (DbResult::BE_SQLITE_ROW == propStatement.Step())
                 {
                 ECInstanceECSqlSelectAdapter propAdapter(propStatement);
@@ -474,7 +474,7 @@ TEST_F(ECSqlMetadataQueryTest, VerifyQueries)
     JOIN ms.ECClassDef USING ms.SchemaHasClass \
     WHERE ECSchemaDef.Name='ECSqlTest'";
     ECSqlStatement classStatement;
-    classStatement.Prepare(db, classQuery.c_str());
+    ASSERT_TRUE (ECSqlStatus::Success == classStatement.Prepare(db, classQuery.c_str()));
     while (DbResult::BE_SQLITE_ROW == classStatement.Step())
         {
         ECInstanceECSqlSelectAdapter classAdapter(classStatement);
