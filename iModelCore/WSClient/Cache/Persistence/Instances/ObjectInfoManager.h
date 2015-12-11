@@ -41,7 +41,6 @@ struct ObjectInfoManager
             );
 
         ECClassCP GetInfoClass() const;
-        ECRelationshipClassCP GetInfoRelationshipClass() const;
 
         BentleyStatus InsertInfo(ObjectInfoR info);
         BentleyStatus UpdateInfo(ObjectInfoCR info);

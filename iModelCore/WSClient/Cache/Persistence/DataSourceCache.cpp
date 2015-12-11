@@ -1149,20 +1149,14 @@ ISelectProviderCR selectProvider
         instancesOut = Json::arrayValue;
         }
 
-    ECInstanceKey root = m_state->GetRootManager().FindRoot(rootName);
-    if (!root.IsValid())
-        {
-        return SUCCESS;
-        }
-
-    ECInstanceKeyMultiMap instanceIds;
-    if (SUCCESS != m_state->GetHierarchyManager().ReadTargetKeys(root, m_state->GetRootManager().GetRootRelationshipClass(), instanceIds))
+    ECInstanceKeyMultiMap instanceMap;
+    if (SUCCESS != m_state->GetRootManager().GetInstancesLinkedToRoot(rootName, instanceMap))
         {
         return ERROR;
         }
 
     CacheQueryHelper helper(selectProvider);
-    if (SUCCESS != helper.ReadInstances(m_state->GetECDbAdapter(), instanceIds,
+    if (SUCCESS != helper.ReadInstances(m_state->GetECDbAdapter(), instanceMap,
         [&] (const CacheQueryHelper::ClassReadInfo& info, ECSqlStatement& statement)
         {
         return CacheQueryHelper::ReadJsonInstances(info, statement, instancesOut);
@@ -1183,18 +1177,7 @@ Utf8StringCR rootName,
 ECInstanceKeyMultiMap& instanceMap
 )
     {
-    ECInstanceKey root = m_state->GetRootManager().FindRoot(rootName);
-    if (!root.IsValid())
-        {
-        return SUCCESS;
-        }
-
-    if (SUCCESS != m_state->GetHierarchyManager().ReadTargetKeys(root, m_state->GetRootManager().GetRootRelationshipClass(), instanceMap))
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return m_state->GetRootManager().GetInstancesLinkedToRoot(rootName, instanceMap);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1510,7 +1493,7 @@ ICancellationTokenPtr ct
 
     bool wasCompleted = m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
     bool nowCompleted = wasCompleted;
-    
+
     if (response.IsFinal())
         {
         nowCompleted = true;
