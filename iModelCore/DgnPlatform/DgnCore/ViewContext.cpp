@@ -18,18 +18,8 @@ static DRange3d const s_fullNpcRange =
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewContext::ViewContext()
     {
-    m_dgnDb = nullptr;
-    m_viewport = nullptr;
     m_purpose = DrawPurpose::NotSpecified;
-    m_isAttached = false;
-    m_is3dView = true;
-    m_useNpcSubRange = false;
-    m_filterLOD = FILTER_LOD_ShowRange;
-    m_wantMaterials = false;
-    m_ignoreViewRange = false;
     m_hiliteState = DgnElement::Hilited::None;
-    m_scanRangeValid = false;
-    m_levelOfDetail = 1.0;
     m_worldToNpc.InitIdentity();
     m_worldToView.InitIdentity();
     }
@@ -217,8 +207,6 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     m_viewport = viewport;
     m_purpose = purpose;
     ClearAborted();
-
-    m_filterLOD = FILTER_LOD_ShowRange;
 
     m_is3dView = viewport->Is3dView();
     SetViewFlags(viewport->GetViewFlags());

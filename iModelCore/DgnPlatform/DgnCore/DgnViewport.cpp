@@ -326,7 +326,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFrac
 
     // calculate the root-to-npc mapping (using expanded frustum)
     DMap4d  newRootToNpc;
-    if (!bsiDMap4d_initFromVectorFrustum(&newRootToNpc, &origin, &xExtent, &yExtent, &zExtent, m_frustFraction))
+    if (!bsiDMap4d_initFromVectorFrustum(&newRootToNpc, &origin, &xExtent, &yExtent, &zExtent, frustFraction))
         {
 #if defined (NO_TEST_VIEW_FRUSTUM)
         BeAssert(0);

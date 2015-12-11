@@ -15,8 +15,6 @@
 #include "ScanCriteria.h"
 #include "IPickGeom.h"
 
-#define FOCAL_LENGTH_RATIO 0.023584905
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
@@ -25,21 +23,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  \e attached to a DgnViewport to be useful, and must be \e detached from the DgnViewport to free any memory associated with its internal state.
  @beginGroup 
 +===============+===============+===============+===============+===============+======*/
-
-enum FilterLODFlags
-{
-    FILTER_LOD_Off          = 0,        //!< don't do Level-of-detail filtering at all
-    FILTER_LOD_ShowRange    = 1,        //!< when too small, just show range
-    FILTER_LOD_ShowNothing  = 2,        //!< when too small, show nothing
-};
-
-enum
-{
-    LOD_DISPLAY_AS_POINT    = 6,        // extent squared
-    LOD_DELTA_INCREASE      = 9,        // extent squared
-    LOD_DELTA_DECREASE      = 100,      // extent squared
-    MAX_LOD_DELTA           = 40000,    // extent squared
-};
 
 //=======================================================================================
 //! @note This is stored persistently as part of the Reference Dynamic View Settings XAttributes, and thus cannot be changed
@@ -202,14 +185,13 @@ public:
     };
 
 protected:
-    DgnDbP                  m_dgnDb;
-    bool                    m_isAttached;
-    bool                    m_is3dView;
-    bool                    m_wantMaterials;
-    bool                    m_useNpcSubRange;
-    bool                    m_ignoreViewRange;
-    bool                    m_scanRangeValid;
-    Byte                    m_filterLOD;
+    DgnDbP                  m_dgnDb = nullptr;
+    bool                    m_isAttached = false;
+    bool                    m_is3dView = true;
+    bool                    m_wantMaterials = false;
+    bool                    m_useNpcSubRange = false;
+    bool                    m_ignoreViewRange = false;
+    bool                    m_scanRangeValid = false;
     ViewFlags               m_viewflags;
     DrawPurpose             m_purpose;
     DRange3d                m_npcSubRange;
@@ -218,11 +200,10 @@ protected:
     ScanCriteria            m_scanCriteria;
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
-    DgnViewportP            m_viewport;
+    DgnViewportP            m_viewport = nullptr;
     DgnElement::Hilited     m_hiliteState;
     IElemTopologyCPtr       m_currElemTopo;
     GeometryStreamEntryId   m_currGeometryStreamEntryId;
-    double                  m_levelOfDetail;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
@@ -291,8 +272,6 @@ public:
     DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     TransformClipStackR GetTransformClipStack() {return m_transformClipStack;}
-    Byte& GetFilterLODFlag() {return m_filterLOD;}
-    void SetFilterLODFlag(FilterLODFlags flags) {m_filterLOD =(Byte) flags;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
@@ -429,13 +408,6 @@ public:
     //! Clears current override flags and re-applies context overrides.
     //! @note Calls ActivateOverrideGraphicParams on the output.
     DGNPLATFORM_EXPORT void ResetContextOverrides();
-
-    //! Gets the current level of detail.
-    //! @return       the current level of detail.
-    double GetCurrentLevelOfDetail() const {return m_levelOfDetail;}
-
-    //! Sets the current level of detail.
-    void SetCurrentLevelOfDetail(double levelOfDetail) {m_levelOfDetail = levelOfDetail;}
 
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
