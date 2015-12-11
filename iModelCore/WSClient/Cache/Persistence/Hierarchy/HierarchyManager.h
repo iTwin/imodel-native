@@ -31,10 +31,10 @@ struct HierarchyManager
 #endif
     {
     private:
-        ECDbAdapterR            m_dbAdapter;
-        ECSqlStatementCache*    m_statementCache;
-        ObjectInfoManager*      m_objectInfoManager;
-        ChangeInfoManager*      m_changeInfoManager;
+        ECDbAdapter&            m_dbAdapter;
+        ECSqlStatementCache&    m_statementCache;
+        ObjectInfoManager&      m_objectInfoManager;
+        ChangeInfoManager&      m_changeInfoManager;
 
 #if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
         std::vector<ECInstanceDeleter> m_deleteHandlers;

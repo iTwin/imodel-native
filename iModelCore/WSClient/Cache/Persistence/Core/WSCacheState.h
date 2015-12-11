@@ -26,6 +26,7 @@
 #include "../Instances/RelationshipInfoManager.h"
 #include "../Instances/InstanceCacheHelper.h"
 #include "../Responses/CachedResponseManager.h"
+#include "../../Logging.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -37,26 +38,30 @@ struct WSCacheState : public IECDbSchemaChangeListener
     private:
         struct Core
             {
-            Core(ObservableECDb& db, CacheEnvironmentCR environment);
+            private:
+                ECSchemaCP cacheSchema = nullptr;
 
-            ECDbAdapter                 m_dbAdapter;
-            ECSqlStatementCache         m_statementCache;
+            public:
+                Core(ObservableECDb& db, CacheEnvironmentCR environment);
+                ECSchemaCP GetCacheSchema();
 
-            ObjectInfoManager           m_objectInfoManager;
-            RelationshipInfoManager     m_relationshipInfoManager;
-            FileInfoManager             m_fileInfoManager;
-            CachedResponseManager       m_cachedQueryManager;
-            NavigationBaseManager       m_navigationBaseManager;
-            HierarchyManager            m_hierarchyManager;
-            RootManager                 m_rootManager;
-            InstanceCacheHelper         m_instanceHelper;
-            ChangeInfoManager           m_changeInfoManager;
-            ChangeManager               m_changeManager;
-            FileStorage                 m_fileStorage;
+                ECDbAdapter             dbAdapter;
+                ECSqlStatementCache     statementCache;
+                ExtendedDataAdapter     extendedDataAdapter;
 
-            ECSchemaCP                  m_cacheSchema;
+                CacheEnvironmentCR      environment;
 
-            ExtendedDataAdapter         m_extendedDataAdapter;
+                ObjectInfoManager       objectInfoManager;
+                RelationshipInfoManager relationshipInfoManager;
+                FileInfoManager         fileInfoManager;
+                CachedResponseManager   responseManager;
+                NavigationBaseManager   navigationBaseManager;
+                HierarchyManager        hierarchyManager;
+                RootManager             rootManager;
+                InstanceCacheHelper     instanceCacheHelper;
+                ChangeInfoManager       changeInfoManager;
+                FileStorage             fileStorage;
+                ChangeManager           changeManager;
             };
 
     private:
@@ -71,74 +76,76 @@ struct WSCacheState : public IECDbSchemaChangeListener
         void ResetCore();
 
     public:
+        WSCacheState(const WSCacheState&) = delete;
         WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment);
         ~WSCacheState();
 
         virtual void OnSchemaChanged() override; // IECDbSchemaChangeListener
         void ClearRuntimeCaches();
-        ECSchemaCP GetCacheSchema();
 
         ECDbAdapter& GetECDbAdapter()
             {
-            return GetCore().m_dbAdapter;
+            return GetCore().dbAdapter;
             }
-
         ExtendedDataAdapter& GetExtendedDataAdapter()
             {
-            return GetCore().m_extendedDataAdapter;
+            return GetCore().extendedDataAdapter;
             }
-
         CacheEnvironmentCR GetFileCacheEnvironment()
             {
-            return m_environment;
+            return GetCore().environment;
+            }
+        ECSchemaCP GetCacheSchema()
+            {
+            return GetCore().GetCacheSchema();
             }
         ObjectInfoManager& GetObjectInfoManager()
             {
-            return GetCore().m_objectInfoManager;
+            return GetCore().objectInfoManager;
             }
         RelationshipInfoManager& GetRelationshipInfoManager()
             {
-            return GetCore().m_relationshipInfoManager;
+            return GetCore().relationshipInfoManager;
             }
         FileInfoManager& GetFileInfoManager()
             {
-            return GetCore().m_fileInfoManager;
+            return GetCore().fileInfoManager;
             }
         CachedResponseManager& GetCachedResponseManager()
             {
-            return GetCore().m_cachedQueryManager;
+            return GetCore().responseManager;
             }
         FileStorage& GetFileStorage()
             {
-            return GetCore().m_fileStorage;
+            return GetCore().fileStorage;
             }
         NavigationBaseManager& GetNavigationBaseManager()
             {
-            return GetCore().m_navigationBaseManager;
+            return GetCore().navigationBaseManager;
             }
         HierarchyManager& GetHierarchyManager()
             {
-            return GetCore().m_hierarchyManager;
+            return GetCore().hierarchyManager;
             }
         RootManager& GetRootManager()
             {
-            return GetCore().m_rootManager;
+            return GetCore().rootManager;
             }
         ChangeInfoManager& GetChangeInfoManager()
             {
-            return GetCore().m_changeInfoManager;
+            return GetCore().changeInfoManager;
             }
         ChangeManager& GetChangeManager()
             {
-            return GetCore().m_changeManager;
+            return GetCore().changeManager;
             }
         InstanceCacheHelper& GetInstanceHelper()
             {
-            return GetCore().m_instanceHelper;
+            return GetCore().instanceCacheHelper;
             }
         ECSqlStatementCache& GetStatementCache()
             {
-            return GetCore().m_statementCache;
+            return GetCore().statementCache;
             }
     };
 

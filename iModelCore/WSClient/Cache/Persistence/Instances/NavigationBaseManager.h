@@ -22,8 +22,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct NavigationBaseManager
     {
     private:
-        ECDbAdapter* m_dbAdapter;
-        ECSqlStatementCache* m_statementCache;
+        ECDbAdapter& m_dbAdapter;
+        ECSqlStatementCache& m_statementCache;
 
         ECClassCP m_navigationBaseClass;
 

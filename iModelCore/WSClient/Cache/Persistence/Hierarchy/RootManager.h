@@ -31,9 +31,9 @@ struct RootManager
     {
     private:
         ECDbAdapter&                m_dbAdapter;
-        ECSqlStatementCache*        m_statementCache;
+        ECSqlStatementCache&        m_statementCache;
 
-        InstanceCacheHelper&        m_instanceHelper;
+        InstanceCacheHelper&        m_instanceCacheHelper;
         HierarchyManager&           m_hierarchyManager;
         ObjectInfoManager&          m_objectInfoManager;
 
@@ -57,7 +57,7 @@ struct RootManager
             (
             ECDbAdapter& dbAdapter,
             ECSqlStatementCache& statementCache,
-            InstanceCacheHelper&  instanceHelper,
+            InstanceCacheHelper& instanceCacheHelper,
             HierarchyManager& hierarchyManager,
             ObjectInfoManager& objectInfoManager
             );

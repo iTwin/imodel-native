@@ -21,8 +21,8 @@ NavigationBaseManager::NavigationBaseManager
 ECDbAdapterR dbAdapter,
 WebServices::ECSqlStatementCache& statementCache
 ) :
-m_dbAdapter(&dbAdapter),
-m_statementCache(&statementCache),
+m_dbAdapter(dbAdapter),
+m_statementCache(statementCache),
 m_navigationBaseClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_NavigationBase))
     {}
 
@@ -32,7 +32,7 @@ m_navigationBaseClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_NavigationB
 ECInstanceKey NavigationBaseManager::FindNavigationBase()
     {
     Utf8PrintfString key("NavigationBaseManager::FindNavigationBase");
-    auto statement = m_statementCache->GetPreparedStatement(key, [&]
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return "SELECT ECInstanceId FROM " ECSql_NavigationBaseClass " LIMIT 1";
         });
@@ -57,7 +57,7 @@ ECInstanceKey NavigationBaseManager::FindOrCreateNavigationBase()
 
     auto ecSql = "INSERT INTO " ECSql_NavigationBaseClass " (ECInstanceId) VALUES (NULL)";
     ECSqlStatement statement;
-    if (SUCCESS != m_dbAdapter->PrepareStatement(statement, ecSql))
+    if (SUCCESS != m_dbAdapter.PrepareStatement(statement, ecSql))
         {
         return ECInstanceKey();
         }

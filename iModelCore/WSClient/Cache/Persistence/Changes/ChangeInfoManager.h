@@ -26,12 +26,13 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct ChangeInfoManager
     {
     private:
-        IECDbAdapter*                       m_dbAdapter;
-        WebServices::ECSqlStatementCache*   m_statementCache;
-        HierarchyManager*                   m_hierarchyManager;
-        ObjectInfoManager*                  m_objectInfoManager;
-        RelationshipInfoManager*            m_relationshipInfoManager;
-        FileInfoManager*                    m_fileInfoManager;
+        IECDbAdapter&                       m_dbAdapter;
+        ECSqlStatementCache&                m_statementCache;
+        HierarchyManager&                   m_hierarchyManager;
+        ObjectInfoManager&                  m_objectInfoManager;
+        RelationshipInfoManager&            m_relationshipInfoManager;
+        FileInfoManager&                    m_fileInfoManager;
+
         std::shared_ptr<ValueIncrementor>   m_changeNumberIncrementor;
 
     private:
