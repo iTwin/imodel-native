@@ -23,9 +23,9 @@ struct FacetClipper : PolyfaceQuery::IClipToPlaneSetOutput
 {
 private:
     SimplifyGraphic&   m_output;
-    ClipVectorCP            m_clip;
-    bool                    m_triangulate;
-    bool                    m_filled;
+    ClipVectorCP       m_clip;
+    bool               m_triangulate;
+    bool               m_filled;
     
 public:
 
@@ -103,14 +103,6 @@ SimplifyGraphic::SimplifyGraphic(bool addFacetNormals, bool addFacetParams)
     {
     m_context = nullptr;
     m_localToWorldTransform.InitIdentity();
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    ViewFlags viewFlags;
-    viewFlags.InitDefaults();
-    viewFlags.styles = false; // don't want linestyles for range calculation - they're added later.
-    m_context->SetViewFlags(viewFlags);
-#endif
-
     m_defaultFacetOptions = IFacetOptions::New();
     setDefaultFacetOptions(m_defaultFacetOptions.get(), 0.0, addFacetNormals, addFacetParams);
 
@@ -634,8 +626,8 @@ void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
                 polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
-                faceAttachmentsVec->at(i).ToGeometryParams(m_context->GetCurrentGeometryParams());
-                m_context->CookGeometryParams(*this);
+                faceAttachmentsVec->at(i).ToGeometryParams(m_currGeometryParams);
+                m_context->CookGeometryParams(m_currGeometryParams, *this);
 
                 FacetClipper(*this, false).ProcessDisposablePolyface(*polyfaces[i]);
                 }
@@ -1499,30 +1491,43 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicParamsR SimplifyGraphic::GetEffectiveGraphicParams(GraphicParamsR matSymb)
+void SimplifyGraphic::GetEffectiveGraphicParams(GraphicParamsR graphicParams)
     {
-    matSymb = *m_context->GetGraphicParams();
-    Render::OvrGraphicParams ovr =  *m_context->GetOverrideGraphicParams();
+    graphicParams = m_currGraphicParams;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    Render::OvrGraphicParams ovr = *m_context->GetOverrideGraphicParams();
 
     if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_Color))
-        matSymb.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (matSymb.GetLineColor().GetValue() & 0xff000000)));
+        graphicParams.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (graphicParams.GetLineColor().GetValue() & 0xff000000)));
 
     if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_ColorTransparency))
-        matSymb.SetLineColor(ColorDef((matSymb.GetLineColor().GetValue() & 0xffffff) | (ovr.GetLineColor().GetValue() & 0xff000000)));
+        graphicParams.SetLineColor(ColorDef((graphicParams.GetLineColor().GetValue() & 0xffffff) | (ovr.GetLineColor().GetValue() & 0xff000000)));
 
     if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColor))
-        matSymb.SetFillColor(ColorDef((ovr.GetFillColor().GetValue() & 0xffffff) | (matSymb.GetFillColor().GetValue() & 0xff000000)));
+        graphicParams.SetFillColor(ColorDef((ovr.GetFillColor().GetValue() & 0xffffff) | (graphicParams.GetFillColor().GetValue() & 0xff000000)));
 
     if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColorTransparency))
-        matSymb.SetFillColor(ColorDef((matSymb.GetFillColor().GetValue() & 0xffffff) | (ovr.GetFillColor().GetValue() & 0xff000000)));
+        graphicParams.SetFillColor(ColorDef((graphicParams.GetFillColor().GetValue() & 0xffffff) | (ovr.GetFillColor().GetValue() & 0xff000000)));
 
     if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RastWidth))
-        matSymb.SetWidth(ovr.GetWidth());
+        graphicParams.SetWidth(ovr.GetWidth());
 
     if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RenderMaterial))
-        matSymb.SetMaterial(ovr.GetMaterial().get());
+        graphicParams.SetMaterial(ovr.GetMaterial().get());
+#endif
+    }
 
-    return matSymb;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams)
+    {
+    m_currGraphicParams = graphicParams;
+
+    if (nullptr != geomParams)
+        m_currGeometryParams = *geomParams;
+    else
+        m_currGeometryParams = GeometryParams();
     }
 
 /*---------------------------------------------------------------------------------**//**  

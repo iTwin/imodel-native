@@ -10,7 +10,7 @@
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  06/09
 +===============+===============+===============+===============+===============+======*/
-struct ElementGraphicsDrawGeom : SimplifyGraphic
+struct ElementGraphicsProcessor : SimplifyGraphic
 {
     DEFINE_T_SUPER(SimplifyGraphic)
 private:
@@ -45,17 +45,17 @@ virtual bool _ProcessAsBody(bool isCurved) const override {return m_dropObj->_Pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AnnounceCurrentState()
     {
-    GraphicParams currentGraphicParams;
+    GraphicParams currGraphicParams;
 
-    GetEffectiveGraphicParams(currentGraphicParams);
+    GetEffectiveGraphicParams(currGraphicParams);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_dropObj->_AnnounceTransform(m_context->GetCurrLocalToWorldTransformCP());
 #else
     m_dropObj->_AnnounceTransform(&m_localToWorldTransform);
 #endif
-    m_dropObj->_AnnounceGraphicParams(currentGraphicParams);
-    m_dropObj->_AnnounceGeometryParams(m_context->GetCurrentGeometryParams());
+    m_dropObj->_AnnounceGraphicParams(currGraphicParams);
+    m_dropObj->_AnnounceGeometryParams(m_currGeometryParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,47 +133,15 @@ virtual void _AddTextString(TextStringCR text, double* zDepth) override
     text.DrawTextAdornments(*m_context);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ModifyDrawViewFlags(ViewFlagsR flags)
-    {
-    // Prefer "higher level" geometry from legacy types...
-    flags.SetRenderMode(RenderMode::SmoothShade);
-
-    // Make sure linestyles drawn for drop...esp. when dropping linestyles!
-    flags.styles = true;
-
-    // Make sure to display fill so that fill/gradient can be added to output...
-    flags.fill = true;
-
-    // Make sure to display patterns so that patterns can be added to output...
-    flags.patterns = true;
-    }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _SetDrawViewFlags(ViewFlags flags) override
-    {
-    T_Super::_SetDrawViewFlags(flags);
-    ModifyDrawViewFlags(m_viewFlags);
-    }
-#endif
-
 public:
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGraphicsDrawGeom(ViewContextP context, IElementGraphicsProcessor& dropObj)
+ElementGraphicsProcessor(ViewContextP context, IElementGraphicsProcessor& dropObj)
     {
     SetViewContext(context);
     m_dropObj = &dropObj;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    ModifyDrawViewFlags(m_viewFlags);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -181,7 +149,7 @@ ElementGraphicsDrawGeom(ViewContextP context, IElementGraphicsProcessor& dropObj
 +---------------+---------------+---------------+---------------+---------------+------*/
 IElementGraphicsProcessor* GetIElementGraphicsProcessor() {return m_dropObj;}
 
-}; // ElementGraphicsDrawGeom
+}; // ElementGraphicsProcessor
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  06/09
@@ -190,7 +158,7 @@ struct ElementGraphicsContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
-    RefCountedPtr<ElementGraphicsDrawGeom> m_graphic;
+    RefCountedPtr<ElementGraphicsProcessor> m_graphic;
 
     ElementGraphicsContext() {}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
@@ -200,7 +168,7 @@ public:
         {
         m_purpose = dropObj._GetDrawPurpose();
         m_wantMaterials = true; // Setup material in GeometryParams in case IElementGraphicsProcessor needs it...
-        m_graphic = new ElementGraphicsDrawGeom(this, dropObj);
+        m_graphic = new ElementGraphicsProcessor(this, dropObj);
 
         dropObj._AnnounceContext(*this);
         }
@@ -231,6 +199,7 @@ virtual void _DrawAreaPattern(ClipStencil& boundary) override
     T_Super::_DrawAreaPattern(boundary);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -243,16 +212,7 @@ virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP* symb) override
 
     return currStyle;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _CookGeometryParams(GeometryParamsR elParams, GraphicParamsR elMatSymb) override
-    {
-    // Apply ignores, resolve effective, and cook GraphicParams...
-    elParams.Resolve(*this);
-    elMatSymb.Cook(elParams, *this, m_startTangent, m_endTangent);
-    }
+#endif
 
 }; // ElementGraphicsContext
 
@@ -281,10 +241,10 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
 
             for (ElementGeometryPtr elemGeom : collection)
                 {
-                context.SetGeometryStreamEntryId(collection.GetGeometryStreamEntryId());
+                context.GetGeometryStreamEntryIdR() = collection.GetGeometryStreamEntryId();
 
-                context.GetCurrentGeometryParams() = collection.GetGeometryParams();
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+                context.GetCurrentGeometryParams() = collection.GetGeometryParams();
                 context.CookGeometryParams();
 
                 context.PushTransform(collection.GetGeometryToWorld());
@@ -292,8 +252,9 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
                 context.PopTransformClip();
 #else
                 Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), collection.GetGeometryToWorld()));
+                GeometryParams geomParams(collection.GetGeometryParams());
 
-                context.CookGeometryParams(*graphic);
+                context.CookGeometryParams(geomParams, *graphic);
                 elemGeom->Draw(*graphic, context);
 #endif
                 }
@@ -312,7 +273,6 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, DgnDbR d
     {
     ElementGraphicsContext  context(dropObj);
 
-    context.GetCurrentGeometryParams() = GeometryParams();
     context.SetDgnDb(dgnDb);
 
     dropObj._OutputGraphics(context);
@@ -325,7 +285,7 @@ static double wireframe_getTolerance(CurveVectorCR curves)
     {
     static double s_minRuleLineTolerance = 1.0e-8;
    
-    return  curves.ResolveTolerance(s_minRuleLineTolerance);      // TFS# 24423 - Length calculation can be very slow for B-Curves.  s_defaultLengthRelTol * curves.Length ();
+    return curves.ResolveTolerance(s_minRuleLineTolerance); // TFS# 24423 - Length calculation can be very slow for B-Curves. s_defaultLengthRelTol * curves.Length ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1332,7 +1292,7 @@ struct FaceAttachmentRuleCollector : IElementGraphicsProcessor
 protected:
 
 Transform                           m_currentTransform;
-GeometryParams                   m_currentDisplayParams;
+GeometryParams                      m_currentDisplayParams;
 
 ISolidKernelEntityCR                m_entity;
 bool                                m_includeEdges;
@@ -1340,7 +1300,7 @@ bool                                m_includeFaceIso;
 bmap<FaceAttachment, CurveVectorP>  m_uniqueAttachments;
 
 bvector<CurveVectorPtr>&            m_curves;
-bvector<GeometryParams>&         m_params;
+bvector<GeometryParams>&            m_params;
 
 public:
 

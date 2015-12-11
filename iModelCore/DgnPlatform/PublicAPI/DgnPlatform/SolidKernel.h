@@ -38,9 +38,6 @@ DGNPLATFORM_EXPORT FaceAttachment (Render::GeometryParamsCR);
 //! Input GeometryParams should be initialized from ViewContext::GetCurrentGeometryParams for anything other than color, transparency, material.
 DGNPLATFORM_EXPORT void ToGeometryParams (Render::GeometryParamsR) const; 
 
-//! @private For QvOutput use only, other callers should use ToGeometryParams.
-DGNPLATFORM_EXPORT void ToGraphicParams (Render::GraphicParamsR, DgnViewportR) const;
-
 DGNPLATFORM_EXPORT bool operator== (struct FaceAttachment const&) const;
 DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
 

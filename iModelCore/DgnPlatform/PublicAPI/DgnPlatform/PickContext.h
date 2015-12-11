@@ -85,7 +85,6 @@ private:
     virtual bool _CheckStop() override;
     virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override;
     virtual void _DrawAreaPattern(ViewContext::ClipStencil& boundary) override;
-    virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*) override;
     virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;
     virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false) override;
     virtual void _DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) override;

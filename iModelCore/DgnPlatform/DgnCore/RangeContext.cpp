@@ -816,7 +816,7 @@ private:
 protected:
 
 public:
-    FitContext(FitViewParams& params) : NullContext(true), m_params(params)
+    FitContext(FitViewParams& params) : NullContext(), m_params(params)
         {
         m_ignoreViewRange = !params.m_useScanRange;
         m_purpose         = DrawPurpose::FitView;

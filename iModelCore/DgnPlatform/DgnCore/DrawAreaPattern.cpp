@@ -544,6 +544,7 @@ struct PatternHelper
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     GeometryParamsR elParams = context.GetCurrentGeometryParams();
 
     if (PatternParamsModifierFlags::None != ((PatternParamsModifierFlags::Color | PatternParamsModifierFlags::Weight | PatternParamsModifierFlags::Style) & params.modifiers))
@@ -554,14 +555,11 @@ static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Weight))
             elParams.SetWeight(params.weight);
 
-#if defined (NEEDSWORK_WIP_LINESTYLE)
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Style))
             elParams->SetLineStyle(params.style, elParams->GetLineStyleParams());
-#endif
         }
 
     // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing it doesn't affect them...
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.CookGeometryParams();
 #endif
     }
@@ -940,6 +938,7 @@ double          scale
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2dCR low, DPoint2dCR high, DPoint2dCR spacing, double scale, TransformCR orgTrans, DPoint3dCP cellCorners, bool drawFiltered, CurveVectorCP boundaryToPush = NULL)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (NULL != boundaryToPush)
         {
         ClipVectorPtr   clip = ClipVector::CreateFromCurveVector(*boundaryToPush, 0.0, TOLERANCE_ChoordAngle);
@@ -977,15 +976,11 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 DPoint3d    tmpPt;
 
                 cellTrans.GetTranslation(tmpPt);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 context.GetCurrentGraphicR().AddPointString(1, &tmpPt, NULL);
-#endif
                 }
             else
                 {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 context.DrawSymbol(&symbCell, &cellTrans, NULL);
-#endif
                 }
 
             wasAborted = context.WasAborted();
@@ -993,6 +988,9 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
         }
 
     return wasAborted;
+#else
+    return false;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1116,7 +1114,11 @@ ViewContextR    context
     size_t        nGot, sourceCount = pGPA->GetGraphicsPointCount();
     DPoint3d      localPoints[MAX_GPA_STROKES];
     bool          is3d = context.Is3dView();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double        priority = context.GetCurrentGeometryParams().GetNetDisplayPriority();
+#else
+    double        priority = 0.0;
+#endif
     GraphicsPoint gp;
 
     for (size_t i=0; i < sourceCount;)
@@ -1586,6 +1588,7 @@ bool ViewContext::_WantAreaPatterns()
     return GetViewFlags().patterns;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1630,12 +1633,14 @@ static void correctPatternOffsetAndRotation(PatternParamsR params, DPoint3dR ori
     rtmp.Scale(planeNormal, t);
     origin.SumOf(rtmp, origin);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (_CheckStop())
         return;
 
@@ -1652,11 +1657,9 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
 
     DPoint3d    origin = params->origin;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())
         return boundary.GetGeomSource().Stroke(*this);
-#endif
 
     IPickGeom*  pickGeom = GetIPickGeom();
     GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail() : NULL;
@@ -1690,6 +1693,7 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
 
     if (NULL != detail)
         detail->SetNonSnappable(!wasSnappable);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

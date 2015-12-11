@@ -32,6 +32,9 @@ protected:
     bool                m_processingMaterialGeometryMap;
     Transform           m_localToWorldTransform;
 
+    Render::GraphicParams   m_currGraphicParams;
+    Render::GeometryParams  m_currGeometryParams;
+
 private:
     void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
     
@@ -62,7 +65,7 @@ protected:
     virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR, bool filled) {return ERROR;}
     virtual StatusInt _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled) {return ERROR;}
 
-    virtual void _ActivateGraphicParams(Render::GraphicParamsCP matSymb) override {}
+    DGNPLATFORM_EXPORT virtual void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
     DGNPLATFORM_EXPORT virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
@@ -198,7 +201,9 @@ public:
     StatusInt ProcessFacetSet(PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet(facets, filled);}
     StatusInt ProcessGeometryMapOrFacetSet(PolyfaceQueryCR facets, bool filled);
 
-    DGNPLATFORM_EXPORT Render::GraphicParamsR GetEffectiveGraphicParams(Render::GraphicParamsR matSymb); // Get GraphicParams adjusted for overrides...
+    DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams); // Get GraphicParams adjusted for overrides...
+    Render::GraphicParamsCR GetCurrentGraphicParams() {return m_currGraphicParams;}
+    Render::GeometryParamsCR GetCurrentGeometryParams() {return m_currGeometryParams;}
 
     IFacetOptionsP GetFacetOptions() {return _GetFacetOptions();}
 

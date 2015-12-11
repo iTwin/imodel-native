@@ -433,6 +433,7 @@ static bool             AreClipPointsEqual (void const* data1, int numBytes1, vo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, uint32_t weight, int32_t style)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DgnViewportP vp = context.GetViewport();
 
     if (nullptr == vp)
@@ -443,7 +444,6 @@ void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, 
     elemMatSymb.SetLineColor(vp->AdjustColorForContrast(color, vp->GetBackgroundColor()));
     elemMatSymb.SetWidth(vp->GetIndexedLineWidth(weight));
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetCurrentGraphicR().ActivateGraphicParams(&elemMatSymb);
 #endif
     }

@@ -201,15 +201,9 @@ protected:
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport = nullptr;
-    Render::GeometryParams  m_currGeometryParams;
-    Render::GraphicParams   m_graphicParams;
-    Render::OvrGraphicParams m_ovrGraphicParams;
-    DPoint3dCP              m_startTangent = nullptr;       // linestyle start tangent.
-    DPoint3dCP              m_endTangent = nullptr;         // linestyle end tangent.
     DgnElement::Hilited     m_hiliteState;
     IElemTopologyCPtr       m_currElemTopo;
     GeometryStreamEntryId   m_currGeometryStreamEntryId;
-    double                  m_arcTolerance;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
@@ -221,7 +215,6 @@ protected:
     virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
-    DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
@@ -245,7 +238,6 @@ protected:
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR);
-    DGNPLATFORM_EXPORT virtual void _ModifyPreCook(Render::GeometryParamsR); 
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
@@ -274,16 +266,12 @@ public:
     DGNPLATFORM_EXPORT bool VisitAllViewElements(bool includeTransients, BSIRectCP updateRect);
     DGNPLATFORM_EXPORT StatusInt VisitHit(HitDetailCR hit);
     void VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
-    DGNPLATFORM_EXPORT void DrawBox(DPoint3dP box, bool is3d);
     StatusInt InitContextForView() {return _InitContextForView();}
     DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
     DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     TransformClipStackR GetTransformClipStack() {return m_transformClipStack;}
-    double GetArcTolerance() const {return m_arcTolerance;}
-    void SetArcTolerance(double tol) {m_arcTolerance = tol;}
-    DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
@@ -393,10 +381,6 @@ public:
     //! Set the project for this ViewContext when not attaching a viewport.
     void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void SetCurrentGeomSource(GeometrySourceCP source) {m_currentGeomSource = source;}
-#endif
-    
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
     DrawPurpose GetDrawPurpose() const {return m_purpose;}
 
@@ -411,31 +395,15 @@ public:
 
     /// @name Get/Set Current Display Parameters
     //@{
-    bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
+    bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (nullptr == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
 
-    //! Change the supplied "natural" GeometryParams. Resolves effective symbology as required by the context and initializes the supplied GraphicParams.
-    //! @note Does NOT call ActivateGraphicParams on the output or change the current GeometryParams/GraphicParams of the context.
+    //! Modify the supplied "natural" GeometryParams by resolving effective symbology as required by the context.
+    //! Initializes the supplied GraphicParams from the resolved GeometryParams.
     void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams) {_CookGeometryParams(geomParams, graphicParams);}
 
-    //! Change the current "natural" GeometryParams. Resolves effective symbology as required by the context and initializes the current GraphicParams.
-    //! @note Calls ActivateGraphicParams on the supplied Render::GraphicR.
-    DGNPLATFORM_EXPORT void CookGeometryParams(Render::GraphicR);
-
-    //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
-    //! @return the net display priority. For 3D views, display priority is always 0.
-    DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearance = nullptr) const;
-
-    //! Get the current GraphicParams.
-    //! @return   the current GraphicParams.
-    Render::GraphicParamsP GetGraphicParams() {return &m_graphicParams;}
-
-    //! Get the current OvrGraphicParams.
-    //! @return the current OvrGraphicParams.
-    Render::OvrGraphicParamsP GetOverrideGraphicParams() {return &m_ovrGraphicParams;}
-
-    //! Get the current GeometryParams.
-    //! @return the current GeometryParams.
-    Render::GeometryParams& GetCurrentGeometryParams() {return m_currGeometryParams;}
+    //! Modify the supplied "natural" GeometryParams by resolving effective symbology as required by the context.
+    //! Initializes a GraphicParams from the resolved GeometryParams and calls ActivateGraphicParams on the supplied Render::GraphicR.
+    DGNPLATFORM_EXPORT void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicR graphic);
 
     //! Clears current override flags and re-applies context overrides.
     //! @note Calls ActivateOverrideGraphicParams on the output.
@@ -460,8 +428,8 @@ public:
     //! Query the current GeometryStreamEntryId.
     GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_currGeometryStreamEntryId;}
 
-    //! Set the current GeometryStreamEntryId.
-    void SetGeometryStreamEntryId(GeometryStreamEntryId geomId) {m_currGeometryStreamEntryId = geomId;}
+    //! Get a reference to the current GeometryStreamEntryId to modify.
+    GeometryStreamEntryId& GetGeometryStreamEntryIdR() {return m_currGeometryStreamEntryId;}
 
     //@}
 

@@ -334,13 +334,14 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
 
 private:
 
-uint8_t const*      m_data;
-size_t              m_dataSize;
-ViewContextP        m_context;
-Transform           m_elemToWorld;
-Transform           m_geomToElem;
-Transform           m_geomToWorld;
-BRepOutput          m_bRepOutput;
+uint8_t const*          m_data;
+size_t                  m_dataSize;
+ViewContextP            m_context;
+Render::GeometryParams  m_currGeometryParams;
+Transform               m_elemToWorld;
+Transform               m_geomToElem;
+Transform               m_geomToWorld;
+BRepOutput              m_bRepOutput;
 
 public:
 

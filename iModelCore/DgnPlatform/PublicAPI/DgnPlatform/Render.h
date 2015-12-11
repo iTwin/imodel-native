@@ -438,7 +438,8 @@ public:
     DGNPLATFORM_EXPORT GeometryParams();
     DGNPLATFORM_EXPORT explicit GeometryParams(GeometryParamsCR rhs);
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
-    DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values
+    DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
+    DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values using the supplied ViewContext.
 
     void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
     void SetSubCategoryId(DgnSubCategoryId subCategoryId) {m_subCategoryId = subCategoryId; memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
@@ -662,7 +663,7 @@ private:
     PatternParamsPtr    m_patternParams;
 
 public:
-    void Cook(GeometryParamsCR, ViewContextR, DPoint3dCP startTan, DPoint3dCP endTan);
+    void Cook(GeometryParamsCR, ViewContextR);
 
     DGNPLATFORM_EXPORT GraphicParams();
     DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
@@ -841,11 +842,13 @@ struct Graphic : RefCounted<NonCopyableClass>
     };
 
 protected:
-    DgnViewportCP m_vp;
-    double        m_pixelSize;
+    DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
+    double        m_pixelSize; //! Pixel size to use for stroke
+    double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
+    double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
 
     virtual StatusInt _Close() {return SUCCESS;}
-    virtual void _ActivateGraphicParams(GraphicParamsCP matSymb) = 0;
+    virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
     virtual void _AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
@@ -867,7 +870,6 @@ protected:
     virtual void _AddTextString(TextStringCR text, double* zDepth = nullptr) = 0;
     virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
     virtual bool _IsQuickVision() const {return false;}
-    virtual bool _IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return true;}
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
     virtual void _AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
@@ -877,14 +879,26 @@ protected:
 
 public:
     StatusInt Close() {return _Close();}
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize) {}
+    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {}
 
-    bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
+    bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
+        {
+        if (nullptr != m_vp && m_vp != &vp)
+            return false;
 
-    //! Set an GraphicParams to be the "active" GraphicParams for this IDrawGeom.
-    //! @param[in]          matSymb     The new active GraphicParams. All geometry drawn via calls to this IDrawGeom will
-    //!                                     be displayed using the values in this GraphicParams.
-    void ActivateGraphicParams(GraphicParamsCP matSymb) {_ActivateGraphicParams(matSymb);}
+        if (0.0 == m_minSize && 0.0 == m_maxSize)
+            return true;
+
+        return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
+        }
+
+    double GetPixelSize() {return m_pixelSize;}
+    void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}
+
+    //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
+    //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
+    //! @param[in]          geomParams      The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
+    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) {_ActivateGraphicParams(graphicParams, geomParams);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
