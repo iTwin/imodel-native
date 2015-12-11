@@ -212,7 +212,7 @@ struct SchemaVisualizationTests : testing::Test
         {
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         SchemaReadStatus status = ECSchema::ReadFromXmlString(m_metaSchema, METASCHEMA_XML, *schemaContext);
-        EXPECT_EQ(SUCCESS, status);
+        EXPECT_EQ(SchemaReadStatus::Success, status);
         }
     };
 
