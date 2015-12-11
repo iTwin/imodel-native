@@ -53,14 +53,6 @@ ECClassCP FileInfoManager::GetInfoClass() const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP FileInfoManager::GetInfoRelationshipClass() const
-    {
-    return m_infoRelationshipClass;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 FileInfo FileInfoManager::ReadInfo(ECInstanceKeyCR fileKey)

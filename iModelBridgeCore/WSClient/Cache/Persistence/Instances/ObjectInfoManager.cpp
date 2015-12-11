@@ -45,14 +45,6 @@ ECClassCP ObjectInfoManager::GetInfoClass() const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP ObjectInfoManager::GetInfoRelationshipClass() const
-    {
-    return m_infoRelationshipClass;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ObjectInfoManager::InsertInfo(ObjectInfoR info)

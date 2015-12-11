@@ -40,14 +40,6 @@ m_rootUpdater(m_dbAdapter.GetECDb(), *m_rootClass)
     {}
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP RootManager::GetRootRelationshipClass() const
-    {
-    return m_rootHoldingRelationshipClass;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceId RootManager::FindRootECInstanceId(Utf8StringCR rootName)
@@ -494,7 +486,22 @@ BentleyStatus RootManager::GetInstancesConnectedToRoots(const bset<ECInstanceId>
         {
         return ERROR;
         }
+
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod    
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootManager::GetInstancesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut)
+    {
+    ECInstanceKey root = FindRoot(rootName);
+    if (!root.IsValid())
+        {
+        return SUCCESS;
+        }
+
+    return m_hierarchyManager.ReadTargetKeys(root, m_rootHoldingRelationshipClass, instancesOut);
     }
 
 /*--------------------------------------------------------------------------------------+

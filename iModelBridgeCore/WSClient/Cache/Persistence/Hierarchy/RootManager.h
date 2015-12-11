@@ -62,8 +62,6 @@ struct RootManager
             ObjectInfoManager& objectInfoManager
             );
 
-        ECRelationshipClassCP GetRootRelationshipClass() const;
-
         BentleyStatus SetupRoot(Utf8StringCR rootName, CacheRootPersistence persistence);
         BentleyStatus RenameRoot(Utf8StringCR rootName, Utf8StringCR newRootName);
 
@@ -101,7 +99,9 @@ struct RootManager
 
         bool IsInstanceConnectedToAnyOfRoots(ECInstanceKeyCR instance, const bset<ECInstanceId>& rootIds);
         bool IsInstanceInRoot(ECInstanceKeyCR instance, ECInstanceId rootId);
+
         BentleyStatus GetInstancesConnectedToRoots(const bset<ECInstanceId> roots, ECInstanceKeyMultiMap& instancesOut, uint8_t depth = UINT8_MAX);
+        BentleyStatus GetInstancesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut);
 
         BentleyStatus RemoveRoot(Utf8StringCR rootName);
         BentleyStatus RemoveRootsByPrefix(Utf8StringCR rootPrefix);

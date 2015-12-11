@@ -59,7 +59,6 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
             );
 
         ECClassCP GetInfoClass() const;
-        ECRelationshipClassCP GetInfoRelationshipClass() const;
 
         FileInfo ReadInfo(ECInstanceKeyCR fileKey);
         FileInfo ReadInfo(ObjectIdCR fileId);

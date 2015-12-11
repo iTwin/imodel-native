@@ -831,15 +831,12 @@ ECRelationshipClassCP resultRelationshipClass,
 const ECInstanceKeyMultiMap& fullyPersistedInstances
 )
     {
-    ECClassCP instanceInfoClass = m_objectInfoManager.GetInfoClass();
-    ECClassCP instanceInfoRelationshipClass = m_objectInfoManager.GetInfoRelationshipClass();
-
     Utf8String ecsql =
         "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId, info.* "
-        "FROM ONLY " + instanceInfoClass->GetECSqlName() + " info "
-        "JOIN ONLY " + instanceInfoRelationshipClass->GetECSqlName() + " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
+        "FROM ONLY " ECSql_CachedObjectInfoClass " info "
+        "JOIN ONLY " ECSql_CachedObjectInfoToInstanceClass " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
         "JOIN ONLY " + resultRelationshipClass->GetECSqlName() + " pageToResultRel ON pageToResultRel.TargetECInstanceId = infoRel.TargetECInstanceId "
-        "JOIN ONLY " + ECSql_ResponseToResponsePageClass + " responseToPageRel ON responseToPageRel.TargetECInstanceId = pageToResultRel.SourceECInstanceId "
+        "JOIN ONLY " ECSql_ResponseToResponsePageClass " responseToPageRel ON responseToPageRel.TargetECInstanceId = pageToResultRel.SourceECInstanceId "
         "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceState "] = ? "
         "  AND responseToPageRel.SourceECInstanceId IN (" + StringHelper::Join(responseIds.begin(), responseIds.end(), ',') + ")";
 
@@ -850,6 +847,7 @@ const ECInstanceKeyMultiMap& fullyPersistedInstances
         }
     statement.BindInt(1, static_cast<int> (CachedInstanceState::Full));
 
+    ECClassCP instanceInfoClass = m_objectInfoManager.GetInfoClass();
     JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
 
     DbResult status;
