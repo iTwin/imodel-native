@@ -432,7 +432,7 @@ $(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStub
 
 %endif
 
-%if defined (winNT)
+%if $(TARGET_PLATFORM) == "Windows"
 
 $(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
 
