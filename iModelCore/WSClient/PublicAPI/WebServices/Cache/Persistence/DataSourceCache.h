@@ -28,7 +28,7 @@ struct DataSourceCache : public IDataSourceCache
     {
     private:
         ObservableECDb m_db;
-        std::shared_ptr<struct DataSourceCacheOpenState> m_state;
+        std::shared_ptr<struct WSCacheState> m_state;
 
     private:
         BentleyStatus ExecuteWithinTransaction(std::function<BentleyStatus()> execute);

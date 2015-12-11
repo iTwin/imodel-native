@@ -64,7 +64,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Changes/ChangeInfoManager.h             \
     $(CacheMkiSourceDir)Persistence/Core/CacheSchema.h                      \
     $(CacheMkiSourceDir)Persistence/Core/CacheSettings.h                    \
-    $(CacheMkiSourceDir)Persistence/Core/DataSourceCacheOpenState.h         \
+    $(CacheMkiSourceDir)Persistence/Core/WSCacheState.h                     \
     $(CacheMkiSourceDir)Persistence/Core/ECDbFileInfoSchema.h               \
     $(CacheMkiSourceDir)Persistence/Core/SchemaContext.h                    \
     $(CacheMkiSourceDir)Persistence/Core/SchemaManager.h                    \
@@ -159,7 +159,7 @@ $(o)ChangeInfoManager$(oext)                    : $(CacheMkiSourceDir)Persistenc
 
 $(o)CacheSettings$(oext)                        : $(CacheMkiSourceDir)Persistence/Core/CacheSettings.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DataSourceCacheOpenState$(oext)             : $(CacheMkiSourceDir)Persistence/Core/DataSourceCacheOpenState.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+$(o)WSCacheState$(oext)                         : $(CacheMkiSourceDir)Persistence/Core/WSCacheState.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)SchemaContext$(oext)                        : $(CacheMkiSourceDir)Persistence/Core/SchemaContext.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

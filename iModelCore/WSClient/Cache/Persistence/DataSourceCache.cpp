@@ -18,7 +18,7 @@
 
 #include "Core/CacheSchema.h"
 #include "Core/CacheSettings.h"
-#include "Core/DataSourceCacheOpenState.h"
+#include "Core/WSCacheState.h"
 #include "Core/SchemaContext.h"
 #include "Core/SchemaManager.h"
 #include "Core/Version.h"
@@ -31,7 +31,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(DataSourceCacheOpenState& state, Utf8CP context)
+std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf8CP context)
     {
     if (!LOG.isSeverityEnabled(BentleyApi::NativeLogging::LOG_TRACE))
         {
@@ -255,7 +255,7 @@ BentleyStatus DataSourceCache::ExecuteWithinTransaction(std::function<BentleySta
 void DataSourceCache::SetupOpenState(CacheEnvironmentCR environment)
     {
     BeFileName cachePath(m_db.GetDbFileName());
-    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, FileStorage::CreateCacheEnvironment(cachePath, environment));
+    m_state = std::make_shared<WSCacheState>(m_db, FileStorage::CreateCacheEnvironment(cachePath, environment));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -376,7 +376,7 @@ BentleyStatus DataSourceCache::Reset()
             }
         }
 
-    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, m_state->GetFileCacheEnvironment());
+    m_state = std::make_shared<WSCacheState>(m_db, m_state->GetFileCacheEnvironment());
     return SUCCESS;
     }
 
