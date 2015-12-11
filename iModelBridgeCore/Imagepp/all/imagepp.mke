@@ -132,8 +132,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)HFCBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBinStream.cpp $(ippAllInc)HFCBinStream.h $(ippAllInc)HFCBinStream.h ${MultiCompileDepends}
 
-$(o)HFCBufferedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBufferedBinStream.cpp $(ippAllInc)HFCBufferedBinStream.h $(ippAllInc)HFCBufferedBinStream.h ${MultiCompileDepends}
-
 $(o)HFCCallbackRegistry$(oext) : $(ippUtlDir)hfc/src/HFCCallbackRegistry.cpp $(ippAllInc)HFCCallbackRegistry.h $(ippAllInc)HFCCallbackRegistry.h ${MultiCompileDepends}
 
 $(o)HFCCallbacks$(oext) : $(ippUtlDir)hfc/src/HFCCallbacks.cpp $(ippAllInc)HFCCallbacks.h $(ippAllInc)HFCCallbacks.h ${MultiCompileDepends}
@@ -187,8 +185,6 @@ $(o)HFCSocketConnection$(oext) : $(ippUtlDir)hfc/src/HFCSocketConnection.cpp $(i
 $(o)HFCStat$(oext) : $(ippUtlDir)hfc/src/HFCStat.cpp $(ippAllInc)HFCStat.h ${MultiCompileDepends}
 
 $(o)HFCThread$(oext) : $(ippUtlDir)hfc/src/HFCThread.cpp $(ippAllInc)HFCThread.h ${MultiCompileDepends}
-
-$(o)HFCTimer$(oext) : $(ippUtlDir)hfc/src/HFCTimer.cpp $(ippAllInc)HFCTimer.h ${MultiCompileDepends}
 
 $(o)HFCURL$(oext) : $(ippUtlDir)hfc/src/HFCURL.cpp $(ippAllInc)HFCURL.h ${MultiCompileDepends}
 
@@ -1413,7 +1409,7 @@ $(o)HRFErMapperSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFErMapperSuppo
 #       Libraries used
 #----------------------------------------------------------------------
 BeLibJpegTurbo                  = $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext)
-IppJpegLib12Bits                = $(ippOutPrivateLibs)$(libprefix)IppJpeg12Bits$(stlibext)
+IppJpegLib12Bits                = $(ContextSubpartsLibs)$(libprefix)IppJpeg12Bits$(stlibext)
 IppGdalLib                      = $(ContextSubpartsLibs)$(libprefix)IppGdalLib$(stlibext)
 PdfLibInitializer               = $(libprefix)PdfLibInitializer$(libext)
 PdfLibInitializerExportLib      = $(ContextSubpartsLibs)$(PdfLibInitializer)
@@ -1470,7 +1466,7 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(BuildContext)SubParts/Libs/BeSQLite.lib \
                     $(ntPlatformLib)Urlmon.lib \
                     $(IppGdalLib) \
-                    $(ippOutPrivateLibs)$(libprefix)MatrixFromTiePts$(libext) \
+                    $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(libext) \
                     $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
                     $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext) \
                     $(ContextSubpartsLibs)NCSEcw.lib
@@ -1483,9 +1479,10 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
 
 %if defined (CREATE_STATIC_LIBRARIES)
     # embed our private external static lib into gralib.
-    DLM_OBJECT_FILES + $(ippOutPrivateLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
+    DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
 %endif
 
+%if !defined(IPP_OBJ_ONLY)
 %include $(sharedMki)linkLibrary.mki
 
 #----------------------------------------------------------------------
@@ -1503,3 +1500,7 @@ SQLANG_CHeader      = $(ippPublicAPISrc)h/ImagePPExceptionMessages.xliff.h
 SQLANG_Xliff        = $(o)xliffs/ImagePPExceptionMessages_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki
+%endif
+
+
+

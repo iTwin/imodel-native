@@ -149,6 +149,60 @@ inline void HGF2DSegment::SetEndPoint(const HGF2DPosition& pi_rNewEndPoint)
     }
 
 
+/** -----------------------------------------------------------------------------
+    This method sets the start point of the segment by specification
+    of raw coordinate values. These values are interpreted in the
+    coordinate system of the segment, in the coordinate units of
+    the X and Y dimension of this coordinate system.
+
+    @param pi_X Value of the X dimension of the newly specified
+                start point.
+
+    @param pi_Y Value of the Y dimension of the newly specified
+                start point.
+
+    @see SetStartPoint()
+    @see GetStartPoint()
+    @see SetRawEndPoint()
+    @see HGF2DPosition
+    -----------------------------------------------------------------------------
+*/
+inline void HGF2DSegment::SetRawStartPoint(double pi_X, double pi_Y)
+    {
+    m_StartPoint.SetX(pi_X);
+    m_StartPoint.SetY(pi_Y);
+
+    // Reset tolerance
+    ResetTolerance();
+    }
+
+/** -----------------------------------------------------------------------------
+    This method sets the end point of the segment by specification
+    of raw coordinate values. These values are interpreted in the
+    coordinate system of the segment, in the coordinate units of
+    the X and Y dimension of this coordinate system.
+
+    @param pi_X Value of the X dimension of the newly specified
+                end point.
+
+    @param pi_Y Value of the Y dimension of the newly specified
+                end point.
+
+    @see SetEndPoint()
+    @see GetEndPoint()
+    @see SetRawStartPoint()
+    @see HGF2DPosition
+    -----------------------------------------------------------------------------
+*/
+inline void HGF2DSegment::SetRawEndPoint(double pi_X, double pi_Y)
+    {
+    m_EndPoint.SetX(pi_X);
+    m_EndPoint.SetY(pi_Y);
+
+    // Reset tolerance
+    ResetTolerance();
+    }
+
 
 /** -----------------------------------------------------------------------------
     This method calculates and returns the line, the segment is a part

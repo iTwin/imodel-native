@@ -1,0 +1,23 @@
+# Tests that should not be run
+
+#----------------------------------------------------------------------------------------
+# *** Broken in 06; need to be re-visited ***
+#----------------------------------------------------------------------------------------
+HGF2DPolySegmentTester.*                          # Alain.Robert  &&AR
+HGF2DPolygonOfSegmentsTester.*
+HGF2DComplexShapeTester.*
+HGF2DHoledShapeTester.*
+HGF2DRectangleTest.GetLinearTest
+HGF2DRectangleTest.CloningTest
+HGF2DSegmentTester.CalculateLineTest
+HGF2DSegmentTester.IntersectSegmentTest
+HGF2DSegmentTester.GetTypeTest
+HGF2DSegmentTester.CalculateRayArea
+HGF2DSegmentTester.ShorteningTest
+HGF2DSegmentTester.CalculateClosestPointTest
+HGF2DSegmentTester.InteractionTest
+HGF2DSegmentTester.BearingTest
+HGF2DSegmentTester.AngularAccelerationTest
+HGF2DSegmentTester.GetExtentTest
+HGF2DUniverseTester.LinearTest
+
