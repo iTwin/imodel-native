@@ -229,7 +229,7 @@ static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnMode
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
-static BeSQLite::DbResult queryComponentModelFromSolution(DgnModelId& mid, ModelSolverDef::ParameterSet& params, DgnDbR db, DgnElementId itemId)
+static BeSQLite::DbResult querySolutionOfComponentTargetAndParameters(DgnModelId& mid, ModelSolverDef::ParameterSet& params, DgnDbR db, DgnElementId itemId)
     {
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
         "SELECT TargetECInstanceId, Parameters FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE SourceECInstanceId=? LIMIT 1");
@@ -271,7 +271,7 @@ static DgnDbStatus createInstanceOfTemplateRelationship(DgnElementCR inst, DgnEl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
-static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instanceId)
+static DgnElementId queryInstantiationOfTemplateTarget(DgnDbR db, DgnElementId instanceId)
     {
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
         "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate) " WHERE SourceECInstanceId=? LIMIT 1");
@@ -355,7 +355,7 @@ DgnDbStatus ComponentModel::Importer::ImportSolutions(DgnModelR destCatalogModel
         #ifndef NDEBUG
         DgnModelId qmid;
         ModelSolverDef::ParameterSet qparams;
-        BeAssert(BE_SQLITE_OK == queryComponentModelFromSolution(qmid, qparams, GetDestinationDb(), destCatalogItem->GetElementId()) 
+        BeAssert(BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(qmid, qparams, GetDestinationDb(), destCatalogItem->GetElementId()) 
                     && qmid == m_destComponent->GetModelId() 
                     && qparams == params);
         #endif
@@ -516,7 +516,7 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& parameters
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isInstanceOfComponent(DgnElementCR el)
     {
-    return queryTemplateItemFromInstance(el.GetDgnDb(), el.GetElementId()).IsValid();
+    return queryInstantiationOfTemplateTarget(el.GetDgnDb(), el.GetElementId()).IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,7 +524,7 @@ static bool isInstanceOfComponent(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr ComponentModel::QuerySolutionFromInstance(DgnElementCR instance)
     {
-    DgnElementId capturedSolutionElementId = queryTemplateItemFromInstance(instance.GetDgnDb(), instance.GetElementId());
+    DgnElementId capturedSolutionElementId = queryInstantiationOfTemplateTarget(instance.GetDgnDb(), instance.GetElementId());
     return instance.GetDgnDb().Elements().Get<DgnElement>(capturedSolutionElementId);
     }
 
@@ -758,7 +758,7 @@ void ComponentModel::OnElementCopied(DgnElementCR outputElement, DgnElementCR so
 
     DgnModelId cmid;
     ModelSolverDef::ParameterSet prms;
-    if (BE_SQLITE_OK == queryComponentModelFromSolution(cmid, prms, db, sourceElement.GetElementId()))
+    if (BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(cmid, prms, db, sourceElement.GetElementId()))
         {
         ComponentModelPtr cm = db.Models().Get<ComponentModel>(cmid);
         if (!cm.IsValid())
@@ -775,7 +775,7 @@ void ComponentModel::OnElementCopied(DgnElementCR outputElement, DgnElementCR so
         return;
         }
 
-    DgnElementCPtr solutionElement = sourceElement.GetDgnDb().Elements().GetElement(queryTemplateItemFromInstance(db, sourceElement.GetElementId()));
+    DgnElementCPtr solutionElement = sourceElement.GetDgnDb().Elements().GetElement(queryInstantiationOfTemplateTarget(db, sourceElement.GetElementId()));
     if (solutionElement.IsValid())
         {
         //  When we copy an instance, we must connect to the solution from which the original was created. The copy is just another instance.
@@ -794,7 +794,7 @@ void ComponentModel::OnElementImported(DgnElementCR outputElement, DgnElementCR 
     //  Solutions must remap to their component models
     DgnModelId sourceComponentModelId;
     ModelSolverDef::ParameterSet sourceParameters;
-    queryComponentModelFromSolution(sourceComponentModelId, sourceParameters, sourceDb, sourceElement.GetElementId());
+    querySolutionOfComponentTargetAndParameters(sourceComponentModelId, sourceParameters, sourceDb, sourceElement.GetElementId());
     ComponentModelPtr sourceComponentModel = sourceDb.Models().Get<ComponentModel>(sourceComponentModelId);
     bool isSolution = false;
     if (sourceComponentModel.IsValid())
@@ -808,7 +808,7 @@ void ComponentModel::OnElementImported(DgnElementCR outputElement, DgnElementCR 
         }
 
     //  Instances must remap to their solutions
-    DgnElementCPtr sourceSolutionElement = sourceDb.Elements().GetElement(queryTemplateItemFromInstance(sourceDb, sourceElement.GetElementId()));
+    DgnElementCPtr sourceSolutionElement = sourceDb.Elements().GetElement(queryInstantiationOfTemplateTarget(sourceDb, sourceElement.GetElementId()));
     if (sourceSolutionElement.IsValid())
         {
         //  Look up the solution in the destination by its code
@@ -848,7 +848,7 @@ DgnElementCPtr ComponentModel::HarvestedSolutionInserter::_WriteSolution(DgnDbSt
     #ifndef NDEBUG
     DgnModelId qmid;
     ModelSolverDef::ParameterSet qparams;
-    BeAssert(BE_SQLITE_OK == queryComponentModelFromSolution(qmid, qparams, m_destModel.GetDgnDb(), storedPhysicalElem->GetElementId()) 
+    BeAssert(BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(qmid, qparams, m_destModel.GetDgnDb(), storedPhysicalElem->GetElementId()) 
                 && qmid == m_cm.GetModelId() 
                 && qparams == m_cm.GetSolver().GetParameters());
     #endif
@@ -887,7 +887,7 @@ DgnElementCPtr ComponentModel::MakeInstance(DgnDbStatus* statusOut, DgnModelR ta
     // Look up the component model that generated the catalog item
     DgnModelId mid;
     ModelSolverDef::ParameterSet qparams;
-    if (BE_SQLITE_OK != queryComponentModelFromSolution(mid, qparams, db, catalogItem.GetElementId()))
+    if (BE_SQLITE_OK != querySolutionOfComponentTargetAndParameters(mid, qparams, db, catalogItem.GetElementId()))
         {
         status = DgnDbStatus::BadArg;
         BeAssert(false && "input catalog item must be the solution of a componentmodel");
@@ -921,7 +921,7 @@ DgnElementCPtr ComponentModel::MakeInstance(DgnDbStatus* statusOut, DgnModelR ta
     if (!inst.IsValid())
         return nullptr;
 
-    BeAssert(queryTemplateItemFromInstance(db, inst->GetElementId()) == catalogItem.GetElementId());
+    BeAssert(queryInstantiationOfTemplateTarget(db, inst->GetElementId()) == catalogItem.GetElementId());
 
     return inst;
     }
@@ -951,7 +951,7 @@ DgnElementCPtr ComponentModel::MakeInstance(DgnDbStatus* statusOut, DgnModelR ta
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::QuerySolutionInfo(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, DgnElementCR catalogItem)
     {
-    return (BE_SQLITE_OK == queryComponentModelFromSolution(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    return (BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))? DgnDbStatus::Success: DgnDbStatus::NotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**

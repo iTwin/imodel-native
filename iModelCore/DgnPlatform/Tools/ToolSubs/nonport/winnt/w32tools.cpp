@@ -2,10 +2,10 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/w32tools.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#define NOMINMAX
+#include    <DgnPlatformInternal.h>
 #include    <windows.h>
 #include    <objbase.h>
 #include    <excpt.h>
@@ -21,6 +21,7 @@
 #include    <dbghelp.h>
 #include    <tlhelp32.h>
 #include    <Winternl.h>
+#include    <DgnPlatform/DesktopTools/ConfigurationManager.h>
 typedef struct _LDR_MODULE {
 
     LIST_ENTRY              InLoadOrderModuleList;
@@ -48,20 +49,9 @@ extern "C"
 #pragma intrinsic ( _ReturnAddress          )
 #pragma intrinsic ( _AddressOfReturnAddress )
 
+
 #undef BENTLEY_PORTABLE_CODE
 #undef DGN_PLATFORM_MT
-#include    <Bentley/Bentley.h>
-#include    <Bentley/BeThreadLocalStorage.h>
-#include    <DgnPlatform/ExportMacros.h>
-#include    <DgnPlatform/DgnPlatformlib.h>
-#include    <DgnPlatform/DesktopTools/envvutil.h>
-#include    <DgnPlatform/DesktopTools/ConfigurationManager.h>
-#include    <RmgrTools/Tools/memutil.h>
-#include    <DgnPlatform/Tools/ToolsAPI.h>
-#include    <DgnPlatform/DesktopTools/pagalloc.h>   /* page protection based memory allocation */
-#include    <RmgrTools/Tools/pagstruc.h>    /* PAGALLOC function prototypes */
-#include    <DgnPlatform/DesktopTools/pagalloc.fdf>
-
 #define     INCLUDE_win32tools_recordDelayLoadHookFailure   (1)
 #include    <DgnPlatform/DesktopTools/w32tools.h>
 
@@ -105,6 +95,7 @@ static char const g_divider[] = "\n=============================================
 
 static BeThreadLocalStorage     s_fpuMask;
 
+#if defined (NEEDSWORK_DesktopPlaform_MoveToRmgrToolsIfNeeded)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    GeorgeDulchinos 1/95
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -134,6 +125,7 @@ CRuntimeMemFuncs *memFuncsP
 
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    MikeStratoti    03/10
@@ -263,7 +255,7 @@ PDelayLoadInfo  pdli
     g_DelayLoadHookFailure.dli       = *pdli;
     }
 
-#ifdef UNUSED_FUNCTION
+#if defined (NOT_USED)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    MikeStratoti                    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -599,7 +591,8 @@ void
 
         if (ERROR_SUCCESS == RegOpenKey (HKEY_LOCAL_MACHINE, "System\\CurrentControlSet\\Control\\ProductOptions", &hKey))
             {
-            uint32_t type = 0, size = 0;
+            DWORD type = 0;
+            DWORD size = 0;
             if (ERROR_SUCCESS == RegQueryValueEx (hKey, "ProductSuite", ___, &type, ___, &size)    &&  size)
                 {
                 char*  productSuite;

@@ -807,6 +807,8 @@ public:
     void            CalculateSize                       (DgnModelP modelRef);
 
     static BentleyStatus CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId id);
+    void CreateJsonValue(Json::Value& result);
+    static LsCompoundComponentPtr CreateFromJson(Json::Value& result, DgnDbR project, LsComponentId id);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
     virtual void    _ClearPostProcess           () override;
@@ -1025,6 +1027,7 @@ protected:
 
 public:
 
+    void CreateJsonValue(Json::Value& result);
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
     BentleyStatus   CreateFromRsrc          (V10LineCode const* pRsc);
@@ -1240,6 +1243,7 @@ public:
     LsOkayForTextureGeneration VerifySymbols() const;
     LsOkayForTextureGeneration VerifySymbol(double& adjustment, double startingOffset, double patternLength, uint32_t strokeIndex) const;
 
+    void CreateJsonValue(Json::Value& result);
     static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
 
 //__PUBLISH_SECTION_START__
