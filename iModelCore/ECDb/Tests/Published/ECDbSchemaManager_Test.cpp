@@ -798,7 +798,7 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECClassViewsInDb)
     //beca	        3
     //bsca	        10
     //bsm	        2
-    //ecdbf	        3
+    //ecdbf	        4
     //ecdbmap	    2
     //stco	        51
     //units_attribs	2
@@ -813,7 +813,7 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECClassViewsInDb)
     ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
     ASSERT_EQ(10, x["bsca"].size()) << "Unexpected number of views";
     ASSERT_EQ(2, x["bsm"].size()) << "Unexpected number of views";
-    ASSERT_EQ(3, x["ecdbf"].size()) << "Unexpected number of views";
+    ASSERT_EQ(4, x["ecdbf"].size()) << "Unexpected number of views";
     ASSERT_EQ(2, x["ecdbmap"].size()) << "Unexpected number of views";
     //====================================================================
     ECSchemaReadContextPtr  context = nullptr;
@@ -831,7 +831,7 @@ TEST_F(ECDbSchemaManagerTests, CreateOrUpdateECClassViewsInDb)
     ASSERT_EQ(3, x["beca"].size()) << "Unexpected number of views";
     ASSERT_EQ(10, x["bsca"].size()) << "Unexpected number of views";
     ASSERT_EQ(2, x["bsm"].size()) << "Unexpected number of views";
-    ASSERT_EQ(3, x["ecdbf"].size()) << "Unexpected number of views";
+    ASSERT_EQ(4, x["ecdbf"].size()) << "Unexpected number of views";
     ASSERT_EQ(2, x["ecdbmap"].size()) << "Unexpected number of views";
     //Following should exist in addition to above
     ASSERT_EQ(2, x["units_attribs"].size()) << "Unexpected number of views";

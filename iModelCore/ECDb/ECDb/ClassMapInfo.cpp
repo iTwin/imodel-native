@@ -526,7 +526,14 @@ ECClassCR          ecClass
             // ClassMappingRule: non-polymorphic MapStrategies used in base classes have no effect on child classes
             return true;
             }
+        auto getTable = [](IClassMap const& classMap) 
+            {
+            if (auto joinedTableRoot = classMap.FindParentOfJoinedTable())
+                return &joinedTableRoot->GetTable();
 
+            return &classMap.GetTable();
+            };
+        auto baseTable = getTable(*baseClassMap);
         switch (baseMapStrategy.GetStrategy())
             {
                 case ECDbMapStrategy::Strategy::SharedTable:
@@ -534,7 +541,7 @@ ECClassCR          ecClass
                     bool add = true;
                     for (auto classMap : tphMaps)
                         {
-                        if (classMap->GetTable().GetId() == baseClassMap->GetTable().GetId())
+                        if (getTable(*classMap) == baseTable)
                             {
                             add = false;
                             break;
