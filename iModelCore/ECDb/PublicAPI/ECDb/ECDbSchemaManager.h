@@ -296,23 +296,17 @@ public:
     //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-    //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
-    //! @param ecClass The ECClass in the duplicate ECSchema. Its Id will be set (as well as returned)
-    static ECN::ECClassId GetClassIdForECClassFromDuplicateECSchema(ECDbCR db, ECN::ECClassCR ecClass);
+    static ECN::ECClassId GetClassIdForECClassFromDuplicateECSchema(ECDbCR, ECN::ECClassCR);
 
     //! For cases where we are working with an ECProperty in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECPropertyId set. Generally, we would prefer that the primary ECSchema had
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-    //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
-    //! @param ecProperty. The ECProperty in the duplicate ECSchema. Its Id will be set (as well as returned)
-    static ECN::ECPropertyId GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECN::ECPropertyCR ecProperty);
+    static ECN::ECPropertyId GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR, ECN::ECPropertyCR);
 
     //! For cases where we are working with an ECSchema in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECSchemaId set. Generally, we would prefer that the primary ECSchema had
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-    //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
-    //! @param ecSchema. The duplicate ECSchema. Its Id will be set (as well as returned)
-    static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECN::ECSchemaCR ecSchema);
+    static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR, ECN::ECSchemaCR);
 
     void ClearCache () const;
     ECDbCR GetECDb () const;
