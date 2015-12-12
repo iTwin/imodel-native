@@ -2588,24 +2588,28 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnDbR 
             {
             ElementGeometryPtr geom = iter.GetGeometryPtr();
 
-            if (!geom.IsValid())
+            if (geom.IsValid())
                 {
-                ElementGeometryCollection partCollection(iter);
-
-                for (auto partIter : partCollection)
-                    {
-                    ElementGeometryPtr partGeom = partIter.GetGeometryPtr();
-
-                    if (!partGeom.IsValid())
-                        continue;
-
-                    debugGeomId(output, *partGeom, partIter.GetGeometryStreamEntryId());
-                    }
-
+                debugGeomId(output, *geom, iter.GetGeometryStreamEntryId());
                 continue;
                 }
 
-            debugGeomId(output, *geom, iter.GetGeometryStreamEntryId());
+            DgnGeomPartPtr partGeom = iter.GetGeomPartPtr();
+
+            if (!partGeom.IsValid())
+                continue;
+
+            ElementGeometryCollection partCollection(*partGeom, iter);
+
+            for (auto partIter : partCollection)
+                {
+                ElementGeometryPtr partGeom = partIter.GetGeometryPtr();
+
+                if (!partGeom.IsValid())
+                    continue;
+
+                debugGeomId(output, *partGeom, partIter.GetGeometryStreamEntryId());
+                }
             }
 
         output._DoOutputLine(Utf8PrintfString("\n"));
@@ -3475,20 +3479,10 @@ void ElementGeometryCollection::Iterator::ToNext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::ElementGeometryCollection(Iterator& iter) : m_state(iter.m_state->m_dgnDb)
+ElementGeometryCollection::ElementGeometryCollection(DgnGeomPartCR geomPart, Iterator& iter) : m_state(iter.m_state->m_dgnDb)
     {
-    DgnGeomPartPtr partGeom = iter.GetGeomPartPtr();
-
-    if (!partGeom.IsValid())
-        {
-        m_data = nullptr;
-        m_dataSize = 0;
-        return;
-        }
-
-    // Setup for iterating in context of parent GeomStream...
-    m_data = partGeom->GetGeometryStream().GetData();
-    m_dataSize = partGeom->GetGeometryStream().GetSize();
+    m_data = geomPart.GetGeometryStream().GetData();
+    m_dataSize = geomPart.GetGeometryStream().GetSize();
 
     m_state.m_geomParams        = iter.m_state->m_geomParams;
     m_state.m_geomStreamEntryId = iter.m_state->m_geomStreamEntryId;

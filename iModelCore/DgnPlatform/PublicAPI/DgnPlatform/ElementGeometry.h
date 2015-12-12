@@ -367,7 +367,7 @@ public:
 
     void SetBRepOutput(BRepOutput bRep) {m_state.m_bRepOutput = bRep;}
 
-    DGNPLATFORM_EXPORT ElementGeometryCollection (Iterator&); // Use to iterate DgnGeomPart in context of parent...
+    DGNPLATFORM_EXPORT ElementGeometryCollection (DgnGeomPartCR geomPart, Iterator&); // Use to iterate DgnGeomPart in context of parent...should I just pass 5 extra params instead of iterator???
     DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, GeometryStreamCR geom);
     DGNPLATFORM_EXPORT ElementGeometryCollection (GeometrySourceCR source);
 
