@@ -510,6 +510,9 @@ TEST_F (SchemaNameParsingTest, ParseFullSchemaName)
     ValidateSchemaNameParsing ("12.18", true, NULL, 0, 0);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F (SchemaDeserializationTest, TestAbstractness)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -527,8 +530,35 @@ TEST_F (SchemaDeserializationTest, TestAbstractness)
     ECClassCP absClass = schema->GetClassCP("Abstract1");
     ASSERT_TRUE(absClass->IsEntityClass());
     ASSERT_TRUE(ECClassModifier::Abstract == absClass->GetClassModifier());
-
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='StructArray' version='01.00' displayLabel='StructArrays' description='Schema with invalid XML for a struct array property' nameSpacePrefix='sa' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='Ent1' description='Entity ECClass' displayLabel='Entity' isDomainClass='true' isCustomAttributeClass='false' isStruct='false'>"
+        "        <ECArrayProperty propertyName = 'TypeReferences' typeName = 'string' minOccurs = '0' maxOccurs = 'unbounded' isStruct = 'True' />" 
+        "    </ECClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    ECClassP ent = schema->GetClassP("Ent1");
+    ASSERT_TRUE(ent->IsEntityClass());
+    ECPropertyP prop = ent->GetPropertyP("TypeReferences");
+    ASSERT_TRUE(nullptr != prop);
+    StructArrayECPropertyCP typeReferences1 = prop->GetAsStructArrayProperty();
+    ASSERT_TRUE(nullptr == typeReferences1);
+
+    ArrayECPropertyCP typeReferences2 = prop->GetAsArrayProperty();
+    ASSERT_TRUE(nullptr != typeReferences2);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
