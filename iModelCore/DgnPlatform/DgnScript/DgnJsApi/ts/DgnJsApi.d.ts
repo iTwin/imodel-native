@@ -10,6 +10,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
     type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
 
+    enum ECPropertyPrimitiveType { }
+
     //! Logging serverity level.
     enum LoggingSeverity { }
 
@@ -63,6 +65,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsDgnDb ***/
         Models: DgnModelsP;
+        Schemas: SchemaManagerP;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -224,4 +227,141 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         OnDispose(): void;
         Dispose(): void;
     }
-}
+
+
+    /* ------------------------------------------ EC -----------------------------------------------*/
+
+    class SchemaManager implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECDbSchemaManager ***/
+        GetECClass(schemaNameOrPrefix: Bentley_Utf8String, className: Bentley_Utf8String): ECClassP;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type SchemaManagerP = cxx_pointer<SchemaManager>;
+
+    class ECSchema implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECSchema ***/
+        Name: Bentley_Utf8String;
+        GetECClass(className: Bentley_Utf8String): ECClassP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECSchemaP = cxx_pointer<ECSchema>;
+
+    class ECClass implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECClass ***/ 
+        Name: Bentley_Utf8String;
+        BaseClasses: ECClassCollectionP;
+        DerivedClasses: ECClassCollectionP;
+        Properties: ECPropertyCollectionP;
+        GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECClassP = cxx_pointer<ECClass>;
+
+    class ECInstance implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECInstance ***/
+        Class: ECClassP;
+        GetValue(propertyName: Bentley_Utf8String): ECValueP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECInstanceP = cxx_pointer<ECInstance>;
+
+    class ECValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECValue ***/
+        IsNull: cxx_bool;
+        IsPrimitive: cxx_bool;
+        PrimitiveType: cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
+        GetString(): Bentley_Utf8String;
+        GetInteger(): cxx_int32_t;
+        GetDouble(): cxx_double;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECValueP = cxx_pointer<ECValue>;
+
+    class ECClassCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECClassCollectionIterator ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECClassCollectionIteratorP = cxx_pointer<ECClassCollectionIterator>;
+
+    class ECClassCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECClassCollection ***/
+        Begin(): ECClassCollectionIteratorP;
+        IsValid(iter: ECClassCollectionIteratorP): cxx_bool;
+        ToNext(iter: ECClassCollectionIteratorP): cxx_bool;
+        GetECClass(iter: ECClassCollectionIteratorP): ECClassP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECClassCollectionP = cxx_pointer<ECClassCollection>;
+
+    class ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECProperty ***/
+        Name: Bentley_Utf8String;
+        IsPrimitive: cxx_bool;
+        GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECPropertyP = cxx_pointer<ECProperty>;
+
+    class PrimitiveECProperty extends ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPrimitiveECProperty ***/
+        Type: cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type PrimitiveECPropertyP = cxx_pointer<PrimitiveECProperty>;
+
+    class ECPropertyCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECPropertyCollectionIterator ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECPropertyCollectionIteratorP = cxx_pointer<ECPropertyCollectionIterator>;
+
+    class ECPropertyCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECPropertyCollection ***/
+        Begin(): ECPropertyCollectionIteratorP;
+        IsValid(iter: ECPropertyCollectionIteratorP): cxx_bool;
+        ToNext(iter: ECPropertyCollectionIteratorP): cxx_bool;
+        GetECProperty(iter: ECPropertyCollectionIteratorP): ECPropertyP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECPropertyCollectionP = cxx_pointer<ECPropertyCollection>;}

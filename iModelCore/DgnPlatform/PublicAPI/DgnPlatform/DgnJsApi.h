@@ -21,14 +21,48 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+#define STUB_OUT_SET_METHOD(PROPNAME,PROPTYPE)  void Set ## PROPNAME (PROPTYPE) {BeAssert(false);}
+
 struct JsDgnModel;
 typedef JsDgnModel* JsDgnModelP;
 
 struct JsDgnModels;
 typedef JsDgnModels* JsDgnModelsP;
 
+struct JsECDbSchemaManager;
+typedef JsECDbSchemaManager* JsECDbSchemaManagerP;
+
 struct JsComponentModel;
 typedef JsComponentModel* JsComponentModelP;
+
+struct JsECInstance;
+typedef JsECInstance* JsECInstanceP;
+
+struct JsECClass;
+typedef JsECClass* JsECClassP;
+
+struct JsECProperty;
+typedef JsECProperty* JsECPropertyP;
+
+#define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
+    T_CppColl::const_iterator m_iter;\
+    JSITCLASS(CPPCOLL::const_iterator it) : m_iter(it) {;}
+
+#define JS_COLLECTION_IMPL(JSCOLLCLASS,JSITCLASS) JSITCLASS::T_CppColl m_collection;\
+    JSCOLLCLASS(JSITCLASS::T_CppColl const& c) : m_collection(c) {;}\
+    JSITCLASS* Begin() {return new JSITCLASS(m_collection.begin());}\
+    bool IsValid(JSITCLASS* iter) {return iter && iter->m_iter != m_collection.end();}\
+    bool ToNext(JSITCLASS* iter) {if (nullptr == iter) return false; ++(iter->m_iter); return IsValid(iter);}
+
+template<typename T>
+JsECInstanceP getCustomAttribute(T* ccontainer, Utf8StringCR className)
+    {
+    if (nullptr == ccontainer)
+        return nullptr;
+    ECN::IECInstancePtr ca = ccontainer->GetCustomAttribute(className);
+    return ca.IsValid()? new JsECInstance(*ca): nullptr;
+    }
+
 
 //=======================================================================================
 // Needed by generated callbacks to construct instances of wrapper classes.
@@ -46,11 +80,26 @@ struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
 };
 
 //=======================================================================================
+// @bsiclass                                                    Sam.Wilson      10/15
+//=======================================================================================
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
+enum class ECPropertyPrimitiveType : uint32_t
+    {
+    Unknown                   = 0,
+    Binary                    = 0x0101,//ECN::PRIMITIVETYPE_Binary,
+    Boolean                   = 0x0201,//ECN::PRIMITIVETYPE_Boolean,
+    DateTime                  = 0x0301,//ECN::PRIMITIVETYPE_DateTime,
+    Double                    = 0x0401,//ECN::PRIMITIVETYPE_Double,
+    Integer                   = 0x0501,//ECN::PRIMITIVETYPE_Integer,
+    Long                      = 0x0601,//ECN::PRIMITIVETYPE_Long,
+    Point2D                   = 0x0701,//ECN::PRIMITIVETYPE_Point2D,
+    Point3D                   = 0x0801,//ECN::PRIMITIVETYPE_Point3D,
+    String                    = 0x0901,//ECN::PRIMITIVETYPE_String,
+    IGeometry                 = 0x0a01 //ECN::PRIMITIVETYPE_IGeometry
+    };
+
+//=======================================================================================
 //! Logging Severity 
-// *** TRICKY: Note that BEJAVASCRIPT_EXPORT_CLASS must be followed by the Typescript module name in parentheses.
-//              That is, even though this enum is defined in the BentleyApi::Dgn, you mus tell the TS API generator 
-//              explicitly that this enum should be defined in the 'BentleyApi.Dgn' module.
-//
 // @bsiclass                                                    Sam.Wilson      10/15
 //=======================================================================================
 BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
@@ -116,31 +165,24 @@ struct JsDgnObjectId : RefCountedBaseWithCreate
 
 typedef JsDgnObjectId* JsDgnObjectIdP;
 
-struct JsDgnObjectIdSet;
-
 struct JsDgnObjectIdSetIterator : RefCountedBaseWithCreate
-{
-    bset<uint64_t>::iterator m_iter;
-
-    JsDgnObjectIdSetIterator(bset<uint64_t>::iterator const& it) : m_iter(it) {;}
-};
+    {
+    JS_ITERATOR_IMPL(JsDgnObjectIdSetIterator, bset<uint64_t>)
+    };
 
 typedef JsDgnObjectIdSetIterator* JsDgnObjectIdSetIteratorP;
 
 struct JsDgnObjectIdSet : RefCountedBaseWithCreate
 {
-    bset<uint64_t> m_ids;
-
     JsDgnObjectIdSet() {;}
-    JsDgnObjectIdSet(DgnCategoryIdSet const& ids) {for (auto id: ids) m_ids.insert(id.GetValueUnchecked());}
-    JsDgnObjectIdSet(DgnElementIdSet const& ids) {for (auto id: ids) m_ids.insert(id.GetValueUnchecked());}
+    JsDgnObjectIdSet(DgnCategoryIdSet const& ids) {for (auto id: ids) m_collection.insert(id.GetValueUnchecked());}
+    JsDgnObjectIdSet(DgnElementIdSet const& ids) {for (auto id: ids) m_collection.insert(id.GetValueUnchecked());}
 
-    int Size() {return (int)m_ids.size();}
-    void Clear() {m_ids.clear();}
-    void Insert(JsDgnObjectIdP id) {if (id && id->m_id) m_ids.insert(id->m_id);}
-    JsDgnObjectIdSetIteratorP Begin() {return new JsDgnObjectIdSetIterator(m_ids.begin());}
-    bool IsValid(JsDgnObjectIdSetIteratorP iter) {return iter && iter->m_iter != m_ids.end();}
-    bool ToNext(JsDgnObjectIdSetIteratorP iter) {if (!iter) return false; ++(iter->m_iter); return IsValid(iter);}
+    JS_COLLECTION_IMPL(JsDgnObjectIdSet,JsDgnObjectIdSetIterator)
+
+    int Size() {return (int)m_collection.size();}
+    void Clear() {m_collection.clear();}
+    void Insert(JsDgnObjectIdP id) {if (id && id->m_id) m_collection.insert(id->m_id);}
     JsDgnObjectIdP GetId(JsDgnObjectIdSetIteratorP iter) {return IsValid(iter)? new JsDgnObjectId(*iter->m_iter): nullptr;}
 };
 
@@ -155,11 +197,12 @@ struct JsAuthorityIssuedCode : RefCountedBaseWithCreate
     explicit JsAuthorityIssuedCode(AuthorityIssuedCode const& c) : m_code(c) {;}
 
     Utf8String GetValue() const {return m_code.GetValue();}
-    void SetValue(Utf8StringCR) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     Utf8String GetNamespace() const {return m_code.GetNamespace();}
-    void SetNamespace(Utf8StringCR) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnObjectIdP GetAuthority() {return new JsDgnObjectId(m_code.GetAuthority().GetValueUnchecked());}
-    void SetAuthority(JsDgnObjectIdP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
+
+    STUB_OUT_SET_METHOD(Value,Utf8String)
+    STUB_OUT_SET_METHOD(Namespace,Utf8String)
+    STUB_OUT_SET_METHOD(Authority,JsDgnObjectIdP)
 };
 
 typedef JsAuthorityIssuedCode* JsAuthorityIssuedCodeP;
@@ -173,7 +216,10 @@ struct JsDgnDb : RefCountedBaseWithCreate
     explicit JsDgnDb(DgnDbR db) : m_db(&db) {;}
 
     JsDgnModelsP GetModels();
-    void SetModels(JsDgnModelsP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
+    JsECDbSchemaManagerP GetSchemas();
+
+    STUB_OUT_SET_METHOD(Models,JsDgnModelsP)
+    STUB_OUT_SET_METHOD(Schemas,JsECDbSchemaManagerP)
 };
 
 typedef JsDgnDb* JsDgnDbP;
@@ -188,14 +234,15 @@ struct JsDgnElement : RefCountedBaseWithCreate
     JsDgnElement(DgnElementR el) : m_el(&el) {;}
 
     JsDgnObjectIdP GetElementId() {return new JsDgnObjectId(m_el->GetElementId().GetValueUnchecked());}
-    void SetElementId(JsDgnObjectIdP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_el->GetCode());}
-    void SetCode(JsAuthorityIssuedCodeP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnModelP GetModel();
     void SetModel(JsDgnModelP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     int32_t Insert() {return m_el.IsValid()? m_el->Insert().IsValid()? 0: -1: -2;}
     int32_t Update() {return m_el.IsValid()? m_el->Update().IsValid()? 0: -1: -2;}
     void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
+
+    STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
+    STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
 };
 
 typedef JsDgnElement* JsDgnElementP;
@@ -222,15 +269,16 @@ struct JsDgnModel : RefCountedBaseWithCreate
     JsDgnModel(DgnModelR m) : m_model(&m) {;}
 
     JsDgnObjectIdP GetModelId() {return new JsDgnObjectId(m_model->GetModelId().GetValueUnchecked());}
-    void SetModelId(JsDgnObjectIdP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_model->GetCode());}
-    void SetCode(JsAuthorityIssuedCodeP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnDbP GetDgnDb() {return new JsDgnDb(m_model->GetDgnDb());}
-    void SetDgnDb(JsDgnDbP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     void DeleteAllElements();
     static JsAuthorityIssuedCodeP CreateModelCode(Utf8StringCR name) {return new JsAuthorityIssuedCode(DgnModel::CreateModelCode(name));}
 
     JsComponentModelP ToComponentModel();
+
+    STUB_OUT_SET_METHOD(ModelId,JsDgnObjectIdP)
+    STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
+    STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
 };
 
 //=======================================================================================
@@ -259,10 +307,11 @@ struct JsComponentModel : JsDgnModel
     JsComponentModel(ComponentModel& m) : JsDgnModel(m) {;}
 
     Utf8String GetName() {return m_model.IsValid()? m_model->GetCode().GetValue(): "";}
-    void SetName(Utf8StringCR) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnElement* MakeInstance(JsDgnModelP targetModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP code);
     void DeleteAllElements();
     static JsComponentModelP FindModelByName(JsDgnDbP db, Utf8StringCR name) {auto cm = ComponentModel::FindModelByName(*db->m_db, name); return cm.IsValid()? new JsComponentModel(*cm): nullptr; }
+
+    STUB_OUT_SET_METHOD(Name,Utf8String)
 };
 
 //=======================================================================================
@@ -285,13 +334,9 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
 {
     ElementGeometryBuilderPtr m_builder;
 
-    //JsElementGeometryBuilder(DgnElement3dR el, DPoint3dCR o, YawPitchRollAnglesCR angles) : m_builder (ElementGeometryBuilder::Create(el, o, angles)) {} // Not exposed to JS
-    //JsElementGeometryBuilder(DgnElement2dR el, DPoint2dCR o, AngleInDegrees angle) : m_builder (ElementGeometryBuilder::Create(el, o, angle)) {} // Not exposed to JS
     JsElementGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
     ~JsElementGeometryBuilder() {}
 
-    void AppendBox(double x, double y, double z);
-    void AppendSphere(double radius);
     void Append(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
     BentleyStatus SetGeomStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeomStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
 };
@@ -307,13 +352,9 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     JsDgnCategory(DgnCategoryCR cat) : m_category(&cat) {;}
 
     JsDgnDbP GetDgnDb() {return m_category.IsValid()? new JsDgnDb(m_category->GetDgnDb()): nullptr;}
-    void SetDgnDb(JsDgnDbP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnObjectIdP GetCategoryId() {return m_category.IsValid()? new JsDgnObjectId(m_category->GetCategoryId().GetValueUnchecked()): nullptr;}
-    void SetCategoryId(JsDgnObjectIdP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     JsDgnObjectIdP GetDefaultSubCategoryId() {return m_category.IsValid()? new JsDgnObjectId(m_category->GetDefaultSubCategoryId().GetValueUnchecked()): nullptr;}
-    void SetDefaultSubCategoryId(JsDgnObjectIdP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     Utf8String GetCategoryName() {return m_category.IsValid()? m_category->GetCategoryName(): "";}
-    void SetCategoryName(Utf8StringCR) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     static JsDgnObjectIdP QueryCategoryId(Utf8StringCR name, JsDgnDbP db) {return (db && db->m_db.IsValid())? new JsDgnObjectId(DgnCategory::QueryCategoryId(name, *db->m_db).GetValueUnchecked()): nullptr;}
     static JsDgnCategory* QueryCategory(JsDgnObjectIdP id, JsDgnDbP db) 
         {
@@ -328,8 +369,195 @@ struct JsDgnCategory : RefCountedBaseWithCreate
             return nullptr;
         return new JsDgnObjectIdSet(DgnCategory::QueryCategories(*db->m_db));
         }
+
+    STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
+    STUB_OUT_SET_METHOD(CategoryId,JsDgnObjectIdP)
+    STUB_OUT_SET_METHOD(DefaultSubCategoryId,JsDgnObjectIdP)
+    STUB_OUT_SET_METHOD(CategoryName,Utf8String)
+
 };
 typedef JsDgnCategory* JsDgnCategoryP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECClassCollectionIterator : RefCountedBaseWithCreate
+    {
+    JS_ITERATOR_IMPL(JsECClassCollectionIterator, ECN::ECBaseClassesList)
+    };
+
+typedef JsECClassCollectionIterator* JsECClassCollectionIteratorP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECClassCollection : RefCountedBaseWithCreate
+{
+    JS_COLLECTION_IMPL(JsECClassCollection,JsECClassCollectionIterator)
+    JsECClassP GetECClass(JsECClassCollectionIteratorP iter);
+};
+
+typedef JsECClassCollection* JsECClassCollectionP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECPropertyCollectionIterator : RefCountedBaseWithCreate
+{
+    JS_ITERATOR_IMPL(JsECPropertyCollectionIterator, ECN::ECPropertyIterable)
+};
+
+typedef JsECPropertyCollectionIterator* JsECPropertyCollectionIteratorP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECPropertyCollection : RefCountedBaseWithCreate
+{
+    JS_COLLECTION_IMPL(JsECPropertyCollection,JsECPropertyCollectionIterator)
+    JsECPropertyP GetECProperty(JsECPropertyCollectionIteratorP iter);
+};
+
+typedef JsECPropertyCollection* JsECPropertyCollectionP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECClass : RefCountedBaseWithCreate
+{
+    ECN::ECClassCP m_ecClass;
+
+    JsECClass(ECN::ECClassCR c) : m_ecClass(&c) {;}
+
+    Utf8String GetName() {return m_ecClass? m_ecClass->GetName(): "";}
+    JsECClassCollectionP GetBaseClasses() const {return m_ecClass? new JsECClassCollection(m_ecClass->GetBaseClasses()): nullptr;}
+    JsECClassCollectionP GetDerivedClasses() const {return m_ecClass? new JsECClassCollection(m_ecClass->GetDerivedClasses()): nullptr;}
+    JsECPropertyCollectionP GetProperties() const {return m_ecClass? new JsECPropertyCollection(m_ecClass->GetProperties()): nullptr;}
+
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_ecClass, className);}
+
+    STUB_OUT_SET_METHOD(Name,Utf8String)
+    STUB_OUT_SET_METHOD(Properties,JsECPropertyCollectionP)
+    STUB_OUT_SET_METHOD(BaseClasses,JsECClassCollectionP)
+    STUB_OUT_SET_METHOD(DerivedClasses,JsECClassCollectionP)
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECSchema : RefCountedBaseWithCreate
+{
+    ECN::ECSchemaCP m_ecSchema;
+
+    JsECSchema(ECN::ECSchemaCR c) : m_ecSchema(&c) {;}
+
+    Utf8String GetName() {return m_ecSchema? m_ecSchema->GetName(): "";}
+
+    JsECClassP GetECClass(Utf8StringCR cls) 
+        {
+        auto eccls = m_ecSchema->GetClassCP(cls.c_str());
+        return eccls? new JsECClass(*eccls): nullptr;
+        }
+
+    STUB_OUT_SET_METHOD(Name,Utf8String)
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECDbSchemaManager : RefCountedBaseWithCreate
+{
+    BeSQLite::EC::ECDbSchemaManager const& m_schemas;
+
+    JsECDbSchemaManager(BeSQLite::EC::ECDbSchemaManager const& schemas) : m_schemas(schemas) {;}
+
+    JsECClassP GetECClass(Utf8StringCR ns, Utf8StringCR cls) 
+        {
+        auto eccls = m_schemas.GetECClass(ns.c_str(), cls.c_str());
+        return eccls? new JsECClass(*eccls): nullptr;
+        }
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECProperty : RefCountedBaseWithCreate
+{
+    ECN::ECPropertyCP m_property;
+
+    JsECProperty(ECN::ECPropertyCR prop) : m_property(&prop) {;}
+
+    Utf8String GetName() {return m_property? m_property->GetName(): "";}
+    bool GetIsPrimitive() const {return m_property && m_property->GetIsPrimitive();}
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_property, className);}
+    
+    STUB_OUT_SET_METHOD(Name,Utf8String)
+    STUB_OUT_SET_METHOD(IsPrimitive,bool)
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsPrimitiveECProperty : JsECProperty
+{
+    JsPrimitiveECProperty(ECN::PrimitiveECPropertyCR prop) : JsECProperty(prop) {;}
+
+    ECPropertyPrimitiveType GetType() {return (m_property && m_property->GetIsPrimitive())? (ECPropertyPrimitiveType)m_property->GetAsPrimitiveProperty()->GetType(): ECPropertyPrimitiveType::Unknown;}
+
+    STUB_OUT_SET_METHOD(Type,ECPropertyPrimitiveType)
+};
+
+typedef JsPrimitiveECProperty* JsPrimitiveECPropertyP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECValue : RefCountedBaseWithCreate
+{
+    ECN::ECValue m_value;
+
+    JsECValue(ECN::ECValueCR v) : m_value(v) {;}
+    bool GetIsPrimitive() const {return m_value.IsPrimitive();}
+    bool GetIsNull() const {return m_value.IsNull();}
+    ECPropertyPrimitiveType GetPrimitiveType() const {return (ECPropertyPrimitiveType)m_value.GetPrimitiveType();}
+    Utf8String GetString() const {return m_value.ToString();}
+    int32_t GetInteger() const {return m_value.GetInteger();}
+    double GetDouble() const {return m_value.GetDouble();}
+
+    STUB_OUT_SET_METHOD(PrimitiveType,ECPropertyPrimitiveType)
+    STUB_OUT_SET_METHOD(IsPrimitive,bool)
+    STUB_OUT_SET_METHOD(IsNull,bool)
+    STUB_OUT_SET_METHOD(String,Utf8StringCR)
+    STUB_OUT_SET_METHOD(Integer,int32_t)
+    STUB_OUT_SET_METHOD(Double,double)
+};
+
+typedef JsECValue* JsECValueP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsECInstance : RefCountedBaseWithCreate
+{
+    ECN::IECInstancePtr m_instance;
+
+    JsECInstance(ECN::IECInstanceR i) : m_instance(&i) {;}
+
+    JsECClassP GetClass() {return m_instance.IsValid()? new JsECClass(m_instance->GetClass()): nullptr;} 
+    JsECValueP GetValue(Utf8StringCR propertyName) 
+        {
+        if (!m_instance.IsValid())
+            return nullptr;
+        ECN::ECValue v;
+        if (ECN::ECObjectsStatus::Success != m_instance->GetValue(v, propertyName.c_str()))
+            return nullptr;
+        return new JsECValue(v);
+        }
+
+    STUB_OUT_SET_METHOD(Class,JsECClassP)
+};
+
+typedef JsECInstance* JsECInstanceP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

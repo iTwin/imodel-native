@@ -145,6 +145,10 @@ JsDgnElement* JsComponentModel::MakeInstance(JsDgnModelP targetJsModel, Utf8Stri
     return new JsDgnElement(*const_cast<DgnElementP>(instance.get()));
     }
 
+JsECClassP JsECClassCollection::GetECClass(JsECClassCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECClass(**iter->m_iter): nullptr;}
+JsECPropertyP JsECPropertyCollection::GetECProperty(JsECPropertyCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECProperty(**iter->m_iter): nullptr;}
+JsECDbSchemaManagerP JsDgnDb::GetSchemas() {return m_db.IsValid()? new JsECDbSchemaManager(m_db->Schemas()): nullptr;}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
