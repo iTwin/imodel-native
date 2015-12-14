@@ -225,6 +225,11 @@ Utf8StringCR ECEnumeration::GetInvariantDescription () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
     {
+    if (ecXmlVersionMajor < 3)
+        { //Enumerations will only be serialized in 3.0 and later
+        return SchemaWriteStatus::Success;
+        }
+
     Utf8CP elementName = EC_ENUMERATION_ELEMENT;
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     

@@ -608,7 +608,8 @@ protected:
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr, bool writeType=true);
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr, bool writeType=true);
+    virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
 
     virtual bool                        _IsPrimitive () const { return false; }
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -634,6 +635,7 @@ protected:
     // prefix relative to the containing schema.
     virtual Utf8String                  _GetTypeName () const = 0;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) = 0;
+    
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
 
@@ -772,6 +774,7 @@ protected:
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
     virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
+    virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
