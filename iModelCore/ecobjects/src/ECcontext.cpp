@@ -389,10 +389,10 @@ ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyCR key, SchemaMatc
 ECObjectsStatus   ECSchemaReadContext::AddSchema(ECSchemaR schema)
     {
     if (NULL != m_knownSchemas->GetSchema(schema.GetSchemaKey()))
-        return ECOBJECTS_STATUS_DuplicateSchema;
+        return ECObjectsStatus::DuplicateSchema;
 
     _AddSchema(schema);
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -400,7 +400,7 @@ ECObjectsStatus   ECSchemaReadContext::AddSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
     {
-    if (ECOBJECTS_STATUS_Success != m_knownSchemas->AddSchema(schema))
+    if (ECObjectsStatus::Success != m_knownSchemas->AddSchema(schema))
         return;
 
     for (bvector<bool>::iterator iter = m_knownSchemaDirtyStack.begin(); iter != m_knownSchemaDirtyStack.end(); ++iter)

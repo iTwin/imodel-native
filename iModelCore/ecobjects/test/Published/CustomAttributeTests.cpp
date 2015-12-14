@@ -25,39 +25,32 @@ struct CustomAttributeTest : ECTestFixture
 ECSchemaPtr   CreateCustomAttributeTestSchema()
     {
     ECSchemaPtr schema;
-    ECClassP customAttributeClass;
-    ECClassP customAttributeClass2;
-    ECClassP customAttributeClass3;
-    ECClassP customAttributeClass4;
-    ECClassP containerClass;
-    ECClassP baseClass;
-    ECClassP classWithProperties;
+    ECCustomAttributeClassP customAttributeClass;
+    ECCustomAttributeClassP customAttributeClass2;
+    ECCustomAttributeClassP customAttributeClass3;
+    ECCustomAttributeClassP customAttributeClass4;
+    ECEntityClassP containerClass;
+    ECEntityClassP baseClass;
+    ECEntityClassP classWithProperties;
     
     ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
-    schema->CreateClass(customAttributeClass, "CustomAttribClass");
-    customAttributeClass->SetIsCustomAttributeClass(true);
+    schema->CreateCustomAttributeClass(customAttributeClass, "CustomAttribClass");
+    schema->CreateCustomAttributeClass(customAttributeClass2, "CustomAttribClass2");
+    schema->CreateCustomAttributeClass(customAttributeClass3, "CustomAttribClass3");
+    schema->CreateCustomAttributeClass(customAttributeClass4, "CustomAttribClass4");
 
-    schema->CreateClass(customAttributeClass2, "CustomAttribClass2");
-    customAttributeClass2->SetIsCustomAttributeClass(true);
-
-    schema->CreateClass(customAttributeClass3, "CustomAttribClass3");
-    customAttributeClass3->SetIsCustomAttributeClass(true);
-
-    schema->CreateClass(customAttributeClass4, "CustomAttribClass4");
-    customAttributeClass4->SetIsCustomAttributeClass(true);
-
-    schema->CreateClass(baseClass, "BaseClass");
+    schema->CreateEntityClass(baseClass, "BaseClass");
     PrimitiveECPropertyP baseStringProp;
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, baseClass->CreatePrimitiveProperty(baseStringProp, "StringMember", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECObjectsStatus::Success, baseClass->CreatePrimitiveProperty(baseStringProp, "StringMember", PRIMITIVETYPE_String));
 
-    schema->CreateClass(containerClass, "TestClass");
+    schema->CreateEntityClass(containerClass, "TestClass");
     containerClass->AddBaseClass(*baseClass);
 
-    schema->CreateClass(classWithProperties, "ClassWithProperties");
+    schema->CreateEntityClass(classWithProperties, "ClassWithProperties");
     classWithProperties->AddBaseClass(*baseClass);
 
     PrimitiveECPropertyP stringProp = NULL;
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, classWithProperties->CreatePrimitiveProperty(stringProp, "StringMember", PRIMITIVETYPE_String));
+    EXPECT_EQ(ECObjectsStatus::Success, classWithProperties->CreatePrimitiveProperty(stringProp, "StringMember", PRIMITIVETYPE_String));
     EXPECT_EQ(baseStringProp, stringProp->GetBaseProperty());
 
     return schema;
@@ -134,7 +127,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass("BaseClass", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
     }
 #endif
 
@@ -154,10 +147,10 @@ TEST_F(CustomAttributeTest, CanAddSingleCustomAttribute)
     IECInstancePtr instance = GetInstanceForClass("CustomAttribClass", *schema);
 
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->GetCustomAttributeContainer().SetCustomAttribute(*instance));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, p->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->GetCustomAttributeContainer().SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, p->SetCustomAttribute(*instance));
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
     }
 
 //---------------------------------------------------------------------------------------
@@ -176,10 +169,10 @@ TEST_F(CustomAttributeTest, CanAddMultipleCustomAttributes)
     IECInstancePtr instance3 = GetInstanceForClass("CustomAttribClass3", *schema);
     IECInstancePtr instance4 = GetInstanceForClass("CustomAttribClass4", *schema);
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance2));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance3));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance4));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance2));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance3));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance4));
     }
 
 //---------------------------------------------------------------------------------------
@@ -194,8 +187,8 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddDuplicateCustomAttribute)
     ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass("CustomAttribClass", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
     }
 
 //---------------------------------------------------------------------------------------
@@ -212,7 +205,7 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddCustomAttributeToProperty)
     ASSERT_TRUE (NULL != stringProperty);
 
     IECInstancePtr instance = GetInstanceForClass("CustomAttribClass", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, stringProperty->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, stringProperty->SetCustomAttribute(*instance));
     }
 
 //---------------------------------------------------------------------------------------
@@ -231,7 +224,7 @@ TEST_F(CustomAttributeTest, ExpectIsDefined)
     EXPECT_FALSE(containerClass->IsDefined("CustomAttribClass"));
     EXPECT_FALSE(containerClass->IsDefined(*customAttributeClass));
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
     EXPECT_TRUE(containerClass->IsDefined("CustomAttribClass"));
     EXPECT_TRUE(containerClass->IsDefined(*customAttributeClass));
     }
@@ -255,7 +248,7 @@ TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     EXPECT_FALSE(containerClass->IsDefined("CustomAttribClass"));
     EXPECT_FALSE(containerClass->IsDefined(*customAttributeClass));
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, baseClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, baseClass->SetCustomAttribute(*instance));
     EXPECT_TRUE(baseClass->IsDefined("CustomAttribClass"));
     EXPECT_TRUE(baseClass->IsDefined(*customAttributeClass));
     EXPECT_TRUE(containerClass->IsDefined("CustomAttribClass"));
@@ -274,7 +267,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass("CustomAttribClass", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute("CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
@@ -302,13 +295,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     ASSERT_TRUE (NULL != baseClass);
 
     IECInstancePtr instance = GetInstanceForClass("CustomAttribClass", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
 
     IECInstancePtr instance2 = GetInstanceForClass("CustomAttribClass2", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance2));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance2));
 
     IECInstancePtr instance3 = GetInstanceForClass("CustomAttribClass3", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, baseClass->SetCustomAttribute(*instance3));
+    EXPECT_EQ(ECObjectsStatus::Success, baseClass->SetCustomAttribute(*instance3));
 
     bool foundCustomAttrib = false;
     bool foundCustomAttrib2 = false;
@@ -358,7 +351,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass("CustomAttribClass", *schema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute("CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
@@ -368,7 +361,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     IECInstancePtr gotInstance2 = containerClass->GetCustomAttribute("CustomAttribClass");
     EXPECT_FALSE(gotInstance2.IsValid());
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
     ECClassP caClass = schema->GetClassP ("CustomAttribClass");
     ASSERT_TRUE (NULL != caClass);
     EXPECT_TRUE(containerClass->RemoveCustomAttribute(*caClass));
@@ -390,18 +383,17 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
 
-    ECClassP refClass;
-    refSchema->CreateClass(refClass, "RefClass");
-    refClass->SetIsCustomAttributeClass(true);
+    ECCustomAttributeClassP refClass;
+    refSchema->CreateCustomAttributeClass(refClass, "RefClass");
 
     ECClassP containerClass = schema->GetClassP ("TestClass");
     ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass("RefClass", *refSchema);
 
-    EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, containerClass->SetCustomAttribute(*instance));
     schema->AddReferencedSchema(*refSchema);
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
+    EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
     }
 #endif
 
@@ -417,20 +409,18 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
     ECSchemaP schema;    
 
     //ECObjectsStatus structStatus;
-    ECClassP struct1;
-    ECClassP struct2;
-    ECClassP customAttributeClass;
-    ECClassP testClass;
+    ECStructClassP struct1;
+    ECStructClassP struct2;
+    ECCustomAttributeClassP customAttributeClass;
+    ECEntityClassP testClass;
 
     ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
     ASSERT_TRUE(schema!=NULL);
 
-    schema->CreateClass(struct1,"Struct1");
+    schema->CreateStructClass(struct1,"Struct1");
     ASSERT_TRUE(struct1!=NULL);
-    schema->CreateClass(struct2,"Struct2");
+    schema->CreateStructClass(struct2,"Struct2");
     ASSERT_TRUE(struct2!=NULL);
-    struct1->SetIsStruct(true);
-    struct2->SetIsStruct(true);
 
     StructECPropertyP P1;
     StructECPropertyP P2;
@@ -442,9 +432,8 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
 
     StructECPropertyP PropertyOfCustomAttribute;
 
-    schema->CreateClass(customAttributeClass,"MyCustomAttribute");
+    schema->CreateCustomAttributeClass(customAttributeClass,"MyCustomAttribute");
     ASSERT_TRUE(customAttributeClass!=NULL);
-    customAttributeClass->SetIsCustomAttributeClass(true);
 
 
     customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, "PropertyOfCustomAttribute",*struct1);
@@ -453,13 +442,13 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
     IECInstancePtr instance = GetInstanceForClass("MyCustomAttribute", *schema);
     ASSERT_TRUE(instance.get()!=NULL);
 
-    schema->CreateClass(testClass,"TestClass");
+    schema->CreateEntityClass(testClass,"TestClass");
     ASSERT_TRUE(testClass!=NULL);
 
     ECClassP tempClass = schema->GetClassP("TestClass");
     ASSERT_TRUE(tempClass!=NULL);
     ECObjectsStatus status =tempClass->SetCustomAttribute(*instance);
-    ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
+    ASSERT_EQ(ECObjectsStatus::Success,status);
     }
 #endif
 
@@ -469,13 +458,13 @@ TEST_F(CustomAttributeTest, ExpectSuccessWhenAddingCircularStructPropertiesToCus
 TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     {
     ECSchemaPtr             schema;
-    ECClassP                ecclass;
+    ECEntityClassP                ecclass;
     PrimitiveECPropertyP    primProp;
     ArrayECPropertyP        arrayProp;
     PrimitiveECPropertyP    pointProp;
 
     ECSchema::CreateSchema (schema, "TestSchema", 1, 2);
-    schema->CreateClass (ecclass, "TestClass");
+    schema->CreateEntityClass (ecclass, "TestClass");
     ecclass->CreatePrimitiveProperty (primProp, "PrimitiveProperty", PRIMITIVETYPE_String);
     ecclass->CreateArrayProperty (arrayProp, "ArrayProperty", PRIMITIVETYPE_String);
     ecclass->CreatePrimitiveProperty (pointProp, "PointProperty", PRIMITIVETYPE_Point3D);
@@ -484,39 +473,39 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
 
     PresentationMetadataHelper meta (*readContext);
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetHideNullProperties (*ecclass));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetHideNullProperties (*ecclass));
     EXPECT_TRUE (ecclass->IsDefined ("DontShowNullProperties"));
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetIgnoreZ (*pointProp));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetIgnoreZ (*pointProp));
     EXPECT_TRUE (pointProp->IsDefined ("IgnoreZ"));
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMembersIndependent (*arrayProp));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetMembersIndependent (*arrayProp));
     EXPECT_TRUE (arrayProp->IsDefined ("MembersIndependent"));
 
     ECValue v;
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetPriority (*primProp, 1234));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute ("PropertyPriority")->GetValue (v, "Priority"));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetPriority (*primProp, 1234));
+    EXPECT_EQ (ECObjectsStatus::Success, primProp->GetCustomAttribute ("PropertyPriority")->GetValue (v, "Priority"));
     EXPECT_EQ (1234, v.GetInteger());
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetAlwaysExpand (*arrayProp, true));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute ("AlwaysExpand")->GetValue (v, "ArrayMembers"));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetAlwaysExpand (*arrayProp, true));
+    EXPECT_EQ (ECObjectsStatus::Success, arrayProp->GetCustomAttribute ("AlwaysExpand")->GetValue (v, "ArrayMembers"));
     EXPECT_TRUE (v.GetBoolean());
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetExtendedType (*primProp, 1));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute ("ExtendType")->GetValue (v, "Standard"));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetExtendedType (*primProp, 1));
+    EXPECT_EQ (ECObjectsStatus::Success, primProp->GetCustomAttribute ("ExtendType")->GetValue (v, "Standard"));
     EXPECT_EQ (1, v.GetInteger());
 
     Utf8String str ("CustomType");
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetExtendedType (*primProp, str.c_str()));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute ("ExtendType")->GetValue (v, "Name"));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetExtendedType (*primProp, str.c_str()));
+    EXPECT_EQ (ECObjectsStatus::Success, primProp->GetCustomAttribute ("ExtendType")->GetValue (v, "Name"));
     EXPECT_TRUE (str.Equals (v.GetUtf8CP()));
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMemberExtendedType (*arrayProp, 1));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute ("MemberExtendedType")->GetValue (v, "Standard"));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetMemberExtendedType (*arrayProp, 1));
+    EXPECT_EQ (ECObjectsStatus::Success, arrayProp->GetCustomAttribute ("MemberExtendedType")->GetValue (v, "Standard"));
     EXPECT_EQ (1, v.GetInteger());
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMemberExtendedType (*arrayProp, str.c_str()));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute ("MemberExtendedType")->GetValue (v, "Name"));
+    EXPECT_EQ (ECObjectsStatus::Success, meta.SetMemberExtendedType (*arrayProp, str.c_str()));
+    EXPECT_EQ (ECObjectsStatus::Success, arrayProp->GetCustomAttribute ("MemberExtendedType")->GetValue (v, "Name"));
     EXPECT_TRUE (str.Equals (v.GetUtf8CP()));
     }
 
@@ -545,25 +534,25 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
 
     IECInstancePtr caInstance = GetInstanceForClass (caClassName, *expectedSchema);
     ECValue expectedWCharValue (caPropValueString);
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caWCharStringPropName, expectedWCharValue)) << "Assigning value to " << caWCharStringPropName << " in custom attribute instance failed.";
+    EXPECT_EQ (ECObjectsStatus::Success, caInstance->SetValue (caWCharStringPropName, expectedWCharValue)) << "Assigning value to " << caWCharStringPropName << " in custom attribute instance failed.";
 
     ECValue expectedUtf8Value (expectedCAPropValueUtf8String.c_str ());
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caUtf8StringPropName, expectedUtf8Value)) << "Assigning value to " << caUtf8StringPropName << " in custom attribute instance failed.";
+    EXPECT_EQ (ECObjectsStatus::Success, caInstance->SetValue (caUtf8StringPropName, expectedUtf8Value)) << "Assigning value to " << caUtf8StringPropName << " in custom attribute instance failed.";
 
     ECClassP testClass = expectedSchema->GetClassP (testClassName);
     EXPECT_TRUE (testClass != NULL) << "Test class " << testClassName << " not found";
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, testClass->SetCustomAttribute (*caInstance)) << "Assigning the custom attribute instance to class " << testClassName << " failed.";
+    EXPECT_EQ (ECObjectsStatus::Success, testClass->SetCustomAttribute (*caInstance)) << "Assigning the custom attribute instance to class " << testClassName << " failed.";
 
     //serializing
     Utf8String schemaUtfXml;
     SchemaWriteStatus serializeStat = expectedSchema->WriteToXmlString (schemaUtfXml);
-    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, serializeStat) << "Serializing the schema to a UTF-8 XML string failed.";
+    EXPECT_EQ (SchemaWriteStatus::Success, serializeStat) << "Serializing the schema to a UTF-8 XML string failed.";
 
     //deserializing
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr actualSchema = NULL;
     SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString (actualSchema, schemaUtfXml.c_str (), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, deserializeStat) << "Deserializing the schema from a UTF-8 XML string failed.";
+    EXPECT_EQ (SchemaReadStatus::Success, deserializeStat) << "Deserializing the schema from a UTF-8 XML string failed.";
 
     //base check of actual vs expected schema
     VerifyCustomAttributeTestSchema (actualSchema);
@@ -578,10 +567,94 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
 
     //verify UTF-8 property value
     ECValue actualUtf8Value;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, actualCAInstance->GetValue (actualUtf8Value, caUtf8StringPropName)) << "Property " << caUtf8StringPropName << "not found in custom attribute instance on test class.";
+    ASSERT_EQ (ECObjectsStatus::Success, actualCAInstance->GetValue (actualUtf8Value, caUtf8StringPropName)) << "Property " << caUtf8StringPropName << "not found in custom attribute instance on test class.";
     EXPECT_TRUE (expectedUtf8Value.Equals (actualUtf8Value)) << "Unexpected ECValue of property " << caUtf8StringPropName << " of custom attribute instance";
     EXPECT_STREQ (expectedCAPropValueUtf8String.c_str(), actualUtf8Value.GetUtf8CP ()) << "Unexpected string value of property " << caUtf8StringPropName << " of custom attribute instance";
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CustomAttributeTest, ContainerTypes)
+    {
+    CustomAttributeContainerType schema = CustomAttributeContainerType::Schema;
+    CustomAttributeContainerType entityAndSchema = CustomAttributeContainerType::Schema | CustomAttributeContainerType::EntityClass;
+
+    ASSERT_TRUE(CustomAttributeContainerType::Schema == (schema & CustomAttributeContainerType::Schema));
+    ASSERT_TRUE(CustomAttributeContainerType::Schema != (schema & CustomAttributeContainerType::EntityClass));
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (entityAndSchema & CustomAttributeContainerType::EntityClass));
+
+    int schemaAsInt = static_cast<int>(schema);
+    ASSERT_TRUE(CustomAttributeContainerType::Schema == (static_cast<CustomAttributeContainerType>(schemaAsInt) & CustomAttributeContainerType::Schema));
+
+    int entityAndSchemaAsInt = static_cast<int>(entityAndSchema);
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (static_cast<CustomAttributeContainerType>(entityAndSchemaAsInt) & CustomAttributeContainerType::EntityClass));
+
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (CustomAttributeContainerType::EntityClass & CustomAttributeContainerType::Any));
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass == (CustomAttributeContainerType::EntityClass & CustomAttributeContainerType::AnyClass));
+    ASSERT_TRUE(CustomAttributeContainerType::EntityClass != (CustomAttributeContainerType::EntityClass & CustomAttributeContainerType::AnyProperty));
+    }
+
+bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContainerType myType)
+    {
+    if (compareType == (compareType & myType))
+        return true;
+    return false;
+    }
+
+TEST_F(CustomAttributeTest, ContainerTypeSerialization)
+    {
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributeClass typeName=\"AppliesToSchema\" appliesTo=\"Schema\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToAnyClass\" appliesTo=\"AnyClass\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToAny\" appliesTo=\"Any\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToSchemaAndEntity\" appliesTo=\"Schema,EntityClass\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToSchemaEntityClassPrimitiveProperty\" appliesTo=\"Schema,EntityClass,PrimitiveProperty\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToGarbage\" appliesTo=\"Bad\" />"
+        "</ECSchema>";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    ECCustomAttributeClassCP appliesToSchema = schema->GetClassCP("AppliesToSchema")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToAnyClass = schema->GetClassCP("AppliesToAnyClass")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToAny = schema->GetClassCP("AppliesToAny")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToSchemaAndEntity = schema->GetClassCP("AppliesToSchemaAndEntity")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToSchemaEntityClassPrimitiveProperty = schema->GetClassCP("AppliesToSchemaEntityClassPrimitiveProperty")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToGarbage = schema->GetClassCP("AppliesToGarbage")->GetCustomAttributeClassCP();
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchema->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Any, appliesToSchema->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchema->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAnyClass->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAnyClass->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAnyClass->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Schema, appliesToAnyClass->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Any, appliesToAny->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAny->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAny->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAny->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaAndEntity->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaAndEntity->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaAndEntity->GetContainerType()));
+
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    ASSERT_TRUE(TestValue(CustomAttributeContainerType::PrimitiveProperty, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Any, appliesToGarbage->GetContainerType()));
+    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Schema, appliesToGarbage->GetContainerType()));
+
+    Utf8String serializedStr;
+    SchemaWriteStatus status2 = schema->WriteToXmlString(serializedStr, 3, 0);
+    EXPECT_EQ(SchemaWriteStatus::Success, status2);
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -55,7 +55,7 @@ public:
 
     ECObjectsStatus Apply (IECInstanceR instance) const
         {
-        return m_name ? instance.SetValue (m_name, m_value) : ECOBJECTS_STATUS_Success;
+        return m_name ? instance.SetValue (m_name, m_value) : ECObjectsStatus::Success;
         }
     };
 
@@ -68,7 +68,7 @@ PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaReadContextR sch
     m_customAttributesSchema = schemaContext.LocateSchema (schemaKey, SCHEMAMATCHTYPE_Latest);
     if (m_customAttributesSchema.IsNull())
         {
-        // If we can't find the custom attributes schema, all methods will return ECOBJECTS_STATUS_SchemaNotFound
+        // If we can't find the custom attributes schema, all methods will return ECObjectsStatus::SchemaNotFound
         BeAssert (false);
         LOG.error (L"Unable to locate EditorCustomAttributes schema");
         }
@@ -123,20 +123,20 @@ IECInstancePtr PresentationMetadataHelper::CreateInstance (Utf8CP className) con
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PresentationMetadataHelper::EnsureSchemaReference (IECCustomAttributeContainerR container) const
     {
-    ECObjectsStatus status = ECOBJECTS_STATUS_SchemaNotFound;
+    ECObjectsStatus status = ECObjectsStatus::SchemaNotFound;
     if (m_customAttributesSchema.IsValid())
         {
         ECSchemaP containerSchema = container.GetContainerSchema();
         if (NULL != containerSchema)
             {
             if (containerSchema == m_customAttributesSchema.get() || ECSchema::IsSchemaReferenced (*containerSchema, *m_customAttributesSchema))
-                status = ECOBJECTS_STATUS_Success;
+                status = ECObjectsStatus::Success;
             else
                 status = containerSchema->AddReferencedSchema (*m_customAttributesSchema);
             }
         }
 
-    BeAssert (ECOBJECTS_STATUS_Success == status);
+    BeAssert (ECObjectsStatus::Success == status);
     return status;
     }
 
@@ -155,12 +155,12 @@ ECObjectsStatus PresentationMetadataHelper::CreateCustomAttribute (IECCustomAttr
     {
     IECInstancePtr instance;
     ECObjectsStatus status = EnsureSchemaReference (container);
-    if (ECOBJECTS_STATUS_Success == status && (instance = CreateInstance (className)).IsValid())
+    if (ECObjectsStatus::Success == status && (instance = CreateInstance (className)).IsValid())
         {
         if (NULL != data)
             status = data->Apply (*instance);
 
-        if (ECOBJECTS_STATUS_Success == status)
+        if (ECObjectsStatus::Success == status)
             status = container.SetCustomAttribute (*instance);
         }
 
@@ -240,7 +240,7 @@ ECObjectsStatus PresentationMetadataHelper::SetMembersIndependent (ECPropertyR e
         {
         BeAssert (false);
         LOG.error ("MembersIndependent custom attribute not permitted on primitive properties");
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
         }
 
     return CreateCustomAttribute (ecproperty, MEMBERS_INDEPENDENT_CLASSNAME);
@@ -254,7 +254,7 @@ ECObjectsStatus PresentationMetadataHelper::SetAlwaysExpand (ECPropertyR ecprope
         {
         BeAssert (false);
         LOG.error ("AlwaysExpand custom attribute only valid for complex properties");
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
         }
     else if (NULL != ecproperty.GetAsArrayProperty() && andArrayMembers)
         return CreateCustomAttribute (ecproperty, ALWAYS_EXPAND_CLASSNAME, CustomAttributeData ("ArrayMembers", true));
@@ -284,11 +284,11 @@ ECObjectsStatus PresentationMetadataHelper::SetStandardCategory (ECPropertyR ecp
 ECObjectsStatus PresentationMetadataHelper::SetCustomCategory (ECPropertyR ecproperty, Utf8CP uniqueName, Utf8CP displayLabel, int32_t priority, bool expand, Utf8CP description) const
     {
     if (NULL == uniqueName || 0 == *uniqueName)
-        return ECOBJECTS_STATUS_Error;
+        return ECObjectsStatus::Error;
 
     IECInstancePtr attr;
     ECObjectsStatus status = EnsureSchemaReference (ecproperty);
-    if (ECOBJECTS_STATUS_Success == status && (attr = CreateInstance (CATEGORY_CLASSNAME)).IsValid())
+    if (ECObjectsStatus::Success == status && (attr = CreateInstance (CATEGORY_CLASSNAME)).IsValid())
         {
         attr->SetValue ("Name", ECValue (uniqueName, false));
         attr->SetValue ("DisplayLabel", ECValue (displayLabel, false));

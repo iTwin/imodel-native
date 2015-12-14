@@ -400,7 +400,7 @@ public:
 
     //! Generates a list of supplemental schema full names
     //! @param[out] supplementalSchemaNames List of supplemental schema full names
-    //! @returns ECOBJECTS_STATUS_SchemaNotSupplemented if the schema is not supplemented, otherwise ECOBJECTS_STATUS_Success
+    //! @returns ECObjectsStatus::SchemaNotSupplemented if the schema is not supplemented, otherwise ECObjectsStatus::Success
     ECOBJECTS_EXPORT ECObjectsStatus GetSupplementalSchemaNames(bvector<Utf8String>& supplementalSchemaNames) const;
 
     //! Returns the purpose of the supplemental schema with the given full name
@@ -411,7 +411,7 @@ public:
     //! Generates a list of supplemental schema full names that have the input purpose
     //! @param[out] supplementalSchemaNames A list of schema full names that have the input purpose
     //! @param[in]  purpose             Schemas with this purpose will be returned
-    //! @returns ECOBJECTS_STATUS_SchemaNotSupplemented if the schema is not supplemented, otherwise ECOBJECTS_STATUS_Success (even if no matching schemas are found)
+    //! @returns ECObjectsStatus::SchemaNotSupplemented if the schema is not supplemented, otherwise ECObjectsStatus::Success (even if no matching schemas are found)
     ECOBJECTS_EXPORT ECObjectsStatus GetSupplementalSchemasWithPurpose(bvector<Utf8String>& supplementalSchemaNames, Utf8StringCR purpose) const;
 
     //! Returns true if the second schema has the same supplemental schemas as the current schema for the input purpose

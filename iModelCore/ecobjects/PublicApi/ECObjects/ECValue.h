@@ -844,14 +844,14 @@ public:
     public:
         //! Get the enabler associated with this Location
         //! @return     The enabler associated with this Location
-        ECOBJECTS_EXPORT ECEnablerCP                     GetEnabler() const          { return m_enabler; }
+        ECEnablerCP                     GetEnabler() const          { return m_enabler; }
         //! Get the property index identifying this Location
         //! @return     The index of the property within its enabler
-        ECOBJECTS_EXPORT int                             GetPropertyIndex() const    { return m_propertyIndex; }
+        int                             GetPropertyIndex() const    { return m_propertyIndex; }
 
         //! Gets the array index of the property value associated with this Location
         //! @return     The array index, or INDEX_ROOT if no array index specified.
-        ECOBJECTS_EXPORT int                             GetArrayIndex() const       { return m_arrayIndex; }
+        int                             GetArrayIndex() const       { return m_arrayIndex; }
 
         //! Gets the ECProperty associated with this Location
         //! @return     The ECProperty, or nullptr if the ECProperty could not be evaluated.
@@ -1002,7 +1002,7 @@ public:
     //! @param[in]      va                      The ECValueAccessor to populate
     //! @param[in]      instance                The IECInstance containing the specified property value
     //! @param[in]      managedPropertyAccessor The managed access string relative to the specified IECInstance
-    //! @return     ECOBJECTS_STATUS_Success if the ECValueAccessor was successfully populated, otherwise an error status
+    //! @return     ECObjectsStatus::Success if the ECValueAccessor was successfully populated, otherwise an error status
     //! @private
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, Utf8CP managedPropertyAccessor);
 
@@ -1010,7 +1010,7 @@ public:
     //! @param[in]      va                      The ECValueAccessor to populate
     //! @param[in]      enabler                 The ECEnabler containing the specified property
     //! @param[in]      managedPropertyAccessor The managed access string relative to the specified ECEnabler
-    //! @return     ECOBJECTS_STATUS_Success if the ECValueAccessor was successfully populated, otherwise an error status
+    //! @return     ECObjectsStatus::Success if the ECValueAccessor was successfully populated, otherwise an error status
     //! @private
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, Utf8CP managedPropertyAccessor);
 //__PUBLISH_SECTION_END__

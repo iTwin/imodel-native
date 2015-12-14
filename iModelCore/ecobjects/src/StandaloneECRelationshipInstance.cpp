@@ -98,7 +98,7 @@ Utf8String        StandaloneECRelationshipInstance::_GetInstanceId() const
 ECObjectsStatus StandaloneECRelationshipInstance::_SetInstanceId (Utf8CP instanceId)
     {
     m_instanceId = instanceId;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -186,7 +186,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (uint32_t propIdx)
     {
-    return ECOBJECTS_STATUS_OperationNotSupported;
+    return ECObjectsStatus::OperationNotSupported;
     }                      
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,13 +205,10 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    for (auto source : GetRelationshipClass().GetSource().GetConstraintClasses())
+    if (GetRelationshipClass().GetSource().SupportsClass(instance->GetClass()))
         {
-        if (source->GetClass().GetName().EqualsI ("AnyClass") || instance->GetClass().Is(&source->GetClass()))
-            {
-            m_source = instance;
-            return;
-            }
+        m_source = instance;
+        return;
         }
 
     BeAssert(false && "Invalid source instance");
@@ -232,7 +229,7 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetSource () const
 ECObjectsStatus StandaloneECRelationshipInstance::_GetSourceOrderId (int64_t& sourceOrderId) const 
     {
     sourceOrderId = m_sourceOrderId;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,13 +256,10 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    for (auto target : this->GetRelationshipClass().GetTarget().GetConstraintClasses())
+    if (GetRelationshipClass().GetTarget().SupportsClass(instance->GetClass()))
         {
-        if (target->GetClass().GetName().EqualsI ("AnyClass") || instance->GetClass().Is(&target->GetClass()))
-            {
-            m_target = instance;
-            return;
-            }
+        m_target = instance;
+        return;
         }
 
     BeAssert(false && "Invalid target instance");
@@ -286,7 +280,7 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetTarget () const
 ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (int64_t& targetOrderId) const 
     {
     targetOrderId = m_targetOrderId;
-    return ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

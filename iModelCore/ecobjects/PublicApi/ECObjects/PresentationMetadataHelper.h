@@ -74,7 +74,7 @@ public:
     //! Applies a standard category to the property
     //! @param[in]      ecproperty         
     //! @param[in]      standardCategoryId 
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetStandardCategory (ECPropertyR ecproperty, int32_t standardCategoryId) const;
 
     //! Applies a custom category to a property
@@ -84,55 +84,55 @@ public:
     //! @param[in]      priority     
     //! @param[in]      expand       
     //! @param[in]      description  
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, Utf8CP uniqueName, Utf8CP displayLabel, int32_t priority, bool expand = false, Utf8CP description = NULL) const;
 
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for the property
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param standardTypeId   The ID of a standard extended type. Must be a valid DgnECExtendedType::StandardType.
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, int32_t standardTypeId) const;
 
     //! Sets the extended type name for the property
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param extendTypeName   The name of the extended type.
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, Utf8CP extendTypeName) const;
 
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for members of the array property
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param standardTypeId   The ID of a standard extended type. Must be a valid DgnECExtendedType::StandardType.
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, int32_t standardTypeId) const;
 
     //! Sets the extended type name for the members of the array property
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param extendTypeName   The name of the extended type.
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, Utf8CP extendTypeName) const;
 
     //! Sets the PropertyPriority for the property
     //! @param ecproperty   The property to which to apply the custom attribute
     //! @param priority     The desired priority
-    //! @return ECOBJECTS_STATUS_Success if the priority was applied to the property
+    //! @return ECObjectsStatus::Success if the priority was applied to the property
     ECOBJECTS_EXPORT ECObjectsStatus    SetPriority (ECPropertyR ecproperty, int32_t priority) const;
 
     //! Applies a custom attribute which prevents the Z coordinate of a Point3D property from being displayed in the UI
     //! @param ecproperty   The property to which to apply the custom attribute
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetIgnoreZ (ECPropertyR ecproperty) const;
 
     //! Applies a custom attribute to a struct property which causes the UI to display its properties as if they were part of the parent structure
     //! @param ecproperty   THe property to which to apply the custom attribute
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetMembersIndependent (ECPropertyR ecproperty) const;
 
     //! Applies a custom attribute to a Point3D, array, or struct property which causes the UI to to expand the property's members
     //! @param ecproperty       The property to which to apply the custom attribute. Must be a Point3D, array, or struct property.
     //! @param andArrayMembers  If true, and ecproperty is an array of structures, members of the structures are expanded as well. Ignored otherwise.
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetAlwaysExpand (ECPropertyR ecproperty, bool andArrayMembers = false) const;
 
     //! Applies a custom attribute indicating that when the value of the property is changed, the other properties should be refreshed in the UI
@@ -140,7 +140,7 @@ public:
 
     //! Applies a custom attribute which prevents null property values from being displayed in the UI
     //! @param ecclass  The ECClass to which to apply the custom attribute
-    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    //! @return ECObjectsStatus::Success if the custom attribute was applied
     ECOBJECTS_EXPORT ECObjectsStatus    SetHideNullProperties (ECClassR ecclass) const;
 
     //! Applies a custom attribute to the schema which indicates properties of extended types such as Distance or Area are stored in UORs

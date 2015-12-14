@@ -170,10 +170,10 @@ struct StringMethods
         if (ExtractArg(a, args, 0, true) && ExtractArg(b, args, 1, true))
             {
             evalResult.InitECValue().SetBoolean(ignoreCase ? a.EqualsI(b) : a.Equals(b));
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus Compare(EvaluationResult& evalResult, EvaluationResultVector& args)
@@ -193,10 +193,10 @@ struct StringMethods
             {
             (str.*transformFunc)();
             evalResult.InitECValue().SetUtf8CP(str.c_str());
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus ToUpper(EvaluationResult& evalResult, EvaluationResultVector& args)
@@ -224,10 +224,10 @@ struct StringMethods
             Utf8CP found;
             int32_t index = (str && token && NULL != (found = strstr(str, token))) ? (int32_t)(found - str) : -1;
             evalResult.InitECValue().SetInteger(index);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus LastIndexOf(EvaluationResult& evalResult, EvaluationResultVector& args)
@@ -238,16 +238,16 @@ struct StringMethods
             Utf8CP found;
             int32_t index = (str && token && NULL != (found = findLastOccurrence(str, token))) ? (int32_t)(found - str) : -1;
             evalResult.InitECValue().SetInteger(index);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus Contains(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         ExpressionStatus status = IndexOf(evalResult, args);
-        if (ExprStatus_Success == status)
+        if (ExpressionStatus::Success == status)
             evalResult.GetECValue()->SetBoolean(evalResult.GetECValue()->GetInteger() >= 0);
 
         return status;
@@ -261,10 +261,10 @@ struct StringMethods
             str.ToUpper();
             token.ToUpper();
             evalResult.InitECValue().SetBoolean(-1 != str.find(token));
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus ToString(EvaluationResult& evalResult, EvaluationResultVector& args)
@@ -272,10 +272,10 @@ struct StringMethods
         if (args.size() == 1 && args[0].IsECValue())
             {
             evalResult.InitECValue().SetUtf8CP(args[0].GetECValue()->ToString().c_str());
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus Length(EvaluationResult& evalResult, EvaluationResultVector& args)
@@ -284,10 +284,10 @@ struct StringMethods
         if (ExtractArg(str, args, 0, true))
             {
             evalResult.InitECValue().SetInteger(str ? (int32_t)strlen(str) : 0);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus SubString(EvaluationResult& evalResult, EvaluationResultVector& args)
@@ -301,10 +301,10 @@ struct StringMethods
             else
                 evalResult.InitECValue().SetUtf8CP(str.substr(startIndex, length).c_str());
 
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
 #ifdef TODO
@@ -326,11 +326,11 @@ struct StringMethods
             if (DgnECManager::GetManager().GetInteropStringFormatter().Format (formatted, fmtString, ValueList (args)))
                 {
                 evalResult.InitECValue().SetString (formatted.c_str());
-                return ExprStatus_Success;
+                return ExpressionStatus::Success;
                 }
             }
 
-        return ExprStatus_UnknownError;
+        return ExpressionStatus::UnknownError;
         }
 #endif
 
@@ -341,10 +341,10 @@ struct StringMethods
             {
             str.Trim();
             evalResult.InitECValue().SetUtf8CP(str.c_str());
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static void PublishSymbols(SymbolExpressionContextR systemContext)
@@ -381,7 +381,7 @@ struct DateTimeMethods
         DateTime dt;
         DateTime::FromUnixMilliseconds(dt, (int64_t)unixMillis);
         evalResult.InitECValue().SetDateTime(dt);
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
 
     static void PublishSymbols(SymbolExpressionContextR systemContext)
@@ -411,10 +411,10 @@ struct PathMethods
         if (ExtractArg(arg, args, 0, false))
             {
             evalResult.InitECValue().SetWCharCP(extractFunc(arg).c_str());
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus GetFileName(EvaluationResult& evalResult, EvaluationResultVector& args)
@@ -425,7 +425,7 @@ struct PathMethods
     static ExpressionStatus GetDirectoryName(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         ExpressionStatus status = getFileNamePart(evalResult, args, BeFileName::GetDirectoryName);
-        if (ExprStatus_Success == status)
+        if (ExpressionStatus::Success == status)
             {
             // Do not include terminating separator
             Utf8CP ret = evalResult.GetECValue()->GetUtf8CP();
@@ -443,7 +443,7 @@ struct PathMethods
     static ExpressionStatus GetExtension(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         ExpressionStatus status = getFileNamePart(evalResult, args, BeFileName::GetExtension);
-        if (ExprStatus_Success == status)
+        if (ExpressionStatus::Success == status)
             {
             // Add the dot '.'
             Utf8CP ret = evalResult.GetECValue()->GetUtf8CP();
@@ -471,29 +471,29 @@ struct PathMethods
         if (ExtractArg(arg, args, 0, false) && BeFileNameStatus::Success == BeFileName::BeGetFullPathName(fullPath, arg))
             {
             evalResult.InitECValue().SetWCharCP(fullPath.c_str());
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus Combine(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
         WCharCP nextPart;
         if (!ExtractArg(nextPart, args, 0, false))
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
 
         BeFileName filename(nextPart);
         for (size_t i = 1; i < args.size(); i++)
             {
             if (!ExtractArg(nextPart, args, i, false))
-                return ExprStatus_UnknownError;
+                return ExpressionStatus::UnknownError;
 
             filename.AppendToPath(nextPart);
             }
 
         evalResult.InitECValue().SetWCharCP(filename);
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
 
     static void PublishSymbols(SymbolExpressionContextR systemContext)
@@ -548,10 +548,10 @@ struct MathMethods
         if (ExtractArg(arg, args, 0))
             {
             evalResult.InitECValue().SetDouble(func(arg));
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus eval2(EvaluationResult& evalResult, EvaluationResultVector& args, double(*func)(double, double))
@@ -560,10 +560,10 @@ struct MathMethods
         if (ExtractArg(arg1, args, 0) && ExtractArg(arg2, args, 1))
             {
             evalResult.InitECValue().SetDouble(func(arg1, arg2));
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static double roundToEven(double val)
@@ -611,10 +611,10 @@ struct MathMethods
             {
             double result = doMax ? (a > b ? a : b) : (a < b ? a : b);
             evalResult.InitECValue().SetDouble(result);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus Min(EvaluationResult& evalResult, EvaluationResultVector& args)              { return minOrMax(evalResult, args, false); }
@@ -627,10 +627,10 @@ struct MathMethods
             {
             bool result = DoubleOps::AlmostEqual(a, b);
             evalResult.InitECValue().SetBoolean(result);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static ExpressionStatus AlmostEqual(EvaluationResult& evalResult, EvaluationResultVector& args)      { return almostEqual(evalResult, args); }
@@ -641,10 +641,10 @@ struct MathMethods
         if (ExtractArg(a, args, 0) && ExtractArg(b, args, 1))
             {
             evalResult.InitECValue().SetLong((int64_t)a * (int64_t)b);
-            return ExprStatus_Success;
+            return ExpressionStatus::Success;
             }
         else
-            return ExprStatus_UnknownError;
+            return ExpressionStatus::UnknownError;
         }
 
     static void PublishSymbols(SymbolExpressionContextR systemContext)

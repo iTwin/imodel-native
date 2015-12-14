@@ -160,7 +160,7 @@ public:
 //__PUBLISH_SECTION_START__
     //! Merges the property values of the specified IECInstance into this MemoryECInstanceBase
     //! @param[in]      fromNativeInstance The IECInstance supplying property values to be merged
-    //! @return ECOBJECTS_STATUS_Success if property values were successfully merged, otherwise an error status
+    //! @return ECObjectsStatus::Success if property values were successfully merged, otherwise an error status
     ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (ECN::IECInstanceCR fromNativeInstance);
 //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount);
@@ -273,9 +273,9 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     protected:
         ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
 
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (Utf8CP name) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) = 0;
+        virtual BentleyStatus  _SetName (Utf8CP name) = 0;
+        virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) = 0;
+        virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) = 0;
 
 //__PUBLISH_SECTION_START__
     public:

@@ -67,7 +67,7 @@ struct CompressInstanceTests : ECTestFixture
     void ReadKitchenSinkSchemaFromXml ()
         {
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext (false);
-        EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, kitchenSinkSchemaXML, *schemaContext));
+        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, kitchenSinkSchemaXML, *schemaContext));
         EXPECT_TRUE (m_schema.IsValid ());
         }
 
@@ -77,7 +77,7 @@ struct CompressInstanceTests : ECTestFixture
     void VerifyArrayInfo (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t count, bool isFixedCount)
         {
         v.Clear ();
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
         EXPECT_EQ (count, v.GetArrayInfo ().GetCount ());
         EXPECT_EQ (isFixedCount, v.GetArrayInfo ().IsFixedCount ());
         }
@@ -90,7 +90,7 @@ struct CompressInstanceTests : ECTestFixture
         for (uint32_t i = start; i < start + count; i++)
             {
             v.Clear ();
-            EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, i));
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, i));
             EXPECT_TRUE (isNull == v.IsNull ());
             }
         }
@@ -102,9 +102,9 @@ struct CompressInstanceTests : ECTestFixture
         {
         v.Clear ();
         if (useIndex)
-            EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
         else
-            EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
         EXPECT_STREQ (value, v.GetUtf8CP ());
         }
 
@@ -122,7 +122,7 @@ struct CompressInstanceTests : ECTestFixture
     void SetAndVerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
         {
         v.SetUtf8CP (value);
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
         VerifyString (instance, v, accessString, value);
         }
 
@@ -133,9 +133,9 @@ struct CompressInstanceTests : ECTestFixture
         {
         v.Clear ();
         if (useIndex)
-            EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
         else
-            EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
         EXPECT_EQ (value, v.GetInteger ());
         }
 
@@ -153,7 +153,7 @@ struct CompressInstanceTests : ECTestFixture
     void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
         {
         v.SetInteger (value);
-        EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
         VerifyInteger (instance, v, accessString, value);
         }
 
@@ -163,14 +163,14 @@ struct CompressInstanceTests : ECTestFixture
     void validateArrayCount (ECN::StandaloneECInstanceCR instance, Utf8CP propertyName, uint32_t expectedCount)
         {
         ECValue varray;
-        EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (varray, propertyName));
         uint32_t count = varray.GetArrayInfo ().GetCount ();
         EXPECT_TRUE (count == expectedCount);
 
         ECValue ventry;
         for (uint32_t i = 0; i < count; i++)
             {
-            EXPECT_TRUE (SUCCESS == instance.GetValue (ventry, propertyName, i));
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (ventry, propertyName, i));
             }
         }
     };
@@ -188,37 +188,37 @@ TEST_F (CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     double     inLength = 432.178;
     bool       inTest = true;
 
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("myInt", ECValue (inCount)));
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("myString", ECValue ("Test")));
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("myDouble", ECValue (inLength)));
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("myBool", ECValue (inTest)));
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myInt", ECValue (inCount)));
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myString", ECValue ("Test")));
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myDouble", ECValue (inLength)));
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myBool", ECValue (inTest)));
 
     ECValue ecValue;
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myInt"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myInt"));
     EXPECT_TRUE (ecValue.GetInteger () == inCount);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myString"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myString"));
     EXPECT_STREQ (ecValue.GetUtf8CP (), "Test");
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myDouble"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myDouble"));
     EXPECT_TRUE (ecValue.GetDouble () == inLength);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myBool"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myBool"));
     EXPECT_TRUE (ecValue.GetBoolean () == inTest);
 
     instance->Compress ();
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myInt"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myInt"));
     EXPECT_TRUE (ecValue.GetInteger () == inCount);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myString"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myString"));
     EXPECT_STREQ (ecValue.GetUtf8CP (), "Test");
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myDouble"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myDouble"));
     EXPECT_TRUE (ecValue.GetDouble () == inLength);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myBool"));
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myBool"));
     EXPECT_TRUE (ecValue.GetBoolean () == inTest);
 
     // define struct array
@@ -226,7 +226,7 @@ TEST_F (CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     EXPECT_TRUE (manufacturerEnabler.IsValid ());
 
     ECValue v;
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements ("myManufacturerStructArray", 4));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("myManufacturerStructArray", 4));
     instance->Compress ();
     VerifyArrayInfo (*instance, v, "myManufacturerStructArray", 4, false);
     instance->Compress ();
@@ -239,25 +239,25 @@ TEST_F (CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 3475);
     instance->Compress ();
     v.SetStruct (manufInst.get ());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 0));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 0));
 
     manufInst = manufacturerEnabler->CreateInstance ().get ();
     SetAndVerifyString (*manufInst, v, "Name", "Kia");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 1791);
     v.SetStruct (manufInst.get ());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 1));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 1));
 
     manufInst = manufacturerEnabler->CreateInstance ().get ();
     SetAndVerifyString (*manufInst, v, "Name", "Honda");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 1592);
     v.SetStruct (manufInst.get ());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 2));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 2));
 
     manufInst = manufacturerEnabler->CreateInstance ().get ();
     SetAndVerifyString (*manufInst, v, "Name", "Chevy");
     SetAndVerifyInteger (*manufInst, v, "AccountNo", 19341);
     v.SetStruct (manufInst.get ());
-    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 3));
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 3));
     instance->Compress ();
     VerifyIsNullArrayElements (*instance, v, "myManufacturerStructArray", 0, 4, false);
 

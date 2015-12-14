@@ -39,11 +39,11 @@ typedef bvector<IECDiffNodeCP> DiffNodeList;
 //! @beginGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
-enum DiffStatus
+enum class DiffStatus
     {
-    DIFFSTATUS_Success = SUCCESS,
-    DIFFSTATUS_InvalidAccessString,
-    DIFFSTATUS_Failed
+    Success = 0,
+    InvalidAccessString,
+    Failed
     };
 
 //======================================================================================
@@ -101,7 +101,7 @@ enum class DiffNodeId
     Class = 9,
     References = 10,
     IsCustomAttributeClass = 11,
-    IsDomainClass = 12,
+    IsEntityClass = 12,
     IsStruct = 13,
     BaseClass = 14,
     Reference = 15,
@@ -130,6 +130,8 @@ enum class DiffNodeId
     ConstraintClasses = 38,
     ConstraintClass = 39,
     NamespacePrefix = 40,
+    IsAbstract = 41,
+    IsSealed = 42
     };
 
 //======================================================================================
@@ -141,37 +143,37 @@ struct IECDiffNode
 public:
     //! Return diff node type. It represent a meta schema id for facet that represent current diff node.
     //! @return return diff node type
-    ECOBJECTS_EXPORT virtual DiffNodeId                  GetId() const = 0;
+    virtual DiffNodeId                  GetId() const = 0;
     //! Return access string for the current node. Access string is a meta schema path for current diff node.
     //! @return access string for current node
-    ECOBJECTS_EXPORT virtual Utf8String                  GetAccessString() const =0;
+    virtual Utf8String                  GetAccessString() const =0;
     //! Return constant string representation of current diff node.
     //! @return name of current node.
-    ECOBJECTS_EXPORT virtual Utf8StringCR                GetName() const = 0;
+    virtual Utf8StringCR                GetName() const = 0;
     //! If current node is a array element e.g. BaseClasses it will also have a index
     //! @return index of current node if its array. Return -1 if if its not.
-    ECOBJECTS_EXPORT virtual int                         GetIndex() const = 0;
+    virtual int                         GetIndex() const = 0;
     //! Return list of childe node pointers for current diff node. This method computes child nodes so it would nice idea to keep it value in local variable for performance reasons.
     //! @return list of child node pointers
-    ECOBJECTS_EXPORT virtual DiffNodeList                GetChildren() const = 0;
+    virtual DiffNodeList                GetChildren() const = 0;
    //! Return child by knownDiffNodeId
     //! @param[in] id The id of child diff node.
     //! @return if successfully will return child node otherwise nullptr
-    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildById(DiffNodeId id) const = 0;
+    virtual IECDiffNodeCP               GetChildById(DiffNodeId id) const = 0;
     //! Return child by accessString
     //! @param[in] accessString The accessString of child diff node.
     //! @return if successfully will return child node otherwise nullptr
-    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildByAccessString(Utf8CP accessString) const = 0;
+    virtual IECDiffNodeCP               GetChildByAccessString(Utf8CP accessString) const = 0;
     //! Returns diff type for current diff node
     //! @param[in] bRecursively If true it will compute accumulative diff type of sub tree.
     //! @return DiffType for current node or accumulative one if bRecursively was true.
-    ECOBJECTS_EXPORT virtual DiffType                    GetDiffType(bool bRecursively =false) const = 0;
+    virtual DiffType                    GetDiffType(bool bRecursively =false) const = 0;
     //! Return left value for current diff node. GetDiffType() can be use to determine type of diff to see which one (Left or Right) need to be called.
     //! @return ECValue for current node left value from left schema
-    ECOBJECTS_EXPORT virtual ECN::ECValue                GetValueLeft() const = 0;
+    virtual ECN::ECValue                GetValueLeft() const = 0;
     //! Return right value for current diff node. GetDiffType() can be use to determine type of diff to see which one (Left or Right) need to be called.
     //! @return ECValue for current node left value from right schema
-    ECOBJECTS_EXPORT virtual ECN::ECValue                GetValueRight() const = 0;
+    virtual ECN::ECValue                GetValueRight() const = 0;
 
     virtual ~IECDiffNode(){};
     };
@@ -180,17 +182,18 @@ public:
 //! Provide status of merge operations
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
-enum MergeStatus
+enum class MergeStatus
     {
-    MERGESTATUS_Success = SUCCESS, 
-    MERGESTATUS_Failed,
-    MERGESTATUS_ErrorCreatingMergeSchema,
-    MERGESTATUS_ErrorClassNotFound,
-    MERGESTATUS_ErrorMergeClassAlreadyExist,
-    MERGESTATUS_ErrorCreatingCopyOfCustomAttribute,
-    MERGESTATUS_ErrorParsingRelationshipStrengthType,
-    MERGESTATUS_ErrorParsingRelationshipStrengthDirection,
-    MERGESTATUS_ErrorParsingCardinality,
+    Success = 0, 
+    Failed,
+    ErrorCreatingMergeSchema,
+    ErrorClassNotFound,
+    ErrorClassTypeMismatch,
+    ErrorMergeClassAlreadyExist,
+    ErrorCreatingCopyOfCustomAttribute,
+    ErrorParsingRelationshipStrengthType,
+    ErrorParsingRelationshipStrengthDirection,
+    ErrorParsingCardinality,
     };
 
 #define ECDIFF_DEFAULT_TABSIZE 3
@@ -222,13 +225,13 @@ public:
     //! Gets right ECSchema as passed at the time of diff.
     //! @return The retrieved ECSchema
     ECOBJECTS_EXPORT ECN::ECSchemaCR GetRightSchema() const;
-    //! Gets the status of the diff. If its succeed it will return ::DIFFSTATUS_Success.
+    //! Gets the status of the diff. If its succeed it will return DiffStatus::Success.
     //! @return The status of the diff
     ECOBJECTS_EXPORT DiffStatus GetStatus() const;
     //! Write the diff to string. Each line is prefix with either 'L" mean appended from left schema, 'R' appended from right schema and '!' means there was conflict between left and right schema.
     //! @param[out] outString WSTring object to which diff will be written.
     //! @param[in] tabSize optional parameter specifying size of the spaces to use for indenting each line in diff.
-    //! @return if successfully it will return ::DIFFSTATUS_Success.
+    //! @return if successfully it will return DiffStatus::Success.
     ECOBJECTS_EXPORT DiffStatus WriteToString(Utf8StringR outString, int tabSize = ECDIFF_DEFAULT_TABSIZE);
     //! Return if diff is empty. If there is no difference between two schemas. This function will return true.
     //! @return true if its empty
@@ -236,12 +239,12 @@ public:
     //! Merge the schemas from which diff was created. 
     //! @param[out] mergedSchema The resulting merged schema if merge is successful.
     //! @param[in] conflictRule If there is a conflict in diff then this rule is used to resolve it.
-    //! @return if successfully it will return ::MERGESTATUS_Success.
+    //! @return if successfully it will return MergeStatus::Success.
     ECOBJECTS_EXPORT MergeStatus Merge (ECN::ECSchemaPtr& mergedSchema, ConflictRule conflictRule);
     //! Compute a diff of two schemas
     //! @param[in] leftSchema The first or left schema for diff.
     //! @param[in] rightSchema The second or right schema for diff.
-    //! @return if successfully it will return ::DIFFSTATUS_Success.
+    //! @return if successfully it will return DiffStatus::Success.
     ECOBJECTS_EXPORT static ECDiffPtr Diff (ECN::ECSchemaCR leftSchema, ECN::ECSchemaCR rightSchema);
     //! Return a list of nodes status matching the accessString.
     //! @param[out] nodes The nodes that were found in diff matching accessString.
@@ -249,7 +252,7 @@ public:
     //!                          *.CustomAttributes.UnitSpecification Find UnitSpecification in diff and its status which ever container it exist on.
     //!                          *.Classes.*.Prop1 It will return Prop1 from diff tree under Classes nodes.
     //! @param[in] bAccumlativeState Accumulative state mean if user need just the state of specific node or all its children.
-    //! @return if successfully it will return ::DIFFSTATUS_Success.
+    //! @return if successfully it will return DiffStatus::Success.
     ECOBJECTS_EXPORT DiffStatus GetNodesState (bmap<Utf8String, DiffNodeState>& nodes, Utf8StringCR accessString, bool bAccumlativeState = true);
     //! Return top level diff node
     //! @return IECDiffNode that represent a difference between two schemas. nullptr if difference was not found.
@@ -535,7 +538,7 @@ private:
     MergeStatus AppendPropertyToMerge(ECClassR mergeClass,ECPropertyCP property);
     MergeStatus AppendRelationshipToMerge(ECRelationshipClassR mergedRelationshipClass, ECRelationshipClassCR defaultRelationshipClass);
     MergeStatus AppendRelationshipClassToMerge(ECRelationshipClassR mergedClass, ECRelationshipClassCR defaultClass);
-    MergeStatus AppendRelationshipContstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint);
+    MergeStatus AppendRelationshipConstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint);
     MergeStatus AppendCustomAttributesToMerge (IECCustomAttributeContainerR mergeContainer, IECCustomAttributeContainerCR defaultContainer);
 
     ECClassCP ResolveClass (Utf8StringCR classFullName);

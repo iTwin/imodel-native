@@ -44,7 +44,7 @@ static ECSchemaPtr       CreateTestSchema ()
 
     ECSchemaPtr schema; 
     SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
-    EXPECT_EQ (SUCCESS, status);  
+    EXPECT_EQ (SchemaReadStatus::Success, status);  
     
     return schema;
     }
@@ -175,7 +175,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
         ASSERT_TRUE (testInstance.IsValid());
 
         InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);
-        EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
+        EXPECT_EQ(InstanceWriteStatus::Success, status2);
         }
 
     //CoUninitialize();

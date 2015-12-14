@@ -34,8 +34,8 @@ struct InstanceLabelTest      : ECTestFixture
 
     ECClassCP           CreateClass (Utf8CP className, bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName)
         {
-        ECClassP ecClass;
-        m_schema->CreateClass (ecClass, className);
+        ECEntityClassP ecClass;
+        m_schema->CreateEntityClass (ecClass, className);
 
         PrimitiveECPropertyP prop;
         ecClass->CreatePrimitiveProperty (prop, instanceLabelPropertyName, PRIMITIVETYPE_String);
@@ -64,7 +64,7 @@ struct InstanceLabelTest      : ECTestFixture
             instance->SetValue (instanceLabelPropertyName, ECValue (instanceLabelPropertyValue, false));
 
         Utf8String displayLabel;
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->GetDisplayLabel (displayLabel));
+        EXPECT_EQ (ECObjectsStatus::Success, instance->GetDisplayLabel (displayLabel));
         if (instanceLabelPropertyValue)
             EXPECT_TRUE (displayLabel.Equals (instanceLabelPropertyValue));
         else

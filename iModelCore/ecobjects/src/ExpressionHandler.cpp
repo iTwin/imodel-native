@@ -1497,7 +1497,7 @@ ExpressionStatus  ECEvaluator::EvaluateExpression(EvaluationResult& result, Utf8
     {
     NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
     if (tree.IsNull ())
-        return ExpressionStatus::ExprStatus_UnknownSymbol;
+        return ExpressionStatus::UnknownSymbol;
 
     return tree->GetValue (result, context);
     }

@@ -223,7 +223,7 @@ Utf8StringCR SchemaLocalizedStrings::GetRelationshipTargetRoleLabel(ECRelationsh
 bool SchemaLocalizedStrings::TryGetStringValue(IECInstanceCR instance, Utf8StringR value, Utf8CP accessString)
     {
     ECValue stringValue;
-    if (ECOBJECTS_STATUS_Success == instance.GetValue(stringValue, accessString) && !stringValue.IsNull())
+    if (ECObjectsStatus::Success == instance.GetValue(stringValue, accessString) && !stringValue.IsNull())
         {
         value = stringValue.GetUtf8CP();
         return true;
@@ -237,7 +237,7 @@ bool SchemaLocalizedStrings::TryGetStringValue(IECInstanceCR instance, Utf8Strin
 bool SchemaLocalizedStrings::TryGetBoolValue(IECInstanceCR instance, bool & value, Utf8CP accessString)
     {
     ECValue boolValue;
-    if (ECOBJECTS_STATUS_Success == instance.GetValue(boolValue, accessString) && !boolValue.IsNull())
+    if (ECObjectsStatus::Success == instance.GetValue(boolValue, accessString) && !boolValue.IsNull())
         {
         value = boolValue.GetBoolean();
         return true;
@@ -267,7 +267,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
         Utf8String containerAccessor;
         Utf8String caClassName;
         Utf8String caPropertyAccessor;
-        if(ECOBJECTS_STATUS_Success != ParseCaKeyString(containerAccessor, caClassName, caPropertyAccessor, it.first, prefixLength, it.second.first))
+        if(ECObjectsStatus::Success != ParseCaKeyString(containerAccessor, caClassName, caPropertyAccessor, it.first, prefixLength, it.second.first))
             {
             LOG.errorv("Invalid key '%s' for localized string '%s' for schema '%s'", it.first.c_str(), it.second.second.c_str(), primarySchema.GetFullSchemaName().c_str());
             continue;
@@ -294,8 +294,8 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
 
         // have ECValue hold the copy because we're not going to hold onto CA strings
         ECValueAccessor accessor;
-        if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, caPropertyAccessor.c_str()) ||
-            ECOBJECTS_STATUS_Success != caInstance->SetValueUsingAccessor(accessor, ECValue(it.second.second.c_str())))
+        if (ECObjectsStatus::Success != ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, caPropertyAccessor.c_str()) ||
+            ECObjectsStatus::Success != caInstance->SetValueUsingAccessor(accessor, ECValue(it.second.second.c_str())))
                 LOG.errorv("Cannot apply the localized string '%s' using the property accessor '%s' on the custom attribute class '%s' on the container '%s'",
                     it.second.second.c_str(), caPropertyAccessor.c_str(), caClassName.c_str(), containerAccessor.c_str());
         }
@@ -314,7 +314,7 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<Utf8String, bpair<size_
         }
 
     ECValue resource;
-    if (ECOBJECTS_STATUS_Success != localizationSpec->GetValue(resource, RESOURCE))
+    if (ECObjectsStatus::Success != localizationSpec->GetValue(resource, RESOURCE))
         {
         LOG.errorv("Unable to load schema localizations from '%s' because the Custom Attribute '%s' does not have a value for '%s'",
             localizationSupplemental->GetFullSchemaName().c_str(), LOC_SPEC, RESOURCE);
@@ -328,7 +328,7 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<Utf8String, bpair<size_
     for (uint32_t i = 0; i < resourcesInfo.GetCount(); ++i)
         {
         ECValue stringResource;
-        if (ECOBJECTS_STATUS_Success == localizationSpec->GetValue(stringResource, RESOURCE, i) && !stringResource.IsNull())
+        if (ECObjectsStatus::Success == localizationSpec->GetValue(stringResource, RESOURCE, i) && !stringResource.IsNull())
             {
             IECInstancePtr resourceEntry = stringResource.GetStruct();
             if (!resourceEntry.IsValid())
@@ -383,7 +383,7 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetContainer(Utf8StringCR c
     Utf8String className;
     Utf8String relEndPoint;
     Utf8String propertyName;
-    if (ECOBJECTS_STATUS_Success != ParseContainerAccessor(className, relEndPoint, propertyName, containerAccessor))
+    if (ECObjectsStatus::Success != ParseContainerAccessor(className, relEndPoint, propertyName, containerAccessor))
         {
         LOG.errorv("Unable to parse '%s' to set a localized string for schema '%s'", containerAccessor.c_str(), primarySchema.GetFullSchemaName().c_str());
         return nullptr;
@@ -468,20 +468,20 @@ ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(Utf8StringR containerAc
     size_t beginCaKeyIndex = atIndex + 9; // index after @Standard:
     size_t caSchemaClassSepIndex = keyString.find(COLON, beginCaKeyIndex + 1); // index of ':' between CaClassSchemaFullName and CaClassName
     if (WString::npos == caSchemaClassSepIndex)
-        return ECObjectsStatus::ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
     size_t propertyAccessorIndex = keyString.find(COLON, caSchemaClassSepIndex + 1); // index of ':' between CaClassName and PropertyAccessor
     if (WString::npos == propertyAccessorIndex)
-        return ECObjectsStatus::ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
     size_t accessorHashSepIndex = keyString.rfind(COLON); // index of ':' between PropertyAccessor and Hash
     if (WString::npos == accessorHashSepIndex)
-        return ECObjectsStatus::ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
     caClassName = keyString.substr(caSchemaClassSepIndex + 1, propertyAccessorIndex - caSchemaClassSepIndex - 1);
     propertyAccessor = keyString.substr(propertyAccessorIndex + 1, accessorHashSepIndex - propertyAccessorIndex - 1);
 
-    return ECObjectsStatus::ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -493,7 +493,7 @@ ECObjectsStatus SchemaLocalizedStrings::ParseContainerAccessor(Utf8StringR class
     {
     // Is CA applied to schema
     if(Utf8String::IsNullOrEmpty(containerAccessor.c_str()))
-        return ECObjectsStatus::ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
     
     size_t sepIndex = containerAccessor.find(COLON);
     // Is CA applied to a class or rel class endpoint
@@ -504,24 +504,24 @@ ECObjectsStatus SchemaLocalizedStrings::ParseContainerAccessor(Utf8StringR class
         if (WString::npos == dotIndex)
             {
             className = Utf8String(containerAccessor);
-            return ECObjectsStatus::ECOBJECTS_STATUS_Success;
+            return ECObjectsStatus::Success;
             }
         
         // Is CA applied to rel class endpoint
         className = containerAccessor.substr(0, dotIndex);
         relEndPoint = containerAccessor.substr(dotIndex + 1);
-        return ECObjectsStatus::ECOBJECTS_STATUS_Success;
+        return ECObjectsStatus::Success;
         }
     
     // Has ':' at end of accessor
     if (containerAccessor.length() == sepIndex + 1)
-        return ECObjectsStatus::ECOBJECTS_STATUS_ParseError;
+        return ECObjectsStatus::ParseError;
 
     // CA is applied to a property
     className = containerAccessor.substr(0, sepIndex);
     propertyName = containerAccessor.substr(sepIndex + 1);
 
-    return ECObjectsStatus::ECOBJECTS_STATUS_Success;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

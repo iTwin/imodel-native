@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="Widgets" version="01.00" nameSpacePrefix="wid" xmlns="http://www.bentley.com/schemas/FOOBARBentley.ECXML.2.0" xmlns:ec="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:ods="Bentley_ODS.01.02">
+<ECSchema schemaName="Widgets" version="01.00" nameSpacePrefix="wid" xmlns="http://www.bentley.com/schemas/FOOBARBentley.ECXML.2.0">
    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
 
    <ECClass typeName="ecProject" description="Project Class" displayLabel="Project" isDomainClass="True">

@@ -50,21 +50,21 @@ TEST_F(PerformancePropertiesTest, AddArrayElements)
     {
     ECSchemaPtr schemaA;
     ECSchema::CreateSchema (schemaA, "SchemaA", 1, 0);
-    ECClassP classA;
-    schemaA->CreateClass (classA, "ClassA");
+    ECEntityClassP classA;
+    schemaA->CreateEntityClass (classA, "ClassA");
 
     ArrayECPropertyP prop;
     classA->CreateArrayProperty (prop, "IntArray", PRIMITIVETYPE_Integer);
     classA->CreateArrayProperty (prop, "StringArray", PRIMITIVETYPE_String);
     classA->CreateArrayProperty (prop, "BoolArray", PRIMITIVETYPE_Boolean);
 
-    ECClassP struct1;
-    schemaA->CreateClass (struct1, "Struct");
-    struct1->SetIsStruct (true);
+    ECStructClassP struct1;
+    schemaA->CreateStructClass (struct1, "Struct");
     PrimitiveECPropertyP primProp;
     struct1->CreatePrimitiveProperty (primProp, "String", PRIMITIVETYPE_String);
 
-    classA->CreateArrayProperty (prop, "StructArray", struct1);
+    StructArrayECPropertyP structArrayProp;
+    classA->CreateStructArrayProperty (structArrayProp, "StructArray", struct1);
     bmap<Utf8String, double> results;
     AddElementsOneAtATime(classA, "IntArray", results, TEST_DETAILS);
     AddElementsOneAtATime(classA, "StringArray", results, TEST_DETAILS);

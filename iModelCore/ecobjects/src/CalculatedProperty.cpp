@@ -144,10 +144,10 @@ bool ParserRegex::ProcessCaptureGroup (Utf8StringR converted, Utf8CP& in, Utf8CP
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool SETVALUE_SUCCEEDED (ECObjectsStatus status)
     {
-    // ###TODO: ECOBJECTS_STATUS_PropertyValueMatchesNoChange is always causing problems, because it is not an error but
-    // we typically test against ECOBJECTS_STATUS_Success.
+    // ###TODO: ECObjectsStatus::PropertyValueMatchesNoChange is always causing problems, because it is not an error but
+    // we typically test against ECObjectsStatus::Success.
     // Can we get rid of it?
-    return status == ECOBJECTS_STATUS_Success || status == ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+    return status == ECObjectsStatus::Success || status == ECObjectsStatus::PropertyValueMatchesNoChange;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,7 +163,7 @@ bool ParserRegex::Apply (IECInstanceR instance, Utf8CP calculatedValue) const
         {
         // ###TODO: we may want to create this stuff once and cache it with the captured property names
         ECValueAccessor accessor;
-        if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor (accessor, instance, m_capturedPropertyNames[i].c_str()))
+        if (ECObjectsStatus::Success != ECValueAccessor::PopulateValueAccessor (accessor, instance, m_capturedPropertyNames[i].c_str()))
             return false;
 
         ECPropertyCP ecprop = accessor.GetECProperty();
@@ -196,27 +196,27 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
   : m_expression(&expr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType), m_evaluationOptions (EVALOPT_Legacy)
     {
     ECValue v;
-    if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, "IsDefaultValueOnly") && !v.IsNull())
+    if (ECObjectsStatus::Success == customAttr.GetValue (v, "IsDefaultValueOnly") && !v.IsNull())
         m_isDefaultOnly = v.GetBoolean();
 
-    if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, "UseLastValidValueOnFailure") && !v.IsNull())
+    if (ECObjectsStatus::Success == customAttr.GetValue (v, "UseLastValidValueOnFailure") && !v.IsNull())
         m_useLastValidOnFailure = v.GetBoolean();
 
     uint32_t nSymbolSets;
     bvector<Utf8String> requiredSymbolSets;
-    if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, "RequiredSymbolSets") && !v.IsNull() && 0 < ( nSymbolSets = v.GetArrayInfo().GetCount()))
+    if (ECObjectsStatus::Success == customAttr.GetValue (v, "RequiredSymbolSets") && !v.IsNull() && 0 < ( nSymbolSets = v.GetArrayInfo().GetCount()))
         {
         requiredSymbolSets.reserve (nSymbolSets);
         for (uint32_t i = 0; i < nSymbolSets; i++)
             {
-            if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, "RequiredSymbolSets", i) && !v.IsNull())
+            if (ECObjectsStatus::Success == customAttr.GetValue (v, "RequiredSymbolSets", i) && !v.IsNull())
                 requiredSymbolSets.push_back (v.GetUtf8CP());
             }
         }
 
-    if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, "EnforceUnits") && !v.IsNull() && v.GetBoolean())
+    if (ECObjectsStatus::Success == customAttr.GetValue (v, "EnforceUnits") && !v.IsNull() && v.GetBoolean())
         m_evaluationOptions = EVALOPT_EnforceUnits;
-    else if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, "SuppressTypeConversions") && !v.IsNull() && v.GetBoolean())
+    else if (ECObjectsStatus::Success == customAttr.GetValue (v, "SuppressTypeConversions") && !v.IsNull() && v.GetBoolean())
         m_evaluationOptions = EVALOPT_SuppressTypeConversions;
 
     InstanceExpressionContextPtr thisContext = InstanceExpressionContext::Create (NULL);
@@ -248,14 +248,14 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
         return NULL;
 
     ECValue v;
-    if (ECOBJECTS_STATUS_Success != customAttr->GetValue (v, "ECExpression") || v.IsNull())
+    if (ECObjectsStatus::Success != customAttr->GetValue (v, "ECExpression") || v.IsNull())
         { BeAssert (false && "CalculatedECPropertySpecification must contain an ECExpression"); return NULL; }
 
     NodePtr node = ECEvaluator::ParseValueExpressionAndCreateTree (v.GetUtf8CP());
     if (node.IsNull())
         { BeAssert (false && "Could not parse ECExpression for CalculatedECPropertySpecification"); return NULL; }
 
-    bool isDefaultOnly = (ECOBJECTS_STATUS_Success == customAttr->GetValue (v, "IsDefaultValueOnly") && !v.IsNull() && v.GetBoolean());
+    bool isDefaultOnly = (ECObjectsStatus::Success == customAttr->GetValue (v, "IsDefaultValueOnly") && !v.IsNull() && v.GetBoolean());
 
     // ###TODO: It seems to me that if the calculated property spec is for default value only, then setting the value should not affect dependent properties and we don't require ParserRegex...correct?
     // Note: ParserRegex only makes sense for string properties
@@ -264,8 +264,8 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
     if (wantParserRegex)
         {
         // ###TODO: there is also a configuration variable which can be used to control this...In System.Configuration.ConfigurationManager.AppSettings[] - relevant?
-        bool doNotUseECMAScript =  (ECOBJECTS_STATUS_Success == customAttr->GetValue (v, "DoNotUseECMAScript") && !v.IsNull() && v.GetBoolean());
-        if (ECOBJECTS_STATUS_Success == customAttr->GetValue (v, "ParserRegularExpression") && !v.IsNull())
+        bool doNotUseECMAScript =  (ECObjectsStatus::Success == customAttr->GetValue (v, "DoNotUseECMAScript") && !v.IsNull() && v.GetBoolean());
+        if (ECObjectsStatus::Success == customAttr->GetValue (v, "ParserRegularExpression") && !v.IsNull())
             {
             parserRegex = ParserRegex::Create (v.GetUtf8CP(), doNotUseECMAScript);
             if (NULL == parserRegex)
@@ -293,13 +293,13 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance, Utf8CP accessString) const
     {
-    PRECONDITION (m_expression.IsValid(), ECOBJECTS_STATUS_Error);
+    PRECONDITION (m_expression.IsValid(), ECObjectsStatus::Error);
 
     ECPropertyCP ecprop = instance.GetEnabler().LookupECProperty (accessString);
     if (nullptr == ecprop)
-        return ECOBJECTS_STATUS_PropertyNotFound;
+        return ECObjectsStatus::PropertyNotFound;
 
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
 
     if (m_isDefaultOnly && !existingValue.IsNull())
         newValue = existingValue;
@@ -310,7 +310,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         ValueResultPtr valueResult;
         ECValue exprValue;
         bool gotValue = false;
-        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
+        if (ExpressionStatus::Success == m_expression->GetValue (valueResult, *m_context) && ExpressionStatus::Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
             {
             gotValue = true;
             bool allowTypeConversions = (0 == (m_evaluationOptions & EVALOPT_SuppressTypeConversions));
@@ -372,7 +372,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         else
             {
             // Note that if we don't *have* a last valid value, we still return the failure value
-            // Also note that we are returning ECOBJECTS_STATUS_Success even if expression evaluation failed, because we have successfully produced a value for the calculated property
+            // Also note that we are returning ECObjectsStatus::Success even if expression evaluation failed, because we have successfully produced a value for the calculated property
             newValue = (m_useLastValidOnFailure && !existingValue.IsNull()) ? existingValue : m_failureValue;
             }
         }
@@ -386,13 +386,13 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
 ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECValueCR v, IECInstanceR instance) const
     {
     if (m_isDefaultOnly)
-        return ECOBJECTS_STATUS_Success;                        // doesn't apply to dependent properties
+        return ECObjectsStatus::Success;                        // doesn't apply to dependent properties
     else if (!v.IsString() || v.IsNull())
-        return ECOBJECTS_STATUS_OperationNotSupported;          // only supported for strings
+        return ECObjectsStatus::OperationNotSupported;          // only supported for strings
     else if (NULL == m_parserRegex)
-        return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
+        return ECObjectsStatus::UnableToSetReadOnlyProperty;
     else
-        return m_parserRegex->Apply (instance, v.GetUtf8CP()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_ParseError;
+        return m_parserRegex->Apply (instance, v.GetUtf8CP()) ? ECObjectsStatus::Success : ECObjectsStatus::ParseError;
     }
 
 

@@ -2,6 +2,7 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -16,4 +17,7 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 
 CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
-#ECRelationshipTests.DumpToString # notified Carole
+SchemaDeserializationTest.ExpectSuccessWithDuplicateClassesInXml  # This is no longer allowed
+
+NavigationECPropertyTests.InvalidXml                # Disabled until we figure out how to validate nav properties on deserialization
+

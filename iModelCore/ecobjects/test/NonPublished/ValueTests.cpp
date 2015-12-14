@@ -18,7 +18,7 @@ struct ValueTests : ECTestFixture
         {
         const Byte binary[] = { 0x00, 0x01, 0x02, 0x03 };
 
-        EXPECT_EQ (value.SetUtf8CP (text), ECOBJECTS_STATUS_Success);
+        EXPECT_EQ (value.SetUtf8CP (text), SUCCESS);
         EXPECT_TRUE (value.ConvertToPrimitiveType (PRIMITIVETYPE_Binary));
         EXPECT_TRUE (value.IsBinary ());
         size_t sizeOut;
@@ -41,7 +41,7 @@ TEST_F(ValueTests, StringToECValue)
     Utf8String unicharutf8;
     BeStringUtilities::WCharToUtf8(unicharutf8, unichar);
 
-    EXPECT_EQ (value.SetUtf8CP(unicharutf8.c_str()), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP(unicharutf8.c_str()), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_String));
     EXPECT_TRUE (value.IsString());
     EXPECT_STREQ (value.GetUtf8CP(), unicharutf8.c_str());
@@ -56,13 +56,13 @@ TEST_F(ValueTests, StringToECValue)
     bool boolResults[] = {true, false, true, false, true, false};
     for (int i=0; i<sizeof(boolResults); i++)
         {
-        EXPECT_EQ (value.SetUtf8CP(boolString[i]), ECOBJECTS_STATUS_Success);
+        EXPECT_EQ (value.SetUtf8CP(boolString[i]), SUCCESS);
         EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Boolean));
         EXPECT_TRUE (value.IsBoolean());
         EXPECT_TRUE (value.GetBoolean() == boolResults[i]);
         }
     
-    EXPECT_EQ (value.SetUtf8CP("634964326974560000"), ECOBJECTS_STATUS_Success);  //Human readable string is not handled
+    EXPECT_EQ (value.SetUtf8CP("634964326974560000"), SUCCESS);  //Human readable string is not handled
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_DateTime));
     EXPECT_TRUE (value.IsDateTime());
     EXPECT_EQ (value.GetDateTime().GetYear(), 2013);
@@ -73,28 +73,28 @@ TEST_F(ValueTests, StringToECValue)
     EXPECT_EQ (value.GetDateTime().GetSecond(), 17);
     EXPECT_EQ (value.GetDateTime().GetMillisecond(), 456);
     
-    EXPECT_EQ (value.SetUtf8CP("-3.14159265359"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP("-3.14159265359"), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Double));
     EXPECT_TRUE (value.IsDouble());
     EXPECT_EQ (value.GetDouble(), -3.14159265359);
     
-    EXPECT_EQ (value.SetUtf8CP("256"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP("256"), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Integer));
     EXPECT_TRUE (value.IsInteger());
     EXPECT_EQ (value.GetInteger(), 256);
     
-    EXPECT_EQ (value.SetUtf8CP("9876543210"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP("9876543210"), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Long));
     EXPECT_TRUE (value.IsLong());
     EXPECT_EQ (value.GetLong(), 9876543210L);
     
-    EXPECT_EQ (value.SetUtf8CP("123.456,456.789"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP("123.456,456.789"), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Point2D));
     EXPECT_TRUE (value.IsPoint2D());
     DPoint2d point2dOut = value.GetPoint2D();
     EXPECT_EQ (0, memcmp(&point2d, &point2dOut, sizeof(point2d)));
     
-    EXPECT_EQ (value.SetUtf8CP("1.2,-3.4,5.6"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP("1.2,-3.4,5.6"), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Point3D));
     EXPECT_TRUE (value.IsPoint3D());
     DPoint3d point3dOut = value.GetPoint3D();
@@ -109,7 +109,7 @@ TEST_F(ValueTests, StringToIGeometry)
     ECValue value;
     const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
     
-    EXPECT_EQ (value.SetUtf8CP("AEgADw=="), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (value.SetUtf8CP("AEgADw=="), SUCCESS);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_IGeometry));
     EXPECT_TRUE (value.IsBinary());
     size_t sizeOut;

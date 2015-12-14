@@ -9,7 +9,7 @@
 #include "../TestFixture/TestFixture.h"
 
 using namespace BentleyApi::ECN;
-#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
+#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(ECObjectsStatus::Success == EXPR)
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaTest : ECTestFixture {};
@@ -41,12 +41,12 @@ struct TestCopySchema : ECTestFixture
 TEST_F (SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaPtr schema;
-    ECClassP foo;
-    ECClassP bar;
+    ECEntityClassP foo;
+    ECEntityClassP bar;
 
     ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
-    schema->CreateClass (foo, "foo");
-    schema->CreateClass (bar, "bar");
+    schema->CreateEntityClass (foo, "foo");
+    schema->CreateEntityClass (bar, "bar");
 
     ClassMap classMap;
     classMap.insert (bpair<Utf8CP, ECClassP> (foo->GetName ().c_str (), foo));
@@ -76,12 +76,12 @@ TEST_F (SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
 TEST_F (SchemaTest, TestGetClassCount)
     {
     ECSchemaPtr schema;
-    ECClassP foo;
-    ECClassP bar;
+    ECEntityClassP foo;
+    ECEntityClassP bar;
 
     ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
-    schema->CreateClass (foo, "foo");
-    schema->CreateClass (bar, "bar");
+    schema->CreateEntityClass (foo, "foo");
+    schema->CreateEntityClass (bar, "bar");
 
     ClassMap classMap;
     classMap.insert (bpair<Utf8CP, ECClassP> (foo->GetName ().c_str (), foo));

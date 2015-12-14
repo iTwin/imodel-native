@@ -22,12 +22,12 @@ struct NonPublishedSchemaTest : ECTestFixture {};
 TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaPtr schema;
-    ECClassP foo;
-    ECClassP bar;
+    ECEntityClassP foo;
+    ECEntityClassP bar;
     
     ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
-    schema->CreateClass(foo, "foo");
-    schema->CreateClass(bar, "bar");
+    schema->CreateEntityClass(foo, "foo");
+    schema->CreateEntityClass(bar, "bar");
 
     ClassMap classMap;
     classMap.insert (bpair<Utf8CP, ECClassP> (foo->GetName().c_str(), foo));

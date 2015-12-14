@@ -13,8 +13,8 @@
 #include <ECObjects/ECValue.h>
 #include <ECObjects/ECExpressions.h>
 
-#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == (EXPR))
-#define EXPECT_ERROR(EXPR) EXPECT_FALSE(SUCCESS == (EXPR))
+#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(ExpressionStatus::Success == (EXPR))
+#define EXPECT_ERROR(EXPR) EXPECT_FALSE(ExpressionStatus::Success == (EXPR))
 #define EXPECT_NOT_NULL(EXPR) EXPECT_FALSE(NULL == (EXPR))
 #define EXPECT_NULL(EXPR) EXPECT_TRUE(NULL == (EXPR))
 using namespace BentleyApi::ECN;
@@ -80,7 +80,7 @@ struct ExpressionTests : ECTestFixture
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, instance);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue ())
@@ -98,7 +98,7 @@ struct ExpressionTests : ECTestFixture
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, requiredSymbolSets, instance);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue())
@@ -116,7 +116,7 @@ struct ExpressionTests : ECTestFixture
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue())
@@ -139,7 +139,7 @@ struct ExpressionTests : ECTestFixture
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, instance);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             if (result.IsECValue())
                 EXPECT_EQ (expectNull, result.GetECValue()->IsNull());
@@ -215,7 +215,7 @@ public:
             {
             Utf8String schemaXMLString = GetTestSchemaXMLString ();
             ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
-            EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str(), *schemaContext));  
+            EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str(), *schemaContext));  
             }
 
         return *m_schema;
@@ -526,10 +526,10 @@ struct InstanceListExpressionTests : InstanceExpressionTests
     void    AddArrayElement (IECInstanceR instance, Utf8CP accessString, ECValueCR entryVal)
         {
         ECValue arrayVal;
-        EXPECT_SUCCESS (instance.GetValue (arrayVal, accessString));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (arrayVal, accessString));
         uint32_t index = arrayVal.GetArrayInfo().GetCount();
-        EXPECT_SUCCESS (instance.AddArrayElements (accessString, 1));
-        EXPECT_SUCCESS (instance.SetValue (accessString, entryVal, index));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.AddArrayElements (accessString, 1));
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, entryVal, index));
         }
     };
 
@@ -589,7 +589,7 @@ TEST_F (InstanceListExpressionTests, ComplexExpressions)
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, *a);
         EXPECT_SUCCESS (status);
-        if (ExprStatus_Success != status)
+        if (ExpressionStatus::Success != status)
             continue;
 
         EXPECT_TRUE (result.IsECValue());
@@ -618,7 +618,7 @@ TEST_F (InstanceListExpressionTests, ComplexExpressions)
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, *a);
         EXPECT_SUCCESS (status);
-        if (ExprStatus_Success != status)
+        if (ExpressionStatus::Success != status)
             continue;
 
         EXPECT_TRUE (result.IsECValue());
@@ -660,17 +660,17 @@ struct ArrayExpressionTests : InstanceListExpressionTests
         {
         uint32_t count = valueList.GetCount();
         int32_t sum = 0;
-        ExpressionStatus status = ExprStatus_Success;
+        ExpressionStatus status = ExpressionStatus::Success;
 
         for (uint32_t i = 0; i < count; i++)
             {
             EvaluationResult member;
             status = valueList.GetValueAt (member, i);
-            if (ExprStatus_Success == status && member.IsECValue() && member.GetECValue()->IsInteger())
+            if (ExpressionStatus::Success == status && member.IsECValue() && member.GetECValue()->IsInteger())
                 sum += member.GetECValue()->GetInteger();
             }
 
-        if (ExprStatus_Success == status)
+        if (ExpressionStatus::Success == status)
             result.InitECValue().SetInteger (sum);
 
         return status;
@@ -832,7 +832,7 @@ struct MethodsReturningInstancesTests : InstanceListExpressionTests
         IECInstancePtr instance = CreateInstance ("ClassA", *s_schema);
         instance->SetValue ("String", ECValue ("A"));
         result.SetInstance (*instance);
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
     static ExpressionStatus     CreateInstancesA (EvaluationResultR result, ECInstanceListCR, EvaluationResultVector& args)
         {
@@ -847,7 +847,7 @@ struct MethodsReturningInstancesTests : InstanceListExpressionTests
         instances.push_back (a);
 
         result.SetInstanceList (instances, true);
-        return ExprStatus_Success;
+        return ExpressionStatus::Success;
         }
     };
 

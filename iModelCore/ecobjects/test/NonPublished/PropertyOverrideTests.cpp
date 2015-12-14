@@ -37,9 +37,9 @@ ECSchemaPtr PropertyOverrideTests::RoundTripSchema(ECSchemaPtr testSchema)
     {
     ECSchemaPtr tempSchema;
     Utf8String schemaXml;
-    EXPECT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, testSchema->WriteToXmlString(schemaXml));
+    EXPECT_EQ(SchemaWriteStatus::Success, testSchema->WriteToXmlString(schemaXml));
     ECSchemaReadContextPtr deserializedSchemaContext = ECSchemaReadContext::CreateContext();
-    EXPECT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(tempSchema, schemaXml.c_str(), *deserializedSchemaContext));
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(tempSchema, schemaXml.c_str(), *deserializedSchemaContext));
     return tempSchema;
     }
 
@@ -91,17 +91,17 @@ ECSchemaPtr PropertyOverrideTests::SetUpBaseSchema()
     {
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
-    EXPECT_EQ(SUCCESS, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
     testSchema->SetNamespacePrefix("ts");
 
-    ECClassP root = NULL;
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(root, "Root"));
-    ECClassP b1 = NULL;
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(b1, "B1"));
-    ECClassP b2 = NULL;
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(b2, "B2"));
-    ECClassP foo = NULL;
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(foo, "Foo"));
+    ECEntityClassP root = NULL;
+    EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(root, "Root"));
+    ECEntityClassP b1 = NULL;
+    EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(b1, "B1"));
+    ECEntityClassP b2 = NULL;
+    EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(b2, "B2"));
+    ECEntityClassP foo = NULL;
+    EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(foo, "Foo"));
 
     return testSchema;
     }
@@ -128,23 +128,23 @@ TEST_F(PropertyOverrideTests, PropertyOverrideInMultiInheritance)
     //create Schema
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
-    ASSERT_EQ(SUCCESS, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
     testSchema->SetNamespacePrefix("ts");
 
-    ECClassP ab = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(ab, "ab"));
-    ECClassP cd = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(cd, "cd"));
-    ECClassP ef = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(ef, "ef"));
-    ECClassP gh = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(gh, "gh"));
-    ECClassP ij = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(ij, "ij"));
-    ECClassP kl = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(kl, "kl"));
-    ECClassP mn = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(mn, "mn"));
+    ECEntityClassP ab = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ab, "ab"));
+    ECEntityClassP cd = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(cd, "cd"));
+    ECEntityClassP ef = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ef, "ef"));
+    ECEntityClassP gh = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(gh, "gh"));
+    ECEntityClassP ij = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ij, "ij"));
+    ECEntityClassP kl = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(kl, "kl"));
+    ECEntityClassP mn = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(mn, "mn"));
 
     //add base classes of ef
     ef->AddBaseClass(*ab);
@@ -159,20 +159,20 @@ TEST_F(PropertyOverrideTests, PropertyOverrideInMultiInheritance)
     mn->AddBaseClass(*kl);
 
     PrimitiveECPropertyP primitiveProperty;
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ab->CreatePrimitiveProperty(primitiveProperty, "a", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ab->CreatePrimitiveProperty(primitiveProperty, "b", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, cd->CreatePrimitiveProperty(primitiveProperty, "c", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, cd->CreatePrimitiveProperty(primitiveProperty, "d", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ef->CreatePrimitiveProperty(primitiveProperty, "e", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ef->CreatePrimitiveProperty(primitiveProperty, "f", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, gh->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, gh->CreatePrimitiveProperty(primitiveProperty, "h", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ij->CreatePrimitiveProperty(primitiveProperty, "i", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ij->CreatePrimitiveProperty(primitiveProperty, "j", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, kl->CreatePrimitiveProperty(primitiveProperty, "k", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, kl->CreatePrimitiveProperty(primitiveProperty, "l", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, mn->CreatePrimitiveProperty(primitiveProperty, "m", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, mn->CreatePrimitiveProperty(primitiveProperty, "n", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "a", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "b", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, cd->CreatePrimitiveProperty(primitiveProperty, "c", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, cd->CreatePrimitiveProperty(primitiveProperty, "d", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "e", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "f", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "h", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "i", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "j", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "k", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "l", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "m", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "n", PrimitiveType::PRIMITIVETYPE_String));
 
     //verify that properties successfully added for classes
     Utf8CP propName = "a";
@@ -248,21 +248,21 @@ TEST_F(PropertyOverrideTests, PropertyOverrideInMultiInheritance)
     ASSERT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
 
     //Override more properties of base classes (Add eacg to kl, iab to gh, l to ef, g to ij and gh to ab) and verify property inheritance
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, kl->CreatePrimitiveProperty(primitiveProperty, "e", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, kl->CreatePrimitiveProperty(primitiveProperty, "a", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, kl->CreatePrimitiveProperty(primitiveProperty, "c", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, kl->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "e", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "a", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "c", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, gh->CreatePrimitiveProperty(primitiveProperty, "a", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, gh->CreatePrimitiveProperty(primitiveProperty, "b", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, gh->CreatePrimitiveProperty(primitiveProperty, "i", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "a", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "b", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "i", PrimitiveType::PRIMITIVETYPE_String));
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ef->CreatePrimitiveProperty(primitiveProperty, "l", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "l", PrimitiveType::PRIMITIVETYPE_String));
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ij->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ab->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ab->CreatePrimitiveProperty(primitiveProperty, "h", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "g", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "h", PrimitiveType::PRIMITIVETYPE_String));
 
     VerifyPropertyInheritance(ab, cd, ef, gh, ij, kl, mn);
 
@@ -312,29 +312,29 @@ TEST_F(PropertyOverrideTests, AddingBasePropertyOverrideChangesPropertyInDerived
     {
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
-    ASSERT_EQ(SUCCESS, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
     testSchema->SetNamespacePrefix("ts");
-    ECClassP baseClass = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(baseClass, "BaseClass"));
+    ECEntityClassP baseClass = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(baseClass, "BaseClass"));
     PrimitiveECPropertyP primitiveProperty;
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, baseClass->CreatePrimitiveProperty(primitiveProperty, "testProp", PrimitiveType::PRIMITIVETYPE_String));
-    ECClassP derivedClass = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(derivedClass, "DerivedClass"));
+    ASSERT_EQ(ECObjectsStatus::Success, baseClass->CreatePrimitiveProperty(primitiveProperty, "testProp", PrimitiveType::PRIMITIVETYPE_String));
+    ECEntityClassP derivedClass = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(derivedClass, "DerivedClass"));
     derivedClass->AddBaseClass(*baseClass);
-    ECClassP doubleDerivedClass = NULL;
-    ASSERT_EQ(ECOBJECTS_STATUS_Success, testSchema->CreateClass(doubleDerivedClass, "DoubleDerivedClass"));
+    ECEntityClassP doubleDerivedClass = NULL;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(doubleDerivedClass, "DoubleDerivedClass"));
     doubleDerivedClass->AddBaseClass(*derivedClass);
 
     ASSERT_EQ(doubleDerivedClass->GetPropertyP("testProp"), baseClass->GetPropertyP("testProp")) << "Expected base and double derived classes to return the base property";
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, derivedClass->CreatePrimitiveProperty(primitiveProperty, "testProp", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, derivedClass->CreatePrimitiveProperty(primitiveProperty, "testProp", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(doubleDerivedClass->GetPropertyP("testProp"), baseClass->GetPropertyP("testProp")) << "Expected base and double derived classes to return the base property and Derived Property respectively";
     ASSERT_EQ(doubleDerivedClass->GetPropertyP("testProp"), (derivedClass->GetPropertyP("testProp"))) << "Expected derived and double derived classes to return the derived Propertyy";
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, doubleDerivedClass->CreatePrimitiveProperty(primitiveProperty, "testProp", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, doubleDerivedClass->CreatePrimitiveProperty(primitiveProperty, "testProp", PrimitiveType::PRIMITIVETYPE_String));
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, derivedClass->RemoveProperty("testProp"));
+    ASSERT_EQ(ECObjectsStatus::Success, derivedClass->RemoveProperty("testProp"));
 
     ASSERT_EQ(doubleDerivedClass->GetPropertyP("testProp")->GetBaseProperty(), baseClass->GetPropertyP("testProp")) << "doubleDerivedClass.testProp.GetBaseProperty to have BaseClass.testProp because derivedClass Property has been removed";
     }
@@ -373,17 +373,17 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride)
     foo->AddBaseClass(*b2);
 
     PrimitiveECPropertyP primitiveProp;
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, root->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, root->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_EQ(foo->GetPropertyP("A"), root->GetPropertyP("A")) << "Expected Foo and Root to return the Root Property";
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, foo->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(foo->GetPropertyP("A"), root->GetPropertyP("A")) << "Expected Foo and Root to return the Foo Property and Root property Respectively";
     ASSERT_EQ(foo->GetPropertyP("A")->GetBaseProperty(), root->GetPropertyP("A")) << "Expected Foo and Root both to return Root  property";
 
     //now add same property A to class B2, as B2 has Higher Override Priority so traversal Order should not get changed.
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, b2->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, b2->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(foo->GetPropertyP("A"), root->GetPropertyP("A")) << "Expected Foo and Root to return the Foo Property and Root property Respectively";
     ASSERT_EQ(foo->GetPropertyP("A")->GetBaseProperty(), root->GetPropertyP("A")) << "Expected Foo and Root both to return Root property";
@@ -423,17 +423,17 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride1)
     foo->AddBaseClass(*b1);
 
     PrimitiveECPropertyP primitiveProp;
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, b2->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, b2->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_EQ(foo->GetPropertyP("A"), b2->GetPropertyP("A")) << "Expected Foo and B2 to return the B2 Property";
 
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, foo->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(foo->GetPropertyP("A"), b2->GetPropertyP("A")) << "Expected Foo and B2 to return the Foo Property and B2 property Respectively";
     ASSERT_EQ(foo->GetPropertyP("A")->GetBaseProperty(), b2->GetPropertyP("A")) << "Expected Foo and B2 both to return B2  property";
 
     //now add same property A to class B1, as B1 has Lower Override Priority so traversal Order should not get changed.
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, b1->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, b1->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(foo->GetPropertyP("A"), b2->GetPropertyP("A")) << "Expected Foo and B2 to return the Foo Property and B2 property Respectively";
     ASSERT_EQ(foo->GetPropertyP("A")->GetBaseProperty(), b2->GetPropertyP("A")) << "Expected Foo and B2 both to return B2 property";
@@ -473,9 +473,9 @@ TEST_F(PropertyOverrideTests, VerifyTraversalOrderAfterSerializingDeserializingS
     foo->AddBaseClass(*b2);
 
     PrimitiveECPropertyP primitiveProp;
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, root->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, foo->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, b2->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, root->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, foo->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, b2->CreatePrimitiveProperty(primitiveProp, "A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(foo->GetPropertyP("A"), root->GetPropertyP("A")) << "Expected Foo and Root to return the Foo Property and Root property Respectively";
     ASSERT_EQ(foo->GetPropertyP("A")->GetBaseProperty(), root->GetPropertyP("A")) << "Expected Foo and Root both to return Root property even after adding property A to class B2";

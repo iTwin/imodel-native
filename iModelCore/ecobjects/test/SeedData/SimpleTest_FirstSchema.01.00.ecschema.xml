@@ -25,14 +25,6 @@
         <ECProperty propertyName="Struct2DoubleMember" typeName="double" />
         <ECArrayProperty propertyName="NestedArray" typeName="Struct1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>
-    <ECRelationshipClass typeName="BaseClassAsSourceRelationship" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" roleLabel="BaseClassAsSourceRelationship" polymorphic="True">
-            <Class class="BaseClass" />
-        </Source>
-        <Target cardinality="(0,1)" roleLabel="BaseClassAsSourceRelationship (reversed)" polymorphic="True">
-            <Class class="Struct2" />
-        </Target>
-    </ECRelationshipClass>
     <ECRelationshipClass typeName="BaseRelationshipClass" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="MyIntegerMember" typeName="int" />
         <ECProperty propertyName="MyLongMember" typeName="long" />
@@ -206,58 +198,4 @@
     <ECClass typeName="Test2Class" isDomainClass="True">
         <ECProperty propertyName="Test2StringMember" typeName="string" />
     </ECClass>
-    <ECRelationshipClass typeName="ClonedRelationshipClass" strength="referencing" strengthDirection="forward">
-        <BaseClass>BaseRelationshipClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">
-            <Class class="TestClass" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Test2Class" />
-            <Class class="Struct2" />
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="ExplicitRelationshipClass" strength="referencing" strengthDirection="forward">
-        <BaseClass>BaseRelationshipClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">
-            <Class class="TestClass" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Test2Class" />
-            <Class class="Struct2" />
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="ImplicitRelationshipClass" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
-                <AccessLevel>5</AccessLevel>
-                <Writeable>False</Writeable>
-            </AccessCustomAttributes>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="source constraint" polymorphic="True">
-            <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
-                    <AccessLevel>6</AccessLevel>
-                    <Writeable>True</Writeable>
-                </AccessCustomAttributes>
-            </ECCustomAttributes>
-            <Class class="TestClass">
-                <Key>
-                    <Property name="StringMember" />
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="target constraint" polymorphic="True">
-            <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
-                    <AccessLevel>7</AccessLevel>
-                    <Writeable>False</Writeable>
-                </AccessCustomAttributes>
-            </ECCustomAttributes>
-            <Class class="Test2Class">
-                <Key>
-                    <Property name="Test2StringMember" />
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 </ECSchema>

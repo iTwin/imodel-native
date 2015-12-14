@@ -12,7 +12,7 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 
-#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
+#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(ECObjectsStatus::Success == EXPR)
 using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
@@ -137,7 +137,7 @@ struct CalculatedPropertyTests : ECTestFixture
         ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext ();
 
         ECSchemaPtr schema;
-        EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str (), *schemaContext));
+        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str (), *schemaContext));
 
         return schema.get ();
         }
@@ -167,11 +167,11 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (Utf8CP propName, Utf8CP 
     static ECSchemaPtr schema;
     Utf8String schemaName;
     schemaName.Sprintf ("TestSchema_%d", s_schemaNumber++);
-    EXPECT_EQ (SUCCESS, ECSchema::CreateSchema (schema, schemaName, 1, 0));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->AddReferencedSchema (*customAttrSchema, "besc"));
+    EXPECT_EQ (ECObjectsStatus::Success, ECSchema::CreateSchema (schema, schemaName, 1, 0));
+    EXPECT_EQ (ECObjectsStatus::Success, schema->AddReferencedSchema (*customAttrSchema, "besc"));
 
-    ECClassP ecClass = NULL;
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->CreateClass (ecClass, "TestClass"));
+    ECEntityClassP ecClass = NULL;
+    EXPECT_EQ (ECObjectsStatus::Success, schema->CreateEntityClass (ecClass, "TestClass"));
     PrimitiveECPropertyP ecProp = NULL;
     ArrayECPropertyP arrayProp = NULL;
     ecClass->CreatePrimitiveProperty (ecProp, "S", PRIMITIVETYPE_String);
@@ -203,7 +203,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (Utf8CP propName, Utf8CP 
     v.SetBoolean (0 != (options & OPTION_UseLastValid));    calcSpecAttr->SetValue ("UseLastValidValueOnFailure", v);
     v.SetUtf8CP (parserRegex);                              calcSpecAttr->SetValue ("ParserRegularExpression", v);
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecProp->SetCustomAttribute (*calcSpecAttr));
+    EXPECT_EQ (ECObjectsStatus::Success, ecProp->SetCustomAttribute (*calcSpecAttr));
 
     // Create an instance to test against
     return ecClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -394,13 +394,13 @@ TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithCalculatedPr
     Utf8String ecInstanceXml;
 
     InstanceWriteStatus status2 = instance->WriteToXmlString (ecInstanceXml, true, false);
-    EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);
+    EXPECT_EQ (InstanceWriteStatus::Success, status2);
 
     IECInstancePtr deserializedInstance;
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (instance->GetClass ().GetSchema ());
 
     InstanceReadStatus status3 = IECInstance::ReadFromXmlString (deserializedInstance, ecInstanceXml.c_str (), *instanceContext);
-    EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3);
+    EXPECT_EQ (InstanceReadStatus::Success, status3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -414,13 +414,13 @@ TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithFailedCalcul
     Utf8String ecInstanceXml;
 
     InstanceWriteStatus status2 = instance->WriteToXmlString (ecInstanceXml, true, false);
-    EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);
+    EXPECT_EQ (InstanceWriteStatus::Success, status2);
 
     IECInstancePtr deserializedInstance;
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (instance->GetClass ().GetSchema ());
 
     InstanceReadStatus status3 = IECInstance::ReadFromXmlString (deserializedInstance, ecInstanceXml.c_str (), *instanceContext);
-    EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3);
+    EXPECT_EQ (InstanceReadStatus::Success, status3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -581,7 +581,7 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamedFromFile)
     ECSchemaPtr schema;
 
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"pidSnippet.01.02.ecschema.xml").c_str (), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    EXPECT_EQ (SchemaReadStatus::Success, status);
 
     ECClassP ecClass = schema->GetClassP ("BASE_REDUCER");
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
