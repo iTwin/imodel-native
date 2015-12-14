@@ -25,10 +25,6 @@ ECDbInstances.UpdateRelationshipProperty
 #TFS344205 (Affan)
 JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
 
-#WIP_EC3
-#Deserialization of rule instance doesn't work (Carole)
-ECInstanceInserterTests.InsertSingleRuleInstance
-
 #Raman will take a look
 ECDbInstances.CommonGeometryJsonSerialization
 
