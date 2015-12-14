@@ -357,10 +357,10 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     status = enumeration->CreateEnumerator(enumerator, 5);
     EXPECT_TRUE(status == ECObjectsStatus::Success);
     EXPECT_TRUE(enumerator != nullptr);
+    EXPECT_STREQ(enumerator->GetInvariantDisplayLabel().c_str(), "5");
     enumerator->SetDisplayLabel("DLBL");
 
-    Utf8StringCR displayLabel = enumerator->GetDisplayLabel();
-    EXPECT_STREQ(displayLabel.c_str(), "DLBL");
+    EXPECT_STREQ(enumerator->GetDisplayLabel().c_str(), "DLBL");
     
     EXPECT_TRUE(enumerator->GetInteger() == 5);
     EXPECT_STREQ(enumerator->GetString().c_str(), "");

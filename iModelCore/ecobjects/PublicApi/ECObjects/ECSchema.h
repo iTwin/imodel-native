@@ -1511,18 +1511,18 @@ struct ECEnumerator : NonCopyableClass
         int32_t m_intValue;
         Utf8String m_stringValue;
 
-        Utf8String m_displayLabel;
+        mutable Utf8String m_displayLabel;
         bool m_hasExplicitDisplayLabel;
 
         //  Lifecycle management:  The enumeration implementation will
         //  serve as a factory for enumerators and will manage their lifecycle.
         explicit ECEnumerator(ECEnumerationCR parent, int32_t value) : m_enum(parent), m_intValue(value), m_hasExplicitDisplayLabel(false) {}
-        explicit ECEnumerator(ECEnumerationCR parent, Utf8StringCR value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
+        explicit ECEnumerator(ECEnumerationCR parent, Utf8CP value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
         ~ECEnumerator() {}
 
     public:
         //! The ECEnumeration that this enumerator is defined in
-        ECEnumerationCR    GetEnumeration() const { return m_enum; }
+        ECEnumerationCR GetEnumeration() const { return m_enum; }
         //! Whether the display label is explicitly defined or not
         bool GetIsDisplayLabelDefined() const { return m_hasExplicitDisplayLabel; }
         //! Sets the display label of this enumerator
@@ -1533,21 +1533,21 @@ struct ECEnumerator : NonCopyableClass
         ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
 
         //!Returns true if this enumerator holds an integer value
-        ECOBJECTS_EXPORT bool IsInteger() const;
+        bool IsInteger() const { return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_Integer; }
         //! Returns the integer value, if this ECEnumerator holds an Integer 
         int32_t GetInteger() const { return m_intValue; }
         //! Sets the value of this ECEnumerator to the given integer
         //! @param[in] integer  The value to set
         ECOBJECTS_EXPORT ECObjectsStatus SetInteger(int32_t integer);
         //!Returns true if this enumerator holds an integer value
-        ECOBJECTS_EXPORT bool IsString() const;
+        bool IsString() const { return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_String; }
         //! Gets the string content of this ECEnumerator in UTF-8 encoding.
         //! @return string content in UTF-8 encoding
         Utf8StringCR GetString() const { return m_stringValue; }
         //! Sets the value of this ECEnumerator to the given string
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
-        //! @param[in] value           The value to set
-        ECOBJECTS_EXPORT ECObjectsStatus    SetString(Utf8CP value);
+        //! @param[in] value The value to set
+        ECOBJECTS_EXPORT ECObjectsStatus SetString(Utf8CP value);
     };
 
 //---------------------------------------------------------------------------------------

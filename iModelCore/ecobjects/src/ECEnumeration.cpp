@@ -506,23 +506,12 @@ Utf8StringCR ECEnumerator::GetInvariantDisplayLabel() const
     if (m_hasExplicitDisplayLabel)
         return m_displayLabel;
 
-    return GetString();
-    }
+    if (IsInteger())
+        m_displayLabel.Sprintf("%d", m_intValue);
+    else
+        m_displayLabel = m_stringValue;
 
-/*--------------------------------------------------------------------------------------/
-* @bsimethod                                    Robert.Schili                  12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECEnumerator::IsInteger() const
-    {
-    return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_Integer;
-    }
-
-/*--------------------------------------------------------------------------------------/
-* @bsimethod                                    Robert.Schili                  12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECEnumerator::IsString() const
-    {
-    return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_String;
+    return m_displayLabel;
     }
 
 /*--------------------------------------------------------------------------------------/
