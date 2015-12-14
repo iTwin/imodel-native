@@ -185,6 +185,7 @@ struct ElementImporter
 protected:
     DgnImportContext& m_context;
     bool m_copyChildren;
+    bool m_copyGroups;
 
 public:
     DGNPLATFORM_EXPORT ElementImporter(DgnImportContext&);
@@ -194,7 +195,14 @@ public:
     //! Specify if children should be deep-copied or not. The default is yes, deep-copy children.
     void SetCopyChildren(bool b) {m_copyChildren=b;}
 
+    //! Specify if group members should be deep-copied or not. The default is no, do not deep-copy group members.
+    void SetCopyGroups(bool b) {m_copyGroups=b;}
+
     //! Make a persistent copy of a specified Physical element, along with all of its children.
+    //! If the source element is a group, this function will optionally import all of its members (recursively). See SetCopyGroups.
+    //! When importing children, if the child element's model has already been imported, this function will import the child into the copy of that model. 
+    //! If the child element's model has not already been imported, then this function will import the child into its parent's model. 
+    //! The same strategy is used to choose the destination model of group members.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
     //! @param[in] destModel    The model where the instance is to be inserted
     //! @param[in] sourceElement The element that is to be copied
@@ -392,7 +400,7 @@ public:
         //! @param[in] modified the modified DgnElement (before undo)
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::No;}
+        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
@@ -2137,6 +2145,8 @@ struct ElementCopier
 protected:
     DgnCloneContext& m_context;
     bool m_copyChildren;
+    bool m_copyGroups;
+    bool m_preserveOriginalModels;
 
 public:
     DGNPLATFORM_EXPORT ElementCopier(DgnCloneContext& c);
@@ -2146,7 +2156,17 @@ public:
     //! Specify if children should be deep-copied or not. The default is yes, deep-copy children.
     void SetCopyChildren(bool b) {m_copyChildren=b;}
 
-    //! Make a persistent copy of a specified Physical element, along with all of its children.
+    //! Specify if group members should be deep-copied or not. The default is no, do not deep-copy group members.
+    void SetCopyGroups(bool b) {m_copyGroups=b;}
+
+    //! Specify if child elements and group members should be copied into the parent/group element's destination model. If not, children and members are copied to their own models. The default is, yes, preserve original models.
+    void SetPreserveOriginalModels(bool b) {m_preserveOriginalModels=b;}
+
+    //! Make a persistent copy of a specified Physical element and its children.
+    //! This function copies the input element's children, unless you call SetCopyChildren and pass false.
+    //! If the input element is a group, this function will optionally copy its group members. See SetCopyGroups.
+    //! When copying children, this function will either copy a child into its own model or its parent's model. See SetPreserveOriginalModels.
+    //! The same strategy is used to choose the destination model of group members.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
     //! @param[in] targetModel  The model where the instance is to be inserted
     //! @param[in] sourceElement The element that is to be copied

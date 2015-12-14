@@ -764,7 +764,7 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema()
     // are available in the cache of the schemaContext
     ECN::ECSchemaPtr schema = NULL;
     ECN::SchemaReadStatus deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, markupEcSchemaFileName, *schemaContext);
-    if (ECN::SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (ECN::SchemaReadStatus::Success != deserializeStat)
         {
         // Schema could not be read into memory. Do error handling here
         BeAssert(false && "Markup schemas should be a delivered asset");
@@ -772,7 +772,7 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema()
         }
     schema = NULL;
     deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, markupExtEcSchemaFileName, *schemaContext);
-    if (ECN::SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (ECN::SchemaReadStatus::Success != deserializeStat)
         {
         // Schema could not be read into memory. Do error handling here
         BeAssert(false && "Markup schemas should be a delivered asset");
@@ -780,7 +780,7 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema()
         }
     schema = NULL;
     deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, dgnMarkupEcSchemaFileName, *schemaContext);
-    if (ECN::SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (ECN::SchemaReadStatus::Success != deserializeStat)
         {
         // Schema could not be read into memory. Do error handling here
         BeAssert(false && "Markup schemas should be a delivered asset");

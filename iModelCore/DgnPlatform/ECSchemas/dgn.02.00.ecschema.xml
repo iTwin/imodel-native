@@ -303,7 +303,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                         <Properties>
                             <string>ParentId</string>
                         </Properties>
-                        <Where>ECDB_NOTNULL</Where>
+                        <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                     <DbIndex>
                         <!-- Index on ModelId -->
@@ -320,7 +320,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                         <Properties>
                             <string>Label</string>
                         </Properties>
-                        <Where>ECDB_NOTNULL</Where>
+                        <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
                 </Indexes>
             </ClassMap>

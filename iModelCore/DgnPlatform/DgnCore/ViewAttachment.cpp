@@ -213,6 +213,7 @@ void ViewAttachmentGeomCollector::FitView()
     {
     DRange3d range;
     FitViewParams params;
+    params.m_useScanRange = true;
     if (!IsValid() || SUCCESS != m_viewport.ComputeViewRange(range, params))
         return;
 
