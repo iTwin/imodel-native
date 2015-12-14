@@ -3,10 +3,12 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     /*** BEGIN_FORWARD_DECLARATIONS ***/
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
     class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
+    class SolidPrimitive { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
     type DPoint3dP = cxx_pointer<DPoint3d>;
     type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
+    type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
 
     //! Logging serverity level.
     enum LoggingSeverity { }
@@ -68,14 +70,44 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type DgnDbP = cxx_pointer<DgnDb>;
 
     //! A wrapper for 64-bit element ids, etc.
-    class DgnObjectIdValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    class DgnObjectId implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
+        IsValid(): cxx_bool;
+        Equals(id: DgnObjectIdP): cxx_bool;
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type DgnObjectId = cxx_pointer<DgnObjectIdValue>;
+    type DgnObjectIdP = cxx_pointer<DgnObjectId>;
+
+    class DgnObjectIdSetIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnObjectIdSetIterator ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnObjectIdSetIteratorP = cxx_pointer<DgnObjectIdSetIterator>;
+
+    //! A wrapper for 64-bit element ids, etc.
+    class DgnObjectIdSet implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnObjectIdSet ***/
+        Size(): cxx_double;
+        Clear(): void;
+
+        Insert(id: DgnObjectIdP): void;
+        Begin(): DgnObjectIdSetIteratorP;
+        IsValid(iter: DgnObjectIdSetIteratorP): cxx_bool;
+        ToNext(iter: DgnObjectIdSetIteratorP): cxx_bool;
+        GetId(iter: DgnObjectIdSetIteratorP): DgnObjectIdP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnObjectIdSetP = cxx_pointer<DgnObjectIdSet>;
 
     class AuthorityIssuedCodeValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
@@ -89,17 +121,33 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class DgnModels implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModels ***/
-        QueryModelId(name: AuthorityIssuedCode): DgnObjectId;
-        GetModel(id: DgnObjectId): DgnModelP;
+        QueryModelId(name: AuthorityIssuedCode): DgnObjectIdP;
+        GetModel(id: DgnObjectIdP): DgnModelP;
         OnDispose(): void;
         Dispose(): void;
     }
 
     type DgnModelsP = cxx_pointer<DgnModels>;
 
+    class DgnCategory implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnCategory ***/
+        DgnDb: DgnDbP;
+        CategoryId: DgnObjectIdP;
+        DefaultSubCategoryId: DgnObjectIdP;
+        CategoryName: Bentley_Utf8String;
+        static QueryCategoryId(name: Bentley_Utf8String, db: DgnDbP): DgnObjectIdP;
+        static QueryCategory(id: DgnObjectIdP, db: DgnDbP): DgnCategoryP;
+        static QueryCategories(db: DgnDbP): DgnObjectIdSetP;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnCategoryP = cxx_pointer<DgnCategory>;
+
     class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
-        ElementId: DgnObjectId;
+        ElementId: DgnObjectIdP;
         Code: AuthorityIssuedCode;
         Model: DgnModelP;
         Insert(): cxx_int32_t;
@@ -111,12 +159,28 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnElementP = cxx_pointer<DgnElement>;
 
+    class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
+
+        /**
+         * Create a new PhysicalElement
+         * @param model The model that is to contain the new element
+         * @param categoryId The ID of the category to assign to the new element
+         * @paeram elementClassname Optional. The name of the element's ECClass. If not specified, then dgn.PhysicalElement is used
+         * @return a new, non-persistent PhysicalElement or null if one of the parameters is invalid
+         * @see Insert
+        */
+        static Create(model: DgnModelP, categoryId: DgnObjectIdP, elementClassName: Bentley_Utf8String): PhysicalElementP;
+    }
+
+    type PhysicalElementP = cxx_pointer<PhysicalElement>;
+
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
-        ModelId: DgnObjectId;
+        ModelId: DgnObjectIdP;
         Code: AuthorityIssuedCode;
         DgnDb: DgnDbP;
-        CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): DgnElementP;
         static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
         DeleteAllElements(): void;
         OnDispose(): void;
@@ -155,8 +219,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
-        AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
-        AppendSphere(radius: cxx_double): void;
+        Append(solid: SolidPrimitiveP): void;
         SetGeometryStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;

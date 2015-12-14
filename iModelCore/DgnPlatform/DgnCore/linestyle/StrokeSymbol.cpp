@@ -209,6 +209,24 @@ StatusInt LsSymbolComponent::_GetRange (DRange3dR range) const
     return BSISUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsSymbolComponent::LsSymbolComponent(LsSymbolComponentCR src) : LsComponent(&src)
+    {
+    m_isModified = true;
+    m_geomPartId = src.m_geomPartId;
+    m_storedScale = src.m_storedScale;
+    m_muDef = src.m_muDef;
+    m_symSize = src.m_symSize;
+    m_symBase = src.m_symBase;;
+    m_symFlags = src.m_symFlags;
+    m_lineColor = src.m_lineColor;
+    m_fillColor = src.m_fillColor;
+    m_weight = src.m_weight;
+    m_lineColorByLevel = src.m_lineColorByLevel;
+    m_postProcessed = false;
+    }
 #endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03

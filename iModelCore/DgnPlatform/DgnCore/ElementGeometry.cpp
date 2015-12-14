@@ -4101,10 +4101,11 @@ private:
     ElementGeometryBuilderR m_builder;
     DgnCategoryId m_categoryId;
     Transform m_transform;
+    Transform m_geomToElem;
 
 public:
-    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
-        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_transform(Transform::FromIdentity()) {}
+    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, TransformCR geomToElem, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
+        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_geomToElem (geomToElem), m_transform(Transform::FromIdentity()) {}
 
     virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
     virtual void _AnnounceGeometryParams(GeometryParamsCR params) override { m_builder.Append(params); }
@@ -4157,9 +4158,11 @@ BentleyStatus TextAnnotationDrawToElementGeometry::_ProcessCurveVector(CurveVect
 void TextAnnotationDrawToElementGeometry::_OutputGraphics(ViewContextR context)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetCurrentGeometryParams().SetCategoryId(m_categoryId);
-#endif
+    context.PushTransform(m_geomToElem);
+    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
     m_annotationDraw.Draw(context);
+    context.PopTransformClip();
+#endif
     }
 
 END_UNNAMED_NAMESPACE
@@ -4167,10 +4170,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append(TextAnnotationCR text)
+bool ElementGeometryBuilder::Append(TextAnnotationCR text, TransformCR transform)
     {
     TextAnnotationDraw annotationDraw(text);
-    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, *this, m_elParams.GetCategoryId());
+    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, transform, *this, m_elParams.GetCategoryId());
     ElementGraphicsOutput::Process(annotationDrawToGeom, m_dgnDb);
 
     return true;
@@ -4182,6 +4185,7 @@ bool ElementGeometryBuilder::Append(TextAnnotationCR text)
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement) : m_dgnDb(dgnDb), m_is3d(true), m_writer(dgnDb)
     {
     m_placement3d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 
@@ -4195,6 +4199,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement) : m_dgnDb(dgnDb), m_is3d(false), m_writer(dgnDb)
     {
     m_placement2d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 

@@ -105,6 +105,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::LineStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
@@ -119,6 +120,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
+
+    RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

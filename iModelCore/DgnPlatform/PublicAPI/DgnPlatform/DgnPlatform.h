@@ -246,27 +246,6 @@ DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
 DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 /** @endcond */
 
-//__PUBLISH_SECTION_END__
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-// DO NOT USE: these MAX*LENGTH values are not portable or correct!
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-BEGIN_BENTLEY_NAMESPACE
-
-enum
-{
-    DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
-    MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
-    MAXDIRLENGTH          = 256,
-    MAXDEVICELENGTH       = 256,
-    MAXNAMELENGTH         = DGNPLATFORM_RESOURCE_MAXNAMELENGTH,
-    MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
-};
-
-END_BENTLEY_NAMESPACE
-
-//__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
@@ -276,6 +255,7 @@ BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a D
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#Styles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
@@ -284,7 +264,6 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that re
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
-BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -683,6 +662,46 @@ enum class ClipMask
 };
 
 ENUM_IS_FLAGS(ClipMask)
+
+//! Values held in line style definition elements; normally not used by clients of this API
+//! @ingroup LineStyleManagerModule
+enum class LsComponentType
+{
+    Unknown         = 0,             //!<   Unknown, should never occur
+    PointSymbol     = 1,
+    Compound        = 2,
+    LineCode        = 3,
+    LinePoint       = 4,
+    Internal        = 6,
+    RasterImage     = 7,
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LsComponentId
+{
+private:
+    uint32_t            m_number;              // Component property ID
+    LsComponentType     m_type;
+public:
+    uint32_t GetValue() const { return m_number; }
+    LsComponentType GetType() const { return m_type; }
+    LsComponentId() { m_type = LsComponentType::Unknown; m_number = 0xFFFFFFFF; }
+    bool IsValid() const { return m_number != 0xFFFFFFFF; }
+    explicit LsComponentId(LsComponentType type, uint32_t value) : m_type(type), m_number(value) {}
+
+    bool operator<(LsComponentId const&r) const
+        {
+        if (this->m_type < r.m_type)
+            return true;
+
+        if (this->m_type > r.m_type)
+            return false;
+
+        return this->m_number < r.m_number;
+        }
+};
 
 enum
 {

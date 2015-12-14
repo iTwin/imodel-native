@@ -38,6 +38,7 @@
 #include "ValueParse.h"
 #include "ViewContext.h"
 #include "ViewController.h"
+#include "ViewAttachment.h"
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"

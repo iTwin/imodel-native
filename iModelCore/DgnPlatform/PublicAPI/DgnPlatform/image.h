@@ -321,30 +321,31 @@ static const double MONOCHROME_THRESHOLD  = 128.0;
 |   Movie Frame Transition Modes                    |
 |                                   |
 +----------------------------------------------------------------------*/
-typedef enum
+enum MovieFrameTransition
     {
     MOVIE_FrameCut           = 0,
     MOVIE_HorizontalWipe     = 1,
     MOVIE_VerticalWipe       = 2,
     MOVIE_Fade               = 3
-    } MovieFrameTransition;
+    };
 
+#include <Geom/IntegerTypes/BSIRect.h>
 /*----------------------------------------------------------------------+
 |                                   |
 |   Movies Structure                            |
 |                                   |
 +----------------------------------------------------------------------*/
 #if ! defined (resource)
-typedef struct msMovieFrame
+struct MSMovieFrame
     {
     Byte *dataP;
     WChar     fileName[DGNPLATFORM_RESOURCE_MAXFILELENGTH];
     int         imageFormat;
     BSIRect     changeRect;
     struct msMovieFrame *nextP;
-    } MSMovieFrame;
+    };
 
-typedef struct msMovies
+struct MSMovie
     {
     MSMovieFrame    *firstFrameP;
     Point2d     size;
@@ -356,7 +357,7 @@ typedef struct msMovies
     int         paletteSize;
     double      gammaCorrection;
     bool        buffered;
-    } MSMovie;
+    };
 
 #endif
 

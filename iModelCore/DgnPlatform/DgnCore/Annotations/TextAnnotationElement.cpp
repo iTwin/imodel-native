@@ -106,7 +106,7 @@ void TextAnnotationData::GenerateElementGeometry(GeometrySourceR source, Generat
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(source);
     
-    builder->Append(*m_annotation);
+    builder->Append(*m_annotation, Transform::FromIdentity());
     builder->SetGeometryStreamAndPlacement(source);
     }
 

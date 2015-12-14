@@ -916,8 +916,11 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement(GeometrySourceCR source) override
     {
-    DRange3d range = source.CalculateRange3d();
-    if (IsRangeContainedInCurrentRange(range, nullptr != source.ToGeometrySource3d()))
+    DPoint3d corners[8];
+    auto geom3d = source.ToGeometrySource3d();
+
+    DRange3d elRange = source.CalculateRange3d();
+    if (IsRangeContainedInCurrentRange(elRange, nullptr != geom3d))
         return SUCCESS;
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

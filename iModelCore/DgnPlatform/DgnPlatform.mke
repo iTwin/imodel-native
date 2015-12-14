@@ -11,6 +11,16 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
+# Need to ignore this because it's in Vancouver's header files.
+%if defined(MSVC_VERSION)
+%if MSVC_VERSION >= 1900
+    # C4312: 'type cast': conversion from '...' to '...' of greater size
+    CCompOpts + -wd4312
+
+    # C4091: '... ': ignored on left of '...' when no variable is declared
+    CCompOpts + -wd4091
+%endif
+%endif
 
 #-----------------------------------------------------------
 # Root DgnPlatform directory
@@ -175,7 +185,7 @@ $(CoreObjs)MemoryManager$(oext) :                   $(DgnCoreDir)MemoryManager.c
 
 $(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
-$(coreObjs)LocksManager$(oext): $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
+$(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
 
 $(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
@@ -317,6 +327,8 @@ $(CoreObjs)DgnLight$(oext) :                        $(DgnCoreDir)DgnLight.cpp $(
 
 $(CoreObjs)DgnView$(oext) :                         $(DgnCoreDir)DgnView.cpp $(DgnPlatformAPISrc)DgnDb.h $(DgnPlatformAPISrc)DgnView.h ${MultiCompileDepends}
 
+$(CoreObjs)ViewAttachment$(oext) :                  $(DgnCoreDir)ViewAttachment.cpp $(DgnPlatformAPISrc)ViewAttachment.h ${MultiCompileDepends}
+
 $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
@@ -357,6 +369,7 @@ $(CoreObjs)DgnECSymbolProvider$(oext) :             $(DgnHandlersDir)DgnECSymbol
 
 $(coreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
+$(coreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
@@ -423,6 +436,12 @@ $(o)GeomJsApiCallbacks$(oext) :                     $(dgnScriptGen)GeomJsApiCall
 %else
 
 $(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStubbedOut.cpp $(DgnPlatformAPISrc)DgnScript.h ${MultiCompileDepends}
+
+%endif
+
+%if $(TARGET_PLATFORM) == "Windows"
+
+$(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
 
 %endif
 

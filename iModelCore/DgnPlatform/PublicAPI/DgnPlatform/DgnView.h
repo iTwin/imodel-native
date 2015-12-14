@@ -88,6 +88,7 @@ private:
     Data m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus DeleteReferences() const;
     static bool IsValidCode(Code const& code);
 protected:
     explicit ViewDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
@@ -273,6 +274,8 @@ public:
     PhysicalViewDefinitionP ToPhysicalViewP() { return const_cast<PhysicalViewDefinitionP>(ToPhysicalView()); }
     DrawingViewDefinitionP ToDrawingViewP() { return const_cast<DrawingViewDefinitionP>(ToDrawingView()); }
     SheetViewDefinitionP ToSheetViewP() { return const_cast<SheetViewDefinitionP>(ToSheetView()); }
+
+    ViewControllerPtr LoadViewController(bool allowOverrides, FillModels fillModels) const; //!< @private
 };
 
 //=======================================================================================

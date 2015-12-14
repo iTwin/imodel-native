@@ -53,8 +53,6 @@ protected:
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
-    bmap<DgnMaterialId, DgnMaterialId> m_materialId;
-    bmap<DgnTextureId, DgnTextureId> m_textureId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
@@ -75,6 +73,8 @@ public:
     DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
     DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
+    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnClassId Find(DgnClassId sourceId) const {return Find<DgnClassId>(m_classId, sourceId);}
@@ -109,6 +109,7 @@ private:
     AngleInDegrees  m_yawAdj;
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
+    bmap<LsComponentId, uint32_t> m_importedComponents;
 
     void ComputeGcsAdjustment();
 
@@ -162,11 +163,15 @@ public:
     //! Make sure that a Texture has been imported
     DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
     //! Look up a copy of a LineStyle
-    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {BeAssert(false); return DgnStyleId();}
+    DgnStyleId FindLineStyleId(DgnStyleId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a LineStyle
-    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {BeAssert(false); return DgnStyleId();;}
+    DgnStyleId AddLineStyleId(DgnStyleId sourceId, DgnStyleId targetId) {return m_remap.Add(sourceId, targetId); }
     //! Make sure that a LineStyle has been imported
-    DgnStyleId RemapLineStyleId(DgnStyleId sourceId) {BeAssert(false); return DgnStyleId();}
+    DgnStyleId RemapLineStyleId(DgnStyleId sourceId);
+    //! Look up a copy of a LineStyle component
+    LsComponentId FindLineStyleComponentId(LsComponentId sourceId) const;
+    //! Register a copy of a LineStyle component
+    void AddLineStyleComponentId(LsComponentId sourceId, LsComponentId targetId);
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeometryStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom);
@@ -192,6 +197,7 @@ struct ElementImporter
 protected:
     DgnImportContext& m_context;
     bool m_copyChildren;
+    bool m_copyGroups;
 
 public:
     DGNPLATFORM_EXPORT ElementImporter(DgnImportContext&);
@@ -201,7 +207,14 @@ public:
     //! Specify if children should be deep-copied or not. The default is yes, deep-copy children.
     void SetCopyChildren(bool b) {m_copyChildren=b;}
 
+    //! Specify if group members should be deep-copied or not. The default is no, do not deep-copy group members.
+    void SetCopyGroups(bool b) {m_copyGroups=b;}
+
     //! Make a persistent copy of a specified Physical element, along with all of its children.
+    //! If the source element is a group, this function will optionally import all of its members (recursively). See SetCopyGroups.
+    //! When importing children, if the child element's model has already been imported, this function will import the child into the copy of that model. 
+    //! If the child element's model has not already been imported, then this function will import the child into its parent's model. 
+    //! The same strategy is used to choose the destination model of group members.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
     //! @param[in] destModel    The model where the instance is to be inserted
     //! @param[in] sourceElement The element that is to be copied
@@ -380,7 +393,7 @@ public:
         //! @param[in] modified the modified DgnElement (before undo)
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::No;}
+        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
@@ -1043,6 +1056,9 @@ public:
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsSystemElement() const {return nullptr != ToSystemElement();}             //!< Determine whether this element is a SystemElement or not
+    bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
+    bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
+    bool IsSheetElement() const {return nullptr != ToSheetElement();}               //!< Determine whether this element is an SheetElement
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
@@ -1495,9 +1511,6 @@ protected:
     virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource3d()); }
 };
 
-//! Specialization of GeometricElement3d deriving directly from the dgn:Element ECClass.
-typedef GeometricElement3d<DgnElement> DgnElement3d;
-
 //=======================================================================================
 //! CreateParams used for constructing geometric elements
 //! @ingroup DgnElementGroup
@@ -1592,17 +1605,14 @@ protected:
     virtual void _CopyFrom(DgnElementCR rhs) override { T_Base::_CopyFrom(rhs); this->m_geom.CopyFrom(rhs.ToGeometrySource2d()); }
 };
 
-//! Specialization of GeometricElement2d deriving directly from the dgn:Element ECClass.
-typedef GeometricElement2d<DgnElement> DgnElement2d;
-
 //=======================================================================================
 //! A 2-dimensional geometric element used to annotate drawings and sheets.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : DgnElement2d
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement : GeometricElement2d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, DgnElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, GeometricElement2d<DgnElement>)
     friend struct dgn_ElementHandler::Annotation;
 public:
     typedef ElementCreateParams2d CreateParams;
@@ -1620,9 +1630,9 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
+struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : GeometricElement2d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, GeometricElement2d<DgnElement>)
     friend struct dgn_ElementHandler::Drawing;
 public:
     typedef ElementCreateParams2d CreateParams;
@@ -1640,9 +1650,9 @@ protected:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetElement : DgnElement2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetElement : GeometricElement2d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, DgnElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, GeometricElement2d<DgnElement>)
     friend struct dgn_ElementHandler::Sheet;
 public:
     typedef ElementCreateParams2d CreateParams;
@@ -2078,6 +2088,8 @@ struct ElementCopier
 protected:
     DgnCloneContext& m_context;
     bool m_copyChildren;
+    bool m_copyGroups;
+    bool m_preserveOriginalModels;
 
 public:
     DGNPLATFORM_EXPORT ElementCopier(DgnCloneContext& c);
@@ -2087,7 +2099,17 @@ public:
     //! Specify if children should be deep-copied or not. The default is yes, deep-copy children.
     void SetCopyChildren(bool b) {m_copyChildren=b;}
 
-    //! Make a persistent copy of a specified Physical element, along with all of its children.
+    //! Specify if group members should be deep-copied or not. The default is no, do not deep-copy group members.
+    void SetCopyGroups(bool b) {m_copyGroups=b;}
+
+    //! Specify if child elements and group members should be copied into the parent/group element's destination model. If not, children and members are copied to their own models. The default is, yes, preserve original models.
+    void SetPreserveOriginalModels(bool b) {m_preserveOriginalModels=b;}
+
+    //! Make a persistent copy of a specified Physical element and its children.
+    //! This function copies the input element's children, unless you call SetCopyChildren and pass false.
+    //! If the input element is a group, this function will optionally copy its group members. See SetCopyGroups.
+    //! When copying children, this function will either copy a child into its own model or its parent's model. See SetPreserveOriginalModels.
+    //! The same strategy is used to choose the destination model of group members.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
     //! @param[in] targetModel  The model where the instance is to be inserted
     //! @param[in] sourceElement The element that is to be copied

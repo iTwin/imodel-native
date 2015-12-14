@@ -52,7 +52,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb (WCharCP destFileName, U
         schemaContext->AddSchemaPath (searchDir.GetName ());
 
         ECN::ECSchemaPtr schema = nullptr;
-        ASSERT_EQ (ECN::SCHEMA_READ_STATUS_Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
+        ASSERT_EQ (ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
 
         schemaContext->AddSchema (*schema);
         DgnBaseDomain::GetDomain ().ImportSchema (*m_db, schemaContext->GetCache ());
