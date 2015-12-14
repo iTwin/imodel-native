@@ -272,7 +272,7 @@ namespace connectivity
                 SQLNodeType _eNodeType,
                 sal_uInt32 _nNodeID = 0);
 
-            OSQLParseNode (const Utf8String& _rValue,
+            OSQLParseNode (Utf8String const& _rValue,
                 SQLNodeType eNewNodeType,
                 sal_uInt32 nNewNodeID = 0);
 
@@ -373,7 +373,7 @@ namespace connectivity
 #if OSL_DEBUG_LEVEL > 0
             // zeigt den ParseTree mit tabs und linefeeds
             void showParseTree (Utf8String& rString) const;
-            void showParseTree (Utf8StringBuffer& _inout_rBuf, sal_uInt32 nLevel) const;
+            void showParseTree (Utf8String& _inout_rBuf, sal_uInt32 nLevel) const;
 #endif
 
             SQLNodeType getNodeType () const { return m_eNodeType; };
@@ -457,21 +457,21 @@ namespace connectivity
                 bool _bSubstitute) const;
 
         private:
-            void impl_parseNodeToString_throw (Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const;
-            void impl_parseLikeNodeToString_throw (Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const;
-            void impl_parseTableRangeNodeToString_throw (Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const;
+            void impl_parseNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
+            void impl_parseLikeNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
+            void impl_parseTableRangeNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
 
             /** parses a table_name node into a SQL statement particle.
                 @return
                 <TRUE/> if and only if parsing was successful, <FALSE/> if default handling should
                 be applied.
                 */
-            bool impl_parseTableNameNodeToString_throw (Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const;
+            bool impl_parseTableNameNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
 
             Utf8String convertDateTimeString (const SQLParseNodeParameter& rParam, const Utf8String& rString) const;
             Utf8String convertDateString (const SQLParseNodeParameter& rParam, const Utf8String& rString) const;
             Utf8String convertTimeString (const SQLParseNodeParameter& rParam, const Utf8String& rString) const;
-            void parseLeaf (Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const;
+            void parseLeaf (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
 #if !NDEBUG
         private:
             Rule m_ruleId;
@@ -513,7 +513,7 @@ namespace connectivity
 #define SQL_ISTOKEN(pParseNode, token) ((pParseNode)->isToken() && (pParseNode)->getTokenID() == SQL_TOKEN_##token)
 #define SQL_ISTOKENOR2(pParseNode, tok0, tok1) ((pParseNode)->isToken() &&  ( (pParseNode)->getTokenID() == SQL_TOKEN_##tok0 || (pParseNode)->getTokenID() == SQL_TOKEN_##tok1 ))
 #define SQL_ISTOKENOR3(pParseNode, tok0, tok1, tok2) ((pParseNode)->isToken() && ( (pParseNode)->getTokenID() == SQL_TOKEN_##tok0 || (pParseNode)->getTokenID() == SQL_TOKEN_##tok1 || (pParseNode)->getTokenID() == SQL_TOKEN_##tok2 ))
-#define SQL_ISPUNCTUATION(pParseNode, aString) ((pParseNode)->getNodeType() == SQL_NODE_PUNCTUATION && !Utf8StringHelper::compareToAscii((pParseNode)->getTokenValue(), aString))
+#define SQL_ISPUNCTUATION(pParseNode, aString) ((pParseNode)->getNodeType() == SQL_NODE_PUNCTUATION && !(pParseNode)->getTokenValue().Equals(aString))
     }
 
 #endif    //_CONNECTIVITY_SQLNODE_HXX

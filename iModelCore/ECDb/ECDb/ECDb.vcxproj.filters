@@ -200,9 +200,6 @@
     <ClInclude Include="ECDbSchemaWriter.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\Parser\SqlBison.hpp">
-      <Filter>ECSql\OSQLParser</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\InsertStatementExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>

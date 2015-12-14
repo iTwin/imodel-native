@@ -106,72 +106,6 @@ const sal_Bool sal_False = false;
 ///////////////////////////RTL/////////////////////////////////////////////
 
 
-struct Utf8StringBuffer
-    {
-    private:
-        Utf8String m_buffer;
-    public:
-        Utf8StringBuffer (size_t reserve)
-            {
-            m_buffer.reserve (reserve);
-            }
-        Utf8StringBuffer (Utf8StringCR str)
-            {
-            m_buffer = str;
-            }
-
-        Utf8StringBuffer ()
-            {
-            }
-        size_t size () const { return m_buffer.size (); }
-
-        Utf8String makeStringAndClear ()
-            {
-            Utf8String tmp = m_buffer;
-            m_buffer.clear ();
-            return tmp;
-            }
-        void append (Utf8Char c)
-            {
-            m_buffer.append (&c, 1);
-            }
-        void append (Utf8StringCR str)
-            {
-            m_buffer.append (str);
-            }
-
-        void operator = (Utf8StringCR str)
-            {
-            m_buffer = str;
-            }
-        void appendInt32 (sal_uInt32 i)
-            {
-            Utf8String n;
-            n.Sprintf ("%d ", i);
-            m_buffer.append (n);
-            }
-        void appendAscii (Utf8CP str, sal_Int32 len)
-            {
-            BeAssert (strlen (str) != len);
-            m_buffer.append (str);
-            }
-        void appendAscii (Utf8CP c)
-            {
-            m_buffer.append (c);
-            }
-
-        sal_Char charAt (size_t index)
-            {
-            return m_buffer[index];
-            }
-        void setCharAt (size_t index, sal_Char c)
-            {
-            BeAssert (m_buffer.size () > index && index >= 0);
-            m_buffer[index] = c;
-            }
-    };
-
-
 struct Utf8StringHelper
     {
     static sal_Char toChar (Utf8StringCR s)
@@ -184,21 +118,7 @@ struct Utf8StringHelper
         {
         return Utf8String (ascii);
         }
-    static bool compareToAscii (Utf8StringCR str, const char * ascii)
-        {
-        return str.Equals (createFromAscii (ascii));
-        }
-    static Utf8String createString (const char* str)
-        {
-        return Utf8String (str);
-        }
 
-    static Utf8String createString (const char* str, size_t len, int16_t encoding)
-        {
-        BeAssert (encoding != RTL_TEXTENCODING_UTF8);
-        BeAssert (strlen (str) != len);
-        return Utf8String (str);
-        }
      static Utf8String replace (Utf8StringCR str, sal_Char findChar, sal_Char replaceWith)
         {
         BeAssert (false && "Implement this");

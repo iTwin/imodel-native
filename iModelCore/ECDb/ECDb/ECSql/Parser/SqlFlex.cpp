@@ -5833,7 +5833,8 @@ sal_Int32 parseString ()
     {
     sal_Char ch;
     sal_Char delim = '\''; //'' ''
-    Utf8StringBuffer sBuffer (256);
+    Utf8String sBuffer;
+    sBuffer.reserve(256);
 
     int s = 1;
     while (!checkeof (ch = yyinput ()))
@@ -5844,7 +5845,7 @@ sal_Int32 parseString ()
             ch = yyinput ();
             if (checkeof (ch))
                 {
-                SQL_NEW_NODE (sBuffer.makeStringAndClear (), SQL_NODE_STRING);
+                SQL_NEW_NODE (sBuffer, SQL_NODE_STRING);
                 return SQL_TOKEN_STRING;
                 }
             else if (ch == ' ')
@@ -5852,20 +5853,20 @@ sal_Int32 parseString ()
                 ch = yyinput ();
                 if (ch == delim)
                     {
-                    sBuffer.append (delim);
+                    sBuffer.append (&delim, 1);
                     }
                 else
                     {
                     if (!checkeof (ch))
                         unput (ch);
 
-                    SQL_NEW_NODE (sBuffer.makeStringAndClear (), SQL_NODE_STRING);
+                    SQL_NEW_NODE (sBuffer, SQL_NODE_STRING);
                     return SQL_TOKEN_STRING;
                     }
                 }
             else if (ch == delim)
                 {
-                sBuffer.append (delim);
+                sBuffer.append (&delim, 1);
                 continue;
                 }
             else
@@ -5873,13 +5874,13 @@ sal_Int32 parseString ()
                 if (!checkeof (ch))
                     unput (ch);
 
-                SQL_NEW_NODE (sBuffer.makeStringAndClear (), SQL_NODE_STRING);
+                SQL_NEW_NODE (sBuffer, SQL_NODE_STRING);
                 return SQL_TOKEN_STRING;
                 }
             }
         else
             {
-            sBuffer.append (ch);
+            sBuffer.append (&ch, 1);
             }
         }
 
@@ -5899,7 +5900,8 @@ sal_Int32 parseString ()
 sal_Int32 gatherString( sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 {
 	sal_Char ch;
-	Utf8StringBuffer sBuffer(256);
+	Utf8String sBuffer;
+    sBuffer.reserve(256);
 
 	while (!checkeof(ch = yyinput())) 
 	{
@@ -5919,9 +5921,9 @@ sal_Int32 gatherString( sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 							{
 							for (size_t i = 0; i < sBuffer.size(); i++)
 								{
-								if (sBuffer.charAt(i) == '-' || sBuffer.charAt(i) == '+')
+								if (sBuffer[i] == '-' || sBuffer[i] == '+')
 									continue;
-								isNumeric = (isNumeric & (isdigit (sBuffer.charAt(i)) != 0));
+								isNumeric = (isNumeric & (isdigit (sBuffer[i]) != 0));
 								}
 							}
 
@@ -5930,11 +5932,11 @@ sal_Int32 gatherString( sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 							{
 							for (size_t i = 0; i < sBuffer.size(); i++)
 								{
-								if (sBuffer.charAt(i) == '-' || sBuffer.charAt(i) == '+')
+								if (sBuffer[i] == '-' || sBuffer[i] == '+')
 									{
 									if (checkForSign)
 										{
-										if (sBuffer.charAt(i) == '-')
+										if (sBuffer[i] == '-')
 											{
 											YY_FATAL_ERROR("Invalid array index. Only positive integer is expected."); 
 											return SQL_TOKEN_INVALIDSYMBOL;
@@ -5950,20 +5952,20 @@ sal_Int32 gatherString( sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 								}
 							}
 
-						SQL_NEW_NODE(sBuffer.makeStringAndClear(), isNumeric ? SQL_NODE_ARRAY_INDEX : SQL_NODE_NAME);
+						SQL_NEW_NODE(sBuffer, isNumeric ? SQL_NODE_ARRAY_INDEX : SQL_NODE_NAME);
 						return isNumeric ? SQL_TOKEN_ARRAY_INDEX : SQL_TOKEN_NAME;
 						}
 					case 1:
-						SQL_NEW_NODE(sBuffer.makeStringAndClear(), SQL_NODE_STRING);
+						SQL_NEW_NODE(sBuffer, SQL_NODE_STRING);
 						return SQL_TOKEN_STRING;
 					case 2:
-						SQL_NEW_NODE(sBuffer.makeStringAndClear(), SQL_NODE_ACCESS_DATE);
+						SQL_NEW_NODE(sBuffer, SQL_NODE_ACCESS_DATE);
 						return SQL_TOKEN_ACCESS_DATE;
 				}				
 			} 
 			else
 			{
-			    sBuffer.append(ch);
+			    sBuffer.append(&ch, 1);
 			}
 
 		} 
@@ -5971,7 +5973,7 @@ sal_Int32 gatherString( sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
 			break;					
 		else
 		{
-		    sBuffer.append(ch);
+		    sBuffer.append(&ch, 1);
 		}
 	}
 	YY_FATAL_ERROR("Unterminated name string"); 

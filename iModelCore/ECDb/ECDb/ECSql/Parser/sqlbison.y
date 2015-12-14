@@ -4311,7 +4311,7 @@ const double fMilliSecondsPerDay = 86400000.0;
 //------------------------------------------------------------------
 Utf8String ConvertLikeToken(const OSQLParseNode* pTokenNode, const OSQLParseNode* pEscapeNode, sal_Bool bInternational)
 {
-    Utf8StringBuffer aMatchStr;
+    Utf8String aMatchStr;
     if (pTokenNode->isToken())
     {
         sal_Char cEscape = 0;
@@ -4321,22 +4321,22 @@ Utf8String ConvertLikeToken(const OSQLParseNode* pTokenNode, const OSQLParseNode
         // Platzhalter austauschen
         aMatchStr = pTokenNode->getTokenValue();
         const size_t nLen = aMatchStr.size();
-        Utf8StringBuffer sSearch,sReplace;
+        Utf8String sSearch,sReplace;
         if ( bInternational )
         {
-            sSearch.appendAscii("%_",2);
-            sReplace.appendAscii("*?",2);
+            sSearch.append("%_");
+            sReplace.append("*?");
         }
         else
         {
-            sSearch.appendAscii("*?",2);
-            sReplace.appendAscii("%_",2);
+            sSearch.append("*?");
+            sReplace.append("%_");
         }
         
         bool wasEscape = false;
         for (size_t i = 0; i < nLen; i++)
         {
-                const sal_Char c = aMatchStr.charAt(i);
+                const sal_Char c = aMatchStr[i];
                 // SQL standard requires the escape to be followed
                 // by a meta-character ('%', '_' or itself), else error
                 // We are more lenient here and let it escape anything.
@@ -4353,18 +4353,18 @@ Utf8String ConvertLikeToken(const OSQLParseNode* pTokenNode, const OSQLParseNode
                 continue;
             }
             int match = -1;
-            if (c == sSearch.charAt(0))
+            if (c == sSearch[0])
                 match=0;
-            else if (c == sSearch.charAt(1))
+            else if (c == sSearch[1])
                 match=1;
 
             if (match != -1)
             {
-                aMatchStr.setCharAt(i, sReplace.charAt(match));
+                aMatchStr[i] = sReplace[(size_t)match];
             }
         }
     }
-    return aMatchStr.makeStringAndClear();
+    return aMatchStr;
 }
 
 
@@ -4398,7 +4398,7 @@ void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     See also getComment()/concatComment() implementation for
     OQueryController::translateStatement().
  */
-static Utf8String delComment( const Utf8String& rQuery )
+static Utf8String delComment(Utf8String const& rQuery)
 {
     // First a quick search if there is any "--" or "//" or "/*", if not then the whole
     // copying loop is pointless.
@@ -4412,7 +4412,8 @@ static Utf8String delComment( const Utf8String& rQuery )
     bool bIsText2  = false;     // 'text'
     bool bComment2 = false;     // /* comment */
     bool bComment  = false;     // -- or // comment
-    Utf8StringBuffer aBuf(nQueryLen);
+    Utf8String aBuf;
+    aBuf.reserve(nQueryLen);
     for (sal_Int32 i=0; i < nQueryLen; ++i)
     {
         if (bComment2)
@@ -4448,13 +4449,13 @@ static Utf8String delComment( const Utf8String& rQuery )
             }
         }
         if (!bComment && !bComment2)
-            aBuf.append( pCopy[i]);
+            aBuf.append(&pCopy[i], 1);
     }
-    return aBuf.makeStringAndClear();
+    return aBuf;
 }
 
 OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
-                                     const Utf8String& rStatement,
+                                     Utf8String const& rStatement,
                                      sal_Bool bInternational)
 {
 
@@ -4547,10 +4548,10 @@ Utf8String OSQLParser::TokenIDToStr(sal_uInt32 nTokenID, const IParseContext* pC
 
 
 //-----------------------------------------------------------------------------
-Utf8String OSQLParser::RuleIDToStr(sal_uInt32 nRuleID)
+Utf8CP OSQLParser::RuleIDToStr(sal_uInt32 nRuleID)
 {
     OSL_ENSURE(nRuleID < (sizeof yytname/sizeof yytname[0]), "OSQLParser::RuleIDToStr: Invalid nRuleId!");
-    return Utf8String(yytname[nRuleID]);
+    return yytname[nRuleID];
 }
 
 //-----------------------------------------------------------------------------
@@ -4662,15 +4663,15 @@ void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, sal_Bool bAppendBlank)
     OSL_ENSURE(pLiteral->isRule(), "This is no ::com::sun::star::chaos::Rule");
     OSL_ENSURE(pLiteral->count() == 2, "OSQLParser::ReduceLiteral() Invalid count");
     OSQLParseNode* pTemp = pLiteral;
-    Utf8StringBuffer aValue(pLiteral->getChild(0)->getTokenValue());
+    Utf8String aValue(pLiteral->getChild(0)->getTokenValue());
     if (bAppendBlank)
     {
-        aValue.appendAscii(" ");
+        aValue.append(" ");
     }
     
     aValue.append(pLiteral->getChild(1)->getTokenValue());
 
-    pLiteral = new OSQLInternalNode(aValue.makeStringAndClear(),SQL_NODE_STRING);
+    pLiteral = new OSQLInternalNode(aValue,SQL_NODE_STRING);
     delete pTemp;
 }
 

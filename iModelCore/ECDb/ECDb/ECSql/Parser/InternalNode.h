@@ -39,7 +39,7 @@ namespace connectivity
             OSQLInternalNode (const sal_Char* pNewValue,
                 SQLNodeType eNodeType,
                 sal_uInt32 nNodeID = 0);
-            OSQLInternalNode (const Utf8String& _rNewValue,
+            OSQLInternalNode (Utf8String const& _rNewValue,
                 SQLNodeType eNodeType,
                 sal_uInt32 nNodeID = 0);
             virtual ~OSQLInternalNode ();

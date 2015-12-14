@@ -2145,6 +2145,45 @@ TEST_F (ECDbMappingTestFixture, InvalidPrimaryKeyInExistingTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle   12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
+    {
+    ECDbR ecdb = SetupECDb("existingtablemapstrategy.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateTable("Foo", "ECInstanceId INTEGER PRIMARY KEY, P1 TEXT, P2 INTEGER"));
+    ecdb.SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>Foo</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "  <ECProperty propertyName='P1' typeName='string'/>"
+        "  <ECProperty propertyName='P2' typeName='int'/>"
+        "  <ECProperty propertyName='P3' typeName='int'/>"
+        "  <ECProperty propertyName='P4' typeName='string'/>"
+        "</ECEntityClass>"
+        "</ECSchema>", true); //schema import should ideally fail for properties without columns in existing table. TFS#268976
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, testItem);
+    ASSERT_FALSE(asserted);
+
+    ASSERT_FALSE(ecdb.ColumnExists("Foo", "P3"));
+    ASSERT_FALSE(ecdb.ColumnExists("Foo", "P4"));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)

@@ -123,7 +123,7 @@ namespace
         @return
         The quoted string.
         */
-    Utf8String SetQuotation(const Utf8String& rValue, const Utf8String& rQuot, const Utf8String& rQuotToReplace)
+    Utf8String SetQuotation(Utf8StringCR rValue, Utf8StringCR rQuot, Utf8StringCR rQuotToReplace)
         {
         Utf8String rNewValue = rQuot;
         rNewValue += rValue;
@@ -303,7 +303,7 @@ namespace connectivity
 
         if (_rxConnection.IsValid())
             {
-            Utf8StringBuffer sBuffer = rString;
+            Utf8String sBuffer = rString;
             try
                 {
                 OSQLParseNode::impl_parseNodeToString_throw(sBuffer,
@@ -320,7 +320,7 @@ namespace connectivity
                 // in the sub queries, but this cannot be the case here, as we do not parse to
                 // SDBC level.
                 }
-            rString = sBuffer.makeStringAndClear();
+            rString = sBuffer;
             }
         }
     //-----------------------------------------------------------------------------
@@ -344,7 +344,7 @@ namespace connectivity
         aParseParam.pParser = &_rParser;
 
         _out_rString = Utf8String();
-        Utf8StringBuffer sBuffer;
+        Utf8String sBuffer;
         bool bSuccess = false;
         try
             {
@@ -356,7 +356,7 @@ namespace connectivity
             if (_pErrorHolder)
                 *_pErrorHolder = e;
             }
-        _out_rString = sBuffer.makeStringAndClear();
+        _out_rString = sBuffer;
         return bSuccess;
         }
 
@@ -370,7 +370,7 @@ namespace connectivity
         }
 
     //-----------------------------------------------------------------------------
-    void OSQLParseNode::impl_parseNodeToString_throw(Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const
+    void OSQLParseNode::impl_parseNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const
         {
         RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::getTableRange");
         if (isToken())
@@ -389,7 +389,7 @@ namespace connectivity
             case parameter:
                 {
                 if (rString.size())
-                    rString.appendAscii(" ");
+                    rString.append(" ");
                 if (nCount == 1)    // ?
                     m_aChildren[0]->impl_parseNodeToString_throw(rString, rParam);
                 else if (nCount == 2)    // :Name
@@ -423,7 +423,7 @@ namespace connectivity
 
             case as:
                 if (rParam.aMetaData.generateASBeforeCorrelationName())
-                    rString.appendAscii(" AS");
+                    rString.append(" AS");
                 bHandled = true;
                 break;
 
@@ -449,7 +449,7 @@ namespace connectivity
                 m_aChildren[0]->impl_parseNodeToString_throw(rString, aNewParam);
                 aNewParam.bQuote = rParam.bQuote;
                 //aNewParam.bPredicate = sal_False; // disable [ ] around names // look at i73215 
-                Utf8StringBuffer aStringPara;
+                Utf8String aStringPara;
                 for (sal_uInt32 i = 1; i < nCount; i++)
                     {
                     const OSQLParseNode * pSubTree = m_aChildren[i];
@@ -459,16 +459,16 @@ namespace connectivity
 
                         // bei den CommaListen zwischen alle Subtrees Commas setzen
                         if ((m_eNodeType == SQL_NODE_COMMALISTRULE) && (i < (nCount - 1)))
-                            aStringPara.appendAscii(",");
+                            aStringPara.append(",");
 
                         if ((m_eNodeType == SQL_NODE_DOTLISTRULE) && (i < (nCount - 1)))
-                            aStringPara.appendAscii(".");
+                            aStringPara.append(".");
 
                         }
                     else
                         i++;
                     }
-                rString.append(aStringPara.makeStringAndClear());
+                rString.append(aStringPara);
                 bHandled = true;
                 }
                 break;
@@ -547,10 +547,10 @@ namespace connectivity
 
                         // bei den CommaListen zwischen alle Subtrees Commas setzen
                         if ((m_eNodeType == SQL_NODE_COMMALISTRULE) && (i != m_aChildren.end()))
-                            rString.appendAscii(",");
+                            rString.append(",");
 
                         if ((m_eNodeType == SQL_NODE_DOTLISTRULE) && (i != m_aChildren.end()))
-                            rString.appendAscii(".");
+                            rString.append(".");
                         }
                     }
                 else
@@ -562,20 +562,20 @@ namespace connectivity
                     if ((m_eNodeType == SQL_NODE_COMMALISTRULE) && (i != m_aChildren.end()))
                         {
                         if (SQL_ISRULE(this, value_exp_commalist) && rParam.bPredicate)
-                            rString.appendAscii(";");
+                            rString.append(";");
                         else
-                            rString.appendAscii(",");
+                            rString.append(",");
                         }
 
                     if ((m_eNodeType == SQL_NODE_DOTLISTRULE) && (i != m_aChildren.end()))
-                        rString.appendAscii(".");
+                        rString.append(".");
                     }
                 }
             }
         }
 
     //-----------------------------------------------------------------------------
-    bool OSQLParseNode::impl_parseTableNameNodeToString_throw(Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const
+    bool OSQLParseNode::impl_parseTableNameNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const
         {
         RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::impl_parseTableNameNodeToString_throw");
         // is the table_name part of a table_ref?
@@ -675,7 +675,7 @@ namespace connectivity
         }
 
     //-----------------------------------------------------------------------------
-    void OSQLParseNode::impl_parseTableRangeNodeToString_throw(Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const
+    void OSQLParseNode::impl_parseTableRangeNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const
         {
         //   RTL_LOGFILE_CONTEXT_AUTHOR( aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::impl_parseTableRangeNodeToString_throw" );
         //   OSL_PRECOND(  ( count() == 2 ) || ( count() == 3 ) || ( count() == 5 ) ,"Illegal count");
@@ -687,7 +687,7 @@ namespace connectivity
         }
 
     //-----------------------------------------------------------------------------
-    void OSQLParseNode::impl_parseLikeNodeToString_throw(Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const
+    void OSQLParseNode::impl_parseLikeNodeToString_throw(Utf8String& rString, const SQLParseNodeParameter& rParam) const
         {
         RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::impl_parseLikeNodeToString_throw");
         OSL_ENSURE(count() == 2, "count != 2: Prepare for GPF");
@@ -737,8 +737,8 @@ namespace connectivity
         if (pParaNode->isToken())
             {
             Utf8String aStr = ConvertLikeToken(pParaNode, pEscNode, rParam.bInternational);
-            rString.appendAscii(" ");
-            rString.append(SetQuotation(aStr, Utf8StringHelper::createFromAscii("\'"), Utf8StringHelper::createFromAscii("\'\'")));
+            rString.append(" ");
+            rString.append(SetQuotation(aStr, Utf8String("\'"), Utf8String("\'\'")));
             }
         else
             pParaNode->impl_parseNodeToString_throw(rString, aNewParam);
@@ -1630,7 +1630,7 @@ namespace connectivity
         OSL_ENSURE(m_eNodeType >= SQL_NODE_RULE && m_eNodeType <= SQL_NODE_CONCAT, "OSQLParseNode: mit unzulaessigem NodeType konstruiert");
         }
     //-----------------------------------------------------------------------------
-    OSQLParseNode::OSQLParseNode(const Utf8String &_rNewValue,
+    OSQLParseNode::OSQLParseNode(Utf8String const&_rNewValue,
         SQLNodeType eNewNodeType,
         sal_uInt32 nNewNodeID)
         :m_pParent(NULL)
@@ -2230,28 +2230,28 @@ namespace connectivity
     // -----------------------------------------------------------------------------
     void OSQLParseNode::showParseTree(Utf8String& rString) const
         {
-        Utf8StringBuffer aBuf;
-        showParseTree(aBuf, 0);
-        rString = aBuf.makeStringAndClear();
+        showParseTree(rString, 0);
         }
 
     // -----------------------------------------------------------------------------
-    void OSQLParseNode::showParseTree(Utf8StringBuffer& _inout_rBuffer, sal_uInt32 nLevel) const
+    void OSQLParseNode::showParseTree(Utf8String& _inout_rBuffer, sal_uInt32 nLevel) const
         {
         RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::showParseTree");
 
         for (sal_uInt32 j = 0; j < nLevel; ++j)
-            _inout_rBuffer.appendAscii("  ");
+            _inout_rBuffer.append("  ");
 
         if (!isToken())
             {
             // Regelnamen als rule: ...
-            _inout_rBuffer.appendAscii("RULE_ID: ");
-            _inout_rBuffer.appendInt32(getRuleID());
-            _inout_rBuffer.append(sal_Char('('));
+            _inout_rBuffer.append("RULE_ID: ");
+            Utf8String ruleIdStr;
+            ruleIdStr.Sprintf("%d ", getRuleID());
+            _inout_rBuffer.append(ruleIdStr);
+            _inout_rBuffer.append("(");
             _inout_rBuffer.append(OSQLParser::RuleIDToStr(getRuleID()));
-            _inout_rBuffer.append(sal_Char(')'));
-            _inout_rBuffer.append(sal_Char('\n'));
+            _inout_rBuffer.append(")");
+            _inout_rBuffer.append("\n");
 
             // hol dir den ersten Subtree
             for (OSQLParseNodes::const_iterator i = m_aChildren.begin();
@@ -2267,63 +2267,63 @@ namespace connectivity
                 {
 
                 case SQL_NODE_KEYWORD:
-                    _inout_rBuffer.appendAscii("SQL_KEYWORD: ");
+                    _inout_rBuffer.append("SQL_KEYWORD: ");
                     _inout_rBuffer.append(OSQLParser::TokenIDToStr(getTokenID()));
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_COMPARISON:
-                    _inout_rBuffer.appendAscii("SQL_COMPARISON: ");
+                    _inout_rBuffer.append("SQL_COMPARISON: ");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_NAME:
-                    _inout_rBuffer.appendAscii("SQL_NAME: ");
-                    _inout_rBuffer.append(sal_Char('"'));
+                    _inout_rBuffer.append("SQL_NAME: ");
+                    _inout_rBuffer.append("\"");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('"'));
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\"");
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_ARRAY_INDEX:
-                    _inout_rBuffer.appendAscii("SQL_ARRAY_INDEX: ");
-                    _inout_rBuffer.append(sal_Char('"'));
+                    _inout_rBuffer.append("SQL_ARRAY_INDEX: ");
+                    _inout_rBuffer.append("\"");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('"'));
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\"");
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_STRING:
-                    _inout_rBuffer.appendAscii("SQL_STRING: ");
-                    _inout_rBuffer.append(sal_Char('\''));
+                    _inout_rBuffer.append("SQL_STRING: ");
+                    _inout_rBuffer.append("\"");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\''));
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\"");
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_INTNUM:
-                    _inout_rBuffer.appendAscii("SQL_INTNUM: ");
+                    _inout_rBuffer.append("SQL_INTNUM: ");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_APPROXNUM:
-                    _inout_rBuffer.appendAscii("SQL_APPROXNUM: ");
+                    _inout_rBuffer.append("SQL_APPROXNUM: ");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_PUNCTUATION:
-                    _inout_rBuffer.appendAscii("SQL_PUNCTUATION: ");
+                    _inout_rBuffer.append("SQL_PUNCTUATION: ");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_AMMSC:
-                    _inout_rBuffer.appendAscii("SQL_AMMSC: ");
+                    _inout_rBuffer.append("SQL_AMMSC: ");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_EQUAL:
@@ -2333,24 +2333,24 @@ namespace connectivity
                 case SQL_NODE_GREATEQ:
                 case SQL_NODE_NOTEQUAL:
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_ACCESS_DATE:
-                    _inout_rBuffer.appendAscii("SQL_ACCESS_DATE: ");
+                    _inout_rBuffer.append("SQL_ACCESS_DATE: ");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_DATE:
-                    _inout_rBuffer.appendAscii("SQL_DATE: ");
+                    _inout_rBuffer.append("SQL_DATE: ");
                     _inout_rBuffer.append(m_aNodeValue);
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("\n");
                     break;
 
                 case SQL_NODE_CONCAT:
-                    _inout_rBuffer.appendAscii("||");
-                    _inout_rBuffer.append(sal_Char('\n'));
+                    _inout_rBuffer.append("||");
+                    _inout_rBuffer.append("\n");
                     break;
 
                 default:
@@ -2408,7 +2408,7 @@ namespace connectivity
         return pOldSubNode;
         }
     // -----------------------------------------------------------------------------
-    void OSQLParseNode::parseLeaf(Utf8StringBuffer& rString, const SQLParseNodeParameter& rParam) const
+    void OSQLParseNode::parseLeaf(Utf8String& rString, const SQLParseNodeParameter& rParam) const
         {
         RTL_LOGFILE_CONTEXT_AUTHOR(aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::parseLeaf");
         // ein Blatt ist gefunden
@@ -2418,7 +2418,7 @@ namespace connectivity
             case SQL_NODE_KEYWORD:
                 {
                 if (rString.size())
-                    rString.appendAscii(" ");
+                    rString.append(" ");
 
                 const Utf8String sT = OSQLParser::TokenIDToStr(m_nNodeID, rParam.bInternational ? &rParam.m_rContext : NULL);
                 rString.append(sT);
@@ -2426,40 +2426,40 @@ namespace connectivity
             case SQL_NODE_STRING:
                 {
                 if (rString.size())
-                    rString.appendAscii(" ");
+                    rString.append(" ");
                 rString.append(SetQuotation(m_aNodeValue, Utf8StringHelper::createFromAscii("\'"), Utf8StringHelper::createFromAscii("\'\'")));
                 break;
                 }
             case SQL_NODE_ARRAY_INDEX:
                 {
                 if (rString.size())
-                    rString.appendAscii(" ");
-                rString.appendAscii("[");
+                    rString.append(" ");
+                rString.append("[");
                 rString.append(m_aNodeValue);
-                rString.appendAscii("]");
+                rString.append("]");
                 break;
                 }
             case SQL_NODE_NAME:
                 if (rString.size())
                     {
-                    switch (rString.charAt(rString.size() - 1))
+                    switch (rString[rString.size() - 1])
                         {
                         case ' ':
                         case '.': break;
                         default:
                             if (!rParam.aMetaData.getCatalogSeparator().size()
-                                || rString.charAt(rString.size() - 1) != Utf8StringHelper::toChar(rParam.aMetaData.getCatalogSeparator())
+                                || rString[rString.size() - 1] != Utf8StringHelper::toChar(rParam.aMetaData.getCatalogSeparator())
                                 )
-                                rString.appendAscii(" "); break;
+                                rString.append(" "); break;
                         }
                     }
                 if (rParam.bQuote)
                     {
                     if (rParam.bPredicate)
                         {
-                        rString.appendAscii("[");
+                        rString.append("[");
                         rString.append(m_aNodeValue);
-                        rString.appendAscii("]");
+                        rString.append("]");
                         }
                     else
                         rString.append(SetQuotation(m_aNodeValue,
@@ -2470,10 +2470,10 @@ namespace connectivity
                 break;
             case SQL_NODE_ACCESS_DATE:
                 if (rString.size())
-                    rString.appendAscii(" ");
-                rString.appendAscii("#");
+                    rString.append(" ");
+                rString.append("#");
                 rString.append(m_aNodeValue);
-                rString.appendAscii("#");
+                rString.append("#");
                 break;
 
             case SQL_NODE_INTNUM:
@@ -2484,7 +2484,7 @@ namespace connectivity
                     aTmp = Utf8StringHelper::replace(aTmp, '.', rParam.cDecSep);
 
                 if (rString.size())
-                    rString.appendAscii(" ");
+                    rString.append(" ");
                 rString.append(aTmp);
 
                 }   break;
@@ -2498,15 +2498,15 @@ namespace connectivity
             default:
                 if (rString.size() && Utf8StringHelper::toChar(m_aNodeValue) != '.' && Utf8StringHelper::toChar(m_aNodeValue) != ':')
                     {
-                    switch (rString.charAt(rString.size() - 1))
+                    switch (rString[rString.size() - 1])
                         {
                         case ' ':
                         case '.': break;
                         default:
                             if (!rParam.aMetaData.getCatalogSeparator().size()
-                                || rString.charAt(rString.size() - 1) != Utf8StringHelper::toChar(rParam.aMetaData.getCatalogSeparator())
+                                || rString[rString.size() - 1] != Utf8StringHelper::toChar(rParam.aMetaData.getCatalogSeparator())
                                 )
-                                rString.appendAscii(" "); break;
+                                rString.append(" "); break;
                         }
                     }
                 rString.append(m_aNodeValue);

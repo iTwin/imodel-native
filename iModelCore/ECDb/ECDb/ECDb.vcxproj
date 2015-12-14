@@ -201,7 +201,6 @@
     <ClInclude Include="ECSql\Parser\InternalNode.h" />
     <ClInclude Include="ECSql\Parser\IParseContext.h" />
     <ClInclude Include="ECSql\Parser\SqlBison.h" />
-    <ClInclude Include="ECSql\Parser\SqlBison.hpp" />
     <ClInclude Include="ECSql\Parser\SqlError.h" />
     <ClInclude Include="ECSql\Parser\SqlNode.h" />
     <ClInclude Include="ECSql\Parser\SqlParse.h" />

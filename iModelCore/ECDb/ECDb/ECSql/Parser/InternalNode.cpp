@@ -40,7 +40,7 @@ OSQLInternalNode::OSQLInternalNode (const sal_Char* pNewValue,
     }
 
 //-----------------------------------------------------------------------------
-OSQLInternalNode::OSQLInternalNode (const Utf8String &_NewValue,
+OSQLInternalNode::OSQLInternalNode (Utf8String const& _NewValue,
     SQLNodeType eNodeType,
     sal_uInt32 nNodeID)
     :OSQLParseNode (_NewValue, eNodeType, nNodeID)

@@ -189,7 +189,7 @@ namespace connectivity
 
             // Parsing an SQLStatement
             OSQLParseNode* parseTree (Utf8String& rErrorMessage,
-                const Utf8String& rStatement,
+                Utf8String const& rStatement,
                 sal_Bool bInternational = sal_False);
 
             // Check a Predicate
@@ -211,7 +211,7 @@ namespace connectivity
 
             // RuleIDToStr gibt den zu einer RuleID gehoerenden Utf8String zurueck
             // (Leerstring, falls nicht gefunden)
-            static Utf8String RuleIDToStr (sal_uInt32 nRuleID);
+            static Utf8CP RuleIDToStr (sal_uInt32 nRuleID);
 
             // StrToRuleID berechnet zu einem Utf8String die RuleID (d.h. ::com::sun::star::sdbcx::Index in yytname)
             // (0, falls nicht gefunden). Die Suche nach der ID aufgrund eines Strings ist
