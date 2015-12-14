@@ -536,7 +536,6 @@ void QueryViewController::_DrawView(ViewContextR context)
 #endif
     const uint32_t intermediatePaintsThreshold = (uint32_t)(1.1 * m_intermediatePaintsThreshold);
 
-    context.SetFilterLODFlag(FILTER_LOD_Off); // there's no point in doing lod filtering on the elements we've found by a QueryView
 
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
     uint32_t numDrawn = 0;

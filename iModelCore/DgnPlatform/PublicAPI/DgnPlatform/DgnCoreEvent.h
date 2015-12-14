@@ -86,7 +86,6 @@ template <class CALLER> void CallAllHandlers (CALLER& caller)
     if (m_entries.empty())
         return;
 
-
     m_locked = true;
     try
         {

@@ -31,7 +31,7 @@ struct DgnGeomPart : RefCountedBase
 private:
     DgnGeomPartId   m_id;       //!< Id of this geometry part.  Invalid until DgnGeomParts::InsertGeomPart is called or part is read from the DgnDb.
     Utf8String      m_code;     //!< Code of this geometry part for "named" look-ups. Code is optional.
-    GeometryStream      m_geometry; //!< Geometry of part
+    GeometryStream  m_geometry; //!< Geometry of part
 
     explicit DgnGeomPart(Utf8CP code) {SetCode(code);}
 

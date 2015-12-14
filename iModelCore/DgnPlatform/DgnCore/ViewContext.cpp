@@ -18,18 +18,7 @@ static DRange3d const s_fullNpcRange =
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewContext::ViewContext()
     {
-    m_dgnDb = nullptr;
-    m_viewport = nullptr;
     m_purpose = DrawPurpose::NotSpecified;
-    m_isAttached = false;
-    m_is3dView = true;
-    m_useNpcSubRange = false;
-    m_filterLOD = FILTER_LOD_ShowRange;
-    m_wantMaterials = false;
-    m_ignoreViewRange = false;
-    m_hiliteState = DgnElement::Hilited::None;
-    m_scanRangeValid = false;
-    m_levelOfDetail = 1.0;
     m_worldToNpc.InitIdentity();
     m_worldToView.InitIdentity();
     }
@@ -58,15 +47,6 @@ void ViewContext::NpcToView(DPoint3dP viewVec, DPoint3dCP npcVec, int nPts) cons
 void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const
     {
     m_worldToNpc.M1.MultiplyAndRenormalize(worldPts, npcPts, nPts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::InitDisplayPriorityRange()
-    {
-    m_displayPriorityRange[0] = (m_is3dView ? 0 : -MAX_HW_DISPLAYPRIORITY);
-    m_displayPriorityRange[1] = (m_is3dView ? 0 : MAX_HW_DISPLAYPRIORITY);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -184,7 +164,6 @@ void ViewContext::_PopClip()
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
     m_dgnDb = &dgnDb;
-    InitDisplayPriorityRange();
     _SetupScanCriteria();
     }
 
@@ -217,8 +196,6 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     m_viewport = viewport;
     m_purpose = purpose;
     ClearAborted();
-
-    m_filterLOD = FILTER_LOD_ShowRange;
 
     m_is3dView = viewport->Is3dView();
     SetViewFlags(viewport->GetViewFlags());
@@ -295,21 +272,6 @@ void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) 
     {
     m_worldToView.M1.MultiplyAndRenormalize(worldPts, viewPts, nPts);
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
-    {
-    LineStyleSymbR  tSymb = (m_ovrGraphicParams.GetFlags() & OvrGraphicParams::FLAGS_Style) ? m_ovrGraphicParams.GetMatSymbR().GetLineStyleSymbR() : m_graphicParams.GetLineStyleSymbR();
-
-    if (symb)
-        *symb = &tSymb;
-
-    return nullptr == tSymb.GetTexture() ? tSymb.GetILineStyle() : nullptr;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * convert the view context polyhedron to scan parameters in the scanCriteria.
@@ -561,12 +523,12 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
     return SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_VisitTransientGraphics(bool isPreUpdate)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Render::Output*    output = (IsAttached() ? GetViewport()->GetIViewOutput() : nullptr);
     bool            restoreZWrite = (output && isPreUpdate ? output->EnableZWriting(false) : false);
 
@@ -574,8 +536,8 @@ void ViewContext::_VisitTransientGraphics(bool isPreUpdate)
 
     if (restoreZWrite)
         output->EnableZWriting(true);
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * private callback (called from scanner)
@@ -767,7 +729,7 @@ void ViewContext::SetSubRectNpc(DRange3dCR subRect)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::VisitAllViewElements(bool includeTransients, BSIRectCP updateRect)
+bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
     {
     ClearAborted();
     if (nullptr != updateRect)
@@ -776,7 +738,7 @@ bool ViewContext::VisitAllViewElements(bool includeTransients, BSIRectCP updateR
     _InitScanRangeAndPolyhedron();
 
     SetScanReturn();
-    _VisitAllModelElements(includeTransients);
+    _VisitAllModelElements();
 
     return WasAborted();
     }
@@ -784,11 +746,8 @@ bool ViewContext::VisitAllViewElements(bool includeTransients, BSIRectCP updateR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_VisitAllModelElements(bool includeTransients)
+bool ViewContext::_VisitAllModelElements()
     {
-    if (includeTransients)
-        _VisitTransientGraphics(true);
-
     PhysicalViewControllerCP physController = m_viewport->GetPhysicalViewControllerCP();
     ClipVectorPtr clipVector = physController ? physController->GetClipVector() : nullptr;
     if (clipVector.IsValid())
@@ -803,9 +762,6 @@ bool ViewContext::_VisitAllModelElements(bool includeTransients)
 #else
         PopClip();
 #endif
-
-    if (includeTransients) // Give post-update IViewTransients a chance to display even if aborted the element draw...
-        _VisitTransientGraphics(false);
 
     return WasAborted();
     }
@@ -1541,16 +1497,4 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
 void GeometryParams::Resolve(ViewContextR context)
     {
     Resolve(context.GetDgnDb(), context.GetViewport());
-
-    if (context.Is3dView())
-        {
-        m_netPriority = 0;
-        }
-    else
-        {
-        int32_t displayRange[2];
-
-        if (context.GetDisplayPriorityRange(displayRange[0], displayRange[1]))
-            LIMIT_RANGE (displayRange[0], displayRange[1], m_netPriority);
-        }
     }

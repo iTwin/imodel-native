@@ -533,6 +533,17 @@ DgnAuthority::Code AnnotationTextStyle::CreateCodeFromName(Utf8CP nameCP)
     return createResourceCode(name, DGN_CLASSNAME_AnnotationTextStyle);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+DgnAuthority::Code LineStyleElement::CreateCodeFromName(Utf8CP nameCP)
+    {
+    Utf8String name;
+    name.AssignOrClear(nameCP);
+
+    return createResourceCode(name, DGN_CLASSNAME_LineStyle);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -610,5 +621,20 @@ void DgnAuthority::Code::From(DgnAuthorityId id, Utf8StringCR value, Utf8StringC
     m_authority = id;
     m_value = value;
     m_nameSpace = nameSpace;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AuthorityIssuedCode::operator<(AuthorityIssuedCode const& rhs) const
+    {
+    if (GetAuthority().GetValueUnchecked() != rhs.GetAuthority().GetValueUnchecked())
+        return GetAuthority().GetValueUnchecked() < rhs.GetAuthority().GetValueUnchecked();
+
+    int cmp = GetValue().CompareTo(rhs.GetValue());
+    if (0 != cmp)
+        return cmp < 0;
+
+    return GetNamespace().CompareTo(rhs.GetNamespace()) < 0;
     }
 

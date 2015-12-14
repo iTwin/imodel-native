@@ -42,7 +42,6 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTableElement);
 #define DGN_CLASSNAME_AnnotationTableColumn     "AnnotationTableColumn"
 #define DGN_CLASSNAME_AnnotationTableCell       "AnnotationTableCell"
 #define DGN_CLASSNAME_AnnotationTableMerge      "AnnotationTableMerge"
-#define DGN_CLASSNAME_AnnotationTableFill       "AnnotationTableFill"
 #define DGN_CLASSNAME_AnnotationTableSymbology  "AnnotationTableSymbology"
 #define DGN_CLASSNAME_AnnotationTableEdgeRun    "AnnotationTableEdgeRun"
 
@@ -656,7 +655,6 @@ struct IFillRunInitializer
 struct FillRuns : bvector<AnnotationTableFillRun>
 {
 FillRuns::iterator  CreateGap (FillRunsP removedRuns, uint32_t gapStartIndex, uint32_t gapSpan);
-void                Insert (AnnotationTableFillRunCR newFillRun);
 
 void                InsertSpan (uint32_t startIndex, uint32_t span, IFillRunInitializer const&);
 
@@ -794,8 +792,6 @@ private:
         SymbologyKey    = 4,
         };
 
-    void                                CopyDataFrom (AnnotationTableEdgeRunCR);
-
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::EdgeRun; }
@@ -814,6 +810,8 @@ public:
 
     bool                            CanMergeWith (AnnotationTableEdgeRunCR other) const;
     void                            OnRemoved (AnnotationTableElementR table);
+
+    void                            CopyDataFrom (AnnotationTableEdgeRunCR);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -899,7 +897,7 @@ public:
     virtual double                  _GetFullyExpandedHeight () const = 0;   // Natural height of the content
     virtual double                  _GetFullyCompressedWidth () const = 0;  // Minimum width supported by the content
     virtual double                  _GetFullyExpandedWidth () const = 0;    // Natural width of the content
-    virtual void                    _Draw (DPoint3dCR origin, RotMatrixCR, TableCellAlignment, ViewContextR) const {}
+    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, ElementGeometryBuilderR) const {}
 
     virtual void                    _SetAlignment (TableCellAlignment) {};
     virtual void                    _SetOrientation (TableCellOrientation) {};
@@ -952,6 +950,7 @@ public:
     virtual double                  _GetFullyExpandedWidth () const override;
     virtual double                  _GetFullyCompressedHeight () const override;
     virtual double                  _GetFullyExpandedHeight () const override;
+    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, ElementGeometryBuilderR) const;
 
     virtual void                    _SetAlignment (TableCellAlignment) override;
     virtual void                    _SetOrientation (TableCellOrientation) override;
@@ -1020,9 +1019,10 @@ public:
 
     void                                SetIndex (AnnotationTableCellIndexCR val);
 
-    RotMatrix                           GetContentRotation () const;
-    DPoint3d                            GetContentOrigin (DPoint3dCR cellOrigin, DVec3dCR xVec, DVec3dCR yVec) const;
+    DVec2d                              GetContentDirection () const;
+    DPoint2d                            GetContentOrigin (DPoint2dCR cellOrigin, DVec2dCR xVec, DVec2dCR yVec) const;
     DVec2d                              GetContentSize () const;
+    void                                AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, ElementGeometryBuilderR builder) const;
     double                              GetFullyCompressedContentHeight () const;
     double                              GetFullyExpandedContentHeight () const;
     double                              GetFullyCompressedContentWidth () const;
@@ -1047,7 +1047,8 @@ public:
 
     void                                ClearFillKey ();
     void                                SetFillKey (uint32_t fillKey);
-    void                                ApplyToFillRuns ();
+    bool                                HasFillKey () const;
+    uint32_t                            GetFillKey () const;
 
     void                                SetAlignmentDirect (TableCellAlignment);
     void                                SetOrientationDirect (TableCellOrientation);
@@ -1058,6 +1059,24 @@ public:
     void                                ClearBinaryTextBlock ();
 
     static AnnotationTextBlock::HorizontalJustification ToTextBlockJustification (TableCellAlignment);
+
+    enum class HorizontalAlignment
+        {
+        Left    = 0,
+        Center  = 1,
+        Right   = 2,
+        };
+
+    enum class VerticalAlignment
+        {
+        Top     = 0,
+        Middle  = 1,
+        Bottom  = 2,
+        };
+
+    static HorizontalAlignment  ToHorizontalAlignment (TableCellAlignment);
+    static VerticalAlignment    ToVerticalAlignment   (TableCellAlignment);
+    static TableCellAlignment   ToTableCellAlignment  (HorizontalAlignment, VerticalAlignment);
 
 //__PUBLISH_SECTION_START__
 
@@ -1141,7 +1160,6 @@ private:
     TableDoubleValue                m_height;
     bvector<AnnotationTableCell>    m_cells;
     EdgeRuns                        m_edgeRuns;
-    FillRuns                        m_fillRuns;
 
 //__PUBLISH_SECTION_END__
     enum class PropIndex
@@ -1178,8 +1196,9 @@ public:
     EdgeRunsR                           GetEdgeRuns()       { return m_edgeRuns; }
     EdgeRunsCR                          GetEdgeRuns() const { return m_edgeRuns; }
     EdgeRunsR                           GetEdgeRuns(bool top);
-    FillRunsR                           GetFillRuns()       { return m_fillRuns; }
-    FillRunsCR                          GetFillRuns() const { return m_fillRuns; }
+
+    double                              GetLength () const  { return GetHeight(); }
+    void                                FindMergedLength (double& mergedLength, uint32_t& mergedCount) const;
 
     void                                SetHeightLock    (bool);
     void                                SetHeightDirect (double);
@@ -1274,6 +1293,9 @@ public:
     EdgeRunsR                           GetEdgeRuns()       { return m_edgeRuns; }
     EdgeRunsCR                          GetEdgeRuns() const { return m_edgeRuns; }
     EdgeRunsR                           GetEdgeRuns(bool left);
+
+    double                              GetLength () const  { return GetWidth(); }
+    void                                FindMergedLength (double& mergedLength, uint32_t& mergedCount) const;
 
     void                                SetWidthLock    (bool);
     void                                SetWidthDirect (double);
@@ -1423,6 +1445,7 @@ private:
 
     int         GetInteger  (PropIndex) const;
     int         GetUInteger (PropIndex) const;
+    bool        GetBoolean  (PropIndex, bool defVal) const;
     double      GetDouble   (PropIndex) const;
     DgnElementId  GetStyleId (PropIndex) const;
 
@@ -1501,14 +1524,14 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationTableElement : DrawingElement
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationTableElement : AnnotationElement
 {
 //__PUBLISH_SECTION_END__
 friend AnnotationTableSerializer;
 //__PUBLISH_SECTION_START__
 
 private:
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, DrawingElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationElement) 
 
     TableHeaderAspect                       m_tableHeader;
     SymbologyDictionary                     m_symbologyDictionary;
@@ -1543,6 +1566,7 @@ private:
     void        SetFooterRowCount    (uint32_t);
 
     bool        HasOverlappingMerges (bvector<AnnotationTableCellP>& consumedRoots, AnnotationTableCellIndexCR rootIndex, uint32_t numRows, uint32_t numCols);
+    double      GetDefaultBreakGap () const;
 
     enum class  TextSymb { Color, Weight };
     enum class  TextSymbAction { Store, Clear };
@@ -1577,9 +1601,6 @@ public:
 
     AnnotationTableCellP            GetCell (AnnotationTableCellIndexCR cellIndex, bool allowMergedInteriors) const;
 
-#if defined (NEEDSWORK)
-    TableEdgeStrokes                ComputeEdgeStrokes (bool horizontal, SubTablesCR) const;
-#endif
     EdgeRunsR                       GetTopEdgeRuns ()          { return m_topEdgeRuns; }
     EdgeRunsCR                      GetTopEdgeRuns () const    { return m_topEdgeRuns; }
     EdgeRunsR                       GetLeftEdgeRuns ()         { return m_leftEdgeRuns; }
@@ -1587,9 +1608,6 @@ public:
     EdgeRunsP                       GetEdgeRuns (EdgeRunHostType, uint32_t hostIndex);
     EdgeRunsCP                      GetEdgeRuns (EdgeRunHostType, uint32_t hostIndex) const;
 
-#if defined (NEEDSWORK)
-    TableFillBoxes                  ComputeFillBoxes (SubTablesCR)  const;
-#endif
     uint32_t                        GetFillSymbologyForRow (uint32_t) const;
     uint32_t                        GetFillSymbologyForOddRow()     const;
     uint32_t                        GetFillSymbologyForEvenRow()    const;
@@ -1648,16 +1666,14 @@ DGNPLATFORM_EXPORT  uint32_t                        GetHeaderRowCount ()        
 DGNPLATFORM_EXPORT  uint32_t                        GetFooterRowCount ()                    const;  //!<    Get the number of footer rows in this table.
 DGNPLATFORM_EXPORT  uint32_t                        GetHeaderColumnCount ()                 const;  //!<    Get the number of header columns in this table.
 DGNPLATFORM_EXPORT  uint32_t                        GetFooterColumnCount ()                 const;  //!<    Get the number of footer columns in this table.
-#if defined (NEEDSWORK)
 DGNPLATFORM_EXPORT  TableBreakType                  GetBreakType ()                         const;  //!<    Get the break type of this table.
 DGNPLATFORM_EXPORT  TableBreakPosition              GetBreakPosition ()                     const;  //!<    Get the break position for this table.
 DGNPLATFORM_EXPORT  double                          GetBreakLength ()                       const;  //!<    Get the break length in UORs for this table.  Any cells that don't fit within this length will flow into a new subtable.
 DGNPLATFORM_EXPORT  double                          GetBreakGap ()                          const;  //!<    Get the break gap in UORs for this table.  This controlls the spacing between subtables.
 DGNPLATFORM_EXPORT  bool                            GetRepeatHeaders ()                     const;  //!<    Get the flag defining if header rows will be repeated in sub tables created by breaking.
 DGNPLATFORM_EXPORT  bool                            GetRepeatFooters ()                     const;  //!<    Get the flag defining if footer rows will be repeated in sub tables created by breaking.
-#endif
-DGNPLATFORM_EXPORT double                           GetDefaultColumnWidth ()                const;  //!<    Get the default column width in UORs which will be used by columns that don't have a specific width set.
-DGNPLATFORM_EXPORT double                           GetDefaultRowHeight ()                  const;  //!<    Get the default row height in UORs which will be used by rows that don't have a specific height set.
+DGNPLATFORM_EXPORT  double                          GetDefaultColumnWidth ()                const;  //!<    Get the default column width in UORs which will be used by columns that don't have a specific width set.
+DGNPLATFORM_EXPORT  double                          GetDefaultRowHeight ()                  const;  //!<    Get the default row height in UORs which will be used by rows that don't have a specific height set.
 DGNPLATFORM_EXPORT  TableCellMarginValues           GetDefaultMargins ()                    const;  //!<    Get the default cell margins in UORs which will be used by cells that don't have specific margins set.
 DGNPLATFORM_EXPORT  ColorDef                        GetDefaultLineColor ()                  const;  //!<    Get the default line color which will be used by edge lines that don't have a specific color set.
 DGNPLATFORM_EXPORT  DgnStyleId                      GetDefaultLineStyleId ()                const;  //!<    Get the default line style which will be used by edge lines that don't have a specific style set.
@@ -1775,14 +1791,321 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The ElementHandler for AnnotationTableElement
     //=======================================================================================
-    struct AnnotationTableHandler : Drawing
+    struct AnnotationTableHandler : Annotation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationTableElement, AnnotationTableHandler, Drawing, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTableElement, AnnotationTableElement, AnnotationTableHandler, Annotation, DGNPLATFORM_EXPORT);
     };
 };
 
+//__PUBLISH_SECTION_END__
+typedef bvector<AnnotationTableRowCP>     RowVector;
+typedef bvector<AnnotationTableColumnCP>  ColumnVector;
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct          SubTable
+{
+public:
+    DPoint2d                            m_origin;
+    DVec2d                              m_offset;
+    DVec2d                              m_size;
+    bvector<AnnotationTableRowCP>       m_rows;
+    bvector<AnnotationTableColumnCP>    m_columns;
 
+    /* ctor */  SubTable () { m_size.Zero(); }
+    void        AddRow (AnnotationTableRowCP);
+    void        AddColumn (AnnotationTableColumnCP);
+};
+
+struct SubTable;
+typedef bvector<SubTable>   SubTables;
+typedef SubTables*          SubTablesP;
+typedef SubTables&          SubTablesR;
+typedef SubTables const*    SubTablesCP;
+typedef SubTables const&    SubTablesCR;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct          TablePositionedCell
+{
+AnnotationTableCellP    m_cell;
+DPoint2d                m_origin;
+};
+
+struct   TablePositionedCells;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct      TablePositionedCellIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, TablePositionedCell const>
+{
+private:
+    friend struct   TablePositionedCells;
+
+    TablePositionedCell             m_positionedCell;
+    double                          m_runningRowHeight;
+    SubTables::const_iterator       m_subTableIter;
+    SubTables::const_iterator       m_subTableIterEnd;
+    RowVector::const_iterator       m_rowIter;
+    RowVector::const_iterator       m_rowIterEnd;
+    ColumnVector::const_iterator    m_columnIter;
+    ColumnVector::const_iterator    m_columnIterEnd;
+
+    TablePositionedCells const*     m_cellCollection;
+
+    /* ctor */  TablePositionedCellIterator (TablePositionedCells const& collection, bool begin);
+
+    AnnotationTableCellP  CellFromIterators   ();
+    void            InitForNewSubTable  ();
+
+public:
+    DGNPLATFORM_EXPORT bool                 IsDifferent(TablePositionedCellIterator const& rhs) const;
+    DGNPLATFORM_EXPORT void                 MoveToNext ();
+    DGNPLATFORM_EXPORT TablePositionedCell const& GetCurrent () const;
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct      TablePositionedCells
+{
+private:
+    //friend struct   AnnotationTable;
+    friend struct   TablePositionedCellIterator;
+
+    bool                        m_ownSubTables;
+    SubTablesCP                 m_subTables;
+    AnnotationTableElementPtr   m_table;
+
+public:
+    DGNPLATFORM_EXPORT TablePositionedCells (AnnotationTableElementCR, SubTablesCP, bool ownSubTables);
+    DGNPLATFORM_EXPORT ~TablePositionedCells ();
+
+    typedef VirtualCollectionIterator<TablePositionedCellIterator> const_iterator;
+    typedef const_iterator iterator;    //!< only const iteration is possible
+
+public:
+    DGNPLATFORM_EXPORT const_iterator begin () const;           //!< Returns an iterator to the first element in the collection.
+    DGNPLATFORM_EXPORT const_iterator end ()   const;           //!< Returns an iterator that points to the end of the collection.
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct          TableFillBox
+{
+uint32_t        m_fillKey;
+uint32_t        m_rowIndex;
+DPoint2d        m_origin;
+double          m_width;
+double          m_height;
+};
+
+struct   TableFillBoxes;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct  TableFillBoxIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, TableFillBox const>
+{
+private:
+    friend struct   TableFillBoxes;
+
+    TableFillBox                        m_fillBox;
+    TableFillBoxes const*               m_fillCollection;
+
+    bool                                m_atEnd;
+    DPoint2d                            m_rowOrigin;
+    SubTables::const_iterator           m_subTableIter;
+    SubTables::const_iterator           m_subTableIterEnd;
+    RowVector::const_iterator           m_rowIter;
+    RowVector::const_iterator           m_rowIterEnd;
+    ColumnVector::const_iterator        m_columnIter;
+    ColumnVector::const_iterator        m_columnIterEnd;
+    FillRuns::const_iterator            m_fillRunIter;
+    FillRuns::const_iterator            m_fillRunIterEnd;
+
+    void            InitForNewSubTable();
+    void            InitForNewRow();
+    BentleyStatus   MoveToNextRow();
+    void            GetHeightFromFillRun();
+
+    TableFillBoxIterator (TableFillBoxes const& collection, bool begin);
+
+public:
+    bool                    IsDifferent (TableFillBoxIterator const& rhs) const;
+    void                    MoveToNext  ();
+    TableFillBox const&     GetCurrent  () const;
+};
+
+struct   AnnotationTableStroker;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct          TableFillBoxes
+{
+private:
+    friend struct   AnnotationTableStroker;
+    friend struct   TableFillBoxIterator;
+
+    AnnotationTableStroker const&   m_stroker;
+    SubTablesCR                     m_subTables;
+
+    TableFillBoxes (AnnotationTableStroker const&, SubTablesCR);
+
+    AnnotationTableElementCR    GetTable() const;
+    FillRunsCR                  GetFillRuns(uint32_t rowIndex) const;
+
+public:
+    typedef VirtualCollectionIterator<TableFillBoxIterator> const_iterator;
+    typedef const_iterator iterator;    //!< only const iteration is possible
+
+public:
+    const_iterator begin () const;           //!< Returns an iterator to the first element in the collection.
+    const_iterator end ()   const;           //!< Returns an iterator that points to the end of the collection.
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct          TableEdgeStroke
+{
+uint32_t        m_symbologyKey;
+DPoint2d        m_origin;
+DPoint2d        m_end;
+};
+
+struct   TableEdgeStrokes;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct  TableEdgeStrokeIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, TableEdgeStroke const>
+{
+private:
+    friend struct   TableEdgeStrokes;
+
+    enum class StrokePoint { Origin, End };
+
+    TableEdgeStroke                     m_stroke;
+    TableEdgeStrokes const*             m_strokeCollection;
+
+    bool                                m_atEnd;
+    bool                                m_firstEdge;
+    DPoint2d                            m_hostOrigin;
+    EdgeRuns::const_iterator            m_runIter;
+    EdgeRuns::const_iterator            m_runIterEnd;
+    SubTables::const_iterator           m_subTableIter;
+    SubTables::const_iterator           m_subTableIterEnd;
+    RowVector::const_iterator           m_rowIter;
+    RowVector::const_iterator           m_rowIterEnd;
+    ColumnVector::const_iterator        m_columnIter;
+    ColumnVector::const_iterator        m_columnIterEnd;
+
+    TableEdgeStrokeIterator (TableEdgeStrokes const& collection, bool begin);
+
+    double          GetComponentLength (uint32_t index, bool span) const;
+    DVec2dCP        GetComponentDirection (bool host) const;
+    DVec2d          GetHostVector (uint32_t index, bool span) const;
+    DVec2d          GetHostLengthVector (uint32_t index) const;
+    DVec2d          GetHostSpanVector (uint32_t index) const;
+
+    bool            AtEndOfSpan();
+    uint32_t        GetSpanIndex();
+    bool            AdvanceAlongSpan(StrokePoint);
+    BentleyStatus   IncrementHostIter (uint32_t& newIndex);
+    BentleyStatus   MoveToNextHost();
+
+    void            InitRowIter();
+    void            InitColumnIter();
+    void            InitRunIterFromStart();
+    void            InitRunIterFromHost (uint32_t index);
+    void            InitForNewSubTable ();
+
+public:
+    bool                        IsDifferent(TableEdgeStrokeIterator const& rhs) const;
+    void                        MoveToNext ();
+    TableEdgeStroke const&      GetCurrent () const;
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct          TableEdgeStrokes
+{
+private:
+    friend struct   AnnotationTableStroker;
+    friend struct   TableEdgeStrokeIterator;
+
+    bool                        m_horizontal;
+    AnnotationTableElementPtr   m_table;
+    SubTablesCR                 m_subTables;
+
+    TableEdgeStrokes (AnnotationTableElementCR, bool horizontal, SubTablesCR subTables);
+
+public:
+    typedef VirtualCollectionIterator<TableEdgeStrokeIterator> const_iterator;
+    typedef const_iterator iterator;    //!< only const iteration is possible
+
+public:
+    const_iterator begin () const;      //!< Returns an iterator to the first element in the collection.
+    const_iterator end ()   const;      //!< Returns an iterator that points to the end of the collection.
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct          AnnotationTableStroker
+{
+private:
+    AnnotationTableElementCR    m_table;
+    ElementGeometryBuilderR     m_geomBuilder;
+    bvector<FillRuns>           m_allFillRuns;
+
+    bool                    m_addFills;
+    bool                    m_addTextBlocks;
+    SubTables               m_subTables;
+
+    void                    AppendRectangle (DPoint2dCR origin, double width, double height);
+
+    void                    AppendFillBox (TableFillBox const&);
+    void                    AppendEdgeStroke (TableEdgeStroke const&, bool horizontal);
+    void                    AppendCell (AnnotationTableCellCR, DPoint2dCR cellOrigin);
+
+    void                    LayoutSubTables (SubTablesR subTables) const;
+    TableEdgeStrokes        ComputeEdgeStrokes (bool horizontal, SubTablesCR subTables) const;
+    TableFillBoxes          ComputeFillBoxes (SubTablesCR subTables) const;
+    TablePositionedCells    ComputePositionedCells (SubTablesCR) const;
+
+    void                    ApplyCellToFillRuns (AnnotationTableCellCR cell);
+
+#if defined (NEEDSWORK)
+    void            DrawHilitedSubEntitiesGeometry ();
+#endif
+
+public:
+    AnnotationTableStroker (AnnotationTableElementCR table, ElementGeometryBuilderR builder);
+
+    AnnotationTableElementCR    GetTable () const { return m_table; }
+    FillRunsCR                  GetFillRuns (uint32_t rowIndex) const { return m_allFillRuns[rowIndex]; }
+
+    void            WantAddTextBlocks          (bool v) { m_addTextBlocks = v; }
+    void            WantAddFill                (bool v) { m_addFills = v; }
+
+    void            AppendTableGeometry ();
+#if defined (NEEDSWORK)
+    void            StrokeBoundary (bool filled);
+    void            DrawHilitedSubEntities ();
+
+    SubTablesCR     GetSubTables () { return m_subTables; }
+    static UInt32   GetTableHiliteColor (ViewContextR context);
+#endif
+};
+
+//__PUBLISH_SECTION_START__
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

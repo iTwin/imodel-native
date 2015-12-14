@@ -239,9 +239,14 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
 
             collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Edges | ElementGeometryCollection::BRepOutput::FaceIso);
 
-            for (ElementGeometryPtr elemGeom : collection)
+            for (auto iter : collection)
                 {
-                context.GetGeometryStreamEntryIdR() = collection.GetGeometryStreamEntryId();
+                ElementGeometryPtr elemGeom = iter.GetGeometryPtr();
+
+                if (!elemGeom.IsValid())
+                    continue;
+
+                context.GetGeometryStreamEntryIdR() = iter.GetGeometryStreamEntryId();
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 context.GetCurrentGeometryParams() = collection.GetGeometryParams();
@@ -251,8 +256,8 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
                 elemGeom->Draw(context);
                 context.PopTransformClip();
 #else
-                Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), collection.GetGeometryToWorld()));
-                GeometryParams geomParams(collection.GetGeometryParams());
+                Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
+                GeometryParams geomParams(iter.GetGeometryParams());
 
                 context.CookGeometryParams(geomParams, *graphic);
                 elemGeom->Draw(*graphic, context);

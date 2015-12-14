@@ -100,6 +100,9 @@ struct DgnScript
     @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
     **/
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options);
+
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
+
 }; 
 
 END_BENTLEY_DGN_NAMESPACE

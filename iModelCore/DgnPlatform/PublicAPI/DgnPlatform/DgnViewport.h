@@ -206,14 +206,6 @@ public:
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 
-//=======================================================================================
-//! Interface to draw information into a viewport while a tool is active.
-// @bsiclass                                                    Keith.Bentley   06/14
-//=======================================================================================
-struct ToolGraphicsHandler
-{
-    virtual void _DrawToolGraphics(ViewContextR context, bool preUpdate) = 0;
-};
 
 /*=================================================================================**//**
 * @bsiclass
@@ -410,7 +402,6 @@ protected:
     double          m_frustFraction;
     double          m_minLOD;                   // default level of detail filter size
     Utf8String      m_viewTitle;
-    ToolGraphicsHandler* m_toolGraphicsHandler = nullptr;
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
     DPoint3d        m_viewCmdTargetCenter;
@@ -424,7 +415,7 @@ protected:
     virtual bool _IsVisible() const {return true;}
     virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
-    DGNPLATFORM_EXPORT virtual void _CallDecorators(bool& stopFlag);
+    DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
@@ -439,6 +430,7 @@ protected:
     virtual uint64_t _GetMaxHealTime() const {return 1000;}
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
     DGNPLATFORM_EXPORT static void StartRenderThread();
+    DMap4d CalcNpcToView();
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -456,7 +448,6 @@ public:
     DGNPLATFORM_EXPORT void GetGridRoundingDistance(DPoint2dR roundingDistance);
     DGNPLATFORM_EXPORT void GridFix(DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions = nullptr);
-    DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
     void AlignWithRootZ();
     IProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
@@ -490,8 +481,7 @@ public:
     DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
-    StatusInt HealViewport(uint64_t const* endTime);
-    void ForceHealUntil(uint64_t endTime);
+    StatusInt HealViewport(uint64_t timeout);
     bool GetNeedsHeal() {return m_needsHeal;}
     DGNVIEW_EXPORT void ForceHealImmediate(uint64_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
@@ -513,10 +503,6 @@ public:
 
     //! @return the camera target for this DgnViewport
     DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
-
-    //! sets the object to be used for drawing tool graphics
-    //! @param[in] handler The new tool graphics handler. NULL to clear
-    DGNPLATFORM_EXPORT void SetToolGraphicsHandler(ToolGraphicsHandler* handler);
 
     //! Determine the depth, in NPC units, of the elements visible within a view.
     //! @param[out] low the npc value of the furthest back element in the view
@@ -577,14 +563,6 @@ public:
     //! @return the current TBGR hilite color.
     ColorDef GetHiliteColor() const {return _GetHiliteColor();}
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Set the current display symbology for this DgnViewport by TBGR color values, a pixel width, and 0-7 line code.
-    //! @param[in]          lineColor Line color
-    //! @param[in]          fillColor Fill color
-    //! @param[in]          lineWidth       Line width in pixels (1 or greater)
-    //! @param[in]          lineCodeIndex   Line code index (0-7)
-    DGNPLATFORM_EXPORT void SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex);
-#endif
 /** @} */
 
 /** @name Coordinate Query and Conversion */

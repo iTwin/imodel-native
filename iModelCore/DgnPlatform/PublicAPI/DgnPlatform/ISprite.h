@@ -106,7 +106,7 @@ public:
     //! If this Sprite Location is active for the specified DgnViewport, draw its Sprite Definition at the current location.
     //! Otherwise, this method does nothing.
     //! @note This method is <b>ONLY</b> valid from within an IViewDecoration::DoDecoration event callback.
-    DGNPLATFORM_EXPORT void DecorateViewport(DgnViewportP);
+    DGNPLATFORM_EXPORT void DecorateViewport(DecorateContextR);
 
     //! Determine whether this Sprite Location is currently active.
     //! @return true if this Sprite Location is currently active.

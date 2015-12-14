@@ -359,11 +359,6 @@ protected:
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
-    virtual bool _DrawOverlayDecorations(DgnViewportR viewport) override;
-    virtual bool _DrawZBufferedDecorations(DgnViewportR viewport) override;
-    virtual void _DrawBackgroundGraphics(ViewContextR context) override;
-    virtual void _DrawZBufferedGraphics(ViewContextR context) override;
-
     virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed

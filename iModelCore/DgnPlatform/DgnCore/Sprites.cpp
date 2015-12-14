@@ -19,8 +19,9 @@ SpriteLocation::SpriteLocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    SpriteLocation::DecorateViewport (DgnViewportP viewport)
+void SpriteLocation::DecorateViewport(DecorateContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (viewport == m_viewport)
         {
 #define USE_WORLD_COORDSFOR_SPRITES 0
@@ -32,13 +33,12 @@ void    SpriteLocation::DecorateViewport (DgnViewportP viewport)
         DPoint3d loc;
         viewport->WorldToView (&loc, &m_location, 1);
         loc.z = 0;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         viewport->GetIViewDraw()->SetToViewCoords(true);
         viewport->GetIViewDraw()->DrawSprite (m_sprite, &loc, NULL, m_transparency);
         viewport->GetIViewDraw()->SetToViewCoords(false);
 #endif
-#endif
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

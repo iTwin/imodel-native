@@ -1771,7 +1771,6 @@ BentleyStatus   RegionGraphicsContext::AddFaceLoopsAtPoints(DPoint3dCP seedPoint
 BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in)
     {
     m_operation = RegionType::Flood;
-    m_setupScan = true;
     m_ignoreViewRange = false;
 
     if (SUCCESS != Attach(vp, m_purpose))
@@ -1802,7 +1801,7 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElement
         }
     else
         {
-        VisitAllViewElements(false, NULL);
+        VisitAllViewElements();
         }
 
     Detach();

@@ -225,7 +225,7 @@ public:
 };
 
 //=======================================================================================
-//! Categorizes a geometric element. Each category one default sub-category and any number
+//! Categorizes a geometric element. Each category has one default sub-category and any number
 //! of additional sub-categories.
 //! @ingroup DgnCategoryGroup
 //=======================================================================================

@@ -799,7 +799,6 @@ void    AnnotationTableRow::CopyDataFrom (AnnotationTableRowCR rhs)
     m_heightLock        = rhs.m_heightLock;
     m_height            = rhs.m_height;
     m_cells             = rhs.m_cells;
-    m_fillRuns          = rhs.m_fillRuns;
 
     m_edgeRuns.CopyFrom (rhs.m_edgeRuns, GetTable());
     }
@@ -878,7 +877,6 @@ void    AnnotationTableRow::InitializeInternalCollections()
     {
     PRECONDITION(m_cells.empty(),);
     PRECONDITION(m_edgeRuns.empty(),);
-    PRECONDITION(m_fillRuns.empty(),);
 
     // Cells
     for (uint32_t colIndex = 0; colIndex < GetTable().GetColumnCount(); colIndex++)
@@ -891,11 +889,6 @@ void    AnnotationTableRow::InitializeInternalCollections()
     AnnotationTableEdgeRun edgeRun (GetTable());
     edgeRun.Initialize (EdgeRunHostType::Row, m_index);
     m_edgeRuns.push_back (edgeRun);
-
-    // FillRuns
-    AnnotationTableFillRun fillRun;
-    fillRun.Initialize (GetTable(), m_index);
-    m_fillRuns.push_back (fillRun);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -946,6 +939,42 @@ bvector<AnnotationTableCellP>     AnnotationTableRow::FindCells() const
         }
 
     return cells;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableRow::FindMergedLength (double& mergedHeight, uint32_t& mergedCount) const
+    {
+    // starting with this row, find the number of rows that are joined by merged cells and
+    // return the total height.
+    uint32_t                rowsLeftToAdd = 1;
+    AnnotationTableRowCP    rowToAdd      = this;
+
+    while (true)
+        {
+        uint32_t  maxSpan = 1;
+
+        for (AnnotationTableCell const& cell : rowToAdd->m_cells)
+            {
+            if (cell.IsMergedCellInterior())
+                continue;
+
+            if (maxSpan < cell.GetRowSpan())
+                maxSpan = cell.GetRowSpan();
+            }
+
+        if (rowsLeftToAdd < maxSpan)
+            rowsLeftToAdd += (maxSpan - rowsLeftToAdd);
+
+        mergedHeight += rowToAdd->GetHeight();
+        mergedCount++;
+
+        if (0 == --rowsLeftToAdd)
+            break;
+
+        rowToAdd = GetTable().GetRow (rowToAdd->GetIndex() + 1);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1809,6 +1838,104 @@ void            TextBlockHolder::GetPaddedSizeAlignedWithTextBlock (double& widt
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void    resolveTextSymb (ColorDef& color, uint32_t& weight, SymbologyDictionary const& dictionary, uint32_t textSymbKey)
+    {
+    bool  gotColor  = false;
+    bool  gotWeight = false;
+
+    if (0 != textSymbKey)
+        {
+        SymbologyEntryCP entry = dictionary.GetSymbology(textSymbKey);
+
+        if (entry->HasColor())
+            {
+            color    = entry->GetColor();
+            gotColor = true;
+            }
+
+        if (entry->HasWeight())
+            {
+            weight    = entry->GetWeight();
+            gotWeight = true;
+            }
+        }
+
+    if (gotColor && gotWeight)
+        return;
+
+    SymbologyEntryCP        entry   = dictionary.GetSymbology (0);
+
+    if (UNEXPECTED_CONDITION (nullptr == entry))
+        return;
+
+    if ( ! gotColor)
+        color = entry->GetColor();
+    if ( ! gotWeight)
+        weight = entry->GetWeight();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, TableCellAlignment alignment, ElementGeometryBuilderR builder) const
+    {
+    AnnotationTextBlockCP textBlock = GetTextBlock();
+
+    if (UNEXPECTED_CONDITION (NULL == textBlock))
+        return;
+
+    // TFS#75038: Previously we never drew field background.
+    // We want to draw it if the cell is not filled.
+    // (If the cell IS filled, the field background will z-fight with the cell fill, so don't draw it).
+    AnnotationTableSymbologyValues symb;
+    m_tableCell->GetFillSymbology (symb);
+
+#if defined (NEEDSWORK)
+    bool wantFieldBackground = !symb.GetFillVisible();
+    auto options = TextBlockDrawOptions::CreateDefault();
+    options->SetShouldDrawFieldBackground (wantFieldBackground);
+
+    uint32_t                    fallbackColor   = 0;
+    uint32_t                    fallbackWeight  = 0;
+    SymbologyDictionary const&  dictionary      = m_tableCell->GetAnnotationTable().GetSymbologyDictionary();
+
+    resolveTextSymb (fallbackColor, fallbackWeight, dictionary, m_tableCell->GetAnnotationTable().GetDefaultTextSymbology());
+
+    options->SetFallbackColor (fallbackColor);
+    options->SetLineWeight    (fallbackWeight);
+#endif
+
+    DPoint2d                                textOrigin = origin;
+
+#if defined (NEEDSWORK)
+    AnnotationTableCell::VerticalAlignment  vAlign = AnnotationTableCell::ToVerticalAlignment (alignment);
+
+    if (AnnotationTableCell::VerticalAlignment::Top == vAlign || AnnotationTableCell::VerticalAlignment::Bottom == vAlign)
+        {
+        double  adjustDistance = ComputeDescenderAdjustment (*textBlock);
+        DVec2d  adjustDirection;
+
+        rotation.GetColumn (adjustDirection, 1);    // +yVec (up)
+
+        if (AnnotationTableCell::VerticalAlignment::Top == vAlign)
+            adjustDirection.Negate ();              // -yVec (down)
+
+        textOrigin.SumOf (origin, adjustDirection, adjustDistance);
+        }
+#endif
+
+    Transform   transform = Transform::FromOriginAndXVector (textOrigin, direction);
+
+    TextAnnotation textAnnotation (textBlock->GetDbR());
+    textAnnotation.SetText (textBlock);
+
+    builder.Append (textAnnotation, transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 /*ctor*/  AnnotationTableCell::AnnotationTableCell (AnnotationTableElementR table, AnnotationTableCellIndex index)
@@ -2064,6 +2191,87 @@ AnnotationTextBlock::HorizontalJustification AnnotationTableCell::ToTextBlockJus
         case TableCellAlignment::RightTop:
         case TableCellAlignment::RightMiddle:
         case TableCellAlignment::RightBottom:   return AnnotationTextBlock::HorizontalJustification::Right;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCell::HorizontalAlignment AnnotationTableCell::ToHorizontalAlignment (TableCellAlignment cellAlignment)
+    {
+    switch (cellAlignment)
+        {
+        default:
+        case TableCellAlignment::LeftTop:
+        case TableCellAlignment::LeftMiddle:
+        case TableCellAlignment::LeftBottom:    return HorizontalAlignment::Left;
+        case TableCellAlignment::CenterTop:
+        case TableCellAlignment::CenterMiddle:
+        case TableCellAlignment::CenterBottom:  return HorizontalAlignment::Center;
+        case TableCellAlignment::RightTop:
+        case TableCellAlignment::RightMiddle:
+        case TableCellAlignment::RightBottom:   return HorizontalAlignment::Right;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+AnnotationTableCell::VerticalAlignment AnnotationTableCell::ToVerticalAlignment (TableCellAlignment cellAlignment)
+    {
+    switch (cellAlignment)
+        {
+        default:
+        case TableCellAlignment::LeftTop:
+        case TableCellAlignment::CenterTop:
+        case TableCellAlignment::RightTop:      return VerticalAlignment::Top;
+        case TableCellAlignment::LeftMiddle:
+        case TableCellAlignment::CenterMiddle:
+        case TableCellAlignment::RightMiddle:   return VerticalAlignment::Middle;
+        case TableCellAlignment::LeftBottom:
+        case TableCellAlignment::CenterBottom:
+        case TableCellAlignment::RightBottom:   return VerticalAlignment::Bottom;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TableCellAlignment AnnotationTableCell::ToTableCellAlignment (AnnotationTableCell::HorizontalAlignment hAlign, AnnotationTableCell::VerticalAlignment vAlign)
+    {
+    switch (hAlign)
+        {
+        default:
+        case HorizontalAlignment::Left:
+            {
+            switch (vAlign)
+                {
+                default:
+                case VerticalAlignment::Top:    return TableCellAlignment::LeftTop;
+                case VerticalAlignment::Middle: return TableCellAlignment::LeftMiddle;
+                case VerticalAlignment::Bottom: return TableCellAlignment::LeftBottom;
+                }
+            }
+        case HorizontalAlignment::Center:
+            {
+            switch (vAlign)
+                {
+                default:
+                case VerticalAlignment::Top:    return TableCellAlignment::CenterTop;
+                case VerticalAlignment::Middle: return TableCellAlignment::CenterMiddle;
+                case VerticalAlignment::Bottom: return TableCellAlignment::CenterBottom;
+                }
+            }
+        case HorizontalAlignment::Right:
+            {
+            switch (vAlign)
+                {
+                default:
+                case VerticalAlignment::Top:    return TableCellAlignment::RightTop;
+                case VerticalAlignment::Middle: return TableCellAlignment::RightMiddle;
+                case VerticalAlignment::Bottom: return TableCellAlignment::RightBottom;
+                }
+            }
         }
     }
 
@@ -2372,18 +2580,17 @@ DVec2d          AnnotationTableCell::GetContentSize () const
     return size;
     }
 
-#if defined (NEEDSWORK)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d        AnnotationTableCell::GetContentOrigin (DPoint3dCR cellOrigin, DVec3dCR xCellVec, DVec3dCR yCellVec) const
+DPoint2d        AnnotationTableCell::GetContentOrigin (DPoint2dCR cellOrigin, DVec2dCR xCellVec, DVec2dCR yCellVec) const
     {
     DVec2d                  cellSize = GetSize();
     DVec2d                  contentBox;
-    DVec3d                  xContentVec, yContentVec;
+    DVec2d                  xContentVec, yContentVec;
     double                  topContentMargin, bottomContentMargin;
     double                  leftContentMargin, rightContentMargin;
-    DPoint3d                contentOrigin;
+    DPoint2d                contentOrigin;
     TableCellMarginValues   marginValues = GetMargins();
 
     switch (GetOrientation())
@@ -2486,6 +2693,7 @@ DPoint3d        AnnotationTableCell::GetContentOrigin (DPoint3dCR cellOrigin, DV
     return contentOrigin;
     }
 
+#if defined (NEEDSWORK)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2502,53 +2710,22 @@ DPoint3d        AnnotationTableCell::ComputeContentOrigin () const
 
     return GetContentOrigin (cellOrigin, xVec, yVec);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RotMatrix       AnnotationTableCell::GetContentRotation () const
+DVec2d          AnnotationTableCell::GetContentDirection () const
     {
-    RotMatrix   tableRotation   = m_table->GetRotation();
-    RotMatrix   contentRotation;
-
     switch (GetOrientation())
         {
-        default:
-            {
-            contentRotation = tableRotation;
-            break;
-            }
-        case TableCellOrientation::Rotate90:
-            {
-            RotMatrix   adjustment = RotMatrix::FromIdentity();
-            DVec3d      xVec, yVec, zVec;
-
-            adjustment.GetColumns (xVec, yVec, zVec);
-            yVec.Negate();
-
-            adjustment = RotMatrix::FromColumnVectors (yVec, xVec, zVec);
-            contentRotation.InitProduct (adjustment, tableRotation);
-
-            break;
-            }
-        case TableCellOrientation::Rotate270:
-            {
-            RotMatrix   adjustment = RotMatrix::FromIdentity();
-            DVec3d      xVec, yVec, zVec;
-
-            adjustment.GetColumns (xVec, yVec, zVec);
-            xVec.Negate();
-
-            adjustment = RotMatrix::FromColumnVectors (yVec, xVec, zVec);
-            contentRotation.InitProduct (adjustment, tableRotation);
-
-            break;
-            }
+        default:                                     return DVec2d::From (1.0, 0.0);
+        case        TableCellOrientation::Rotate90:  return DVec2d::From (0.0, 1.0);
+        case        TableCellOrientation::Rotate270: return DVec2d::From (0.0, -1.0);
         }
-
-    return contentRotation;
     }
 
+#if defined (NEEDSWORK)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2616,6 +2793,24 @@ DPoint3d        AnnotationTableCell::ComputeOrigin () const
     return m_table->GetOrigin();
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AnnotationTableCell::AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, ElementGeometryBuilderR builder) const
+    {
+    if (UNEXPECTED_CONDITION (nullptr == m_contentHolder))
+        return;
+
+    if (m_contentHolder->_IsEmpty())
+        return;
+
+    DPoint2d            contentOrigin    = GetContentOrigin (origin, xVec, yVec);
+    DVec2d              contentDirection = GetContentDirection ();
+    TableCellAlignment  alignment        = GetAlignment();
+
+    m_contentHolder->_AppendGeometry (contentOrigin, contentDirection, alignment, builder);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/14
@@ -2789,39 +2984,10 @@ void    AnnotationTableCell::ClearContents ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   AnnotationTableCell::SetFillKey (uint32_t fillKey)   { m_fillKey.SetValue (fillKey); SetHasChanges(); }
-void   AnnotationTableCell::ClearFillKey ()                 { m_fillKey.Clear();            SetHasChanges(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void   AnnotationTableCell::ApplyToFillRuns ()
-    {
-    AnnotationTableRowP row             = GetTable().GetRow (m_index.row);
-    FillRunsR           fillRuns        = row->GetFillRuns();
-    uint32_t            verticalSpan    = GetRowSpan();
-
-    if (m_fillKey.IsValid() && 0 == m_fillKey.GetValue())
-        {
-        fillRuns.CreateGap (NULL, m_index.col, GetColumnSpan());
-        }
-    else
-        {
-        uint32_t  runKey = m_fillKey.IsNull() ? 0 : m_fillKey.GetValue();
-
-        fillRuns.ApplyRun (runKey, verticalSpan, m_index.col, GetColumnSpan());
-        fillRuns.MergeRedundantRuns (&GetTable());
-        }
-
-    for (uint32_t iRow = 1; iRow < verticalSpan; iRow++)
-        {
-        uint32_t                rowIndex        = m_index.row + iRow;
-        AnnotationTableRowP     spannedRow      = GetTable().GetRow (rowIndex);
-        FillRunsR               spannedFillRuns = spannedRow->GetFillRuns();
-
-        spannedFillRuns.CreateGap (NULL, m_index.col, GetColumnSpan());
-        }
-    }
+void      AnnotationTableCell::SetFillKey (uint32_t fillKey)   { m_fillKey.SetValue (fillKey); SetHasChanges(); }
+void      AnnotationTableCell::ClearFillKey ()                 { m_fillKey.Clear();            SetHasChanges(); }
+bool      AnnotationTableCell::HasFillKey () const             { return m_fillKey.IsValid();  }
+uint32_t  AnnotationTableCell::GetFillKey () const             { return m_fillKey.GetValue(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/13
@@ -2849,8 +3015,6 @@ void   AnnotationTableCell::SetFillSymbology (AnnotationTableSymbologyValuesCR s
 
         SetFillKey (newKey);
         }
-
-    ApplyToFillRuns();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3178,6 +3342,45 @@ bvector<AnnotationTableCellP>     AnnotationTableColumn::FindCells() const
         }
 
     return cells;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            AnnotationTableColumn::FindMergedLength (double& mergedWidth, uint32_t& mergedCount) const
+    {
+    // starting with this column, find the number of columns that are joined by merged cells and
+    // return the total width.
+    uint32_t                rowCount         = GetTable().GetRowCount();
+    uint32_t                columnsLeftToAdd = 1;
+    AnnotationTableColumnCP columnToAdd      = this;
+
+    while (true)
+        {
+        uint32_t  maxSpan = 0;
+
+        for (uint32_t iRow = 0; iRow < rowCount; iRow++)
+            {
+            AnnotationTableCellCP cell = GetTable().GetCell (AnnotationTableCellIndex (iRow, columnToAdd->GetIndex()));
+
+            if (NULL == cell)
+                continue;
+
+            if (maxSpan < cell->GetColumnSpan())
+                maxSpan = cell->GetColumnSpan();
+            }
+
+        if (columnsLeftToAdd < maxSpan)
+            columnsLeftToAdd += (maxSpan - columnsLeftToAdd);
+
+        mergedWidth += columnToAdd->GetWidth();
+        mergedCount++;
+
+        if (0 == --columnsLeftToAdd)
+            break;
+
+        columnToAdd = GetTable().GetColumn (columnToAdd->GetIndex() + 1);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3733,6 +3936,7 @@ bool            SymbologyEntry::HasVisible()        const { return      m_visibl
 bool            SymbologyEntry::HasColor()          const { return      m_color.IsValid();           }
 bool            SymbologyEntry::HasWeight()         const { return      m_weight.IsValid();          }
 bool            SymbologyEntry::HasLineStyle()      const { return      m_lineStyleId.IsValid();     }
+bool            SymbologyEntry::HasFillColor()      const { return      m_fillColor.IsValid();       }
 bool            SymbologyEntry::GetVisible()        const { return      HasVisible() ? m_visible.GetValue() : true; }
 ColorDef        SymbologyEntry::GetColor()          const { return      ColorDef(m_color.GetValue());}
 uint32_t        SymbologyEntry::GetWeight()         const { return      m_weight.GetValue();         }
@@ -4197,22 +4401,29 @@ static void     insertSpan (bvector<T_RunType>& runVector, uint32_t insertIndex,
         break;
         }
 
-    if (expandRun)
+    if ((*iter).GetStartIndex() > insertIndex)
         {
-        uint32_t  runSpan = (*iter).GetSpan();
-
-        (*iter).SetSpan (runSpan + insertSpan);
+        // The insert is happening inside a gap.
         }
     else
         {
-        T_RunType newRun = initializer.CreateNewRun (seedRun);
+        if (expandRun)
+            {
+            uint32_t  runSpan = (*iter).GetSpan();
 
-        newRun.SetStartIndex    (insertIndex);
-        newRun.SetSpan          (insertSpan);
-        iter = runVector.insert (iter, newRun);
+            (*iter).SetSpan (runSpan + insertSpan);
+            }
+        else
+            {
+            T_RunType newRun = initializer.CreateNewRun (seedRun);
+
+            newRun.SetStartIndex    (insertIndex);
+            newRun.SetSpan          (insertSpan);
+            iter = runVector.insert (iter, newRun);
+            }
+
+        ++iter;
         }
-
-    ++iter;
 
     // After the insertion or expansion just push all the runs to the right
     while (iter < runVector.end())
@@ -4877,7 +5088,7 @@ struct EdgeRunInitializer : IEdgeRunInitializer
 
         if (nullptr != seedRun)
             {
-            newRun = *seedRun;
+            newRun.CopyDataFrom (*seedRun);
             return newRun;
             }
 
@@ -5290,6 +5501,25 @@ int         TableHeaderAspect::GetUInteger (PropIndex propIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
+bool        TableHeaderAspect::GetBoolean (PropIndex propIndex, bool defaultVal) const
+    {
+    TableBoolValue const* boolValue = nullptr;
+
+    switch (propIndex)
+        {
+        case PropIndex::RepeatHeaders:          { boolValue = &m_repeatHeaders;         break; }
+        case PropIndex::RepeatFooters:          { boolValue = &m_repeatFooters;         break; }
+        }
+
+    if (EXPECTED_CONDITION (nullptr != boolValue))
+        return boolValue->IsValid() ? boolValue->GetValue() : defaultVal;
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   09/2015
+//---------------------------------------------------------------------------------------
 double          TableHeaderAspect::GetDouble (PropIndex propIndex) const
     {
     TableDoubleValue const* doubleValue = nullptr;
@@ -5586,6 +5816,11 @@ uint32_t                AnnotationTableElement::GetHeaderRowCount()             
 uint32_t                AnnotationTableElement::GetFooterRowCount()             const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FooterRowCount); }
 uint32_t                AnnotationTableElement::GetHeaderColumnCount()          const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::HeaderColumnCount); }
 uint32_t                AnnotationTableElement::GetFooterColumnCount()          const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FooterColumnCount); }
+TableBreakType          AnnotationTableElement::GetBreakType()                  const     { return static_cast <TableBreakType>     (m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::BreakType)); }
+TableBreakPosition      AnnotationTableElement::GetBreakPosition()              const     { return static_cast <TableBreakPosition> (m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::BreakPosition)); }
+double                  AnnotationTableElement::GetBreakLength()                const     { return m_tableHeader.GetDouble  (TableHeaderAspect::PropIndex::BreakLength); }
+bool                    AnnotationTableElement::GetRepeatHeaders()              const     { return m_tableHeader.GetBoolean (TableHeaderAspect::PropIndex::RepeatHeaders, false); }
+bool                    AnnotationTableElement::GetRepeatFooters()              const     { return m_tableHeader.GetBoolean (TableHeaderAspect::PropIndex::RepeatFooters, false); }
 double                  AnnotationTableElement::GetDefaultRowHeight ()          const     { return m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultRowHeight); }
 double                  AnnotationTableElement::GetDefaultColumnWidth ()        const     { return m_tableHeader.GetDouble   (TableHeaderAspect::PropIndex::DefaultColumnWidth); }
 TableCellOrientation    AnnotationTableElement::GetDefaultCellOrientation ()    const     { return static_cast<TableCellOrientation> (m_tableHeader.GetUInteger  (TableHeaderAspect::PropIndex::DefaultCellOrientation)); }
@@ -5593,6 +5828,29 @@ TableCellAlignment      AnnotationTableElement::GetDefaultCellAlignment ()      
 uint32_t                AnnotationTableElement::GetFillSymbologyForOddRow()     const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FillSymbologyKeyOddRow); }
 uint32_t                AnnotationTableElement::GetFillSymbologyForEvenRow()    const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::FillSymbologyKeyEvenRow); }
 uint32_t                AnnotationTableElement::GetDefaultTextSymbology()       const     { return m_tableHeader.GetUInteger (TableHeaderAspect::PropIndex::DefaultTextSymbKey); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+double          AnnotationTableElement::GetDefaultBreakGap () const
+    {
+    TableBreakPosition  position = GetBreakPosition();
+
+    if (TableBreakPosition::Right == position || TableBreakPosition::Left == position)
+        return (0.5 * GetDefaultColumnWidth());
+
+    return (2.0 * GetDefaultRowHeight());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+double          AnnotationTableElement::GetBreakGap() const
+    {
+    TableDoubleValue const& val = m_tableHeader.m_breakGap;
+
+    return (val.IsValid()) ? val.GetValue() : GetDefaultBreakGap();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   10/2015
@@ -5746,6 +6004,24 @@ ColorDef        AnnotationTableElement::GetDefaultTextColor () const
         return ColorDef::White();
 
     return entry->GetColor();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t  AnnotationTableElement::GetFillSymbologyForRow(uint32_t rowIndex) const
+    {
+    // Banded fill applies to body rows only
+    uint32_t firstBodyRow = GetTitleRowCount() + GetHeaderRowCount();
+    uint32_t lastBodyRow  = GetRowCount() - GetFooterRowCount() - 1;
+
+    if (rowIndex < firstBodyRow || rowIndex > lastBodyRow)
+        return 0;
+
+    uint32_t bodyIndex = rowIndex - firstBodyRow;
+    bool     isEven = (0 == (bodyIndex + 1) % 2);
+
+    return isEven ? GetFillSymbologyForEvenRow() : GetFillSymbologyForOddRow();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7012,10 +7288,7 @@ BentleyStatus   AnnotationTableElement::InsertColumn (uint32_t indexOfSeedColumn
     GetTopEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer(*this, EdgeRunHostType::Top));
 
     for (AnnotationTableRowR row: m_rows)
-        {
         row.GetEdgeRuns().InsertSpan (indexOfNewColumn, 1, EdgeRunInitializer (*this, EdgeRunHostType::Row, row.GetIndex()));
-        row.GetFillRuns().InsertSpan (indexOfNewColumn, 1, FillRunInitializer (row.GetIndex()));
-        }
 
     // Insert the new column
     AnnotationTableColumn newColumn (*this, indexOfNewColumn);
@@ -7058,9 +7331,6 @@ BentleyStatus   AnnotationTableElement::InsertColumn (uint32_t indexOfSeedColumn
     // Layout any cells that span the new column.
     for (AnnotationTableCellP const& cell : cellsWithWidthChanges)
         cell->WidthChanged();
-
-    for (AnnotationTableCellP const& cell : GetColumn(indexOfNewColumn)->FindCells())
-        cell->ApplyToFillRuns();
 
     AnnotationTableColumnP   postSeedColumn = GetColumn (indexOfSeedColumn);
 
@@ -7304,9 +7574,6 @@ BentleyStatus   AnnotationTableElement::MergeCells (AnnotationTableCellIndexCR r
     rootCell->SetAsMergedCellRoot (numRows, numCols);
 
     MarkAsMergedCellInteriors (rootIndex, numRows, numCols, false);
-
-    // Will set the verticalSpan in the main row, and open gaps on subsequent rows.
-    rootCell->ApplyToFillRuns();
 
     if (1 < numCols)
         rootCell->WidthChanged();
@@ -8268,8 +8535,6 @@ void AnnotationTableElement::LoadCells ()
             continue;
 
         cell->AssignProperties (*statement);
-
-        cell->ApplyToFillRuns();
         }
 
 #if defined (NEEDSWORK)
@@ -8429,18 +8694,10 @@ void AnnotationTableElement::UpdateGeometryRepresentation()
     if (! IsValid())
         return;
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngle());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin(), GetPlacement().GetAngle());
+    AnnotationTableStroker stroker (*this, *builder);
+    stroker.AppendTableGeometry();
 
-    DPoint3d points[] =
-        {
-        DPoint3d::From(0,0,0),
-        DPoint3d::From(10,0,0),
-        DPoint3d::From(10,-10,0),
-        };
-    ICurvePrimitivePtr primitive = ICurvePrimitive::CreateLineString(points, _countof(points));
-    CurveVectorPtr curveVector = CurveVector::Create(primitive, CurveVector::BOUNDARY_TYPE_Open);
-
-    builder->Append (*curveVector);
     builder->SetGeometryStreamAndPlacement(*this);
     }
 

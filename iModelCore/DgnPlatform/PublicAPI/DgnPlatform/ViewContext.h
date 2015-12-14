@@ -15,8 +15,6 @@
 #include "ScanCriteria.h"
 #include "IPickGeom.h"
 
-#define FOCAL_LENGTH_RATIO 0.023584905
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
@@ -25,21 +23,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  \e attached to a DgnViewport to be useful, and must be \e detached from the DgnViewport to free any memory associated with its internal state.
  @beginGroup 
 +===============+===============+===============+===============+===============+======*/
-
-enum FilterLODFlags
-{
-    FILTER_LOD_Off          = 0,        //!< don't do Level-of-detail filtering at all
-    FILTER_LOD_ShowRange    = 1,        //!< when too small, just show range
-    FILTER_LOD_ShowNothing  = 2,        //!< when too small, show nothing
-};
-
-enum
-{
-    LOD_DISPLAY_AS_POINT    = 6,        // extent squared
-    LOD_DELTA_INCREASE      = 9,        // extent squared
-    LOD_DELTA_DECREASE      = 100,      // extent squared
-    MAX_LOD_DELTA           = 40000,    // extent squared
-};
 
 //=======================================================================================
 //! @note This is stored persistently as part of the Reference Dynamic View Settings XAttributes, and thus cannot be changed
@@ -202,30 +185,25 @@ public:
     };
 
 protected:
-    DgnDbP                  m_dgnDb;
-    bool                    m_isAttached;
-    bool                    m_is3dView;
-    bool                    m_wantMaterials;
-    bool                    m_useNpcSubRange;
-    bool                    m_ignoreViewRange;
-    bool                    m_scanRangeValid;
-    Byte                    m_filterLOD;
+    DgnDbP                  m_dgnDb = nullptr;
+    bool                    m_isAttached = false;
+    bool                    m_is3dView = true;
+    bool                    m_wantMaterials = false;
+    bool                    m_useNpcSubRange = false;
+    bool                    m_ignoreViewRange = false;
+    bool                    m_scanRangeValid = false;
     ViewFlags               m_viewflags;
     DrawPurpose             m_purpose;
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
     ScanCriteria            m_scanCriteria;
-    int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
-    DgnViewportP            m_viewport;
-    DgnElement::Hilited     m_hiliteState;
+    DgnViewportP            m_viewport = nullptr;
     IElemTopologyCPtr       m_currElemTopo;
     GeometryStreamEntryId   m_currGeometryStreamEntryId;
-    double                  m_levelOfDetail;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
-    DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
@@ -244,15 +222,13 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
-    DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements(bool includeTransients);
+    DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
     DGNPLATFORM_EXPORT virtual void _PushClip(ClipVectorCR clip);
     DGNPLATFORM_EXPORT virtual void _PopClip();    
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
-    virtual void _OnPreDrawTransient() {}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) = 0;
-    DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
@@ -272,27 +248,22 @@ public:
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
     bool IsAttached() {return m_isAttached;}
-    DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
-    void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputGeometry may not be called...
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
     StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
     void Detach() {_Detach();}
-    bool VisitAllModelElements(bool includeTransients) {return _VisitAllModelElements(includeTransients);}
-    DGNPLATFORM_EXPORT bool VisitAllViewElements(bool includeTransients, BSIRectCP updateRect);
+    bool VisitAllModelElements() {return _VisitAllModelElements();}
+    DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     DGNPLATFORM_EXPORT StatusInt VisitHit(HitDetailCR hit);
-    void VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
     StatusInt InitContextForView() {return _InitContextForView();}
     DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
     DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     TransformClipStackR GetTransformClipStack() {return m_transformClipStack;}
-    Byte& GetFilterLODFlag() {return m_filterLOD;}
-    void SetFilterLODFlag(FilterLODFlags flags) {m_filterLOD =(Byte) flags;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
@@ -416,8 +387,6 @@ public:
 
     /// @name Get/Set Current Display Parameters
     //@{
-    bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (nullptr == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
-
     //! Modify the supplied "natural" GeometryParams by resolving effective symbology as required by the context.
     //! Initializes the supplied GraphicParams from the resolved GeometryParams.
     void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams) {_CookGeometryParams(geomParams, graphicParams);}
@@ -429,13 +398,6 @@ public:
     //! Clears current override flags and re-applies context overrides.
     //! @note Calls ActivateOverrideGraphicParams on the output.
     DGNPLATFORM_EXPORT void ResetContextOverrides();
-
-    //! Gets the current level of detail.
-    //! @return       the current level of detail.
-    double GetCurrentLevelOfDetail() const {return m_levelOfDetail;}
-
-    //! Sets the current level of detail.
-    void SetCurrentLevelOfDetail(double levelOfDetail) {m_levelOfDetail = levelOfDetail;}
 
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
@@ -522,6 +484,31 @@ public:
 
     bool CheckStop() {return _CheckStop();}
 }; // ViewContext
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
+struct RenderContext : ViewContext
+{
+protected:
+    Render::TargetR m_target;
+
+public:
+    DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
+    virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
+    virtual void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {source.Graphics().Save(graphic);}
+    virtual void _PushFrustumClip() override {}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
+struct DecorateContext : RenderContext
+{
+    Render::Decorations& m_decorations;
+    DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
+};
 
 /** @endGroup */
 

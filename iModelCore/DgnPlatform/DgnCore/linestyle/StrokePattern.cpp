@@ -1986,11 +1986,6 @@ LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
         {
         LsStroke& stroke(*(retval->m_strokes + i));
 
-#if defined(NEEDSWORK_LINESTYLES_CapModeForTextureGen)
-        if (stroke.GetCapMode() != LsCapMode::Open)
-            stroke.SetCapMode(LsCapMode::Closed);
-#endif
-
         stroke.SetIsStretchable(false);
         //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
         //  Since we draw exactly one iteration for generating the texture, corner mode (IsRigid) should not be important.
@@ -2021,11 +2016,7 @@ LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration
         {
         LsStroke const& stroke(*(m_strokes+i));
         
-        if (stroke.IsStretchable() 
-#if defined(NEEDSWORK_LINESTYLES_CapModeForTextureGen)
-                || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open)
-#endif
-            )
+        if (stroke.IsStretchable())
             UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, LsOkayForTextureGeneration::ChangeRequired);
         }
 

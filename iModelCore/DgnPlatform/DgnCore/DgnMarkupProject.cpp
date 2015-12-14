@@ -266,10 +266,6 @@ uint64_t PhysicalRedlineViewController::_GetMaxElementMemory () {return m_subjec
 
 ViewController::FitComplete PhysicalRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
 
-bool PhysicalRedlineViewController::_DrawOverlayDecorations(DgnViewportR viewport) { return m_subjectView._DrawOverlayDecorations(viewport) || T_Super::_DrawOverlayDecorations(viewport); }
-bool PhysicalRedlineViewController::_DrawZBufferedDecorations(DgnViewportR viewport) { return m_subjectView._DrawZBufferedDecorations(viewport) || T_Super::_DrawZBufferedDecorations(viewport); }
-void PhysicalRedlineViewController::_DrawBackgroundGraphics(ViewContextR context) { m_subjectView._DrawBackgroundGraphics(context); }
-void PhysicalRedlineViewController::_DrawZBufferedGraphics(ViewContextR context) { m_subjectView._DrawZBufferedGraphics(context); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
@@ -755,7 +751,7 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema()
     // are available in the cache of the schemaContext
     ECN::ECSchemaPtr schema = NULL;
     ECN::SchemaReadStatus deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, markupEcSchemaFileName, *schemaContext);
-    if (ECN::SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (ECN::SchemaReadStatus::Success != deserializeStat)
         {
         // Schema could not be read into memory. Do error handling here
         BeAssert(false && "Markup schemas should be a delivered asset");
@@ -763,7 +759,7 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema()
         }
     schema = NULL;
     deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, markupExtEcSchemaFileName, *schemaContext);
-    if (ECN::SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (ECN::SchemaReadStatus::Success != deserializeStat)
         {
         // Schema could not be read into memory. Do error handling here
         BeAssert(false && "Markup schemas should be a delivered asset");
@@ -771,7 +767,7 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema()
         }
     schema = NULL;
     deserializeStat = ECN::ECSchema::ReadFromXmlFile(schema, dgnMarkupEcSchemaFileName, *schemaContext);
-    if (ECN::SCHEMA_READ_STATUS_Success != deserializeStat)
+    if (ECN::SchemaReadStatus::Success != deserializeStat)
         {
         // Schema could not be read into memory. Do error handling here
         BeAssert(false && "Markup schemas should be a delivered asset");

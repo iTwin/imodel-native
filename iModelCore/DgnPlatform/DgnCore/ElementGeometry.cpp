@@ -620,29 +620,6 @@ bool ElementGeomIO::Operation::IsGeometryOp() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Iterator::ToNext()
-    {
-    if (m_dataOffset >= m_totalDataSize)
-        {
-        m_data = nullptr;
-        m_dataOffset = 0;
-
-        return;
-        }
-
-    uint32_t        opCode = *((uint32_t *) (m_data));
-    uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
-    uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
-    size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
-
-    m_egOp = Operation((OpCode) (opCode), dataSize, data);
-    m_data += egOpSize;
-    m_dataOffset += egOpSize;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Writer::Append(Operation const& egOp)
@@ -936,52 +913,49 @@ void ElementGeomIO::Writer::Append(MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnly)
+void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity)
     {
-    bool saveBRep = saveBRepOnly, saveFacets = false, saveEdges = false, saveFaceIso = false;
+    bool saveBRep = false, saveFacets = false, saveEdges = false, saveFaceIso = false;
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
-    if (!saveBRepOnly)
+    switch (entity.GetEntityType())
         {
-        switch (entity.GetEntityType())
+        case ISolidKernelEntity::EntityType_Wire:
             {
-            case ISolidKernelEntity::EntityType_Wire:
+            // Save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
+            CurveVectorPtr wireGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._WireBodyToCurveVector(entity);
+
+            if (wireGeom.IsValid())
+                Append(*wireGeom);
+
+            return;
+            }
+
+        case ISolidKernelEntity::EntityType_Sheet:
+            {
+            // Save sheet body that is a single planar face as CurveVector...very in-efficent and un-necessary to persist these as BReps...
+            CurveVectorPtr faceGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._PlanarSheetBodyToCurveVector(entity);
+
+            if (faceGeom.IsValid())
                 {
-                // Save wire body as CurveVector...very in-efficent and un-necessary to persist these as BReps...
-                CurveVectorPtr wireGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._WireBodyToCurveVector(entity);
-
-                if (wireGeom.IsValid())
-                    Append(*wireGeom);
-
+                Append(*faceGeom);
                 return;
                 }
 
-            case ISolidKernelEntity::EntityType_Sheet:
-                {
-                // Save sheet body that is a single planar face as CurveVector...very in-efficent and un-necessary to persist these as BReps...
-                CurveVectorPtr faceGeom = DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._PlanarSheetBodyToCurveVector(entity);
+            // Fall through...
+            }
 
-                if (faceGeom.IsValid())
-                    {
-                    Append(*faceGeom);
-                    return;
-                    }
+        case ISolidKernelEntity::EntityType_Solid:
+            {
+            saveBRep = saveFacets = true;
 
-                // Fall through...
-                }
+            if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
+                saveFaceIso = true;
 
-            case ISolidKernelEntity::EntityType_Solid:
-                {
-                saveBRep = saveFacets = true;
-
-                if (!DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
-                    saveFaceIso = true;
-
-                // NOTE: Never want OpCode::BRepPolyfaceExact when split by face symbology...
-                if (attachments || saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
-                    saveEdges = true;
-                break;
-                }
+            // NOTE: Never want OpCode::BRepPolyfaceExact when split by face symbology...
+            if (attachments || saveFaceIso || DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge))
+                saveEdges = true;
+            break;
             }
         }
 
@@ -2008,238 +1982,27 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElementGeometryPtr& elemG
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2015
+* @bsimethod                                                    Brien.Bastings  11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Collection::GetGeomPartIds(IdSet<DgnGeomPartId>& parts, DgnDbR dgnDb) const
+void ElementGeomIO::Iterator::ToNext()
     {
-    ElementGeomIO::Reader reader(dgnDb);
-
-    for (auto const& egOp : *this)
+    if (m_dataOffset >= m_dataSize)
         {
-        if (ElementGeomIO::OpCode::GeomPartInstance != egOp.m_opCode)
-            continue;
+        m_data = nullptr;
+        m_dataOffset = 0;
 
-        DgnGeomPartId geomPartId;
-        Transform     geomToElem;
-
-        if (!reader.Get(egOp, geomPartId, geomToElem))
-            continue;
-
-        parts.insert(geomPartId);
-        }
-    }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  02/2015
-+===============+===============+===============+===============+===============+======*/
-struct DrawState
-{
-ViewContextR        m_context;
-GraphicParams       m_currGraphicParams;
-GeometryParams      m_currGeometryParams;
-bool                m_symbologyChanged;
-
-DrawState(ViewContextR context) : m_context(context) {m_symbologyChanged = false;}
-~DrawState() {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InitDisplayParams(DgnCategoryId category)
-    {
-    GeometryParamsR  dispParams = m_currGeometryParams;
-
-    dispParams = GeometryParams();
-    dispParams.SetCategoryId(category);
-
-    m_symbologyChanged = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SetGeometryParams(DgnSubCategoryId subCategory)
-    {
-    GeometryParamsR dispParams = m_currGeometryParams;
-    DgnCategoryId   category = dispParams.GetCategoryId(); // Preserve current category...
-
-    dispParams = GeometryParams();
-    dispParams.SetCategoryId(category);
-    dispParams.SetSubCategoryId(subCategory);
-
-    m_symbologyChanged = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ChangedGeometryParams() {m_symbologyChanged = true;}
-GeometryParamsR GetCurrentGeometryParams() {return m_currGeometryParams;}
-GraphicParamsR GetCurrentGraphicParams() {return m_currGraphicParams;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CookGeometryParams(Render::GraphicP graphic)
-    {
-    if (!m_symbologyChanged)
-        return false;
-
-    // NOTE: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change...
-    ViewFlags   viewFlags = m_context.GetViewFlags();
-
-    if (FillDisplay::ByView == m_currGeometryParams.GetFillDisplay() && RenderMode::Wireframe == viewFlags.GetRenderMode() && !viewFlags.fill)
-        m_currGeometryParams.SetFillDisplay(FillDisplay::Never);
-
-    m_context.CookGeometryParams(m_currGeometryParams, m_currGraphicParams);
-
-    if (nullptr != graphic)
-        graphic->ActivateGraphicParams(m_currGraphicParams, &m_currGeometryParams);
-
-    m_symbologyChanged = false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IsGeometryVisible()
-    {
-    ViewFlags   viewFlags = m_context.GetViewFlags();
-
-    switch (m_currGeometryParams.GetGeometryClass())
-        {
-        case DgnGeometryClass::Construction:
-            if (!viewFlags.constructions)
-                return false;
-            break;
-
-        case DgnGeometryClass::Dimension:
-            if (!viewFlags.dimensions)
-                return false;
-            break;
-
-        case DgnGeometryClass::Pattern:
-            if (!viewFlags.patterns)
-                return false;
-            break;
-        }
-
-    if (nullptr == m_context.GetViewport())
-        return true;
-
-    DgnSubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_currGeometryParams.GetSubCategoryId());
-
-    if (appearance.IsInvisible())
-        return false;
-
-    switch (m_context.GetDrawPurpose())
-        {
-        case DrawPurpose::Plot:
-            if (appearance.GetDontPlot())
-                return false;
-            break;
-
-        case DrawPurpose::Pick:
-        case DrawPurpose::FenceAccept:
-            if (appearance.GetDontLocate()) // NOTE: Don't check GetDontSnap as we still need "not snappable" hit...
-                return false;
-            break;
-        }
-
-    return true;
-    }
-
-}; // DrawState
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamEntryId::operator==(GeometryStreamEntryIdCR rhs) const
-    {
-    if (this == &rhs)
-        return true;
-
-    return (m_type == rhs.m_type &&
-            m_partId == rhs.m_partId &&
-            m_index == rhs.m_index &&
-            m_partIndex == rhs.m_partIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamEntryId::operator!=(GeometryStreamEntryIdCR rhs) const
-    {
-    return !(*this == rhs);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryStreamEntryIdR GeometryStreamEntryId::operator=(GeometryStreamEntryIdCR rhs)
-    {
-    m_type = rhs.m_type;
-    m_partId = rhs.m_partId;
-    m_index = rhs.m_index;
-    m_partIndex = rhs.m_partIndex;
-
-    return *this;
-    }
-
-//=======================================================================================
-//! Helper class for setting GeometryStream entry identifier
-//=======================================================================================
-struct GeometryStreamEntryIdHelper
-{
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool SetActive(GeometryStreamEntryId& entryId, bool enable)
-    {
-    if (GeometryStreamEntryId::Type::Invalid != entryId.GetType() && entryId.GetGeomPartId().IsValid())
-        {
-        if (!enable)
-            entryId.SetGeomPartId(DgnGeomPartId()); // Clear part and remain active...
-
-        return false; // Already active (or remaining active)...
-        }
-
-    entryId.Init();
-
-    if (enable)
-        entryId.SetType(GeometryStreamEntryId::Type::Indexed);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void SetActiveGeomPart(GeometryStreamEntryId& entryId, DgnGeomPartId partId)
-    {
-    if (GeometryStreamEntryId::Type::Invalid == entryId.GetType())
         return;
+        }
 
-    entryId.SetGeomPartId(partId);
+    uint32_t        opCode = *((uint32_t *) (m_data));
+    uint32_t        dataSize = *((uint32_t *) (m_data + sizeof (opCode)));
+    uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
+    size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
+
+    m_egOp = Operation((OpCode) (opCode), dataSize, data);
+    m_data += egOpSize;
+    m_dataOffset += egOpSize;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void Increment(GeometryStreamEntryId& entryId)
-    {
-    if (GeometryStreamEntryId::Type::Indexed != entryId.GetType())
-        return;
-
-    if (entryId.GetGeomPartId().IsValid())
-        entryId.SetPartIndex(entryId.GetPartIndex()+1);
-    else
-        entryId.SetIndex(entryId.GetIndex()+1);
-    }
-
-}; // GeometryStreamEntryIdHelper
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/15
@@ -2363,6 +2126,54 @@ DgnDbStatus ElementGeomIO::Import(GeometryStreamR dest, GeometryStreamCR source,
     dest.SaveData(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void debugGeomId(ElementGeomIO::IDebugOutput& output, ElementGeometryCR geom, GeometryStreamEntryId geomId)
+    {
+    Utf8String  geomType;
+
+    switch (geom.GetGeometryType())
+        {
+        case ElementGeometry::GeometryType::CurvePrimitive:
+            geomType.assign("CurvePrimitive");
+            break;
+
+        case ElementGeometry::GeometryType::CurveVector:
+            geomType.assign("CurveVector");
+            break;
+
+        case ElementGeometry::GeometryType::SolidPrimitive:
+            geomType.assign("SolidPrimitive");
+            break;
+
+        case ElementGeometry::GeometryType::BsplineSurface:
+            geomType.assign("BsplineSurface");
+            break;
+
+        case ElementGeometry::GeometryType::Polyface:
+            geomType.assign("Polyface");
+            break;
+
+        case ElementGeometry::GeometryType::SolidKernelEntity:
+            geomType.assign("SolidKernelEntity");
+            break;
+
+        case ElementGeometry::GeometryType::TextString:
+            geomType.assign("TextString");
+            break;
+
+        default:
+            geomType.assign("Unknown");
+            break;
+        }
+
+    if (!geomId.GetGeomPartId().IsValid())
+        output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d]\n", geomType.c_str(), geomId.GetIndex()).c_str());
+    else
+        output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d | PartId: %" PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeomPartId().GetValue(), geomId.GetPartIndex()).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2773,50 +2584,32 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnDbR 
 
         output._DoOutputLine(Utf8PrintfString("\n--- GeometryStream Entry Ids ---\n\n"));
 
-        for (ElementGeometryPtr geom : collection)
+        for (auto iter : collection)
             {
-            GeometryStreamEntryId geomId = collection.GetGeometryStreamEntryId();
-            Utf8String        geomType;
+            ElementGeometryPtr geom = iter.GetGeometryPtr();
 
-            switch (geom->GetGeometryType())
+            if (geom.IsValid())
                 {
-                case ElementGeometry::GeometryType::CurvePrimitive:
-                    geomType.assign("CurvePrimitive");
-                    break;
-
-                case ElementGeometry::GeometryType::CurveVector:
-                    geomType.assign("CurveVector");
-                    break;
-
-                case ElementGeometry::GeometryType::SolidPrimitive:
-                    geomType.assign("SolidPrimitive");
-                    break;
-
-                case ElementGeometry::GeometryType::BsplineSurface:
-                    geomType.assign("BsplineSurface");
-                    break;
-
-                case ElementGeometry::GeometryType::Polyface:
-                    geomType.assign("Polyface");
-                    break;
-
-                case ElementGeometry::GeometryType::SolidKernelEntity:
-                    geomType.assign("SolidKernelEntity");
-                    break;
-
-                case ElementGeometry::GeometryType::TextString:
-                    geomType.assign("TextString");
-                    break;
-
-                default:
-                    geomType.assign("Unknown");
-                    break;
+                debugGeomId(output, *geom, iter.GetGeometryStreamEntryId());
+                continue;
                 }
 
-            if (!geomId.GetGeomPartId().IsValid())
-                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d]\n", geomType.c_str(), geomId.GetIndex()).c_str());
-            else
-                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d | PartId: %" PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeomPartId().GetValue(), geomId.GetPartIndex()).c_str());
+            DgnGeomPartPtr partGeom = iter.GetGeomPartPtr();
+
+            if (!partGeom.IsValid())
+                continue;
+
+            ElementGeometryCollection partCollection(*partGeom, iter);
+
+            for (auto partIter : partCollection)
+                {
+                ElementGeometryPtr partGeom = partIter.GetGeometryPtr();
+
+                if (!partGeom.IsValid())
+                    continue;
+
+                debugGeomId(output, *partGeom, partIter.GetGeometryStreamEntryId());
+                }
             }
 
         output._DoOutputLine(Utf8PrintfString("\n"));
@@ -2824,16 +2617,207 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnDbR 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryStreamEntryId::operator==(GeometryStreamEntryIdCR rhs) const
+    {
+    if (this == &rhs)
+        return true;
+
+    return (m_type == rhs.m_type &&
+            m_partId == rhs.m_partId &&
+            m_index == rhs.m_index &&
+            m_partIndex == rhs.m_partIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryStreamEntryId::operator!=(GeometryStreamEntryIdCR rhs) const
+    {
+    return !(*this == rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryStreamEntryIdR GeometryStreamEntryId::operator=(GeometryStreamEntryIdCR rhs)
+    {
+    m_type = rhs.m_type;
+    m_partId = rhs.m_partId;
+    m_index = rhs.m_index;
+    m_partIndex = rhs.m_partIndex;
+
+    return *this;
+    }
+
+//=======================================================================================
+//! Helper class for setting GeometryStream entry identifier
+//=======================================================================================
+struct GeometryStreamEntryIdHelper
+{
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool SetActive(GeometryStreamEntryId& entryId, bool enable)
+    {
+    if (GeometryStreamEntryId::Type::Invalid != entryId.GetType() && entryId.GetGeomPartId().IsValid())
+        {
+        if (!enable)
+            entryId.SetGeomPartId(DgnGeomPartId()); // Clear part and remain active...
+
+        return false; // Already active (or remaining active)...
+        }
+
+    entryId.Init();
+
+    if (enable)
+        entryId.SetType(GeometryStreamEntryId::Type::Indexed);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetActiveGeomPart(GeometryStreamEntryId& entryId, DgnGeomPartId partId)
+    {
+    if (GeometryStreamEntryId::Type::Invalid == entryId.GetType())
+        return;
+
+    entryId.SetGeomPartId(partId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void Increment(GeometryStreamEntryId& entryId)
+    {
+    if (GeometryStreamEntryId::Type::Indexed != entryId.GetType())
+        return;
+
+    if (entryId.GetGeomPartId().IsValid())
+        entryId.SetPartIndex(entryId.GetPartIndex()+1);
+    else
+        entryId.SetIndex(entryId.GetIndex()+1);
+    }
+
+}; // GeometryStreamEntryIdHelper
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomIO::Collection::GetGeomPartIds(IdSet<DgnGeomPartId>& parts, DgnDbR dgnDb) const
+    {
+    ElementGeomIO::Reader reader(dgnDb);
+
+    for (auto const& egOp : *this)
+        {
+        if (ElementGeomIO::OpCode::GeomPartInstance != egOp.m_opCode)
+            continue;
+
+        DgnGeomPartId geomPartId;
+        Transform     geomToElem;
+
+        if (!reader.Get(egOp, geomPartId, geomToElem))
+            continue;
+
+        parts.insert(geomPartId);
+        }
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  02/2015
++===============+===============+===============+===============+===============+======*/
+struct DrawHelper
+{
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams, Render::GraphicP graphic=nullptr, bool* geomParamsChanged=nullptr)
+    {
+    if (nullptr != geomParamsChanged && !(*geomParamsChanged))
+        return;
+
+    // NOTE: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change...
+    ViewFlags   viewFlags = context.GetViewFlags();
+
+    if (FillDisplay::ByView == geomParams.GetFillDisplay() && RenderMode::Wireframe == viewFlags.GetRenderMode() && !viewFlags.fill)
+        geomParams.SetFillDisplay(FillDisplay::Never);
+
+    context.CookGeometryParams(geomParams, graphicParams);
+
+    if (nullptr != graphic)
+        graphic->ActivateGraphicParams(graphicParams, &geomParams);
+
+    if (nullptr != geomParamsChanged)
+        *geomParamsChanged = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geomParams)
+    {
+    ViewFlags   viewFlags = context.GetViewFlags();
+
+    switch (geomParams.GetGeometryClass())
+        {
+        case DgnGeometryClass::Construction:
+            if (!viewFlags.constructions)
+                return false;
+            break;
+
+        case DgnGeometryClass::Dimension:
+            if (!viewFlags.dimensions)
+                return false;
+            break;
+
+        case DgnGeometryClass::Pattern:
+            if (!viewFlags.patterns)
+                return false;
+            break;
+        }
+
+    if (nullptr == context.GetViewport())
+        return true;
+
+    DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
+
+    if (appearance.IsInvisible())
+        return false;
+
+    switch (context.GetDrawPurpose())
+        {
+        case DrawPurpose::Plot:
+            if (appearance.GetDontPlot())
+                return false;
+            break;
+
+        case DrawPurpose::Pick:
+        case DrawPurpose::FenceAccept:
+            if (appearance.GetDontLocate()) // NOTE: Don't check GetDontSnap as we still need "not snappable" hit...
+                return false;
+            break;
+        }
+
+    return true;
+    }
+
+}; // DrawHelper
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, DgnCategoryId category, TransformCR elemToWorld) const
+void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, TransformCR sourceToWorld) const
     {
     bool        isQVis = graphic.IsQuickVision();
     bool        isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);
-    DrawState   state(context);
+    bool        geomParamsChanged = true;
 
+    Render::GraphicParams graphicParams;
     ElementGeomIO::Reader reader(context.GetDgnDb());
 
     for (auto const& egOp : *this)
@@ -2842,13 +2826,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
             {
             case ElementGeomIO::OpCode::Header:
                 {
-                // Current display params is already setup when displaying a geom part...DON'T INITIALIZE!!!
-                if (!GeometryStreamEntryIdHelper::SetActive(context.GetGeometryStreamEntryIdR(), true))
-                    break;
-
-                Header const*hdr = Reader::GetHeader(egOp);
-                if (!hdr->UseCurrentDisplayParams())
-                    state.InitDisplayParams(category);
+                GeometryStreamEntryIdHelper::SetActive(context.GetGeometryStreamEntryIdR(), true);
                 break;
                 }
 
@@ -2858,10 +2836,10 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
             case ElementGeomIO::OpCode::Pattern:
             case ElementGeomIO::OpCode::Material:
                 {
-                if (!reader.Get(egOp, state.GetCurrentGeometryParams()))
+                if (!reader.Get(egOp, geomParams))
                     break;
 
-                state.ChangedGeometryParams();
+                geomParamsChanged = true;
                 break;
                 }
 
@@ -2870,9 +2848,9 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
                 DgnGeomPartId geomPartId;
-                Transform     geomToElem;
+                Transform     geomToSource;
 
-                if (!reader.Get(egOp, geomPartId, geomToElem))
+                if (!reader.Get(egOp, geomPartId, geomToSource))
                     break;
 
                 DgnGeomPartPtr partGeometry = context.GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
@@ -2884,28 +2862,17 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
 
                 GeometryStreamEntryIdHelper::SetActiveGeomPart(context.GetGeometryStreamEntryIdR(), geomPartId);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER) // NEEDSWORK: AddSubGraphic...how to we let output force a stroke? Make it so that SimplifyGraphic can handle GeometryParams goop below too!
-                state.CookGeometryParams(graphic);
-
-                context.PushTransform(geomToElem);
-                collection.Draw(graphic, context, category);
-                context.PopTransformClip();
-#else
-                bool changed = state.CookGeometryParams(nullptr); // Don't bake into QvElem, will be activated when adding sub-graphic to display list...
-
-                Render::GraphicParams  partGraphicParams(state.GetCurrentGraphicParams()); // Save current GraphicParams for AddSubGraphic, might be change by Draw...
-                Render::GeometryParams partGeometryParams(state.GetCurrentGeometryParams()); // Restore in case changed by Draw...
-                Render::GraphicPtr     partGraphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), Transform::FromIdentity(), graphic.GetPixelSize()));
-
-                collection.Draw(*partGraphic, context, category, Transform::FromIdentity());
-                graphic.AddSubGraphic(*partGraphic, Transform::FromProduct(elemToWorld, geomToElem), partGraphicParams);
-
-                state.GetCurrentGraphicParams() = GraphicParams(partGraphicParams);
-                state.GetCurrentGeometryParams() = GeometryParams(partGeometryParams);
-
-                if (changed)
-                    state.ChangedGeometryParams(); // Make sure activate is called if something else gets drawn...
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+                // NEEDSWORK: AddSubGraphic...how to let output force a stroke? Make it so that SimplifyGraphic can handle GeometryParams goop below too!
 #endif
+                Render::GraphicPtr     partGraphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), Transform::FromIdentity(), graphic.GetPixelSize()));
+                Render::GeometryParams partGeometryParams(geomParams);
+                Render::GraphicParams  partGraphicParams;
+
+                // NOTE: Need to cook partGeometryParams to get partGraphicParams, but we don't want to activate and bake into our QvElem...
+                DrawHelper::CookGeometryParams(context, partGeometryParams, partGraphicParams);
+                collection.Draw(*partGraphic, context, partGeometryParams, Transform::FromIdentity());
+                graphic.AddSubGraphic(*partGraphic, Transform::FromProduct(sourceToWorld, geomToSource), partGraphicParams);
                 break;
                 }
 
@@ -2913,7 +2880,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 int         nPts;
@@ -2923,20 +2890,20 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
 
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        graphic.AddPointString2d(nPts, pts, state.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
+                        graphic.AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority(), nullptr);
                         break;
 
                     case FB::BoundaryType_Open:
-                        graphic.AddLineString2d(nPts, pts, state.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
+                        graphic.AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority(), nullptr);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape2d(nPts, pts, FillDisplay::Never != state.GetCurrentGeometryParams().GetFillDisplay(), state.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
+                        graphic.AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(), nullptr);
                         break;
                     }
                 break;
@@ -2946,7 +2913,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 int         nPts;
@@ -2956,7 +2923,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
 
                 switch (boundary)
                     {
@@ -2969,7 +2936,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape(nPts, pts, FillDisplay::Never != state.GetCurrentGeometryParams().GetFillDisplay(), nullptr);
+                        graphic.AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), nullptr);
                         break;
                     }
                 break;
@@ -2979,7 +2946,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 DEllipse3d  arc;
@@ -2988,21 +2955,21 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, arc, boundary))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
                     if (FB::BoundaryType_Closed != boundary)
-                        graphic.AddArc2d(arc, false, false, state.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
+                        graphic.AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority(), nullptr);
                     else
-                        graphic.AddArc2d(arc, true, FillDisplay::Never != state.GetCurrentGeometryParams().GetFillDisplay(), state.GetCurrentGeometryParams().GetNetDisplayPriority(), nullptr);
+                        graphic.AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(), nullptr);
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
                     graphic.AddArc(arc, false, false, nullptr);
                 else
-                    graphic.AddArc(arc, true, FillDisplay::Never != state.GetCurrentGeometryParams().GetFillDisplay(), nullptr);
+                    graphic.AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), nullptr);
                 break;
                 }
 
@@ -3010,7 +2977,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 ICurvePrimitivePtr curvePrimitivePtr;
@@ -3018,14 +2985,14 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, curvePrimitivePtr))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
 
                 // A single curve primitive is always open (or none for a point string)...
                 CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
 
                 if (!context.Is3dView())
                     {
-                    graphic.AddCurveVector2d(*curvePtr, false, state.GetCurrentGeometryParams().GetNetDisplayPriority());
+                    graphic.AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
                     break;
                     }
 
@@ -3037,7 +3004,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 CurveVectorPtr curvePtr;
@@ -3045,15 +3012,15 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
-                    graphic.AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != state.GetCurrentGeometryParams().GetFillDisplay(), state.GetCurrentGeometryParams().GetNetDisplayPriority());
+                    graphic.AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                graphic.AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != state.GetCurrentGeometryParams().GetFillDisplay());
+                graphic.AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 }
 
@@ -3061,7 +3028,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3069,8 +3036,8 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, meshData))
                     break;
 
-                state.CookGeometryParams(&graphic);
-                graphic.AddPolyface(meshData, FillDisplay::Never != state.GetCurrentGeometryParams().GetFillDisplay());
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                graphic.AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 };
 
@@ -3078,7 +3045,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 ISolidPrimitivePtr solidPtr;
@@ -3086,7 +3053,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
                 graphic.AddSolidPrimitive(*solidPtr);
                 break;
                 }
@@ -3095,7 +3062,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 MSBsplineSurfacePtr surfacePtr;
@@ -3103,7 +3070,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!reader.Get(egOp, surfacePtr))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
                 graphic.AddBSplineSurface(*surfacePtr);
                 break;
                 }
@@ -3115,7 +3082,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!useBRep)
                     break;
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 ISolidKernelEntityPtr entityPtr;
@@ -3126,7 +3093,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                     break;
                     }
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
                 graphic.AddBody(*entityPtr);
                 break;
                 }
@@ -3138,7 +3105,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (useBRep)
                     break;
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3146,7 +3113,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
 
                 // NOTE: For this case the exact edge geometry will be supplied by BRepEdges/BRepFaceIso, inhibit facetted edge draw...
                 if ((isPick || isQVWireframe) && ElementGeomIO::OpCode::BRepPolyface == egOp.m_opCode)
@@ -3188,7 +3155,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!(isPick || isQVWireframe)) // NEEDSWORK: Assumes QVElems are per-view...otherwise must setup WF only matsymb like Vancouver...
                     break;
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3196,7 +3163,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!curvePtr.IsValid())
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
                 graphic.AddCurveVector(*curvePtr, false);
                 break;
                 }
@@ -3207,7 +3174,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!(isPick || isQVWireframe)) // NEEDSWORK: Assumes QVElems are per-view...otherwise must setup WF only matsymb like Vancouver...
                     break;
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3215,7 +3182,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (!curvePtr.IsValid())
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
                 graphic.AddCurveVector(*curvePtr, false);
                 break;
                 }
@@ -3224,7 +3191,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
 
-                if (!state.IsGeometryVisible())
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
                     break;
 
                 TextString  text;
@@ -3232,7 +3199,7 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
 
-                state.CookGeometryParams(&graphic);
+                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
                 context.AddTextString(text);
                 break;
                 }
@@ -3246,7 +3213,6 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
         }
 
     GeometryStreamEntryIdHelper::SetActive(context.GetGeometryStreamEntryIdR(), false);
-
     graphic.Close();
     }
 
@@ -3256,27 +3222,12 @@ void ElementGeomIO::Collection::Draw(Render::GraphicR graphic, ViewContextR cont
 Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSize) const
     {
     Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform(), pixelSize));
+    Render::GeometryParams params;
 
-    ElementGeomIO::Collection(GetGeometryStream().GetData(), GetGeometryStream().GetSize()).Draw(*graphic, context, GetCategoryId(), GetPlacementTransform());
+    params.SetCategoryId(GetCategoryId());
+    ElementGeomIO::Collection(GetGeometryStream().GetData(), GetGeometryStream().GetSize()).Draw(*graphic, context, params, GetPlacementTransform());
 
     return graphic;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        {
-        // NEEDSWORK: Temporary - Continous rendering DgnGraphic will allow this to be cached...
-        Transform   placementTrans = GetPlacementTransform();
-        ViewFlags   viewFlags;
-
-        if (nullptr != context.GetViewFlags())
-            viewFlags = *context.GetViewFlags();
-        else
-            viewFlags.InitDefaults();
-
-        context.PushTransform(placementTrans);
-        ElementGeomIO::Collection(GetGeometryStream().GetData(), GetGeometryStream().GetSize()).Draw(context, GetCategoryId(), viewFlags);
-        context.PopTransformClip();
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3321,13 +3272,18 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
 
     collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh);
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
         switch (hit.GetSubSelectionMode())
             {
             case SubSelectionMode::Part:
                 {
-                if (hit.GetGeomDetail().GetGeometryStreamEntryId().GetGeomPartId() == collection.GetGeometryStreamEntryId().GetGeomPartId())
+                if (hit.GetGeomDetail().GetGeometryStreamEntryId().GetGeomPartId() == iter.GetGeometryStreamEntryId().GetGeomPartId())
                     break;
 
                 continue;
@@ -3336,7 +3292,7 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
             case SubSelectionMode::Primitive:
             case SubSelectionMode::Segment:
                 {
-                if (hit.GetGeomDetail().GetGeometryStreamEntryId() == collection.GetGeometryStreamEntryId())
+                if (hit.GetGeomDetail().GetGeometryStreamEntryId() == iter.GetGeometryStreamEntryId())
                     break;
 
                 continue;
@@ -3375,38 +3331,41 @@ SnapStatus GeometrySource::_OnSnap(SnapContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryPtr ElementGeometryCollection::Iterator::GetGeometryPtr() const
+    {
+    if (m_state->m_geometry.IsValid())
+        return m_state->m_geometry;
+
+    ElementGeomIO::Reader reader(m_state->m_dgnDb);
+
+    if (!reader.Get(m_egOp, m_state->m_geometry))
+        return nullptr;
+
+    return m_state->m_geometry;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeometryCollection::Iterator::ToNext()
     {
     do
         {
-        if (m_dataOffset >= m_totalDataSize)
+        if (m_dataOffset >= m_dataSize)
             {
-            GeometryStreamEntryIdHelper::SetActive(m_context->GetGeometryStreamEntryIdR(), false);
+            GeometryStreamEntryIdHelper::SetActive(m_state->m_geomStreamEntryId, false);
+            m_data = nullptr;
+            m_dataOffset = 0;
+            return;
+            }
 
-            if (!m_partGeometry.IsValid())
-                {
-                m_data = nullptr;
-                m_dataOffset = 0;
-                return;
-                }
-
-            m_data = m_saveData;
-            m_dataOffset = m_saveDataOffset;
-            m_totalDataSize = m_saveTotalDataSize;;
-
-            m_partGeometry = nullptr;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-            m_context->PopTransformClip(); // Pop part transform...
-#endif
-
-            if (m_dataOffset >= m_totalDataSize)
-                {
-                m_data = nullptr;
-                m_dataOffset = 0;
-                return;
-                }
+        // NOTE: Don't want to clear partId and transform when using nested iter for GeomPart...
+        if (0 != m_dataOffset && ElementGeomIO::OpCode::GeomPartInstance == m_egOp.m_opCode)
+            {
+            GeometryStreamEntryIdHelper::SetActive(m_state->m_geomStreamEntryId, false);
+            m_state->m_geomToSource = Transform::FromIdentity();
             }
 
         uint32_t        opCode = *((uint32_t *) (m_data));
@@ -3414,17 +3373,17 @@ void ElementGeometryCollection::Iterator::ToNext()
         uint8_t const*  data = (0 != dataSize ? (uint8_t const*) (m_data + sizeof (opCode) + sizeof (dataSize)) : nullptr);
         size_t          egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
 
-        ElementGeomIO::Operation egOp = ElementGeomIO::Operation((ElementGeomIO::OpCode) (opCode), dataSize, data);
-        ElementGeomIO::Reader reader(m_context->GetDgnDb());
-
+        m_egOp = ElementGeomIO::Operation((ElementGeomIO::OpCode) (opCode), dataSize, data);
         m_data += egOpSize;
         m_dataOffset += egOpSize;
 
-        switch (egOp.m_opCode)
+        ElementGeomIO::Reader reader(m_state->m_dgnDb);
+
+        switch (m_egOp.m_opCode)
             {
             case ElementGeomIO::OpCode::Header:
                 {
-                GeometryStreamEntryIdHelper::SetActive(m_context->GetGeometryStreamEntryIdR(), true);
+                GeometryStreamEntryIdHelper::SetActive(m_state->m_geomStreamEntryId, true);
                 break;
                 }
 
@@ -3434,105 +3393,82 @@ void ElementGeometryCollection::Iterator::ToNext()
             case ElementGeomIO::OpCode::Pattern:
             case ElementGeomIO::OpCode::Material:
                 {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                reader.Get(egOp, m_context->GetCurrentGeometryParams()); // Update active GeometryParams...
-#else
-                Render::GeometryParams currGeometryParams; // NEEDSWORK: Set member variable to collection...
-                reader.Get(egOp, currGeometryParams); // Update active GeometryParams...
-#endif
+                reader.Get(m_egOp, m_state->m_geomParams); // Update active GeometryParams...
                 break;
                 }
 
             case ElementGeomIO::OpCode::GeomPartInstance:
                 {
-                GeometryStreamEntryIdHelper::Increment(m_context->GetGeometryStreamEntryIdR());
-
                 DgnGeomPartId geomPartId;
-                Transform     geomToElem;
+                Transform     geomToSource;
 
-                if (!reader.Get(egOp, geomPartId, geomToElem))
+                GeometryStreamEntryIdHelper::Increment(m_state->m_geomStreamEntryId);
+
+                if (!reader.Get(m_egOp, geomPartId, geomToSource))
                     break;
 
-                m_partGeometry = m_context->GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
+                GeometryStreamEntryIdHelper::SetActiveGeomPart(m_state->m_geomStreamEntryId, geomPartId);
+                m_state->m_geomToSource = geomToSource;
+                m_state->m_geometry = nullptr;
 
-                if (!m_partGeometry.IsValid())
-                    break;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                // Push part transform...
-                m_context->PushTransform(geomToElem);
-#endif
-
-                // Save current data position...
-                m_saveData = m_data;
-                m_saveDataOffset = m_dataOffset;
-                m_saveTotalDataSize = m_totalDataSize;
-
-                // Switch to iterate over part geometry...
-                m_data = m_partGeometry->GetGeometryStream().GetData();
-                m_dataOffset = 0;
-                m_totalDataSize = m_partGeometry->GetGeometryStream().GetSize();
-
-                GeometryStreamEntryIdHelper::SetActiveGeomPart(m_context->GetGeometryStreamEntryIdR(), geomPartId);
-                break;
+                if (m_state->m_geomParams.GetCategoryId().IsValid())
+                    m_state->m_geomParams.Resolve(m_state->m_dgnDb); // Resolve sub-category appearance...
+                return;
                 }
 
             default:
                 {
                 bool    doOutput = false, doIncrement = false;
 
-                switch (egOp.m_opCode)
+                switch (m_egOp.m_opCode)
                     {
                     case ElementGeomIO::OpCode::ParasolidBRep:
                         {
-                        doOutput = (BRepOutput::None != (BRepOutput::BRep & m_bRepOutput));
+                        // Decide now on best "auto" output representation by checking if Parasolid is available...
+                        if (BRepOutput::None != (BRepOutput::Auto & m_state->m_bRepOutput))
+                            m_state->m_bRepOutput = ((m_state->m_bRepOutput & ~BRepOutput::Auto) | (DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._IsParasolidLoaded() ? BRepOutput::BRep : BRepOutput::Mesh));
+
+                        doOutput = (BRepOutput::None != (BRepOutput::BRep & m_state->m_bRepOutput));
                         doIncrement = true;
                         break;
                         }
 
                     case ElementGeomIO::OpCode::BRepEdges:
                         {
-                        doOutput = (BRepOutput::None != (BRepOutput::Edges & m_bRepOutput));
+                        doOutput = (BRepOutput::None != (BRepOutput::Edges & m_state->m_bRepOutput));
                         break;
                         }
 
                     case ElementGeomIO::OpCode::BRepFaceIso:
                         {
-                        doOutput = (BRepOutput::None != (BRepOutput::FaceIso & m_bRepOutput));
+                        doOutput = (BRepOutput::None != (BRepOutput::FaceIso & m_state->m_bRepOutput));
                         break;
                         }
 
                     case ElementGeomIO::OpCode::BRepPolyface:
                     case ElementGeomIO::OpCode::BRepPolyfaceExact:
                         {
-                        doOutput = (BRepOutput::None != (BRepOutput::Mesh & m_bRepOutput));
+                        doOutput = (BRepOutput::None != (BRepOutput::Mesh & m_state->m_bRepOutput));
                         break;
                         }
 
                     default:
                         {
-                        doOutput = doIncrement = egOp.IsGeometryOp();
+                        doOutput = doIncrement = m_egOp.IsGeometryOp();
                         break;
                         }
                     }
 
                 if (doIncrement)
-                    GeometryStreamEntryIdHelper::Increment(m_context->GetGeometryStreamEntryIdR());
+                    GeometryStreamEntryIdHelper::Increment(m_state->m_geomStreamEntryId);
 
                 if (!doOutput)
                     break;
 
-                if (!reader.Get(egOp, m_elementGeometry))
-                    {
-                    if (ElementGeomIO::OpCode::ParasolidBRep == egOp.m_opCode)
-                        m_bRepOutput = ((m_bRepOutput & ~BRepOutput::BRep) | BRepOutput::Mesh); // BRep unavailable - start returning BRepPolyface geometry...
-                    break;
-                    }
+                m_state->m_geometry = nullptr; // Defer extract until asked...
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                if (m_context->GetCurrentGeometryParams().GetCategoryId().IsValid())
-                    m_context->GetCurrentGeometryParams().Resolve(*m_context); // Resolve sub-category appearance...
-#endif
+                if (m_state->m_geomParams.GetCategoryId().IsValid())
+                    m_state->m_geomParams.Resolve(m_state->m_dgnDb); // Resolve sub-category appearance...
                 return;
                 }
             }
@@ -3540,124 +3476,38 @@ void ElementGeometryCollection::Iterator::ToNext()
         } while (true);
     }
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  04/2015
-+===============+===============+===============+===============+===============+======*/
-struct ElementGeometryCollectionContext : NullContext
-{
-    DEFINE_T_SUPER(NullContext)
-protected:
-    RefCountedPtr<SimplifyGraphic> m_output;
-
-public:
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
-
-    ElementGeometryCollectionContext(DgnDbR db)
-        {
-        m_purpose = DrawPurpose::CaptureGeometry;
-        m_wantMaterials = true; // Setup material in GeometryParams...
-
-        m_output = new SimplifyGraphic();
-        m_output->SetViewContext(this);
-
-        SetDgnDb(db);
-        }
-
-}; // ElementGeometryCollectionContext
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
+* @bsimethod                                                    Brien.Bastings  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryParamsCR ElementGeometryCollection::GetGeometryParams()
+ElementGeometryCollection::ElementGeometryCollection(DgnGeomPartCR geomPart, Iterator& iter) : m_state(iter.m_state->m_dgnDb)
     {
-    if (m_currGeometryParams.GetCategoryId().IsValid())
-        m_currGeometryParams.Resolve(m_context->GetDgnDb()); // Resolve sub-category appearance...
+    m_data = geomPart.GetGeometryStream().GetData();
+    m_dataSize = geomPart.GetGeometryStream().GetSize();
 
-    return m_currGeometryParams;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryStreamEntryId ElementGeometryCollection::GetGeometryStreamEntryId()
-    {
-    return m_context->GetGeometryStreamEntryId();
+    m_state.m_geomParams        = iter.m_state->m_geomParams;
+    m_state.m_geomStreamEntryId = iter.m_state->m_geomStreamEntryId;
+    m_state.m_sourceToWorld     = iter.m_state->m_sourceToWorld;
+    m_state.m_geomToSource      = iter.m_state->m_geomToSource;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransformCR ElementGeometryCollection::GetElementToWorld()
+ElementGeometryCollection::ElementGeometryCollection(DgnDbR dgnDb, GeometryStreamCR geom) : m_state(dgnDb)
     {
-    return m_elemToWorld;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransformCR ElementGeometryCollection::GetGeometryToWorld()
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    TransformCP currentTrans = m_context->GetCurrLocalToWorldTransformCP();
-#else
-    TransformCP currentTrans = nullptr;
-#endif
-
-    if (nullptr != currentTrans)
-        m_geomToWorld = *currentTrans;
-    else
-        m_geomToWorld.InitIdentity();
-
-    return m_geomToWorld;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransformCR ElementGeometryCollection::GetGeometryToElement()
-    {
-    Transform   worldToElem;
-
-    worldToElem.InverseOf(m_elemToWorld);
-    m_geomToElem = Transform::FromProduct(worldToElem, GetGeometryToWorld());
-
-    return m_geomToElem;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::ElementGeometryCollection(DgnDbR dgnDb, GeometryStreamCR geom)
-    {
-    m_bRepOutput = BRepOutput::BRep;
     m_data = geom.GetData();
     m_dataSize = geom.GetSize();
-    m_elemToWorld.InitIdentity();
-    m_context = new ElementGeometryCollectionContext(dgnDb);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::ElementGeometryCollection(GeometrySourceCR source)
+ElementGeometryCollection::ElementGeometryCollection(GeometrySourceCR source) : m_state(source.GetSourceDgnDb())
     {
-    m_bRepOutput = BRepOutput::BRep;
     m_data = source.GetGeometryStream().GetData();
     m_dataSize = source.GetGeometryStream().GetSize();
-    m_elemToWorld = source.GetPlacementTransform();
-    m_context = new ElementGeometryCollectionContext(source.GetSourceDgnDb());
-    m_currGeometryParams.SetCategoryId(source.GetCategoryId());
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_context->PushTransform(m_elemToWorld);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::~ElementGeometryCollection()
-    {
-    delete((ElementGeometryCollectionContext*) m_context);
+    m_state.m_geomParams.SetCategoryId(source.GetCategoryId());
+    m_state.m_sourceToWorld = source.GetPlacementTransform();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3864,8 +3714,10 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 
     collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
         if (!geom.IsValid())
             continue;
 
@@ -4249,10 +4101,11 @@ private:
     ElementGeometryBuilderR m_builder;
     DgnCategoryId m_categoryId;
     Transform m_transform;
+    Transform m_geomToElem;
 
 public:
-    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
-        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_transform(Transform::FromIdentity()) {}
+    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, TransformCR geomToElem, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
+        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_geomToElem (geomToElem), m_transform(Transform::FromIdentity()) {}
 
     virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
     virtual void _AnnounceGeometryParams(GeometryParamsCR params) override { m_builder.Append(params); }
@@ -4305,9 +4158,11 @@ BentleyStatus TextAnnotationDrawToElementGeometry::_ProcessCurveVector(CurveVect
 void TextAnnotationDrawToElementGeometry::_OutputGraphics(ViewContextR context)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetCurrentGeometryParams().SetCategoryId(m_categoryId);
-#endif
+    context.PushTransform(m_geomToElem);
+    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
     m_annotationDraw.Draw(context);
+    context.PopTransformClip();
+#endif
     }
 
 END_UNNAMED_NAMESPACE
@@ -4315,21 +4170,13 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append(TextAnnotationCR text)
+bool ElementGeometryBuilder::Append(TextAnnotationCR text, TransformCR transform)
     {
     TextAnnotationDraw annotationDraw(text);
-    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, *this, m_elParams.GetCategoryId());
+    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, transform, *this, m_elParams.GetCategoryId());
     ElementGraphicsOutput::Process(annotationDrawToGeom, m_dgnDb);
 
     return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2015
-//---------------------------------------------------------------------------------------
-void ElementGeometryBuilder::SetUseCurrentDisplayParams(bool newValue)
-    {
-    m_writer.Reset((uint32_t)(newValue ? ElementGeomIO::HeaderFlags::UseCurrentDisplayParams : ElementGeomIO::HeaderFlags::None));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4338,6 +4185,7 @@ void ElementGeometryBuilder::SetUseCurrentDisplayParams(bool newValue)
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement) : m_dgnDb(dgnDb), m_is3d(true), m_writer(dgnDb)
     {
     m_placement3d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 
@@ -4351,6 +4199,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement) : m_dgnDb(dgnDb), m_is3d(false), m_writer(dgnDb)
     {
     m_placement2d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 

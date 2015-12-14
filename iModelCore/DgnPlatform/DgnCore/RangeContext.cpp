@@ -816,7 +816,7 @@ private:
 protected:
 
 public:
-    FitContext(FitViewParams& params) : NullContext(true), m_params(params)
+    FitContext(FitViewParams& params) : NullContext(), m_params(params)
         {
         m_ignoreViewRange = !params.m_useScanRange;
         m_purpose         = DrawPurpose::FitView;
@@ -916,11 +916,14 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement(GeometrySourceCR source) override
     {
-    DRange3d range = source.CalculateRange3d();
-    if (IsRangeContainedInCurrentRange(range, nullptr != source.ToGeometrySource3d()))
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    DPoint3d corners[8];
+    auto geom3d = source.ToGeometrySource3d();
+
+    DRange3d elRange = source.CalculateRange3d();
+    if (IsRangeContainedInCurrentRange(elRange, nullptr != geom3d))
         return SUCCESS;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // NOTE: Can just draw bounding box instead of drawing element geometry...
     DPoint3d corners[8];
     range.Get8Corners(corners);
@@ -954,7 +957,7 @@ StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params)
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements(true, nullptr);
+    context.VisitAllViewElements();
     context.Detach();
     
     m_viewController->RestoreFromSettings(oldState);
@@ -1072,7 +1075,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements(true, nullptr);
+    context.VisitAllViewElements();
     context.Detach();
 
     lowNpc = 0.0;
@@ -1110,7 +1113,7 @@ StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDep
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements(true, nullptr);
+    context.VisitAllViewElements();
     context.Detach();
 
     DRange3d range;

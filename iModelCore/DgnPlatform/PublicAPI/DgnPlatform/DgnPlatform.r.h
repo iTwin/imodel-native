@@ -52,6 +52,7 @@ enum class StandardView
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
+#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
 enum class RenderMode : uint8_t
     {
     Wireframe           = 0,
@@ -112,6 +113,7 @@ public:
     DGNPLATFORM_EXPORT void To3dJson(JsonValueR) const;
     DGNPLATFORM_EXPORT void From3dJson(JsonValueCR);
     };
+#endif
 
 enum class GradientMode
     {
@@ -325,12 +327,14 @@ enum class DgnUnitFormat
 //!     - In Bearing mode, a direction is formatted as an angle measure from either
 //!                        North or South and oriented to either East or West.
 //=======================================================================================
+#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
 enum class DirectionMode : uint16_t
     {
     Invalid                         = 0,    //!< Uninitialized value. Do not use.
     Azimuth                         = 1,    //!< Ex: 30^
     Bearing                         = 2,    //!< Ex: N60^E
     };
+#endif
 
 //=======================================================================================
 //! Used by DateTimeFormatter to specify the sequence in which various elements of
@@ -644,3 +648,27 @@ ENUM_IS_FLAGS (SnapMode)
 /** @endcond */
 
 END_BENTLEY_DGN_NAMESPACE
+
+//__PUBLISH_SECTION_END__
+// ///////////////////////////////////////////////////////////////////////////////////////////////////
+// DO NOT USE: these MAX*LENGTH values are not portable or correct!
+// ///////////////////////////////////////////////////////////////////////////////////////////////////
+BEGIN_BENTLEY_NAMESPACE
+
+enum
+{
+    DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
+    DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
+    DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
+
+    MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
+    MAXDIRLENGTH          = 256,
+    MAXDEVICELENGTH       = 256,
+    MAXNAMELENGTH         = DGNPLATFORM_RESOURCE_MAXNAMELENGTH,
+    MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
+};
+
+END_BENTLEY_NAMESPACE
+
+//__PUBLISH_SECTION_START__
+

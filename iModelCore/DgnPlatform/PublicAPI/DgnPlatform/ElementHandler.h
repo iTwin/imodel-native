@@ -125,10 +125,22 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for AnnotationElement
+    struct EXPORT_VTABLE_ATTRIBUTE Annotation : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Element, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for DrawingElement
     struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for SheetElement
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Element, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for ElementGroup

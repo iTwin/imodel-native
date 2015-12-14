@@ -58,11 +58,10 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeJsEnvironment)
 DGNPLATFORM_TYPEDEFS (ColorDef)
 DGNPLATFORM_TYPEDEFS (BoundingBox2d)
 DGNPLATFORM_TYPEDEFS (BoundingBox3d)
+DGNPLATFORM_TYPEDEFS (DefinitionElement)
 DGNPLATFORM_TYPEDEFS (DictionaryElement)
 DGNPLATFORM_TYPEDEFS (DgnDb)
 DGNPLATFORM_TYPEDEFS (DgnElement)
-DGNPLATFORM_TYPEDEFS (DgnElement2d)
-DGNPLATFORM_TYPEDEFS (DgnElement3d)
 DGNPLATFORM_TYPEDEFS (DgnFont)
 DGNPLATFORM_TYPEDEFS (DgnGeomPart)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
@@ -83,7 +82,9 @@ DGNPLATFORM_TYPEDEFS (DgnTrueTypeFont)
 DGNPLATFORM_TYPEDEFS (DgnViewport)
 DGNPLATFORM_TYPEDEFS (DisplayStyle)
 DGNPLATFORM_TYPEDEFS (DisplayStyleFlags)
+DGNPLATFORM_TYPEDEFS (AnnotationElement)
 DGNPLATFORM_TYPEDEFS (DrawingElement)
+DGNPLATFORM_TYPEDEFS (SheetElement)
 DGNPLATFORM_TYPEDEFS (GeometryStream)
 DGNPLATFORM_TYPEDEFS (GeometrySource)
 DGNPLATFORM_TYPEDEFS (GeometrySource2d)
@@ -99,6 +100,7 @@ DGNPLATFORM_TYPEDEFS (ITransientGeometryHandler)
 DGNPLATFORM_TYPEDEFS (PhysicalElement)
 DGNPLATFORM_TYPEDEFS (PhysicalRedlineModel)
 DGNPLATFORM_TYPEDEFS (RedlineModel)
+DGNPLATFORM_TYPEDEFS (SystemElement)
 DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
 DGNPLATFORM_TYPEDEFS (ViewFlags)
@@ -117,7 +119,7 @@ DGNPLATFORM_TYPEDEFS (ClipPrimitive)
 DGNPLATFORM_TYPEDEFS (ClipVector)
 DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
 DGNPLATFORM_TYPEDEFS (ComponentModel)
-DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
+DGNPLATFORM_TYPEDEFS (DecorateContext)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
 DGNPLATFORM_TYPEDEFS (DgnColorMap)
@@ -129,6 +131,7 @@ DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
 DGNPLATFORM_TYPEDEFS (DgnScript)
 DGNPLATFORM_TYPEDEFS (DrawingModel)
+DGNPLATFORM_TYPEDEFS (DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS (DropGeometry)
 DGNPLATFORM_TYPEDEFS (DropGraphics)
 DGNPLATFORM_TYPEDEFS (DwgHatchDef)
@@ -144,8 +147,8 @@ DGNPLATFORM_TYPEDEFS (Frustum)
 DGNPLATFORM_TYPEDEFS (GeomDetail)
 DGNPLATFORM_TYPEDEFS (GeometryStreamEntryId)
 DGNPLATFORM_TYPEDEFS (HatchLinkage)
-DGNPLATFORM_TYPEDEFS (HitList)
 DGNPLATFORM_TYPEDEFS (HitDetail)
+DGNPLATFORM_TYPEDEFS (HitList)
 DGNPLATFORM_TYPEDEFS (IACSManager)
 DGNPLATFORM_TYPEDEFS (IAuxCoordSys)
 DGNPLATFORM_TYPEDEFS (IEditAction)
@@ -162,19 +165,16 @@ DGNPLATFORM_TYPEDEFS (ISolidKernelEntity)
 DGNPLATFORM_TYPEDEFS (ISubEntity)
 DGNPLATFORM_TYPEDEFS (ITransactionHandler)
 DGNPLATFORM_TYPEDEFS (IVariableMonitor)
-DGNPLATFORM_TYPEDEFS (TxnManager)
-DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
-DGNPLATFORM_TYPEDEFS (IViewTransients)
-DGNPLATFORM_TYPEDEFS (ViewSet)
+DGNPLATFORM_TYPEDEFS (ImageBuffer)
 DGNPLATFORM_TYPEDEFS (NotificationManager)
 DGNPLATFORM_TYPEDEFS (ParagraphProperties)
 DGNPLATFORM_TYPEDEFS (PatternParams)
 DGNPLATFORM_TYPEDEFS (PermanentTopologicalId)
-DGNPLATFORM_TYPEDEFS (PersistentElementPath)
-DGNPLATFORM_TYPEDEFS (PersistentSnapDetail)
 DGNPLATFORM_TYPEDEFS (PhysicalModel)
 DGNPLATFORM_TYPEDEFS (PhysicalRedlineViewController)
 DGNPLATFORM_TYPEDEFS (PhysicalViewController)
+DGNPLATFORM_TYPEDEFS (PhysicalViewDefinition)
+DGNPLATFORM_TYPEDEFS (PickContext)
 DGNPLATFORM_TYPEDEFS (Placement2d)
 DGNPLATFORM_TYPEDEFS (Placement3d)
 DGNPLATFORM_TYPEDEFS (PropertyContext)
@@ -186,25 +186,24 @@ DGNPLATFORM_TYPEDEFS (RevisionManager);
 DGNPLATFORM_TYPEDEFS (ScanCriteria)
 DGNPLATFORM_TYPEDEFS (SelectionSetManager)
 DGNPLATFORM_TYPEDEFS (SheetViewController)
+DGNPLATFORM_TYPEDEFS (SheetViewDefinition)
 DGNPLATFORM_TYPEDEFS (SnapContext)
 DGNPLATFORM_TYPEDEFS (SnapDetail)
 DGNPLATFORM_TYPEDEFS (TextString)
 DGNPLATFORM_TYPEDEFS (TextStringStyle)
 DGNPLATFORM_TYPEDEFS (TransformClipStack)
 DGNPLATFORM_TYPEDEFS (TransformInfo)
+DGNPLATFORM_TYPEDEFS (TxnManager)
+DGNPLATFORM_TYPEDEFS (ViewDefinition)
 DGNPLATFORM_TYPEDEFS (ViewHandler)
 DGNPLATFORM_TYPEDEFS (ViewManager)
-DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
-DGNPLATFORM_TYPEDEFS (ViewDefinition)
-DGNPLATFORM_TYPEDEFS (PhysicalViewDefinition)
-DGNPLATFORM_TYPEDEFS (DrawingViewDefinition)
-DGNPLATFORM_TYPEDEFS (SheetViewDefinition)
-DGNPLATFORM_TYPEDEFS (ImageBuffer)
+DGNPLATFORM_TYPEDEFS (ViewSet)
 
 /** @endcond */
 DGNPLATFORM_TYPEDEFS (DgnGCS)
 DGNPLATFORM_TYPEDEFS (IGeoCoordinateServices)
 
+DGNPLATFORM_REF_COUNTED_PTR (DefinitionElement)
 DGNPLATFORM_REF_COUNTED_PTR (DictionaryElement)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
@@ -217,7 +216,9 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
 DGNPLATFORM_REF_COUNTED_PTR (DgnViewport)
+DGNPLATFORM_REF_COUNTED_PTR (AnnotationElement)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
+DGNPLATFORM_REF_COUNTED_PTR (SheetElement)
 DGNPLATFORM_REF_COUNTED_PTR (ILocksManager)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
@@ -245,27 +246,6 @@ DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
 DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 /** @endcond */
 
-//__PUBLISH_SECTION_END__
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-// DO NOT USE: these MAX*LENGTH values are not portable or correct!
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-BEGIN_BENTLEY_NAMESPACE
-
-enum
-{
-    DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
-    MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
-    MAXDIRLENGTH          = 256,
-    MAXDEVICELENGTH       = 256,
-    MAXNAMELENGTH         = DGNPLATFORM_RESOURCE_MAXNAMELENGTH,
-    MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
-};
-
-END_BENTLEY_NAMESPACE
-
-//__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
@@ -275,6 +255,7 @@ BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a D
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#Styles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
@@ -283,7 +264,6 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that re
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
-BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -683,6 +663,46 @@ enum class ClipMask
 
 ENUM_IS_FLAGS(ClipMask)
 
+//! Values held in line style definition elements; normally not used by clients of this API
+//! @ingroup LineStyleManagerModule
+enum class LsComponentType
+{
+    Unknown         = 0,             //!<   Unknown, should never occur
+    PointSymbol     = 1,
+    Compound        = 2,
+    LineCode        = 3,
+    LinePoint       = 4,
+    Internal        = 6,
+    RasterImage     = 7,
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LsComponentId
+{
+private:
+    uint32_t            m_number;              // Component property ID
+    LsComponentType     m_type;
+public:
+    uint32_t GetValue() const { return m_number; }
+    LsComponentType GetType() const { return m_type; }
+    LsComponentId() { m_type = LsComponentType::Unknown; m_number = 0xFFFFFFFF; }
+    bool IsValid() const { return m_number != 0xFFFFFFFF; }
+    explicit LsComponentId(LsComponentType type, uint32_t value) : m_type(type), m_number(value) {}
+
+    bool operator<(LsComponentId const&r) const
+        {
+        if (this->m_type < r.m_type)
+            return true;
+
+        if (this->m_type > r.m_type)
+            return false;
+
+        return this->m_number < r.m_number;
+        }
+};
+
 enum
 {
     MAX_GRADIENT_KEYS =  8,
@@ -810,7 +830,7 @@ enum class DrawPurpose
     TransientChanged,
     CaptureGeometry,
     GenerateThumbnail,
-    ForceRedraw,
+    Decorate,
     FenceAccept,
     RegionFlood,                 //!< Collect graphics to find closed regions/flood...
     FitView,

@@ -110,6 +110,8 @@ struct ModelSolverDef
 
         bvector<Parameter>::iterator begin() {return m_parameters.begin();}
         bvector<Parameter>::iterator end() {return m_parameters.end();}
+
+        size_t size() const {return m_parameters.size();}
         };
 
     private:
