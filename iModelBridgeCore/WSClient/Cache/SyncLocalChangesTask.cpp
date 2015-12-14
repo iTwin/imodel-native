@@ -319,7 +319,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
             if (!objectsResult.IsSuccess())
                 {
                 m_totalBytesToUpload -= currentFileSize;
-                HandleCreationError(objectsResult.GetError(), changeGroup, objectLabel);
+                HandleSyncError(objectsResult.GetError(), changeGroup, objectLabel);
                 return;
                 }
 
@@ -421,7 +421,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::HandleCreationError(WSErrorCR error, CacheChangeGroupPtr changeGroup, Utf8StringCR objectLabel)
+void SyncLocalChangesTask::HandleSyncError(WSErrorCR error, CacheChangeGroupPtr changeGroup, Utf8StringCR objectLabel)
     {
     if (WSError::Status::ReceivedError == error.GetStatus())
         {
@@ -457,7 +457,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(CacheChangeGroup
             {
             if (!result.IsSuccess())
                 {
-                SetError(result.GetError());
+                HandleSyncError(result.GetError(), changeGroup, objectLabel);
                 return;
                 }
 
