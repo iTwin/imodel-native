@@ -741,15 +741,6 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     */
     EXPECT_EQ(0, changeSummary.MakeInstanceIterator().QueryCount());
-
-    ecSqlStmt.Finalize();
-    ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, "INSERT INTO StartupCompany.AnglesStruct (Alpha,Beta,Theta) VALUES(1.1,2.2,3.3)");
-    ASSERT_TRUE(ECSqlStatus::Success == ecSqlStatus);
-    ECInstanceKey structInstanceKey;
-    stepStatus = ecSqlStmt.Step(structInstanceKey);
-    ASSERT_TRUE(BE_SQLITE_DONE == stepStatus);
-
-    m_testDb->SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
