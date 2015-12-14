@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* rotpnt.c                                            tmi    19-Oct-1990     */
@@ -15,22 +15,6 @@
 #include "stdafx.h"
 
 
-
-/*----------------------------------------------------------------------------*/
-/* Constants and macros                                                       */
-/*----------------------------------------------------------------------------*/
-#define     ALCSIZ    10
-
-
-/*----------------------------------------------------------------------------*/
-/* Private static function prototypes                                         */
-/*----------------------------------------------------------------------------*/
-static int aecDTM_getPointNeighborsAllocate(long *,long **,long **,long **);
-
-
-
-
-
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_rotateAroundPoint
  DESC: Given a point and a triangle which has as one of its vertices the
@@ -110,145 +94,6 @@ int aecDTM_rotateAroundPoint /* <= TRUE if error                   */
   if ( tindP  ) *tindP  = ttind;
   if ( ntinPP ) *ntinPP = tntinP;
   if ( npntPP ) *npntPP = tnpntP;
-
-  return ( sts );
-}
-
-
-
-
-/*%-----------------------------------------------------------------------------
- FUNC: aecDTM_getPointNeighbors
- DESC: It builds a list of all the points, triangles, and neigboring
-       triangles to the input point.  If you don't want a particular
-       piece of information, pass in a null pointer for that variable.
- HIST: Original - tmi 19-Oct-1990
- MISC:
- KEYW: DTM POINT NEIGHBORS GET
------------------------------------------------------------------------------%*/
-
-int aecDTM_getPointNeighbors /* <= TRUE if error                   */
-(
-  long *npntlstP,                /* <= # point neighbors (or NULL)            */
-  long **pntlstPP,               /* <= list of neighboring points (or NULL)   */
-  long *ntinlstP,                /* <= # triangle neighbors (or NULL)         */
-  long **tinlstPP,               /* <= list of neighboring triangles (or NULL)*/
-  long *nnbrlstP,                /* <= # triangle neighbor triangles (or NULL)*/
-  long **nbrlstPP,               /* <= list of triangle neighbor triangles (or NULL) */
-  struct CIVdtmsrf *srfP,        /* => surface to use                         */
-  struct CIVdtmpnt *pntP,        /* => point to rotate about                  */
-  struct CIVdtmtin *inptinP,     /* => current triangle                       */
-  int dir                        /* => 0: rotate clockwise, 1: counter-clock. */
-)
-{
-  struct CIVdtmtin *tinP, *ntinP = inptinP;
-  struct CIVdtmpnt *npntP;
-  DPoint3d cor;
-  int sts = SUCCESS, pind;
-  long num = 0L, nalloc = 0L;
-
-  if ( npntlstP ) *npntlstP = 1L, *pntlstPP = (long *)0;
-  if ( ntinlstP ) *ntinlstP = 0L, *tinlstPP = (long *)0;
-  if ( nnbrlstP ) *nnbrlstP = 0L, *nbrlstPP = (long *)0;
-  DTMPOINTTODPOINT ( srfP, pntP, cor );
-
-  if ( ( sts = aecDTM_findTriangle ( &ntinP, 0, 0, 0, srfP, &cor ) ) == SUCCESS )
-    if ( ( sts = aecDTM_rotateAroundPoint ( &npntP, &ntinP, &pind, (int *)0, pntP, ntinP, dir ) ) == SUCCESS )
-      if ( ntinP != (struct CIVdtmtin *)0 )
-      {
-        BOOL bFinished = FALSE;
-        int loopCnt = 0;
-        tinP = ntinP;
-
-        do
-        {
-          if ( num >= nalloc*ALCSIZ )
-            if ( ( sts = aecDTM_getPointNeighborsAllocate ( &nalloc, pntlstPP, tinlstPP, nbrlstPP ) ) != SUCCESS )
-              return ( sts );
-
-          num++;
-          if ( npntlstP ) (*pntlstPP)[(*npntlstP)++] = (long) npntP;
-          if ( ntinlstP ) (*tinlstPP)[(*ntinlstP)++] = (long) ntinP;
-          if ( nnbrlstP ) (*nbrlstPP)[(*nnbrlstP)++] = (long) ((pind == 0) ? ntinP->n31 : *(&ntinP->n12 + pind - 1));
-
-          sts = aecDTM_rotateAroundPoint ( &npntP, &ntinP, &pind, (int *)0, pntP, ntinP, dir );
-
-          if ( loopCnt > 1000 && sts == SUCCESS && ntinP )
-          {
-            for ( int i = 0; i < *ntinlstP && !bFinished; i++ )
-            {
-                if ( (*tinlstPP)[i] == (long)ntinP )
-                    bFinished = TRUE;
-            }
-          }
-
-          loopCnt++;
-
-        } while ( ntinP != tinP  &&  ntinP != (struct CIVdtmtin *)0  && !bFinished && sts == SUCCESS );
-      }
-
-  if ( pntlstPP  &&  *pntlstPP != (long *)0 )
-    (*pntlstPP)[0] = (*pntlstPP)[(*npntlstP)-1];
-  else if ( npntlstP != (long *)0 )
-    *npntlstP = 0L;
-
-  return ( sts );
-}
-
-
-
-
-
-/*%-----------------------------------------------------------------------------
- FUNC: aecDTM_getPointNeighborsAllocate
- DESC: It allocates memory for the data structures returned by this
-       list generation function.
- HIST: Original - tmi 19-Oct-1990
- MISC: static
- KEYW: DTM POINT NEIGHBORS GET ALLOCATE MEMORY
------------------------------------------------------------------------------%*/
-
-static int aecDTM_getPointNeighborsAllocate
-(
-  long *nalloc,
-  long **pntlst,
-  long **tinlst,
-  long **nbrlst
-)
-{
-  int sts = SUCCESS;
-
-  (*nalloc)++;
-
-  if ( pntlst )
-  {
-    if ( *nalloc == 1 )
-      *pntlst = (long *) calloc ( (unsigned int)(*nalloc*ALCSIZ+1), sizeof(long) );
-    else
-      *pntlst = (long *) realloc ( *pntlst, (unsigned int)((*nalloc*ALCSIZ+1)*sizeof(long)) );
-    if ( *pntlst == (long *)0 )
-      sts = DTM_M_MEMALF;
-  }
-
-  if ( sts == SUCCESS  &&  tinlst )
-  {
-    if ( *nalloc == 1 )
-      *tinlst = (long *) calloc ( (unsigned int)(*nalloc*ALCSIZ), sizeof(long) );
-    else
-      *tinlst = (long *) realloc ( *tinlst, (unsigned int)((*nalloc*ALCSIZ)*sizeof(long)) );
-    if ( *tinlst == (long *)0 )
-      sts = DTM_M_MEMALF;
-  }
-
-  if ( sts == SUCCESS  &&  nbrlst )
-  {
-    if ( *nalloc == 1 )
-      *nbrlst = (long *) calloc ( (unsigned int)(*nalloc*ALCSIZ), sizeof(long) );
-    else
-      *nbrlst = (long *) realloc ( *nbrlst, (unsigned int)((*nalloc*ALCSIZ)*sizeof(long)) );
-    if ( *nbrlst == (long *)0 )
-      sts = DTM_M_MEMALF;
-  }
 
   return ( sts );
 }

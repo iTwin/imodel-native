@@ -41,9 +41,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //  rsc.20Feb2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddPoint (DPoint3dCR point)
+DTMStatusInt BcDTM::AddPoint (DPoint3dCR point)
     {
-    return _AddPoints (&point, 1);
+    return AddPoints (&point, 1);
     }
 
 //----------------------------------------------------------------------+
@@ -51,7 +51,7 @@ DTMStatusInt BcDTM::_AddPoint (DPoint3dCR point)
 //  rsc.20Feb2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddPoints (DPoint3dCP ptsP, int numPts)
+DTMStatusInt BcDTM::AddPoints (DPoint3dCP ptsP, int numPts)
     {
     // Check arguments
     if ( ptsP == NULL) return DTM_ERROR ;
@@ -75,9 +75,9 @@ DTMStatusInt BcDTM::_AddPoints (DPoint3dCP ptsP, int numPts)
 //  rsc.20Feb2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddPointFeature (DPoint3dCR point, DTMFeatureId* featureIdP)
+DTMStatusInt BcDTM::AddPointFeature (DPoint3dCR point, DTMFeatureId* featureIdP)
     {
-    return _AddPointFeature (&point, 1, DTM_NULL_USER_TAG, featureIdP);
+    return AddPointFeature (&point, 1, DTM_NULL_USER_TAG, featureIdP);
     }
 
 //----------------------------------------------------------------------+
@@ -85,18 +85,18 @@ DTMStatusInt BcDTM::_AddPointFeature (DPoint3dCR point, DTMFeatureId* featureIdP
 //  rsc.20dec2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddPointFeature (DPoint3dCR point, DTMUserTag userTag, DTMFeatureId* featureIdP)
+DTMStatusInt BcDTM::AddPointFeature (DPoint3dCR point, DTMUserTag userTag, DTMFeatureId* featureIdP)
     {
-    return _AddPointFeature (&point, 1, userTag, featureIdP);
+    return AddPointFeature (&point, 1, userTag, featureIdP);
     }
 //----------------------------------------------------------------------+
 //                                                                      |
 //  rsc.20Feb2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddPointFeature (DPoint3dCP ptsP, int numPts, DTMFeatureId* featureIdP)
+DTMStatusInt BcDTM::AddPointFeature (DPoint3dCP ptsP, int numPts, DTMFeatureId* featureIdP)
     {
-    return _AddPointFeature (ptsP, numPts, DTM_NULL_USER_TAG, featureIdP);
+    return AddPointFeature (ptsP, numPts, DTM_NULL_USER_TAG, featureIdP);
     }
 
 //----------------------------------------------------------------------+
@@ -104,10 +104,10 @@ DTMStatusInt BcDTM::_AddPointFeature (DPoint3dCP ptsP, int numPts, DTMFeatureId*
 //  rsc.20Feb2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddPointFeature (DPoint3dCP ptsP, int numPts, DTMUserTag userTag, DTMFeatureId* featureIdP)
+DTMStatusInt BcDTM::AddPointFeature (DPoint3dCP ptsP, int numPts, DTMUserTag userTag, DTMFeatureId* featureIdP)
     {
     // This calls the same underlining code as AddLinearFeature with Group Spot as its feature type.
-    return _AddLinearFeature (DTMFeatureType::GroupSpots, ptsP, numPts, userTag, featureIdP);
+    return AddLinearFeature (DTMFeatureType::GroupSpots, ptsP, numPts, userTag, featureIdP);
     }
 
 //----------------------------------------------------------------------+
@@ -115,16 +115,16 @@ DTMStatusInt BcDTM::_AddPointFeature (DPoint3dCP ptsP, int numPts, DTMUserTag us
 //  rsc.20feb2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddLinearFeature(DTMFeatureType dtmFeatureType, DPoint3dCP ptsP, int numPts, DTMFeatureId* featureIdP)
+DTMStatusInt BcDTM::AddLinearFeature(DTMFeatureType dtmFeatureType, DPoint3dCP ptsP, int numPts, DTMFeatureId* featureIdP)
     {
-    return _AddLinearFeature (dtmFeatureType, ptsP, numPts, DTM_NULL_USER_TAG, featureIdP);
+    return AddLinearFeature (dtmFeatureType, ptsP, numPts, DTM_NULL_USER_TAG, featureIdP);
     }
 //----------------------------------------------------------------------+
 //                                                                      |
 //  rsc.20feb2008   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_AddLinearFeature (DTMFeatureType dtmFeatureType, DPoint3dCP ptsP, int numPts, DTMUserTag userTag, DTMFeatureId*  featureIdP)
+DTMStatusInt BcDTM::AddLinearFeature (DTMFeatureType dtmFeatureType, DPoint3dCP ptsP, int numPts, DTMUserTag userTag, DTMFeatureId*  featureIdP)
     {
 
     // Check arguments
@@ -146,7 +146,7 @@ DTMStatusInt BcDTM::_AddLinearFeature (DTMFeatureType dtmFeatureType, DPoint3dCP
 //  cbe.17jan2005   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_DeleteFeaturesByUserTag (DTMUserTag  userTag)
+DTMStatusInt BcDTM::DeleteFeaturesByUserTag (DTMUserTag  userTag)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -162,7 +162,7 @@ DTMStatusInt BcDTM::_DeleteFeaturesByUserTag (DTMUserTag  userTag)
 //  cbe.17jan2005   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_DeleteFeatureById (DTMFeatureId featureID)
+DTMStatusInt BcDTM::DeleteFeatureById (DTMFeatureId featureID)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -178,7 +178,7 @@ DTMStatusInt BcDTM::_DeleteFeatureById (DTMFeatureId featureID)
 //  cbe.17jan2005   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_DeleteFeaturesByType (DTMFeatureType featureType)
+DTMStatusInt BcDTM::DeleteFeaturesByType (DTMFeatureType featureType)
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -194,7 +194,7 @@ DTMStatusInt BcDTM::_DeleteFeaturesByType (DTMFeatureType featureType)
 //  cbe.17jan2005   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_RemoveHull()
+DTMStatusInt BcDTM::RemoveHull()
     {
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -210,7 +210,7 @@ DTMStatusInt BcDTM::_RemoveHull()
 //  cbe.17jan2005   -  Created.                                         |
 //                                                                      |
 //-----------------------------------------------------------------------
-DTMStatusInt BcDTM::_JoinFeatures (DTMFeatureType dtmFeat, int* nFeatures, int* nJoinedFeatures, double tol)
+DTMStatusInt BcDTM::JoinFeatures (DTMFeatureType dtmFeat, int* nFeatures, int* nJoinedFeatures, double tol)
     {
     DTMStatusInt status;	
     long	numFeat = 0, numJoined = 0 , numJoinUserTags = 0 ;
@@ -254,6 +254,7 @@ DTMStatusInt BcDTM::_JoinFeatures (DTMFeatureType dtmFeat, int* nFeatures, int* 
     return status;
     }
 
+#ifdef NOTDEF
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -358,3 +359,4 @@ DTMStatusInt BcDTM::RemoveHull()
     {
     return _RemoveHull();
     }
+#endif

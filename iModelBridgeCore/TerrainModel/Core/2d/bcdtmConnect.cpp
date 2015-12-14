@@ -1700,7 +1700,8 @@ BENTLEYDTM_Private int bcdtmConnect_getNumberOfDrapeBreakBetweenPointsDtmObject
 )
 {
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long              numDrapePts=0,numStringPts=2,dtmFeatureOption=FALSE ;
+ long              numDrapePts = 0, numStringPts = 2;
+ bool  dtmFeatureOption = false;
  DPoint3d               stringPts[2] ;          
  DTMDrapePoint   *drapeP;
  bvector<DTMDrapePoint> drapePtsP;

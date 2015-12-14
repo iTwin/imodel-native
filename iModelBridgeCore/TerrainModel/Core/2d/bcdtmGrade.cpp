@@ -1377,7 +1377,7 @@ BENTLEYDTM_Public int bcdtmGrade_calculateMacaoGradeSlopeStartDirectionsForPoint
 */
     drapeString[0].x = X1 ; drapeString[0].y = Y1 ; drapeString[0].z = 0.0 ; 
     drapeString[1].x = X2 ; drapeString[1].y = Y2 ; drapeString[1].z = 0.0 ; 
-    if( bcdtmDrape_stringDtmObject(dtmP,drapeString,2,FALSE,drapePtsP)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,drapeString,2,false,drapePtsP)) goto errexit ;
     numDrapePts = (long)drapePtsP.size();
     if( dbg == 1 )
       {

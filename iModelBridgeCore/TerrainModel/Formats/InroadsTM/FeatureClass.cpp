@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //---------------------------------------------------------------------------
@@ -40,14 +40,6 @@ CFeature::CFeature()
     m_nNumPayItems = 0;
     m_nPayItemsAlc = 0;
     memset ( &m_flag, 0, sizeof ( byte ) );
-    m_locateGuidsP = NULL;
-    m_nNumLocateGuids = 0;
-    m_nLocateGuidsAlc = 0;
-    m_bLocateClosed = FALSE;
-    m_bLocateClosedXY = FALSE;
-    m_locatePointsP = NULL;
-    m_nNumLocatePoints = 0;
-    m_nLocatePointsAlc = 0;
     m_pStyleInfo = NULL;
 }
 
@@ -228,9 +220,6 @@ int CFeature::FreeAll ( )   // <=  Non-zero status code if error occurred.
 
     Clear ( );
     
-    FreeLocateGuids ( );
-    FreeLocatePoints ( );
-
     return ( sts );
 }
 
@@ -273,40 +262,3 @@ int CFeature::Clear ( )     // <=  Non-zero status code if error occurred.
     m_pStyleInfo = NULL;
     return ( sts );
 }
-
-
-//---------------------------------------------------------------------------
-// DESC: Frees memory allocated to the feature object's located guid's list.
-// HIST: Original - twlangha - 01/13/99
-// MISC:
-//---------------------------------------------------------------------------
-
-void CFeature::FreeLocateGuids ( )
-{
-    if ( m_locateGuidsP )
-        free ( m_locateGuidsP );
-
-    m_locateGuidsP = NULL;
-    m_nNumLocateGuids = 0;
-    m_nLocateGuidsAlc = 0;
-}
-
-
-//---------------------------------------------------------------------------
-// DESC: Frees memory allocated to the feature object's located points list.
-// HIST: Original - twlangha - 01/13/99
-// MISC:
-//---------------------------------------------------------------------------
-
-void CFeature::FreeLocatePoints ( )
-{
-    if ( m_locatePointsP )
-        free ( m_locatePointsP );
-
-    m_locatePointsP = NULL;
-    m_nNumLocatePoints = 0;
-    m_nLocatePointsAlc = 0;
-
-}
-
-

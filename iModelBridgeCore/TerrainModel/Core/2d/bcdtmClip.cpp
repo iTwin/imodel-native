@@ -4442,7 +4442,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 /*
 **  Drape Feature Points On Clipping Tin
 */
-    if( bcdtmDrape_stringDtmObject(dtmP,featPtsP,numFeatPts,FALSE,drapePtsP)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,featPtsP,numFeatPts,false,drapePtsP)) goto errexit ;
     numDrapePts = (long)drapePtsP.size();
 /*
 **  Write Drape Points
@@ -4756,7 +4756,7 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
 */
     else
       {
-       if( bcdtmDrape_stringDtmObject(tinP,featurePtsP,numFeaturePts,FALSE,drapePtsP)) goto errexit ;
+       if( bcdtmDrape_stringDtmObject(tinP,featurePtsP,numFeaturePts,false,drapePtsP)) goto errexit ;
        numPtsOnDrape = 0 ; 
 
        for(auto drapeP : drapePtsP )  

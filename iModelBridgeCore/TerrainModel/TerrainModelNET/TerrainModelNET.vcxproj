@@ -40,7 +40,6 @@
     <ClCompile Include="Caching.cpp" />
     <ClCompile Include="DTM.cpp" />
     <ClCompile Include="DTMDrapedLinearElement.cpp" />
-    <ClCompile Include="DTMEdges.cpp" />
     <ClCompile Include="DTMFeature.cpp" />
     <ClCompile Include="DTMFeatureEnumerator.cpp" />
     <ClCompile Include="DTMHelpers.cpp" />
@@ -58,7 +57,6 @@
     <ClInclude Include="DTM.h" />
     <ClInclude Include="DTMDelegates.h" />
     <ClInclude Include="DTMDrapedLinearElement.h" />
-    <ClInclude Include="DTMEdges.h" />
     <ClInclude Include="DTMException.h" />
     <ClInclude Include="DTMFeature.h" />
     <ClInclude Include="DTMFeatureEnumerator.h" />

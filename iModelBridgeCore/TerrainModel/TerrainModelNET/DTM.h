@@ -12,8 +12,7 @@
 #include "DTMHelpers.h"
 #include "DTMTinEditor.h"
 #include "DTMDrapedLinearElement.h"
-//#include "dtmmesh.h"
-//#include "dtmedges.h"
+#include "dtmmesh.h"
 
 //using namespace Bentley::Civil::BCSystem::Base;
 
@@ -4702,17 +4701,7 @@ public ref class DTM
         /// <returns>The mesh representation.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        //Mesh^ GetMesh (bool firstCall, int maxMeshSize);
-
-        //=======================================================================================
-        /// <summary>
-        /// Gets the edges that represents this DTM.
-        /// </summary>
-        /// <category>DTM</category>
-        /// <returns>The edge representation.</returns>
-        /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
-        //=======================================================================================
-        //Edges^ GetEdges ();
+        Mesh^ GetMesh (bool firstCall, int maxMeshSize);
 
         //=======================================================================================
         /// <summary>

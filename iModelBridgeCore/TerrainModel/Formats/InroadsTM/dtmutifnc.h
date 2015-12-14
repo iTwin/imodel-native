@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmutifnc.h                                       aec    08-Feb-1994       */
@@ -14,7 +14,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include <dtmstr.h>
-#include <dtmuti.h>
 
 /*----------------------------------------------------------------------------*/
 /* Function prototypes                                                        */
@@ -65,27 +64,6 @@ void aecDTM_applyMaximumTriangleLengthAndMarkRangeTriangles
 (
    struct CIVdtmsrf *srfP,              /* => surface to use                   */
    double maxTriLength                  /* => max. tri. side length            */
-);
-
-int aecDTM_crossingCheck    /* <= TRUE if error                         */
-(
-   CIVdtmsrf *srfP,                     /* => surface to check                 */
-   int option,                          /* => option DTM_C_INSIDE, etc.        */
-   int (*intFuncP)(                     /* => intersect function               */
-    wchar_t *name1,                     /* => segment one name                   */
-    wchar_t *name2,                     /* => segment two name                   */
-    struct CIVdtmpnt *,                /* => segment one                      */
-    struct CIVdtmpnt *,                /* => segment two                      */
-    void * ),                          /* => user data pointer                */
-   void *mdlDescP,                      /* => MDL Descriptor                   */
-   void *userDataP,                     /* => user data pointer                */
-   BOOL bDisableLog = FALSE,            /* => disables the log file, optional    */
-   CMapStringToString *ftrGuidsP = NULL /* => only process these features   */
-);
-
-int aecDTM_crossingCheckExterior  /* TRUE if error                 */
-(
-   CIVdtmsrf *srfP                      /* => surface to check                 */
 );
 
 int aecDTM_fixTolerance     /* <= TRUE if error                    */

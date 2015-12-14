@@ -92,8 +92,6 @@ $(PCHHeaderObject)
 
 $(o)DTM$(oext)      : $(basedir)DTM.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-#$(o)DTMEdges$(oext)        : $(basedir)DTMEdges.cpp $(DependsOnHeaders) ${MultiCompileDepends}
-
 $(o)DTMFeature$(oext)       : $(basedir)DTMFeature.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)DTMFeatureEnumerator$(oext)     : $(basedir)DTMFeatureEnumerator.cpp $(DependsOnHeaders) ${MultiCompileDepends}
@@ -102,7 +100,7 @@ $(o)DTMMeshEnumerator$(oext)     : $(basedir)DTMMeshEnumerator.cpp $(DependsOnHe
 
 $(o)DTMHelpers$(oext)       : $(basedir)DTMHelpers.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-#$(o)DTMMesh$(oext)     : $(basedir)DTMMesh.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMMesh$(oext)     : $(basedir)DTMMesh.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)DTMTinEditor$(oext)     : $(basedir)DTMTinEditor.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmfndfnc.h                                         aec    07-Feb-1994     */
@@ -14,7 +14,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include <dtmstr.h>
-#include <dtmfnd.h>
 
 /*----------------------------------------------------------------------------*/
 /* Function prototypes                                                        */
@@ -89,15 +88,6 @@ int aecDTM_findFirstTriangle /* <= TRUE if error                   */
 (
   struct CIVdtmtin **tinPP,            /* <= found triangle                   */
   struct CIVdtmsrf *srfP               /* => surface to use                   */
-);
-
-int aecDTM_findAffectedTriangles /* <= TRUE if error               */
-(
-  struct CIVdtmtin **triPP,            /* <=> starting/first triangle         */
-  long *ntinlstP,                      /* <=  # tins in list                  */
-  long **tinlstPP,                     /* <=  array of tin addresses          */
-  struct CIVdtmsrf *srfP,              /*  => surface to use                  */
-  DPoint3d *locP                       /*  => loc. of pnt to be added         */
 );
 
 int aecDTM_findOutsideTriangle /* <= TRUE if error                 */

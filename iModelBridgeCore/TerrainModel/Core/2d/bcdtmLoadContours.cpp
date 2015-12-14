@@ -353,7 +353,7 @@ BENTLEYDTM_Public int bcdtmLoad_testForOverlapWithTinHullDtmObject
 /*
 **  Drape Feature Points On Clipping Tin
 */
-    if( bcdtmDrape_stringDtmObject(dtmP,featPtsP,numFeatPts,FALSE,drapePts)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,featPtsP,numFeatPts,false,drapePts)) goto errexit ;
     drapePtsP = drapePts.data();
     numDrapePts = (long)drapePts.size();
 /*

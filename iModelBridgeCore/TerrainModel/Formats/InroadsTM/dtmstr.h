@@ -259,8 +259,8 @@ struct CIVdtmdis                       /* display things                      */
     int (*confnc)(void *,              /* for interactive dis.                */
     struct CIVdtmtin *,
         int,void *);
-    struct CIVdistri *tinsym;          /* for interactive dis.                */
-    struct CIVdiscon *consym;          /* for interactive dis.                */
+    void *tinsym;          /* for interactive dis.                */
+    void *consym;          /* for interactive dis.                */
     };
 
 struct CIVdtmoffV8                     /* profile offset settings             */
