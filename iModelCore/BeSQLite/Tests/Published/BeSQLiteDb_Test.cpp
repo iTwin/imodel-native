@@ -793,7 +793,7 @@ TEST_F(BeSQLiteEmbeddedFileTests, ReadAddNewEntrySaveEmbeddedFile)
     ASSERT_EQ(0, memcmp(&buffer[0], &buffer2[0], buffer.size()));
 
     //Now save data without compression and read it again and read it again to verify that the data is unchanged.
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Save(buffer.data(), size, NewFileName, false));
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Save(buffer.data(), size, NewFileName, nullptr, false));
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer2, NewFileName));
     ASSERT_TRUE(buffer.size() == buffer2.size());
     ASSERT_EQ(0, memcmp(&buffer[0], &buffer2[0], buffer.size()));
