@@ -3472,6 +3472,30 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithReadOnlyProper
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
     }
 
+TEST_F(CachingDataSourceTests, SyncLocalChanges_FailedToModifyObject_ReturnsFailedObject)
+    {
+    // Arrange
+    auto ds = GetTestDataSourceV2();
+
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubInstanceInCache(txn.GetCache());
+    txn.GetCache().GetChangeManager().ModifyObject(instance, Json::objectValue);
+    txn.Commit();
+
+    // Act & Assert
+    EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
+        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError(StubWSErrorHttpResponse(HttpStatus::BadRequest))));
+        }));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+
+    ASSERT_THAT(result.GetValue(), SizeIs(1));
+    EXPECT_THAT(result.GetValue()[0].GetObjectId(), Eq(ds->StartCacheTransaction().GetCache().FindInstance(instance)));
+    }
+
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectRequestWithOnlyChangedPropertiesAndCommits)
     {
     // Arrange

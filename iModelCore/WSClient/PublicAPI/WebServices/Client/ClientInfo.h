@@ -41,6 +41,7 @@ struct ClientInfo : public IHttpHeaderProvider
 
     public:
         //! Create client info with mandatory fields and initialize other required fields automatically.
+        //! More info at WSClient wiki page.
         //! There should be one ClientInfo created per application and shared to code that connects to web services.
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
         //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
@@ -55,6 +56,7 @@ struct ClientInfo : public IHttpHeaderProvider
             );
 
         //! Consider using ClientInfo::Create() instead. Create client info with custom values, only useful for testing.
+        //! More info at WSClient wiki page.
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
         //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
         //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
