@@ -107,8 +107,13 @@ static void checkGeometryStream(GeometrySourceCR gel, ElementGeometry::GeometryT
     {
     //  Verify that item generated a line
     size_t count=0;
-    for (ElementGeometryPtr geom : ElementGeometryCollection (gel))
+    for (auto iter : ElementGeometryCollection (gel))
         {
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
         ASSERT_EQ( exptectedType , geom->GetGeometryType() );
         ++count;
         }
@@ -121,7 +126,7 @@ static void checkGeometryStream(GeometrySourceCR gel, ElementGeometry::GeometryT
 static void checkSlabDimensions(GeometrySourceCR el, double expectedX, double expectedY, double expectedZ)
     {
     DgnBoxDetail box;
-    ASSERT_TRUE( (*(ElementGeometryCollection(el).begin()))->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
+    ASSERT_TRUE( (*(ElementGeometryCollection(el).begin())).GetGeometryPtr()->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
     ASSERT_EQ( expectedX, box.m_baseX );
     ASSERT_EQ( expectedY, box.m_baseY );
     ASSERT_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );

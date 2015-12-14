@@ -1999,10 +1999,16 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
 
         // *** NEEDS WORK: Detect, schedule, and skip instances of other CM's
         ElementGeometryCollection gcollection(*componentElement);
-        for (ElementGeometryPtr const& geom : gcollection)
+
+        for (auto iter : gcollection)
             {
+            ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+            if (!geom.IsValid())
+                continue;
+
             //  Look up the subcategory ... IN THE CLIENT DB
-            GeometryParamsCR dparams = gcollection.GetGeometryParams();
+            GeometryParamsCR dparams = iter.GetGeometryParams();
             DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
             ElementGeometryBuilderPtr& builder = builders [clientsubcatid];
@@ -2013,7 +2019,7 @@ PhysicalElementCPtr ComponentModel::HarvestSolution(DgnDbStatus& status, Physica
             // build the transforms back into them in order to assemble them into a single geomstream.
             // It's all relative to 0,0,0 in the component model, so it's fine to do this.
             ElementGeometryPtr xgeom = geom->Clone();
-            Transform trans = gcollection.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
+            Transform trans = iter.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
             xgeom->TransformInPlace(trans);
 
             builder->Append(*xgeom);

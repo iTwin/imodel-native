@@ -64,9 +64,14 @@ TEST_F (ElementDisplayProperties, SetGradient)
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
-        Render::GeometryParamsCR params = collection.GetGeometryParams();
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
+        Render::GeometryParamsCR params = iter.GetGeometryParams();
         Render::GradientSymbCP gradient = params.GetGradient();
         EXPECT_NE (nullptr, params.GetGradient());
         EXPECT_EQ (GradientMode::Spherical, gradient->GetMode());
@@ -111,9 +116,14 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection (*geomElem);
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
-        Render::GeometryParamsCR params = collection.GetGeometryParams ();
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
+        Render::GeometryParamsCR params = iter.GetGeometryParams ();
         PatternParamsCP pattern = params.GetPatternParams ();
         ASSERT_NE(nullptr, pattern );
         EXPECT_EQ(ColorDef::Cyan(), pattern->GetColor());
@@ -147,9 +157,14 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
-        Render::GeometryParamsCR params = collection.GetGeometryParams();
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
+        Render::GeometryParamsCR params = iter.GetGeometryParams();
         EXPECT_EQ (0.5, params.GetTransparency());
         EXPECT_EQ (0.5, params.GetNetTransparency());
         }
@@ -179,9 +194,14 @@ TEST_F (ElementDisplayProperties, SetCategory)
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
-        Render::GeometryParamsCR params = collection.GetGeometryParams();
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
+        Render::GeometryParamsCR params = iter.GetGeometryParams();
         DgnCategoryId CId = params.GetCategoryId();
         ASSERT_TRUE (CId.IsValid());
         //Setting the Category Id also sets the SubCategory to the default.
@@ -216,9 +236,14 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
-        Render::GeometryParamsCR params = collection.GetGeometryParams();
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
+        Render::GeometryParamsCR params = iter.GetGeometryParams();
         EXPECT_EQ (21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
         EXPECT_FALSE (weight);
@@ -253,9 +278,14 @@ TEST_F (ElementDisplayProperties, FillProperties)
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
     ElementGeometryCollection collection(*geomElem);
 
-    for (ElementGeometryPtr geom : collection)
+    for (auto iter : collection)
         {
-        Render::GeometryParamsCR params = collection.GetGeometryParams();
+        ElementGeometryPtr geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            continue;
+
+        Render::GeometryParamsCR params = iter.GetGeometryParams();
         EXPECT_EQ (Render::FillDisplay::Always, params.GetFillDisplay());
         EXPECT_EQ (ColorDef::Red(), params.GetFillColor());
         bool FillColor = params.IsFillColorFromSubCategoryAppearance();
