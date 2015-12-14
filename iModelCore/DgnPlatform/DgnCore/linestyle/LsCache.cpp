@@ -70,6 +70,25 @@ void LsComponent::UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&cu
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsComponent::ExtractDescription(JsonValueCR result)
+    {
+    m_descr = LsJsonHelpers::GetString(result, "descr", "");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsComponent::SaveToJson(Json::Value& result)
+    {
+    result.clear();
+    Utf8String descr = GetDescription();
+    if (descr.SizeInBytes() > 0)
+        result["descr"] = descr.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec)
@@ -245,13 +264,81 @@ V10LineCode const* lcRsc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsStrokePatternComponent::CreateJsonValue(Json::Value& result)
+LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponentPtr& newLC, Json::Value const & jsonDef, LsLocationCP location)
     {
-    result.clear();
-    Utf8String descr = GetDescription();
-    if (descr.SizeInBytes() > 0)
-        result["descr"] = descr.c_str();
+    LsStrokePatternComponentP retval = new LsStrokePatternComponent(location);
+    retval->ExtractDescription(jsonDef);
 
+    JsonValueCR strokes = jsonDef["strokes"];
+    uint32_t nStrokes = strokes.size();
+
+    if (nStrokes == 0)
+        {
+        // create a default solid stroke
+        retval->AppendStroke (fc_hugeVal, true);
+        }
+    else
+        {
+        retval->m_nStrokes = nStrokes;
+        if (retval->m_nStrokes > 32)
+            retval->m_nStrokes = 32;
+
+        for (uint32_t i = 0; i < retval->m_nStrokes; i++)
+            {
+            LsStroke&   pStroke = retval->m_strokes[i];
+            JsonValueCR jsonStroke = strokes[i];
+            double length = LsJsonHelpers::GetDouble(jsonStroke, "length", 0);
+            double width = LsJsonHelpers::GetDouble(jsonStroke, "orgWidth", 0);
+            double endWidth = LsJsonHelpers::GetDouble(jsonStroke, "endWidth", width);
+            uint32_t strokeMode = LsJsonHelpers::GetUInt32(jsonStroke, "strokeMode", 0);
+            uint32_t widthMode = LsJsonHelpers::GetUInt32(jsonStroke, "widthMode", 0);
+            uint32_t capMode = LsJsonHelpers::GetUInt32(jsonStroke, "capMode", 0);
+            
+            pStroke.Init (length, width, endWidth, (LsStroke::WidthMode)widthMode, (LsCapMode)capMode);
+            pStroke.SetIsDash (strokeMode & LCSTROKE_DASH);
+            pStroke.SetIsRigid (TO_BOOL (strokeMode & LCSTROKE_RAY));
+            pStroke.SetIsStretchable (TO_BOOL(strokeMode & LCSTROKE_SCALE));
+            pStroke.SetIsDashFirst (pStroke.IsDash() ^ TO_BOOL(strokeMode & LCSTROKE_SINVERT));
+            pStroke.SetIsDashLast  (pStroke.IsDash() ^ TO_BOOL(strokeMode & LCSTROKE_EINVERT));
+            }
+
+        uint32_t options = LsJsonHelpers::GetUInt32(jsonDef, "options", 0);
+        uint32_t maxIterate = LsJsonHelpers::GetUInt32(jsonDef, "maxIter", 0);
+        double phase = LsJsonHelpers::GetDouble(jsonDef, "phase", 0);
+        retval->SetIterationLimit ((options & LCOPT_ITERATION) ? maxIterate : 0);
+        retval->SetIterationMode ((options & LCOPT_ITERATION) ? true : false);
+        retval->SetSegmentMode ((options & LCOPT_SEGMENT) ? true : false);
+
+        if (!retval->IsRigid())
+            {
+            if (0 == (options & (LCOPT_AUTOPHASE | LCOPT_CENTERSTRETCH)) && 0.0 != phase)
+                {
+                retval->SetDistancePhase (phase);
+                }
+            else if (options & LCOPT_AUTOPHASE)
+                {
+                retval->SetFractionalPhase (phase);
+                }
+            else if (options & LCOPT_CENTERSTRETCH)
+                {
+                retval->SetCenterPhaseMode();
+                }
+            }
+        }
+
+    retval->CalcPatternLength();
+    retval->PostCreate ();
+
+    newLC = retval;
+    return LINESTYLE_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsStrokePatternComponent::SaveToJson(Json::Value& result)
+    {
+    LsComponent::SaveToJson(result);
     double phase = 0.0;
     uint32_t options = 0;
     uint32_t  maxIterate = 0;

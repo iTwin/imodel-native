@@ -127,6 +127,21 @@ public:
     bool IsWeightBySymbol(uint32_t& lineWeight) { lineWeight = m_weight; return m_weightBySymbol; }
 };
 
+//=======================================================================================
+// @bsiclass                                                    John.Gooding    12/2015
+//=======================================================================================
+struct LsJsonHelpers
+{
+    static Utf8CP CompId;
+    
+    static double GetDouble(JsonValueCR json, CharCP fieldName, double defaultValue);
+    static uint32_t GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue);
+    static int32_t GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue);
+    static uint64_t GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t defaultValue);
+    static Utf8String GetString(JsonValueCR json, CharCP fieldName, char* defaultValue);
+    static LsComponentId GetComponentId(JsonValueCR json, CharCP typeName, CharCP idName, LsComponentType defaultType = LsComponentType::Internal);
+};
+
 #pragma pack(push)
 #pragma pack(1)
 //  LineStyle definitions are kept in dgnPrj_Style entries with Type === DgnStyleType::Line (3)
@@ -322,6 +337,7 @@ enum class LsCapMode
 };
 
 //__PUBLISH_SECTION_END__
+
 enum DwgShapeFlag
 {
     SHAPEFLAG_TextSymbol    = 0x0002,
@@ -428,8 +444,10 @@ protected:
     void      CopyDescription (Utf8CP buffer);
     static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
     virtual LsComponentPtr _Import(DgnImportContext& importer) const = 0;
+    void SaveToJson(Json::Value& result);
 
 public:
+    void ExtractDescription(JsonValueCR result);
     LsComponent (DgnDbR, LsComponentId componentId);
     LsComponent (LsLocationCP location);
     LsComponent (LsComponent const* base) : m_isDirty (false)
@@ -539,6 +557,8 @@ protected:
     virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
+    void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData);
+    static LineStyleStatus CreateFromJson(LsRasterImageComponentPtr&, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location);
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
     static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
@@ -590,6 +610,8 @@ protected:
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
+    void SaveToJson(Json::Value& result);
+    static LineStyleStatus CreateFromJson(LsSymbolComponentPtr&, Json::Value const & jsonDef, LsLocationCP location);
 
     void                SetColors           (bool colorByLevel, ColorDef lineColor, ColorDef fillColor);
     void                SetWeight           (uint32_t weight);
@@ -807,8 +829,8 @@ public:
     void            CalculateSize                       (DgnModelP modelRef);
 
     static BentleyStatus CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId id);
-    void CreateJsonValue(Json::Value& result);
-    static LsCompoundComponentPtr CreateFromJson(Json::Value& result, DgnDbR project, LsComponentId id);
+    void SaveToJson(Json::Value& result);
+    static LineStyleStatus CreateFromJson(LsCompoundComponentPtr&, Json::Value const & jsonDef, LsLocationCP location);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
     virtual void    _ClearPostProcess           () override;
@@ -1027,7 +1049,8 @@ protected:
 
 public:
 
-    void CreateJsonValue(Json::Value& result);
+    void SaveToJson(Json::Value& result);
+    static LineStyleStatus CreateFromJson(LsStrokePatternComponentPtr&, Json::Value const & jsonDef, LsLocationCP location);
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
     BentleyStatus   CreateFromRsrc          (V10LineCode const* pRsc);
@@ -1243,7 +1266,8 @@ public:
     LsOkayForTextureGeneration VerifySymbols() const;
     LsOkayForTextureGeneration VerifySymbol(double& adjustment, double startingOffset, double patternLength, uint32_t strokeIndex) const;
 
-    void CreateJsonValue(Json::Value& result);
+    void SaveToJson(Json::Value& result);
+    LineStyleStatus CreateFromJson(LsPointComponentPtr&newPoint, Json::Value const & jsonDef, LsLocationCP location);
     static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
 
 //__PUBLISH_SECTION_START__
