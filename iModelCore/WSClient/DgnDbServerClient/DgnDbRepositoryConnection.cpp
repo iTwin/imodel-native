@@ -377,9 +377,9 @@ AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocks(const BeB
 AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId(ICancellationTokenPtr cancellationToken)
     {
     Json::Value briefcaseIdJson = Json::objectValue;
-    Json::Value instance = briefcaseIdJson[ServerSchema::Instance] = Json::objectValue;
-    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
-    instance[ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
+    briefcaseIdJson[ServerSchema::Instance] = Json::objectValue;
+    briefcaseIdJson[ServerSchema::Instance][ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
+    briefcaseIdJson[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
     return m_wsRepositoryClient->SendCreateObjectRequest(briefcaseIdJson, BeFileName(), nullptr, cancellationToken);
     }
 
@@ -580,6 +580,7 @@ Json::Value PushRevisionJson(Dgn::DgnRevisionPtr revision, Utf8StringCR reposito
     pushRevisionJson[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::ParentId] = revision->GetParentId();
     pushRevisionJson[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::MasterFileId] = revision->GetDbGuid();
     pushRevisionJson[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::BriefcaseId] = repositoryId;
+    pushRevisionJson[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::IsUploaded] = false;
     return pushRevisionJson;
     }
 
@@ -589,15 +590,46 @@ Json::Value PushRevisionJson(Dgn::DgnRevisionPtr revision, Utf8StringCR reposito
 AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::Push(Dgn::DgnRevisionPtr revision, uint32_t repositoryId,
     HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
+    // Stage 1. Create revision.
     auto pushJson = PushRevisionJson(revision, m_repositoryInfo->GetId(), repositoryId);
-    return m_wsRepositoryClient->SendCreateObjectRequest(pushJson, revision->GetChangeStreamFile(), callback, cancellationToken)->Then<DgnDbResult>
-        ([=] (const WSCreateObjectResult& result)
+    std::shared_ptr<DgnDbResult> finalResult = std::make_shared<DgnDbResult>();
+    return m_wsRepositoryClient->SendCreateObjectRequest(pushJson, BeFileName(), callback, cancellationToken)->Then
+        ([=] (const WSCreateObjectResult& initializePushResult)
         {
-        if (result.IsSuccess())
-            return DgnDbResult::Success();
+        if (initializePushResult.IsSuccess())
+            {
+            // Stage 2. Upload revision file. 
+            JsonValueCR revisionInstance   = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            Utf8String  revisionInstanceId = revisionInstance[ServerSchema::InstanceId].asString();
+            ObjectId    revisionObjectId   = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
+
+            m_wsRepositoryClient->SendUpdateFileRequest(revisionObjectId, revision->GetChangeStreamFile(), callback, cancellationToken)->Then
+                ([=](const WSUpdateObjectResult& uploadRevisionResult)
+                {
+                if (uploadRevisionResult.IsSuccess())
+                    {
+                    // Stage 3. Initialize revision.
+                    Json::Value revisionProperties = Json::Value(pushJson[ServerSchema::Instance][ServerSchema::Properties]);
+                    revisionProperties[ServerSchema::Property::IsUploaded] = true;
+                    m_wsRepositoryClient->SendUpdateObjectRequest(revisionObjectId, revisionProperties, nullptr, callback, cancellationToken)->Then
+                        ([=](const WSUpdateObjectResult& finishPushResult)
+                        {
+                        if (finishPushResult.IsSuccess())
+                            finalResult->SetSuccess();
+                        else
+                            finalResult->SetError(finishPushResult.GetError());
+                        });
+                    }
+                else
+                    finalResult->SetError(uploadRevisionResult.GetError());
+                });
+            }
         else
-            return DgnDbResult::Error(result.GetError());
-        });
+            finalResult->SetError(initializePushResult.GetError());
+        })->Then<DgnDbResult>([=]()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------

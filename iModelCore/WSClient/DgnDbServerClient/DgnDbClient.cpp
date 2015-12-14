@@ -169,6 +169,7 @@ Json::Value RepositoryCreationJson(Utf8StringCR repositoryId, Utf8StringCR repos
     BeFileName(localPath).GetFileSize(size);
     repositoryCreation[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::FileSize] = size;
     repositoryCreation[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::Published] = published;
+    repositoryCreation[ServerSchema::Instance][ServerSchema::Properties][ServerSchema::Property::IsUploaded] = false;
     return repositoryCreation;
     }
 
@@ -195,33 +196,60 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(Error::InvalidRepository));
         }
+
     std::shared_ptr<DgnDbRepositoryResult> finalResult = std::make_shared<DgnDbRepositoryResult>();
     return GetRepositoriesByPlugin(ServerSchema::Plugin::Admin, m_serverUrl, m_clientInfo, cancellationToken)->Then([=]
         (const WSRepositoriesResult& repositoriesResult)
         {
         if (repositoriesResult.IsSuccess())
             {
+            // Stage 1. Create repository.
             Utf8String adminRepositoryURL = (*repositoriesResult.GetValue().begin()).GetId();
             IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, adminRepositoryURL, m_clientInfo);
+            Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryId, db->GetDbGuid().ToString(), description, db->GetDbFileName(), published);
             client->SetCredentials(m_credentials);
-            client->SendCreateObjectRequest(RepositoryCreationJson(repositoryId, db->GetDbGuid().ToString(), description, db->GetDbFileName(), published),
-                                            db->GetFileName(), callback, cancellationToken)->Then([=] (const WSCreateObjectResult& createObjectResult)
+            client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), callback, cancellationToken)->Then
+                ([=] (const WSCreateObjectResult& createRepositoryResult)
                 {
-                if (createObjectResult.IsSuccess())
+                if (createRepositoryResult.IsSuccess())
                     {
-                    Json::Value createdObject = createObjectResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-                    Utf8String repositoryId = createdObject[ServerSchema::InstanceId].asString();
-                    ConnectToRepository(RepositoryInfo::Create(m_serverUrl, repositoryId), cancellationToken)->Then([=]
-                        (const DgnDbRepositoryConnectionResult& result)
+                    // Stage 2. Upload master file. 
+                    JsonValueCR repositoryInstance   = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+                    Utf8String  repositoryInstanceId = repositoryInstance[ServerSchema::InstanceId].asString();
+                    ObjectId    repositoryObjectId   = ObjectId(ServerSchema::Schema::Admin, ServerSchema::Class::Repository, repositoryInstanceId);
+
+                    client->SendUpdateFileRequest(repositoryObjectId, db->GetFileName(), callback, cancellationToken)->Then
+                        ([=] (const WSUpdateObjectResult& uploadFileResult)
                         {
-                        if (result.IsSuccess())
-                            finalResult->SetSuccess(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
+                        if (uploadFileResult.IsSuccess())
+                            {
+                            // Stage 3. Initialize repository.
+                            Json::Value repositoryProperties = Json::Value (repositoryCreationJson[ServerSchema::Instance][ServerSchema::Properties]);
+                            repositoryProperties[ServerSchema::Property::IsUploaded] = true;
+                            client->SendUpdateObjectRequest(repositoryObjectId, repositoryProperties, nullptr, callback, cancellationToken)->Then
+                                ([=] (const WSUpdateObjectResult& initializeRepositoryResult)
+                                {
+                                if (initializeRepositoryResult.IsSuccess())
+                                    {
+                                    ConnectToRepository(RepositoryInfo::Create(m_serverUrl, repositoryId), cancellationToken)->Then
+                                        ([=] (const DgnDbRepositoryConnectionResult& result)
+                                        {
+                                        if (result.IsSuccess())
+                                            finalResult->SetSuccess(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
+                                        else
+                                            finalResult->SetError(result.GetError());
+                                        });
+                                    }
+                                else
+                                    finalResult->SetError(initializeRepositoryResult.GetError());
+                                });
+                            }
                         else
-                            finalResult->SetError(result.GetError());
+                            finalResult->SetError(uploadFileResult.GetError());
                         });
                     }
                 else
-                    finalResult->SetError(createObjectResult.GetError());
+                    finalResult->SetError(createRepositoryResult.GetError());
                 });
             }
         else
